@@ -1,0 +1,247 @@
+DRAFT DOCUMENT FOR A COARRAY API DEFINTION
+
+NOTE: The actual function names will have some PREFIX to avoid name clashes.
+This prefix can be vendor specific.
+
+
+Content
+0  TODO
+1  Implementation status
+2  Description of defines and types used in the API
+3  Description of the functions provided by the API
+
+
+0  TODO
+
+- Discuss the current draft
+- Add missing functions of the current gfortran implementation
+- Address the TODO items
+- Extend the functions to match a sensible set
+- Update the implementation status, especially for the ARMCI library
+
+
+
+1  Implementation status
+
+		gfort	ARMCI
+caf_init	Y(1)	Y
+caf_finish	Y	Y
+caf_this_image	(1)	Y
+caf_num_images	(1)	Y
+caf_register	Y	Y
+caf_deregister	Y	Y
+
+(1) Patch submitted:
+    http://gcc.gnu.org/ml/gcc-patches/2014-03/msg00307.html
+
+
+
+2  Description of defines and types used in the API
+
+
+2.1  caf_register_t
+
+Type used to distinguish different kinds of allocations.
+
+typedef enum caf_register_t {
+  CAF_REGTYPE_COARRAY_STATIC,
+  CAF_REGTYPE_COARRAY_ALLOC,
+  CAF_REGTYPE_LOCK,
+}
+caf_register_t;
+
+TODO:
+  Check whether this set is complete and makes sense
+
+2.2  caf_token_t
+
+In terms of the processor, some opaque pointer, which is used to identify a
+coarray.  The exact content is implementation defined by the library.
+
+
+2.3  Stat values
+
+#define STAT_UNLOCKED           0
+#define STAT_LOCKED             1
+#define STAT_LOCKED_OTHER_IMAGE 2
+#define STAT_STOPPED_IMAGE      6000
+
+TODO:
+  Define more, allow room for lib-specific values, update for TS18508.
+  Do we need to take care of special vendor choices?
+  Note: Some values have to be such that they differ from certain other
+  values.
+
+
+
+3. Description of the API functions
+
+
+3.1  Initialization function
+
+     void caf_init (int *argc, char ***argv)
+
+This function shall be called at startup of the program before the Fortran main
+program.  It takes as arguments the command-line arguments of the program. The
+library is permitted to change the arguments.  It is permitted to pass to
+NULL pointers as argument.
+
+Arguments: 
+  argc  intent(inout) An integer pointer with the number of arguments
+        passed to the program, or NULL.
+  argv  intent(inout) A pointer to an array of strings with the
+        command-line arguments.
+
+NOTE: 
+  The function is modelled after the initialization function of the MPI
+  (Message Passing Interface) specification.  Due to the way coarray
+  registration (3.5) works, it might not be the first call to the libaray. If
+  the main program is not written in Fortran and only a library uses coarrays,
+  it can happen that this function is never called.  Therefore, it is
+  recommended that the library does not rely on the passed arguments and whether
+  the call has been done.
+
+GCC:
+  In gfortran, the function is generated when the Fortran main program is
+  compiled with -fcoarray=lib; the call happens before the run-time library
+  initialiation such that changes to the command-line arguments will be visible
+  when the command-line intrinsics are invoked.
+  NOTE: GCC currently uses a four-argument version.
+  A patch to move to two arguments has been posted:
+  http://gcc.gnu.org/ml/gcc-patches/2014-03/msg00307.html
+
+
+
+3.2  Finalization function
+
+     void caf_finish (void)
+
+This function shall be called at the end of the program to permit a graceful
+shutdown.
+
+NOTE:
+  It is recommended to add this call at the end of the Fortran main program.
+  To ensure that the shutdown is also performed for programs where this function
+  is not explicitly invoked, for instance non-Fortran programs or calls to the
+  system's exit() function, the library can use a destructor function.
+  Note that programs can also be terminated using the STOP and ERROR STOP
+  statements; those use different library calls.
+
+GCC:
+  In gfortran, this function is called at the end of the Fortran main program,
+  if it has been compiled with the -fcoarray=lib option.
+
+
+
+3.3 Querying the image number
+
+    int caf_this_image (int distance)
+
+This function returns the current image number, which is a positive number.
+
+Argument:
+  distance   As specified for the this_image intrinsic in TS18508. Shall be a
+             nonnegative number.
+NOTE:
+  If the Fortran intrinsic this_image() is invoked without an argument, which
+  is the only permitted form in Fortran 2008, the processer shall pass a 0 as
+  first argument.
+
+GCC:
+  Unsupported.
+  Patch submitted: http://gcc.gnu.org/ml/gcc-patches/2014-03/msg00307.html
+
+
+
+3.4 Querying the maximal number of images
+
+    int caf_num_images(int distance, int failed)
+
+This function returns the number of images in the current team, if distance is 0
+or the number of images in the parent team at the specified distance. If failed
+is is -1, the function returns the number of all images at the specified
+distance; if it is 0, the function returns the number of nonfailed images, and
+if it is 1, it returns the number of failed images.
+
+Arguments:
+  distance  the distance from this image to the ancestor. Shall be positive.
+  failed    shall be -1, 0, or 1
+
+NOTE:
+  This function follows TS18508. If the num_image intrinsic has no arguments,
+  the processor shall pass distance=0 and failed=-1 to the function.
+
+GCC:
+  Unsupported.
+  Patch submitted: http://gcc.gnu.org/ml/gcc-patches/2014-03/msg00307.html
+
+
+
+3.5 Registering coarrays
+
+    void * caf_register (size_t size, caf_register_t type, caf_token_t ***token,
+                         int *stat, char *errmsg, size_t errmsg_len);
+
+Allocates memory for a coarray and creates a token to identify the coarray. The
+function is called for both coarrays with SAVE attribute and using an explicit
+ALLOCATE statement. If an error occurs and STAT is a NULL pointer, the function
+shall abort with printing an error message and starting the error termination.
+If no error occurs and STAT= is present, it shall be set to zero. If an error
+is 
+
+Arguments:
+  size   byte size of the array to be allocated
+  type   one of the caf_register_t types. Possible values:
+         CAF_REGTYPE_COARRAY_STATIC - for nonallocatable coarrays
+         CAF_REGTYPE_COARRAY - for allocatable coarrays
+         CAF_REGTYPE_LOCK - for lock variables 
+  token  intent(out) An opaque pointer identifying the coarray.
+  stat   intent(out) For allocatable coarrays, stores the STAT=; may be NULL
+  errmsg intent(out) When an error occurs, this will be set to an error
+         message, may be NULL
+  errmgs_len the buffersize of errmsg.
+
+TODO:
+  - Check whether the locking should be handled like that and whether one needs
+  more, e.g. for locking types in DT?
+  - Check whether one needs an additional function for to register coarrays
+  which are in static memory and used without memory allocation
+  - Check whether we need an explicit SYNC ALL at the beginning of the main
+  program or whether we can do without.
+  - Does TS18508 require more for SAVE within teams or within blocks?
+
+NOTE:
+  Nonalloatable coarrays have to be registered prior use from remote images.
+  In order to guarantee this, they have to be registered before the main
+  program. This can be achieved by creating constructor functions.  When using
+  caf_register, also nonallocatable coarrays the memory is allocated and no
+  static memory is used.
+  The token permits to identify the coarray; to the processor, the token is a
+  nonaliasing pointer. The library can, for instance, store the base address
+  of the coarray in the token, some handle or a more complicated struct.
+  The function shall finish 
+
+GCC:
+  Implemented. However, it currently uses an INT and not a SIZE_T for the
+  string length.
+
+
+
+3.6  Deregistering coarrays
+
+    void caf_deregister (const caf_token_t ***token, int *stat, char *errmsg,
+                         int errmsg_len);
+
+Called for free the memory of a coarray; the processor calls this function for
+automatic and explicit deallocation.  In case of an error, this function shall
+fail with an error message, unless the STAT= variable is not null.
+
+Arguments:
+  token  intent(int) An opaque pointer identifying the coarray.
+  stat   intent(out) For allocatable coarrays, stores the STAT=; may be NULL
+  errmsg intent(out) When an error occurs, this will be set to an error
+         message, may be NULL
+  errmgs_len the buffersize of errmsg.
+
+GCC:
+  Implemented.

@@ -1,0 +1,6 @@
+PREFIX_NAME=__gfortran_caf_
+
+ARMCI_CFLAGS= #-I/usr/include
+SINGLE_CFLAGS=
+
+CFLAGS += -DPREFIX_NAME=$(PREFIX_NAME)
