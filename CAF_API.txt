@@ -23,23 +23,33 @@ Content
 
 1  Implementation status
 
-		gfort	ARMCI
-caf_init	Y(1)	Y
-caf_finish	Y	Y
-caf_this_image	(1)	Y
-caf_num_images	(1)	Y
-caf_register	Y	Y
-caf_deregister	Y	Y
+The library implementation in this directory should be API compatible
+with the wording below, except for some "int errmsg_len" vs. size_t
+changes which have not yet been done.
 
-(1) Patch submitted:
-    http://gcc.gnu.org/ml/gcc-patches/2014-03/msg00307.html
+gfortran development is done in GCC's fortran-caf branch and should
+also match - with the same exception - the API described here.
+
+In both cases, the implementations might be stubs and not fully
+working or not fully adhering  and should
+also match - with the same exception - the API described here.
+
+In both cases, the implementations might be stubs and not fully
+working or not fully adhering to the specification. See also individual
+notes below.
 
 
 
 2  Description of defines and types used in the API
 
 
-2.1  caf_register_t
+2.1  caf_token_t
+
+Typedef of type "void *" on the compiler side. Can be any data
+type on the library side.
+
+
+2.2  caf_register_t
 
 Type used to distinguish different kinds of allocations.
 
@@ -53,13 +63,13 @@ caf_register_t;
 TODO:
   Check whether this set is complete and makes sense
 
-2.2  caf_token_t
+2.3  caf_token_t
 
 In terms of the processor, some opaque pointer, which is used to identify a
 coarray.  The exact content is implementation defined by the library.
 
 
-2.3  Stat values
+2.4  Stat values
 
 #define STAT_UNLOCKED           0
 #define STAT_LOCKED             1
@@ -106,10 +116,8 @@ GCC:
   compiled with -fcoarray=lib; the call happens before the run-time library
   initialiation such that changes to the command-line arguments will be visible
   when the command-line intrinsics are invoked.
-  NOTE: GCC currently uses a four-argument version.
-  A patch to move to two arguments has been posted:
-  http://gcc.gnu.org/ml/gcc-patches/2014-03/msg00307.html
-
+  NOTE: The Fortran-caf branch uses this implementation.
+  GCC 4.x uses a four-argument version.
 
 
 3.2  Finalization function
@@ -148,8 +156,7 @@ NOTE:
   first argument.
 
 GCC:
-  Unsupported.
-  Patch submitted: http://gcc.gnu.org/ml/gcc-patches/2014-03/msg00307.html
+  Fortran-caf uses this function. Not called in GCC 4.x.
 
 
 
@@ -172,15 +179,14 @@ NOTE:
   the processor shall pass distance=0 and failed=-1 to the function.
 
 GCC:
-  Unsupported.
-  Patch submitted: http://gcc.gnu.org/ml/gcc-patches/2014-03/msg00307.html
+  Fortran-caf uses this function. Not called in GCC 4.x.
 
 
 
 3.5 Registering coarrays
 
-    void * caf_register (size_t size, caf_register_t type, caf_token_t ***token,
-                         int *stat, char *errmsg, size_t errmsg_len);
+    void *caf_register (size_t size, caf_register_t type, caf_token_t *token,
+                        int *stat, char *errmsg, size_t errmsg_len);
 
 Allocates memory for a coarray and creates a token to identify the coarray. The
 function is called for both coarrays with SAVE attribute and using an explicit
@@ -229,19 +235,115 @@ GCC:
 
 3.6  Deregistering coarrays
 
-    void caf_deregister (const caf_token_t ***token, int *stat, char *errmsg,
-                         int errmsg_len);
+    void caf_deregister (const caf_token_t *token, int *stat, char *errmsg,
+                         size_t errmsg_len);
 
 Called for free the memory of a coarray; the processor calls this function for
 automatic and explicit deallocation.  In case of an error, this function shall
 fail with an error message, unless the STAT= variable is not null.
 
 Arguments:
-  token  intent(int) An opaque pointer identifying the coarray.
+  token  intent(inout) An opaque pointer identifying the coarray.
   stat   intent(out) For allocatable coarrays, stores the STAT=; may be NULL
   errmsg intent(out) When an error occurs, this will be set to an error
          message, may be NULL
   errmgs_len the buffersize of errmsg.
 
+NOTE:
+  The implementation is permitted to set the token to NULL. However, it is
+  not required to do so.
 GCC:
-  Implemented.
+  Implemented. Currently uses an int instead of size_t for the string length.
+
+
+
+3.7  Sending data from a local image to a remote image
+
+   void caf_send (const caf_token_t token, size_t offset, int image_id,
+                  void *data, size_t size, bool async)
+
+Called to send a scalar or contiguous section of an array to another image,
+identified by the image_index.
+
+Arguments:
+  token  intent(in)  An opaque pointer identifying the coarray.
+  offset  By which amount of bytes the actual data is shifted compared to
+          the base address of the coarray.
+  image_id  The ID of the remote image; must be a positive number.
+  data  Address of the data, which shall be sent
+  size  Amount of bytes to be transmitted
+
+NOTE:
+  It is permitted to have image_id == current image. Additionally, the memory
+  of the send-to and the send-from might (partially) overlap in that case. The
+  implementation has to take care that it handles this case.
+GCC:
+  (Partially) implemented on the Fortran-caf branch. The communication is
+  currently always synchronous.
+TODO:
+  How to handle asynchronous communication. Shall one return a handle, which
+  can be optionally used as handle for a wait command?
+
+TODO:
+  - Wait is missing
+  - Array section, array vector sections, scalar assignment to arrays
+  - Assignment to an address instead of using a token, to handle
+    caf[i]%allocatable%alloc_array(:,:) = ...
+    Or some other means to handle those.
+  - Image index: How to handle references to other TEAMS?
+
+3.x TODO: Handle GET and remote-to-remote communication
+3.y TODO: Handle ATOMIC, LOCK, CRITICAL
+3.z TODO Teams and error recovery
+
+
+3.8  All-Image Barrier
+
+   void caf_sync_all (int *stat, char *errmsg, size_t errmsg_len)
+
+Barrier which waits for all other images, pending asynchronous communication
+and other data transfer.
+
+Arguments:
+  stat  Status variable, if NULL, failures are fatal. If nonnull, assigned 0
+        on success, and a stat code (cf. 2.3) in case of an error.
+  errmsg  If not NULL: Ignored unless stat is present; unmodified when
+          successful, otherwise, an error message is copied into the variable.
+  errmsg_len  Maximal length of the error string, which is not '\0' terminated.
+          The string should be padded by blanks.
+
+Note:
+  For portability, consider only using 7bit ASCII characters in the error
+  message.
+GCC:
+  Implemented in GCC 4.x using an int argument for the length.
+  Currently, size_t is not implemented.
+
+
+
+3.9  Barrier for Selected Images
+
+   void sync_images (int count, int images[], int *stat,
+                     char *errmsg, size_t errmsg_len)
+
+Arguments:
+  count Size of the array "images"; has value -1 for 'sync images(*)' and
+        value 0 for a zero-sized array.
+  image  list of images to be synced with.
+  stat  Status variable, if NULL, failures are fatal. If nonnull, assigned 0
+        on success, and a stat code (cf. 2.3) in case of an error.
+  errmsg  If not NULL: Ignored unless stat is present; unmodified when
+          successful, otherwise, an error message is copied into the variable.
+  errmsg_len  Maximal length of the error string, which is not '\0' terminated.
+          The string should be padded by blanks.
+
+Note:
+  For portability, consider only using 7bit ASCII characters in the error
+  message. Note that the list can contain also the ID of this image or can be
+  an empty set. Example use is that image 1 syncs with all others (i.e "sync
+  images(*)") and the others sync only with that image ("sync image(1)"). Or
+  for point-to point communication (sync image([left_image, right_image]).
+
+GCC:
+  Implemented in GCC 4.x using an int argument for the error-string length.
+  Currently, size_t is not implemented.
