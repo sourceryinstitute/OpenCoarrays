@@ -210,7 +210,7 @@ error:
 
 
 void
-_gfortran_caf_deregister (caf_token_t *token, int *stat, char *errmsg, int errmsg_len)
+PREFIX(deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len)
 {
   int ierr;
 

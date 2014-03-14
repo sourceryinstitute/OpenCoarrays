@@ -1,4 +1,4 @@
-PREFIX_NAME=__gfortran_caf_
+PREFIX_NAME=_gfortran_caf_
 
 ARMCI_CFLAGS= #-I/usr/include
 SINGLE_CFLAGS=

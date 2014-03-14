@@ -52,12 +52,12 @@ int main(int argc, char **argv)
 
   size = n*sizeof(double);
 
-  __gfortran_caf_init (&argc, &argv);
+  _gfortran_caf_init (&argc, &argv);
 
-  me = __gfortran_caf_this_image (1);
-  np = __gfortran_caf_num_images (1, 1);
+  me = _gfortran_caf_this_image (1);
+  np = _gfortran_caf_num_images (1, 1);
 
-  a_d = __gfortran_caf_register(size,CAF_REGTYPE_COARRAY_STATIC,&token,&info,errmsg,255);
+  a_d = _gfortran_caf_register(size,CAF_REGTYPE_COARRAY_STATIC,&token,&info,errmsg,255);
   
   start_timer();
 
@@ -66,10 +66,10 @@ int main(int argc, char **argv)
       d = (double *)calloc(n,sizeof(double));
       for(int i=0;i<n;i++)
 	d[i] = i;
-      __gfortran_caf_send (token, 0, me+1, d, size, false);
+      _gfortran_caf_send (token, 0, me+1, d, size, false);
     }
   
-  __gfortran_caf_sync_all (&info, errmsg, 255);
+  _gfortran_caf_sync_all (&info, errmsg, 255);
 
   stop_time();
 
@@ -86,7 +86,7 @@ int main(int argc, char **argv)
   if(me==1)
      printf("Elapsed time (ms): %lf\n",elapsed_time());
 
-  __gfortran_caf_finalize();
+  _gfortran_caf_finalize();
 
   return 0;
 }
