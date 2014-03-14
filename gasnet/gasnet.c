@@ -294,11 +294,12 @@ PREFIX(sync_all) (int *stat, char *errmsg, int errmsg_len)
 /* asynchronous: Return before the data transfer has been complete  */
 
 void
-PREFIX(send) (caf_token_t *token, size_t offset, int image_index, void *data, size_t size, bool async)
+PREFIX(send) (caf_token_t token, size_t offset, int image_index, void *data,
+	      size_t size, bool async)
 {
   int ierr = 0;
   
-  gasnet_seginfo_t *t = (gasnet_seginfo_t *)*token;
+  gasnet_seginfo_t *t = (gasnet_seginfo_t *) token;
 
   if(async==false)
     gasnet_put_bulk(image_index-1, t[image_index-1].addr+offset, data, size);
@@ -306,7 +307,6 @@ PREFIX(send) (caf_token_t *token, size_t offset, int image_index, void *data, si
   /*   ierr = ARMCI_NbPut(data,t.addr+offset,size,image_index-1,NULL); */
   if(ierr != 0)
     error_stop (ierr);
-
 }
 
 

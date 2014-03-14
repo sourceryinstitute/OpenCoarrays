@@ -83,11 +83,11 @@ void PREFIX(finalize) (void);
 int PREFIX(this_image) (int);
 int PREFIX(num_images) (int, int);
 
-void *PREFIX(register) (size_t, caf_register_t, caf_token_t *, int *,
-			       char *, int);
+void *PREFIX(register) (size_t, caf_register_t, caf_token_t *, int *, char *,
+			int);
 void PREFIX(deregister) (caf_token_t *, int *, char *, int);
 
-void PREFIX(send) (caf_token_t *, size_t, int, void *, size_t, bool);
+void PREFIX(send) (caf_token_t, size_t, int, void *, size_t, bool);
 
 void PREFIX(sync_all) (int *, char *, int);
 void PREFIX(sync_images) (int, int[], int *, char *, int);

@@ -66,7 +66,7 @@ int main(int argc, char **argv)
       d = (double *)calloc(n,sizeof(double));
       for(int i=0;i<n;i++)
 	d[i] = i;
-      __gfortran_caf_send (&token, 0, me+1, d, size, false);
+      __gfortran_caf_send (token, 0, me+1, d, size, false);
     }
   
   __gfortran_caf_sync_all (&info, errmsg, 255);

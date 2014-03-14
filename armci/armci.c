@@ -285,16 +285,16 @@ PREFIX(sync_all) (int *stat, char *errmsg, int errmsg_len)
 /* asynchronous: Return before the data transfer has been complete  */
 
 void
-PREFIX(send) (caf_token_t *token, size_t offset, int image_index, void *data,
+PREFIX(send) (caf_token_t token, size_t offset, int image_index, void *data,
 	      size_t size, bool async)
 {
   int ierr;
 
   if (!async)
-    ierr = ARMCI_Put(data, TOKEN(*token)[image_index-1] + offset, size,
+    ierr = ARMCI_Put(data, TOKEN(token)[image_index-1] + offset, size,
 		     image_index - 1);
   else
-    ierr = ARMCI_NbPut(data, TOKEN(*token)[image_index-1] + offset, size,
+    ierr = ARMCI_NbPut(data, TOKEN(token)[image_index-1] + offset, size,
 		       image_index-1, NULL);
 
   if(ierr != 0)

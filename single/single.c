@@ -154,6 +154,16 @@ PREFIX(deregister) (caf_token_t *token, int *stat,
 
 
 void
+PREFIX(send) (caf_token_t token, size_t offset,
+	      int image_id __attribute__ ((unused)),
+	      void *buffer, size_t size, bool asyn __attribute__ ((unused)))
+{
+    void *dest = (void *) ((char *) TOKEN(token) + offset);
+    memmove (dest, buffer, size);
+}
+
+
+void
 PREFIX(sync_all) (int *stat,
 		  char *errmsg __attribute__ ((unused)),
 		  int errmsg_len __attribute__ ((unused)))
