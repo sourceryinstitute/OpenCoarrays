@@ -31,6 +31,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 #include <stdlib.h>
 #include <string.h>	/* For memcpy.  */
 #include <stdarg.h>	/* For variadic arguments.  */
+#include <alloca.h>
 
 
 /* Define GFC_CAF_CHECK to enable run-time checking.  */
@@ -70,7 +71,7 @@ caf_runtime_error (const char *message, ...)
 
 
 /* Initialize coarray program.  This routine assumes that no other
-   ARMCI initialization happened before. */
+   GASNet initialization happened before. */
 
 void
 PREFIX(init) (int *argc, char ***argv)
@@ -78,10 +79,22 @@ PREFIX(init) (int *argc, char ***argv)
   if (caf_num_images == 0)
     {
       int ierr;
-      ierr = gasnet_init(argc,argv);
-      /* armci_msg_init (argc, argv); */
+
+      if (argc == NULL)
+	{
+	  /* GASNet hat the bug that it expects that argv[0] is always
+	     available.  Provide a summy argument.  */
+	  int i = 0;
+	  char *tmpstr = "CAF";
+          char **strarray = alloca (sizeof (char *));
+          strarray[0] = tmpstr;
+	  ierr = gasnet_init (&i, &strarray);
+	}
+      else
+	ierr = gasnet_init (argc, argv);
+
       if (unlikely ((ierr != GASNET_OK)))
-	caf_runtime_error ("Failure when initializing GASNET: %d", ierr);
+	caf_runtime_error ("Failure when initializing GASNet: %d", ierr);
 
       caf_num_images = gasnet_nodes ();
       caf_this_image = gasnet_mynode ();
