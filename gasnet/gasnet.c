@@ -189,7 +189,7 @@ PREFIX(register) (size_t size, caf_register_t type, caf_token_t *token,
   if (stat)
     *stat = 0;
 
-  gasnet_seginfo_t *tm = (gasnet_seginfo_t *)(*token);
+  gasnet_seginfo_t *tm = TOKEN(*token);
 
   return tm[caf_this_image-1].addr;
 

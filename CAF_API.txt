@@ -211,7 +211,8 @@ TODO:
   - Check whether the locking should be handled like that and whether one needs
   more, e.g. for locking types in DT?
   - Check whether one needs an additional function for to register coarrays
-  which are in static memory and used without memory allocation
+  which are in static memory and used without memory allocation, i.e. just to
+  register the address.
   - Check whether we need an explicit SYNC ALL at the beginning of the main
   program or whether we can do without.
   - Does TS18508 require more for SAVE within teams or within blocks?
@@ -347,3 +348,18 @@ Note:
 GCC:
   Implemented in GCC 4.x using an int argument for the error-string length.
   Currently, size_t is not implemented.
+
+
+
+3.10  Error abort
+
+   void error_stop_str (const char *string, int32_t str_len)
+   void error_stop (int32_t exit_error_code)
+
+TODO
+  - Fix this description by filling-in the missing bits
+  - STOP vs ERROR STOP handling. Currently, STOP calls "finalize" and then the
+    normal STOP while for ERROR STOP directly calls the library 
+  - F2008 requires that one prints the raised exceptions with STOP and ERROR
+    STOP. libgfortran's STOP and ERROR STOP do so - the current implementation
+    for ERROR STOP does not.
