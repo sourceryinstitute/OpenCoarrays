@@ -49,6 +49,9 @@ static int caf_is_finalized;
 
 caf_static_t *caf_static_list = NULL;
 
+static size_t r_pointer;
+
+static void *remote_memory = NULL;
 
 /* Keep in sync with single.c.  */
 static void
@@ -146,37 +149,57 @@ void *
 PREFIX(register) (size_t size, caf_register_t type, caf_token_t *token,
 		  int *stat, char *errmsg, int errmsg_len)
 {
-  int ierr;
+  int ierr,i;
 
   if (unlikely (caf_is_finalized))
     goto error;
 
-  /* Start ARMCI if not already started.  */
+  /* Start GASNET if not already started.  */
   if (caf_num_images == 0)
     PREFIX(init) (NULL, NULL);
 
-  if(gasnet_attach(NULL, 0, gasnet_getMaxLocalSegmentSize(), GASNET_PAGESIZE))
-    goto error;
+  /* It creates the remote memory on each image */
+  if(remote_memory==NULL)
+    {
+
+      if(gasnet_attach(NULL, 0, gasnet_getMaxLocalSegmentSize(), GASNET_PAGESIZE))
+	goto error;
+
+      r_pointer = 0;
+
+      remote_memory = malloc(sizeof(gasnet_seginfo_t) * caf_num_images);
+
+      if (remote_memory == NULL)
+      	goto error;
+
+      /* gasnet_seginfo_t *tt = (gasnet_seginfo_t*)*token; */
+
+      ierr = gasnet_getSegmentInfo(TOKEN(remote_memory), caf_num_images);
+      
+      if (unlikely (ierr))
+	{
+	  free (remote_memory);
+	  goto error;
+	}
+    }
+
+  /* New variable registration */
 
   /* Token contains only a list of pointers.  */
-  *token = malloc (sizeof(gasnet_caf_token_t));
+  *token = malloc (sizeof(void **));
 
-    /* (void *)malloc(caf_num_images*sizeof(gasnet_seginfo_t)); */
+  *token = malloc(caf_num_images*sizeof(void *));
 
-  if (*token == NULL)
-    goto error;
+  for(i=0;i<caf_num_images;i++)
+  {
+    gasnet_seginfo_t *rm = TOKEN(remote_memory);
+    char * tm = (char *)rm[i].addr;
+    tm += r_pointer;
+    void ** t = *token;
+    t[i] = (void *)tm;
+  }
 
-  *token = malloc(sizeof(gasnet_seginfo_t) * caf_num_images);
-
-  /* gasnet_seginfo_t *tt = (gasnet_seginfo_t*)*token; */
-
-  ierr = gasnet_getSegmentInfo(TOKEN(*token), caf_num_images);
-
-  if (unlikely (ierr))
-    {
-      free (*token);
-      goto error;
-    }
+  r_pointer += (size+1);
 
   if (type == CAF_REGTYPE_COARRAY_STATIC)
     {
@@ -189,9 +212,9 @@ PREFIX(register) (size_t size, caf_register_t type, caf_token_t *token,
   if (stat)
     *stat = 0;
 
-  gasnet_seginfo_t *tm = TOKEN(*token);
+  void **tm = *token;
 
-  return tm[caf_this_image-1].addr;
+  return tm[caf_this_image-1];
 
 error:
   {
@@ -255,8 +278,20 @@ PREFIX(deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len)
 
   /* if (unlikely (ierr = ARMCI_Free ((*token)[caf_this_image-1]))) */
   /*   caf_runtime_error ("ARMCI memory freeing failed: Error code %d", ierr); */
-  gasnet_exit(0);
+  //gasnet_exit(0);
 
+  caf_static_t *tmp = caf_static_list, *next = caf_static_list;
+
+  while(tmp && tmp->prev != NULL && tmp->token != *token)
+    {
+      next = tmp;
+      tmp=tmp->prev;
+    }
+
+  next->prev=tmp->prev;
+
+  free(tmp);
+  
   free (*token);
 }
 
@@ -312,10 +347,10 @@ PREFIX(send) (caf_token_t token, size_t offset, int image_index, void *data,
 {
   int ierr = 0;
   
-  gasnet_seginfo_t *t = (gasnet_seginfo_t *) token;
+  void **tm = token;
 
   if(async==false)
-    gasnet_put_bulk(image_index-1, t[image_index-1].addr+offset, data, size);
+    gasnet_put_bulk(image_index-1, tm[image_index-1]+offset, data, size);
   /* else */
   /*   ierr = ARMCI_NbPut(data,t.addr+offset,size,image_index-1,NULL); */
   if(ierr != 0)
