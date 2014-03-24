@@ -41,10 +41,6 @@ typedef gasnet_seginfo_t * gasnet_caf_token_t;
 #define TOKEN(X) ((gasnet_caf_token_t) (X))
 
 #define send_notify1_handler   201
-#define recv_notify1_handler   202
-
-#define send_notify2_handler   203
-#define recv_notify2_handler   204
 
 static void error_stop (int error) __attribute__ ((noreturn));
 
@@ -149,12 +145,12 @@ void insArrived(int image)
 void req_notify1_handler(gasnet_token_t token, int proc)
 {
   insArrived(proc);
-  gasnet_AMReplyShort1(token, recv_notify1_handler,caf_this_image-1);
+  //gasnet_AMReplyShort1(token, recv_notify1_handler,caf_this_image-1);
 }
-void rec_notify1_handler(gasnet_token_t token, int proc)
-{
-  ;
-}
+/* void rec_notify1_handler(gasnet_token_t token, int proc) */
+/* { */
+/*   ; */
+/* } */
 
 /* Keep in sync with single.c.  */
 static void
@@ -272,7 +268,6 @@ PREFIX(register) (size_t size, caf_register_t type, caf_token_t *token,
 
       gasnet_handlerentry_t htable[] = { 
 	{ send_notify1_handler,  req_notify1_handler },
-	{ recv_notify1_handler,  rec_notify1_handler },
       };
       
       if(gasnet_attach(htable, sizeof(htable)/sizeof(gasnet_handlerentry_t), gasnet_getMaxLocalSegmentSize(), GASNET_PAGESIZE))
