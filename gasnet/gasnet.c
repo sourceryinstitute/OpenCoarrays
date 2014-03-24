@@ -520,7 +520,7 @@ PREFIX(sync_images) (int count, int images[], int *stat, char *errmsg,
     ierr = STAT_STOPPED_IMAGE;
   else
     {
-      if(images[0] == -1)
+      if(count == -1)
 	insOrders(images_full,caf_num_images-1);
       else
 	insOrders(images, count);
