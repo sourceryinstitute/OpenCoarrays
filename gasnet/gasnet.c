@@ -40,6 +40,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 typedef gasnet_seginfo_t * gasnet_caf_token_t;
 #define TOKEN(X) ((gasnet_caf_token_t) (X))
 
+#define send_notify1_handler   201
+#define recv_notify1_handler   202
+
+#define send_notify2_handler   203
+#define recv_notify2_handler   204
+
 static void error_stop (int error) __attribute__ ((noreturn));
 
 /* Global variables.  */
@@ -47,11 +53,108 @@ static int caf_this_image;
 static int caf_num_images;
 static int caf_is_finalized;
 
+/*Sync image part*/
+/*By default the two array have initially 64 items*/
+static int listsLength = 64;
+static int sizeOrders = 0;
+static int sizeArrived = 0;
+static int *orders;
+static int *arrived;
+static int beginOrders = 0;
+static int beginArrived = 0;
+static int *images_full;
+
 caf_static_t *caf_static_list = NULL;
-
 static size_t r_pointer;
-
 static void *remote_memory = NULL;
+
+bool freeToGo()
+{
+  int i=0, j=0;
+  bool ret=false;
+
+  gasnet_hold_interrupts();
+
+  for(i=0;i<beginOrders;i++)
+    {
+      for(j=0;j<beginArrived;j++)
+	{
+	  if(orders[i]==arrived[j] && orders[i]!=0)
+	    {
+	      /* printf("Proc: %d erases order for %d\n",caf_this_image,orders[i]); */
+	      orders[i]=0;
+	      arrived[j]=0;
+	      sizeOrders--;
+	      sizeArrived--;
+	    }
+	}
+    }
+
+  if(sizeOrders==0)
+    {
+      beginOrders=0;
+      ret = true;
+    }
+
+  if(sizeArrived == 0)
+    beginArrived = 0;
+
+  gasnet_resume_interrupts();
+
+  return ret;
+
+}
+
+void initImageSync()
+{
+  int i=0,j=0;
+  orders = (int *)calloc(64,sizeof(int));
+  arrived = (int *)calloc(64,sizeof(int));
+  beginOrders = 0;
+  beginArrived = 0;
+  images_full = (int *)calloc(caf_num_images-1,sizeof(int));
+
+  for(i=0;i<caf_num_images;i++)
+    {
+      if(i+1 != caf_this_image)
+	{
+	  images_full[j]=i+1;
+	  j++;
+	}
+    }
+}
+
+void insOrders(int *images, int n)
+{
+  int i=0;
+
+  for(i=0;i<n;i++)
+    {
+      orders[beginOrders] = images[i];
+      beginOrders++;
+      sizeOrders++;
+      /* printf("Process: %d order: %d\n",caf_this_image,images[i]); */
+      gasnet_AMRequestShort1(images[i]-1, send_notify1_handler,caf_this_image);
+    }  
+}
+
+void insArrived(int image)
+{
+  arrived[beginArrived] = image;
+  /* printf("Process: %d arrived: %d\n",caf_this_image,image); */
+  beginArrived++;
+  sizeArrived++;
+}
+
+void req_notify1_handler(gasnet_token_t token, int proc)
+{
+  insArrived(proc);
+  gasnet_AMReplyShort1(token, recv_notify1_handler,caf_this_image-1);
+}
+void rec_notify1_handler(gasnet_token_t token, int proc)
+{
+  ;
+}
 
 /* Keep in sync with single.c.  */
 static void
@@ -101,8 +204,10 @@ PREFIX(init) (int *argc, char ***argv)
 
       caf_num_images = gasnet_nodes ();
       caf_this_image = gasnet_mynode ();
+
       caf_this_image++;
       caf_is_finalized = 0;
+
     }
 }
 
@@ -112,6 +217,9 @@ PREFIX(init) (int *argc, char ***argv)
 void
 PREFIX(finalize) (void)
 {
+  gasnet_barrier_notify(0,GASNET_BARRIERFLAG_ANONYMOUS);            
+  gasnet_barrier_wait(0,GASNET_BARRIERFLAG_ANONYMOUS);
+
   while (caf_static_list != NULL)
     {
       caf_static_t *tmp = caf_static_list->prev;
@@ -162,7 +270,12 @@ PREFIX(register) (size_t size, caf_register_t type, caf_token_t *token,
   if(remote_memory==NULL)
     {
 
-      if(gasnet_attach(NULL, 0, gasnet_getMaxLocalSegmentSize(), GASNET_PAGESIZE))
+      gasnet_handlerentry_t htable[] = { 
+	{ send_notify1_handler,  req_notify1_handler },
+	{ recv_notify1_handler,  rec_notify1_handler },
+      };
+      
+      if(gasnet_attach(htable, sizeof(htable)/sizeof(gasnet_handlerentry_t), gasnet_getMaxLocalSegmentSize(), GASNET_PAGESIZE))
 	goto error;
 
       r_pointer = 0;
@@ -182,6 +295,8 @@ PREFIX(register) (size_t size, caf_register_t type, caf_token_t *token,
 	  goto error;
 	}
     }
+
+  initImageSync();
 
   /* New variable registration */
 
@@ -357,6 +472,22 @@ PREFIX(send) (caf_token_t token, size_t offset, int image_index, void *data,
     error_stop (ierr);
 }
 
+void
+PREFIX(recv) (caf_token_t token, size_t offset, int image_index, void *data, size_t size, bool async)
+{
+  int ierr = 0;
+
+  void **tm = token;
+
+  if(async==false)
+    gasnet_get_bulk(data,image_index-1,tm[image_index-1]+offset,size);
+  /* else */
+  /*   ierr = ARMCI_NbPut(data,t.addr+offset,size,image_index-1,NULL); */
+  if(ierr != 0)
+    error_stop (ierr);
+
+}
+
 
 /* SYNC IMAGES. Note: SYNC IMAGES(*) is passed as count == -1 while
    SYNC IMAGES([]) has count == 0. Note further that SYNC IMAGES(*)
@@ -365,7 +496,7 @@ void
 PREFIX(sync_images) (int count, int images[], int *stat, char *errmsg,
 		     int errmsg_len)
 {
-  int ierr;
+  int ierr,i=0;
   if (count == 0 || (count == 1 && images[0] == caf_this_image))
     {
       if (stat)
@@ -375,8 +506,6 @@ PREFIX(sync_images) (int count, int images[], int *stat, char *errmsg,
 
 #ifdef GFC_CAF_CHECK
   {
-    int i;
-
     for (i = 0; i < count; i++)
       if (images[i] < 1 || images[i] > caf_num_images)
 	{
@@ -387,23 +516,17 @@ PREFIX(sync_images) (int count, int images[], int *stat, char *errmsg,
   }
 #endif
 
-  /* FIXME: SYNC IMAGES with a nontrivial argument cannot easily be
-     mapped to ARMCI communicators. Thus, exist early with an error message.  */
-  if (count > 0)
-    {
-      fprintf (stderr, "COARRAY ERROR: SYNC IMAGES not yet implemented");
-      error_stop (1);
-    }
-
-  /* Handle SYNC IMAGES(*).  */
   if (unlikely (caf_is_finalized))
     ierr = STAT_STOPPED_IMAGE;
   else
     {
-      gasnet_barrier_notify(0,GASNET_BARRIERFLAG_ANONYMOUS);            
-      gasnet_barrier_wait(0,GASNET_BARRIERFLAG_ANONYMOUS);
-      //ARMCI_AllFence ();
-      //armci_msg_barrier ();
+      if(images[0] == -1)
+	insOrders(images_full,caf_num_images-1);
+      else
+	insOrders(images, count);
+
+      GASNET_BLOCKUNTIL(freeToGo() == true);
+
       ierr = 0;
     }
 
