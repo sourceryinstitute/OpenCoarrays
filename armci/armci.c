@@ -49,6 +49,10 @@ static int caf_is_finalized;
 
 caf_static_t *caf_static_list = NULL;
 
+static int **arrived;
+static int *orders;
+static int sizeOrders = 0;
+static int *images_full;
 
 /* Keep in sync with single.c.  */
 static void
@@ -78,7 +82,7 @@ PREFIX(init) (int *argc, char ***argv)
 {
   if (caf_num_images == 0)
     {
-      int ierr;
+      int ierr,i=0,j=0;
 
       armci_msg_init (argc, argv);
       if (unlikely ((ierr = ARMCI_Init()) != 0))
@@ -88,6 +92,17 @@ PREFIX(init) (int *argc, char ***argv)
       caf_this_image = armci_msg_me ();
       caf_this_image++;
       caf_is_finalized = 0;
+
+      images_full = (int *)calloc(caf_num_images-1,sizeof(int));
+
+      for(i=0;i<caf_num_images;i++)
+      	{
+      	  if(i+1 != caf_this_image)
+      	    {
+      	      images_full[j]=i+1;
+      	      j++;
+      	    }
+      	}
     }
 }
 
@@ -133,7 +148,7 @@ void *
 PREFIX(register) (size_t size, caf_register_t type, caf_token_t *token,
 		  int *stat, char *errmsg, int errmsg_len)
 {
-  int ierr;
+  int ierr,i;
 
   if (unlikely (caf_is_finalized))
     goto error;
@@ -169,6 +184,17 @@ PREFIX(register) (size_t size, caf_register_t type, caf_token_t *token,
 
   if (stat)
     *stat = 0;
+
+  orders = calloc(caf_num_images,sizeof(int));
+
+  arrived = malloc(sizeof(int *) * caf_num_images);
+
+  ierr = ARMCI_Malloc ((void **)arrived,sizeof(int)*caf_num_images);
+  
+  for(i=0;i<caf_num_images;i++)
+    arrived[caf_this_image-1][i] = 0;
+
+  ierr = ARMCI_Create_mutexes(1);
 
   return TOKEN(*token)[caf_this_image-1];
 
@@ -309,7 +335,9 @@ void
 PREFIX(sync_images) (int count, int images[], int *stat, char *errmsg,
 		     int errmsg_len)
 {
-  int ierr;
+  int ierr=0,i,j,wc,*tmp;
+  bool freeToGo = false;
+
   if (count == 0 || (count == 1 && images[0] == caf_this_image))
     {
       if (stat)
@@ -333,20 +361,71 @@ PREFIX(sync_images) (int count, int images[], int *stat, char *errmsg,
 
   /* FIXME: SYNC IMAGES with a nontrivial argument cannot easily be
      mapped to ARMCI communicators. Thus, exist early with an error message.  */
-  if (count > 0)
-    {
-      fprintf (stderr, "COARRAY ERROR: SYNC IMAGES not yet implemented");
-      error_stop (1);
-    }
 
   /* Handle SYNC IMAGES(*).  */
   if (unlikely (caf_is_finalized))
     ierr = STAT_STOPPED_IMAGE;
   else
     {
-      ARMCI_AllFence ();
-      armci_msg_barrier ();
-      ierr = 0;
+      /* Insert orders */
+      if(count == -1)
+	{
+	  for(i=0;i<caf_num_images-1;i++)
+	    orders[images_full[i]-1]++;
+	  count = caf_num_images-1;
+	  images = images_full;
+	}
+      else
+	{
+	  for(i=0;i<count;i++)
+	    orders[images[i]-1]++;
+	}
+
+      /*Sending  ack */
+      
+      int val;
+
+      for(i=0;i<count;i++)
+	{
+	  ARMCI_Lock(0, images[i]-1);
+
+	  val = ARMCI_GetValueInt((void *)&arrived[images[i]-1][caf_this_image-1], images[i]-1);
+	  val++;
+	  ierr = ARMCI_PutValueInt(val,(void *)&arrived[images[i]-1][caf_this_image-1], images[i]-1);
+	  ARMCI_Unlock(0, images[i]-1);
+	}
+
+      while(!freeToGo)
+	{
+	  ARMCI_Lock(0, caf_this_image-1);
+	  
+	  sizeOrders = 0;
+
+	  for(i=0;i<caf_num_images;i++)
+	    {
+	      if(orders[i] != 0)
+		{
+		  sizeOrders++;
+		  val = ARMCI_GetValueInt((void *)&arrived[caf_this_image-1][i], caf_this_image-1);
+		  //val = arrived[caf_this_image-1][i];
+		  if(val != 0)
+		    {
+		      orders[i]--;
+		      sizeOrders--;
+		      val--;
+		      ierr = ARMCI_PutValueInt(val, (void *)&arrived[caf_this_image-1][i], caf_this_image-1);
+		    }
+		}
+	    }
+	  
+	  if(sizeOrders==0)
+	    freeToGo=true;
+	  
+	  ARMCI_Unlock(0, caf_this_image-1);
+	  sched_yield();
+	}
+      
+      freeToGo = false;
     }
 
   if (stat)
