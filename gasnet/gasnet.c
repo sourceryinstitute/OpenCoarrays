@@ -63,6 +63,7 @@ static int *images_full;
 caf_static_t *caf_static_list = NULL;
 static size_t r_pointer;
 static void *remote_memory = NULL;
+static long remoteMemorySize = 0;
 
 bool freeToGo()
 {
@@ -262,6 +263,8 @@ PREFIX(register) (size_t size, caf_register_t type, caf_token_t *token,
   if (caf_num_images == 0)
     PREFIX(init) (NULL, NULL);
 
+  remoteMemorySize = gasnet_getMaxLocalSegmentSize();
+
   /* It creates the remote memory on each image */
   if(remote_memory==NULL)
     {
@@ -270,7 +273,7 @@ PREFIX(register) (size_t size, caf_register_t type, caf_token_t *token,
 	{ send_notify1_handler,  req_notify1_handler },
       };
       
-      if(gasnet_attach(htable, sizeof(htable)/sizeof(gasnet_handlerentry_t), gasnet_getMaxLocalSegmentSize(), GASNET_PAGESIZE))
+      if(gasnet_attach(htable, sizeof(htable)/sizeof(gasnet_handlerentry_t), remoteMemorySize, GASNET_PAGESIZE))
 	goto error;
 
       r_pointer = 0;
@@ -289,9 +292,14 @@ PREFIX(register) (size_t size, caf_register_t type, caf_token_t *token,
 	  free (remote_memory);
 	  goto error;
 	}
+
+      initImageSync();
+
     }
 
-  initImageSync();
+  /* Allocation check */
+  if((size+r_pointer) > remoteMemorySize)
+    goto error;
 
   /* New variable registration */
 
