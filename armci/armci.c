@@ -95,6 +95,8 @@ PREFIX(init) (int *argc, char ***argv)
 
       images_full = (int *)calloc(caf_num_images-1,sizeof(int));
 
+      ierr = ARMCI_Create_mutexes(1);
+
       for(i=0;i<caf_num_images;i++)
       	{
       	  if(i+1 != caf_this_image)
@@ -193,8 +195,6 @@ PREFIX(register) (size_t size, caf_register_t type, caf_token_t *token,
   
   for(i=0;i<caf_num_images;i++)
     arrived[caf_this_image-1][i] = 0;
-
-  ierr = ARMCI_Create_mutexes(1);
 
   return TOKEN(*token)[caf_this_image-1];
 
