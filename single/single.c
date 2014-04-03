@@ -153,6 +153,8 @@ PREFIX(deregister) (caf_token_t *token, int *stat,
 }
 
 
+/* Send scalar (or contiguous) data from buffer to a remote image.  */
+
 void
 PREFIX(send) (caf_token_t token, size_t offset,
 	      int image_id __attribute__ ((unused)),
@@ -160,6 +162,72 @@ PREFIX(send) (caf_token_t token, size_t offset,
 {
     void *dest = (void *) ((char *) TOKEN(token) + offset);
     memmove (dest, buffer, size);
+}
+
+
+/* Send array data from src to dest on a remote image.  */
+
+void
+PREFIX (send_desc) (caf_token_t token, size_t offset,
+		    int image_id __attribute__ ((unused)),
+		    gfc_descriptor_t *dest, gfc_descriptor_t *src,
+		    bool asyn __attribute__ ((unused)))
+{
+  fprintf (stderr, "COARRAY ERROR: Array communication "
+	   "[send_desc] not yet implemented for rank /= 0");
+  exit (EXIT_FAILURE);
+  size_t i, j;
+  size_t size = GFC_DESCRIPTOR_SIZE (dest);
+  int rank = GFC_DESCRIPTOR_RANK (dest);
+
+  if (rank != 1)
+    {
+      fprintf (stderr, "COARRAY ERROR: Array communication "
+	       "[_gfortran_caf_send_desc] not yet implemented for rank /= 0");
+      exit (EXIT_FAILURE);
+    }
+  
+  for (j = dest->dim[0].lower_bound - dest->offset,
+       i = src->dim[0].lower_bound - src->offset;
+       j <= dest->dim[0]._ubound - dest->offset
+       && i <= src->dim[0]._ubound - src->offset;
+       j += dest->dim[0]._stride,
+       i += src->dim[0]._stride)
+    {
+      void *dst = (void *)((char *) TOKEN(token) + offset + j*size);
+      void *sr = (void *)((char *)src->base_addr + j*size);
+      memmove (dst, sr, size);
+    }
+}
+
+
+/* Send scalar data from src to array dest on a remote image.  */
+
+void
+PREFIX (send_desc_scalar) (caf_token_t token, size_t offset,
+			   int image_id __attribute__ ((unused)),
+			   gfc_descriptor_t *dest, void *buffer,
+			   bool asyn __attribute__ ((unused)))
+{
+  size_t j;
+  size_t size = GFC_DESCRIPTOR_SIZE (dest);
+  int rank = GFC_DESCRIPTOR_RANK (dest);
+
+  if (rank != 1)
+    {
+      fprintf (stderr, "COARRAY ERROR: Array communication "
+	       "[send_desc_scalar] not yet implemented for "
+	       "rank /= 0");
+      exit (EXIT_FAILURE);
+    }
+  
+  for (j = dest->dim[0].lower_bound - dest->offset;
+       j <= dest->dim[0]._ubound - dest->offset;
+       j += dest->dim[0]._stride)
+    {
+      void *dst = (void *)((char *) TOKEN(token) + offset + j*size);
+      memmove (dst, buffer, size);
+    }
 }
 
 
