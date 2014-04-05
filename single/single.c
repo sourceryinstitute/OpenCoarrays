@@ -74,7 +74,7 @@ PREFIX (finalize) (void)
   while (caf_static_list != NULL)
     {
       caf_static_t *tmp = caf_static_list->prev;
-      free (TOKEN(caf_static_list->token));
+      free (TOKEN (caf_static_list->token));
       free (caf_static_list);
       caf_static_list = tmp;
     }
@@ -105,7 +105,7 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
   local = malloc (size);
   *token = malloc (sizeof (single_token_t));
 
-  if (unlikely (local == NULL || TOKEN(*token) == NULL))
+  if (unlikely (local == NULL || TOKEN (*token) == NULL))
     {
       const char msg[] = "Failed to allocate coarray";
       if (stat)
@@ -146,7 +146,7 @@ PREFIX (deregister) (caf_token_t *token, int *stat,
 		     char *errmsg __attribute__ ((unused)),
 		     int errmsg_len __attribute__ ((unused)))
 {
-  free (TOKEN(*token));
+  free (TOKEN (*token));
 
   if (stat)
     *stat = 0;
@@ -158,9 +158,9 @@ PREFIX (deregister) (caf_token_t *token, int *stat,
 void
 PREFIX (send) (caf_token_t token, size_t offset,
 	       int image_id __attribute__ ((unused)),
-	       void *buffer, size_t size, bool asyn __attribute__ ((unused)))
+	       void *buffer, size_t size, bool async __attribute__ ((unused)))
 {
-    void *dest = (void *) ((char *) TOKEN(token) + offset);
+    void *dest = (void *) ((char *) TOKEN (token) + offset);
     memmove (dest, buffer, size);
 }
 
@@ -171,7 +171,7 @@ void
 PREFIX (send_desc) (caf_token_t token, size_t offset,
 		    int image_id __attribute__ ((unused)),
 		    gfc_descriptor_t *dest, gfc_descriptor_t *src,
-		    bool asyn __attribute__ ((unused)))
+		    bool async __attribute__ ((unused)))
 {
   size_t i, j;
   size_t size = GFC_DESCRIPTOR_SIZE (dest);
@@ -180,7 +180,7 @@ PREFIX (send_desc) (caf_token_t token, size_t offset,
   if (rank != 1)
     {
       fprintf (stderr, "COARRAY ERROR: Array communication "
-	       "[_gfortran_caf_send_desc] not yet implemented for rank /= 0");
+	       "[send_desc] not yet implemented for rank /= 0");
       exit (EXIT_FAILURE);
     }
 
@@ -188,11 +188,13 @@ PREFIX (send_desc) (caf_token_t token, size_t offset,
     {
       for (i = 0; i < GFC_DESCRIPTOR_RANK(src); i++)
 	{
-	  size *= src->dim[0]._ubound - src->dim[0].lower_bound + 1;
-	  if (size <= 0)
+	  ptrdiff_t dim_extent = src->dim[0]._ubound - src->dim[0].lower_bound + 1;
+	  if (dim_extent <= 0)
 	    return;  /* Zero-sized array.  */
+	  size *= dim_extent;
 	}
-      void *dst = (void *)((char *) TOKEN(token) + offset
+
+      void *dst = (void *)((char *) TOKEN (token) + offset
 			   + dest->dim[0].lower_bound - dest->offset);
       void *sr = src->base_addr + src->dim[0].lower_bound - src->offset;
       memmove (dst, sr, size);
@@ -206,8 +208,8 @@ PREFIX (send_desc) (caf_token_t token, size_t offset,
        j += dest->dim[0]._stride,
        i += src->dim[0]._stride)
     {
-      void *dst = (void *)((char *) TOKEN(token) + offset + j*size);
-      void *sr = (void *)((char *)src->base_addr + j*size);
+      void *dst = (void *)((char *) TOKEN (token) + offset + j*size);
+      void *sr = (void *)((char *) src->base_addr + j*size);
       memmove (dst, sr, size);
     }
 }
@@ -219,7 +221,7 @@ void
 PREFIX (send_desc_scalar) (caf_token_t token, size_t offset,
 			   int image_id __attribute__ ((unused)),
 			   gfc_descriptor_t *dest, void *buffer,
-			   bool asyn __attribute__ ((unused)))
+			   bool async __attribute__ ((unused)))
 {
   size_t j;
   size_t size = GFC_DESCRIPTOR_SIZE (dest);
@@ -237,7 +239,7 @@ PREFIX (send_desc_scalar) (caf_token_t token, size_t offset,
        j <= dest->dim[0]._ubound - dest->offset;
        j += dest->dim[0]._stride)
     {
-      void *dst = (void *)((char *) TOKEN(token) + offset + j*size);
+      void *dst = (void *)((char *) TOKEN (token) + offset + j*size);
       memmove (dst, buffer, size);
     }
 }

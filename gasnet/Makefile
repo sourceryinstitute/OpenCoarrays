@@ -13,7 +13,7 @@ all: libcaf_gasnet.a hello
 	$(GASNET_CC) $(CFLAGS) $(GASNET_CPPFLAGS) $(GASNET_CFLAGS) -I$(CCINCL) $(CCOPT) -c -o $@ $<
 
 hello: hello.o gasnet.o
-	$(GASNET_LD) $(GASNET_LDFLAGS) -I$(CCINCL) gasnet.o -o $@ $< $(GASNET_LIBS)
+	$(GASNET_LD) $(GASNET_LDFLAGS) -I$(CCINCL) -o $@ $< -L. -lcaf_gasnet $(GASNET_LIBS)
 
 libcaf_gasnet.a: gasnet.o ../caf_auxiliary.o
 	ar rcv $@ gasnet.o ../caf_auxiliary.o

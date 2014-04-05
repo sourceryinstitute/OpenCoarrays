@@ -69,7 +69,7 @@ static long remoteMemorySize = 0;
 static bool
 freeToGo ()
 {
-  int i = j = 0;
+  int i = 0, j = 0;
   bool ret = false;
 
   gasnet_hold_interrupts ();
@@ -297,7 +297,7 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
 
       /* gasnet_seginfo_t *tt = (gasnet_seginfo_t*)*token;  */
 
-      ierr = gasnet_getSegmentInfo (TOKEN(remote_memory), caf_num_images);
+      ierr = gasnet_getSegmentInfo (TOKEN (remote_memory), caf_num_images);
 
       if (unlikely (ierr))
 	{
@@ -486,17 +486,131 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index, void *data,
 
   if (image_index == caf_this_image)
     {
-       void *dest = (void *) ((char *) TOKEN (token) + offset);
+       void *dest = (void *) ((char *) tm[image_index-1] + offset);
        memmove (dest, data, size);
        return;
     }
 
-  if (async == false)
+  /* if (async == false) */
     gasnet_put_bulk (image_index-1, tm[image_index-1]+offset, data, size);
   /* else */
   /*   ierr = ARMCI_NbPut(data,t.addr+offset,size,image_index-1,NULL); */
   if(ierr != 0)
     error_stop (ierr);
+}
+
+
+/* Send array data from src to dest on a remote image.  */
+
+void
+PREFIX (send_desc) (caf_token_t token, size_t offset, int image_index,
+		    gfc_descriptor_t *dest, gfc_descriptor_t *src, bool async)
+{
+  int ierr = 0;
+  size_t i, j;
+  size_t size = GFC_DESCRIPTOR_SIZE (dest);
+  int rank = GFC_DESCRIPTOR_RANK (dest);
+  void **tm = token;
+
+  if (rank != 1)
+    {
+      fprintf (stderr, "COARRAY ERROR: Array communication "
+	       "[caf_send_desc] not yet implemented for rank /= 0");
+      exit (EXIT_FAILURE);
+    }
+
+  if (PREFIX (is_contiguous) (dest) && PREFIX (is_contiguous) (src))
+    {
+      for (i = 0; i < GFC_DESCRIPTOR_RANK(src); i++)
+	{
+	  ptrdiff_t dim_extent = src->dim[0]._ubound - src->dim[0].lower_bound + 1;
+	  if (dim_extent <= 0)
+	    return;  /* Zero-sized array.  */
+	  size *= dim_extent;
+	}
+
+      void *sr = src->base_addr + src->dim[0].lower_bound - src->offset;
+
+      void *dst = (void *)((char *) tm[image_index-1] + offset,
+			   + dest->dim[0].lower_bound - dest->offset);
+
+      if (image_index == caf_this_image)
+	{
+	  memmove (dst, sr, size);
+	  return;
+	}
+
+      /* if (!async) */
+        gasnet_put_bulk (image_index-1, dst, sr, size);
+      /* else */
+
+      if (ierr != 0)
+	error_stop (ierr);
+      return;
+    }
+
+  for (j = dest->dim[0].lower_bound - dest->offset,
+       i = src->dim[0].lower_bound - src->offset;
+       j <= dest->dim[0]._ubound - dest->offset
+       && i <= src->dim[0]._ubound - src->offset;
+       j += dest->dim[0]._stride,
+       i += src->dim[0]._stride)
+    {
+      void *sr = (void *)((char *) src->base_addr + j*size);
+      void *dst = (void *)((char *) tm[image_index-1] + offset + j*size);
+      if (image_index == caf_this_image)
+	memmove (dst, sr, size);
+      else /* if (!async) */
+        gasnet_put_bulk (image_index-1, dst, sr, size);
+      /* else */
+
+      if (ierr != 0)
+	{
+	  error_stop (ierr);
+	  return;
+	}
+    }
+}
+
+
+/* Send scalar data from src to array dest on a remote image.  */
+
+void
+PREFIX (send_desc_scalar) (caf_token_t token, size_t offset, int image_index,
+			   gfc_descriptor_t *dest, void *buffer, bool async)
+{
+  int ierr = 0;
+  size_t j;
+  size_t size = GFC_DESCRIPTOR_SIZE (dest);
+  int rank = GFC_DESCRIPTOR_RANK (dest);
+  void **tm = token;
+
+  if (rank != 1)
+    {
+      fprintf (stderr, "COARRAY ERROR: Array communication "
+	       "[send_desc_scalar] not yet implemented for "
+	       "rank /= 0");
+      exit (EXIT_FAILURE);
+    }
+
+  for (j = dest->dim[0].lower_bound - dest->offset;
+       j <= dest->dim[0]._ubound - dest->offset;
+       j += dest->dim[0]._stride)
+    {
+      void *dst = (void *)((char *) tm[image_index-1] + offset
+			   + j*size);
+      if (image_index == caf_this_image)
+	memmove (dst, buffer, size);
+      else /* if (!async) */
+        gasnet_put_bulk (image_index-1, dst, buffer, size);
+      /* else */
+
+      if (ierr != 0)
+	{
+	  error_stop (ierr);
+	  return;
+	}
+    }
 }
 
 
@@ -513,12 +627,12 @@ PREFIX (recv) (caf_token_t token, size_t offset, int image_index, void *data,
 
   if (image_index == caf_this_image)
     {
-       void *src = (void *) ((char *) TOKEN (token) + offset);
+       void *src = (void *) ((char *) tm[image_index-1] + offset);
        memmove (data, src, size);
        return;
     }
 
-  if (async == false)
+  /* if (async == false) */
     gasnet_get_bulk (data, image_index-1, tm[image_index-1]+offset, size);
   /* else */
   /*   ierr = ARMCI_NbPut(data,t.addr+offset,size,image_index-1,NULL); */
