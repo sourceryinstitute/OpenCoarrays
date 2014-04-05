@@ -80,7 +80,7 @@ caf_runtime_error (const char *message, ...)
 void
 PREFIX (init) (int *argc, char ***argv)
 {
-  int ierr, i = j = 0;
+  int ierr, i = 0, j = 0;
 
   if (caf_num_images != 0)
     return;  /* Already initialized.  */
@@ -322,7 +322,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index, void *data,
 
   if (image_index == caf_this_image)
     {
-       void *dest = (void *) ((char *) TOKEN(token) + offset);
+       void *dest = (void *) ((char *) TOKEN (token) + offset);
        memmove (dest, data, size);
        return;
     }
@@ -336,6 +336,122 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index, void *data,
 
   if (ierr != 0)
     error_stop (ierr);
+}
+
+
+/* Send array data from src to dest on a remote image.  */
+
+void
+PREFIX (send_desc) (caf_token_t token, size_t offset, int image_index,
+		    gfc_descriptor_t *dest, gfc_descriptor_t *src, bool async)
+{
+  int ierr;
+  size_t i, j;
+  size_t size = GFC_DESCRIPTOR_SIZE (dest);
+  int rank = GFC_DESCRIPTOR_RANK (dest);
+
+  if (rank != 1)
+    {
+      fprintf (stderr, "COARRAY ERROR: Array communication "
+	       "[caf_send_desc] not yet implemented for rank /= 0");
+      exit (EXIT_FAILURE);
+    }
+
+  if (PREFIX (is_contiguous) (dest) && PREFIX (is_contiguous) (src))
+    {
+      for (i = 0; i < GFC_DESCRIPTOR_RANK(src); i++)
+	{
+	  ptrdiff_t dim_extent = src->dim[0]._ubound - src->dim[0].lower_bound + 1;
+	  if (dim_extent <= 0)
+	    return;  /* Zero-sized array.  */
+	  size *= dim_extent;
+	}
+
+      void *sr = src->base_addr + src->dim[0].lower_bound - src->offset;
+
+      void *dst = (void *)((char *) TOKEN (token)[image_index-1] + offset,
+			   + dest->dim[0].lower_bound - dest->offset);
+
+      if (image_index == caf_this_image)
+	{
+	  memmove (dst, sr, size);
+	  return;
+	}
+
+      if (!async)
+	ierr = ARMCI_Put (sr, dst, size, image_index - 1);
+      else
+	ierr = ARMCI_NbPut (sr, dst, size, image_index-1, NULL);
+
+      if (ierr != 0)
+	error_stop (ierr);
+      return;
+    }
+
+  for (j = dest->dim[0].lower_bound - dest->offset,
+       i = src->dim[0].lower_bound - src->offset;
+       j <= dest->dim[0]._ubound - dest->offset
+       && i <= src->dim[0]._ubound - src->offset;
+       j += dest->dim[0]._stride,
+       i += src->dim[0]._stride)
+    {
+      void *sr = (void *)((char *) src->base_addr + j*size);
+      void *dst = (void *)((char *) TOKEN (token)[image_index-1] + offset
+			   + j*size);
+      if (image_index == caf_this_image)
+	memmove (dst, sr, size);
+      else if (!async)
+        ierr = ARMCI_Put (sr, dst, size, image_index - 1);
+      else
+        ierr = ARMCI_NbPut (sr, dst, size, image_index - 1, NULL);
+
+      if (ierr != 0)
+	{
+	  error_stop (ierr);
+	  return;
+	}
+    }
+}
+
+
+/* Send scalar data from src to array dest on a remote image.  */
+
+void
+PREFIX (send_desc_scalar) (caf_token_t token, size_t offset, int image_index,
+			   gfc_descriptor_t *dest, void *buffer, bool async)
+{
+  int ierr;
+  size_t j;
+  size_t size = GFC_DESCRIPTOR_SIZE (dest);
+  int rank = GFC_DESCRIPTOR_RANK (dest);
+
+  if (rank != 1)
+    {
+      fprintf (stderr, "COARRAY ERROR: Array communication "
+	       "[send_desc_scalar] not yet implemented for "
+	       "rank /= 0");
+      exit (EXIT_FAILURE);
+    }
+
+  for (j = dest->dim[0].lower_bound - dest->offset;
+       j <= dest->dim[0]._ubound - dest->offset;
+       j += dest->dim[0]._stride)
+    {
+      void *dst = (void *)((char *) TOKEN (token)[image_index-1] + offset
+			   + j*size);
+      if (image_index == caf_this_image)
+	memmove (dst, buffer, size);
+      else if (!async)
+        ierr = ARMCI_Put (buffer, dst, size, image_index - 1);
+      else
+        ierr = ARMCI_NbPut (buffer, dst, size, image_index-1, NULL);
+
+      if (ierr != 0)
+	{
+	  error_stop (ierr);
+	  return;
+	}
+    }
 }
 
 
