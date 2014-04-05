@@ -109,6 +109,13 @@ typedef struct caf_static_t {
 caf_static_t;
 
 
+/* Common auxiliary functions: caf_auxiliary.c.  */
+
+bool PREFIX (is_contiguous) (gfc_descriptor_t *);
+
+
+/* Header for the specific implementation.  */
+
 void PREFIX(init) (int *, char ***);
 void PREFIX(finalize) (void);
 

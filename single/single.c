@@ -69,7 +69,7 @@ PREFIX(init) (int *argc __attribute__ ((unused)),
 
 
 void
-PREFIX(finalize) (void)
+PREFIX (finalize) (void)
 {
   while (caf_static_list != NULL)
     {
@@ -82,14 +82,14 @@ PREFIX(finalize) (void)
 
 
 int
-PREFIX(this_image) (int distance __attribute__ ((unused)))
+PREFIX (this_image) (int distance __attribute__ ((unused)))
 {
   return 1;
 }
 
 
 int
-PREFIX(num_images) (int distance __attribute__ ((unused)),
+PREFIX (num_images) (int distance __attribute__ ((unused)),
 		    int failed __attribute__ ((unused)))
 {
   return 1;
@@ -97,7 +97,7 @@ PREFIX(num_images) (int distance __attribute__ ((unused)),
 
 
 void *
-PREFIX(register) (size_t size, caf_register_t type, caf_token_t *token,
+PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
 		  int *stat, char *errmsg, int errmsg_len)
 {
   void *local;
@@ -142,9 +142,9 @@ PREFIX(register) (size_t size, caf_register_t type, caf_token_t *token,
 
 
 void
-PREFIX(deregister) (caf_token_t *token, int *stat,
-		    char *errmsg __attribute__ ((unused)),
-		    int errmsg_len __attribute__ ((unused)))
+PREFIX (deregister) (caf_token_t *token, int *stat,
+		     char *errmsg __attribute__ ((unused)),
+		     int errmsg_len __attribute__ ((unused)))
 {
   free (TOKEN(*token));
 
@@ -156,9 +156,9 @@ PREFIX(deregister) (caf_token_t *token, int *stat,
 /* Send scalar (or contiguous) data from buffer to a remote image.  */
 
 void
-PREFIX(send) (caf_token_t token, size_t offset,
-	      int image_id __attribute__ ((unused)),
-	      void *buffer, size_t size, bool asyn __attribute__ ((unused)))
+PREFIX (send) (caf_token_t token, size_t offset,
+	       int image_id __attribute__ ((unused)),
+	       void *buffer, size_t size, bool asyn __attribute__ ((unused)))
 {
     void *dest = (void *) ((char *) TOKEN(token) + offset);
     memmove (dest, buffer, size);
@@ -173,9 +173,6 @@ PREFIX (send_desc) (caf_token_t token, size_t offset,
 		    gfc_descriptor_t *dest, gfc_descriptor_t *src,
 		    bool asyn __attribute__ ((unused)))
 {
-  fprintf (stderr, "COARRAY ERROR: Array communication "
-	   "[send_desc] not yet implemented for rank /= 0");
-  exit (EXIT_FAILURE);
   size_t i, j;
   size_t size = GFC_DESCRIPTOR_SIZE (dest);
   int rank = GFC_DESCRIPTOR_RANK (dest);
@@ -186,7 +183,22 @@ PREFIX (send_desc) (caf_token_t token, size_t offset,
 	       "[_gfortran_caf_send_desc] not yet implemented for rank /= 0");
       exit (EXIT_FAILURE);
     }
-  
+
+  if (PREFIX (is_contiguous) (dest) && PREFIX (is_contiguous) (src))
+    {
+      for (i = 0; i < GFC_DESCRIPTOR_RANK(src); i++)
+	{
+	  size *= src->dim[0]._ubound - src->dim[0].lower_bound + 1;
+	  if (size <= 0)
+	    return;  /* Zero-sized array.  */
+	}
+      void *dst = (void *)((char *) TOKEN(token) + offset
+			   + dest->dim[0].lower_bound - dest->offset);
+      void *sr = src->base_addr + src->dim[0].lower_bound - src->offset;
+      memmove (dst, sr, size);
+      return;
+    }
+
   for (j = dest->dim[0].lower_bound - dest->offset,
        i = src->dim[0].lower_bound - src->offset;
        j <= dest->dim[0]._ubound - dest->offset
@@ -220,7 +232,7 @@ PREFIX (send_desc_scalar) (caf_token_t token, size_t offset,
 	       "rank /= 0");
       exit (EXIT_FAILURE);
     }
-  
+
   for (j = dest->dim[0].lower_bound - dest->offset;
        j <= dest->dim[0]._ubound - dest->offset;
        j += dest->dim[0]._stride)
@@ -232,9 +244,9 @@ PREFIX (send_desc_scalar) (caf_token_t token, size_t offset,
 
 
 void
-PREFIX(sync_all) (int *stat,
-		  char *errmsg __attribute__ ((unused)),
-		  int errmsg_len __attribute__ ((unused)))
+PREFIX (sync_all) (int *stat,
+		   char *errmsg __attribute__ ((unused)),
+		   int errmsg_len __attribute__ ((unused)))
 {
   if (stat)
     *stat = 0;
@@ -242,11 +254,11 @@ PREFIX(sync_all) (int *stat,
 
 
 void
-PREFIX(sync_images) (int count __attribute__ ((unused)),
-		     int images[] __attribute__ ((unused)),
-		     int *stat,
-		     char *errmsg __attribute__ ((unused)),
-		     int errmsg_len __attribute__ ((unused)))
+PREFIX (sync_images) (int count __attribute__ ((unused)),
+		      int images[] __attribute__ ((unused)),
+		      int *stat,
+		      char *errmsg __attribute__ ((unused)),
+		      int errmsg_len __attribute__ ((unused)))
 {
 #ifdef GFC_CAF_CHECK
   int i;
@@ -266,7 +278,7 @@ PREFIX(sync_images) (int count __attribute__ ((unused)),
 
 
 void
-PREFIX(error_stop_str) (const char *string, int32_t len)
+PREFIX (error_stop_str) (const char *string, int32_t len)
 {
   fputs ("ERROR STOP ", stderr);
   while (len--)

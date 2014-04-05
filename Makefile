@@ -1,21 +1,31 @@
 include make.inc
 export
 
-.PHONY : armci
 .PHONY : single
+.PHONY : armci
+.PHONY : gasnet
 
-all: single armci
+all: single armci gasnet
 
-armci:
+single: caf_auxiliary.o
 	$(MAKE) -C $@
 
-single:
+armci: caf_auxiliary.o
 	$(MAKE) -C $@
+
+gasnet: caf_auxiliary.o
+	$(MAKE) -C $@
+
+caf_auxiliary.o: caf_auxiliary.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	$(MAKE) -C armci clean
+	rm -f  caf_auxiliary.o
 	$(MAKE) -C single clean
+	$(MAKE) -C armci clean
+	$(MAKE) -C gasnet clean
 
-distclean:
-	$(MAKE) -C armci distclean
+distclean: clean
 	$(MAKE) -C single distclean
+	$(MAKE) -C armci distclean
+	$(MAKE) -C gasnet distclean

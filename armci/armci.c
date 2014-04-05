@@ -78,48 +78,46 @@ caf_runtime_error (const char *message, ...)
    ARMCI initialization happened before. */
 
 void
-PREFIX(init) (int *argc, char ***argv)
+PREFIX (init) (int *argc, char ***argv)
 {
-  if (caf_num_images == 0)
-    {
-      int ierr,i=0,j=0;
+  int ierr, i = j = 0;
 
-      armci_msg_init (argc, argv);
-      if (unlikely ((ierr = ARMCI_Init()) != 0))
-	caf_runtime_error ("Failure when initializing ARMCI: %d", ierr);
+  if (caf_num_images != 0)
+    return;  /* Already initialized.  */
 
-      caf_num_images = armci_msg_nproc ();
-      caf_this_image = armci_msg_me ();
-      caf_this_image++;
-      caf_is_finalized = 0;
+  armci_msg_init (argc, argv);
+  if (unlikely ((ierr = ARMCI_Init()) != 0))
+    caf_runtime_error ("Failure when initializing ARMCI: %d", ierr);
 
-      images_full = (int *)calloc(caf_num_images-1,sizeof(int));
+  caf_num_images = armci_msg_nproc ();
+  caf_this_image = armci_msg_me ();
+  caf_this_image++;
+  caf_is_finalized = 0;
 
-      ierr = ARMCI_Create_mutexes(1);
+  images_full = (int *) calloc (caf_num_images-1, sizeof (int));
 
-      for(i=0;i<caf_num_images;i++)
-      	{
-      	  if(i+1 != caf_this_image)
-      	    {
-      	      images_full[j]=i+1;
-      	      j++;
-      	    }
-      	}
-    }
+  ierr = ARMCI_Create_mutexes (1);
+
+  for (i = 0; i < caf_num_images; i++)
+    if (i + 1 != caf_this_image)
+      {
+	images_full[j] = i + 1;
+	j++;
+      }
 }
 
 
 /* Finalize coarray program.   */
 
 void
-PREFIX(finalize) (void)
+PREFIX (finalize) (void)
 {
   while (caf_static_list != NULL)
     {
       caf_static_t *tmp = caf_static_list->prev;
 
-      (void) ARMCI_Free (TOKEN(caf_static_list->token)[caf_this_image-1]);
-      free (TOKEN(caf_static_list->token));
+      (void) ARMCI_Free (TOKEN (caf_static_list->token)[caf_this_image-1]);
+      free (TOKEN (caf_static_list->token));
       free (caf_static_list);
       caf_static_list = tmp;
     }
@@ -132,23 +130,23 @@ PREFIX(finalize) (void)
 
 
 int
-PREFIX(this_image) (int distance __attribute__ ((unused)))
+PREFIX (this_image) (int distance __attribute__ ((unused)))
 {
   return caf_this_image;
 }
 
 
 int
-PREFIX(num_images) (int distance __attribute__ ((unused)),
-		    int failed __attribute__ ((unused)))
+PREFIX (num_images) (int distance __attribute__ ((unused)),
+		     int failed __attribute__ ((unused)))
 {
   return caf_num_images;
 }
 
 
 void *
-PREFIX(register) (size_t size, caf_register_t type, caf_token_t *token,
-		  int *stat, char *errmsg, int errmsg_len)
+PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
+		   int *stat, char *errmsg, int errmsg_len)
 {
   int ierr,i;
 
@@ -165,14 +163,14 @@ PREFIX(register) (size_t size, caf_register_t type, caf_token_t *token,
     goto error;
 
   *token = malloc (sizeof (void*) * caf_num_images);
-  if (TOKEN(*token) == NULL)
+  if (TOKEN (*token) == NULL)
     goto error;
 
-  ierr = ARMCI_Malloc (TOKEN(*token), size);
+  ierr = ARMCI_Malloc (TOKEN (*token), size);
 
   if (unlikely (ierr))
     {
-      free (TOKEN(*token));
+      free (TOKEN (*token));
       goto error;
     }
 
@@ -187,16 +185,16 @@ PREFIX(register) (size_t size, caf_register_t type, caf_token_t *token,
   if (stat)
     *stat = 0;
 
-  orders = calloc(caf_num_images,sizeof(int));
+  orders = calloc (caf_num_images, sizeof (int));
 
-  arrived = malloc(sizeof(int *) * caf_num_images);
+  arrived = malloc(sizeof (int *) * caf_num_images);
 
-  ierr = ARMCI_Malloc ((void **)arrived,sizeof(int)*caf_num_images);
-  
-  for(i=0;i<caf_num_images;i++)
+  ierr = ARMCI_Malloc ((void **) arrived, sizeof (int) * caf_num_images);
+
+  for (i = 0; i < caf_num_images; i++)
     arrived[caf_this_image-1][i] = 0;
 
-  return TOKEN(*token)[caf_this_image-1];
+  return TOKEN (*token)[caf_this_image-1];
 
 error:
   {
@@ -228,7 +226,7 @@ error:
 
 
 void
-PREFIX(deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len)
+PREFIX (deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len)
 {
   int ierr;
 
@@ -239,7 +237,7 @@ PREFIX(deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len)
       if (stat)
 	{
 	  *stat = STAT_STOPPED_IMAGE;
-	
+
 	  if (errmsg_len > 0)
 	    {
 	      int len = ((int) sizeof (msg) - 1 > errmsg_len)
@@ -253,20 +251,20 @@ PREFIX(deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len)
       caf_runtime_error (msg);
     }
 
-  PREFIX(sync_all) (NULL, NULL, 0);
+  PREFIX (sync_all) (NULL, NULL, 0);
 
   if (stat)
     *stat = 0;
 
-  if (unlikely (ierr = ARMCI_Free (TOKEN(*token)[caf_this_image-1])))
+  if (unlikely (ierr = ARMCI_Free (TOKEN (*token)[caf_this_image-1])))
     caf_runtime_error ("ARMCI memory freeing failed: Error code %d", ierr);
 
-  free (TOKEN(*token));
+  free (TOKEN (*token));
 }
 
 
 void
-PREFIX(sync_all) (int *stat, char *errmsg, int errmsg_len)
+PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
 {
   int ierr;
 
@@ -278,7 +276,7 @@ PREFIX(sync_all) (int *stat, char *errmsg, int errmsg_len)
       armci_msg_barrier ();
       ierr = 0;
     }
- 
+
   if (stat)
     *stat = ierr;
 
@@ -303,6 +301,9 @@ PREFIX(sync_all) (int *stat, char *errmsg, int errmsg_len)
     }
 }
 
+
+/* Send scalar (or contiguous) data from buffer to a remote image.  */
+
 /* token: The token of the array to be written to. */
 /* offset: Difference between the coarray base address and the actual data, used for caf(3)[2] = 8 or caf[4]%a(4)%b = 7. */
 /* image_index: Index of the coarray (typically remote, though it can also be on this_image). */
@@ -311,19 +312,29 @@ PREFIX(sync_all) (int *stat, char *errmsg, int errmsg_len)
 /* asynchronous: Return before the data transfer has been complete  */
 
 void
-PREFIX(send) (caf_token_t token, size_t offset, int image_index, void *data,
-	      size_t size, bool async)
+PREFIX (send) (caf_token_t token, size_t offset, int image_index, void *data,
+	       size_t size, bool async)
 {
   int ierr;
 
-  if (!async)
-    ierr = ARMCI_Put(data, TOKEN(token)[image_index-1] + offset, size,
-		     image_index - 1);
-  else
-    ierr = ARMCI_NbPut(data, TOKEN(token)[image_index-1] + offset, size,
-		       image_index-1, NULL);
+  if (unlikely (size == 0))
+    return;  /* Zero-sized array.  */
 
-  if(ierr != 0)
+  if (image_index == caf_this_image)
+    {
+       void *dest = (void *) ((char *) TOKEN(token) + offset);
+       memmove (dest, data, size);
+       return;
+    }
+
+  if (!async)
+    ierr = ARMCI_Put (data, TOKEN (token)[image_index-1] + offset, size,
+		      image_index - 1);
+  else
+    ierr = ARMCI_NbPut (data, TOKEN (token)[image_index-1] + offset, size,
+			image_index-1, NULL);
+
+  if (ierr != 0)
     error_stop (ierr);
 }
 
@@ -331,11 +342,13 @@ PREFIX(send) (caf_token_t token, size_t offset, int image_index, void *data,
 /* SYNC IMAGES. Note: SYNC IMAGES(*) is passed as count == -1 while
    SYNC IMAGES([]) has count == 0. Note further that SYNC IMAGES(*)
    is not equivalent to SYNC ALL. */
+
 void
-PREFIX(sync_images) (int count, int images[], int *stat, char *errmsg,
-		     int errmsg_len)
+PREFIX (sync_images) (int count, int images[], int *stat, char *errmsg,
+		      int errmsg_len)
 {
-  int ierr=0,i,j,wc,*tmp;
+  int ierr = 0, i, j, wc;
+  int *tmp;
   bool freeToGo = false;
 
   if (count == 0 || (count == 1 && images[0] == caf_this_image))
@@ -367,64 +380,72 @@ PREFIX(sync_images) (int count, int images[], int *stat, char *errmsg,
     ierr = STAT_STOPPED_IMAGE;
   else
     {
-      /* Insert orders */
+      /* Insert orders.  */
       if(count == -1)
 	{
-	  for(i=0;i<caf_num_images-1;i++)
+	  for (i = 0; i < caf_num_images - 1; i++)
 	    orders[images_full[i]-1]++;
 	  count = caf_num_images-1;
 	  images = images_full;
 	}
       else
 	{
-	  for(i=0;i<count;i++)
+	  for (i = 0; i < count; i++)
 	    orders[images[i]-1]++;
 	}
 
-      /*Sending  ack */
-      
+      /* Sending ack.  */
+
       int val;
 
-      for(i=0;i<count;i++)
+      for (i = 0; i < count; i++)
 	{
-	  ARMCI_Lock(0, images[i]-1);
+	  ARMCI_Lock (0, images[i]-1);
 
-	  val = ARMCI_GetValueInt((void *)&arrived[images[i]-1][caf_this_image-1], images[i]-1);
+	  val = ARMCI_GetValueInt (
+			(void *) &arrived[images[i]-1][caf_this_image-1],
+			images[i]-1);
 	  val++;
-	  ierr = ARMCI_PutValueInt(val,(void *)&arrived[images[i]-1][caf_this_image-1], images[i]-1);
-	  ARMCI_Unlock(0, images[i]-1);
+	  ierr = ARMCI_PutValueInt (
+			val, (void *) &arrived[images[i]-1][caf_this_image-1],
+			images[i]-1);
+	  ARMCI_Unlock (0, images[i]-1);
 	}
 
-      while(!freeToGo)
+      while (!freeToGo)
 	{
-	  ARMCI_Lock(0, caf_this_image-1);
-	  
+	  ARMCI_Lock (0, caf_this_image-1);
+
 	  sizeOrders = 0;
 
-	  for(i=0;i<caf_num_images;i++)
+	  for (i = 0; i < caf_num_images; i++)
 	    {
-	      if(orders[i] != 0)
+	      if (orders[i] != 0)
 		{
 		  sizeOrders++;
-		  val = ARMCI_GetValueInt((void *)&arrived[caf_this_image-1][i], caf_this_image-1);
-		  //val = arrived[caf_this_image-1][i];
-		  if(val != 0)
+		  val = ARMCI_GetValueInt (
+				(void *) &arrived[caf_this_image-1][i],
+				caf_this_image-1);
+		  /* val = arrived[caf_this_image-1][i]; */
+		  if (val != 0)
 		    {
 		      orders[i]--;
 		      sizeOrders--;
 		      val--;
-		      ierr = ARMCI_PutValueInt(val, (void *)&arrived[caf_this_image-1][i], caf_this_image-1);
+		      ierr = ARMCI_PutValueInt (
+				val, (void *) &arrived[caf_this_image-1][i],
+				caf_this_image-1);
 		    }
 		}
 	    }
-	  
-	  if(sizeOrders==0)
+
+	  if (sizeOrders == 0)
 	    freeToGo=true;
-	  
-	  ARMCI_Unlock(0, caf_this_image-1);
-	  sched_yield();
+
+	  ARMCI_Unlock (0, caf_this_image-1);
+	  sched_yield ();
 	}
-      
+
       freeToGo = false;
     }
 
@@ -470,7 +491,7 @@ error_stop (int error)
 /* ERROR STOP function for string arguments.  */
 
 void
-PREFIX(error_stop_str) (const char *string, int32_t len)
+PREFIX (error_stop_str) (const char *string, int32_t len)
 {
   fputs ("ERROR STOP ", stderr);
   while (len--)
@@ -484,7 +505,7 @@ PREFIX(error_stop_str) (const char *string, int32_t len)
 /* ERROR STOP function for numerical arguments.  */
 
 void
-PREFIX(error_stop) (int32_t error)
+PREFIX (error_stop) (int32_t error)
 {
   fprintf (stderr, "ERROR STOP %d\n", error);
   error_stop (error);
