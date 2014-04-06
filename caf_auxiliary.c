@@ -38,7 +38,7 @@ bool
 PREFIX (is_contiguous) (gfc_descriptor_t *array)
 {
   int i;
-  size_t dim_extent;
+  ptrdiff_t dim_extent;
   size_t extent = 1;
   bool element = false;
 
@@ -46,8 +46,11 @@ PREFIX (is_contiguous) (gfc_descriptor_t *array)
     {
       if (!element && array->dim[i]._stride != extent)
 	return false;
+
       dim_extent = array->dim[i]._ubound - array->dim[i].lower_bound + 1;
-      if (dim_extent == 1)
+      if (dim_extent <= 0)
+	return true;  /* Zero-sized array.  */
+      else if (dim_extent == 1)
         element = true;
       else if (element)
 	return false;
