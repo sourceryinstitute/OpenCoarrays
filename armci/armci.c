@@ -25,12 +25,14 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 
-#include "libcaf.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>	/* For memcpy.  */
 #include <stdarg.h>	/* For variadic arguments.  */
+#include <sched.h>	/* For sched_yield.  */
 #include <message.h>    /* ARMCI and armci_msg_*.  */
+
+#include "libcaf.h"
 
 
 /* Define GFC_CAF_CHECK to enable run-time checking.  */
@@ -346,65 +348,81 @@ PREFIX (send_desc) (caf_token_t token, size_t offset, int image_index,
 		    gfc_descriptor_t *dest, gfc_descriptor_t *src, bool async)
 {
   int ierr;
-  size_t i, j;
-  size_t size = GFC_DESCRIPTOR_SIZE (dest);
+  size_t i, size;
+  int j;
   int rank = GFC_DESCRIPTOR_RANK (dest);
 
-  if (rank != 1)
+  size = 1;
+  for (j = 0; j < rank; j++)
     {
-      fprintf (stderr, "COARRAY ERROR: Array communication "
-	       "[caf_send_desc] not yet implemented for rank /= 0");
-      exit (EXIT_FAILURE);
+      ptrdiff_t dimextent = dest->dim[j]._ubound - dest->dim[j].lower_bound + 1;
+      if (dimextent < 0)
+	dimextent = 0;
+      size *= dimextent;
     }
+
+  if (size == 0)
+    return;
 
   if (PREFIX (is_contiguous) (dest) && PREFIX (is_contiguous) (src))
     {
-      for (i = 0; i < GFC_DESCRIPTOR_RANK(src); i++)
-	{
-	  ptrdiff_t dim_extent = src->dim[0]._ubound - src->dim[0].lower_bound + 1;
-	  if (dim_extent <= 0)
-	    return;  /* Zero-sized array.  */
-	  size *= dim_extent;
-	}
-
-      void *sr = src->base_addr + src->dim[0].lower_bound - src->offset;
-
-      void *dst = (void *)((char *) TOKEN (token)[image_index-1] + offset,
-			   + dest->dim[0].lower_bound - dest->offset);
+      void *dst = (void *)((char *) TOKEN (token)[image_index-1] + offset);
 
       if (image_index == caf_this_image)
-	{
-	  memmove (dst, sr, size);
-	  return;
-	}
-
-      if (!async)
-	ierr = ARMCI_Put (sr, dst, size, image_index - 1);
+	memmove (dst, src->base_addr, GFC_DESCRIPTOR_SIZE (dest)*size);
+      else if (!async)
+	ierr = ARMCI_Put (src->base_addr, dst, GFC_DESCRIPTOR_SIZE (dest)*size,
+			  image_index - 1);
       else
-	ierr = ARMCI_NbPut (sr, dst, size, image_index-1, NULL);
-
+	ierr = ARMCI_NbPut (src->base_addr, dst,
+			    GFC_DESCRIPTOR_SIZE (dest)*size,
+			    image_index-1, NULL);
       if (ierr != 0)
 	error_stop (ierr);
       return;
     }
 
-  for (j = dest->dim[0].lower_bound - dest->offset,
-       i = src->dim[0].lower_bound - src->offset;
-       j <= dest->dim[0]._ubound - dest->offset
-       && i <= src->dim[0]._ubound - src->offset;
-       j += dest->dim[0]._stride,
-       i += src->dim[0]._stride)
+  for (i = 0; i < size; i++)
     {
-      void *sr = (void *)((char *) src->base_addr + j*size);
-      void *dst = (void *)((char *) TOKEN (token)[image_index-1] + offset
-			   + j*size);
-      if (image_index == caf_this_image)
-	memmove (dst, sr, size);
-      else if (!async)
-        ierr = ARMCI_Put (sr, dst, size, image_index - 1);
-      else
-        ierr = ARMCI_NbPut (sr, dst, size, image_index - 1, NULL);
+      ptrdiff_t array_offset_dst = 0;
+      ptrdiff_t stride = 1;
+      ptrdiff_t extent = 1;
+      for (j = 0; j < rank-1; j++)
+	{
+	  array_offset_dst += ((i / (extent*stride))
+			       % (dest->dim[j]._ubound
+				  - dest->dim[j].lower_bound + 1))
+			      * dest->dim[j]._stride;
+	  extent = (dest->dim[j]._ubound - dest->dim[j].lower_bound + 1);
+          stride = dest->dim[j]._stride;
+	}
+      array_offset_dst += (i / extent) * dest->dim[rank-1]._stride;
 
+      ptrdiff_t array_offset_sr = 0;
+      stride = 1;
+      extent = 1;
+      for (j = 0; j < GFC_DESCRIPTOR_RANK (src)-1; j++)
+	{
+	  array_offset_sr += ((i / (extent*stride))
+			   % (src->dim[j]._ubound
+			      - src->dim[j].lower_bound + 1))
+			  * src->dim[j]._stride;
+	  extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1);
+          stride = src->dim[j]._stride;
+	}
+      array_offset_sr += (i / extent) * dest->dim[rank-1]._stride;
+
+      void *dst = (void *)((char *) TOKEN (token)[image_index-1] + offset
+			   + array_offset_dst*GFC_DESCRIPTOR_SIZE (dest));
+      void *sr = (void *)((char *) src->base_addr
+			  + array_offset_sr*GFC_DESCRIPTOR_SIZE (src));
+      if (image_index == caf_this_image)
+	memmove (dst, sr, GFC_DESCRIPTOR_SIZE (dest));
+      else if (!async)
+        ierr = ARMCI_Put (sr, dst, GFC_DESCRIPTOR_SIZE (dest), image_index - 1);
+      else
+        ierr = ARMCI_NbPut (sr, dst, GFC_DESCRIPTOR_SIZE (dest),
+			    image_index - 1, NULL);
       if (ierr != 0)
 	{
 	  error_stop (ierr);
@@ -421,31 +439,44 @@ PREFIX (send_desc_scalar) (caf_token_t token, size_t offset, int image_index,
 			   gfc_descriptor_t *dest, void *buffer, bool async)
 {
   int ierr;
-  size_t j;
-  size_t size = GFC_DESCRIPTOR_SIZE (dest);
+  size_t i, size;
+  int j;
   int rank = GFC_DESCRIPTOR_RANK (dest);
 
-  if (rank != 1)
+  size = 1;
+  for (j = 0; j < rank; j++)
     {
-      fprintf (stderr, "COARRAY ERROR: Array communication "
-	       "[send_desc_scalar] not yet implemented for "
-	       "rank /= 0");
-      exit (EXIT_FAILURE);
+      ptrdiff_t dimextent = dest->dim[j]._ubound - dest->dim[j].lower_bound + 1;
+      if (dimextent < 0)
+	dimextent = 0;
+      size *= dimextent;
     }
 
-  for (j = dest->dim[0].lower_bound - dest->offset;
-       j <= dest->dim[0]._ubound - dest->offset;
-       j += dest->dim[0]._stride)
+  for (i = 0; i < size; i++)
     {
+      ptrdiff_t array_offset = 0;
+      ptrdiff_t stride = 1;
+      ptrdiff_t extent = 1;
+      for (j = 0; j < rank-1; j++)
+	{
+	  array_offset += ((i / (extent*stride))
+			   % (dest->dim[j]._ubound
+			      - dest->dim[j].lower_bound + 1))
+			  * dest->dim[j]._stride;
+	  extent = (dest->dim[j]._ubound - dest->dim[j].lower_bound + 1);
+          stride = dest->dim[j]._stride;
+	}
+      array_offset += (i / extent) * dest->dim[rank-1]._stride;
       void *dst = (void *)((char *) TOKEN (token)[image_index-1] + offset
-			   + j*size);
+			   + array_offset*GFC_DESCRIPTOR_SIZE (dest));
       if (image_index == caf_this_image)
-	memmove (dst, buffer, size);
+	memmove (dst, buffer, GFC_DESCRIPTOR_SIZE (dest));
       else if (!async)
-        ierr = ARMCI_Put (buffer, dst, size, image_index - 1);
+        ierr = ARMCI_Put (buffer, dst, GFC_DESCRIPTOR_SIZE (dest),
+			  image_index - 1);
       else
-        ierr = ARMCI_NbPut (buffer, dst, size, image_index-1, NULL);
-
+        ierr = ARMCI_NbPut (buffer, dst, GFC_DESCRIPTOR_SIZE (dest),
+			    image_index-1, NULL);
       if (ierr != 0)
 	{
 	  error_stop (ierr);
@@ -463,8 +494,7 @@ void
 PREFIX (sync_images) (int count, int images[], int *stat, char *errmsg,
 		      int errmsg_len)
 {
-  int ierr = 0, i, j, wc;
-  int *tmp;
+  int i, ierr;
   bool freeToGo = false;
 
   if (count == 0 || (count == 1 && images[0] == caf_this_image))
@@ -476,8 +506,6 @@ PREFIX (sync_images) (int count, int images[], int *stat, char *errmsg,
 
 #ifdef GFC_CAF_CHECK
   {
-    int i;
-
     for (i = 0; i < count; i++)
       if (images[i] < 1 || images[i] > caf_num_images)
 	{
