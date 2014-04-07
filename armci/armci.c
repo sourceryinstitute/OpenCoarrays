@@ -347,7 +347,7 @@ void
 PREFIX (send_desc) (caf_token_t token, size_t offset, int image_index,
 		    gfc_descriptor_t *dest, gfc_descriptor_t *src, bool async)
 {
-  int ierr;
+  int ierr = 0;
   size_t i, size;
   int j;
   int rank = GFC_DESCRIPTOR_RANK (dest);
@@ -438,7 +438,7 @@ void
 PREFIX (send_desc_scalar) (caf_token_t token, size_t offset, int image_index,
 			   gfc_descriptor_t *dest, void *buffer, bool async)
 {
-  int ierr;
+  int ierr = 0;
   size_t i, size;
   int j;
   int rank = GFC_DESCRIPTOR_RANK (dest);
