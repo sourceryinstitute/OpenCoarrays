@@ -407,18 +407,6 @@ PREFIX (deregister) (caf_token_t *token, int *stat, char *errmsg,
   /*   caf_runtime_error ("ARMCI memory freeing failed: Error code %d", ierr); */
   //gasnet_exit(0);
 
-  caf_static_t *tmp = caf_static_list, *next = caf_static_list;
-
-  while(tmp && tmp->prev != NULL && tmp->token != *token)
-    {
-      next = tmp;
-      tmp=tmp->prev;
-    }
-
-  next->prev=tmp->prev;
-
-  free(tmp);
-
   free (*token);
 }
 
