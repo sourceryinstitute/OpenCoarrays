@@ -260,6 +260,9 @@ GCC:
 
 3.7  Sending data from a local image to a remote image
 
+
+3.7.1 Sending a scalar (contiguous memory) from a local to remote image
+
    void caf_send (const caf_token_t token, size_t offset, int image_id,
                   void *data, size_t size, bool async)
 
@@ -273,6 +276,7 @@ Arguments:
   image_id  The ID of the remote image; must be a positive number.
   data  Address of the data, which shall be sent
   size  Amount of bytes to be transmitted
+  async When true, the sending is done asynchronously.
 
 NOTE:
   It is permitted to have image_id == current image. Additionally, the memory
@@ -285,7 +289,70 @@ TODO:
   How to handle asynchronous communication. Shall one return a handle, which
   can be optionally used as handle for a wait command?
 
-TODO:
+
+3.7.2 Sending an array from a local to remote image
+
+   void caf_send_desc (caf_token_t token, size_t offset,
+                       int image_id, gfc_descriptor_t *dest,
+                       gfc_descriptor_t *src,
+                       bool asyn)
+
+Called to send an array section or whole array from a local to a remote
+image identified by the image_index.
+
+Arguments:
+  token  intent(in)  An opaque pointer identifying the coarray.
+  offset  By which amount of bytes the actual data is shifted compared to
+          the base address of the coarray.
+  image_id  The ID of the remote image; must be a positive number.
+  dest    intent(in) Array descriptor for the remote image for the bounds
+          and the size. The base_addr shall not be accessed.
+  src     intent(in) Array descriptor of the local array to be transferred
+          to the remote image
+  async When true, the sending is done asynchronously.
+
+
+NOTE:
+  It is permitted to have image_id == current image. Additionally, the memory
+  of the send-to and the send-from might (partially) overlap in that case. The
+  implementation has to take care that it handles this case.
+GCC:
+  (Partially) implemented on the Fortran-caf branch. The communication is
+  currently always synchronous.
+
+
+
+3.7.3 Sending a scalar from a local to remote-image array
+
+   void caf_send_desc_scalar (caf_token_t token, size_t offset,
+                              int image_id, gfc_descriptor_t *dest,
+                              void *buffer, bool asyn)
+
+Called when assigning a scalar of the local image to an array of the
+remote image, identified by the image_index.
+
+Arguments:
+  token  intent(in)  An opaque pointer identifying the coarray.
+  offset  By which amount of bytes the actual data is shifted compared to
+          the base address of the coarray.
+  image_id  The ID of the remote image; must be a positive number.
+  dest    intent(in) Array descriptor for the remote image for the bounds
+          and the size. The base_addr shall not be accessed.
+  buffer  intent(in) The values used for the assignment; the buffer size
+          must match the element size obtained from the "dest" buffer.
+  async When true, the sending is done asynchronously.
+
+NOTE:
+  It is permitted to have image_id == current image. Additionally, the memory
+  of the send-to and the send-from might (partially) overlap in that case. The
+  implementation has to take care that it handles this case.
+GCC:
+  (Partially) implemented on the Fortran-caf branch. The communication is
+  currently always synchronous.
+
+
+
+TODO FOR SEND*:
   - Wait is missing
   - Array section, array vector sections, scalar assignment to arrays
   - Assignment to an address instead of using a token, to handle
@@ -293,9 +360,11 @@ TODO:
     Or some other means to handle those.
   - Image index: How to handle references to other TEAMS?
 
+OTHER TODOs:
 3.x TODO: Handle GET and remote-to-remote communication
 3.y TODO: Handle ATOMIC, LOCK, CRITICAL
 3.z TODO Teams and error recovery
+
 
 
 3.8  All-Image Barrier
