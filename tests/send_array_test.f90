@@ -129,7 +129,7 @@ subroutine two()
   a(:,:) = b(lb1, lb2)
   sync all
   if (this_image() == 1) then
-    caf(:,:)[this_image()] = b(lb1, lb2)
+    caf(:,:)[num_images()] = b(lb1, lb2)
   end if
   sync all
   if (this_image() == num_images()) then
@@ -143,7 +143,7 @@ subroutine two()
   a(:,:) = b(:, :)
   sync all
   if (this_image() == 1) then
-    caf(:,:)[this_image()] = b(:, :)
+    caf(:,:)[num_images()] = b(:, :)
   end if
   sync all
   if (this_image() == num_images()) then
@@ -166,7 +166,8 @@ subroutine two()
                   a(i:i_e:i_s*i_sgn1, j:j_e:j_s*i_sgn2) = b(lb1, lb2)
                   sync all
                   if (this_image() == 1) then
-                    caf(i:i_e:i_s*i_sgn1, j:j_e:j_s*i_sgn2)[1] = b(lb1, lb2)
+                    caf(i:i_e:i_s*i_sgn1, j:j_e:j_s*i_sgn2)[num_images()] &
+                        = b(lb1, lb2)
                   end if
                   sync all
 
@@ -177,7 +178,7 @@ subroutine two()
                       = b(i:i_e:i_s*i_sgn1, j:j_e:j_s*i_sgn2)
                   sync all
                   if (this_image() == 1) then
-                    caf(i:i_e:i_s*i_sgn1, j:j_e:j_s*i_sgn2)[1] &
+                    caf(i:i_e:i_s*i_sgn1, j:j_e:j_s*i_sgn2)[num_images()] &
                         = b(i:i_e:i_s*i_sgn1, j:j_e:j_s*i_sgn2)
                   end if
                   sync all
@@ -221,7 +222,7 @@ subroutine three()
   a(:,:) = b(lb1, lb2)
   sync all
   if (this_image() == 1) then
-    caf(:,:)[this_image()] = b(lb1, lb2)
+    caf(:,:)[num_images()] = b(lb1, lb2)
   end if
   sync all
   if (this_image() == num_images()) then
@@ -235,7 +236,7 @@ subroutine three()
   a(:,:) = b(:, :)
   sync all
   if (this_image() == 1) then
-    caf(:,:)[this_image()] = b(:, :)
+    caf(:,:)[num_images()] = b(:, :)
   end if
   sync all
   if (this_image() == num_images()) then
