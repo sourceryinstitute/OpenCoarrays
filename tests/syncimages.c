@@ -72,7 +72,7 @@ int main(int argc, char **argv)
     {
       images[0] = me-1;
       _gfortran_caf_sync_images(1,images,&info,errmsg,255);
-      _gfortran_caf_recv (token, 0, me-1, d, size, false);
+      _gfortran_caf_get (token, 0, me-1, d, size, false);
 
       d[0] += 1;
       a_d[0] = d[0];

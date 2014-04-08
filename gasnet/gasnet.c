@@ -628,7 +628,7 @@ PREFIX (send_desc_scalar) (caf_token_t token, size_t offset, int image_index,
 
 
 void
-PREFIX (recv) (caf_token_t token, size_t offset, int image_index, void *data,
+PREFIX (get) (caf_token_t token, size_t offset, int image_index, void *data,
 	       size_t size, bool async)
 {
   int ierr = 0;
