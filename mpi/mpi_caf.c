@@ -139,7 +139,7 @@ void *
 PREFIX(register) (size_t size, caf_register_t type, caf_token_t *token,
 		  int *stat, char *errmsg, int errmsg_len)
 {
-  int ierr,i;
+  /* int ierr; */
   void *mem;
 
   if (unlikely (caf_is_finalized))
@@ -211,7 +211,7 @@ error:
 void
 PREFIX(deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len)
 {
-  int ierr;
+  /* int ierr; */
 
   if (unlikely (caf_is_finalized))
     {
