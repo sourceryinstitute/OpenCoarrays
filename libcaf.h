@@ -127,6 +127,8 @@ void *PREFIX(register) (size_t, caf_register_t, caf_token_t *, int *, char *,
 void PREFIX(deregister) (caf_token_t *, int *, char *, int);
 
 void PREFIX (get) (caf_token_t, size_t, int, void *, size_t , bool);
+void PREFIX(get_desc) (caf_token_t, size_t, int, gfc_descriptor_t*,
+		       gfc_descriptor_t*, bool);
 
 void PREFIX(send) (caf_token_t, size_t, int, void *, size_t, bool);
 void PREFIX(send_desc) (caf_token_t, size_t, int, gfc_descriptor_t*,

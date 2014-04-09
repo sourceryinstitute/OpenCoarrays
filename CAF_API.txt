@@ -367,7 +367,74 @@ OTHER TODOs:
 
 
 
-3.8  All-Image Barrier
+3.8  Getting data from a remote image
+
+
+3.8.1 Getting a scalar (contiguous memory) a remote image
+
+   void caf_get (const caf_token_t token, size_t offset, int image_id,
+                 void *buffer, size_t size, bool async)
+
+Called to get a scalar or contiguous section of an array to another image,
+identified by the image_index.
+
+Arguments:
+  token  intent(in)  An opaque pointer identifying the coarray.
+  offset  By which amount of bytes the actual data is shifted on the remote
+          image compared to the base address of the coarray.
+  image_id  The ID of the remote image; must be a positive number.
+  data  Address of the data, which shall be sent
+  buffer  Local buffer to which the data shall be written to
+  size  Amount of bytes to be transmitted
+  async When true, the sending is done asynchronously.
+
+NOTE:
+  It is permitted to have image_id == current image. Additionally, the memory
+  of the send-to and the send-from might (partially) overlap in that case. The
+  implementation has to take care that it handles this case.
+GCC:
+  (Partially) implemented on the Fortran-caf branch. The communication is
+  currently always synchronous.
+TODO:
+  How to handle asynchronous communication. Shall one return a handle, which
+  can be optionally used as handle for a wait command?
+
+
+3.8.2 Getting an array from a remote image
+
+   void caf_get_desc (caf_token_t token, size_t offset,
+                      int image_id, gfc_descriptor_t *src,
+                      gfc_descriptor_t *dest,
+                      bool asyn)
+
+Called to get an array section or whole array from a a remote,
+image identified by the image_index.
+
+Arguments:
+  token  intent(in)  An opaque pointer identifying the coarray.
+  offset  By which amount of bytes the actual data is shifted compared to
+          the base address of the coarray.
+  image_id  The ID of the remote image; must be a positive number.
+  src     intent(in) Array descriptor for the remote image for the bounds
+          and the size. The base_addr shall not be accessed.
+  dest    intent(out) Array descriptor of the local array to which the
+          data shall be transferred to.
+  async When true, the sending is done asynchronously.
+
+
+NOTE:
+  It is permitted to have image_id == current image. Additionally, the memory
+  of the send-to and the send-from might (partially) overlap in that case. The
+  implementation has to take care that it handles this case.
+GCC:
+  (Partially) implemented on the Fortran-caf branch. The communication is
+  currently always synchronous.
+
+
+
+3.9  Barriers
+
+3.9.1  All-Image Barrier
 
    void caf_sync_all (int *stat, char *errmsg, size_t errmsg_len)
 
@@ -391,7 +458,7 @@ GCC:
 
 
 
-3.9  Barrier for Selected Images
+3.9.2  Barrier for Selected Images
 
    void sync_images (int count, int images[], int *stat,
                      char *errmsg, size_t errmsg_len)
