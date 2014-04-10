@@ -1,4 +1,4 @@
-/* ARMCI implementation of Libcaf
+/* Single-Image implementation of Libcaf
 
 Copyright (c) 2012-2014, OpenCoarray Consortium
 All rights reserved.
@@ -191,8 +191,8 @@ PREFIX (get_desc) (caf_token_t token, size_t offset,
 
   if (PREFIX (is_contiguous) (dest) && PREFIX (is_contiguous) (src))
     {
-      void *dst = (void *)((char *) TOKEN (token) + offset);
-      memmove (dst, src->base_addr, GFC_DESCRIPTOR_SIZE (dest)*size);
+      void *sr = (void *) ((char *) TOKEN (token) + offset);
+      memmove (dest->base_addr, sr, GFC_DESCRIPTOR_SIZE (dest)*size);
       return;
     }
 
