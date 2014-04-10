@@ -1,4 +1,4 @@
-/* Single-Image implementation of Libcaf
+/* GASNet implementation of Libcaf
 
 Copyright (c) 2012-2014, OpenCoarray Consortium
 All rights reserved.
@@ -652,6 +652,83 @@ PREFIX (get) (caf_token_t token, size_t offset, int image_index, void *data,
   if (ierr != 0)
     error_stop (ierr);
 
+}
+
+
+/* Get array data from a remote src to a local dest.  */
+
+void
+PREFIX (get_desc) (caf_token_t token, size_t offset, int image_index,
+		   gfc_descriptor_t *src, gfc_descriptor_t *dest,
+		   bool async __attribute__ ((unused)))
+{
+  size_t i, size;
+  int j;
+  int rank = GFC_DESCRIPTOR_RANK (dest);
+  void **tm = token;
+
+  size = 1;
+  for (j = 0; j < rank; j++)
+    {
+      ptrdiff_t dimextent = dest->dim[j]._ubound - dest->dim[j].lower_bound + 1;
+      if (dimextent < 0)
+	dimextent = 0;
+      size *= dimextent;
+    }
+
+  if (size == 0)
+    return;
+
+  if (PREFIX (is_contiguous) (dest) && PREFIX (is_contiguous) (src))
+    {
+      void *sr = (void *) ((char *) tm[image_index-1] + offset);
+      if (image_index == caf_this_image)
+	memmove (dest->base_addr, sr, GFC_DESCRIPTOR_SIZE (dest)*size);
+      else
+	gasnet_get_bulk (dest->base_addr, image_index-1, sr,
+			 GFC_DESCRIPTOR_SIZE (dest)*size);
+      return;
+    }
+
+  for (i = 0; i < size; i++)
+    {
+      ptrdiff_t array_offset_dst = 0;
+      ptrdiff_t stride = 1;
+      ptrdiff_t extent = 1;
+      for (j = 0; j < rank-1; j++)
+	{
+	  array_offset_dst += ((i / (extent*stride))
+			       % (dest->dim[j]._ubound
+				  - dest->dim[j].lower_bound + 1))
+			      * dest->dim[j]._stride;
+	  extent = (dest->dim[j]._ubound - dest->dim[j].lower_bound + 1);
+          stride = dest->dim[j]._stride;
+	}
+      array_offset_dst += (i / extent) * dest->dim[rank-1]._stride;
+
+      ptrdiff_t array_offset_sr = 0;
+      stride = 1;
+      extent = 1;
+      for (j = 0; j < GFC_DESCRIPTOR_RANK (src)-1; j++)
+	{
+	  array_offset_sr += ((i / (extent*stride))
+			   % (src->dim[j]._ubound
+			      - src->dim[j].lower_bound + 1))
+			  * src->dim[j]._stride;
+	  extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1);
+          stride = src->dim[j]._stride;
+	}
+      array_offset_sr += (i / extent) * dest->dim[rank-1]._stride;
+
+      void *sr = (void *)((char *) tm[image_index-1] + offset
+			   + array_offset_sr*GFC_DESCRIPTOR_SIZE (src));
+      void *dst = (void *)((char *) dest->base_addr
+			  + array_offset_dst*GFC_DESCRIPTOR_SIZE (dest));
+      if (image_index == caf_this_image)
+	memmove (dst, sr, GFC_DESCRIPTOR_SIZE (dest));
+      else
+	gasnet_get_bulk (dst, image_index-1, sr, GFC_DESCRIPTOR_SIZE (dest));
+    }
 }
 
 

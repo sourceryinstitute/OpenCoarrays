@@ -226,9 +226,9 @@ PREFIX (get_desc) (caf_token_t token, size_t offset,
 	}
       array_offset_sr += (i / extent) * dest->dim[rank-1]._stride;
 
-      void *dst = (void *)((char *) TOKEN (token) + offset
+      void *sr = (void *)((char *) TOKEN (token) + offset
 			   + array_offset_sr*GFC_DESCRIPTOR_SIZE (src));
-      void *sr = (void *)((char *) src->base_addr
+      void *dst = (void *)((char *) dest->base_addr
 			  + array_offset_dst*GFC_DESCRIPTOR_SIZE (dest));
       memmove (dst, sr, GFC_DESCRIPTOR_SIZE (dest));
     }
