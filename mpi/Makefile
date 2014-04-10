@@ -10,7 +10,7 @@ libcaf_mpi: mpi_caf.o ../caf_auxiliary.o
 	$(MPICC) $(CFLAGS) -c $< -o $@
 
 mpi_caf.o: mpi_caf.c ../libcaf.h	
-	$(MPICC) $(CFLAGS) $(ARMCI_CFLAGS) -I.. -c $< -o $@
+	$(MPICC) $(CFLAGS) $(MPI_CFLAGS) -I.. -c $< -o $@
 
 clean:
 	rm -f mpi_caf.o
