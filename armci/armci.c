@@ -494,7 +494,7 @@ void
 PREFIX (sync_images) (int count, int images[], int *stat, char *errmsg,
 		      int errmsg_len)
 {
-  int i, ierr;
+  int i, ierr = 0;
   bool freeToGo = false;
 
   if (count == 0 || (count == 1 && images[0] == caf_this_image))

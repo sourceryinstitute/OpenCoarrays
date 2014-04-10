@@ -1,6 +1,6 @@
 include ../make.inc
 
-MPICC = mpicc
+MPICC ?= mpicc
 
 libcaf_mpi: mpi_caf.o ../caf_auxiliary.o
 	ar rcv $@ mpi_caf.o ../caf_auxiliary.o

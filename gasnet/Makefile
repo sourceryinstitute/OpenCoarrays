@@ -1,16 +1,18 @@
-include mpi-seq.mak
-#include ibv-seq.mak
-#include smp-seq.mak
-
 include ../make.inc
 
-CCINCL=./caf
-CCOPT=-std=gnu99
+MY_GASNET_CFLAGS := $(GASNET_CFLAGS)
+GASNET_MAK ?= mpi-seq.mak
+# GASNET_MAK ?= ibv-seq.mak
+# GASNET_MAK ?= smp-seq.mak
 
-all: libcaf_gasnet.a hello
+include $(GASNET_MAK)
+
+GASNET_CFLAGS += $(CFLAGS) $(MY_GASNET_CFLAGS)
+
+all: libcaf_gasnet.a
 
 .c.o:
-	$(GASNET_CC) $(CFLAGS) $(GASNET_CPPFLAGS) $(GASNET_CFLAGS) -I$(CCINCL) $(CCOPT) -c -o $@ $<
+	$(GASNET_CC) $(GASNET_CPPFLAGS) $(GASNET_CFLAGS) -I.. -c -o $@ $<
 
 hello: hello.o gasnet.o
 	$(GASNET_LD) $(GASNET_LDFLAGS) -I$(CCINCL) -o $@ $< -L. -lcaf_gasnet $(GASNET_LIBS)

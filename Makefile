@@ -25,13 +25,13 @@ caf_auxiliary.o: caf_auxiliary.c
 
 clean:
 	rm -f  caf_auxiliary.o
-	$(MAKE) -C single clean
-	$(MAKE) -C armci clean
-	$(MAKE) -C gasnet clean
-	$(MAKE) -C mpi clean
+	$(MAKE) -k -C single clean
+	$(MAKE) -k -C armci clean
+	$(MAKE) -k -C gasnet clean
+	$(MAKE) -k -C mpi clean
 
 distclean: clean
-	$(MAKE) -C single distclean
-	$(MAKE) -C armci distclean
-	$(MAKE) -C gasnet distclean
-	$(MAKE) -C mpi distclean
+	$(MAKE) -k -C single distclean
+	$(MAKE) -k -C armci distclean
+	$(MAKE) -k -C gasnet distclean
+	$(MAKE) -k -C mpi distclean

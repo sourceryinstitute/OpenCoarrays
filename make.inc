@@ -2,6 +2,7 @@ PREFIX_NAME=_gfortran_caf_
 
 SINGLE_CFLAGS +=
 ARMCI_CFLAGS +=
-GASNET_CFLAGS +=
+GASNET_CFLAGS += -Icaf -std=gnu99
+GASNET_MAK =
 
-CFLAGS += -DPREFIX_NAME=$(PREFIX_NAME) -g -Wall -Werror
+CFLAGS += -DPREFIX_NAME=$(PREFIX_NAME) -g -Wall -Werror -O2
