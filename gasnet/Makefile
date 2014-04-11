@@ -5,10 +5,6 @@ MY_GASNET_CC := $(GASNET_CC)
 MY_GASNET_LD := $(GASNET_LD)
 MY_GASNET_LDFLAGS := $(GASNET_LDFLAGS)
 
-GASNET_MAK ?= mpi-seq.mak
-# GASNET_MAK ?= ibv-seq.mak
-# GASNET_MAK ?= smp-seq.mak
-
 include $(GASNET_MAK)
 
 
@@ -29,21 +25,20 @@ endif
 
 all: libcaf_gasnet.a
 
+libcaf_gasnet.a: gasnet.o ../common/caf_auxiliary.o
+	ar rcv $@ gasnet.o ../common/caf_auxiliary.o
+	ranlib $@
+
 .c.o:
 	$(GASNET_CC) $(GASNET_CPPFLAGS) $(GASNET_CFLAGS) -I.. -c -o $@ $<
 
-hello: hello.o gasnet.o
-	$(GASNET_LD) $(GASNET_LDFLAGS) -o $@ $< -L. -lcaf_gasnet $(GASNET_LIBS)
+gasnet.o: gasnet.c ../libcaf.h
 
-libcaf_gasnet.a: gasnet.o ../caf_auxiliary.o
-	ar rcv $@ gasnet.o ../caf_auxiliary.o
-	ranlib $@
-
-../caf_auxiliary.o: ../caf_auxiliary.c
-	$(CC) $(CFLAGS) -c $< -o $@
+../common/caf_auxiliary.o:
+	$(MAKE) -C ../common
 
 clean:
-	rm -f gasnet.o hello.o
+	rm -f gasnet.o
 
 distclean: clean
-	rm -f libcaf_armci.a hello ../caf_auxiliary.o
+	rm -f libcaf_armci.a

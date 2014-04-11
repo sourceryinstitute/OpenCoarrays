@@ -493,8 +493,6 @@ PREFIX (get) (caf_token_t token, size_t offset, int image_index, void *data,
 
   int ierr = 0;
 
-  void **tm = token;
-
   if (unlikely (size == 0))
     return;  /* Zero-sized array.  */
 

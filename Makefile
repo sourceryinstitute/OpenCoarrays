@@ -1,36 +1,38 @@
 include make.inc
 export
 
+.PHONY : common
 .PHONY : single
 .PHONY : armci
 .PHONY : gasnet
 .PHONY : mpi
 
-all: single armci gasnet mpi
+all: common single armci gasnet mpi
 
-single: caf_auxiliary.o
+common:
 	$(MAKE) -C $@
 
-armci: caf_auxiliary.o
+single: common
 	$(MAKE) -C $@
 
-gasnet: caf_auxiliary.o
+armci: common
 	$(MAKE) -C $@
 
-mpi: caf_auxiliary.o
+gasnet: common
 	$(MAKE) -C $@
 
-caf_auxiliary.o: caf_auxiliary.c
-	$(CC) $(CFLAGS) -c $< -o $@
+mpi: common
+	$(MAKE) -C $@
 
 clean:
-	rm -f  caf_auxiliary.o
+	$(MAKE) -k -C common clean
 	$(MAKE) -k -C single clean
 	$(MAKE) -k -C armci clean
 	$(MAKE) -k -C gasnet clean
 	$(MAKE) -k -C mpi clean
 
 distclean: clean
+	$(MAKE) -k -C common distclean
 	$(MAKE) -k -C single distclean
 	$(MAKE) -k -C armci distclean
 	$(MAKE) -k -C gasnet distclean

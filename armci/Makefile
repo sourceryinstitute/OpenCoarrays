@@ -1,17 +1,21 @@
 include ../make.inc
 
-libcaf_armci.a: armci.o ../caf_auxiliary.o
-	ar rcv $@ armci.o ../caf_auxiliary.o
+all: libcaf_armci.a
+
+libcaf_armci.a: armci.o ../common/caf_auxiliary.o
+	ar rcv $@ armci.o ../common/caf_auxiliary.o
 	ranlib $@
 
-../caf_auxiliary.o: ../caf_auxiliary.c
-	$(CC) $(CFLAGS) -c $< -o $@
-
-armci.o: armci.c ../libcaf.h	
+.c.o:
 	$(CC) $(CFLAGS) $(ARMCI_CFLAGS) -I.. -c $< -o $@
+
+armci.o: armci.c ../libcaf.h
+
+../common/caf_auxiliary.o:
+	$(MAKE) -C ../common
 
 clean:
 	rm -f armci.o
 
 distclean: clean
-	rm -f libcaf_armci.a ../caf_auxiliary.o
+	rm -f libcaf_armci.a

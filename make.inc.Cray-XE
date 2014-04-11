@@ -1,0 +1,24 @@
+#
+# Makefile for a Cray XE
+#
+# Before compiling the library, load the following modules:
+#   module swap PrgEnv-cray PrgEnv-gnu
+#   module load gcc/4.8.1  # für GASNet
+#   module load cray-ga  # für ARMCI
+#
+
+PREFIX_NAME=_gfortran_caf_
+
+CFLAGS += -DPREFIX_NAME=$(PREFIX_NAME) -g -Wall -Werror -O2
+SINGLE_CFLAGS +=
+
+ARMCI_CFLAGS +=
+
+MPI_CFLAGS +=
+MPICC = cc
+
+GASNET_CFLAGS += -I/opt/chapel/1.8.0/cray-xk/third-party/gasnet/install/cray-xk-cray-prgenv-gnu/seg-fast/nodbg/include/gemini-conduit/ \
+                 -I/opt/chapel/1.8.0/cray-xk/third-party/gasnet/install/cray-xk-cray-prgenv-gnu/seg-fast/nodbg/include/ \
+                 -Wno-all
+GASNET_MAK = /opt/chapel/1.8.0/cray-xk/third-party/gasnet/install/cray-xk-cray-prgenv-gnu/seg-fast/nodbg/include/gemini-conduit/gemini-par.mak
+GASNET_CC = cc
