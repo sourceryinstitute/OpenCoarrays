@@ -82,7 +82,7 @@ caf_runtime_error (const char *message, ...)
 void
 PREFIX (init) (int *argc, char ***argv)
 {
-  int ierr, i = 0, j = 0;
+  int ierr=0, i = 0, j = 0;
 
   if (caf_num_images != 0)
     return;  /* Already initialized.  */
@@ -150,7 +150,7 @@ void *
 PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
 		   int *stat, char *errmsg, int errmsg_len)
 {
-  int ierr,i;
+  int ierr=0,i;
 
   if (unlikely (caf_is_finalized))
     goto error;
@@ -230,7 +230,7 @@ error:
 void
 PREFIX (deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len)
 {
-  int ierr;
+  int ierr=0;
 
   if (unlikely (caf_is_finalized))
     {
@@ -268,7 +268,7 @@ PREFIX (deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len
 void
 PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
 {
-  int ierr;
+  int ierr=0;
 
   if (unlikely (caf_is_finalized))
     ierr = STAT_STOPPED_IMAGE;
@@ -317,7 +317,7 @@ void
 PREFIX (send) (caf_token_t token, size_t offset, int image_index, void *data,
 	       size_t size, bool async)
 {
-  int ierr;
+  int ierr=0;
 
   if (unlikely (size == 0))
     return;  /* Zero-sized array.  */
@@ -486,6 +486,37 @@ PREFIX (send_desc_scalar) (caf_token_t token, size_t offset, int image_index,
 }
 
 
+void
+PREFIX (get) (caf_token_t token, size_t offset, int image_index, void *data,
+	       size_t size, bool async)
+{
+
+  int ierr = 0;
+
+  void **tm = token;
+
+  if (unlikely (size == 0))
+    return;  /* Zero-sized array.  */
+
+  if (image_index == caf_this_image)
+    {
+      void *src = (void *) ((char *) TOKEN(token) + offset);
+      memmove (data, src, size);
+      return;
+    }
+
+  if (async == false)
+    ierr = ARMCI_Get(TOKEN(token)[image_index-1] + offset, data, size,
+		     image_index - 1);
+  else
+    ierr = ARMCI_NbGet(TOKEN(token)[image_index-1] + offset, data, size,
+		       image_index - 1, NULL);
+  
+  if (ierr != 0)
+    error_stop (ierr);
+
+}
+
 /* SYNC IMAGES. Note: SYNC IMAGES(*) is passed as count == -1 while
    SYNC IMAGES([]) has count == 0. Note further that SYNC IMAGES(*)
    is not equivalent to SYNC ALL. */
@@ -494,7 +525,7 @@ void
 PREFIX (sync_images) (int count, int images[], int *stat, char *errmsg,
 		      int errmsg_len)
 {
-  int i, ierr = 0;
+  int i, ierr=0;
   bool freeToGo = false;
 
   if (count == 0 || (count == 1 && images[0] == caf_this_image))

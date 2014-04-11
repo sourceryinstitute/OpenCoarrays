@@ -250,7 +250,7 @@ PREFIX(deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len)
 void
 PREFIX(sync_all) (int *stat, char *errmsg, int errmsg_len)
 {
-  int ierr;
+  int ierr=0;
 
   if (unlikely (caf_is_finalized))
     ierr = STAT_STOPPED_IMAGE;
@@ -315,7 +315,6 @@ PREFIX(send) (caf_token_t token, size_t offset, int image_index, void *data,
 
   if(async==false)
     ierr = MPI_Put(data,size,MPI_BYTE,image_index-1,offset,size,MPI_BYTE,*p);
-   
     //gasnet_put_bulk(image_index-1, tm[image_index-1]+offset, data, size);
   /* else */
   /*   ierr = ARMCI_NbPut(data,t.addr+offset,size,image_index-1,NULL); */
@@ -323,21 +322,26 @@ PREFIX(send) (caf_token_t token, size_t offset, int image_index, void *data,
     error_stop (ierr);
 }
 
-/* void */
-/* PREFIX(get) (caf_token_t token, size_t offset, int image_index, void *data, size_t size, bool async) */
-/* { */
-/*   int ierr = 0; */
+void
+PREFIX(get) (caf_token_t token, size_t offset, int image_index, void *data, size_t size, bool async)
+{
+  int ierr = 0;
 
-/*   void **tm = token; */
+  MPI_Win *p = token;
 
-/*   if(async==false) */
-/*     gasnet_get_bulk(data,image_index-1,tm[image_index-1]+offset,size); */
-/*   /\* else *\/ */
-/*   /\*   ierr = ARMCI_NbPut(data,t.addr+offset,size,image_index-1,NULL); *\/ */
-/*   if(ierr != 0) */
-/*     error_stop (ierr); */
+  if(async==false)
+    {
+      MPI_Win_lock(MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
+      ierr = MPI_Get(data,size,MPI_BYTE,image_index-1,offset,size,MPI_BYTE,*p);
+      MPI_Win_unlock(image_index-1, *p);
+    }
+  //gasnet_put_bulk(image_index-1, tm[image_index-1]+offset, data, size);
+  /* else */
+  /*   ierr = ARMCI_NbPut(data,t.addr+offset,size,image_index-1,NULL); */
+  if(ierr != 0)
+    error_stop (ierr);
 
-/* } */
+}
 
 
 /* SYNC IMAGES. Note: SYNC IMAGES(*) is passed as count == -1 while
