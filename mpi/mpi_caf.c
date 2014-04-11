@@ -451,6 +451,7 @@ PREFIX (get_desc) (caf_token_t token, size_t offset, int image_index,
     }
 #endif
 
+  MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
   for (i = 0; i < size; i++)
     {
       ptrdiff_t array_offset_dst = 0;
@@ -487,14 +488,13 @@ PREFIX (get_desc) (caf_token_t token, size_t offset, int image_index,
       /* FIXME: Handle image_index == this_image().  */
       /*  if (async == false) */
 	{
-	  MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
 	  ierr = MPI_Get (dst, GFC_DESCRIPTOR_SIZE (dest)*size,
 			  MPI_BYTE, image_index-1, sr_off, size, MPI_BYTE, *p);
-	  MPI_Win_unlock (image_index-1, *p);
 	}
       if (ierr != 0)
 	error_stop (ierr);
     }
+  MPI_Win_unlock (image_index-1, *p);
 }
 
 
