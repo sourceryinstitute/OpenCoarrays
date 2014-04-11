@@ -1,4 +1,4 @@
-/* Single-Image implementation of Libcaf
+/* ARMCI implementation of Libcaf
 
 Copyright (c) 2012-2014, OpenCoarray Consortium
 All rights reserved.
@@ -10,7 +10,7 @@ modification, are permitted provided that the following conditions are met:
     * Redistributions in binary form must reproduce the above copyright
       notice, this list of conditions and the following disclaimer in the
       documentation and/or other materials provided with the distribution.
-    * Neither the name of the <organization> nor the
+    * Neither the name of the OpenCoarray Consortium organization nor the
       names of its contributors may be used to endorse or promote products
       derived from this software without specific prior written permission.
 
@@ -488,9 +488,8 @@ PREFIX (send_desc_scalar) (caf_token_t token, size_t offset, int image_index,
 
 void
 PREFIX (get) (caf_token_t token, size_t offset, int image_index, void *data,
-	       size_t size, bool async)
+	      size_t size, bool async)
 {
-
   int ierr = 0;
 
   if (unlikely (size == 0))
@@ -503,17 +502,107 @@ PREFIX (get) (caf_token_t token, size_t offset, int image_index, void *data,
       return;
     }
 
-  if (async == false)
-    ierr = ARMCI_Get(TOKEN(token)[image_index-1] + offset, data, size,
-		     image_index - 1);
+  if (image_index == caf_this_image)
+    memmove (data, TOKEN (token)[image_index-1] + offset, size);
+  else if (async == false)
+    ierr = ARMCI_Get (TOKEN (token)[image_index-1] + offset, data, size,
+		      image_index - 1);
   else
-    ierr = ARMCI_NbGet(TOKEN(token)[image_index-1] + offset, data, size,
-		       image_index - 1, NULL);
-  
+    ierr = ARMCI_NbGet (TOKEN (token)[image_index-1] + offset, data, size,
+			image_index - 1, NULL);
+
   if (ierr != 0)
     error_stop (ierr);
-
 }
+
+
+/* Get array data from a remote src to a local dest.  */
+
+void
+PREFIX (get_desc) (caf_token_t token, size_t offset, int image_index,
+		   gfc_descriptor_t *src, gfc_descriptor_t *dest,
+		   bool async __attribute__ ((unused)))
+{
+  size_t i, size;
+  int ierr = 0;
+  int j;
+  int rank = GFC_DESCRIPTOR_RANK (dest);
+
+  size = 1;
+  for (j = 0; j < rank; j++)
+    {
+      ptrdiff_t dimextent = dest->dim[j]._ubound - dest->dim[j].lower_bound + 1;
+      if (dimextent < 0)
+	dimextent = 0;
+      size *= dimextent;
+    }
+
+  if (size == 0)
+    return;
+
+  if (PREFIX (is_contiguous) (dest) && PREFIX (is_contiguous) (src))
+    {
+      void *sr = (void *) ((char *) TOKEN(token)[image_index-1] + offset);
+      if (image_index == caf_this_image)
+	memmove (dest->base_addr, sr, GFC_DESCRIPTOR_SIZE (dest)*size);
+      else if (async == false)
+	ierr = ARMCI_Get (sr, dest->base_addr, GFC_DESCRIPTOR_SIZE (dest)*size,
+			  image_index - 1);
+      else
+	ierr = ARMCI_NbGet (sr, dest->base_addr,
+			    GFC_DESCRIPTOR_SIZE (dest)*size, image_index - 1,
+			    NULL);
+      if (ierr != 0)
+	error_stop (ierr);
+      return;
+    }
+
+  for (i = 0; i < size; i++)
+    {
+      ptrdiff_t array_offset_dst = 0;
+      ptrdiff_t stride = 1;
+      ptrdiff_t extent = 1;
+      for (j = 0; j < rank-1; j++)
+	{
+	  array_offset_dst += ((i / (extent*stride))
+			       % (dest->dim[j]._ubound
+				  - dest->dim[j].lower_bound + 1))
+			      * dest->dim[j]._stride;
+	  extent = (dest->dim[j]._ubound - dest->dim[j].lower_bound + 1);
+          stride = dest->dim[j]._stride;
+	}
+      array_offset_dst += (i / extent) * dest->dim[rank-1]._stride;
+
+      ptrdiff_t array_offset_sr = 0;
+      stride = 1;
+      extent = 1;
+      for (j = 0; j < GFC_DESCRIPTOR_RANK (src)-1; j++)
+	{
+	  array_offset_sr += ((i / (extent*stride))
+			   % (src->dim[j]._ubound
+			      - src->dim[j].lower_bound + 1))
+			  * src->dim[j]._stride;
+	  extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1);
+          stride = src->dim[j]._stride;
+	}
+      array_offset_sr += (i / extent) * dest->dim[rank-1]._stride;
+
+      void *sr = (void *)((char *) TOKEN (token)[image_index-1] + offset
+			   + array_offset_sr*GFC_DESCRIPTOR_SIZE (src));
+      void *dst = (void *)((char *) dest->base_addr
+			  + array_offset_dst*GFC_DESCRIPTOR_SIZE (dest));
+      if (image_index == caf_this_image)
+	memmove (dst, sr, GFC_DESCRIPTOR_SIZE (dest));
+      else if (async == false)
+	ierr = ARMCI_Get (sr, dst, GFC_DESCRIPTOR_SIZE (dest), image_index - 1);
+      else
+	ierr = ARMCI_NbGet (sr + offset, dst, GFC_DESCRIPTOR_SIZE (dest),
+			    image_index - 1, NULL);
+      if (ierr != 0)
+	error_stop (ierr);
+    }
+}
+
 
 /* SYNC IMAGES. Note: SYNC IMAGES(*) is passed as count == -1 while
    SYNC IMAGES([]) has count == 0. Note further that SYNC IMAGES(*)

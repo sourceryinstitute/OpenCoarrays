@@ -1,4 +1,4 @@
-/* Single-Image implementation of Libcaf
+/* One-sided MPI implementation of Libcaf
 
 Copyright (c) 2012-2014, OpenCoarray Consortium
 All rights reserved.
@@ -10,7 +10,7 @@ modification, are permitted provided that the following conditions are met:
     * Redistributions in binary form must reproduce the above copyright
       notice, this list of conditions and the following disclaimer in the
       documentation and/or other materials provided with the distribution.
-    * Neither the name of the <organization> nor the
+    * Neither the name of the OpenCoarray Consortium nor the
       names of its contributors may be used to endorse or promote products
       derived from this software without specific prior written permission.
 
@@ -25,14 +25,14 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 
-#include "libcaf.h"
-#include "mpi.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>	/* For memcpy.  */
 #include <stdarg.h>	/* For variadic arguments.  */
 #include <alloca.h>
+#include <mpi.h>
 
+#include "libcaf.h"
 
 /* Define GFC_CAF_CHECK to enable run-time checking.  */
 /* #define GFC_CAF_CHECK  1  */
@@ -242,7 +242,7 @@ PREFIX(deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len)
   /* if (unlikely (ierr = ARMCI_Free ((*token)[caf_this_image-1]))) */
   /*   caf_runtime_error ("ARMCI memory freeing failed: Error code %d", ierr); */
   //gasnet_exit(0);
-  
+
   free (*token);
 }
 
@@ -273,7 +273,7 @@ PREFIX(sync_all) (int *stat, char *errmsg, int errmsg_len)
       MPI_Barrier(MPI_COMM_WORLD);
       ierr = 0;
     }
- 
+
   if (stat)
     *stat = ierr;
 
@@ -323,24 +323,113 @@ PREFIX(send) (caf_token_t token, size_t offset, int image_index, void *data,
 }
 
 void
-PREFIX(get) (caf_token_t token, size_t offset, int image_index, void *data, size_t size, bool async)
+PREFIX(get) (caf_token_t token, size_t offset, int image_index, void *data,
+	     size_t size, bool async  __attribute__ ((unused)))
 {
   int ierr = 0;
-
   MPI_Win *p = token;
 
-  if(async==false)
+  /* FIXME: Handle image_index == this_image().  */
+/*  if (async == false) */
     {
-      MPI_Win_lock(MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
-      ierr = MPI_Get(data,size,MPI_BYTE,image_index-1,offset,size,MPI_BYTE,*p);
-      MPI_Win_unlock(image_index-1, *p);
+      MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
+      ierr = MPI_Get (data, size, MPI_BYTE, image_index-1, offset, size, MPI_BYTE, *p);
+      MPI_Win_unlock (image_index-1, *p);
     }
   //gasnet_put_bulk(image_index-1, tm[image_index-1]+offset, data, size);
   /* else */
   /*   ierr = ARMCI_NbPut(data,t.addr+offset,size,image_index-1,NULL); */
   if(ierr != 0)
     error_stop (ierr);
+}
 
+
+/* Get array data from a remote src to a local dest.  */
+
+void
+PREFIX (get_desc) (caf_token_t token, size_t offset, int image_index,
+		   gfc_descriptor_t *src, gfc_descriptor_t *dest,
+		   bool async __attribute__ ((unused)))
+{
+  size_t i, size;
+  int ierr = 0;
+  int j;
+  MPI_Win *p = token;
+  int rank = GFC_DESCRIPTOR_RANK (dest);
+
+  size = 1;
+  for (j = 0; j < rank; j++)
+    {
+      ptrdiff_t dimextent = dest->dim[j]._ubound - dest->dim[j].lower_bound + 1;
+      if (dimextent < 0)
+	dimextent = 0;
+      size *= dimextent;
+    }
+
+  if (size == 0)
+    return;
+#if 0
+  if (PREFIX (is_contiguous) (dest) && PREFIX (is_contiguous) (src))
+    {
+      /* FIXME: Handle image_index == this_image().  */
+      /*  if (async == false) */
+	{
+	  MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
+	  ierr = MPI_Get (dest->base_addr, GFC_DESCRIPTOR_SIZE (dest)*size,
+			  MPI_BYTE, image_index-1, offset,
+			  GFC_DESCRIPTOR_SIZE (dest)*size, MPI_BYTE, *p);
+	  MPI_Win_unlock (image_index-1, *p);
+	}
+      if (ierr != 0)
+	error_stop (ierr);
+      return;
+    }
+#endif
+
+  for (i = 0; i < size; i++)
+    {
+      ptrdiff_t array_offset_dst = 0;
+      ptrdiff_t stride = 1;
+      ptrdiff_t extent = 1;
+      for (j = 0; j < rank-1; j++)
+	{
+	  array_offset_dst += ((i / (extent*stride))
+			       % (dest->dim[j]._ubound
+				  - dest->dim[j].lower_bound + 1))
+			      * dest->dim[j]._stride;
+	  extent = (dest->dim[j]._ubound - dest->dim[j].lower_bound + 1);
+          stride = dest->dim[j]._stride;
+	}
+      array_offset_dst += (i / extent) * dest->dim[rank-1]._stride;
+
+      ptrdiff_t array_offset_sr = 0;
+      stride = 1;
+      extent = 1;
+      for (j = 0; j < GFC_DESCRIPTOR_RANK (src)-1; j++)
+	{
+	  array_offset_sr += ((i / (extent*stride))
+			   % (src->dim[j]._ubound
+			      - src->dim[j].lower_bound + 1))
+			  * src->dim[j]._stride;
+	  extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1);
+          stride = src->dim[j]._stride;
+	}
+      array_offset_sr += (i / extent) * dest->dim[rank-1]._stride;
+
+      size_t sr_off = offset + array_offset_sr*GFC_DESCRIPTOR_SIZE (src);
+      void *dst = (void *) ((char *) dest->base_addr
+			    + array_offset_dst*GFC_DESCRIPTOR_SIZE (dest));
+      /* FIXME: Handle image_index == this_image().  */
+      /*  if (async == false) */
+	{
+	  MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
+	  ierr = MPI_Get (dst, GFC_DESCRIPTOR_SIZE (dest)*size,
+			  MPI_BYTE, image_index-1, sr_off, size, MPI_BYTE, *p);
+	  MPI_Win_unlock (image_index-1, *p);
+	}
+      if (ierr != 0)
+	error_stop (ierr);
+    }
 }
 
 
