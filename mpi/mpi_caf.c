@@ -48,7 +48,11 @@ static int caf_num_images;
 static int caf_is_finalized;
 
 /*Sync image part*/
-/*By default the two array have initially 64 items*/
+
+static int *orders;
+MPI_Request *handlers;
+static int *images_full;
+static int *arrived;
 
 caf_static_t *caf_static_list = NULL;
 caf_static_t *caf_tot = NULL;
@@ -81,7 +85,7 @@ PREFIX(init) (int *argc, char ***argv)
 {
   if (caf_num_images == 0)
     {
-      int ierr = 0;
+      int ierr = 0, i = 0, j = 0;
 
       MPI_Init(argc,argv);
 
@@ -93,6 +97,20 @@ PREFIX(init) (int *argc, char ***argv)
 
       caf_this_image++;
       caf_is_finalized = 0;
+
+      images_full = (int *) calloc (caf_num_images-1, sizeof (int));
+
+      for (i = 0; i < caf_num_images; i++)
+	if (i + 1 != caf_this_image)
+	  {
+	    images_full[j] = i + 1;
+	    j++;
+	  }
+
+      orders = calloc (caf_num_images, sizeof (int));
+      arrived = calloc (caf_num_images, sizeof (int));
+
+      handlers = malloc(caf_num_images * sizeof(MPI_Request));
 
     }
 }
@@ -112,6 +130,26 @@ PREFIX(finalize) (void)
 
       free (caf_static_list);
       caf_static_list = tmp;
+    }
+
+  caf_static_t *tmp_tot = caf_tot, *prev = caf_tot;
+  MPI_Win *p;
+
+  /* if(tmp_tot->token == *token) */
+  /*   { */
+  /*     MPI_Win_free(p); */
+  /*     tmp_tot = prev->prev; */
+  /*     free(prev); */
+  /*     caf_tot = tmp_tot; */
+  /*   } */
+
+  while(tmp_tot)
+    {
+      prev = tmp_tot->prev;
+      p = tmp_tot->token;
+      MPI_Win_free(p);
+      free(tmp_tot);  
+      tmp_tot = prev;
     }
 
   MPI_Finalize();
@@ -236,6 +274,33 @@ PREFIX(deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len)
 
   PREFIX(sync_all) (NULL, NULL, 0);
 
+  caf_static_t *tmp = caf_tot, *prev = caf_tot;
+  MPI_Win *p = *token;
+
+  if(tmp->token == *token)
+    {
+      MPI_Win_free(p);
+      tmp = prev->prev;
+      free(prev);
+      caf_tot = tmp;
+    }
+
+  while(tmp && tmp->prev != NULL)
+    {
+      prev = tmp->prev;
+      
+      if(tmp->token == *token)
+	{
+	  p = *token;
+	  MPI_Win_free(p);
+	  tmp->prev = prev->prev;
+	  free(prev);
+	  break;
+	}
+
+      tmp = prev;
+    }
+  
   if (stat)
     *stat = 0;
 
@@ -436,67 +501,86 @@ PREFIX (get_desc) (caf_token_t token, size_t offset, int image_index,
 /* SYNC IMAGES. Note: SYNC IMAGES(*) is passed as count == -1 while
    SYNC IMAGES([]) has count == 0. Note further that SYNC IMAGES(*)
    is not equivalent to SYNC ALL. */
-/* void */
-/* PREFIX(sync_images) (int count, int images[], int *stat, char *errmsg, */
-/* 		     int errmsg_len) */
-/* { */
-/*   int ierr,i=0; */
-/*   if (count == 0 || (count == 1 && images[0] == caf_this_image)) */
-/*     { */
-/*       if (stat) */
-/* 	*stat = 0; */
-/*       return; */
-/*     } */
+void
+PREFIX(sync_images) (int count, int images[], int *stat, char *errmsg,
+		     int errmsg_len)
+{
+  int ierr, i=0, val=0;
 
-/* #ifdef GFC_CAF_CHECK */
-/*   { */
-/*     for (i = 0; i < count; i++) */
-/*       if (images[i] < 1 || images[i] > caf_num_images) */
-/* 	{ */
-/* 	  fprintf (stderr, "COARRAY ERROR: Invalid image index %d to SYNC " */
-/* 		   "IMAGES", images[i]); */
-/* 	  error_stop (1); */
-/* 	} */
-/*   } */
-/* #endif */
+  MPI_Status s;
 
-/*   if (unlikely (caf_is_finalized)) */
-/*     ierr = STAT_STOPPED_IMAGE; */
-/*   else */
-/*     { */
-/*       if(count == -1) */
-/* 	insOrders(images_full,caf_num_images-1); */
-/*       else */
-/* 	insOrders(images, count); */
+  if (count == 0 || (count == 1 && images[0] == caf_this_image))
+    {
+      if (stat)
+	*stat = 0;
+      return;
+    }
 
-/*       GASNET_BLOCKUNTIL(freeToGo() == true); */
+#ifdef GFC_CAF_CHECK
+  {
+    for (i = 0; i < count; i++)
+      if (images[i] < 1 || images[i] > caf_num_images)
+	{
+	  fprintf (stderr, "COARRAY ERROR: Invalid image index %d to SYNC "
+		   "IMAGES", images[i]);
+	  error_stop (1);
+	}
+  }
+#endif
 
-/*       ierr = 0; */
-/*     } */
+  if (unlikely (caf_is_finalized))
+    ierr = STAT_STOPPED_IMAGE;
+  else
+    {
+       if(count == -1)
+	{
+	  for (i = 0; i < caf_num_images - 1; i++)
+	    orders[images_full[i]-1]++;
+	  count = caf_num_images-1;
+	  images = images_full;
+	}
+      else
+	{
+	  for (i = 0; i < count; i++)
+	    orders[images[i]-1]++;
+	}
 
-/*   if (stat) */
-/*     *stat = ierr; */
+       for(i = 0; i < count; i++)
+	   ierr = MPI_Irecv(&arrived[images[i]-1], 1, MPI_INT, images[i]-1, 0, MPI_COMM_WORLD, &handlers[images[i]-1]);
 
-/*   if (ierr) */
-/*     { */
-/*       char *msg; */
-/*       if (caf_is_finalized) */
-/* 	msg = "SYNC IMAGES failed - there are stopped images"; */
-/*       else */
-/* 	msg = "SYNC IMAGES failed"; */
+       for(i=0; i < count; i++)
+	 ierr = MPI_Send(&caf_this_image,1,MPI_INT,images[i]-1,0,MPI_COMM_WORLD);
 
-/*       if (errmsg_len > 0) */
-/* 	{ */
-/* 	  int len = ((int) strlen (msg) > errmsg_len) ? errmsg_len */
-/* 						      : (int) strlen (msg); */
-/* 	  memcpy (errmsg, msg, len); */
-/* 	  if (errmsg_len > len) */
-/* 	    memset (&errmsg[len], ' ', errmsg_len-len); */
-/* 	} */
-/*       else */
-/* 	caf_runtime_error (msg); */
-/*     } */
-/* } */
+       for(i=0; i < count; i++)
+	 ierr = MPI_Wait(&handlers[images[i]-1], &s);
+
+       memset(arrived,0,sizeof(int)*caf_num_images);
+
+    }
+
+  if (stat)
+    *stat = ierr;
+
+  if (ierr)
+    {
+      char *msg;
+      if (caf_is_finalized)
+	msg = "SYNC IMAGES failed - there are stopped images";
+      else
+	msg = "SYNC IMAGES failed";
+
+      if (errmsg_len > 0)
+	{
+	  int len = ((int) strlen (msg) > errmsg_len) ? errmsg_len
+						      : (int) strlen (msg);
+	  memcpy (errmsg, msg, len);
+	  if (errmsg_len > len)
+	    memset (&errmsg[len], ' ', errmsg_len-len);
+	}
+      else
+	caf_runtime_error (msg);
+    }
+}
 
 
 /* ERROR STOP the other images.  */
