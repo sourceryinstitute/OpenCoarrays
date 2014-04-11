@@ -505,7 +505,7 @@ void
 PREFIX(sync_images) (int count, int images[], int *stat, char *errmsg,
 		     int errmsg_len)
 {
-  int ierr, i=0, val=0;
+  int ierr = 0, i=0;
 
   MPI_Status s;
 
