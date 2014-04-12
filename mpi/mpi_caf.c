@@ -135,14 +135,6 @@ PREFIX(finalize) (void)
   caf_static_t *tmp_tot = caf_tot, *prev = caf_tot;
   MPI_Win *p;
 
-  /* if(tmp_tot->token == *token) */
-  /*   { */
-  /*     MPI_Win_free(p); */
-  /*     tmp_tot = prev->prev; */
-  /*     free(prev); */
-  /*     caf_tot = tmp_tot; */
-  /*   } */
-
   while(tmp_tot)
     {
       prev = tmp_tot->prev;
@@ -274,18 +266,10 @@ PREFIX(deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len)
 
   PREFIX(sync_all) (NULL, NULL, 0);
 
-  caf_static_t *tmp = caf_tot, *prev = caf_tot;
+  caf_static_t *tmp = caf_tot, *prev = caf_tot, *next=caf_tot;
   MPI_Win *p = *token;
 
-  if(tmp->token == *token)
-    {
-      MPI_Win_free(p);
-      tmp = prev->prev;
-      free(prev);
-      caf_tot = tmp;
-    }
-
-  while(tmp && tmp->prev != NULL)
+  while(tmp)
     {
       prev = tmp->prev;
       
@@ -293,11 +277,20 @@ PREFIX(deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len)
 	{
 	  p = *token;
 	  MPI_Win_free(p);
-	  tmp->prev = prev->prev;
-	  free(prev);
+	  
+	  if(prev)
+	    next->prev = prev->prev;
+	  else
+	    next->prev = NULL;
+	  
+	  if(tmp == caf_tot)
+	    caf_tot = prev;
+
+	  free(tmp);
 	  break;
 	}
-
+      
+      next = tmp;
       tmp = prev;
     }
   
