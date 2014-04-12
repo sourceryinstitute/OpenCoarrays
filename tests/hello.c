@@ -33,7 +33,7 @@ double stop_time(void)
 
 int main(int argc, char **argv)
 {
-  int info = 0, me,np,n=1,i;
+  int info = 0, me, n=1, i;
   double *a_d,*d;
   caf_token_t token;
   ptrdiff_t size;
@@ -55,16 +55,16 @@ int main(int argc, char **argv)
   _gfortran_caf_init (&argc, &argv);
 
   me = _gfortran_caf_this_image (1);
-  np = _gfortran_caf_num_images (1, 1);
+  /* np = _gfortran_caf_num_images (1, 1); */
 
   a_d = _gfortran_caf_register(size,CAF_REGTYPE_COARRAY_STATIC,&token,&info,errmsg,255);
   
   start_timer();
 
-  if(me==1)
+  if (me == 1)
     {
       d = (double *)calloc(n,sizeof(double));
-      for(int i=0;i<n;i++)
+      for (i = 0; i < n; i++)
 	d[i] = i;
       _gfortran_caf_send (token, 0, me+1, d, size, false);
     }
@@ -78,7 +78,7 @@ int main(int argc, char **argv)
 
   if(me==2)
     {
-      for(int i=0;i<n;i++)
+      for (i = 0; i < n; i++)
 	check = check&(a_d[i]==i ? true : false);
       printf("%s\n",check?"OK":"Fail");
     }

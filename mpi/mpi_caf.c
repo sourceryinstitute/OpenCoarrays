@@ -47,6 +47,10 @@ static int caf_this_image;
 static int caf_num_images;
 static int caf_is_finalized;
 
+#if MPI_VERSION >= 3
+  MPI_Info mpi_info_same_size;
+#endif
+
 /*Sync image part*/
 
 static int *orders;
@@ -112,6 +116,10 @@ PREFIX(init) (int *argc, char ***argv)
 
       handlers = malloc(caf_num_images * sizeof(MPI_Request));
 
+#if MPI_VERSION >= 3
+      MPI_Info_create (&mpi_info_same_size);
+      MPI_Info_set (&mpi_info_same_size, "same_size", "true");
+#endif
     }
 }
 
@@ -143,6 +151,9 @@ PREFIX(finalize) (void)
       free(tmp_tot);  
       tmp_tot = prev;
     }
+#if MPI_VERSION >= 3
+  MPI_Info_free (mpi_info_same_size);
+#endif
 
   MPI_Finalize();
 
@@ -181,11 +192,14 @@ PREFIX(register) (size_t size, caf_register_t type, caf_token_t *token,
 
   /* Token contains only a list of pointers.  */
 
-  *token = malloc(sizeof(MPI_Win));
+  *token = malloc (sizeof(MPI_Win));
 
-  MPI_Alloc_mem(size,MPI_INFO_NULL,&mem);
-
-  MPI_Win_create(mem,size,1,MPI_INFO_NULL,MPI_COMM_WORLD,*token);
+#if MPI_VERSION >= 3
+  MPI_Win_allocate(size, 1, mpi_info_same_size, MPI_COMM_WORLD,&mem, *token);
+#else
+  MPI_Alloc_mem(size, MPI_INFO_NULL, &mem);
+  MPI_Win_create(mem, size, 1, MPI_INFO_NULL, MPI_COMM_WORLD, *token);
+#endif
 
   MPI_Win *p = *token;
 
