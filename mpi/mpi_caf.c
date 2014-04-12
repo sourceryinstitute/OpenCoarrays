@@ -85,7 +85,7 @@ caf_runtime_error (const char *message, ...)
    GASNet initialization happened before. */
 
 void
-PREFIX(init) (int *argc, char ***argv)
+PREFIX (init) (int *argc, char ***argv)
 {
   if (caf_num_images == 0)
     {
@@ -127,7 +127,7 @@ PREFIX(init) (int *argc, char ***argv)
 /* Finalize coarray program.   */
 
 void
-PREFIX(finalize) (void)
+PREFIX (finalize) (void)
 {
 
   MPI_Barrier(MPI_COMM_WORLD);
@@ -162,14 +162,14 @@ PREFIX(finalize) (void)
 
 
 int
-PREFIX(this_image)(int distance __attribute__ ((unused)))
+PREFIX (this_image)(int distance __attribute__ ((unused)))
 {
   return caf_this_image;
 }
 
 
 int
-PREFIX(num_images)(int distance __attribute__ ((unused)),
+PREFIX (num_images)(int distance __attribute__ ((unused)),
                          int failed __attribute__ ((unused)))
 {
   return caf_num_images;
@@ -177,7 +177,7 @@ PREFIX(num_images)(int distance __attribute__ ((unused)),
 
 
 void *
-PREFIX(register) (size_t size, caf_register_t type, caf_token_t *token,
+PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
 		  int *stat, char *errmsg, int errmsg_len)
 {
   /* int ierr; */
@@ -188,7 +188,7 @@ PREFIX(register) (size_t size, caf_register_t type, caf_token_t *token,
 
   /* Start GASNET if not already started.  */
   if (caf_num_images == 0)
-    PREFIX(init) (NULL, NULL);
+    PREFIX (init) (NULL, NULL);
 
   /* Token contains only a list of pointers.  */
 
@@ -253,7 +253,7 @@ error:
 
 
 void
-PREFIX(deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len)
+PREFIX (deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len)
 {
   /* int ierr; */
 
@@ -278,7 +278,7 @@ PREFIX(deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len)
       caf_runtime_error (msg);
     }
 
-  PREFIX(sync_all) (NULL, NULL, 0);
+  PREFIX (sync_all) (NULL, NULL, 0);
 
   caf_static_t *tmp = caf_tot, *prev = caf_tot, *next=caf_tot;
   MPI_Win *p = *token;
@@ -320,7 +320,7 @@ PREFIX(deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len)
 
 
 void
-PREFIX(sync_all) (int *stat, char *errmsg, int errmsg_len)
+PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
 {
   int ierr=0;
 
@@ -378,15 +378,16 @@ PREFIX(sync_all) (int *stat, char *errmsg, int errmsg_len)
 /* asynchronous: Return before the data transfer has been complete  */
 
 void
-PREFIX(send) (caf_token_t token, size_t offset, int image_index, void *data,
-	      size_t size, bool async)
+PREFIX (send) (caf_token_t token, size_t offset, int image_index, void *data,
+	      size_t size, bool async  __attribute__ ((unused)))
 {
   int ierr = 0;
 
   MPI_Win *p = token;
 
-  if(async==false)
-    ierr = MPI_Put(data,size,MPI_BYTE,image_index-1,offset,size,MPI_BYTE,*p);
+  /* if(async==false) */
+    ierr = MPI_Put (data, size, MPI_BYTE, image_index-1, offset, size,
+		    MPI_BYTE, *p);
     //gasnet_put_bulk(image_index-1, tm[image_index-1]+offset, data, size);
   /* else */
   /*   ierr = ARMCI_NbPut(data,t.addr+offset,size,image_index-1,NULL); */
@@ -394,9 +395,139 @@ PREFIX(send) (caf_token_t token, size_t offset, int image_index, void *data,
     error_stop (ierr);
 }
 
+/* Send array data from src to dest on a remote image.  */
+
 void
-PREFIX(get) (caf_token_t token, size_t offset, int image_index, void *data,
-	     size_t size, bool async  __attribute__ ((unused)))
+PREFIX (send_desc) (caf_token_t token, size_t offset, int image_index,
+		    gfc_descriptor_t *dest, gfc_descriptor_t *src,
+		    bool async  __attribute__ ((unused)))
+{
+  int ierr = 0;
+  size_t i, size;
+  int j;
+  int rank = GFC_DESCRIPTOR_RANK (dest);
+  MPI_Win *p = token;
+
+  size = 1;
+  for (j = 0; j < rank; j++)
+    {
+      ptrdiff_t dimextent = dest->dim[j]._ubound - dest->dim[j].lower_bound + 1;
+      if (dimextent < 0)
+	dimextent = 0;
+      size *= dimextent;
+    }
+
+  if (size == 0)
+    return;
+
+  if (PREFIX (is_contiguous) (dest) && PREFIX (is_contiguous) (src))
+    {
+      ierr = MPI_Put (src->base_addr, GFC_DESCRIPTOR_SIZE (dest)*size, MPI_BYTE,
+		      image_index-1, offset, GFC_DESCRIPTOR_SIZE (dest)*size,
+		      MPI_BYTE, *p);
+      if (ierr != 0)
+	error_stop (ierr);
+      return;
+    }
+
+  for (i = 0; i < size; i++)
+    {
+      ptrdiff_t array_offset_dst = 0;
+      ptrdiff_t stride = 1;
+      ptrdiff_t extent = 1;
+      for (j = 0; j < rank-1; j++)
+	{
+	  array_offset_dst += ((i / (extent*stride))
+			       % (dest->dim[j]._ubound
+				  - dest->dim[j].lower_bound + 1))
+			      * dest->dim[j]._stride;
+	  extent = (dest->dim[j]._ubound - dest->dim[j].lower_bound + 1);
+          stride = dest->dim[j]._stride;
+	}
+      array_offset_dst += (i / extent) * dest->dim[rank-1]._stride;
+
+      ptrdiff_t array_offset_sr = 0;
+      stride = 1;
+      extent = 1;
+      for (j = 0; j < GFC_DESCRIPTOR_RANK (src)-1; j++)
+	{
+	  array_offset_sr += ((i / (extent*stride))
+			   % (src->dim[j]._ubound
+			      - src->dim[j].lower_bound + 1))
+			  * src->dim[j]._stride;
+	  extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1);
+          stride = src->dim[j]._stride;
+	}
+      array_offset_sr += (i / extent) * dest->dim[rank-1]._stride;
+
+      ptrdiff_t dst_offset = offset + array_offset_dst*GFC_DESCRIPTOR_SIZE (dest);
+      void *sr = (void *)((char *) src->base_addr
+			  + array_offset_sr*GFC_DESCRIPTOR_SIZE (src));
+      ierr = MPI_Put (sr, GFC_DESCRIPTOR_SIZE (dest), MPI_BYTE, image_index-1,
+		      dst_offset, GFC_DESCRIPTOR_SIZE (dest), MPI_BYTE, *p);
+      if (ierr != 0)
+	{
+	  error_stop (ierr);
+	  return;
+	}
+    }
+}
+
+
+/* Send scalar data from src to array dest on a remote image.  */
+
+void
+PREFIX (send_desc_scalar) (caf_token_t token, size_t offset, int image_index,
+			   gfc_descriptor_t *dest, void *buffer,
+			   bool async  __attribute__ ((unused)))
+{
+  int ierr = 0;
+  size_t i, size;
+  int j;
+  int rank = GFC_DESCRIPTOR_RANK (dest);
+  MPI_Win *p = token;
+
+  size = 1;
+  for (j = 0; j < rank; j++)
+    {
+      ptrdiff_t dimextent = dest->dim[j]._ubound - dest->dim[j].lower_bound + 1;
+      if (dimextent < 0)
+	dimextent = 0;
+      size *= dimextent;
+    }
+
+  for (i = 0; i < size; i++)
+    {
+      ptrdiff_t array_offset = 0;
+      ptrdiff_t stride = 1;
+      ptrdiff_t extent = 1;
+      for (j = 0; j < rank-1; j++)
+	{
+	  array_offset += ((i / (extent*stride))
+			   % (dest->dim[j]._ubound
+			      - dest->dim[j].lower_bound + 1))
+			  * dest->dim[j]._stride;
+	  extent = (dest->dim[j]._ubound - dest->dim[j].lower_bound + 1);
+          stride = dest->dim[j]._stride;
+	}
+      array_offset += (i / extent) * dest->dim[rank-1]._stride;
+      ptrdiff_t dst_offset = offset + array_offset*GFC_DESCRIPTOR_SIZE (dest);
+      __builtin_printf("OFFSET: %ld\n", dst_offset);
+      ierr = MPI_Put (buffer, GFC_DESCRIPTOR_SIZE (dest), MPI_BYTE, image_index-1,
+		      dst_offset, GFC_DESCRIPTOR_SIZE (dest), MPI_BYTE, *p);
+      if (ierr != 0)
+	{
+	  error_stop (ierr);
+	  return;
+	}
+    }
+}
+
+
+
+void
+PREFIX (get) (caf_token_t token, size_t offset, int image_index, void *data,
+	      size_t size, bool async  __attribute__ ((unused)))
 {
   int ierr = 0;
   MPI_Win *p = token;
@@ -440,7 +571,7 @@ PREFIX (get_desc) (caf_token_t token, size_t offset, int image_index,
 
   if (size == 0)
     return;
-#if 0
+
   if (PREFIX (is_contiguous) (dest) && PREFIX (is_contiguous) (src))
     {
       /* FIXME: Handle image_index == this_image().  */
@@ -456,7 +587,6 @@ PREFIX (get_desc) (caf_token_t token, size_t offset, int image_index,
 	error_stop (ierr);
       return;
     }
-#endif
 
   MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
   for (i = 0; i < size; i++)
@@ -509,7 +639,7 @@ PREFIX (get_desc) (caf_token_t token, size_t offset, int image_index,
    SYNC IMAGES([]) has count == 0. Note further that SYNC IMAGES(*)
    is not equivalent to SYNC ALL. */
 void
-PREFIX(sync_images) (int count, int images[], int *stat, char *errmsg,
+PREFIX (sync_images) (int count, int images[], int *stat, char *errmsg,
 		     int errmsg_len)
 {
   int ierr = 0, i=0;
@@ -607,7 +737,7 @@ error_stop (int error)
 /* ERROR STOP function for string arguments.  */
 
 void
-PREFIX(error_stop_str) (const char *string, int32_t len)
+PREFIX (error_stop_str) (const char *string, int32_t len)
 {
   fputs ("ERROR STOP ", stderr);
   while (len--)
@@ -621,7 +751,7 @@ PREFIX(error_stop_str) (const char *string, int32_t len)
 /* ERROR STOP function for numerical arguments.  */
 
 void
-PREFIX(error_stop) (int32_t error)
+PREFIX (error_stop) (int32_t error)
 {
   fprintf (stderr, "ERROR STOP %d\n", error);
   error_stop (error);
