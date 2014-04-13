@@ -328,20 +328,19 @@ PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
     ierr = STAT_STOPPED_IMAGE;
   else
     {
-      caf_static_t *tmp = caf_tot, *next = caf_tot;
-
-      MPI_Win *p = tmp->token;
-
-      MPI_Win_fence(0,*p);
-
-      while(tmp && tmp->prev != NULL)
+      MPI_Win *p;
+      caf_static_t *tmp, *next;
+      for (tmp = caf_tot; tmp; )
 	{
-	  next = tmp;
-	  tmp=tmp->prev;
-	  p = next->token;
-	  MPI_Win_fence(0,*p);
+	  next = tmp->prev;
+	  p = tmp->token;
+#if MPI_VERSION >= 3
+	  MPI_Win_flush_all (0, *p);
+#else
+	  MPI_Win_fence (0, *p);
+#endif
+          tmp = next;
 	}
-
       MPI_Barrier(MPI_COMM_WORLD);
       ierr = 0;
     }
@@ -434,6 +433,7 @@ PREFIX (send_desc) (caf_token_t token, size_t offset, int image_index,
       return;
     }
 
+  MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
   for (i = 0; i < size; i++)
     {
       ptrdiff_t array_offset_dst = 0;
@@ -467,16 +467,15 @@ PREFIX (send_desc) (caf_token_t token, size_t offset, int image_index,
       ptrdiff_t dst_offset = offset + array_offset_dst*GFC_DESCRIPTOR_SIZE (dest);
       void *sr = (void *)((char *) src->base_addr
 			  + array_offset_sr*GFC_DESCRIPTOR_SIZE (src));
-      MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
       ierr = MPI_Put (sr, GFC_DESCRIPTOR_SIZE (dest), MPI_BYTE, image_index-1,
 		      dst_offset, GFC_DESCRIPTOR_SIZE (dest), MPI_BYTE, *p);
-      MPI_Win_unlock (image_index-1, *p);
       if (ierr != 0)
 	{
 	  error_stop (ierr);
 	  return;
 	}
     }
+  MPI_Win_unlock (image_index-1, *p);
 }
 
 
@@ -502,6 +501,7 @@ PREFIX (send_desc_scalar) (caf_token_t token, size_t offset, int image_index,
       size *= dimextent;
     }
 
+      MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
   for (i = 0; i < size; i++)
     {
       ptrdiff_t array_offset = 0;
@@ -518,17 +518,15 @@ PREFIX (send_desc_scalar) (caf_token_t token, size_t offset, int image_index,
 	}
       array_offset += (i / extent) * dest->dim[rank-1]._stride;
       ptrdiff_t dst_offset = offset + array_offset*GFC_DESCRIPTOR_SIZE (dest);
-      __builtin_printf("OFFSET: %ld\n", dst_offset);
-      MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
       ierr = MPI_Put (buffer, GFC_DESCRIPTOR_SIZE (dest), MPI_BYTE, image_index-1,
 		      dst_offset, GFC_DESCRIPTOR_SIZE (dest), MPI_BYTE, *p);
-      MPI_Win_unlock (image_index-1, *p);
       if (ierr != 0)
 	{
 	  error_stop (ierr);
 	  return;
 	}
     }
+      MPI_Win_unlock (image_index-1, *p);
 }
 
 
@@ -543,7 +541,7 @@ PREFIX (get) (caf_token_t token, size_t offset, int image_index, void *data,
   /* FIXME: Handle image_index == this_image().  */
 /*  if (async == false) */
     {
-      MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
+      MPI_Win_lock (MPI_LOCK_SHARED, image_index-1, 0, *p);
       ierr = MPI_Get (data, size, MPI_BYTE, image_index-1, offset, size, MPI_BYTE, *p);
       MPI_Win_unlock (image_index-1, *p);
     }
@@ -585,7 +583,7 @@ PREFIX (get_desc) (caf_token_t token, size_t offset, int image_index,
       /* FIXME: Handle image_index == this_image().  */
       /*  if (async == false) */
 	{
-	  MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
+	  MPI_Win_lock (MPI_LOCK_SHARED, image_index-1, 0, *p);
 	  ierr = MPI_Get (dest->base_addr, GFC_DESCRIPTOR_SIZE (dest)*size,
 			  MPI_BYTE, image_index-1, offset,
 			  GFC_DESCRIPTOR_SIZE (dest)*size, MPI_BYTE, *p);
@@ -596,7 +594,7 @@ PREFIX (get_desc) (caf_token_t token, size_t offset, int image_index,
       return;
     }
 
-  MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
+  MPI_Win_lock (MPI_LOCK_SHARED, image_index-1, 0, *p);
   for (i = 0; i < size; i++)
     {
       ptrdiff_t array_offset_dst = 0;
