@@ -386,8 +386,10 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index, void *data,
   MPI_Win *p = token;
 
   /* if(async==false) */
+    MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
     ierr = MPI_Put (data, size, MPI_BYTE, image_index-1, offset, size,
 		    MPI_BYTE, *p);
+    MPI_Win_unlock (image_index-1, *p);
     //gasnet_put_bulk(image_index-1, tm[image_index-1]+offset, data, size);
   /* else */
   /*   ierr = ARMCI_NbPut(data,t.addr+offset,size,image_index-1,NULL); */
@@ -422,9 +424,11 @@ PREFIX (send_desc) (caf_token_t token, size_t offset, int image_index,
 
   if (PREFIX (is_contiguous) (dest) && PREFIX (is_contiguous) (src))
     {
+      MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
       ierr = MPI_Put (src->base_addr, GFC_DESCRIPTOR_SIZE (dest)*size, MPI_BYTE,
 		      image_index-1, offset, GFC_DESCRIPTOR_SIZE (dest)*size,
 		      MPI_BYTE, *p);
+      MPI_Win_unlock (image_index-1, *p);
       if (ierr != 0)
 	error_stop (ierr);
       return;
@@ -463,8 +467,10 @@ PREFIX (send_desc) (caf_token_t token, size_t offset, int image_index,
       ptrdiff_t dst_offset = offset + array_offset_dst*GFC_DESCRIPTOR_SIZE (dest);
       void *sr = (void *)((char *) src->base_addr
 			  + array_offset_sr*GFC_DESCRIPTOR_SIZE (src));
+      MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
       ierr = MPI_Put (sr, GFC_DESCRIPTOR_SIZE (dest), MPI_BYTE, image_index-1,
 		      dst_offset, GFC_DESCRIPTOR_SIZE (dest), MPI_BYTE, *p);
+      MPI_Win_unlock (image_index-1, *p);
       if (ierr != 0)
 	{
 	  error_stop (ierr);
@@ -513,8 +519,10 @@ PREFIX (send_desc_scalar) (caf_token_t token, size_t offset, int image_index,
       array_offset += (i / extent) * dest->dim[rank-1]._stride;
       ptrdiff_t dst_offset = offset + array_offset*GFC_DESCRIPTOR_SIZE (dest);
       __builtin_printf("OFFSET: %ld\n", dst_offset);
+      MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
       ierr = MPI_Put (buffer, GFC_DESCRIPTOR_SIZE (dest), MPI_BYTE, image_index-1,
 		      dst_offset, GFC_DESCRIPTOR_SIZE (dest), MPI_BYTE, *p);
+      MPI_Win_unlock (image_index-1, *p);
       if (ierr != 0)
 	{
 	  error_stop (ierr);
