@@ -118,7 +118,7 @@ PREFIX (init) (int *argc, char ***argv)
 
 #if MPI_VERSION >= 3
       MPI_Info_create (&mpi_info_same_size);
-      MPI_Info_set (&mpi_info_same_size, "same_size", "true");
+      MPI_Info_set (mpi_info_same_size, "same_size", "true");
 #endif
     }
 }
@@ -152,7 +152,7 @@ PREFIX (finalize) (void)
       tmp_tot = prev;
     }
 #if MPI_VERSION >= 3
-  MPI_Info_free (mpi_info_same_size);
+  MPI_Info_free (&mpi_info_same_size);
 #endif
 
   MPI_Finalize();
@@ -335,7 +335,7 @@ PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
 	  next = tmp->prev;
 	  p = tmp->token;
 #if MPI_VERSION >= 3
-	  MPI_Win_flush_all (0, *p);
+	  MPI_Win_flush_all (*p);
 #else
 	  MPI_Win_fence (0, *p);
 #endif
