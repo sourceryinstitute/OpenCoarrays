@@ -385,7 +385,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index, void *data,
   MPI_Win *p = token;
 
   /* if(async==false) */
-    MPI_Win_lock (MPI_LOCK_SHARED, image_index-1, 0, *p);
+    MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
     ierr = MPI_Put (data, size, MPI_BYTE, image_index-1, offset, size,
 		    MPI_BYTE, *p);
     MPI_Win_unlock (image_index-1, *p);
@@ -423,7 +423,7 @@ PREFIX (send_desc) (caf_token_t token, size_t offset, int image_index,
 
   if (PREFIX (is_contiguous) (dest) && PREFIX (is_contiguous) (src))
     {
-      MPI_Win_lock (MPI_LOCK_SHARED, image_index-1, 0, *p);
+      MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
       ierr = MPI_Put (src->base_addr, GFC_DESCRIPTOR_SIZE (dest)*size, MPI_BYTE,
 		      image_index-1, offset, GFC_DESCRIPTOR_SIZE (dest)*size,
 		      MPI_BYTE, *p);
@@ -433,7 +433,7 @@ PREFIX (send_desc) (caf_token_t token, size_t offset, int image_index,
       return;
     }
 
-  MPI_Win_lock (MPI_LOCK_SHARED, image_index-1, 0, *p);
+  MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
   for (i = 0; i < size; i++)
     {
       ptrdiff_t array_offset_dst = 0;
@@ -501,7 +501,7 @@ PREFIX (send_desc_scalar) (caf_token_t token, size_t offset, int image_index,
       size *= dimextent;
     }
 
-  MPI_Win_lock (MPI_LOCK_SHARED, image_index-1, 0, *p);
+  MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
   for (i = 0; i < size; i++)
     {
       ptrdiff_t array_offset = 0;
