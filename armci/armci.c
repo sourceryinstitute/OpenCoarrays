@@ -157,7 +157,7 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
 
   /* Start ARMCI if not already started.  */
   if (caf_num_images == 0)
-    PREFIX(init) (NULL, NULL);
+    PREFIX (init) (NULL, NULL);
 
   *token = malloc (sizeof (armci_token_t));
 
@@ -324,7 +324,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index, void *data,
 
   if (image_index == caf_this_image)
     {
-       void *dest = (void *) ((char *) TOKEN (token) + offset);
+       void *dest = (void *) ((char *) TOKEN (token)[image_index-1] + offset);
        memmove (dest, data, size);
        return;
     }
@@ -494,13 +494,6 @@ PREFIX (get) (caf_token_t token, size_t offset, int image_index, void *data,
 
   if (unlikely (size == 0))
     return;  /* Zero-sized array.  */
-
-  if (image_index == caf_this_image)
-    {
-      void *src = (void *) ((char *) TOKEN(token) + offset);
-      memmove (data, src, size);
-      return;
-    }
 
   if (image_index == caf_this_image)
     memmove (data, TOKEN (token)[image_index-1] + offset, size);
