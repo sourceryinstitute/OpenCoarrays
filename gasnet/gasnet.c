@@ -34,6 +34,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 #include <alloca.h>
 
 
+#ifndef MALLOC_ALIGNMENT
+#  define MALLOC_ALIGNMENT   (2 *sizeof(size_t) < __alignof__ (long double)   \
+                              ? __alignof__ (long double) : 2*sizeof(size_t))
+#endif
+
 /* Define GFC_CAF_CHECK to enable run-time checking.  */
 /* #define GFC_CAF_CHECK  1  */
 
@@ -327,6 +332,9 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
   }
 
   r_pointer += size;
+  size_t align = r_pointer % MALLOC_ALIGNMENT;
+  if (align)
+    r_pointer += MALLOC_ALIGNMENT - align;
 
   if (type == CAF_REGTYPE_COARRAY_STATIC)
     {
