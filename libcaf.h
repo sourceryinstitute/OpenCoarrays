@@ -136,6 +136,13 @@ void PREFIX(send_desc) (caf_token_t, size_t, int, gfc_descriptor_t*,
 void PREFIX(send_desc_scalar) (caf_token_t, size_t, int, gfc_descriptor_t*,
 			       void*, bool);
 
+void PREFIX (co_max) (gfc_descriptor_t *, gfc_descriptor_t *, int, int *,
+		      char *, int);
+void PREFIX (co_min) (gfc_descriptor_t *, gfc_descriptor_t *, int, int *,
+		      char *, int);
+void PREFIX (co_sum) (gfc_descriptor_t *, gfc_descriptor_t *, int, int *,
+		      char *, int);
+
 void PREFIX(sync_all) (int *, char *, int);
 void PREFIX(sync_images) (int, int[], int *, char *, int);
 
