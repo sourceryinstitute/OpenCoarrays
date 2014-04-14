@@ -315,8 +315,6 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
   /* New variable registration.  */
 
   /* Token contains only a list of pointers.  */
-  *token = malloc (sizeof (void **));
-
   *token = malloc (caf_num_images * sizeof (void *));
 
   for(i = 0; i < caf_num_images; i++)
@@ -328,7 +326,7 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
     t[i] = (void *) tm;
   }
 
-  r_pointer += size + 1;
+  r_pointer += size;
 
   if (type == CAF_REGTYPE_COARRAY_STATIC)
     {
