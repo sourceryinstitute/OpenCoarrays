@@ -694,7 +694,7 @@ PREFIX (sync_images) (int count, int images[], int *stat, char *errmsg,
 	   ierr = MPI_Irecv(&arrived[images[i]-1], 1, MPI_INT, images[i]-1, 0, MPI_COMM_WORLD, &handlers[images[i]-1]);
 
        for(i=0; i < count; i++)
-	 ierr = MPI_Send(&caf_this_image,1,MPI_INT,images[i]-1,0,MPI_COMM_WORLD);
+	 ierr = MPI_Send(&caf_this_image, 1, MPI_INT, images[i]-1, 0, MPI_COMM_WORLD);
 
        for(i=0; i < count; i++)
 	 ierr = MPI_Wait(&handlers[images[i]-1], &s);
@@ -727,12 +727,12 @@ PREFIX (sync_images) (int count, int images[], int *stat, char *errmsg,
     }
 }
 
-MPI_Datatype
+static MPI_Datatype
 get_MPI_datatype (gfc_descriptor_t *desc)
 {
   /* FIXME: Better check whether the sizes are okay and supported;
      MPI3 adds more types, e.g. MPI_INTEGER1.  */
-  switch (GFC_DESCRIPTOR_TYPE (desc))
+  switch (GFC_DTYPE_TYPE_SIZE (desc))
     {
     case GFC_DTYPE_INTEGER_4:
       return MPI_INTEGER;
@@ -740,6 +740,10 @@ get_MPI_datatype (gfc_descriptor_t *desc)
       return MPI_REAL;
     case GFC_DTYPE_REAL_8:
       return MPI_DOUBLE_PRECISION;
+    case GFC_DTYPE_COMPLEX_4:
+      return MPI_COMPLEX;
+    case GFC_DTYPE_COMPLEX_8:
+      return MPI_DOUBLE_COMPLEX;
     }
   caf_runtime_error ("Unsupported data type in collective\n");
   return 0;
@@ -758,21 +762,6 @@ co_reduce_1 (MPI_Op op, gfc_descriptor_t *source,
 
   MPI_Datatype datatype = get_MPI_datatype (source);
 
-  if (rank == 0)
-    {
-      source2 = result ? MPI_IN_PLACE : source->base_addr;
-      result2 = result ? result->base_addr : source->base_addr;
-      if (result_image)
-	ierr = MPI_Reduce (source2, result2, GFC_DESCRIPTOR_SIZE (source),
-			   datatype, op, result_image-1, MPI_COMM_WORLD);
-      else
-	ierr = MPI_Allreduce (source2, result2, GFC_DESCRIPTOR_SIZE (source),
-			      datatype, op, MPI_COMM_WORLD);
-      if (ierr)
-	goto error;
-      return;
-    }
-
   size = 1;
   for (j = 0; j < rank; j++)
     {
@@ -781,6 +770,31 @@ co_reduce_1 (MPI_Op op, gfc_descriptor_t *source,
       if (dimextent < 0)
 	dimextent = 0;
       size *= dimextent;
+    }
+
+  if (rank == 0
+      || (PREFIX (is_contiguous) (source)
+	  && (!result || PREFIX (is_contiguous) (result))))
+    {
+      if (result_image == 0)
+	{
+	  source2 = result ? source->base_addr : MPI_IN_PLACE;
+	  result2 = result ? result->base_addr : source->base_addr;
+	  ierr = MPI_Allreduce (source2, result2, size, datatype, op,
+				MPI_COMM_WORLD);
+	}
+      else if (!result && result_image == caf_this_image)
+	ierr = MPI_Reduce (MPI_IN_PLACE, source->base_addr, size, datatype, op,
+			   result_image-1, MPI_COMM_WORLD);
+      else
+	{
+	  result2 = result ? result->base_addr : NULL;
+	  ierr = MPI_Reduce (source->base_addr, result2, size, datatype, op,
+			     result_image-1, MPI_COMM_WORLD);
+	}
+      if (ierr)
+	goto error;
+      return;
     }
 
   for (i = 0; i < size; i++)
@@ -800,6 +814,7 @@ co_reduce_1 (MPI_Op op, gfc_descriptor_t *source,
       array_offset_sr += (i / extent) * source->dim[rank-1]._stride;
       void *sr = (void *)((char *) source->base_addr
 			  + array_offset_sr*GFC_DESCRIPTOR_SIZE (source));
+      void *dst = NULL;
       if (result)
 	{
 	  ptrdiff_t array_offset_dst = 0;
@@ -815,23 +830,23 @@ co_reduce_1 (MPI_Op op, gfc_descriptor_t *source,
 	      stride = result->dim[j]._stride;
 	    }
 	  array_offset_dst += (i / extent) * result->dim[rank-1]._stride;
-	  void *dst = (void *)((char *) result->base_addr
-		      + array_offset_dst*GFC_DESCRIPTOR_SIZE (source));
-	  source2 = sr;
-	  result2 = dst;
-	}
-      else
-	{
-	  source2 = MPI_IN_PLACE;
-	  result2 = sr;
+	  dst = (void *)((char *) result->base_addr
+			 + array_offset_dst*GFC_DESCRIPTOR_SIZE (source));
 	}
 
-      if (result_image)
-	ierr = MPI_Reduce (source2, result2, GFC_DESCRIPTOR_SIZE (source),
-			   datatype, op, result_image-1, MPI_COMM_WORLD);
+      if (result_image == 0)
+	{
+	  source2 = result ? sr : MPI_IN_PLACE;
+	  result2 = result ? dst : sr;
+	  ierr = MPI_Allreduce (source2, result2, 1, datatype, op,
+				MPI_COMM_WORLD);
+	}
+      else if (!result && result_image == caf_this_image)
+	ierr = MPI_Reduce (MPI_IN_PLACE, sr, 1, datatype, op,
+			   result_image-1, MPI_COMM_WORLD);
       else
-	ierr = MPI_Allreduce (source2, result2, GFC_DESCRIPTOR_SIZE (source),
-			      datatype, op, MPI_COMM_WORLD);
+	ierr = MPI_Reduce (sr, dst, 1, datatype, op, result_image-1,
+			   MPI_COMM_WORLD);
       if (ierr)
 	goto error;
     }
