@@ -32,7 +32,7 @@ libcaf_gasnet.a: gasnet.o ../common/caf_auxiliary.o
 .c.o:
 	$(GASNET_CC) $(GASNET_CPPFLAGS) $(GASNET_CFLAGS) -I.. -c -o $@ $<
 
-gasnet.o: gasnet.c ../libcaf.h
+gasnet.o: gasnet.c ../libcaf.h ../libcaf-gfortran-descriptor.h
 
 ../common/caf_auxiliary.o:
 	$(MAKE) -C ../common

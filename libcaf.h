@@ -32,6 +32,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 #include <stddef.h>	/* For size_t.  */
 #include <stdbool.h>
 
+#include "libcaf-gfortran-descriptor.h"
+
 #ifndef __GNUC__
 #define __attribute__(x)
 #define likely(x)       (x)
@@ -68,37 +70,6 @@ typedef enum caf_register_t {
 caf_register_t;
 
 typedef void* caf_token_t;
-
-
-/* GNU Fortran's array descriptor.  Keep in sync with libgfortran.h.  To be
-   replaced by TS29113's ISO_Fortran_binding.h with CFI_cdesc_t.  */
-
-typedef struct descriptor_dimension
-{
-  ptrdiff_t _stride;
-  ptrdiff_t lower_bound;
-  ptrdiff_t _ubound;
-}
-descriptor_dimension;
-
-typedef struct gfc_descriptor_t {
-  void *base_addr;
-  size_t offset;
-  ptrdiff_t dtype;
-  descriptor_dimension dim[];
-} gfc_descriptor_t;
-
-
-#define GFC_MAX_DIMENSIONS 7
-
-#define GFC_DTYPE_RANK_MASK 0x07
-#define GFC_DTYPE_TYPE_SHIFT 3
-#define GFC_DTYPE_TYPE_MASK 0x38
-#define GFC_DTYPE_SIZE_SHIFT 6
-#define GFC_DESCRIPTOR_RANK(desc) ((desc)->dtype & GFC_DTYPE_RANK_MASK)
-#define GFC_DESCRIPTOR_TYPE(desc) (((desc)->dtype & GFC_DTYPE_TYPE_MASK) \
-                                   >> GFC_DTYPE_TYPE_SHIFT)
-#define GFC_DESCRIPTOR_SIZE(desc) ((desc)->dtype >> GFC_DTYPE_SIZE_SHIFT)
 
 
 /* Linked list of static coarrays registered.  */

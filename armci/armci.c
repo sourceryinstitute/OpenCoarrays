@@ -736,6 +736,7 @@ error_stop (int error)
 {
   /* FIXME: Shutdown the Fortran RTL to flush the buffer.  PR 43849.  */
   /* FIXME: Do some more effort than just ARMCI_Error.  */
+//  ARMCI_Error ("Aborting calculation", error);
   ARMCI_Error (NULL, error);
 
   /* Should be unreachable, but to make sure also call exit.  */

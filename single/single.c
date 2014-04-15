@@ -378,7 +378,8 @@ PREFIX (co_sum) (gfc_descriptor_t *source, gfc_descriptor_t *result,
 
   if (rank == 0)
     {
-      memmove (result, source, GFC_DESCRIPTOR_SIZE (source));
+      memmove (result->base_addr, source->base_addr,
+	       GFC_DESCRIPTOR_SIZE (source));
       return;
     }
 

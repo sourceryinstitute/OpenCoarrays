@@ -61,6 +61,8 @@ static int *arrived;
 caf_static_t *caf_static_list = NULL;
 caf_static_t *caf_tot = NULL;
 
+char err_buffer[MPI_MAX_ERROR_STRING];
+
 /* Keep in sync with single.c.  */
 static void
 caf_runtime_error (const char *message, ...)
@@ -725,6 +727,160 @@ PREFIX (sync_images) (int count, int images[], int *stat, char *errmsg,
     }
 }
 
+MPI_Datatype
+get_MPI_datatype (gfc_descriptor_t *desc)
+{
+  /* FIXME: Better check whether the sizes are okay and supported;
+     MPI3 adds more types, e.g. MPI_INTEGER1.  */
+  switch (GFC_DESCRIPTOR_TYPE (desc))
+    {
+    case GFC_DTYPE_INTEGER_4:
+      return MPI_INTEGER;
+    case GFC_DTYPE_REAL_4:
+      return MPI_REAL;
+    case GFC_DTYPE_REAL_8:
+      return MPI_DOUBLE_PRECISION;
+    }
+  caf_runtime_error ("Unsupported data type in collective\n");
+  return 0;
+}
+
+
+static void
+co_reduce_1 (MPI_Op op, gfc_descriptor_t *source,
+	     gfc_descriptor_t *result, int result_image, int *stat,
+	     char *errmsg, int errmsg_len)
+{
+  void *source2, *result2;
+  size_t i, size;
+  int j, ierr;
+  int rank = GFC_DESCRIPTOR_RANK (source);
+
+  MPI_Datatype datatype = get_MPI_datatype (source);
+
+  if (rank == 0)
+    {
+      source2 = result ? MPI_IN_PLACE : source->base_addr;
+      result2 = result ? result->base_addr : source->base_addr;
+      if (result_image)
+	ierr = MPI_Reduce (source2, result2, GFC_DESCRIPTOR_SIZE (source),
+			   datatype, op, result_image-1, MPI_COMM_WORLD);
+      else
+	ierr = MPI_Allreduce (source2, result2, GFC_DESCRIPTOR_SIZE (source),
+			      datatype, op, MPI_COMM_WORLD);
+      if (ierr)
+	goto error;
+      return;
+    }
+
+  size = 1;
+  for (j = 0; j < rank; j++)
+    {
+      ptrdiff_t dimextent = source->dim[j]._ubound
+			    - source->dim[j].lower_bound + 1;
+      if (dimextent < 0)
+	dimextent = 0;
+      size *= dimextent;
+    }
+
+  for (i = 0; i < size; i++)
+    {
+      ptrdiff_t array_offset_sr = 0;
+      ptrdiff_t stride = 1;
+      ptrdiff_t extent = 1;
+      for (j = 0; j < GFC_DESCRIPTOR_RANK (source)-1; j++)
+	{
+	  array_offset_sr += ((i / (extent*stride))
+			   % (source->dim[j]._ubound
+			      - source->dim[j].lower_bound + 1))
+			  * source->dim[j]._stride;
+	  extent = (source->dim[j]._ubound - source->dim[j].lower_bound + 1);
+          stride = source->dim[j]._stride;
+	}
+      array_offset_sr += (i / extent) * source->dim[rank-1]._stride;
+      void *sr = (void *)((char *) source->base_addr
+			  + array_offset_sr*GFC_DESCRIPTOR_SIZE (source));
+      if (result)
+	{
+	  ptrdiff_t array_offset_dst = 0;
+	  stride = 1;
+	  extent = 1;
+	  for (j = 0; j < rank-1; j++)
+	    {
+	      array_offset_dst += ((i / (extent*stride))
+				   % (result->dim[j]._ubound
+				   - result->dim[j].lower_bound + 1))
+				  * result->dim[j]._stride;
+	      extent = (result->dim[j]._ubound - result->dim[j].lower_bound + 1);
+	      stride = result->dim[j]._stride;
+	    }
+	  array_offset_dst += (i / extent) * result->dim[rank-1]._stride;
+	  void *dst = (void *)((char *) result->base_addr
+		      + array_offset_dst*GFC_DESCRIPTOR_SIZE (source));
+	  source2 = sr;
+	  result2 = dst;
+	}
+      else
+	{
+	  source2 = MPI_IN_PLACE;
+	  result2 = sr;
+	}
+
+      if (result_image)
+	ierr = MPI_Reduce (source2, result2, GFC_DESCRIPTOR_SIZE (source),
+			   datatype, op, result_image-1, MPI_COMM_WORLD);
+      else
+	ierr = MPI_Allreduce (source2, result2, GFC_DESCRIPTOR_SIZE (source),
+			      datatype, op, MPI_COMM_WORLD);
+      if (ierr)
+	goto error;
+    }
+  return;
+error:
+  /* FIXME: Put this in an extra function and use it elsewhere.  */
+  if (stat)
+    {
+      *stat = ierr;
+      if (!errmsg)
+	return;
+    }
+
+  int len = sizeof (err_buffer);
+  MPI_Error_string (ierr, err_buffer, &len);
+  if (!stat)
+    {
+      err_buffer[len == sizeof (err_buffer) ? len-1 : len] = '\0';
+      caf_runtime_error ("CO_SUM failed with %s\n", err_buffer);
+    }
+  memcpy (errmsg, err_buffer, errmsg_len > len ? len : errmsg_len);
+  if (errmsg_len > len)
+    memset (&errmsg[len], '\0', errmsg_len - len);
+}
+
+
+void
+PREFIX (co_sum) (gfc_descriptor_t *source, gfc_descriptor_t *result,
+                 int result_image, int *stat, char *errmsg, int errmsg_len)
+{
+  co_reduce_1 (MPI_SUM, source, result, result_image, stat, errmsg, errmsg_len);
+}
+
+
+void
+PREFIX (co_min) (gfc_descriptor_t *source, gfc_descriptor_t *result,
+                 int result_image, int *stat, char *errmsg, int errmsg_len)
+{
+  co_reduce_1 (MPI_MIN, source, result, result_image, stat, errmsg, errmsg_len);
+}
+
+
+void
+PREFIX (co_max) (gfc_descriptor_t *source, gfc_descriptor_t *result,
+                 int result_image, int *stat, char *errmsg, int errmsg_len)
+{
+  co_reduce_1 (MPI_MAX, source, result, result_image, stat, errmsg, errmsg_len);
+}
+
 
 /* ERROR STOP the other images.  */
 
@@ -733,7 +889,7 @@ error_stop (int error)
 {
   /* FIXME: Shutdown the Fortran RTL to flush the buffer.  PR 43849.  */
   /* FIXME: Do some more effort than just gasnet_exit().  */
-  MPI_Finalize();
+  MPI_Abort(MPI_COMM_WORLD, error);
 
   /* Should be unreachable, but to make sure also call exit.  */
   exit (error);

@@ -1,6 +1,6 @@
 include ../make.inc
 
-caf_auxiliary.o: caf_auxiliary.c ../libcaf.h
+caf_auxiliary.o: caf_auxiliary.c ../libcaf.h ../libcaf-gfortran-descriptor.h
 	$(CC) -I.. $(CFLAGS) -c $< -o $@
 
 clean:

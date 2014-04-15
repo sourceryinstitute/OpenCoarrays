@@ -7,7 +7,7 @@ libcaf_single.a: single.o ../common/caf_auxiliary.o
 .c.o:
 	$(CC) $(CFLAGS) $(SINGLE_CFLAGS) -I.. -c $< -o $@
 
-single.o: single.c ../libcaf.h
+single.o: single.c ../libcaf.h ../libcaf-gfortran-descriptor.h
 
 ../common/caf_auxiliary.o:
 	$(MAKE) -C ../common

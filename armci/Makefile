@@ -9,7 +9,7 @@ libcaf_armci.a: armci.o ../common/caf_auxiliary.o
 .c.o:
 	$(CC) $(CFLAGS) $(ARMCI_CFLAGS) -I.. -c $< -o $@
 
-armci.o: armci.c ../libcaf.h
+armci.o: armci.c ../libcaf.h ../libcaf-gfortran-descriptor.h
 
 ../common/caf_auxiliary.o:
 	$(MAKE) -C ../common

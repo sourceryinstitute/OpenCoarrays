@@ -9,7 +9,7 @@ libcaf_mpi.a: mpi_caf.o ../common/caf_auxiliary.o
 .c.o:
 	$(MPICC) $(CFLAGS) $(MPI_CFLAGS) -I.. -c $< -o $@
 
-mpi_caf.o: mpi_caf.c ../libcaf.h	
+mpi_caf.o: mpi_caf.c ../libcaf.h ../libcaf-gfortran-descriptor.h
 
 ../common/caf_auxiliary.o:
 	$(MAKE) -C ../common
