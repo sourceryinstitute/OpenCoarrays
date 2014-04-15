@@ -1,5 +1,8 @@
 PREFIX_NAME=_gfortran_caf_
+FC=gfortran
+MPFC=mpifort
 
+FFLAGS += -O
 CFLAGS += -DPREFIX_NAME=$(PREFIX_NAME) -g -Wall -O2
 SINGLE_CFLAGS +=
 
