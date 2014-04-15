@@ -31,6 +31,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 #include <stdarg.h>	/* For variadic arguments.  */
 #include <sched.h>	/* For sched_yield.  */
 #include <message.h>    /* ARMCI and armci_msg_*.  */
+#include <complex.h>
 
 #include "libcaf.h"
 
@@ -727,6 +728,232 @@ PREFIX (sync_images) (int count, int images[], int *stat, char *errmsg,
 	caf_runtime_error (msg);
     }
 }
+
+#if 0
+
+/* FIXME: The following needs to be fixed - in particular for result_image > 0;
+   It is unclear what's the difference between armci_msg_igop and
+   armci_msg_reduce; in particular, how to state that the result is only saved
+   on a certain image?  */
+static void
+co_reduce_2 (char *op, int result_image, gfc_descriptor_t *source,
+             gfc_descriptor_t *result, void *sr, void *dst,
+	     size_t size)
+{
+  void *arg;
+  if (result && GFC_DESCRIPTOR_TYPE (source) != BT_COMPLEX)
+    memmove (dst, sr, GFC_DESCRIPTOR_SIZE (source)*size);
+  else
+    arg = sr;
+
+  if (result_image == 0)
+    switch (GFC_DESCRIPTOR_TYPE (source))
+      {
+      BT_INTEGER:
+	if (GFC_DESCRIPTOR_SIZE (source) == sizeof (int))
+	  armci_msg_igop (arg, size, op);
+	else if (GFC_DESCRIPTOR_SIZE (source) == sizeof (long))
+	  armci_msg_lgop (arg, size, op);
+	else if (GFC_DESCRIPTOR_SIZE (source) == sizeof (long long))
+	  armci_msg_llgop (arg, size, op);
+        else
+	  goto error;
+	break;
+      BT_REAL:
+	if (GFC_DESCRIPTOR_SIZE (source) == sizeof (float))
+	  armci_msg_fgop (arg, size, op);
+	else if (GFC_DESCRIPTOR_SIZE (source) == sizeof (double))
+	  armci_msg_dgop (arg, size, op);
+        else
+	  goto error;
+	break;
+      BT_COMPLEX:
+	if (GFC_DESCRIPTOR_SIZE (source) == sizeof (float) && size == 1)
+	  {
+	    float re = __real__ *(_Complex float*) sr;
+	    float im = __imag__ *(_Complex float*) sr;
+	    armci_msg_fgop (&re, 1, op);
+	    armci_msg_fgop (&im, 1, op);
+	    if (result)
+	      *(_Complex float*) dst = re + im * _Complex_I;
+	    else
+	      *(_Complex float*) sr = re + im * _Complex_I;
+	  }
+	else if (GFC_DESCRIPTOR_SIZE (source) == sizeof (double) && size == 1)
+       	  {
+	    double re = __real__ *(_Complex double*) sr;
+	    double im = __imag__ *(_Complex double*) sr;
+	    armci_msg_dgop (&re, 1, op);
+	    armci_msg_dgop (&im, 1, op);
+	    if (result)
+	      *(_Complex double*) dst = re + im * _Complex_I;
+	    else
+	      *(_Complex double*) sr = re + im * _Complex_I;
+	  }
+	else
+	  goto error;
+	break;
+      default:
+	goto error;
+      }
+  else 
+    switch (GFC_DESCRIPTOR_TYPE (source))
+      {
+      BT_INTEGER:
+	if (GFC_DESCRIPTOR_SIZE (source) == sizeof (int))
+	  armci_msg_reduce(arg, size, op, ARMCI_INT, result_image-1);
+	else if (GFC_DESCRIPTOR_SIZE (source) == sizeof (long))
+	  armci_msg_reduce(arg, size, op, ARMCI_LONG, result_image-1);
+	else if (GFC_DESCRIPTOR_SIZE (source) == sizeof (long long))
+	  armci_msg_reduce(arg, size, op, ARMCI_LONG_LONG, result_image-1);
+        else
+	  goto error;
+	break;
+      BT_REAL:
+	if (GFC_DESCRIPTOR_SIZE (source) == sizeof (float))
+	  armci_msg_reduce(arg, size, op, ARMCI_FLOAT, result_image-1);
+	else if (GFC_DESCRIPTOR_SIZE (source) == sizeof (double))
+	  armci_msg_reduce(arg, size, op, ARMCI_DOUBLE, result_image-1);
+        else
+	  goto error;
+	break;
+      BT_COMPLEX:
+	if (GFC_DESCRIPTOR_SIZE (source) == sizeof (float) && size == 1)
+	  {
+	    double re = __real__ *(_Complex double*) sr;
+	    double im = __imag__ *(_Complex double*) sr;
+	    armci_msg_reduce(&re, 1, op, ARMCI_FLOAT, result_image-1);
+	    armci_msg_reduce(&im, 1, op, ARMCI_FLOAT, result_image-1);
+	    if (result)
+	      *(_Complex double*) dst = re + im * _Complex_I;
+	    else
+	      *(_Complex double*) sr = re + im * _Complex_I;
+	  }
+	else if (GFC_DESCRIPTOR_SIZE (source) == sizeof (double) && size == 1)
+  	  {
+	    double re = __real__ *(_Complex double*) sr;
+	    double im = __imag__ *(_Complex double*) sr;
+	    armci_msg_reduce(&re, 1, op, ARMCI_DOUBLE, result_image-1);
+	    armci_msg_reduce(&im, 1, op, ARMCI_DOUBLE, result_image-1);
+	    if (result)
+	      *(_Complex double*) dst = re + im * _Complex_I;
+	    else
+	      *(_Complex double*) sr = re + im * _Complex_I;
+	  }
+	else
+	  goto error;
+	break;
+      default:
+	goto error;
+      }
+  return;
+error:
+    /* FIXME: Handle the other data types as well.  */
+    caf_runtime_error ("Unsupported data type in collective\n");
+}
+
+
+static void
+co_reduce_1 (char *op, gfc_descriptor_t *source,
+	     gfc_descriptor_t *result, int result_image, int *stat,
+	     char *errmsg, int errmsg_len)
+{
+  void *source2, *result2;
+  size_t i, size;
+  int j, ierr;
+  int rank = GFC_DESCRIPTOR_RANK (source);
+
+  if (stat)
+    *stat = 0;
+
+  size = 1;
+  for (j = 0; j < rank; j++)
+    {
+      ptrdiff_t dimextent = source->dim[j]._ubound
+			    - source->dim[j].lower_bound + 1;
+      if (dimextent < 0)
+	dimextent = 0;
+      size *= dimextent;
+    }
+
+  if (size = 1
+      || (GFC_DESCRIPTOR_TYPE (source) != BT_COMPLEX
+	  && PREFIX (is_contiguous) (source)
+	  && (!result || PREFIX (is_contiguous) (result))))
+    {
+      source2 = source->base_addr;
+      result2 = result ? result->base_addr : NULL;
+      co_reduce_2 (op, result_image, source, result, source2, result2, size);
+      return;
+    }
+
+  for (i = 0; i < size; i++)
+    {
+      ptrdiff_t array_offset_sr = 0;
+      ptrdiff_t stride = 1;
+      ptrdiff_t extent = 1;
+      for (j = 0; j < GFC_DESCRIPTOR_RANK (source)-1; j++)
+	{
+	  array_offset_sr += ((i / (extent*stride))
+			   % (source->dim[j]._ubound
+			      - source->dim[j].lower_bound + 1))
+			  * source->dim[j]._stride;
+	  extent = (source->dim[j]._ubound - source->dim[j].lower_bound + 1);
+          stride = source->dim[j]._stride;
+	}
+      array_offset_sr += (i / extent) * source->dim[rank-1]._stride;
+      void *sr = (void *)((char *) source->base_addr
+			  + array_offset_sr*GFC_DESCRIPTOR_SIZE (source));
+      void *dst = NULL;
+      if (result)
+	{
+	  ptrdiff_t array_offset_dst = 0;
+	  stride = 1;
+	  extent = 1;
+	  for (j = 0; j < rank-1; j++)
+	    {
+	      array_offset_dst += ((i / (extent*stride))
+				   % (result->dim[j]._ubound
+				   - result->dim[j].lower_bound + 1))
+				  * result->dim[j]._stride;
+	      extent = (result->dim[j]._ubound - result->dim[j].lower_bound + 1);
+	      stride = result->dim[j]._stride;
+	    }
+	  array_offset_dst += (i / extent) * result->dim[rank-1]._stride;
+	  dst = (void *)((char *) result->base_addr
+			 + array_offset_dst*GFC_DESCRIPTOR_SIZE (source));
+	}
+
+      result2 = result ? dst : NULL;
+      co_reduce_2 (op, result_image, source, result, sr, result2, 1);
+    }
+  return;
+}
+
+
+void
+PREFIX (co_sum) (gfc_descriptor_t *source, gfc_descriptor_t *result,
+                 int result_image, int *stat, char *errmsg, int errmsg_len)
+{
+  co_reduce_1 ("+", source, result, result_image, stat, errmsg, errmsg_len);
+}
+
+
+void
+PREFIX (co_min) (gfc_descriptor_t *source, gfc_descriptor_t *result,
+                 int result_image, int *stat, char *errmsg, int errmsg_len)
+{
+  co_reduce_1 ("min", source, result, result_image, stat, errmsg, errmsg_len);
+}
+
+
+void
+PREFIX (co_max) (gfc_descriptor_t *source, gfc_descriptor_t *result,
+                 int result_image, int *stat, char *errmsg, int errmsg_len)
+{
+  co_reduce_1 ("max", source, result, result_image, stat, errmsg, errmsg_len);
+}
+#endif
 
 
 /* ERROR STOP the other images.  */
