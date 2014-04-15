@@ -1,0 +1,10 @@
+#!/bin/bash --login
+#PBS -l mppwidth=16
+#PBS -l walltime=00:01:00
+#PBS -l mppnppn=16
+#PBS -j oe
+# Change to the directory from which the job was submitted
+cd $PBS_O_WORKDIR
+# Set total number of processes 
+export FOR_COARRAY_NUM_IMAGES=16
+time ./burgers_caf
