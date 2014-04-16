@@ -727,6 +727,70 @@ PREFIX (sync_images) (int count, int images[], int *stat, char *errmsg,
     }
 }
 
+
+#define GEN_REDUCTION(name, datatype, operator) \
+void \
+name (datatype *invec, datatype *inoutvec, int *len, \
+	       MPI_Datatype *datatype __attribute__ ((unused))) \
+{ \
+  int i; \
+  for (i = 0; i < len; i++) \
+    operator; \
+}
+
+#ifndef MPI_INTEGER1
+GEN_REDUCTION (do_sum_int1, int8_t, inoutvec[i] += invec[i])
+GEN_REDUCTION (do_min_int1, int8_t,
+               inoutvec[i] = invec[i] >= inoutvec[i] ? inoutvec[i] : invec[i])
+GEN_REDUCTION (do_max_int1, int8_t,
+               inoutvec[i] = invec[i] <= inoutvec[i] ? inoutvec[i] : invec[i])
+#endif
+
+#ifndef MPI_INTEGER2
+GEN_REDUCTION (do_sum_int1, int16_t, inoutvec[i] += invec[i])
+GEN_REDUCTION (do_min_int1, int16_t,
+               inoutvec[i] = invec[i] >= inoutvec[i] ? inoutvec[i] : invec[i])
+GEN_REDUCTION (do_max_int1, int16_t,
+               inoutvec[i] = invec[i] <= inoutvec[i] ? inoutvec[i] : invec[i])
+#endif
+
+#if defined(MPI_INTEGER16) && defined(GFC_INTEGER_16)
+GEN_REDUCTION (do_sum_int1, GFC_INTEGER_16, inoutvec[i] += invec[i])
+GEN_REDUCTION (do_min_int1, GFC_INTEGER_16,
+               inoutvec[i] = invec[i] >= inoutvec[i] ? inoutvec[i] : invec[i])
+GEN_REDUCTION (do_max_int1, GFC_INTEGER_16,
+               inoutvec[i] = invec[i] <= inoutvec[i] ? inoutvec[i] : invec[i])
+#endif
+
+#if defined(GFC_DTYPE_REAL_10) \
+    || (!defined(GFC_DTYPE_REAL_10)  && defined(GFC_DTYPE_REAL_16))
+GEN_REDUCTION (do_sum_real10, long double, inoutvec[i] += invec[i])
+GEN_REDUCTION (do_min_real10, long double,
+               inoutvec[i] = invec[i] >= inoutvec[i] ? inoutvec[i] : invec[i])
+GEN_REDUCTION (do_max_real10, long double,
+               inoutvec[i] = invec[i] <= inoutvec[i] ? inoutvec[i] : invec[i])
+GEN_REDUCTION (do_sum_complex10, _Complex long double, inoutvec[i] += invec[i])
+GEN_REDUCTION (do_min_complex10, _Complex long double,
+               inoutvec[i] = invec[i] >= inoutvec[i] ? inoutvec[i] : invec[i])
+GEN_REDUCTION (do_max_complex10, _Complex long double,
+               inoutvec[i] = invec[i] <= inoutvec[i] ? inoutvec[i] : invec[i])
+#endif
+
+#if defined(GFC_DTYPE_REAL_10) && defined(GFC_DTYPE_REAL_16)
+GEN_REDUCTION (do_sum_real10, __float128, inoutvec[i] += invec[i])
+GEN_REDUCTION (do_min_real10, __float128,
+               inoutvec[i] = invec[i] >= inoutvec[i] ? inoutvec[i] : invec[i])
+GEN_REDUCTION (do_max_real10, __float128,
+               inoutvec[i] = invec[i] <= inoutvec[i] ? inoutvec[i] : invec[i])
+GEN_REDUCTION (do_sum_complex10, _Complex __float128, inoutvec[i] += invec[i])
+GEN_REDUCTION (do_mincomplexl10, _Complex __float128,
+               inoutvec[i] = invec[i] >= inoutvec[i] ? inoutvec[i] : invec[i])
+GEN_REDUCTION (do_max_complex10, _Complex __float128,
+               inoutvec[i] = invec[i] <= inoutvec[i] ? inoutvec[i] : invec[i])
+#endif
+#undef GEN_REDUCTION
+
+
 static MPI_Datatype
 get_MPI_datatype (gfc_descriptor_t *desc)
 {
@@ -734,12 +798,45 @@ get_MPI_datatype (gfc_descriptor_t *desc)
      MPI3 adds more types, e.g. MPI_INTEGER1.  */
   switch (GFC_DTYPE_TYPE_SIZE (desc))
     {
+#ifdef MPI_INTEGER1
+    case GFC_DTYPE_INTEGER_1:
+      return MPI_INTEGER1;
+#endif
+#ifdef MPI_INTEGER2
+    case GFC_DTYPE_INTEGER_2:
+      return MPI_INTEGER2;
+#endif
     case GFC_DTYPE_INTEGER_4:
+#ifdef MPI_INTEGER4
+      return MPI_INTEGER4;
+#else
       return MPI_INTEGER;
+#endif
+#ifdef MPI_INTEGER8
+    case GFC_DTYPE_INTEGER_8:
+      return MPI_INTEGER8;
+#endif
+#ifdef MPI_INTEGER16
+    case GFC_DTYPE_INTEGER_16:
+      return MPI_INTEGER16;
+#endif
+
     case GFC_DTYPE_REAL_4:
+#ifdef MPI_REAL4
+      return MPI_REAL4;
+#else
       return MPI_REAL;
+#endif
     case GFC_DTYPE_REAL_8:
+#ifdef MPI_REAL8
+      return MPI_REAL8;
+#else
       return MPI_DOUBLE_PRECISION;
+#endif
+
+/* Note that we cannot use REAL_16 as we do not know whether it matches REAL(10)
+   or REAL(16), which have both the same bitsize and only make use of less
+   bits.  */
     case GFC_DTYPE_COMPLEX_4:
       return MPI_COMPLEX;
     case GFC_DTYPE_COMPLEX_8:
