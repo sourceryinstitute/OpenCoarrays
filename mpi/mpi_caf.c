@@ -729,7 +729,7 @@ PREFIX (sync_images) (int count, int images[], int *stat, char *errmsg,
 
 
 #define GEN_REDUCTION(name, datatype, operator) \
-void \
+static void \
 name (datatype *invec, datatype *inoutvec, int *len, \
 	       MPI_Datatype *datatype __attribute__ ((unused))) \
 { \
