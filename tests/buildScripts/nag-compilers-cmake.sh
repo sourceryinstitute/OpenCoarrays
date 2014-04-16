@@ -1,0 +1,13 @@
+#!/bin/sh
+SOURCE_PATH=../src
+EXTRA_ARGS=$@
+
+rm -f CMakeCache.txt
+cmake \
+  -D CMAKE_BUILD_TYPE:STRING=DEBUG \
+  -D CMAKE_Fortran_COMPILER:FILEPATH=nagfor \
+  -D CMAKE_C_COMPILER:FILEPATH=gcc \
+  -D CMAKE_Fortran_FLAGS:STRING="-fpp -f2008 -C=all" \
+  -D CMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+$EXTRA_ARGS \
+$SOURCE_PATH

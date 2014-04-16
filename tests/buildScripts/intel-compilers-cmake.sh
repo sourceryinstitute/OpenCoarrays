@@ -1,0 +1,13 @@
+#!/bin/sh
+SOURCE_PATH=../src
+EXTRA_ARGS=$@
+
+rm -f CMakeCache.txt
+cmake \
+  -D CMAKE_BUILD_TYPE:STRING=DEBUG \
+  -D CMAKE_Fortran_COMPILER:FILEPATH=ifort \
+  -D CMAKE_C_COMPILER:FILEPATH=icc \
+  -D CMAKE_Fortran_FLAGS:STRING="-standard-semantics" \
+  -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
+$EXTRA_ARGS \
+$SOURCE_PATH

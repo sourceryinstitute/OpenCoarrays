@@ -1,5 +1,5 @@
-include_path=./include-files
-library_path=./library
+include_path=../include-files
+library_path=../library
 executable= burgers_static_caf
 #Cray compiler command
 cray=ftn -ew -h caf

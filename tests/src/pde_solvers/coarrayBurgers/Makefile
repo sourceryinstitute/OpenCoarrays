@@ -1,5 +1,5 @@
-library_root=./library/
-include_root=./include-files/
+library_root=../library/
+include_root=../include-files/
 executable=burgers_caf
 #Cray compiler command
 cray=ftn -ew -h caf
