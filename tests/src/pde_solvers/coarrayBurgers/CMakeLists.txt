@@ -1,6 +1,6 @@
 set(include_path  ${CMAKE_CURRENT_SOURCE_DIR}/../include-files/)
 set(library_path  ${CMAKE_CURRENT_SOURCE_DIR}/../library/)
-add_executable(burgers_caf 
+add_executable(burgers_caf
   main.F90 
   local_field.F90 
   global_field.F90 

@@ -10,7 +10,7 @@ intel=ifort -Bdynamic -coarray=shared -standard-semantics -O3 -coarray-num-image
 gnu=gfortran -fcoarray=lib
 #TAU compiler command
 tau=tau_f90.sh -Bdynamic -coarray=shared -standard-semantics -O3 -optCompInst 
-compile=$(gnu)
+compile=$(intel)
 
 OPTS=
 objects = local_field.o global_field.o kind_parameters.o co_object_interface.o object_interface.o ForTrilinos_assertion_utility.o ForTrilinos_error.o math_constants.o burgers.o

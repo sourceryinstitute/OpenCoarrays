@@ -6,7 +6,7 @@ intel=ifort -coarray=shared -standard-semantics -O3 -coarray-num-images=2
 #GNU compiler command
 gnu=gfortran -fcoarray=lib
 #Change the name in parenthesis to choose one of the above compilers:
-compile=$(gnu)
+compile=$(intel)
 
 objects = local_field.o global_field.o 
 

@@ -1,5 +1,5 @@
 add_executable(co_heat
-  main.F90 
-  global_field.F90 
-  local_field.F90 
+  main.f90 
+  global_field.f90 
+  local_field.f90 
 )

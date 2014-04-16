@@ -1,23 +1,22 @@
-include_path=./include-files
-library_path=./library
+include_path=../include-files
+library_path=../library
 executable= burgers_static_caf
+
 #Cray compiler command
 cray=ftn -ew -h caf
 #Intel compiler command
 intel=ifort -Bdynamic -coarray=shared -standard-semantics -O3 -coarray-num-images=4
-
-# TAU compiler command 
+#TAU compiler command 
 tau_intel=tauf90 -tau:serial,pdt  -Bdynamic -coarray=shared -standard-semantics -O3 -coarray-num-images=4 -DTAU=1
-
 #GNU compiler command
 gnu=gfortran -fcoarray=single
 #Intel Compiler on ACISS
 tau_aciss=tau_f90.sh -v -Bdynamic -coarray=shared -standard-semantics -O3
 #Cray Compiler on Hopper
 tau_hopper=tau_f90.sh -optCompInst -ew -h caf -g
+
+#Choose the compiler:
 compile=$(intel)
-compile=$(tau_intel)
-# Please uncomment the # to use TAU
 
 OPTS=
 objects = field.o periodic_2nd_order.o kind_parameters.o co_object_interface.o object_interface.o math_constants.o ForTrilinos_assertion_utility.o ForTrilinos_error.o

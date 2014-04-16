@@ -7,7 +7,7 @@ cmake \
   -D CMAKE_BUILD_TYPE:STRING=DEBUG \
   -D CMAKE_Fortran_COMPILER:FILEPATH=ifort \
   -D CMAKE_C_COMPILER:FILEPATH=icc \
-  -D CMAKE_Fortran_FLAGS:STRING="-standard-semantics" \
+  -D CMAKE_Fortran_FLAGS:STRING="-standard-semantics -coarray=shared -coarray-num-images=2 -O3" \
   -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
 $EXTRA_ARGS \
 $SOURCE_PATH
