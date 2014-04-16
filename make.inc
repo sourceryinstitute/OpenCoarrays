@@ -14,6 +14,6 @@ MPI_CFLAGS +=
 #MPICC =
 
 GASNET_CFLAGS +=
-GASNET_MAK=/opt/gasnet/openmpi/1.7.3/gnu/4.9-caf/include/mpi-conduit/mpi-par.mak
+GASNET_MAK=/opt/gasnet/openmpi/1.8.0/gnu/4.9-caf/include/mpi-conduit/mpi-par.mak
 include $(GASNET_MAK)
 GASNET_LDFLAGS +=$(GASNET_LIBS)

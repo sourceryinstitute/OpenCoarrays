@@ -1,6 +1,6 @@
 .SUFFIXES: .f90 .armci .mpi .gasnet
 
-TOP=../..
+TOP=../../..
 include $(TOP)/make.inc
 
 OBJS=test1Caf.o test2Caf.o send_array_test.o
