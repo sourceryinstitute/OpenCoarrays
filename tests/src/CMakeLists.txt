@@ -46,20 +46,20 @@ set_tests_properties(coarrayBurgersStaticMemoryTau PROPERTIES PASS_REGULAR_EXPRE
 add_test(coarrayHeatEquation pde_solvers/coarrayHeatSimplified/co_heat)
 set_tests_properties(coarrayHeatEquation PROPERTIES PASS_REGULAR_EXPRESSION "Test passed.")
 
-#add_test(test1Caf simple/test1Caf)
-#set_tests_properties(test1Caf PROPERTIES PASS_REGULAR_EXPRESSION "Test passed.")
+add_test(test1Caf simple/test1Caf)
+set_tests_properties(test1Caf PROPERTIES PASS_REGULAR_EXPRESSION "Test passed.")
 
-#add_test(test2Caf simple/test2Caf)
-#set_tests_properties(test2Caf PROPERTIES PASS_REGULAR_EXPRESSION "Test passed.")
+add_test(test2Caf simple/test2Caf)
+set_tests_properties(test2Caf PROPERTIES PASS_REGULAR_EXPRESSION "Test passed.")
 
-#add_test(hello simple/hello)
-#set_tests_properties(hello PROPERTIES PASS_REGULAR_EXPRESSION "Test passed.")
+add_test(hello simple/hello)
+set_tests_properties(hello PROPERTIES PASS_REGULAR_EXPRESSION "Test passed.")
 
-#add_test(send_array_test simple/send_array_test)
-#set_tests_properties(send_array_test PROPERTIES PASS_REGULAR_EXPRESSION "Test passed.")
+add_test(send_array_test simple/send_array_test)
+set_tests_properties(send_array_test PROPERTIES PASS_REGULAR_EXPRESSION "Test passed.")
 
-#add_test(syncimages simple/syncimages)
-#set_tests_properties(syncimages PROPERTIES PASS_REGULAR_EXPRESSION "Test passed.")
+add_test(syncimages simple/syncimages)
+set_tests_properties(syncimages PROPERTIES PASS_REGULAR_EXPRESSION "Test passed.")
 
-#add_test(syncimages2 simple/syncimages2)
-#set_tests_properties(syncimages2 PROPERTIES PASS_REGULAR_EXPRESSION "Test passed.")
+add_test(syncimages2 simple/syncimages2)
+set_tests_properties(syncimages2 PROPERTIES PASS_REGULAR_EXPRESSION "Test passed.")
