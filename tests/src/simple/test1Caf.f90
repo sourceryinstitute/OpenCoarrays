@@ -1,45 +1,36 @@
 program test1caf
   implicit none
-  integer, parameter :: n=3
-  real :: a(n)[*]=0.1e0,b(n)[*]=0.2e0
-!  real :: a(n)[*],b(n)[*]
-  integer :: i,j,me,np,left,right
+  integer, parameter :: num_local_elems=3,a_initial=1,b_initial=2
+  integer :: a(num_local_elems)[*]=a_initial,b(num_local_elems)[*]=b_initial
+  integer :: i,me,np,left,right
 
   me = this_image()
   np = num_images()
   
-  if(me == 1) then
-     left = np
-  else
-     left = me -1
-  endif
-
-  if(me == np) then
-     right = 1
-  else
-     right = me +1
-  endif
+  left  = merge(np,me-1,me==1)
+  right = merge(1,me+1,me==np)
  
-!  a = 0.1e0
-!  b = 0.2e0
-
-!  sync all
-
-  do i=1,n
-     if (mod(me,2).eq.0) then
-        a(i)[right] = a(i)[right]+me
-     else
-        b(i)[left] = b(i)[left]+me
-     endif
-  enddo
+  if (mod(me,2).eq.0) then
+     a(:)[right] = a(:)[right]+me
+  else
+     b(:)[left] = b(:)[left]+me
+  end if
 
   if(me==1) then
      write(*,*) me, a, b
   else
      sync images(me-1)
      write(*,*) me, a, b
-  endif
+  end if
 
   if(me < np) sync images(me+1)
+
+  if (mod(me,2).eq.0) then
+    if ( any(a(:)[right]/=a_initial+me)) error stop "Test failed."
+  else
+    if ( any(b(:)[left]/=b_initial+me)) error stop "Test failed."
+  end if
+  
+  if (me==1) print *,"Test passed."
 
 end program test1caf

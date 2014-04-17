@@ -3,7 +3,7 @@
 TOP=../../..
 include $(TOP)/make.inc
 
-OBJS=test1Caf.o test2Caf.o send_array_test.o
+OBJS=increment_my_neighbor.o add_myself_to_my_neighbor.o send_array_test.o
 EXES=$(OBJS:.o=.exe)
 
 
