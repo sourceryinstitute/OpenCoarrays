@@ -1,5 +1,5 @@
-library_root=../library/
-include_root=../include-files/
+library_root=./library/
+include_root=./include-files/
 executable=burgers_caf
 #Cray compiler command
 cray=ftn -ew -h caf
@@ -7,9 +7,11 @@ cray=ftn -ew -h caf
 intel=ifort -Bdynamic -coarray=shared -standard-semantics -O3 -coarray-num-images=2
 #intel=ifort -v -coarray=shared -coarray-config-file=configuration 
 #GNU compiler command
-gnu=gfortran -fcoarray=lib
+gnu=gfortran -fcoarray=single
 #TAU compiler command
-tau=tau_f90.sh -Bdynamic -coarray=shared -standard-semantics -O3 -optCompInst 
+#tau_intel=tauf90 -tau:serial,icpc,pdt  -Bdynamic -coarray=shared -standard-s    emantics -O3 -coarray-num-images=4 -DTAU=1
+tau_intel=tau_f90.sh -Bdynamic -coarray=shared -standard-semantics -O3 -optCompInst 
+tau_cray=tau_f90.sh -ew -h caf -optCompInst
 compile=$(intel)
 
 OPTS=
@@ -50,7 +52,7 @@ ForTrilinos_error.o: $(library_root)/ForTrilinos_error.F90 Makefile
 
 .PHONY : clean
 clean :
-	-rm -f  *.o *.mod $(executable) core fort.* compiler_capabilities.txt $(library_root)/compiler_capabilities.txt
+	-rm -f  *.o *.mod $(executable) core fort.* compiler_capabilities.txt $(library_root)/compiler_capabilities.txt profile* MULT* *.trc *.edf
 
 preprocessor_definitions: 
 ifeq ($(compile),$(gnu))
@@ -64,6 +66,16 @@ else
     ifeq ($(compile),$(cray))
 	cp $(include_root)/cray_capabilities.txt compiler_capabilities.txt
 	cp $(include_root)/cray_capabilities.txt $(library_root)/compiler_capabilities.txt
+  else
+    ifeq ($(compile),$(tau_cray))
+	cp $(include_root)/tau_cray_capabilities.txt compiler_capabilities.txt
+	cp $(include_root)/tau_cray_capabilities.txt $(library_root)/compiler_capabilities.txt
+  else
+    ifeq ($(compile),$(tau_intel))
+	cp $(include_root)/tau_intel_capabilities.txt compiler_capabilities.txt
+	cp $(include_root)/tau_intel_capabilities.txt $(library_root)/compiler_capabilities.txt
     endif
+  endif
+  endif
   endif
 endif

@@ -22,9 +22,15 @@ contains
   subroutine construct_problem(this,diffusion_coefficient)
     class(burgers), intent(out) :: this
     real(rkind), intent(in) :: diffusion_coefficient
+#ifdef TAU
+    call TAU_START('burgers%construct_problem')
+#endif
     this%diffusion = diffusion_coefficient
     ! Ensures
     call this%mark_as_defined
+#ifdef TAU
+    call TAU_STOP('burgers%construct_problem')
+#endif
   end subroutine
 
   ! Return the solution to the 1D heat equation with periodic boundary conditions
@@ -37,6 +43,9 @@ contains
     real(rkind), parameter :: two_pi=2._rkind*pi, four_pi = 4._rkind*pi
     integer(ikind) :: i
     integer(ikind) , parameter :: n_max=100,n(-n_max:n_max)=[(i,i=-n_max,n_max)] 
+#ifdef TAU
+    call TAU_START('burgers%solve')
+#endif
     ! Requires
     call assert(this%user_defined(),error_message("solve: received undefined burgers object"))
     associate( nu=>this%diffusion)
@@ -48,6 +57,9 @@ contains
         end do
       end associate
     end associate
+#ifdef TAU
+    call TAU_STOP('burgers%solve')
+#endif
   end function
 
   subroutine output(this,unit,iotype,v_list,iostat,iomsg)
@@ -57,8 +69,14 @@ contains
     integer, intent(in) :: v_list(:)
     integer, intent(out) :: iostat
     character(len=*), intent(inout) :: iomsg
+#ifdef TAU
+    call TAU_START('burgers%output')
+#endif
     print *,this%diffusion
     iostat = 0
+#ifdef TAU
+    call TAU_STOP('burgers%output')
+#endif
   end subroutine
 
 end module

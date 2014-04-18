@@ -1,13 +1,13 @@
 include_path=./include-files
 library_path=./library
-executable= burgers_static_caf
+executable= burgers_caf
 #Cray compiler command
 cray=ftn -ew -h caf
 #Intel compiler command
 intel=ifort -Bdynamic -coarray=shared -standard-semantics -O3 -coarray-num-images=4
 
 # TAU compiler command 
-tau_intel=tauf90 -tau:serial,pdt  -Bdynamic -coarray=shared -standard-semantics -O3 -coarray-num-images=4 -DTAU=1
+tau_intel=tauf90 -tau:serial,pdt  -Bdynamic -coarray=shared -standard-semantics -O3 -coarray-num-images=4 -DTAU=1 -DTAU_INTEL=1
 
 #GNU compiler command
 gnu=gfortran -fcoarray=single
@@ -15,7 +15,6 @@ gnu=gfortran -fcoarray=single
 tau_aciss=tau_f90.sh -v -Bdynamic -coarray=shared -standard-semantics -O3
 #Cray Compiler on Hopper
 tau_hopper=tau_f90.sh -optCompInst -ew -h caf -g
-compile=$(intel)
 compile=$(tau_intel)
 # Please uncomment the # to use TAU
 
@@ -56,7 +55,7 @@ ForTrilinos_error.o: $(library_path)/ForTrilinos_error.F90 Makefile
 
 .PHONY : clean
 clean :
-	-rm -f  *.o *.mod $(executable) core fort.* $(library_path)/compiler_capabilities.txt profile* MULT* *.trc *.edf
+	-rm -f  *.o *.mod $(executable) core fort.* $(library_path)/compiler_capabilities.txt profile* MULT* *.trc *.edf 
 
 preprocessor_definitions: 
 ifeq ($(compile),$(gnu))
