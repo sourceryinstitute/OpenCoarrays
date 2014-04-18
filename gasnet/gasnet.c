@@ -55,14 +55,9 @@ static int caf_num_images;
 static int caf_is_finalized;
 
 /*Sync image part*/
-/*By default the two array have initially 64 items*/
-/* static int listsLength = 64; */
 static int sizeOrders = 0;
-static int sizeArrived = 0;
 static int *orders;
 static int *arrived;
-static int beginOrders = 0;
-static int beginArrived = 0;
 static int *images_full;
 
 caf_static_t *caf_static_list = NULL;
@@ -79,29 +74,24 @@ freeToGo ()
 
   gasnet_hold_interrupts ();
 
-  for (i = 0; i < beginOrders; i++)
+  sizeOrders = 0;
+
+  for (i = 0; i < caf_num_images; i++)
     {
-      for (j = 0; j < beginArrived; j++)
+      if(orders[i] != 0)
 	{
-	  if(orders[i] == arrived[j] && orders[i]!=0)
+	  sizeOrders++;
+	  if(arrived[i]!=0)
 	    {
-	      /* printf("Proc: %d erases order for %d\n",caf_this_image,orders[i]); */
-	      orders[i] = 0;
-	      arrived[j] = 0;
+	      orders[i]--;
 	      sizeOrders--;
-	      sizeArrived--;
+	      arrived[i]--;
 	    }
 	}
     }
 
   if (sizeOrders == 0)
-    {
-      beginOrders = 0;
-      ret = true;
-    }
-
-  if (sizeArrived == 0)
-    beginArrived = 0;
+    ret = true;
 
   gasnet_resume_interrupts ();
 
@@ -113,10 +103,8 @@ static void
 initImageSync()
 {
   int i=0,j=0;
-  orders = (int *)calloc(64,sizeof(int));
-  arrived = (int *)calloc(64,sizeof(int));
-  beginOrders = 0;
-  beginArrived = 0;
+  orders = (int *)calloc(caf_num_images,sizeof(int));
+  arrived = (int *)calloc(caf_num_images,sizeof(int));
   images_full = (int *)calloc(caf_num_images-1,sizeof(int));
 
   for(i=0;i<caf_num_images;i++)
@@ -136,9 +124,7 @@ insOrders (int *images, int n)
 
   for (i = 0; i < n; i++)
     {
-      orders[beginOrders] = images[i];
-      beginOrders++;
-      sizeOrders++;
+      orders[images[i]-1]++;
       /* printf("Process: %d order: %d\n",caf_this_image,images[i]); */
       gasnet_AMRequestShort1 (images[i]-1, send_notify1_handler, caf_this_image);
     }
@@ -147,10 +133,8 @@ insOrders (int *images, int n)
 static void
 insArrived (int image)
 {
-  arrived[beginArrived] = image;
+  arrived[image-1]++;
   /* printf("Process: %d arrived: %d\n",caf_this_image,image); */
-  beginArrived++;
-  sizeArrived++;
 }
 
 
@@ -222,6 +206,7 @@ PREFIX (init) (int *argc, char ***argv)
       caf_this_image++;
       caf_is_finalized = 0;
 
+      initImageSync ();
     }
 }
 
@@ -310,7 +295,6 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
 	  goto error;
 	}
 
-      initImageSync ();
     }
 
   /* Allocation check */
