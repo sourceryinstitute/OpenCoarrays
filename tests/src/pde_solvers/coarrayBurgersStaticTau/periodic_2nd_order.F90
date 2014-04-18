@@ -136,6 +136,24 @@ contains
     call tau_pure_stop('this_image_contains')
 #endif
   end function
+  
+  subroutine synchronize()
+    integer :: numimages,thisimage
+    ! These definitions enable gfortran to compile the first else block for single-image runs:
+    numimages=num_images()
+    thisimage=this_image()
+     if (numimages==1.or.numimages==2) then
+       sync all      
+     else
+       if (thisimage==1) then
+         sync images([2,numimages])
+       elseif (thisimage==numimages) then
+         sync images([1,thisimage-1])
+       else
+         sync images([thisimage-1,thisimage+1])
+       endif
+     endif
+  end subroutine
 
   subroutine construct (this, initial, num_grid_pts)
     class(periodic_2nd_order), intent(inout) :: this
@@ -160,7 +178,7 @@ contains
 #ifdef TAU
     call TAU_START('sync_constructor')
 #endif
-    sync all
+    call synchronize()
 #ifdef TAU
     call TAU_STOP('sync_constructor')
     call TAU_STOP('constructor')
@@ -225,17 +243,7 @@ contains
 #ifdef TAU
    call TAU_START('sync_assign_field')
 #endif
-   if (num_images()==1.or.num_images()==2) then
-     sync all      
-   else
-     if (this_image()==1) then
-       sync images([2,num_images()])
-     elseif (this_image()==num_images()) then
-       sync images([1,this_image()-1])
-     else
-       sync images([this_image()-1,this_image()+1])
-     endif
-   endif
+    call synchronize()
 #ifdef TAU
     call TAU_STOP('sync_assign_field')
     call TAU_STOP('assign_field')

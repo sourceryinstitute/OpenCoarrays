@@ -49,14 +49,9 @@ set_tests_properties(coarrayHeatEquation PROPERTIES PASS_REGULAR_EXPRESSION "Tes
 add_test(increment_my_neighborTest simple/increment_my_neighbor)
 set_tests_properties(increment_my_neighborTest PROPERTIES PASS_REGULAR_EXPRESSION "Test passed.")
 
-add_test(hello simple/hello)
-set_tests_properties(PROPERTIES PASS_REGULAR_EXPRESSION "Test passed.")
-
 add_test(send_array_test simple/send_array_test)
 set_tests_properties(send_array_test PROPERTIES PASS_REGULAR_EXPRESSION "Test passed.")
 
 add_test(syncimages simple/syncimages)
 set_tests_properties(syncimages PROPERTIES PASS_REGULAR_EXPRESSION "Test passed.")
 
-add_test(syncimages2 simple/syncimages2)
-set_tests_properties(syncimages2 PROPERTIES PASS_REGULAR_EXPRESSION "Test passed.")

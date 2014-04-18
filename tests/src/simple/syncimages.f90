@@ -27,6 +27,6 @@ program syncimages
     enddo
   endif
 
-  if(me==1) write(*,*) print *,"Test passed."
+  if(me==1) print *,"Test passed."
 
 end program
