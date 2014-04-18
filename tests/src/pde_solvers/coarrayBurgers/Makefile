@@ -7,12 +7,12 @@ cray=ftn -ew -h caf
 intel=ifort -Bdynamic -coarray=shared -standard-semantics -O3 -coarray-num-images=2
 #intel=ifort -v -coarray=shared -coarray-config-file=configuration 
 #GNU compiler command
-gnu=gfortran -fcoarray=single
+gnu=gfortran -fcoarray=lib
 #TAU compiler command
 #tau_intel=tauf90 -tau:serial,icpc,pdt  -Bdynamic -coarray=shared -standard-s    emantics -O3 -coarray-num-images=4 -DTAU=1
 tau_intel=tau_f90.sh -Bdynamic -coarray=shared -standard-semantics -O3 -optCompInst 
 tau_cray=tau_f90.sh -ew -h caf -optCompInst
-compile=$(intel)
+compile=$(gnu)
 
 OPTS=
 objects = local_field.o global_field.o kind_parameters.o co_object_interface.o object_interface.o ForTrilinos_assertion_utility.o ForTrilinos_error.o math_constants.o burgers.o
