@@ -107,6 +107,15 @@ PREFIX (init) (int *argc, char ***argv)
 	images_full[j] = i + 1;
 	j++;
       }
+
+  orders = calloc (caf_num_images, sizeof (int));
+
+  arrived = malloc(sizeof (int *) * caf_num_images);
+  
+  ierr = ARMCI_Malloc ((void **) arrived, sizeof (int) * caf_num_images);
+  
+  for (i = 0; i < caf_num_images; i++)
+    arrived[caf_this_image-1][i] = 0;
 }
 
 
@@ -187,15 +196,6 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
 
   if (stat)
     *stat = 0;
-
-  orders = calloc (caf_num_images, sizeof (int));
-
-  arrived = malloc(sizeof (int *) * caf_num_images);
-
-  ierr = ARMCI_Malloc ((void **) arrived, sizeof (int) * caf_num_images);
-
-  for (i = 0; i < caf_num_images; i++)
-    arrived[caf_this_image-1][i] = 0;
 
   return TOKEN (*token)[caf_this_image-1];
 
