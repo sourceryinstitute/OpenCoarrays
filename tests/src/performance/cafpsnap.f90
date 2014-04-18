@@ -203,8 +203,6 @@ continue
 
       iteration_count = calibrate_loop( granularity)
 
-	!write(*,*) 'Iteration after calibrate', iteration_count,'proc',rank
-
       count_loc% val = iteration_count
       count_loc% index = rank
 
@@ -232,8 +230,6 @@ continue
       end if
 
       iteration_count = globalmaxloc% val
-
-	write(*,*) 'Iteration after assignment',iteration_count,'proc',proc
 
    end if
 
