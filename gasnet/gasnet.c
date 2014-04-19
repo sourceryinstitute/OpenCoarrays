@@ -182,7 +182,7 @@ PREFIX (init) (int *argc, char ***argv)
 {
   if (caf_num_images == 0)
     {
-      int ierr;
+      int ierr=0;
 
       if (argc == NULL)
 	{
@@ -207,7 +207,55 @@ PREFIX (init) (int *argc, char ***argv)
       caf_is_finalized = 0;
 
       initImageSync ();
+
+      remoteMemorySize = gasnet_getMaxLocalSegmentSize();
+
+      /* It creates the remote memory on each image */
+      if (remote_memory==NULL)
+	{
+	  gasnet_handlerentry_t htable[] = {
+	    { send_notify1_handler,  req_notify1_handler },
+	  };
+	  
+	  if (gasnet_attach (htable, sizeof (htable)/sizeof (gasnet_handlerentry_t),
+			     remoteMemorySize, GASNET_PAGESIZE))
+	    goto error;
+	  
+	  r_pointer = 0;
+	  
+	  remote_memory = malloc (sizeof (gasnet_seginfo_t) * caf_num_images);
+	  
+	  if (remote_memory == NULL)
+	    goto error;
+	  
+	  /* gasnet_seginfo_t *tt = (gasnet_seginfo_t*)*token;  */
+	  
+	  ierr = gasnet_getSegmentInfo (TOKEN (remote_memory), caf_num_images);
+	  
+	  if (unlikely (ierr))
+	    {
+	      free (remote_memory);
+	      goto error;
+	    }
+	  
+	}
+      
     }
+
+  return;
+
+error:
+  {
+    char *msg;
+
+    if (caf_is_finalized)
+      msg = "Failed to create remote memory space - there are stopped images";
+    else
+      msg = "Failed during initialization and memory allocation";
+
+    caf_runtime_error (msg);
+  }
+
 }
 
 
@@ -265,37 +313,8 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
   if (caf_num_images == 0)
     PREFIX (init) (NULL, NULL);
 
-  remoteMemorySize = gasnet_getMaxLocalSegmentSize();
-
-  /* It creates the remote memory on each image */
-  if (remote_memory==NULL)
-    {
-      gasnet_handlerentry_t htable[] = {
-	{ send_notify1_handler,  req_notify1_handler },
-      };
-
-      if (gasnet_attach (htable, sizeof (htable)/sizeof (gasnet_handlerentry_t),
-			 remoteMemorySize, GASNET_PAGESIZE))
-	goto error;
-
-      r_pointer = 0;
-
-      remote_memory = malloc (sizeof (gasnet_seginfo_t) * caf_num_images);
-
-      if (remote_memory == NULL)
-      	goto error;
-
-      /* gasnet_seginfo_t *tt = (gasnet_seginfo_t*)*token;  */
-
-      ierr = gasnet_getSegmentInfo (TOKEN (remote_memory), caf_num_images);
-
-      if (unlikely (ierr))
-	{
-	  free (remote_memory);
-	  goto error;
-	}
-
-    }
+  /* Here there was the if statement for remote allocation */
+  /* Now it is included in init */
 
   /* Allocation check */
   if ((size+r_pointer) > remoteMemorySize)
