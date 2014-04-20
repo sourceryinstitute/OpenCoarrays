@@ -55,3 +55,5 @@ set_tests_properties(send_array_test PROPERTIES PASS_REGULAR_EXPRESSION "Test pa
 add_test(syncimages simple/syncimages)
 set_tests_properties(syncimages PROPERTIES PASS_REGULAR_EXPRESSION "Test passed.")
 
+add_test(syncimages2 simple/syncimages2)
+set_tests_properties(syncimages2 PROPERTIES PASS_REGULAR_EXPRESSION "Test passed.")
