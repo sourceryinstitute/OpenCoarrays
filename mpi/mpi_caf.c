@@ -330,19 +330,19 @@ PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
     ierr = STAT_STOPPED_IMAGE;
   else
     {
+#if 0
+      /* MPI_Win_unlock implies synchronization, hence, the MPI_Win_fence is not
+	 required.  */
       MPI_Win *p;
       caf_static_t *tmp, *next;
       for (tmp = caf_tot; tmp; )
 	{
 	  next = tmp->prev;
 	  p = tmp->token;
-#if MPI_VERSION >= 3
-	  MPI_Win_flush_all (*p);
-#else
 	  MPI_Win_fence (0, *p);
-#endif
           tmp = next;
 	}
+#endif
       MPI_Barrier(MPI_COMM_WORLD);
       ierr = 0;
     }
