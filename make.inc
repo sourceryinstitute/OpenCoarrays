@@ -3,7 +3,7 @@ FC=gfortran
 MPFC=mpifort
 
 FFLAGS += -O
-CFLAGS += -DPREFIX_NAME=$(PREFIX_NAME) -g -Wall -O2
+CFLAGS += -DPREFIX_NAME=$(PREFIX_NAME) -g -Wall -O2 -DHAVE_INT128_T
 SINGLE_CFLAGS +=
 
 ARMCI_DIR    = /opt/ga/5.3/gnu/4.9

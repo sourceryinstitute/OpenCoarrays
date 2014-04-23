@@ -816,7 +816,7 @@ get_MPI_datatype (gfc_descriptor_t *desc)
     case GFC_DTYPE_INTEGER_8:
       return MPI_INTEGER8;
 #endif
-#ifdef MPI_INTEGER16
+#if defined(MPI_INTEGER16) && defined(GFC_DTYPE_INTEGER_16)
     case GFC_DTYPE_INTEGER_16:
       return MPI_INTEGER16;
 #endif

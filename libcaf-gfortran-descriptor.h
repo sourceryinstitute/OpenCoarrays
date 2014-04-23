@@ -81,9 +81,9 @@ typedef struct gfc_descriptor_t {
    | (sizeof(int32_t) << GFC_DTYPE_SIZE_SHIFT))
 #define GFC_DTYPE_INTEGER_8 ((BT_INTEGER << GFC_DTYPE_TYPE_SHIFT) \
    | (sizeof(int64_t) << GFC_DTYPE_SIZE_SHIFT))
-#if 0
+#if HAVE_INT128_T
 #define GFC_DTYPE_INTEGER_16 ((BT_INTEGER << GFC_DTYPE_TYPE_SHIFT) \
-   | (sizeof(GFC_INTEGER_16) << GFC_DTYPE_SIZE_SHIFT))
+   | (sizeof(__int128_t) << GFC_DTYPE_SIZE_SHIFT))
 #endif
 
 #if 0
