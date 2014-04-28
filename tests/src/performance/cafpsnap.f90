@@ -36,7 +36,7 @@ program psnap
 
 use, intrinsic :: iso_fortran_env, only: error_unit, output_unit, int64, real64, int32
 
-use, intrinsic :: iso_c_binding, only: c_long, c_int, c_sizeof, c_char
+use, intrinsic :: iso_c_binding
 
 character( len= *), parameter :: psnap_rcs_id = &
    '$Id$'
@@ -69,7 +69,21 @@ integer( int64), dimension( :), allocatable, codimension[ :] :: localhist
 integer( int64), codimension[ *], save :: granularity = 1000
 integer( int64), codimension[ *], save :: barrier = 0
 
-character( kind= c_char, len= 1024), codimension[ *] :: hostname
+!character( kind= c_char, len= 1024), codimension[ *] :: hostname
+
+interface 
+  subroutine start_timer() bind(C, name="start_timer")
+    use iso_c_binding
+  end subroutine
+  subroutine stop_timer() bind(C, name="stop_timer")
+    use iso_c_binding
+  end subroutine
+  function elapsed_time() bind(c,name="elapsed_time") result(res)
+    use iso_c_binding
+    !use, intrinsic :: iso_fortran_env, only: int64
+    integer(c_int) :: res
+  end function
+end interface
 
 type( counters), codimension[ *] :: count_loc, globalminloc, globalmaxloc
 
@@ -169,7 +183,7 @@ continue
 
    sync all
 
-   call get_environment_variable( name= 'HOSTNAME', value= hostname)
+   !call get_environment_variable( name= 'HOSTNAME', value= hostname)
 
    allocate( r( 1: n + w), stat= astat)
 
@@ -202,6 +216,8 @@ continue
    if( iteration_count == 0 )then
 
       iteration_count = calibrate_loop( granularity)
+
+	!write(*,*) 'Iteration after calibrate', iteration_count,'proc',rank
 
       count_loc% val = iteration_count
       count_loc% index = rank
@@ -315,10 +331,10 @@ continue
 !  print rank 0's histogram
 
       if( n > 0 )then
-         write( unit= output_unit, fmt= '(a, i9, 9x, i9, 3x, a)') "#", 1, sum_all( 1), trim( hostname)
+         write( unit= output_unit, fmt= '(a, i9, 9x, i9, 3x)') "#", 1, sum_all( 1)!, trim( hostname)
          do i = 0, globalmax
             if( localhist( i) > 0 )then
-               write( unit= output_unit, fmt= '(1x, i9, i9, i9, 3x, a)') rank, i, localhist( i), trim( hostname)
+               write( unit= output_unit, fmt= '(1x, i9, i9, i9, 3x)') rank, i, localhist( i)!, trim( hostname)
             end if
          end do
 
@@ -329,17 +345,17 @@ continue
       do i = 2, np
 
          sync images( i)
-         localhist(:) = localhist(:)[ i]
-         !do j=lbound(localhist,dim=1),ubound(localhist,dim=1)
-         !  localhist(j) = localhist(j)[ i]
-         !end do
+         !localhist(:) = localhist(:)[ i]
+         do j=lbound(localhist,dim=1),ubound(localhist,dim=1)
+           localhist(j) = localhist(j)[ i]
+         end do
 
          !hostname = hostname[ i]
          if( n > 0 )then
-            write( unit= output_unit, fmt= '(a, i9, 9x, i9, 3x, a)') "#", i, sum_all( i), trim( hostname)
+            write( unit= output_unit, fmt= '(a, i9, 9x, i9, 3x)') "#", i, sum_all( i)!, trim( hostname)
             do j = 0, globalmax
                if( localhist( j) > 0 )then
-                  write( unit= output_unit, fmt= '(1x, i9, i9, i9, 3x, a)') i, j, localhist( j), trim( hostname)
+                  write( unit= output_unit, fmt= '(1x, i9, i9, i9, 3x)') i, j, localhist( j)!, trim( hostname)
                end if
             end do
 
@@ -373,7 +389,7 @@ integer(kind=8) :: t,r
 real(real64) :: usecs
 integer(kind=8),parameter :: c = 1000000
 
-!continue
+continue
 
    !call system_clock( count= t, count_rate= r)
    call cpu_time(usecs)
@@ -401,7 +417,9 @@ integer( int64), intent( in) :: iterations
 
 continue
 
-   usecs_init = get_usecs()
+!   usecs_init = get_usecs()
+
+   call start_timer()
 
    next_rank = to_upper_half( rank)
    prev_rank = from_lower_half( rank)
@@ -430,11 +448,12 @@ continue
 
    end do counter
 
-   usecs_final = get_usecs()
+!   usecs_final = get_usecs()
+   call stop_timer()
 
 !   write(*,*) 'usec_init',usec_init,'usec_final',usec_final
 
-   dt = usecs_final - usecs_init
+   dt = elapsed_time()
 
    !write(*,*) 'usec_init',usec_init,'usec_final',usec_final,'dt',dt
 
