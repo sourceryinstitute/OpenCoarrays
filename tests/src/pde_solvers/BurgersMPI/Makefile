@@ -5,6 +5,14 @@ executable=burgers_mpi
 
 #include TAU_MAKEFILE $TAU_ROOT_DIR/x86_64/lib/selected_make_file
 
+# For benchmark purposes the -DBENCHMARK flag is required.
+# Another option is to add #define BENCHMARK to “compiler_capabilities.txt”
+# but it is not recommended.
+# A quick way to activate the benchmark mode is through make CMDFLAGS=-DBENCHMARK.
+
+# Note: A benchmark purpose is the comparison among this solver and the
+# Coarrays counterpart.
+
 #Cray compiler command
 cray=ftn -ew -h caf
 #GNU compiler command
@@ -12,7 +20,7 @@ gnu=mpif90 -fcoarray=single -ffree-form -ffree-line-length-none
 
 #Intel compiler command
 intel= tau_f90.sh -DTAU=1 -Bdynamic -standard-semantics -O3 -g -optCompInst  
-intel= mpiifort -Bdynamic -standard-semantics -O3 -L/usr/lib64 -lpmi
+intel= mpiifort -Bdynamic -standard-semantics -O3 -L/usr/lib64 #-lpmi
 
 #TAU compiler command
 tau=tauf90 -tau:serial,icpc,pdt -DTAU=1 -Bdynamic -standard-semantics -O3 -g -optCompInst  
