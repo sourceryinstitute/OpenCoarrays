@@ -32,39 +32,39 @@ contains
     b = reshape([(i*33, i = 1, size(b))], shape(b))
 
     ! Whole array: ARRAY = SCALAR
-    a = -12
-    b = -32
+    a = -42
+    caf = -42
     if(this_image() == num_images()) then
-       caf = a
-    else
-       caf = -42
+       caf = b
     endif
     sync all
     if (this_image() == 1) then
-      b(:,:) = caf(lb1,lb2)[num_images()]
-    end if
-    sync all
-    if (this_image() == 1) then
-      if (any (a /= b)) &
+      a(:,:) = caf(lb1,lb2)[num_images()]
+      print *, this_image(), '//', a, '//', b(lb1,lb2)
+      print *, '>>>', any(a /= b(lb1,lb2))
+      if (any (a /= b(lb1,lb2))) then
+! FIXME: ABORTS UNLESS THERE IS SOME OTHER CODE
+print *, 'HELLO!!!!!!!!!!!!!!!!!'
         call abort()
+      end if
     end if
 
     ! Whole array: ARRAY = ARRAY
-    a = -12
-    b = -32
+    a = -42
+    caf = -42
     if(this_image() == num_images()) then
-       caf = a
-    else
-       caf = -42
+       caf = b
     endif
     sync all
     if (this_image() == 1) then
-      b(:,:) = caf(:,:)[num_images()]
-    end if
-    sync all
-    if (this_image() == 1) then
-!      if (any (a /= b)) &
- !          call abort()
+      a(:,:) = caf(:,:)[num_images()]
+      if (any (a /= b)) &
+!FIXME
+        print *, a
+        print *, b
+        print *, 'WRONG:', any (a /= b)
+        call abort()
+      end if
     end if
 
     ! Array sections with different ranges and pos/neg strides
@@ -78,11 +78,9 @@ contains
                   do j_s=1, m
                     ! ARRAY = SCALAR
                     a = -12
-		    b = -32
+       		    caf = -42
     		    if(this_image() == num_images()) then
-       		       caf = a
-    		    else
-       		       caf = -42
+       		       caf = b
     		    endif
                     sync all
                     if (this_image() == 1) then

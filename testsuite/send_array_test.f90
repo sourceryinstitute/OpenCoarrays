@@ -59,6 +59,38 @@ contains
            call abort()
     end if
 
+    ! Scalar assignment
+    caf = -42
+    a = -42
+    do j = lb2, m+lb2-1
+      do i = n+lb1-1, 1, -2
+        a(i,j) = b(i,j)
+      end do
+    end do
+    do j = lb2, m+lb2-1
+      do i = 1, n+lb1-1, 2
+        a(i,j) = b(i,j)
+      end do
+    end do
+    sync all
+    if (this_image() == 1) then
+      do j = lb2, m+lb2-1
+        do i = n+lb1-1, 1, -2
+          caf(i,j)[num_images()] = b(i, j)
+        end do
+      end do
+      do j = lb2, m+lb2-1
+        do i = 1, n+lb1-1, 2
+          caf(i,j)[num_images()] = b(i, j)
+        end do
+      end do
+    end if
+    sync all
+    if (this_image() == num_images()) then
+      if (any (a /= caf)) &
+           call abort()
+    end if
+
     ! Array sections with different ranges and pos/neg strides
     do i_sgn1 = -1, 1, 2
       do i_sgn2 = -1, 1, 2
@@ -152,6 +184,38 @@ contains
            call abort()
     end if
 
+    ! Scalar assignment
+    caf = -42
+    a = -42
+    do j = lb2, m+lb2-1
+      do i = n+lb1-1, 1, -2
+        a(i,j) = b(i,j)
+      end do
+    end do
+    do j = lb2, m+lb2-1
+      do i = 1, n+lb1-1, 2
+        a(i,j) = b(i,j)
+      end do
+    end do
+    sync all
+    if (this_image() == 1) then
+      do j = lb2, m+lb2-1
+        do i = n+lb1-1, 1, -2
+          caf(i,j)[num_images()] = b(i, j)
+        end do
+      end do
+      do j = lb2, m+lb2-1
+        do i = 1, n+lb1-1, 2
+          caf(i,j)[num_images()] = b(i, j)
+        end do
+      end do
+    end if
+    sync all
+    if (this_image() == num_images()) then
+      if (any (a /= caf)) &
+           call abort()
+    end if
+
     ! Array sections with different ranges and pos/neg strides
     do i_sgn1 = -1, 1, 2
       do i_sgn2 = -1, 1, 2
@@ -238,6 +302,38 @@ contains
     sync all
     if (this_image() == 1) then
       caf(:,:)[num_images()] = b(:, :)
+    end if
+    sync all
+    if (this_image() == num_images()) then
+      if (any (a /= caf)) &
+           call abort()
+    end if
+
+    ! Scalar assignment
+    caf = -42
+    a = -42
+    do j = lb2, m+lb2-1
+      do i = n+lb1-1, 1, -2
+        a(i,j) = b(i,j)
+      end do
+    end do
+    do j = lb2, m+lb2-1
+      do i = 1, n+lb1-1, 2
+        a(i,j) = b(i,j)
+      end do
+    end do
+    sync all
+    if (this_image() == 1) then
+      do j = lb2, m+lb2-1
+        do i = n+lb1-1, 1, -2
+          caf(i,j)[num_images()] = b(i, j)
+        end do
+      end do
+      do j = lb2, m+lb2-1
+        do i = 1, n+lb1-1, 2
+          caf(i,j)[num_images()] = b(i, j)
+        end do
+      end do
     end if
     sync all
     if (this_image() == num_images()) then
