@@ -4,11 +4,12 @@ MPFC=mpifort
 
 FFLAGS += -O2 -g
 CFLAGS += -DPREFIX_NAME=$(PREFIX_NAME) -g -Wall -O2 -DHAVE_INT128_T
-SINGLE_CFLAGS +=
+
+SINGLE_CFLAGS += -Werror
 
 ARMCI_DIR    = /opt/ga/5.3/gnu/4.9
 ARMCI_CFLAGS  += -I$(ARMCI_DIR)/include/ -Werror
-ARMCI_LDFLAGS += -larmci -L$(ARMCI_DIR)/lib
+ARMCI_LDFLAGS += -larmci -L$(ARMCI_DIR)/lib -L$(ARMCI_DIR)/lib64
 
 MPI_CFLAGS += -Werror
 #MPICC =
