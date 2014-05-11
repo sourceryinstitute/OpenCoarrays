@@ -59,7 +59,7 @@ contains
     endif
     sync all
     if (this_image() == 1) then
-!      b(:,:) = caf(:,:)[num_images()]
+      b(:,:) = caf(:,:)[num_images()]
     end if
     sync all
     if (this_image() == 1) then
