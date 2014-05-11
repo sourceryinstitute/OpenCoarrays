@@ -590,7 +590,7 @@ PREFIX (get_desc) (caf_token_t token, size_t offset, int image_index,
       else if (async == false)
 	ierr = ARMCI_Get (sr, dst, GFC_DESCRIPTOR_SIZE (dest), image_index - 1);
       else
-	ierr = ARMCI_NbGet (sr + offset, dst, GFC_DESCRIPTOR_SIZE (dest),
+	ierr = ARMCI_NbGet (sr, dst, GFC_DESCRIPTOR_SIZE (dest),
 			    image_index - 1, NULL);
       if (ierr != 0)
 	error_stop (ierr);

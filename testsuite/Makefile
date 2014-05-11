@@ -57,24 +57,24 @@ run-gasnet: test-gasnet
 	$(GASNET_RUN) ./get_array_test.gasnet
 
 
-send_array_test.single: send_array_test.o
+send_array_test.single: send_array_test.o ../single/libcaf_single.a
 	$(FC) $(FFLAGS) -o $@ $< -L../single -lcaf_single $(LDFLAGS)
-get_array_test.single: get_array_test.o
+get_array_test.single: get_array_test.o ../single/libcaf_single.a
 	$(FC) $(FFLAGS) -o $@ $< -L../single -lcaf_single $(LDFLAGS)
 
-send_array_test.mpi: send_array_test.o
+send_array_test.mpi: send_array_test.o ../mpi/libcaf_mpi.a
 	$(MPICC) -o $@ $< -L../mpi -lcaf_mpi $(LDFLAGS) -lgfortran -lm
-get_array_test.mpi: get_array_test.o
+get_array_test.mpi: get_array_test.o ../mpi/libcaf_mpi.a
 	$(MPICC) -o $@ $< -L../mpi -lcaf_mpi $(LDFLAGS) -lgfortran -lm
 
-send_array_test.armci: send_array_test.o
+send_array_test.armci: send_array_test.o ../armci/libcaf_armci.a
 	$(ARMCI_CC) -o $@ $< -L../armci -lcaf_armci $(LDFLAGS) $(ARMCI_LDFLAGS) -lgfortran -lm
-get_array_test.armci: get_array_test.o
+get_array_test.armci: get_array_test.o ../armci/libcaf_armci.a
 	$(ARMCI_CC) -o $@ $< -L../armci -lcaf_armci $(LDFLAGS) $(ARMCI_LDFLAGS) -lgfortran -lm
 
-send_array_test.gasnet: send_array_test.o
+send_array_test.gasnet: send_array_test.o ../gasnet/libcaf_gasnet.a
 	$(GASNET_LD) -o $@ $< -L../gasnet -lcaf_gasnet $(LDFLAGS) $(GASNET_LDFLAGS) $(GASNET_LIBS) -lgfortran -lm
-get_array_test.gasnet: get_array_test.o
+get_array_test.gasnet: get_array_test.o ../gasnet/libcaf_gasnet.a
 	$(GASNET_LD) -o $@ $< -L../gasnet -lcaf_gasnet $(LDFLAGS) $(GASNET_LDFLAGS) $(GASNET_LIBS) -lgfortran -lm
 
 clean:

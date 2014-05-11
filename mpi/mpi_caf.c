@@ -633,8 +633,9 @@ PREFIX (get_desc) (caf_token_t token, size_t offset, int image_index,
       /* FIXME: Handle image_index == this_image().  */
       /*  if (async == false) */
 	{
-	  ierr = MPI_Get (dst, GFC_DESCRIPTOR_SIZE (dest)*size,
-			  MPI_BYTE, image_index-1, sr_off, size, MPI_BYTE, *p);
+	  ierr = MPI_Get (dst, GFC_DESCRIPTOR_SIZE (dest),
+			  MPI_BYTE, image_index-1, sr_off,
+			  GFC_DESCRIPTOR_SIZE (src), MPI_BYTE, *p);
 	}
       if (ierr != 0)
 	error_stop (ierr);
