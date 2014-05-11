@@ -411,7 +411,7 @@ PREFIX (send_desc) (caf_token_t token, size_t offset, int image_index,
 	  extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1);
           stride = src->dim[j]._stride;
 	}
-      array_offset_sr += (i / extent) * dest->dim[rank-1]._stride;
+      array_offset_sr += (i / extent) * src->dim[rank-1]._stride;
 
       void *dst = (void *)((char *) TOKEN (token)[image_index-1] + offset
 			   + array_offset_dst*GFC_DESCRIPTOR_SIZE (dest));
@@ -579,7 +579,7 @@ PREFIX (get_desc) (caf_token_t token, size_t offset, int image_index,
 	  extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1);
           stride = src->dim[j]._stride;
 	}
-      array_offset_sr += (i / extent) * dest->dim[rank-1]._stride;
+      array_offset_sr += (i / extent) * src->dim[rank-1]._stride;
 
       void *sr = (void *)((char *) TOKEN (token)[image_index-1] + offset
 			   + array_offset_sr*GFC_DESCRIPTOR_SIZE (src));
