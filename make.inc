@@ -4,6 +4,7 @@ MPFC=mpifort
 
 FFLAGS += -O2 -g -fcoarray=lib
 CFLAGS += -DPREFIX_NAME=$(PREFIX_NAME) -g -O2 -DHAVE_INT128_T
+LDFLAGS +=
 
 SINGLE_CFLAGS += -Werror -Wall -Wextra
 
@@ -18,6 +19,6 @@ MPI_CFLAGS += -Werror -Wall -Wextra
 MPI_RUN = mpirun -np 2
 
 GASNET_CFLAGS +=
-GASNET_MAK= #/opt/gasnet/openmpi/1.8.0/gnu/4.9-caf/include/mpi-conduit/mpi-par.mak
+GASNET_MAK = #/opt/gasnet/openmpi/1.8.0/gnu/4.9-caf/include/mpi-conduit/mpi-par.mak
 GASNET_LDFLAGS +=$(GASNET_LIBS)
 GASNET_RUN = mpirun -np 2

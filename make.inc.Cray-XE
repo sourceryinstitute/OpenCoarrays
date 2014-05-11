@@ -13,6 +13,7 @@ MPFC=mpifort
 
 FFLAGS += -O2 -g -fcoarray=lib
 CFLAGS += -DPREFIX_NAME=$(PREFIX_NAME) -g -O2 -DHAVE_INT128_T
+LDFLAGS +=
 
 SINGLE_CFLAGS += -Werror -Wall -Wextra
 
