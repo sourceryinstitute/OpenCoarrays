@@ -1,5 +1,6 @@
 PREFIX_NAME=_gfortran_caf_
 FC=gfortran
+CC=gcc
 MPFC=mpifort
 
 FFLAGS += -O2 -g -fcoarray=lib
