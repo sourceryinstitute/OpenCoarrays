@@ -160,7 +160,7 @@ void *
 PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
 		   int *stat, char *errmsg, int errmsg_len)
 {
-  int ierr=0,i;
+  int ierr = 0;
 
   if (unlikely (caf_is_finalized))
     goto error;

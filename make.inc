@@ -2,15 +2,15 @@ PREFIX_NAME=_gfortran_caf_
 FC=gfortran
 MPFC=mpifort
 
-FFLAGS += -O
+FFLAGS += -O2 -g
 CFLAGS += -DPREFIX_NAME=$(PREFIX_NAME) -g -Wall -O2 -DHAVE_INT128_T
 SINGLE_CFLAGS +=
 
 ARMCI_DIR    = /opt/ga/5.3/gnu/4.9
-ARMCI_CFLAGS  += -I$(ARMCI_DIR)/include/
+ARMCI_CFLAGS  += -I$(ARMCI_DIR)/include/ -Werror
 ARMCI_LDFLAGS += -larmci -L$(ARMCI_DIR)/lib
 
-MPI_CFLAGS +=
+MPI_CFLAGS += -Werror
 #MPICC =
 
 GASNET_CFLAGS +=
