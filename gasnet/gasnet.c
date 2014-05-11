@@ -69,7 +69,7 @@ static long remoteMemorySize = 0;
 static bool
 freeToGo ()
 {
-  int i = 0, j = 0;
+  int i = 0;
   bool ret = false;
 
   gasnet_hold_interrupts ();
@@ -304,7 +304,7 @@ void *
 PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
 		   int *stat, char *errmsg, int errmsg_len)
 {
-  int ierr,i;
+  int i;
 
   if (unlikely (caf_is_finalized))
     goto error;
@@ -325,7 +325,7 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
   /* Token contains only a list of pointers.  */
   *token = malloc (caf_num_images * sizeof (void *));
 
-  for(i = 0; i < caf_num_images; i++)
+  for (i = 0; i < caf_num_images; i++)
   {
     gasnet_seginfo_t *rm = TOKEN (remote_memory);
     char * tm = (char *) rm[i].addr;
