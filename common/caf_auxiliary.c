@@ -39,7 +39,7 @@ PREFIX (is_contiguous) (gfc_descriptor_t *array)
 {
   int i;
   ptrdiff_t dim_extent;
-  size_t extent = 1;
+  ptrdiff_t extent = 1;
   bool element = false;
 
   for (i = 0; i < GFC_DESCRIPTOR_RANK(array); i++)

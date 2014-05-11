@@ -3,7 +3,7 @@ FC=gfortran
 MPFC=mpifort
 
 FFLAGS += -O2 -g
-CFLAGS += -DPREFIX_NAME=$(PREFIX_NAME) -g -Wall -O2 -DHAVE_INT128_T
+CFLAGS += -DPREFIX_NAME=$(PREFIX_NAME) -g -Wall -Wextra -O2 -DHAVE_INT128_T
 
 SINGLE_CFLAGS += -Werror
 

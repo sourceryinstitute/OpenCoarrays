@@ -849,10 +849,10 @@ get_MPI_datatype (gfc_descriptor_t *desc)
 
 static void
 co_reduce_1 (MPI_Op op, gfc_descriptor_t *source,
-	     gfc_descriptor_t *result, int result_image, int *stat,
+	     void *vect_subscript __attribute__ ((unused)),
+	     int result_image, int *stat,
 	     char *errmsg, int errmsg_len)
 {
-  void *source2, *result2;
   size_t i, size;
   int j, ierr;
   int rank = GFC_DESCRIPTOR_RANK (source);
@@ -869,26 +869,17 @@ co_reduce_1 (MPI_Op op, gfc_descriptor_t *source,
       size *= dimextent;
     }
 
-  if (rank == 0
-      || (PREFIX (is_contiguous) (source)
-	  && (!result || PREFIX (is_contiguous) (result))))
+  if (rank == 0 || PREFIX (is_contiguous) (source))
     {
       if (result_image == 0)
-	{
-	  source2 = result ? source->base_addr : MPI_IN_PLACE;
-	  result2 = result ? result->base_addr : source->base_addr;
-	  ierr = MPI_Allreduce (source2, result2, size, datatype, op,
-				MPI_COMM_WORLD);
-	}
-      else if (!result && result_image == caf_this_image)
+	ierr = MPI_Allreduce (MPI_IN_PLACE, source->base_addr, size, datatype,
+			      op, MPI_COMM_WORLD);
+      else if (result_image == caf_this_image)
 	ierr = MPI_Reduce (MPI_IN_PLACE, source->base_addr, size, datatype, op,
 			   result_image-1, MPI_COMM_WORLD);
       else
-	{
-	  result2 = result ? result->base_addr : NULL;
-	  ierr = MPI_Reduce (source->base_addr, result2, size, datatype, op,
-			     result_image-1, MPI_COMM_WORLD);
-	}
+	ierr = MPI_Reduce (source->base_addr, NULL, size, datatype, op,
+			   result_image-1, MPI_COMM_WORLD);
       if (ierr)
 	goto error;
       return;
@@ -911,38 +902,14 @@ co_reduce_1 (MPI_Op op, gfc_descriptor_t *source,
       array_offset_sr += (i / extent) * source->dim[rank-1]._stride;
       void *sr = (void *)((char *) source->base_addr
 			  + array_offset_sr*GFC_DESCRIPTOR_SIZE (source));
-      void *dst = NULL;
-      if (result)
-	{
-	  ptrdiff_t array_offset_dst = 0;
-	  stride = 1;
-	  extent = 1;
-	  for (j = 0; j < rank-1; j++)
-	    {
-	      array_offset_dst += ((i / (extent*stride))
-				   % (result->dim[j]._ubound
-				   - result->dim[j].lower_bound + 1))
-				  * result->dim[j]._stride;
-	      extent = (result->dim[j]._ubound - result->dim[j].lower_bound + 1);
-	      stride = result->dim[j]._stride;
-	    }
-	  array_offset_dst += (i / extent) * result->dim[rank-1]._stride;
-	  dst = (void *)((char *) result->base_addr
-			 + array_offset_dst*GFC_DESCRIPTOR_SIZE (source));
-	}
-
       if (result_image == 0)
-	{
-	  source2 = result ? sr : MPI_IN_PLACE;
-	  result2 = result ? dst : sr;
-	  ierr = MPI_Allreduce (source2, result2, 1, datatype, op,
-				MPI_COMM_WORLD);
-	}
-      else if (!result && result_image == caf_this_image)
+	ierr = MPI_Allreduce (MPI_IN_PLACE, sr, 1, datatype, op,
+			      MPI_COMM_WORLD);
+      else if (result_image == caf_this_image)
 	ierr = MPI_Reduce (MPI_IN_PLACE, sr, 1, datatype, op,
 			   result_image-1, MPI_COMM_WORLD);
       else
-	ierr = MPI_Reduce (sr, dst, 1, datatype, op, result_image-1,
+	ierr = MPI_Reduce (sr, NULL, 1, datatype, op, result_image-1,
 			   MPI_COMM_WORLD);
       if (ierr)
 	goto error;
@@ -971,26 +938,29 @@ error:
 
 
 void
-PREFIX (co_sum) (gfc_descriptor_t *source, gfc_descriptor_t *result,
+PREFIX (co_sum) (gfc_descriptor_t *source, void *vect_subscript,
                  int result_image, int *stat, char *errmsg, int errmsg_len)
 {
-  co_reduce_1 (MPI_SUM, source, result, result_image, stat, errmsg, errmsg_len);
+  co_reduce_1 (MPI_SUM, source, vect_subscript, result_image, stat, errmsg,
+	       errmsg_len);
 }
 
 
 void
-PREFIX (co_min) (gfc_descriptor_t *source, gfc_descriptor_t *result,
+PREFIX (co_min) (gfc_descriptor_t *source, void *vect_subscript,
                  int result_image, int *stat, char *errmsg, int errmsg_len)
 {
-  co_reduce_1 (MPI_MIN, source, result, result_image, stat, errmsg, errmsg_len);
+  co_reduce_1 (MPI_MIN, source, vect_subscript, result_image, stat, errmsg,
+	       errmsg_len);
 }
 
 
 void
-PREFIX (co_max) (gfc_descriptor_t *source, gfc_descriptor_t *result,
+PREFIX (co_max) (gfc_descriptor_t *source, void *vect_subscript,
                  int result_image, int *stat, char *errmsg, int errmsg_len)
 {
-  co_reduce_1 (MPI_MAX, source, result, result_image, stat, errmsg, errmsg_len);
+  co_reduce_1 (MPI_MAX, source, vect_subscript, result_image, stat, errmsg,
+	       errmsg_len);
 }
 
 

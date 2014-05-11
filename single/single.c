@@ -361,93 +361,39 @@ PREFIX (send_desc_scalar) (caf_token_t token, size_t offset,
 
 
 void
-PREFIX (co_sum) (gfc_descriptor_t *source, gfc_descriptor_t *result,
-                 int result_image  __attribute__ ((unused)), int *stat,
-		 char *errmsg, int errmsg_len)
+PREFIX (co_sum) (gfc_descriptor_t *source __attribute__ ((unused)),
+		 void *vect_subscript __attribute__ ((unused)),
+		 int result_image __attribute__ ((unused)), int *stat,
+		 char *errmsg __attribute__ ((unused)),
+		 int errmsg_len __attribute__ ((unused)))
 {
-  size_t i, size;
-  int j;
-  int rank = GFC_DESCRIPTOR_RANK (source);
-
   if (stat)
-    stat = 0;
-
-  /* On a single image, the result is the input.  */
-  if (result == NULL)
-    return;
-
-  if (rank == 0)
-    {
-      memmove (result->base_addr, source->base_addr,
-	       GFC_DESCRIPTOR_SIZE (source));
-      return;
-    }
-
-  size = 1;
-  for (j = 0; j < rank; j++)
-    {
-      ptrdiff_t dimextent = source->dim[j]._ubound
-			    - source->dim[j].lower_bound + 1;
-      if (dimextent < 0)
-	dimextent = 0;
-      size *= dimextent;
-    }
-
-  for (i = 0; i < size; i++)
-    {
-      ptrdiff_t array_offset_dst = 0;
-      ptrdiff_t stride = 1;
-      ptrdiff_t extent = 1;
-      for (j = 0; j < rank-1; j++)
-	{
-	  array_offset_dst += ((i / (extent*stride))
-			       % (result->dim[j]._ubound
-				  - result->dim[j].lower_bound + 1))
-			      * result->dim[j]._stride;
-	  extent = (result->dim[j]._ubound - result->dim[j].lower_bound + 1);
-          stride = result->dim[j]._stride;
-	}
-      array_offset_dst += (i / extent) * result->dim[rank-1]._stride;
-
-      ptrdiff_t array_offset_sr = 0;
-      stride = 1;
-      extent = 1;
-      for (j = 0; j < GFC_DESCRIPTOR_RANK (source)-1; j++)
-	{
-	  array_offset_sr += ((i / (extent*stride))
-			   % (source->dim[j]._ubound
-			      - source->dim[j].lower_bound + 1))
-			  * source->dim[j]._stride;
-	  extent = (source->dim[j]._ubound - source->dim[j].lower_bound + 1);
-          stride = source->dim[j]._stride;
-	}
-      array_offset_sr += (i / extent) * source->dim[rank-1]._stride;
-
-      void *dst = (void *)((char *) result->base_addr
-			   + array_offset_dst*GFC_DESCRIPTOR_SIZE (source));
-      void *sr = (void *)((char *) source->base_addr
-			  + array_offset_sr*GFC_DESCRIPTOR_SIZE (source));
-      memmove (dst, sr, GFC_DESCRIPTOR_SIZE (source));
-    }
+    *stat = 0;
 }
 
-
-/* On a single image, co_sum, co_min and co_max have the same behaviour.  */
 
 void
-PREFIX (co_min) (gfc_descriptor_t *source, gfc_descriptor_t *result,
-                 int result_image, int *stat, char *errmsg, int errmsg_len)
+PREFIX (co_min) (gfc_descriptor_t *source __attribute__ ((unused)),
+		 void *vect_subscript __attribute__ ((unused)),
+		 int result_image __attribute__ ((unused)), int *stat,
+		 char *errmsg __attribute__ ((unused)),
+		 int errmsg_len __attribute__ ((unused)))
 {
-  PREFIX (co_sum) (source, result, result_image, stat, errmsg, errmsg_len);
+  if (stat)
+    *stat = 0;
 }
+
 
 void
-PREFIX (co_max) (gfc_descriptor_t *source, gfc_descriptor_t *result,
-                 int result_image, int *stat, char *errmsg, int errmsg_len)
+PREFIX (co_max) (gfc_descriptor_t *source __attribute__ ((unused)),
+		 void *vect_subscript __attribute__ ((unused)),
+		 int result_image __attribute__ ((unused)), int *stat,
+		 char *errmsg __attribute__ ((unused)),
+		 int errmsg_len __attribute__ ((unused)))
 {
-  PREFIX (co_sum) (source, result, result_image, stat, errmsg, errmsg_len);
+  if (stat)
+    *stat = 0;
 }
-
 
 
 void
