@@ -78,7 +78,7 @@ char err_buffer[MPI_MAX_ERROR_STRING];
 #ifdef HELPER
 void helperFunction()
 {
-  int i=0,flag=0,rec=0,msgid=0;
+  int i=0,flag=0,msgid=0;
   int ndim=0, position=0;
 
   s_am = calloc(caf_num_images,sizeof(MPI_Status));
@@ -93,7 +93,6 @@ void helperFunction()
       pthread_mutex_lock(&lock_am);
       for(i=0;i<caf_num_images;i++)
         {
-          //pthread_mutex_lock(&lock);
           if(!caf_is_finalized)
             {
               MPI_Test(&req_am[i], &flag, &s_am[i]);
@@ -101,13 +100,14 @@ void helperFunction()
                 {
                   position = 0;
                   MPI_Unpack(buff_am[i], 1000, &position, &msgid, 1, MPI_INT, MPI_COMM_WORLD);
+		  /* msgid=2 was initially assigned to strided transfers, it can be reused */
 		  /* Strided transfers Msgid=2 */
+		  
+		  /* You can add you own function */
+
                   if(msgid==2)
                     {
-                      // It is a datatype message
-		      
                       msgid=0; position=0;
-                      rec++;
                     }
                   MPI_Irecv(buff_am[i], 1000, MPI_PACKED, i, 1, MPI_COMM_WORLD, &req_am[i]);
                   flag=0;
@@ -117,10 +117,8 @@ void helperFunction()
             {
               done_am=1;
               pthread_mutex_unlock(&lock_am);
-              //printf("Process: %d received %d\n",me,rec);
               return;
             }
-          //pthread_mutex_unlock(&lock);
         }
         pthread_mutex_unlock(&lock_am);
     }
@@ -155,9 +153,15 @@ PREFIX (init) (int *argc, char ***argv)
   if (caf_num_images == 0)
     {
       int ierr = 0, i = 0, j = 0;
+#ifdef HELPER
+      int prov_lev=0;
+      MPI_Init_thread(argc, argv, MPI_THREAD_MULTIPLE, &prov_lev);
 
+      if(caf_this_image == 0 && MPI_THREAD_MULTIPLE != prov_lev)
+	caf_runtime_error ("MPI_THREAD_MULTIPLE is not supported: %d", prov_lev);
+#else
       MPI_Init(argc,argv);
-
+#endif
       if (unlikely ((ierr != MPI_SUCCESS)))
 	caf_runtime_error ("Failure when initializing MPI: %d", ierr);
 
@@ -604,46 +608,6 @@ PREFIX (send_desc) (caf_token_t token, size_t offset, int image_index,
   free(arr_bl);
   free(arr_dsp_s);
   free(arr_dsp_d);
-
-  /* for (j = 0; j < rank; j++) */
-  /*   { */
-  /*     extent_d = (dest->dim[j]._ubound - dest->dim[j].lower_bound + 1); */
-  /*     stride_d = dest->dim[j]._stride; */
-  /*     if(stride_d<=0) */
-  /*     	stride_d=1; */
-  /*     printf("Extent dest %d stride %d size %ld\n",extent_d,stride_d,size); */
-  /*     MPI_Type_create_hvector(extent_d, 1, */
-  /*     			      stride_d*sizeof(int), */
-  /*     			      base_dest, */
-  /*     			      &dst_dt[j]); */
-
-  /*     MPI_Type_commit(&dst_dt[j]); */
-
-  /*     extent_s = (src->dim[j]._ubound - src->dim[j].lower_bound + 1); */
-  /*     stride_s = src->dim[j]._stride; */
-  /*     if(stride_s<=0) */
-  /*     	stride_s=1; */
-  /*     printf("Extent src %d stride %d off %d\n",extent_s,stride_s, offset); */
-  /*     MPI_Type_create_hvector(extent_s, 1, */
-  /*     			      stride_s*sizeof(int), */
-  /*     			      base_src, */
-  /*     			      &src_dt[j]); */
-
-  /*     MPI_Type_commit(&src_dt[j]); */
-
-  /*     printf("Before put\n"); */
-
-  /*     MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p); */
-      
-  /*     ierr = MPI_Put (sr, 1, src_dt[j], image_index-1, dst_offset, 1, dst_dt[j], *p); */
-
-  /*     MPI_Win_unlock (image_index-1, *p); */
-      
-  /*     dst_offset += extent_d*stride_d*(j+1)*sizeof(int); */
-  /*     sr += (j+1)*extent_s*stride_s*sizeof(int); */
-  /*   } */
-
-  
 
   /* msg = 2; */
   /* MPI_Pack(&msg, 1, MPI_INT, buff_am[caf_this_image], 1000, &position, MPI_COMM_WORLD); */
