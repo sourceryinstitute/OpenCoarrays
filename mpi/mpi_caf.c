@@ -496,10 +496,11 @@ PREFIX (send_desc) (caf_token_t token, size_t offset, int image_index,
 {
   int ierr = 0;
   size_t i, size;
-  int j,position,msg=0;
+  int j;
+  /* int position, msg = 0;  */
   int rank = GFC_DESCRIPTOR_RANK (dest);
   MPI_Win *p = token;
-  ptrdiff_t dst_offset=0;
+  ptrdiff_t dst_offset = 0;
 
   size = 1;
   for (j = 0; j < rank; j++)
@@ -795,7 +796,7 @@ PREFIX (get_desc) (caf_token_t token, size_t offset, int image_index,
   int j;
   MPI_Win *p = token;
   int rank = GFC_DESCRIPTOR_RANK (dest);
-  size_t sr_off=0;
+  /* size_t sr_off = 0;  */
 
   size = 1;
   for (j = 0; j < rank; j++)
