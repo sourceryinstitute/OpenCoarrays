@@ -470,10 +470,10 @@ void selectType(int size, MPI_Datatype *dt)
 /* Send array data from src to dest on a remote image.  */
 
 void
-_gfortran_caf_send (caf_token_t token, size_t offset, int image_index,
-		    gfc_descriptor_t *dest,
-		    caf_vector_t *dst_vector __attribute__ ((unused)),
-		    gfc_descriptor_t *src, int dst_kind, int src_kind)
+PREFIX (send) (caf_token_t token, size_t offset, int image_index,
+	       gfc_descriptor_t *dest,
+	       caf_vector_t *dst_vector __attribute__ ((unused)),
+	       gfc_descriptor_t *src, int dst_kind, int src_kind)
 {
   /* FIXME: Implement vector subscripts, type conversion and check whether
      string-kind conversions are permitted.
@@ -723,40 +723,23 @@ if (ierr != 0)
 }
 
 
-void
-PREFIX (get) (caf_token_t token, size_t offset, int image_index, void *data,
-	      size_t size, bool async  __attribute__ ((unused)))
-{
-  int ierr = 0;
-  MPI_Win *p = token;
-
-  /* FIXME: Handle image_index == this_image().  */
-/*  if (async == false) */
-    {
-      MPI_Win_lock (MPI_LOCK_SHARED, image_index-1, 0, *p);
-      ierr = MPI_Get (data, size, MPI_BYTE, image_index-1, offset, size, MPI_BYTE, *p);
-      MPI_Win_unlock (image_index-1, *p);
-    }
-  //gasnet_put_bulk(image_index-1, tm[image_index-1]+offset, data, size);
-  /* else */
-  /*   ierr = ARMCI_NbPut(data,t.addr+offset,size,image_index-1,NULL); */
-  if(ierr != 0)
-    error_stop (ierr);
-}
-
-
 /* Get array data from a remote src to a local dest.  */
 
 void
-PREFIX (get_desc) (caf_token_t token, size_t offset, int image_index,
-		   gfc_descriptor_t *src, gfc_descriptor_t *dest,
-		   bool async __attribute__ ((unused)))
+PREFIX (get) (caf_token_t token, size_t offset,
+	      int image_index __attribute__ ((unused)),
+	      gfc_descriptor_t *src ,
+	      caf_vector_t *src_vector __attribute__ ((unused)),
+	      gfc_descriptor_t *dest, int src_kind, int dst_kind)
 {
   size_t i, size;
   int ierr = 0;
   int j;
   MPI_Win *p = token;
   int rank = GFC_DESCRIPTOR_RANK (dest);
+  size_t src_size = GFC_DESCRIPTOR_SIZE (src);
+  size_t dst_size = GFC_DESCRIPTOR_SIZE (dest);
+  void *pad_str = NULL;
   /* size_t sr_off = 0;  */
 
   size = 1;
@@ -771,15 +754,30 @@ PREFIX (get_desc) (caf_token_t token, size_t offset, int image_index,
   if (size == 0)
     return;
 
-  if (PREFIX (is_contiguous) (dest) && PREFIX (is_contiguous) (src))
+  if (GFC_DESCRIPTOR_TYPE (dest) == BT_CHARACTER && dst_size > src_size)
+    {
+      pad_str = alloca (dst_size - src_size);
+      if (dst_kind == 1)
+	memset (pad_str, ' ', dst_size-src_size);
+      else /* dst_kind == 4.  */
+	for (i = 0; i < (dst_size-src_size)/4; i++)
+	      ((int32_t*) pad_str)[i] = (int32_t) ' ';
+    }
+
+  if (rank == 0
+      || (GFC_DESCRIPTOR_TYPE (dest) == GFC_DESCRIPTOR_TYPE (src)
+	  && dst_kind == src_kind && !pad_str
+	  && PREFIX (is_contiguous) (dest) && PREFIX (is_contiguous) (src)))
     {
       /* FIXME: Handle image_index == this_image().  */
       /*  if (async == false) */
 	{
 	  MPI_Win_lock (MPI_LOCK_SHARED, image_index-1, 0, *p);
-	  ierr = MPI_Get (dest->base_addr, GFC_DESCRIPTOR_SIZE (dest)*size,
-			  MPI_BYTE, image_index-1, offset,
-			  GFC_DESCRIPTOR_SIZE (dest)*size, MPI_BYTE, *p);
+	  ierr = MPI_Get (dest->base_addr, dst_size*size, MPI_BYTE,
+			  image_index-1, offset, dst_size*size, MPI_BYTE, *p);
+	  if (pad_str)
+	    memcpy ((char *) dest->base_addr + src_size, pad_str,
+		    dst_size-src_size);
 	  MPI_Win_unlock (image_index-1, *p);
 	}
       if (ierr != 0)
@@ -916,6 +914,8 @@ PREFIX (get_desc) (caf_token_t token, size_t offset, int image_index,
 	  ierr = MPI_Get (dst, GFC_DESCRIPTOR_SIZE (dest),
 			  MPI_BYTE, image_index-1, sr_off,
 			  GFC_DESCRIPTOR_SIZE (src), MPI_BYTE, *p);
+	  if (pad_str)
+	    memcpy ((char *) dst + src_size, pad_str, dst_size-src_size);
 	}
       if (ierr != 0)
 	error_stop (ierr);

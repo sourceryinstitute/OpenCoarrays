@@ -411,27 +411,43 @@ error:
    PREFIX (error_stop) (1);
 }/* Get a scalar (or contiguous) data from remote image into a buffer.  */
 
+
 void
 PREFIX (get) (caf_token_t token, size_t offset,
-	      int image_id __attribute__ ((unused)),
-	      void *buffer, size_t size, bool async __attribute__ ((unused)))
+	      int image_index __attribute__ ((unused)),
+	      gfc_descriptor_t *src ,
+	      caf_vector_t *src_vector __attribute__ ((unused)),
+	      gfc_descriptor_t *dest, int src_kind, int dst_kind)
 {
-    void *src = (void *) ((char *) TOKEN (token) + offset);
-    memmove (buffer, src, size);
-}
-
-
-/* Get array data from a remote src to a local dest.  */
-
-void
-PREFIX (get_desc) (caf_token_t token, size_t offset,
-		   int image_id __attribute__ ((unused)),
-		   gfc_descriptor_t *src, gfc_descriptor_t *dest,
-		   bool async __attribute__ ((unused)))
-{
-  size_t i, size;
+  /* FIXME: Handle vector subscripts; check whether strings of different
+     kinds are permitted.  */
+  size_t i, k, size;
   int j;
   int rank = GFC_DESCRIPTOR_RANK (dest);
+  size_t src_size = GFC_DESCRIPTOR_SIZE (src);
+  size_t dst_size = GFC_DESCRIPTOR_SIZE (dest);
+
+  if (rank == 0)
+    {
+      void *sr = (void *) ((char *) TOKEN (token) + offset);
+      if (GFC_DESCRIPTOR_TYPE (dest) == GFC_DESCRIPTOR_TYPE (src)
+	  && dst_kind == src_kind)
+	memmove (dest->base_addr, sr,
+		 dst_size > src_size ? src_size : dst_size);
+      else
+	convert_type (dest->base_addr, GFC_DESCRIPTOR_TYPE (dest),
+		      dst_kind, sr, GFC_DESCRIPTOR_TYPE (src), src_kind);
+      if (GFC_DESCRIPTOR_TYPE (dest) == BT_CHARACTER && dst_size > src_size)
+	{
+	  if (dst_kind == 1)
+	    memset ((void*)(char*) dest->base_addr + src_size, ' ',
+		    dst_size-src_size);
+	  else /* dst_kind == 4.  */
+	    for (i = src_size/4; i < dst_size/4; i++)
+	      ((int32_t*) dest->base_addr)[i] = (int32_t) ' ';
+	}
+      return;
+    }
 
   size = 1;
   for (j = 0; j < rank; j++)
@@ -444,13 +460,6 @@ PREFIX (get_desc) (caf_token_t token, size_t offset,
 
   if (size == 0)
     return;
-
-  if (PREFIX (is_contiguous) (dest) && PREFIX (is_contiguous) (src))
-    {
-      void *sr = (void *) ((char *) TOKEN (token) + offset);
-      memmove (dest->base_addr, sr, GFC_DESCRIPTOR_SIZE (dest)*size);
-      return;
-    }
 
   for (i = 0; i < size; i++)
     {
@@ -467,6 +476,7 @@ PREFIX (get_desc) (caf_token_t token, size_t offset,
           stride = dest->dim[j]._stride;
 	}
       array_offset_dst += (i / extent) * dest->dim[rank-1]._stride;
+      void *dst = dest->base_addr + array_offset_dst*GFC_DESCRIPTOR_SIZE (dest);
 
       ptrdiff_t array_offset_sr = 0;
       stride = 1;
@@ -474,32 +484,41 @@ PREFIX (get_desc) (caf_token_t token, size_t offset,
       for (j = 0; j < GFC_DESCRIPTOR_RANK (src)-1; j++)
 	{
 	  array_offset_sr += ((i / (extent*stride))
-			   % (src->dim[j]._ubound
-			      - src->dim[j].lower_bound + 1))
-			  * src->dim[j]._stride;
+			       % (src->dim[j]._ubound
+				  - src->dim[j].lower_bound + 1))
+			     * src->dim[j]._stride;
 	  extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1);
-          stride = src->dim[j]._stride;
+	  stride = src->dim[j]._stride;
 	}
       array_offset_sr += (i / extent) * src->dim[rank-1]._stride;
-
       void *sr = (void *)((char *) TOKEN (token) + offset
-			   + array_offset_sr*GFC_DESCRIPTOR_SIZE (src));
-      void *dst = (void *)((char *) dest->base_addr
-			  + array_offset_dst*GFC_DESCRIPTOR_SIZE (dest));
-      memmove (dst, sr, GFC_DESCRIPTOR_SIZE (dest));
+			  + array_offset_sr*GFC_DESCRIPTOR_SIZE (src));
+
+      if (GFC_DESCRIPTOR_TYPE (dest) == GFC_DESCRIPTOR_TYPE (src)
+	  && dst_kind == src_kind)
+	memmove (dst, sr, dst_size > src_size ? src_size : dst_size);
+      else
+	convert_type (dst, GFC_DESCRIPTOR_TYPE (dest), dst_kind,
+		      sr, GFC_DESCRIPTOR_TYPE (src), src_kind);
+      if (GFC_DESCRIPTOR_TYPE (dest) == BT_CHARACTER && dst_size > src_size)
+	{
+	  if (dst_kind == 1)
+	    memset ((void*)(char*) dst + src_size, ' ', dst_size-src_size);
+	  else /* dst_kind == 4.  */
+	    for (k = src_size/4; k < dst_size/4; i++)
+	      ((int32_t*) dst)[i] = (int32_t) ' ';
+	}
     }
 }
 
 
-/* Send array data from src to dest on a remote image.  */
-
 void
-_gfortran_caf_send (caf_token_t token, size_t offset,
-		    int image_index __attribute__ ((unused)),
-		    gfc_descriptor_t *dest,
-		    caf_vector_t *dst_vector __attribute__ ((unused)),
-		    gfc_descriptor_t *src, int dst_kind,
-		    int src_kind)
+PREFIX (send) (caf_token_t token, size_t offset,
+	       int image_index __attribute__ ((unused)),
+	       gfc_descriptor_t *dest,
+	       caf_vector_t *dst_vector __attribute__ ((unused)),
+	       gfc_descriptor_t *src, int dst_kind,
+	       int src_kind)
 {
   /* FIXME: Handle vector subscripts; check whether strings of different
      kinds are permitted.  */
