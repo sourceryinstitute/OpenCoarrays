@@ -1233,6 +1233,9 @@ co_reduce_1 (MPI_Op op, gfc_descriptor_t *source, int result_image, int *stat,
       if (ierr)
 	goto error;
     }
+
+  if (stat)
+    *stat = 0;
   return;
 error:
   /* FIXME: Put this in an extra function and use it elsewhere.  */
