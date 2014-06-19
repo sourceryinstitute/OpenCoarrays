@@ -361,8 +361,7 @@ PREFIX (send_desc_scalar) (caf_token_t token, size_t offset,
 
 
 void
-PREFIX (co_sum) (gfc_descriptor_t *source __attribute__ ((unused)),
-		 void *vect_subscript __attribute__ ((unused)),
+PREFIX (co_sum) (gfc_descriptor_t *a __attribute__ ((unused)),
 		 int result_image __attribute__ ((unused)), int *stat,
 		 char *errmsg __attribute__ ((unused)),
 		 int errmsg_len __attribute__ ((unused)))
@@ -373,10 +372,10 @@ PREFIX (co_sum) (gfc_descriptor_t *source __attribute__ ((unused)),
 
 
 void
-PREFIX (co_min) (gfc_descriptor_t *source __attribute__ ((unused)),
-		 void *vect_subscript __attribute__ ((unused)),
+PREFIX (co_min) (gfc_descriptor_t *a __attribute__ ((unused)),
 		 int result_image __attribute__ ((unused)), int *stat,
 		 char *errmsg __attribute__ ((unused)),
+		 int src_len __attribute__ ((unused)),
 		 int errmsg_len __attribute__ ((unused)))
 {
   if (stat)
@@ -385,10 +384,10 @@ PREFIX (co_min) (gfc_descriptor_t *source __attribute__ ((unused)),
 
 
 void
-PREFIX (co_max) (gfc_descriptor_t *source __attribute__ ((unused)),
-		 void *vect_subscript __attribute__ ((unused)),
+PREFIX (co_max) (gfc_descriptor_t *a __attribute__ ((unused)),
 		 int result_image __attribute__ ((unused)), int *stat,
 		 char *errmsg __attribute__ ((unused)),
+		 int src_len __attribute__ ((unused)),
 		 int errmsg_len __attribute__ ((unused)))
 {
   if (stat)

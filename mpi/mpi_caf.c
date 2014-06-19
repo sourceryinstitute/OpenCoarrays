@@ -1169,10 +1169,8 @@ get_MPI_datatype (gfc_descriptor_t *desc)
 
 
 static void
-co_reduce_1 (MPI_Op op, gfc_descriptor_t *source,
-	     void *vect_subscript __attribute__ ((unused)),
-	     int result_image, int *stat,
-	     char *errmsg, int errmsg_len)
+co_reduce_1 (MPI_Op op, gfc_descriptor_t *source, int result_image, int *stat,
+	     char *errmsg, int src_len __attribute__ ((unused)), int errmsg_len)
 {
   size_t i, size;
   int j, ierr;
@@ -1190,7 +1188,7 @@ co_reduce_1 (MPI_Op op, gfc_descriptor_t *source,
       size *= dimextent;
     }
 
-  if (rank == 0 || PREFIX (is_contiguous) (source))
+  if (rank == 0)
     {
       if (result_image == 0)
 	ierr = MPI_Allreduce (MPI_IN_PLACE, source->base_addr, size, datatype,
@@ -1259,29 +1257,26 @@ error:
 
 
 void
-PREFIX (co_sum) (gfc_descriptor_t *source, void *vect_subscript,
-                 int result_image, int *stat, char *errmsg, int errmsg_len)
+PREFIX (co_sum) (gfc_descriptor_t *a, int result_image, int *stat, char *errmsg,
+		 int errmsg_len)
 {
-  co_reduce_1 (MPI_SUM, source, vect_subscript, result_image, stat, errmsg,
-	       errmsg_len);
+  co_reduce_1 (MPI_SUM, a, result_image, stat, errmsg, 0, errmsg_len);
 }
 
 
 void
-PREFIX (co_min) (gfc_descriptor_t *source, void *vect_subscript,
-                 int result_image, int *stat, char *errmsg, int errmsg_len)
+PREFIX (co_min) (gfc_descriptor_t *a, int result_image, int *stat, char *errmsg,
+		 int src_len, int errmsg_len)
 {
-  co_reduce_1 (MPI_MIN, source, vect_subscript, result_image, stat, errmsg,
-	       errmsg_len);
+  co_reduce_1 (MPI_MIN, a, result_image, stat, errmsg, src_len, errmsg_len);
 }
 
 
 void
-PREFIX (co_max) (gfc_descriptor_t *source, void *vect_subscript,
-                 int result_image, int *stat, char *errmsg, int errmsg_len)
+PREFIX (co_max) (gfc_descriptor_t *a, int result_image, int *stat,
+		 char *errmsg, int src_len, int errmsg_len)
 {
-  co_reduce_1 (MPI_MAX, source, vect_subscript, result_image, stat, errmsg,
-	       errmsg_len);
+  co_reduce_1 (MPI_MAX, a, result_image, stat, errmsg, src_len, errmsg_len);
 }
 
 
