@@ -79,6 +79,24 @@ typedef struct caf_static_t {
 }
 caf_static_t;
 
+/* When there is a vector subscript in this dimension, nvec == 0, otherwise,
+   lower_bound, upper_bound, stride contains the bounds relative to the declared
+   bounds; kind denotes the integer kind of the elements of vector[].  */
+typedef struct caf_vector_t {
+  size_t nvec;
+  union {
+    struct {
+      void *vector;
+      int kind;
+    } v;
+    struct {
+      ptrdiff_t lower_bound, upper_bound, stride;
+    } triplet;
+  } u;
+}
+caf_vector_t;
+
+
 
 /* Common auxiliary functions: caf_auxiliary.c.  */
 
@@ -87,40 +105,41 @@ bool PREFIX (is_contiguous) (gfc_descriptor_t *);
 
 /* Header for the specific implementation.  */
 
-void PREFIX(init) (int *, char ***);
-void PREFIX(finalize) (void);
+void PREFIX (init) (int *, char ***);
+void PREFIX (finalize) (void);
 
-int PREFIX(this_image) (int);
-int PREFIX(num_images) (int, int);
+int PREFIX (this_image) (int);
+int PREFIX (num_images) (int, int);
 
-void *PREFIX(register) (size_t, caf_register_t, caf_token_t *, int *, char *,
+void *PREFIX (register) (size_t, caf_register_t, caf_token_t *, int *, char *,
 			int);
-void PREFIX(deregister) (caf_token_t *, int *, char *, int);
+void PREFIX (deregister) (caf_token_t *, int *, char *, int);
 
 void PREFIX (get) (caf_token_t, size_t, int, void *, size_t , bool);
-void PREFIX(get_desc) (caf_token_t, size_t, int, gfc_descriptor_t*,
+void PREFIX (get_desc) (caf_token_t, size_t, int, gfc_descriptor_t*,
 		       gfc_descriptor_t*, bool);
 
-void PREFIX(send) (caf_token_t, size_t, int, void *, size_t, bool);
-void PREFIX(send_desc) (caf_token_t, size_t, int, gfc_descriptor_t*,
-			gfc_descriptor_t*, bool);
-void PREFIX(send_desc_scalar) (caf_token_t, size_t, int, gfc_descriptor_t*,
-			       void*, bool);
- 
+void PREFIX (caf_send) (caf_token_t, size_t, int, gfc_descriptor_t *,
+                        caf_vector_t *, gfc_descriptor_t *, int, int);
+
+void PREFIX (caf_sendget) (caf_token_t, size_t, int, gfc_descriptor_t *,
+			   caf_vector_t *, caf_token_t, size_t, int,
+			   gfc_descriptor_t *, caf_vector_t *, int, int);
+
 void PREFIX (co_max) (gfc_descriptor_t *, int, int *, char *, int, int);
 void PREFIX (co_min) (gfc_descriptor_t *, int, int *, char *, int, int);
 void PREFIX (co_sum) (gfc_descriptor_t *, int, int *, char *, int);
 
-void PREFIX(sync_all) (int *, char *, int);
-void PREFIX(sync_images) (int, int[], int *, char *, int);
+void PREFIX (sync_all) (int *, char *, int);
+void PREFIX (sync_images) (int, int[], int *, char *, int);
 
 /* FIXME: The CRITICAL functions should be removed;
    the functionality is better represented using Coarray's lock feature.  */
-void PREFIX(critical) (void);
-void PREFIX(end_critical) (void);
+void PREFIX (critical) (void);
+void PREFIX (end_critical) (void);
 
-void PREFIX(error_stop_str) (const char *, int32_t)
+void PREFIX (error_stop_str) (const char *, int32_t)
      __attribute__ ((noreturn));
-void PREFIX(error_stop) (int32_t) __attribute__ ((noreturn));
+void PREFIX (error_stop) (int32_t) __attribute__ ((noreturn));
 
 #endif  /* LIBCAF_H  */
