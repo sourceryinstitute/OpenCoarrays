@@ -513,7 +513,8 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
 
   if (rank == 0
       || (GFC_DESCRIPTOR_TYPE (dest) == GFC_DESCRIPTOR_TYPE (src)
-	  && dst_kind == src_kind && !pad_str && GFC_DESCRIPTOR_RANK (src) != 0
+	  && dst_kind == src_kind && GFC_DESCRIPTOR_RANK (src) != 0
+          && (GFC_DESCRIPTOR_TYPE (dest) != BT_CHARACTER || dst_size == src_size)
 	  && PREFIX (is_contiguous) (dest) && PREFIX (is_contiguous) (src)))
     {
       MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
@@ -766,7 +767,8 @@ PREFIX (get) (caf_token_t token, size_t offset,
 
   if (rank == 0
       || (GFC_DESCRIPTOR_TYPE (dest) == GFC_DESCRIPTOR_TYPE (src)
-	  && dst_kind == src_kind && !pad_str
+	  && dst_kind == src_kind
+          && (GFC_DESCRIPTOR_TYPE (dest) != BT_CHARACTER || dst_size == src_size)
 	  && PREFIX (is_contiguous) (dest) && PREFIX (is_contiguous) (src)))
     {
       /* FIXME: Handle image_index == this_image().  */
