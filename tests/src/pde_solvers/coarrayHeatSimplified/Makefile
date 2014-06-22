@@ -1,17 +1,27 @@
+# Choose desired compiler (options: gnu, intel, cray):
+compiler=gnu
 executable=co_heat
-#Cray compiler command
-cray=ftn -ew -h caf
-#Intel compiler command
-intel=ifort -coarray=shared -standard-semantics -O3 -coarray-num-images=2
-#GNU compiler command
-gnu=gfortran -fcoarray=lib
-#Change the name in parenthesis to choose one of the above compilers:
-compile=$(gnu)
+
+ifeq ($(compiler),gnu)
+  opencoarrays_dir=../../../../../
+  opt=-L $(opencoarrays_dir)/dev/mpi
+  libcaf_dir = $(opencoarrays_dir)/dev/
+  compile=mpif90 -fcoarray=lib -L $(libcaf_dir)
+  lib=-lcaf_mpi
+else
+  ifeq ($(compiler),intel)
+    compile=ifort -coarray=shared -standard-semantics -O3 -coarray-num-images=2
+  else
+    ifeq ($(compiler),cray)
+      compile=ftn -ew -h caf
+    endif
+  endif
+endif
 
 objects = local_field.o global_field.o 
 
 $(executable): main.o $(objects) Makefile
-	$(compile) main.o $(objects) -o $(executable) 
+	$(compile) $(opt) main.o $(objects) -o $(executable) $(lib)
 
 main.o: main.f90 $(objects) Makefile
 	$(compile) -c main.f90
