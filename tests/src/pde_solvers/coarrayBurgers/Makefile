@@ -1,24 +1,43 @@
+# Choose desired compiler (options: gnu, intel, cray, tau_intel):
+compiler=gnu
 library_root=./library/
 include_root=./include-files/
 executable=burgers_caf
-#Cray compiler command
-cray=ftn -ew -h caf
-#Intel compiler command
-intel=ifort -Bdynamic -coarray=shared -standard-semantics -O3 -coarray-num-images=2
-#intel=ifort -v -coarray=shared -coarray-config-file=configuration 
-#GNU compiler command
-gnu=gfortran -fcoarray=lib
-#TAU compiler command
-#tau_intel=tauf90 -tau:serial,icpc,pdt  -Bdynamic -coarray=shared -standard-s    emantics -O3 -coarray-num-images=4 -DTAU=1
-tau_intel=tau_f90.sh -Bdynamic -coarray=shared -standard-semantics -O3 -optCompInst 
-tau_cray=tau_f90.sh -ew -h caf -optCompInst
-compile=$(gnu)
+
+ifeq ($(compiler),gnu)
+  opencoarrays_dir=../../../../../
+  opt=-L $(opencoarrays_dir)/dev/mpi
+  libcaf_dir = $(opencoarrays_dir)/dev/
+  compile=mpif90 -fcoarray=lib -L $(libcaf_dir)
+  lib=-lcaf_mpi
+else
+  ifeq ($(compiler),intel)
+    compile=ifort -coarray=shared -standard-semantics -O3 -coarray-num-images=2
+  else
+    ifeq ($(compiler),cray)
+      compile=ftn -ew -h caf
+    else
+      ifeq ($(compiler),tau_intel)
+        compile=tauf90 -tau:serial,icpc,pdt  -coarray=shared -standard-semantics -O3 -coarray-num-images=4 -DTAU=1
+      else
+        ifeq ($(compiler),tau_aciss)
+          tau_aciss=tau_f90.sh -v -Bdynamic -coarray=shared -standard-semantics -O3
+        else
+          ifeq ($(compiler),tau_cray)
+            tau_hopper=tau_f90.sh -optCompInst -ew -h caf -g
+          endif
+        endif
+      endif
+    endif
+  endif
+endif
+
 
 OPTS=
 objects = local_field.o global_field.o kind_parameters.o co_object_interface.o object_interface.o ForTrilinos_assertion_utility.o ForTrilinos_error.o math_constants.o burgers.o
 
 $(executable): main.o $(objects) Makefile
-	$(compile) $(OPTS)  main.o $(objects) -o $(executable) 
+	$(compile) $(opt)  main.o $(objects) -o $(executable) $(lib)
 
 main.o: main.F90 $(objects) Makefile
 	$(compile) $(OPTS) -c main.F90
@@ -55,27 +74,27 @@ clean :
 	-rm -f  *.o *.mod $(executable) core fort.* compiler_capabilities.txt $(library_root)/compiler_capabilities.txt profile* MULT* *.trc *.edf
 
 preprocessor_definitions: 
-ifeq ($(compile),$(gnu))
+ifeq ($(compiler),gnu)
 	cp $(include_root)/gfortran_capabilities.txt compiler_capabilities.txt
 	cp $(include_root)/gfortran_capabilities.txt $(library_root)/compiler_capabilities.txt
 else
-  ifeq ($(compile),$(intel))
+  ifeq ($(compiler),intel)
 	cp $(include_root)/intel_capabilities.txt compiler_capabilities.txt
 	cp $(include_root)/intel_capabilities.txt $(library_root)/compiler_capabilities.txt
   else
-    ifeq ($(compile),$(cray))
+    ifeq ($(compiler),cray)
 	cp $(include_root)/cray_capabilities.txt compiler_capabilities.txt
 	cp $(include_root)/cray_capabilities.txt $(library_root)/compiler_capabilities.txt
-  else
-    ifeq ($(compile),$(tau_cray))
+    else
+      ifeq ($(compiler),tau_cray)
 	cp $(include_root)/tau_cray_capabilities.txt compiler_capabilities.txt
 	cp $(include_root)/tau_cray_capabilities.txt $(library_root)/compiler_capabilities.txt
-  else
-    ifeq ($(compile),$(tau_intel))
+      else
+        ifeq ($(compiler),tau_intel)
 	cp $(include_root)/tau_intel_capabilities.txt compiler_capabilities.txt
 	cp $(include_root)/tau_intel_capabilities.txt $(library_root)/compiler_capabilities.txt
+        endif
+      endif
     endif
-  endif
-  endif
   endif
 endif

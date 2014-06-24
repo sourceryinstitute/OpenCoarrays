@@ -1,0 +1,1 @@
+add_executable(hello_multiverse hello_multiverse.F90)
