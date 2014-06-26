@@ -532,195 +532,204 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
 	error_stop (ierr);
       return;
     }
-
+  else
+    {
 #ifdef STRIDED
-  MPI_Datatype dt_s, dt_d, base_type;
-  int *arr_bl;
-  int *arr_dsp_s, *arr_dsp_d;
-
-  void *sr = src->base_addr;
-
-  arr_bl = calloc (size, sizeof (int));
-  arr_dsp_s = calloc (size, sizeof (int));
-  arr_dsp_d = calloc (size, sizeof (int));
-
-  selectType (GFC_DESCRIPTOR_SIZE (src), &base_type);
-
-  for (i = 0; i < size; i++)
-    arr_bl[i] = 1;
-
-  for (i = 0; i < size; i++)
-    {
-      ptrdiff_t array_offset_dst = 0;
-      ptrdiff_t stride = 1;
-      ptrdiff_t extent = 1;
-      for (j = 0; j < rank-1; j++)
-	{
-	  array_offset_dst += ((i / (extent*stride))
-			       % (dest->dim[j]._ubound
-				  - dest->dim[j].lower_bound + 1))
-			      * dest->dim[j]._stride;
-	  extent = (dest->dim[j]._ubound - dest->dim[j].lower_bound + 1);
-          stride = dest->dim[j]._stride;
-	}
-
-      array_offset_dst += (i / extent) * dest->dim[rank-1]._stride;
-
-      arr_dsp_d[i] = array_offset_dst;
-
-      ptrdiff_t array_offset_sr = 0;
-      stride = 1;
-      extent = 1;
-      for (j = 0; j < GFC_DESCRIPTOR_RANK (src)-1; j++)
-	{
-	  array_offset_sr += ((i / (extent*stride))
-			   % (src->dim[j]._ubound
-			      - src->dim[j].lower_bound + 1))
-			  * src->dim[j]._stride;
-	  extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1);
-          stride = src->dim[j]._stride;
-	}
-
-      array_offset_sr += (i / extent) * src->dim[rank-1]._stride;
-
-      arr_dsp_s[i] = array_offset_sr;
-
-      //dst_offset = offset + array_offset_dst*GFC_DESCRIPTOR_SIZE (dest);
-      /* void *sr = (void *)((char *) src->base_addr */
-      /* 			  + array_offset_sr*GFC_DESCRIPTOR_SIZE (src)); */
-
-    }
-
-  MPI_Type_indexed(size, arr_bl, arr_dsp_s, base_type, &dt_s);
-  MPI_Type_indexed(size, arr_bl, arr_dsp_d, base_type, &dt_d);
-
-  MPI_Type_commit(&dt_s);
-  MPI_Type_commit(&dt_d);
-
-  dst_offset = offset;
-
-  MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
-  ierr = MPI_Put (sr, 1, dt_s, image_index-1, dst_offset, 1, dt_d, *p);
-  MPI_Win_unlock (image_index-1, *p);
-
-  if (ierr != 0)
-    {
-      error_stop (ierr);
-      return;
-    }
-
-  MPI_Type_free (&dt_s);
-  MPI_Type_free (&dt_d);
-  
-  free (arr_bl);
-  free (arr_dsp_s);
-  free (arr_dsp_d);
-
-  /* msg = 2; */
-  /* MPI_Pack(&msg, 1, MPI_INT, buff_am[caf_this_image], 1000, &position, MPI_COMM_WORLD); */
-  /* MPI_Pack(&rank, 1, MPI_INT, buff_am[caf_this_image], 1000, &position, MPI_COMM_WORLD); */
-
-  /* for(j=0;j<rank;j++) */
-  /*   { */
-  /*     MPI_Pack(&(dest->dim[j]._stride), 1, MPI_INT, buff_am[caf_this_image], 1000, &position, MPI_COMM_WORLD); */
-  /*     MPI_Pack(&(dest->dim[j].lower_bound), 1, MPI_INT, buff_am[caf_this_image], 1000, &position, MPI_COMM_WORLD); */
-  /*     MPI_Pack(&(dest->dim[j]._ubound), 1, MPI_INT, buff_am[caf_this_image], 1000, &position, MPI_COMM_WORLD); */
-  /*   } */
-
-  /* MPI_Pack(&size, 1, MPI_INT, buff_am[caf_this_image], 1000, &position, MPI_COMM_WORLD); */
-
-  /* /\* non-blocking send *\/ */
-
-  /* MPI_Issend(buff_am[caf_this_image],position,MPI_PACKED,image_index-1,1,MPI_COMM_WORLD,&reqdt); */
-
-  /* msgbody = calloc(size,sizeof(char)); */
-
-  /* ptrdiff_t array_offset_sr = 0; */
-  /* ptrdiff_t stride = 1; */
-  /* ptrdiff_t extent = 1; */
-
-  /* for(i = 0; i < size; i++) */
-  /*   { */
-  /*     for (j = 0; j < GFC_DESCRIPTOR_RANK (src)-1; j++) */
-  /* 	{ */
-  /* 	  array_offset_sr += ((i / (extent*stride)) */
-  /* 			      % (src->dim[j]._ubound */
-  /* 				 - src->dim[j].lower_bound + 1)) */
-  /* 	    * src->dim[j]._stride; */
-  /* 	  extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1); */
-  /*         stride = src->dim[j]._stride; */
-  /* 	} */
-
-  /*     array_offset_sr += (i / extent) * src->dim[rank-1]._stride; */
+      MPI_Datatype dt_s, dt_d, base_type_src, base_type_dst;
+      int *arr_bl;
+      int *arr_dsp_s, *arr_dsp_d;
       
-  /*     void *sr = (void *)((char *) src->base_addr */
-  /* 			  + array_offset_sr*GFC_DESCRIPTOR_SIZE (src)); */
+      void *sr = src->base_addr;
+      
+      arr_bl = calloc (size, sizeof (int));
+      arr_dsp_s = calloc (size, sizeof (int));
+      arr_dsp_d = calloc (size, sizeof (int));
+      
+      selectType (GFC_DESCRIPTOR_SIZE (src), &base_type_src);
+      selectType (GFC_DESCRIPTOR_SIZE (dest), &base_type_dst);
 
-  /*     memmove (msgbody+p_mb, sr, GFC_DESCRIPTOR_SIZE (src)); */
-
-  /*     p_mb += GFC_DESCRIPTOR_SIZE (src); */
-  /*   } */
-  
-  /* MPI_Wait(&reqdt, &stadt); */
-
-  /* MPI_Ssend(msgbody,size,MPI_BYTE,image_index-1,1,MPI_COMM_WORLD); */
-
-  /* free(msgbody); */
-
-#else
-  MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
-  for (i = 0; i < size; i++)
-    {
-      ptrdiff_t array_offset_dst = 0;
-      ptrdiff_t stride = 1;
-      ptrdiff_t extent = 1;
-      for (j = 0; j < rank-1; j++)
+      for (i = 0; i < size; i++)
+	arr_bl[i] = 1;
+      
+      for (i = 0; i < size; i++)
 	{
-	  array_offset_dst += ((i / (extent*stride))
-			       % (dest->dim[j]._ubound
-				  - dest->dim[j].lower_bound + 1))
-			      * dest->dim[j]._stride;
-	  extent = (dest->dim[j]._ubound - dest->dim[j].lower_bound + 1);
-          stride = dest->dim[j]._stride;
-	}
-      array_offset_dst += (i / extent) * dest->dim[rank-1]._stride;
-      dst_offset = offset + array_offset_dst*GFC_DESCRIPTOR_SIZE (dest);
-
-      void *sr;
-      if (GFC_DESCRIPTOR_RANK (src) != 0)
-	{
-	  ptrdiff_t array_offset_sr = 0;
-	  stride = 1;
-	  extent = 1;
-	  for (j = 0; j < GFC_DESCRIPTOR_RANK (src)-1; j++)
+	  ptrdiff_t array_offset_dst = 0;
+	  ptrdiff_t stride = 1;
+	  ptrdiff_t extent = 1;
+	  for (j = 0; j < rank-1; j++)
 	    {
-	      array_offset_sr += ((i / (extent*stride))
-				  % (src->dim[j]._ubound
-				     - src->dim[j].lower_bound + 1))
-				 * src->dim[j]._stride;
-	      extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1);
-	      stride = src->dim[j]._stride;
+	      array_offset_dst += ((i / (extent*stride))
+				   % (dest->dim[j]._ubound
+				      - dest->dim[j].lower_bound + 1))
+		* dest->dim[j]._stride;
+	      extent = (dest->dim[j]._ubound - dest->dim[j].lower_bound + 1);
+	      stride = dest->dim[j]._stride;
 	    }
-	  array_offset_sr += (i / extent) * src->dim[rank-1]._stride;
-	  sr = (void *)((char *) src->base_addr
-			+ array_offset_sr*GFC_DESCRIPTOR_SIZE (src));
-	}
-      else
-	sr = src->base_addr;
+	  
+	  array_offset_dst += (i / extent) * dest->dim[rank-1]._stride;
+	  
+	  arr_dsp_d[i] = array_offset_dst;
+	  
 
-      ierr = MPI_Put (sr, GFC_DESCRIPTOR_SIZE (dest), MPI_BYTE, image_index-1,
-		      dst_offset, GFC_DESCRIPTOR_SIZE (dest), MPI_BYTE, *p);
-      if (pad_str)
-	ierr = MPI_Put (pad_str, dst_size - src_size, MPI_BYTE, image_index-1,
-			dst_offset, dst_size - src_size, MPI_BYTE, *p);
-if (ierr != 0)
+	  if (GFC_DESCRIPTOR_RANK (src) != 0)
+	    {
+	      ptrdiff_t array_offset_sr = 0;
+	      stride = 1;
+	      extent = 1;
+	      for (j = 0; j < GFC_DESCRIPTOR_RANK (src)-1; j++)
+		{
+		  array_offset_sr += ((i / (extent*stride))
+				      % (src->dim[j]._ubound
+					 - src->dim[j].lower_bound + 1))
+		    * src->dim[j]._stride;
+		  extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1);
+		  stride = src->dim[j]._stride;
+		}
+	      
+	      array_offset_sr += (i / extent) * src->dim[rank-1]._stride;
+	      
+	      arr_dsp_s[i] = array_offset_sr;
+	    }
+	  else
+	    arr_dsp_s[i] = 0;
+	  
+	  //dst_offset = offset + array_offset_dst*GFC_DESCRIPTOR_SIZE (dest);
+	  /* void *sr = (void *)((char *) src->base_addr */
+	  /* 			  + array_offset_sr*GFC_DESCRIPTOR_SIZE (src)); */
+	  
+	}
+      
+      MPI_Type_indexed(size, arr_bl, arr_dsp_s, base_type_src, &dt_s);
+      MPI_Type_indexed(size, arr_bl, arr_dsp_d, base_type_dst, &dt_d);
+      
+      MPI_Type_commit(&dt_s);
+      MPI_Type_commit(&dt_d);
+      
+      dst_offset = offset;
+      
+      MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
+      ierr = MPI_Put (sr, 1, dt_s, image_index-1, dst_offset, 1, dt_d, *p);
+      MPI_Win_unlock (image_index-1, *p);
+      
+      if (ierr != 0)
 	{
 	  error_stop (ierr);
 	  return;
 	}
-    }
-  MPI_Win_unlock (image_index-1, *p);
+      
+      MPI_Type_free (&dt_s);
+      MPI_Type_free (&dt_d);
+      
+      free (arr_bl);
+      free (arr_dsp_s);
+      free (arr_dsp_d);
+      
+      /* msg = 2; */
+      /* MPI_Pack(&msg, 1, MPI_INT, buff_am[caf_this_image], 1000, &position, MPI_COMM_WORLD); */
+      /* MPI_Pack(&rank, 1, MPI_INT, buff_am[caf_this_image], 1000, &position, MPI_COMM_WORLD); */
+      
+      /* for(j=0;j<rank;j++) */
+      /*   { */
+      /*     MPI_Pack(&(dest->dim[j]._stride), 1, MPI_INT, buff_am[caf_this_image], 1000, &position, MPI_COMM_WORLD); */
+      /*     MPI_Pack(&(dest->dim[j].lower_bound), 1, MPI_INT, buff_am[caf_this_image], 1000, &position, MPI_COMM_WORLD); */
+      /*     MPI_Pack(&(dest->dim[j]._ubound), 1, MPI_INT, buff_am[caf_this_image], 1000, &position, MPI_COMM_WORLD); */
+      /*   } */
+      
+      /* MPI_Pack(&size, 1, MPI_INT, buff_am[caf_this_image], 1000, &position, MPI_COMM_WORLD); */
+      
+      /* /\* non-blocking send *\/ */
+      
+      /* MPI_Issend(buff_am[caf_this_image],position,MPI_PACKED,image_index-1,1,MPI_COMM_WORLD,&reqdt); */
+      
+      /* msgbody = calloc(size,sizeof(char)); */
+      
+      /* ptrdiff_t array_offset_sr = 0; */
+      /* ptrdiff_t stride = 1; */
+      /* ptrdiff_t extent = 1; */
+      
+      /* for(i = 0; i < size; i++) */
+      /*   { */
+      /*     for (j = 0; j < GFC_DESCRIPTOR_RANK (src)-1; j++) */
+      /* 	{ */
+      /* 	  array_offset_sr += ((i / (extent*stride)) */
+      /* 			      % (src->dim[j]._ubound */
+      /* 				 - src->dim[j].lower_bound + 1)) */
+      /* 	    * src->dim[j]._stride; */
+      /* 	  extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1); */
+      /*         stride = src->dim[j]._stride; */
+      /* 	} */
+      
+      /*     array_offset_sr += (i / extent) * src->dim[rank-1]._stride; */
+      
+      /*     void *sr = (void *)((char *) src->base_addr */
+      /* 			  + array_offset_sr*GFC_DESCRIPTOR_SIZE (src)); */
+      
+      /*     memmove (msgbody+p_mb, sr, GFC_DESCRIPTOR_SIZE (src)); */
+      
+      /*     p_mb += GFC_DESCRIPTOR_SIZE (src); */
+      /*   } */
+      
+      /* MPI_Wait(&reqdt, &stadt); */
+      
+      /* MPI_Ssend(msgbody,size,MPI_BYTE,image_index-1,1,MPI_COMM_WORLD); */
+      
+      /* free(msgbody); */
+      
+#else
+      MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
+      for (i = 0; i < size; i++)
+	{
+	  ptrdiff_t array_offset_dst = 0;
+	  ptrdiff_t stride = 1;
+	  ptrdiff_t extent = 1;
+	  for (j = 0; j < rank-1; j++)
+	    {
+	      array_offset_dst += ((i / (extent*stride))
+				   % (dest->dim[j]._ubound
+				      - dest->dim[j].lower_bound + 1))
+		* dest->dim[j]._stride;
+	      extent = (dest->dim[j]._ubound - dest->dim[j].lower_bound + 1);
+	      stride = dest->dim[j]._stride;
+	    }
+	  array_offset_dst += (i / extent) * dest->dim[rank-1]._stride;
+	  dst_offset = offset + array_offset_dst*GFC_DESCRIPTOR_SIZE (dest);
+	  
+	  void *sr;
+	  if (GFC_DESCRIPTOR_RANK (src) != 0)
+	    {
+	      ptrdiff_t array_offset_sr = 0;
+	      stride = 1;
+	      extent = 1;
+	      for (j = 0; j < GFC_DESCRIPTOR_RANK (src)-1; j++)
+		{
+		  array_offset_sr += ((i / (extent*stride))
+				      % (src->dim[j]._ubound
+					 - src->dim[j].lower_bound + 1))
+		    * src->dim[j]._stride;
+		  extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1);
+		  stride = src->dim[j]._stride;
+		}
+	      array_offset_sr += (i / extent) * src->dim[rank-1]._stride;
+	      sr = (void *)((char *) src->base_addr
+			    + array_offset_sr*GFC_DESCRIPTOR_SIZE (src));
+	    }
+	  else
+	    sr = src->base_addr;
+	  
+	  ierr = MPI_Put (sr, GFC_DESCRIPTOR_SIZE (dest), MPI_BYTE, image_index-1,
+			  dst_offset, GFC_DESCRIPTOR_SIZE (dest), MPI_BYTE, *p);
+	  if (pad_str)
+	    ierr = MPI_Put (pad_str, dst_size - src_size, MPI_BYTE, image_index-1,
+			    dst_offset, dst_size - src_size, MPI_BYTE, *p);
+	  if (ierr != 0)
+	    {
+	      error_stop (ierr);
+	      return;
+	    }
+	}
+      MPI_Win_unlock (image_index-1, *p);
 #endif
+    }
 }
 
 
@@ -789,7 +798,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
 
 #ifdef STRIDED
 
-  MPI_Datatype dt_s,dt_d,base_type;
+  MPI_Datatype dt_s,dt_d,base_type_src, base_type_dst;
   int *arr_bl;
   int *arr_dsp_s,*arr_dsp_d;
 
@@ -799,7 +808,8 @@ PREFIX (get) (caf_token_t token, size_t offset,
   arr_dsp_s = calloc(size,sizeof(int));
   arr_dsp_d = calloc(size,sizeof(int));
   
-  selectType(GFC_DESCRIPTOR_SIZE (dest),&base_type);
+  selectType(GFC_DESCRIPTOR_SIZE (src),&base_type_src);
+  selectType(GFC_DESCRIPTOR_SIZE (dest),&base_type_dst);
 
   for(i=0;i<size;i++)
     arr_bl[i]=1;
@@ -851,17 +861,17 @@ PREFIX (get) (caf_token_t token, size_t offset,
 	/* } */
     }
 
-  MPI_Type_indexed(size, arr_bl, arr_dsp_s, base_type, &dt_s);
-  MPI_Type_indexed(size, arr_bl, arr_dsp_d, base_type, &dt_d);
+  MPI_Type_indexed(size, arr_bl, arr_dsp_s, base_type_src, &dt_s);
+  MPI_Type_indexed(size, arr_bl, arr_dsp_d, base_type_dst, &dt_d);
   
   MPI_Type_commit(&dt_s);
   MPI_Type_commit(&dt_d);
   
-  sr_off = offset;
+  //sr_off = offset;
 
   MPI_Win_lock (MPI_LOCK_SHARED, image_index-1, 0, *p);
   
-  ierr = MPI_Get (dst, 1, dt_d, image_index-1, sr_off, 1, dt_s, *p);
+  ierr = MPI_Get (dst, 1, dt_d, image_index-1, offset, 1, dt_s, *p);
 
   MPI_Win_unlock (image_index-1, *p);
 
