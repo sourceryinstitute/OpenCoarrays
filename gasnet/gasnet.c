@@ -469,43 +469,19 @@ PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
 /* asynchronous: Return before the data transfer has been complete  */
 
 void
-PREFIX (send) (caf_token_t token, size_t offset, int image_index, void *data,
-	      size_t size, bool async)
+PREFIX (send) (caf_token_t token, size_t offset, int image_index,
+	       gfc_descriptor_t *dest,
+	       caf_vector_t *dst_vector __attribute__ ((unused)),
+	       gfc_descriptor_t *src, int dst_kind, int src_kind)
 {
-  int ierr = 0;
-
-  void **tm = token;
-
-  if (unlikely (size == 0))
-    return;  /* Zero-sized array.  */
-
-  if (image_index == caf_this_image)
-    {
-       void *dest = (void *) ((char *) tm[image_index-1] + offset);
-       memmove (dest, data, size);
-       return;
-    }
-
-  /* if (async == false) */
-    gasnet_put_bulk (image_index-1, tm[image_index-1]+offset, data, size);
-  /* else */
-  /*   ierr = ARMCI_NbPut(data,t.addr+offset,size,image_index-1,NULL); */
-  if(ierr != 0)
-    error_stop (ierr);
-}
-
-
-/* Send array data from src to dest on a remote image.  */
-
-void
-PREFIX (send_desc) (caf_token_t token, size_t offset, int image_index,
-		    gfc_descriptor_t *dest, gfc_descriptor_t *src, bool async)
-{
-  int ierr = 0;
+  int ierr = 0, j=0;
   size_t i, size;
-  int j;
-  int rank = GFC_DESCRIPTOR_RANK (dest);
   void **tm = token;
+  int rank = GFC_DESCRIPTOR_RANK (dest);
+  ptrdiff_t dst_offset = 0;
+  void *pad_str = NULL;
+  size_t src_size = GFC_DESCRIPTOR_SIZE (src);
+  size_t dst_size = GFC_DESCRIPTOR_SIZE (dest);
 
   size = 1;
   for (j = 0; j < rank; j++)
@@ -516,70 +492,202 @@ PREFIX (send_desc) (caf_token_t token, size_t offset, int image_index,
       size *= dimextent;
     }
 
-  if (size == 0)
-    return;
 
-  if (PREFIX (is_contiguous) (dest) && PREFIX (is_contiguous) (src))
+  if (unlikely (size == 0))
+    return;  /* Zero-sized array.  */
+
+  /* It works only if contiguous */
+  /*if (image_index == caf_this_image)
     {
-      void *dst = (void *)((char *) tm[image_index-1] + offset);
-      if (image_index == caf_this_image)
-	  memmove (dst, src->base_addr, GFC_DESCRIPTOR_SIZE (dest)*size);
-      else /* if (!async) */
-        gasnet_put_bulk (image_index-1, dst, src->base_addr, GFC_DESCRIPTOR_SIZE (dest)*size);
-      /* else */
+       void *dest = (void *) ((char *) tm[image_index-1] + offset);
+       memmove (dest, src->base_addr, size*dst_size);
+       return;
+    }*/
 
+  if (GFC_DESCRIPTOR_TYPE (dest) == BT_CHARACTER && dst_size > src_size)
+    {
+      pad_str = alloca (dst_size - src_size);
+      if (dst_kind == 1)
+	memset (pad_str, ' ', dst_size-src_size);
+      else /* dst_kind == 4.  */
+	for (i = 0; i < (dst_size-src_size)/4; i++)
+	      ((int32_t*) pad_str)[i] = (int32_t) ' ';
+    }
+
+  if (rank == 0
+      || (GFC_DESCRIPTOR_TYPE (dest) == GFC_DESCRIPTOR_TYPE (src)
+	  && dst_kind == src_kind && GFC_DESCRIPTOR_RANK (src) != 0
+          && (GFC_DESCRIPTOR_TYPE (dest) != BT_CHARACTER || dst_size == src_size)
+	  && PREFIX (is_contiguous) (dest) && PREFIX (is_contiguous) (src)))
+    {
+      /* MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p); */
+      if (GFC_DESCRIPTOR_TYPE (dest) == GFC_DESCRIPTOR_TYPE (src)
+	  && dst_kind == src_kind)
+	gasnet_put_bulk (image_index-1, tm[image_index-1]+offset, src->base_addr, (dst_size > src_size ? src_size : dst_size)*size);
+	/* ierr = MPI_Put (src->base_addr, dst_size*size, MPI_BYTE, */
+	/* 		image_index-1, offset, */
+	/* 		(dst_size > src_size ? src_size : dst_size) * size, */
+	/* 		MPI_BYTE, *p); */
+      if (pad_str)
+	gasnet_put_bulk (image_index-1, tm[image_index-1]+offset, pad_str, dst_size-src_size);
+	/* ierr = MPI_Put (pad_str, dst_size-src_size, MPI_BYTE, image_index-1, */
+	/* 		offset, dst_size - src_size, MPI_BYTE, *p); */
+      /* MPI_Win_unlock (image_index-1, *p); */
       if (ierr != 0)
 	error_stop (ierr);
       return;
     }
-
-  for (i = 0; i < size; i++)
+  else
     {
-      ptrdiff_t array_offset_dst = 0;
-      ptrdiff_t stride = 1;
-      ptrdiff_t extent = 1;
-      for (j = 0; j < rank-1; j++)
+      for (i = 0; i < size; i++)
 	{
-	  array_offset_dst += ((i / (extent*stride))
-			       % (dest->dim[j]._ubound
-				  - dest->dim[j].lower_bound + 1))
-			      * dest->dim[j]._stride;
-	  extent = (dest->dim[j]._ubound - dest->dim[j].lower_bound + 1);
-          stride = dest->dim[j]._stride;
-	}
-      array_offset_dst += (i / extent) * dest->dim[rank-1]._stride;
+	  ptrdiff_t array_offset_dst = 0;
+	  ptrdiff_t stride = 1;
+	  ptrdiff_t extent = 1;
+	  for (j = 0; j < rank-1; j++)
+	    {
+	      array_offset_dst += ((i / (extent*stride))
+				   % (dest->dim[j]._ubound
+				      - dest->dim[j].lower_bound + 1))
+		* dest->dim[j]._stride;
+	      extent = (dest->dim[j]._ubound - dest->dim[j].lower_bound + 1);
+	      stride = dest->dim[j]._stride;
+	    }
+	  array_offset_dst += (i / extent) * dest->dim[rank-1]._stride;
+	  dst_offset = offset + array_offset_dst*GFC_DESCRIPTOR_SIZE (dest);
+	  
+	  void *sr;
+	  if (GFC_DESCRIPTOR_RANK (src) != 0)
+	    {
+	      ptrdiff_t array_offset_sr = 0;
+	      stride = 1;
+	      extent = 1;
+	      for (j = 0; j < GFC_DESCRIPTOR_RANK (src)-1; j++)
+		{
+		  array_offset_sr += ((i / (extent*stride))
+				      % (src->dim[j]._ubound
+					 - src->dim[j].lower_bound + 1))
+		    * src->dim[j]._stride;
+		  extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1);
+		  stride = src->dim[j]._stride;
+		}
+	      array_offset_sr += (i / extent) * src->dim[rank-1]._stride;
+	      sr = (void *)((char *) src->base_addr
+			    + array_offset_sr*GFC_DESCRIPTOR_SIZE (src));
+	    }
+	  else
+	    sr = src->base_addr;
+	  
+	  gasnet_put_bulk (image_index-1, tm[image_index-1]+dst_offset, sr, dst_size);
 
-      ptrdiff_t array_offset_sr = 0;
-      stride = 1;
-      extent = 1;
-      for (j = 0; j < GFC_DESCRIPTOR_RANK (src)-1; j++)
-	{
-	  array_offset_sr += ((i / (extent*stride))
-			   % (src->dim[j]._ubound
-			      - src->dim[j].lower_bound + 1))
-			  * src->dim[j]._stride;
-	  extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1);
-          stride = src->dim[j]._stride;
-	}
-      array_offset_sr += (i / extent) * src->dim[rank-1]._stride;
-
-      void *dst = (void *)((char *) tm[image_index-1] + offset
-			   + array_offset_dst*GFC_DESCRIPTOR_SIZE (dest));
-      void *sr = (void *)((char *) src->base_addr
-			  + array_offset_sr*GFC_DESCRIPTOR_SIZE (src));
-      if (image_index == caf_this_image)
-	memmove (dst, sr, GFC_DESCRIPTOR_SIZE (dest));
-      else /* if (!async) */
-        gasnet_put_bulk (image_index-1, dst, sr, GFC_DESCRIPTOR_SIZE (dest));
-      /* else */
-
-      if (ierr != 0)
-	{
-	  error_stop (ierr);
-	  return;
+	  /* ierr = MPI_Put (sr, GFC_DESCRIPTOR_SIZE (dest), MPI_BYTE, image_index-1, */
+	  /* 		  dst_offset, GFC_DESCRIPTOR_SIZE (dest), MPI_BYTE, *p); */
+	  if (pad_str)
+	    gasnet_put_bulk (image_index-1, tm[image_index-1]+offset, pad_str, dst_size-src_size);
+	    /* ierr = MPI_Put (pad_str, dst_size - src_size, MPI_BYTE, image_index-1, */
+	    /* 		    dst_offset, dst_size - src_size, MPI_BYTE, *p); */
+	  if (ierr != 0)
+	    {
+	      error_stop (ierr);
+	      return;
+	    }
 	}
     }
+
+  /* if (async == false) */
+    /* gasnet_put_bulk (image_index-1, tm[image_index-1]+offset, data, size); */
+  /* else */
+  /*   ierr = ARMCI_NbPut(data,t.addr+offset,size,image_index-1,NULL); */
+  if(ierr != 0)
+    error_stop (ierr);
 }
+
+
+/* Send array data from src to dest on a remote image.  */
+
+/* void */
+/* PREFIX (send_desc) (caf_token_t token, size_t offset, int image_index, */
+/* 		    gfc_descriptor_t *dest, gfc_descriptor_t *src, bool async) */
+/* { */
+/*   int ierr = 0; */
+/*   size_t i, size; */
+/*   int j; */
+/*   int rank = GFC_DESCRIPTOR_RANK (dest); */
+/*   void **tm = token; */
+
+/*   size = 1; */
+/*   for (j = 0; j < rank; j++) */
+/*     { */
+/*       ptrdiff_t dimextent = dest->dim[j]._ubound - dest->dim[j].lower_bound + 1; */
+/*       if (dimextent < 0) */
+/* 	dimextent = 0; */
+/*       size *= dimextent; */
+/*     } */
+
+/*   if (size == 0) */
+/*     return; */
+
+/*   if (PREFIX (is_contiguous) (dest) && PREFIX (is_contiguous) (src)) */
+/*     { */
+/*       void *dst = (void *)((char *) tm[image_index-1] + offset); */
+/*       if (image_index == caf_this_image) */
+/* 	  memmove (dst, src->base_addr, GFC_DESCRIPTOR_SIZE (dest)*size); */
+/*       else /\* if (!async) *\/ */
+/*         gasnet_put_bulk (image_index-1, dst, src->base_addr, GFC_DESCRIPTOR_SIZE (dest)*size); */
+/*       /\* else *\/ */
+
+/*       if (ierr != 0) */
+/* 	error_stop (ierr); */
+/*       return; */
+/*     } */
+
+/*   for (i = 0; i < size; i++) */
+/*     { */
+/*       ptrdiff_t array_offset_dst = 0; */
+/*       ptrdiff_t stride = 1; */
+/*       ptrdiff_t extent = 1; */
+/*       for (j = 0; j < rank-1; j++) */
+/* 	{ */
+/* 	  array_offset_dst += ((i / (extent*stride)) */
+/* 			       % (dest->dim[j]._ubound */
+/* 				  - dest->dim[j].lower_bound + 1)) */
+/* 			      * dest->dim[j]._stride; */
+/* 	  extent = (dest->dim[j]._ubound - dest->dim[j].lower_bound + 1); */
+/*           stride = dest->dim[j]._stride; */
+/* 	} */
+/*       array_offset_dst += (i / extent) * dest->dim[rank-1]._stride; */
+
+/*       ptrdiff_t array_offset_sr = 0; */
+/*       stride = 1; */
+/*       extent = 1; */
+/*       for (j = 0; j < GFC_DESCRIPTOR_RANK (src)-1; j++) */
+/* 	{ */
+/* 	  array_offset_sr += ((i / (extent*stride)) */
+/* 			   % (src->dim[j]._ubound */
+/* 			      - src->dim[j].lower_bound + 1)) */
+/* 			  * src->dim[j]._stride; */
+/* 	  extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1); */
+/*           stride = src->dim[j]._stride; */
+/* 	} */
+/*       array_offset_sr += (i / extent) * src->dim[rank-1]._stride; */
+
+/*       void *dst = (void *)((char *) tm[image_index-1] + offset */
+/* 			   + array_offset_dst*GFC_DESCRIPTOR_SIZE (dest)); */
+/*       void *sr = (void *)((char *) src->base_addr */
+/* 			  + array_offset_sr*GFC_DESCRIPTOR_SIZE (src)); */
+/*       if (image_index == caf_this_image) */
+/* 	memmove (dst, sr, GFC_DESCRIPTOR_SIZE (dest)); */
+/*       else /\* if (!async) *\/ */
+/*         gasnet_put_bulk (image_index-1, dst, sr, GFC_DESCRIPTOR_SIZE (dest)); */
+/*       /\* else *\/ */
+
+/*       if (ierr != 0) */
+/* 	{ */
+/* 	  error_stop (ierr); */
+/* 	  return; */
+/* 	} */
+/*     } */
+/* } */
 
 
 /* Send scalar data from src to array dest on a remote image.  */
@@ -637,25 +745,115 @@ PREFIX (send_desc_scalar) (caf_token_t token, size_t offset, int image_index,
 
 
 void
-PREFIX (get) (caf_token_t token, size_t offset, int image_index, void *data,
-	       size_t size, bool async)
+PREFIX (get) (caf_token_t token, size_t offset,
+	      int image_index __attribute__ ((unused)),
+	      gfc_descriptor_t *src ,
+	      caf_vector_t *src_vector __attribute__ ((unused)),
+	      gfc_descriptor_t *dest, int src_kind, int dst_kind)
+
 {
-  int ierr = 0;
+  size_t i, size;
+  int ierr = 0, j = 0;
+  int rank = GFC_DESCRIPTOR_RANK (dest);
+  size_t src_size = GFC_DESCRIPTOR_SIZE (src);
+  size_t dst_size = GFC_DESCRIPTOR_SIZE (dest);
+  void *pad_str = NULL;
 
   void **tm = token;
+
+  size = 1;
+  for (j = 0; j < rank; j++)
+    {
+      ptrdiff_t dimextent = dest->dim[j]._ubound - dest->dim[j].lower_bound + 1;
+      if (dimextent < 0)
+	dimextent = 0;
+      size *= dimextent;
+    }
 
   if (unlikely (size == 0))
     return;  /* Zero-sized array.  */
 
-  if (image_index == caf_this_image)
-    {
-       void *src = (void *) ((char *) tm[image_index-1] + offset);
-       memmove (data, src, size);
-       return;
-    }
+  /* if (image_index == caf_this_image) */
+  /*   { */
+  /*      void *src = (void *) ((char *) tm[image_index-1] + offset); */
+  /*      memmove (data, src, size); */
+  /*      return; */
+  /*   } */
 
+  if (GFC_DESCRIPTOR_TYPE (dest) == BT_CHARACTER && dst_size > src_size)
+    {
+      pad_str = alloca (dst_size - src_size);
+      if (dst_kind == 1)
+	memset (pad_str, ' ', dst_size-src_size);
+      else /* dst_kind == 4.  */
+	for (i = 0; i < (dst_size-src_size)/4; i++)
+	      ((int32_t*) pad_str)[i] = (int32_t) ' ';
+    }
+  
+  if (rank == 0
+      || (GFC_DESCRIPTOR_TYPE (dest) == GFC_DESCRIPTOR_TYPE (src)
+	  && dst_kind == src_kind
+          && (GFC_DESCRIPTOR_TYPE (dest) != BT_CHARACTER || dst_size == src_size)
+	  && PREFIX (is_contiguous) (dest) && PREFIX (is_contiguous) (src)))
+    {
+      gasnet_get_bulk (dest->base_addr, image_index-1, tm[image_index-1]+offset, size*dst_size);
+      
+      if (pad_str)
+	memcpy ((char *) dest->base_addr + src_size, pad_str,
+		dst_size-src_size);      
+    }
+  else
+    {
+      for (i = 0; i < size; i++)
+	{
+	  ptrdiff_t array_offset_dst = 0;
+	  ptrdiff_t stride = 1;
+	  ptrdiff_t extent = 1;
+	  for (j = 0; j < rank-1; j++)
+	    {
+	      array_offset_dst += ((i / (extent*stride))
+				   % (dest->dim[j]._ubound
+				      - dest->dim[j].lower_bound + 1))
+		* dest->dim[j]._stride;
+	      extent = (dest->dim[j]._ubound - dest->dim[j].lower_bound + 1);
+	      stride = dest->dim[j]._stride;
+	    }
+	  array_offset_dst += (i / extent) * dest->dim[rank-1]._stride;
+	  
+	  ptrdiff_t array_offset_sr = 0;
+	  stride = 1;
+	  extent = 1;
+	  for (j = 0; j < GFC_DESCRIPTOR_RANK (src)-1; j++)
+	    {
+	      array_offset_sr += ((i / (extent*stride))
+				  % (src->dim[j]._ubound
+				     - src->dim[j].lower_bound + 1))
+		* src->dim[j]._stride;
+	      extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1);
+	      stride = src->dim[j]._stride;
+	    }
+
+	  array_offset_sr += (i / extent) * src->dim[rank-1]._stride;
+	  
+	  size_t sr_off = offset + array_offset_sr*GFC_DESCRIPTOR_SIZE (src);
+	  void *dst = (void *) ((char *) dest->base_addr
+				+ array_offset_dst*GFC_DESCRIPTOR_SIZE (dest));
+	  /* FIXME: Handle image_index == this_image().  */
+	  /*  if (async == false) */
+	  gasnet_get_bulk (dst, image_index-1, tm[image_index-1]+sr_off, GFC_DESCRIPTOR_SIZE (dest));
+	  /* ierr = MPI_Get (dst, GFC_DESCRIPTOR_SIZE (dest), */
+	  /* 		    MPI_BYTE, image_index-1, sr_off, */
+	  /* 		    GFC_DESCRIPTOR_SIZE (src), MPI_BYTE, *p); */
+	  if (pad_str)
+	    memcpy ((char *) dst + src_size, pad_str, dst_size-src_size);
+	  
+	  if (ierr != 0)
+	    error_stop (ierr);
+	}
+    }
+  
   /* if (async == false) */
-    gasnet_get_bulk (data, image_index-1, tm[image_index-1]+offset, size);
+    /* gasnet_get_bulk (data, image_index-1, tm[image_index-1]+offset, size); */
   /* else */
   /*   ierr = ARMCI_NbPut(data,t.addr+offset,size,image_index-1,NULL); */
   if (ierr != 0)
