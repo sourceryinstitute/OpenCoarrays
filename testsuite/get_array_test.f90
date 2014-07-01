@@ -32,90 +32,142 @@ contains
 
     b = reshape([(i*33, i = 1, size(b))], shape(b))
 
+    ! Whole array: ARRAY = SCALAR
+    a = b
+    caf = -42
+    c = caf
+    sync all
+    if(this_image() == 1) then
+       a(:,:) = caf(lb1,lb2)[num_images()]
+    end if
+    sync all
+    if(this_image()==1) then
+       if(any (a /= c))   call abort()
+    endif
+
     ! Whole array: ARRAY = ARRAY
     caf = -42
-    a = -42
-    c = -42
-    if (this_image() == num_images()) then
-      caf(:,:) = b(:,:)
+    a = b
+    c = caf
+    if (this_image() == 1) then
+       a(:,:) = caf(:,:)[num_images()]
     endif
     sync all
-    a(:,:) = b(:,:)
-    c(:,:) = caf(:,:)[num_images()]
-    if (any (a /= c)) then
-      print *, 'RES 1:', any (a /= c)
-      print *, a
-      print *, c
-      ! FIXME: Without the print lines above, it always fails. Why?
-      call abort()
-    end if
-
+    if(this_image()==1) then
+       if (any (a /= c)) then
+          print *, 'RES 1:', any (a /= c)
+          print *, a
+          print *, c
+          ! FIXME: Without the print lines above, it always fails. Why?
+          call abort()
+       end if
+    endif
+    
     ! Scalar assignment
-    caf = -42
     a = -42
-    c = -42
-    if (this_image() == num_images()) then
-      caf(:,:) = b(:,:)
-    endif
+    caf = -42
+    c = caf
     sync all
     do j = lb2, m+lb2-1
-      do i = n+lb1-1, lb1, -2
-        a(i,j) = b(i,j)
-        c(i,j) = caf(i,j)[num_images()]
-      end do
+       do i = n+lb1-1, lb1, -2
+          a(i,j) = b(i,j)
+       end do
     end do
     do j = lb2, m+lb2-1
-      do i = lb1, n+lb1-1, 2
-        a(i,j) = b(i,j)
-        c(i,j) = caf(i,j)[num_images()]
-      end do
+       do i = lb1, n+lb1-1, 2
+          a(i,j) = b(i,j)
+       end do
     end do
-    if (any (a /= c)) then
-      print *, 'RES 2:', any (a /= c)
-      print *, this_image(), ': ', a
-      print *, this_image(), ': ', c
-      ! FIXME: Without the print lines above, it always fails. Why?
-      call abort()
-    end if
-
+    sync all
+    if(this_image() == 1) then
+       do j = lb2, m+lb2-1
+          do i = n+lb1-1, lb1, -2
+             a(i,j) = caf(i,j)[num_images()]
+          end do
+       end do
+       do j = lb2, m+lb2-1
+          do i = lb1, n+lb1-1, 2
+             a(i,j) = caf(i,j)[num_images()]
+          end do
+       end do
+    endif
+    sync all
+    if(this_image() == 1) then
+       if (any (a /= c)) then
+          print *, 'RES 2:', any (a /= c)
+          print *, this_image(), ': ', a
+          print *, this_image(), ': ', c
+          ! FIXME: Without the print lines above, it always fails. Why?
+          call abort()
+       end if
+    endif
     ! Array sections with different ranges and pos/neg strides
     do i_sgn1 = -1, 1, 2
-      do i_sgn2 = -1, 1, 2
-        do i=lb1, n+lb1-1
-          do i_e=lb1, n+lb1-1
-            do i_s=1, n
-              do j=lb2, m+lb2-1
-                do j_e=lb2, m+lb2-1
-                  do j_s=1, m
-                    ! ARRAY = ARRAY
-                    caf = -42
-                    a = -42
-                    c = -42
-                    if (this_image() == num_images()) then
-                      caf(:,:) = b(:,:)
-                    endif
-                    sync all
-                    a(i:i_e:i_s*i_sgn1, j:j_e:j_s*i_sgn2) &
-                         = b(i:i_e:i_s*i_sgn1, j:j_e:j_s*i_sgn2)
-                    c(i:i_e:i_s*i_sgn1, j:j_e:j_s*i_sgn2) &
-                         = caf(i:i_e:i_s*i_sgn1, j:j_e:j_s*i_sgn2)[num_images()]
-                    if (any (c /= a)) then
-                      print *, 'RES 3:', any (a /= c)
-                      print *, a
-                      print *, c
-                      ! FIXME: Without the print lines above, it always fails. Why?
-                      call abort()
-                    end if
-                  end do
+       do i_sgn2 = -1, 1, 2
+          do i=lb1, n+lb1-1
+             do i_e=lb1, n+lb1-1
+                do i_s=1, n
+                   do j=lb2, m+lb2-1
+                      do j_e=lb2, m+lb2-1
+                         do j_s=1, m
+                            ! ARRAY = SCALAR
+                            a = -42
+                            caf = -42
+                            c = a
+                            a(i:i_e:i_s*i_sgn1, j:j_e:j_s*i_sgn2) = b(lb1, lb2)
+                            sync all
+                            if (this_image() == 1) then
+                               a(i:i_e:i_s*i_sgn1, j:j_e:j_s*i_sgn2) = caf(lb1,lb2)[num_images()]
+                            end if
+                            sync all
+                            if (this_image() == 1) then
+                               if (any (a /= c)) then
+                                  print '(*(g0))', "bounds: ", lb1,":",n+lb1-1,", ", &
+                                       lb2,":",m+lb2-1
+                                  print '(*(g0))', "section: ", i,":",i_e,":",i_s*i_sgn1, &
+                                       ", ", j,":",j_e,":",j_s*i_sgn2
+                                  print *, i
+                                  print *, a
+                                  print *, c
+                                  print *, a-c
+                                  call abort()
+                               endif
+                            end if
+                            ! ARRAY = ARRAY
+                            caf = -42
+                            a = -42
+                            c = a
+                            a(i:i_e:i_s*i_sgn1, j:j_e:j_s*i_sgn2) &
+                                 = b(i:i_e:i_s*i_sgn1, j:j_e:j_s*i_sgn2)
+                            sync all
+                            if (this_image() == 1) then
+                               a(i:i_e:i_s*i_sgn1, j:j_e:j_s*i_sgn2) = caf(i:i_e:i_s*i_sgn1, j:j_e:j_s*i_sgn2)[num_images()]
+                            end if
+                            sync all
+                            
+                            if (this_image() == 1) then
+                               if (any (a /= c)) then
+                                  print '(*(g0))', "bounds: ", lb1,":",n+lb1-1,", ", &
+                                       lb2,":",m+lb2-1
+                                  print '(*(g0))', "section: ", i,":",i_e,":",i_s*i_sgn1, &
+                                       ", ", j,":",j_e,":",j_s*i_sgn2
+                                  print *, i
+                                  print *, a
+                                  print *, c
+                                  print *, a-c
+                                  call abort()
+                               endif
+                            end if
+                         end do
+                      end do
+                   end do
                 end do
-              end do
-            end do
+             end do
           end do
-        end do
-      end do
+       end do
     end do
   end subroutine one
-
+  
   subroutine two()
     integer, parameter :: lb1 = -5, lb2 = 1
 
