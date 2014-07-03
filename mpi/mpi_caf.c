@@ -467,6 +467,144 @@ void selectType(int size, MPI_Datatype *dt)
     }
 }
 
+void
+PREFIX(sendget)(caf_token_t token_s, size_t offset_s, int image_index_s,
+		gfc_descriptor_t *dest,
+		caf_vector_t *dst_vector __attribute__ ((unused)),
+		caf_token_t token_g, size_t offset_g,
+		int image_index_g, gfc_descriptor_t *src ,
+		caf_vector_t *src_vector __attribute__ ((unused)),
+		int src_kind, int dst_kind)
+{
+  int ierr = 0;
+  size_t i, size;
+  int j;
+  int rank = GFC_DESCRIPTOR_RANK (dest);
+  MPI_Win *p_s = token_s, *p_g = token_g;
+  ptrdiff_t dst_offset = 0;
+  ptrdiff_t src_offset = 0;
+  void *pad_str = NULL;
+  size_t src_size = GFC_DESCRIPTOR_SIZE (src);
+  size_t dst_size = GFC_DESCRIPTOR_SIZE (dest);
+  char *tmp;
+  
+  size = 1;
+  for (j = 0; j < rank; j++)
+    {
+      ptrdiff_t dimextent = dest->dim[j]._ubound - dest->dim[j].lower_bound + 1;
+      if (dimextent < 0)
+	dimextent = 0;
+      size *= dimextent;
+    }
+  
+  if (size == 0)
+    return;
+  
+  if (rank == 0
+      || (GFC_DESCRIPTOR_TYPE (dest) == GFC_DESCRIPTOR_TYPE (src)
+	  && dst_kind == src_kind && GFC_DESCRIPTOR_RANK (src) != 0
+          && (GFC_DESCRIPTOR_TYPE (dest) != BT_CHARACTER || dst_size == src_size)
+	  && PREFIX (is_contiguous) (dest) && PREFIX (is_contiguous) (src)))
+    {
+      tmp = (char *)calloc(size,dst_size);
+      
+      MPI_Win_lock (MPI_LOCK_SHARED, image_index_g-1, 0, *p_g);
+      ierr = MPI_Get (tmp, dst_size*size, MPI_BYTE,
+		      image_index_g-1, offset_g, dst_size*size, MPI_BYTE, *p_g);
+      if (pad_str)
+	memcpy ((char *) tmp + src_size, pad_str,
+		dst_size-src_size);
+      MPI_Win_unlock (image_index_g-1, *p_g);
+      
+      MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index_s-1, 0, *p_s);
+      if (GFC_DESCRIPTOR_TYPE (dest) == GFC_DESCRIPTOR_TYPE (src)
+	  && dst_kind == src_kind)
+	ierr = MPI_Put (tmp, dst_size*size, MPI_BYTE,
+			image_index_s-1, offset_s,
+			(dst_size > src_size ? src_size : dst_size) * size,
+			MPI_BYTE, *p_s);
+      if (pad_str)
+	ierr = MPI_Put (pad_str, dst_size-src_size, MPI_BYTE, image_index_s-1,
+			offset_s, dst_size - src_size, MPI_BYTE, *p_s);
+      MPI_Win_unlock (image_index_s-1, *p_s);
+      if (ierr != 0)
+	error_stop (ierr);
+      return;
+      
+      free(tmp);
+    }
+  else
+    {
+      tmp = calloc(1,dst_size);
+      
+      for (i = 0; i < size; i++)
+	{
+	  ptrdiff_t array_offset_dst = 0;
+	  ptrdiff_t stride = 1;
+	  ptrdiff_t extent = 1;
+	  for (j = 0; j < rank-1; j++)
+	    {
+	      array_offset_dst += ((i / (extent*stride))
+				   % (dest->dim[j]._ubound
+				      - dest->dim[j].lower_bound + 1))
+		* dest->dim[j]._stride;
+	      extent = (dest->dim[j]._ubound - dest->dim[j].lower_bound + 1);
+	      stride = dest->dim[j]._stride;
+	    }
+	  array_offset_dst += (i / extent) * dest->dim[rank-1]._stride;
+	  dst_offset = offset_s + array_offset_dst*GFC_DESCRIPTOR_SIZE (dest);
+	  
+	  void *sr;
+	  ptrdiff_t array_offset_sr = 0;
+	  if (GFC_DESCRIPTOR_RANK (src) != 0)
+	    {
+	      stride = 1;
+	      extent = 1;
+	      for (j = 0; j < GFC_DESCRIPTOR_RANK (src)-1; j++)
+		{
+		  array_offset_sr += ((i / (extent*stride))
+				      % (src->dim[j]._ubound
+					 - src->dim[j].lower_bound + 1))
+		    * src->dim[j]._stride;
+		  extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1);
+		  stride = src->dim[j]._stride;
+		}
+	      array_offset_sr += (i / extent) * src->dim[rank-1]._stride;
+	      array_offset_sr *= GFC_DESCRIPTOR_SIZE (src);
+	      sr = (void *)((char *) src->base_addr
+			    + array_offset_sr*GFC_DESCRIPTOR_SIZE (src));
+	    }
+	  else
+	    sr = src->base_addr;
+	  
+	  MPI_Win_lock (MPI_LOCK_SHARED, image_index_g-1, 0, *p_g);
+	  
+	  ierr = MPI_Get (tmp, dst_size, MPI_BYTE,
+			  image_index_g-1, array_offset_sr, src_size, MPI_BYTE, *p_g);
+	  
+	  MPI_Win_unlock (image_index_g-1, *p_g);
+	  
+	  MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index_s-1, 0, *p_s);
+	  
+	  ierr = MPI_Put (tmp, GFC_DESCRIPTOR_SIZE (dest), MPI_BYTE, image_index_s-1,
+			  dst_offset, GFC_DESCRIPTOR_SIZE (dest), MPI_BYTE, *p_s);
+	  if (pad_str)
+	    ierr = MPI_Put (pad_str, dst_size - src_size, MPI_BYTE, image_index_s-1,
+			    dst_offset, dst_size - src_size, MPI_BYTE, *p_s);
+	  
+	  MPI_Win_unlock (image_index_s-1, *p_s);
+	  
+	  if (ierr != 0)
+	    {
+	      error_stop (ierr);
+	      return;
+	    }
+	}
+      free(tmp);
+    }
+  
+}
+
 /* Send array data from src to dest on a remote image.  */
 
 void
