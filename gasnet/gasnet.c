@@ -32,7 +32,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 #include <string.h>	/* For memcpy.  */
 #include <stdarg.h>	/* For variadic arguments.  */
 #include <alloca.h>
-
+#ifdef STRIDED
+#include "gasnet_vis.h"
+#endif
 
 #ifndef MALLOC_ALIGNMENT
 #  define MALLOC_ALIGNMENT   (2 *sizeof(size_t) < __alignof__ (long double)   \
@@ -539,6 +541,78 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
     }
   else
     {
+#ifdef STRIDED
+      gasnet_memvec_t * arr_dsp_s, *arr_dsp_d;
+      
+      void *sr = src->base_addr;
+      
+      arr_dsp_s = malloc (size * sizeof (gasnet_memvec_t));
+      arr_dsp_d = malloc (size * sizeof (gasnet_memvec_t));
+      
+      for (i = 0; i < size; i++)
+	{
+	  ptrdiff_t array_offset_dst = 0;
+	  ptrdiff_t stride = 1;
+	  ptrdiff_t extent = 1;
+	  for (j = 0; j < rank-1; j++)
+	    {
+	      array_offset_dst += ((i / (extent*stride))
+				   % (dest->dim[j]._ubound
+				      - dest->dim[j].lower_bound + 1))
+		* dest->dim[j]._stride;
+	      extent = (dest->dim[j]._ubound - dest->dim[j].lower_bound + 1);
+	      stride = dest->dim[j]._stride;
+	    }
+	  
+	  array_offset_dst += (i / extent) * dest->dim[rank-1]._stride;
+	  
+	  //arr_dsp_d[i] = calloc(1,sizeof(struct gasnet_memvec_t));
+	  
+	  arr_dsp_d[i].addr = tm[image_index-1]+(offset+array_offset_dst)*GFC_DESCRIPTOR_SIZE (dest);
+	  arr_dsp_d[i].len = GFC_DESCRIPTOR_SIZE (dest);
+	  
+	  //arr_dsp_s[i] = calloc(1,sizeof(struct gasnet_memvec_t));
+	  
+	  if (GFC_DESCRIPTOR_RANK (src) != 0)
+	    {
+	      ptrdiff_t array_offset_sr = 0;
+	      stride = 1;
+	      extent = 1;
+	      for (j = 0; j < GFC_DESCRIPTOR_RANK (src)-1; j++)
+		{
+		  array_offset_sr += ((i / (extent*stride))
+				      % (src->dim[j]._ubound
+					 - src->dim[j].lower_bound + 1))
+		    * src->dim[j]._stride;
+		  extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1);
+		  stride = src->dim[j]._stride;
+		}
+	      
+	      array_offset_sr += (i / extent) * src->dim[rank-1]._stride;
+	      
+	      /* arr_dsp_s[i] = array_offset_sr; */
+	      
+	      arr_dsp_s[i].addr = sr+array_offset_sr*GFC_DESCRIPTOR_SIZE (src);
+	      arr_dsp_s[i].len = GFC_DESCRIPTOR_SIZE (src);
+	    }
+	  else
+	    {
+	      arr_dsp_s[i].addr = sr;
+	      arr_dsp_s[i].len = GFC_DESCRIPTOR_SIZE (src);
+	    }
+	  //dst_offset = offset + array_offset_dst*GFC_DESCRIPTOR_SIZE (dest);
+	  /* void *sr = (void *)((char *) src->base_addr */
+	  /* 			  + array_offset_sr*GFC_DESCRIPTOR_SIZE (src)); */
+	  
+	}
+      
+      /* gasnet_puts_bulk(image_index-1, tm[image_index-1]+offset, arr_dsp_d, */
+      /* 		 sr, arr_dsp_s, arr_count, size); */
+      gasnet_putv_bulk(image_index-1,size,arr_dsp_d,size,arr_dsp_s);
+      
+      free(arr_dsp_s);
+      free(arr_dsp_d);      
+#else
       for (i = 0; i < size; i++)
 	{
 	  ptrdiff_t array_offset_dst = 0;
@@ -592,6 +666,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
 	      return;
 	    }
 	}
+#endif
     }
 
   /* if (async == false) */
@@ -804,6 +879,58 @@ PREFIX (get) (caf_token_t token, size_t offset,
     }
   else
     {
+#ifdef STRIDED
+      gasnet_memvec_t * arr_dsp_s, *arr_dsp_d;
+      
+      void *dst = dest->base_addr;
+      
+      arr_dsp_s = malloc (size * sizeof (gasnet_memvec_t));
+      arr_dsp_d = malloc (size * sizeof (gasnet_memvec_t));
+      
+      for (i = 0; i < size; i++)
+	{
+	  ptrdiff_t array_offset_dst = 0;
+	  ptrdiff_t stride = 1;
+	  ptrdiff_t extent = 1;
+	  for (j = 0; j < rank-1; j++)
+	    {
+	      array_offset_dst += ((i / (extent*stride))
+				   % (dest->dim[j]._ubound
+				      - dest->dim[j].lower_bound + 1))
+		* dest->dim[j]._stride;
+	      extent = (dest->dim[j]._ubound - dest->dim[j].lower_bound + 1);
+	      stride = dest->dim[j]._stride;
+	    }
+	  array_offset_dst += (i / extent) * dest->dim[rank-1]._stride;
+	  
+	  arr_dsp_d[i].addr = dst+array_offset_dst*GFC_DESCRIPTOR_SIZE (dest);
+	  arr_dsp_d[i].len = dst_size;
+	  
+	  ptrdiff_t array_offset_sr = 0;
+	  stride = 1;
+	  extent = 1;
+	  for (j = 0; j < GFC_DESCRIPTOR_RANK (src)-1; j++)
+	    {
+	      array_offset_sr += ((i / (extent*stride))
+				  % (src->dim[j]._ubound
+				     - src->dim[j].lower_bound + 1))
+		* src->dim[j]._stride;
+	      extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1);
+	      stride = src->dim[j]._stride;
+	    }
+	  
+	  array_offset_sr += (i / extent) * src->dim[rank-1]._stride;
+	  
+	  arr_dsp_s[i].addr = tm[image_index-1]+(array_offset_sr+offset)*GFC_DESCRIPTOR_SIZE (src);
+	  arr_dsp_s[i].len = src_size;
+	  
+	}
+      
+      gasnet_getv_bulk(size,arr_dsp_d,image_index-1,size,arr_dsp_s);
+      
+      free(arr_dsp_s);
+      free(arr_dsp_d);
+#else
       for (i = 0; i < size; i++)
 	{
 	  ptrdiff_t array_offset_dst = 0;
@@ -832,7 +959,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
 	      extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1);
 	      stride = src->dim[j]._stride;
 	    }
-
+	  
 	  array_offset_sr += (i / extent) * src->dim[rank-1]._stride;
 	  
 	  size_t sr_off = offset + array_offset_sr*GFC_DESCRIPTOR_SIZE (src);
@@ -850,6 +977,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
 	  if (ierr != 0)
 	    error_stop (ierr);
 	}
+#endif
     }
   
   /* if (async == false) */
