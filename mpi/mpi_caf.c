@@ -482,7 +482,6 @@ PREFIX(sendget)(caf_token_t token_s, size_t offset_s, int image_index_s,
   int rank = GFC_DESCRIPTOR_RANK (dest);
   MPI_Win *p_s = token_s, *p_g = token_g;
   ptrdiff_t dst_offset = 0;
-  ptrdiff_t src_offset = 0;
   void *pad_str = NULL;
   size_t src_size = GFC_DESCRIPTOR_SIZE (src);
   size_t dst_size = GFC_DESCRIPTOR_SIZE (dest);
@@ -554,7 +553,6 @@ PREFIX(sendget)(caf_token_t token_s, size_t offset_s, int image_index_s,
 	  array_offset_dst += (i / extent) * dest->dim[rank-1]._stride;
 	  dst_offset = offset_s + array_offset_dst*GFC_DESCRIPTOR_SIZE (dest);
 	  
-	  void *sr;
 	  ptrdiff_t array_offset_sr = 0;
 	  if (GFC_DESCRIPTOR_RANK (src) != 0)
 	    {
