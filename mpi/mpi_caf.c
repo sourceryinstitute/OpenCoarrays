@@ -468,13 +468,13 @@ void selectType(int size, MPI_Datatype *dt)
 }
 
 void
-PREFIX(sendget)(caf_token_t token_s, size_t offset_s, int image_index_s,
-		gfc_descriptor_t *dest,
-		caf_vector_t *dst_vector __attribute__ ((unused)),
-		caf_token_t token_g, size_t offset_g,
-		int image_index_g, gfc_descriptor_t *src ,
-		caf_vector_t *src_vector __attribute__ ((unused)),
-		int src_kind, int dst_kind)
+PREFIX (sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
+		  gfc_descriptor_t *dest,
+		  caf_vector_t *dst_vector __attribute__ ((unused)),
+		  caf_token_t token_g, size_t offset_g,
+		  int image_index_g, gfc_descriptor_t *src ,
+		  caf_vector_t *src_vector __attribute__ ((unused)),
+		  int src_kind, int dst_kind)
 {
   int ierr = 0;
   size_t i, size;
@@ -482,6 +482,7 @@ PREFIX(sendget)(caf_token_t token_s, size_t offset_s, int image_index_s,
   int rank = GFC_DESCRIPTOR_RANK (dest);
   MPI_Win *p_s = token_s, *p_g = token_g;
   ptrdiff_t dst_offset = 0;
+  ptrdiff_t src_offset = 0;
   void *pad_str = NULL;
   size_t src_size = GFC_DESCRIPTOR_SIZE (src);
   size_t dst_size = GFC_DESCRIPTOR_SIZE (dest);
@@ -505,7 +506,7 @@ PREFIX(sendget)(caf_token_t token_s, size_t offset_s, int image_index_s,
           && (GFC_DESCRIPTOR_TYPE (dest) != BT_CHARACTER || dst_size == src_size)
 	  && PREFIX (is_contiguous) (dest) && PREFIX (is_contiguous) (src)))
     {
-      tmp = (char *)calloc(size,dst_size);
+      tmp = (char *) calloc (size, dst_size);
       
       MPI_Win_lock (MPI_LOCK_SHARED, image_index_g-1, 0, *p_g);
       ierr = MPI_Get (tmp, dst_size*size, MPI_BYTE,
@@ -534,7 +535,7 @@ PREFIX(sendget)(caf_token_t token_s, size_t offset_s, int image_index_s,
     }
   else
     {
-      tmp = calloc(1,dst_size);
+      tmp = calloc(1, dst_size);
       
       for (i = 0; i < size; i++)
 	{
@@ -569,16 +570,13 @@ PREFIX(sendget)(caf_token_t token_s, size_t offset_s, int image_index_s,
 		}
 	      array_offset_sr += (i / extent) * src->dim[rank-1]._stride;
 	      array_offset_sr *= GFC_DESCRIPTOR_SIZE (src);
-	      sr = (void *)((char *) src->base_addr
-			    + array_offset_sr*GFC_DESCRIPTOR_SIZE (src));
 	    }
-	  else
-	    sr = src->base_addr;
+	  src_offset = offset_g + array_offset_sr;
 	  
 	  MPI_Win_lock (MPI_LOCK_SHARED, image_index_g-1, 0, *p_g);
 	  
 	  ierr = MPI_Get (tmp, dst_size, MPI_BYTE,
-			  image_index_g-1, array_offset_sr, src_size, MPI_BYTE, *p_g);
+			  image_index_g-1, src_offset, src_size, MPI_BYTE, *p_g);
 	  
 	  MPI_Win_unlock (image_index_g-1, *p_g);
 	  
