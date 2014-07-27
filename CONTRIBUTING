@@ -1,5 +1,9 @@
-By making a contribution to the this project, you certify to
-comply to the Developer's Certificate of Origin of below.
+In order to contribute to the OpenCoarray project, you have to
+certify compliance to the Developer's Certificate of Origin (DCO),
+quoted below.
+
+To show compliance, sign off the patch submissions
+(cf. git commit --signoff) which means that you certify the DCO.
 
 --------------------------------------------------------------------
 
