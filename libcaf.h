@@ -64,8 +64,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 typedef enum caf_register_t {
   CAF_REGTYPE_COARRAY_STATIC,
   CAF_REGTYPE_COARRAY_ALLOC,
-  CAF_REGTYPE_LOCK,
-  CAF_REGTYPE_LOCK_COMP
+  CAF_REGTYPE_LOCK_STATIC,
+  CAF_REGTYPE_LOCK_ALLOC,
+  CAF_REGTYPE_CRITICAL
 }
 caf_register_t;
 
@@ -131,13 +132,18 @@ void PREFIX (co_sum) (gfc_descriptor_t *, int, int *, char *, int);
 void PREFIX (sync_all) (int *, char *, int);
 void PREFIX (sync_images) (int, int[], int *, char *, int);
 
-/* FIXME: The CRITICAL functions should be removed;
-   the functionality is better represented using Coarray's lock feature.  */
-void PREFIX (critical) (void);
-void PREFIX (end_critical) (void);
-
 void PREFIX (error_stop_str) (const char *, int32_t)
      __attribute__ ((noreturn));
 void PREFIX (error_stop) (int32_t) __attribute__ ((noreturn));
+
+void PREFIX (atomic_define) (caf_token_t, size_t, int, void *, int *, int, int);
+void PREFIX (atomic_ref) (caf_token_t, size_t, int, void *, int *, int, int);
+void PREFIX (atomic_cas) (caf_token_t, size_t, int, void *, void *,
+			  void *, int *, int, int);
+void PREFIX (atomic_op) (int, caf_token_t, size_t, int, void *, void *,
+			 int *, int, int);
+
+void PREFIX (lock) (caf_token_t, size_t, int, int *, int *, char *, int);
+void PREFIX (unlock) (caf_token_t, size_t, int, int *, char *, int);
 
 #endif  /* LIBCAF_H  */
