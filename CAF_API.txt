@@ -51,17 +51,19 @@ type on the library side.
 
 2.2  caf_register_t
 
-Type used to distinguish different kinds of allocations.
+Type indicating which kind of coarray variable should be registered.
 
 typedef enum caf_register_t {
   CAF_REGTYPE_COARRAY_STATIC,
   CAF_REGTYPE_COARRAY_ALLOC,
-  CAF_REGTYPE_LOCK,
+  CAF_REGTYPE_LOCK_STATIC,
+  CAF_REGTYPE_LOCK_ALLOC
 }
 caf_register_t;
 
 TODO:
   Check whether this set is complete and makes sense
+
 
 2.3  caf_token_t
 
@@ -92,17 +94,17 @@ TODO:
      void caf_init (int *argc, char ***argv)
 
 This function shall be called at startup of the program before the Fortran main
-program.  It takes as arguments the command-line arguments of the program. The
-library is permitted to change the arguments.  It is permitted to pass to
-NULL pointers as argument.
+program.  It takes as arguments the command-line arguments of the program. It is
+permitted to pass to NULL pointers as argument; if non-NULL, the library is
+permitted to modify the arguments.
 
-Arguments: 
+Arguments:
   argc  intent(inout) An integer pointer with the number of arguments
-        passed to the program, or NULL.
+        passed to the program or NULL.
   argv  intent(inout) A pointer to an array of strings with the
-        command-line arguments.
+        command-line arguments or NULL.
 
-NOTE: 
+NOTE:
   The function is modelled after the initialization function of the MPI
   (Message Passing Interface) specification.  Due to the way coarray
   registration (3.5) works, it might not be the first call to the libaray. If
@@ -116,8 +118,6 @@ GCC:
   compiled with -fcoarray=lib; the call happens before the run-time library
   initialiation such that changes to the command-line arguments will be visible
   when the command-line intrinsics are invoked.
-  NOTE: The Fortran-caf branch uses this implementation.
-  GCC 4.x uses a four-argument version.
 
 
 3.2  Finalization function
@@ -152,21 +152,21 @@ Argument:
              nonnegative number.
 NOTE:
   If the Fortran intrinsic this_image() is invoked without an argument, which
-  is the only permitted form in Fortran 2008, the processer shall pass a 0 as
+  is the only permitted form in Fortran 2008, the processer shall pass 0 as
   first argument.
 
 GCC:
-  Fortran-caf uses this function. Not called in GCC 4.x.
+  (No special note.)
 
 
 
 3.4 Querying the maximal number of images
 
-    int caf_num_images(int distance, int failed)
+    int caf_num_images (int distance, int failed)
 
 This function returns the number of images in the current team, if distance is 0
 or the number of images in the parent team at the specified distance. If failed
-is is -1, the function returns the number of all images at the specified
+is -1, the function returns the number of all images at the specified
 distance; if it is 0, the function returns the number of nonfailed images, and
 if it is 1, it returns the number of failed images.
 
@@ -179,33 +179,37 @@ NOTE:
   the processor shall pass distance=0 and failed=-1 to the function.
 
 GCC:
-  Fortran-caf uses this function. Not called in GCC 4.x.
+  (No special note.)
 
 
 
 3.5 Registering coarrays
 
     void *caf_register (size_t size, caf_register_t type, caf_token_t *token,
-                        int *stat, char *errmsg, size_t errmsg_len);
+                        int *stat, char *errmsg, int errmsg_len)
 
 Allocates memory for a coarray and creates a token to identify the coarray. The
 function is called for both coarrays with SAVE attribute and using an explicit
 ALLOCATE statement. If an error occurs and STAT is a NULL pointer, the function
 shall abort with printing an error message and starting the error termination.
-If no error occurs and STAT= is present, it shall be set to zero. If an error
-is 
+If no error occurs and STAT= is present, it shall be set to zero. Otherwise, it
+shall be set to a positive value and, if not-@code{NULL}, @var{ERRMSG} shall be
+set to a string describing the failure.  The function returns a pointer to the
+requested memory for the local image as a call to malloc would do.
 
 Arguments:
-  size   byte size of the array to be allocated
+  size   byte size of the coarray to be allocated
   type   one of the caf_register_t types. Possible values:
          CAF_REGTYPE_COARRAY_STATIC - for nonallocatable coarrays
-         CAF_REGTYPE_COARRAY - for allocatable coarrays
-         CAF_REGTYPE_LOCK - for lock variables 
+         CAF_REGTYPE_COARRAY_ALLOC - for allocatable coarrays
+         CAF_REGTYPE_LOCK_STATIC - for nonallocatable lock variables
+         CAF_REGTYPE_LOCK_ALLOC - for allocatable lock variables
+
   token  intent(out) An opaque pointer identifying the coarray.
   stat   intent(out) For allocatable coarrays, stores the STAT=; may be NULL
   errmsg intent(out) When an error occurs, this will be set to an error
-         message, may be NULL
-  errmgs_len the buffersize of errmsg.
+         message; may be NULL
+  errmgs_len the buffer size of errmsg.
 
 TODO:
   - Check whether the locking should be handled like that and whether one needs
@@ -226,20 +230,21 @@ NOTE:
   The token permits to identify the coarray; to the processor, the token is a
   nonaliasing pointer. The library can, for instance, store the base address
   of the coarray in the token, some handle or a more complicated struct.
-  The function shall finish 
 
 GCC:
-  Implemented. However, it currently uses an INT and not a SIZE_T for the
-  string length.
+   (no special notes)
+
+TODO:
+   Change errmsg_len to size_t
 
 
 
 3.6  Deregistering coarrays
 
     void caf_deregister (const caf_token_t *token, int *stat, char *errmsg,
-                         size_t errmsg_len);
+                         size_t errmsg_len)
 
-Called for free the memory of a coarray; the processor calls this function for
+Called to free the memory of a coarray; the processor calls this function for
 automatic and explicit deallocation.  In case of an error, this function shall
 fail with an error message, unless the STAT= variable is not null.
 
@@ -253,108 +258,60 @@ Arguments:
 NOTE:
   The implementation is permitted to set the token to NULL. However, it is
   not required to do so.
+  For nonalloatable coarrays this function is never called.  If a cleanup is
+  required, it has to be handled via the finish, stop and error stop functions,
+  and via destructors.
+
 GCC:
-  Implemented. Currently uses an int instead of size_t for the string length.
+   (no special notes)
+
+TODO:
+   Change errmsg_len to size_t
 
 
 
 3.7  Sending data from a local image to a remote image
 
+   void caf_send (caf_token_t token, size_t offset, int image_index,
+                  gfc_descriptor_t *dest, caf_vector_t *dst_vector,
+                  gfc_descriptor_t *src, int dst_kind, int src_kind)
 
-3.7.1 Sending a scalar (contiguous memory) from a local to remote image
-
-   void caf_send (const caf_token_t token, size_t offset, int image_id,
-                  void *data, size_t size, bool async)
-
-Called to send a scalar or contiguous section of an array to another image,
-identified by the image_index.
+Called to send a scalar, an array section or whole array from a local
+to a remote image identified by the image_index.
 
 Arguments:
   token  intent(in)  An opaque pointer identifying the coarray.
   offset  By which amount of bytes the actual data is shifted compared to
           the base address of the coarray.
-  image_id  The ID of the remote image; must be a positive number.
-  data  Address of the data, which shall be sent
-  size  Amount of bytes to be transmitted
-  async When true, the sending is done asynchronously.
-
-NOTE:
-  It is permitted to have image_id == current image. Additionally, the memory
-  of the send-to and the send-from might (partially) overlap in that case. The
-  implementation has to take care that it handles this case.
-GCC:
-  (Partially) implemented on the Fortran-caf branch. The communication is
-  currently always synchronous.
-TODO:
-  How to handle asynchronous communication. Shall one return a handle, which
-  can be optionally used as handle for a wait command?
-
-
-3.7.2 Sending an array from a local to remote image
-
-   void caf_send_desc (caf_token_t token, size_t offset,
-                       int image_id, gfc_descriptor_t *dest,
-                       gfc_descriptor_t *src,
-                       bool asyn)
-
-Called to send an array section or whole array from a local to a remote
-image identified by the image_index.
-
-Arguments:
-  token  intent(in)  An opaque pointer identifying the coarray.
-  offset  By which amount of bytes the actual data is shifted compared to
-          the base address of the coarray.
-  image_id  The ID of the remote image; must be a positive number.
+  image_index  The ID of the remote image; must be a positive number.
   dest    intent(in) Array descriptor for the remote image for the bounds
           and the size. The base_addr shall not be accessed.
+  dst_vector  intent(int)  If not NULL, it contains the vector subscript of
+          the destination array; the values are relative to the dimension
+          triplet of the dest argument.
   src     intent(in) Array descriptor of the local array to be transferred
           to the remote image
-  async When true, the sending is done asynchronously.
-
-
-NOTE:
-  It is permitted to have image_id == current image. Additionally, the memory
-  of the send-to and the send-from might (partially) overlap in that case. The
-  implementation has to take care that it handles this case.
-GCC:
-  (Partially) implemented on the Fortran-caf branch. The communication is
-  currently always synchronous.
-
-
-
-3.7.3 Sending a scalar from a local to remote-image array
-
-   void caf_send_desc_scalar (caf_token_t token, size_t offset,
-                              int image_id, gfc_descriptor_t *dest,
-                              void *buffer, bool asyn)
-
-Called when assigning a scalar of the local image to an array of the
-remote image, identified by the image_index.
-
-Arguments:
-  token  intent(in)  An opaque pointer identifying the coarray.
-  offset  By which amount of bytes the actual data is shifted compared to
-          the base address of the coarray.
-  image_id  The ID of the remote image; must be a positive number.
-  dest    intent(in) Array descriptor for the remote image for the bounds
-          and the size. The base_addr shall not be accessed.
-  buffer  intent(in) The values used for the assignment; the buffer size
-          must match the element size obtained from the "dest" buffer.
-  async When true, the sending is done asynchronously.
+  dst_kind Kind of the destination argument
+  src_kind Kind of the source argument
 
 NOTE:
-  It is permitted to have image_id == current image. Additionally, the memory
-  of the send-to and the send-from might (partially) overlap in that case. The
-  implementation has to take care that it handles this case.
-GCC:
-  (Partially) implemented on the Fortran-caf branch. The communication is
-  currently always synchronous.
+  It is permitted to have image_id equal the current image; the memory of the
+  send-to and the send-from might (partially) overlap in that case. The
+  implementation has to take care that it handles this case. Note that the
+  assignment of a scalar to an array is permitted. In addition, the library has
+  to handle numeric-type conversion and for strings, padding and different
+  character kinds.
 
+GCC:
+  Currently, it uses gfortran's private array descriptor. A change to TS29113's
+  array descriptor is planned; when that's done, the additional kind arguments
+  will be removed.
+  Note that the kind arguments permit to distiniguish the character kinds and
+  real/complex kinds 10 and 16, which have the same byte size.
 
 
 TODO FOR SEND*:
   - Wait is missing
-  - Array section, array vector sections, scalar assignment to arrays
   - Assignment to an address instead of using a token, to handle
     caf[i]%allocatable%alloc_array(:,:) = ...
     Or some other means to handle those.
@@ -369,43 +326,10 @@ OTHER TODOs:
 
 3.8  Getting data from a remote image
 
-
-3.8.1 Getting a scalar (contiguous memory) a remote image
-
-   void caf_get (const caf_token_t token, size_t offset, int image_id,
-                 void *buffer, size_t size, bool async)
-
-Called to get a scalar or contiguous section of an array to another image,
-identified by the image_index.
-
-Arguments:
-  token  intent(in)  An opaque pointer identifying the coarray.
-  offset  By which amount of bytes the actual data is shifted on the remote
-          image compared to the base address of the coarray.
-  image_id  The ID of the remote image; must be a positive number.
-  data  Address of the data, which shall be sent
-  buffer  Local buffer to which the data shall be written to
-  size  Amount of bytes to be transmitted
-  async When true, the sending is done asynchronously.
-
-NOTE:
-  It is permitted to have image_id == current image. Additionally, the memory
-  of the send-to and the send-from might (partially) overlap in that case. The
-  implementation has to take care that it handles this case.
-GCC:
-  (Partially) implemented on the Fortran-caf branch. The communication is
-  currently always synchronous.
-TODO:
-  How to handle asynchronous communication. Shall one return a handle, which
-  can be optionally used as handle for a wait command?
-
-
-3.8.2 Getting an array from a remote image
-
    void caf_get_desc (caf_token_t token, size_t offset,
-                      int image_id, gfc_descriptor_t *src,
-                      gfc_descriptor_t *dest,
-                      bool asyn)
+                      int image_index, gfc_descriptor_t *src,
+		      caf_vector_t *src_vector, gfc_descriptor_t *dest,
+                      int src_kind, int dst_kind)
 
 Called to get an array section or whole array from a a remote,
 image identified by the image_index.
@@ -414,27 +338,87 @@ Arguments:
   token  intent(in)  An opaque pointer identifying the coarray.
   offset  By which amount of bytes the actual data is shifted compared to
           the base address of the coarray.
-  image_id  The ID of the remote image; must be a positive number.
-  src     intent(in) Array descriptor for the remote image for the bounds
+  image_index  The ID of the remote image; must be a positive number.
+  dest     intent(out) Array descriptor of the local array to which the data
+          will be transferred
+  src    intent(in) Array descriptor for the remote image for the bounds
           and the size. The base_addr shall not be accessed.
-  dest    intent(out) Array descriptor of the local array to which the
-          data shall be transferred to.
-  async When true, the sending is done asynchronously.
-
+  src_vector  intent(int)  If not NULL, it contains the vector subscript of
+          the destination array; the values are relative to the dimension
+          triplet of the dest argument.
+  dst_kind Kind of the destination argument
+  src_kind Kind of the source argument
 
 NOTE:
-  It is permitted to have image_id == current image. Additionally, the memory
-  of the send-to and the send-from might (partially) overlap in that case. The
-  implementation has to take care that it handles this case.
+  It is permitted to have image_id equal the current image; the memory of the
+  send-to and the send-from might (partially) overlap in that case. The
+  implementation has to take care that it handles this case. Note that the
+  library has to handle numeric-type conversion and for strings, padding
+  and different character kinds.
+
 GCC:
-  (Partially) implemented on the Fortran-caf branch. The communication is
-  currently always synchronous.
+  Currently, it uses gfortran's private array descriptor. A change to TS29113's
+  array descriptor is planned; when that's done, the additional kind arguments
+  will be removed.
+  Note that the kind arguments permit to distiniguish the character kinds and
+  real/complex kinds 10 and 16, which have the same byte size.
+
+
+3.9  Sending data between remote images
+
+   void caf_sendget (caf_token_t dst_token, size_t dst_offset,
+                     int dst_image_index, gfc_descriptor_t *dest,
+                     caf_vector_t *dst_vector, caf_token_t src_token,
+                     size_t src_offset, int src_image_index,
+                     gfc_descriptor_t *src, caf_vector_t *src_vector,
+                     int dst_kind, int src_kind)
+
+Called to send a scalar, an array section or whole array from a remote image
+identified by the src_image_index to a remote image identified by the
+dst_image_index.
+
+Arguments:
+  dst_token  intent(in)  An opaque pointer identifying the destination coarray.
+  dst_offset  By which amount of bytes the actual data is shifted compared to
+          the base address of the destination coarray.
+  dst_image_index  The ID of the destination remote image; must be a positive
+          number.
+  dest    intent(in) Array descriptor for the destination remote image for
+          the bounds and the size. The base_addr shall not be accessed.
+  dst_vector  intent(int)  If not NULL, it contains the vector subscript of
+          the destination array; the values are relative to the dimension
+          triplet of the dest argument.
+  src_token  intent(in)  An opaque pointer identifying the source coarray.
+  src_offset  By which amount of bytes the actual data is shifted compared to
+          the base address of the source coarray.
+  src_image_index  The ID of the source remote image; must be a positive number.
+  src     intent(in) Array descriptor of the local array to be transferred
+          to the remote image
+  src_vector     intent(in) Array descriptor of the local array to be transferred
+          to the remote image
+  dst_kind Kind of the destination argument
+  src_kind Kind of the source argument
+
+NOTE:
+  It is permitted to have image_id equal the current image; the memory of the
+  send-to and the send-from might (partially) overlap in that case. The
+  implementation has to take care that it handles this case. Note that the
+  assignment of a scalar to an array is permitted. In addition, the library has
+  to handle numeric-type conversion and for strings, padding and different
+  character kinds.
+
+GCC:
+  Currently, it uses gfortran's private array descriptor. A change to TS29113's
+  array descriptor is planned; when that's done, the additional kind arguments
+  will be removed.
+  Note that the kind arguments permit to distiniguish the character kinds and
+  real/complex kinds 10 and 16, which have the same byte size.
 
 
 
-3.9  Barriers
+3.10  Barriers
 
-3.9.1  All-Image Barrier
+3.10.1  All-Image Barrier
 
    void caf_sync_all (int *stat, char *errmsg, size_t errmsg_len)
 
@@ -458,7 +442,7 @@ GCC:
 
 
 
-3.9.2  Barrier for Selected Images
+3.10.2  Barrier for Selected Images
 
    void sync_images (int count, int images[], int *stat,
                      char *errmsg, size_t errmsg_len)
@@ -487,7 +471,7 @@ GCC:
 
 
 
-3.10  Error abort
+3.11  Error abort
 
    void error_stop_str (const char *string, int32_t str_len)
    void error_stop (int32_t exit_error_code)
@@ -495,7 +479,7 @@ GCC:
 TODO
   - Fix this description by filling-in the missing bits
   - STOP vs ERROR STOP handling. Currently, STOP calls "finalize" and then the
-    normal STOP while for ERROR STOP directly calls the library 
+    normal STOP while for ERROR STOP directly calls the library
   - F2008 requires that one prints the raised exceptions with STOP and ERROR
     STOP. libgfortran's STOP and ERROR STOP do so - the current implementation
     for ERROR STOP does not.
