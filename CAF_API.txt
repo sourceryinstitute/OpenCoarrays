@@ -58,6 +58,7 @@ typedef enum caf_register_t {
   CAF_REGTYPE_COARRAY_ALLOC,
   CAF_REGTYPE_LOCK_STATIC,
   CAF_REGTYPE_LOCK_ALLOC
+  CAF_REGTYPE_CRTITICAL
 }
 caf_register_t;
 
@@ -128,17 +129,17 @@ This function shall be called at the end of the program to permit a graceful
 shutdown.
 
 NOTE:
-  It is recommended to add this call at the end of the Fortran main program.
-  To ensure that the shutdown is also performed for programs where this function
-  is not explicitly invoked, for instance non-Fortran programs or calls to the
-  system's exit() function, the library can use a destructor function.
-  Note that programs can also be terminated using the STOP and ERROR STOP
-  statements; those use different library calls.
+  It is recommended to add this call at the end of the Fortran main program and
+  when invoking STOP.  To ensure that the shutdown is also performed for
+  programs where this function is not explicitly invoked, for instance
+  non-Fortran programs or calls to the system's exit() function, the library can
+  use a destructor function.  Note that programs can also be terminated using
+  the ERROR STOP statement, which is handled via its own library call.
 
 GCC:
-  In gfortran, this function is called at the end of the Fortran main program,
-  if it has been compiled with the -fcoarray=lib option.
-
+  In gfortran, this function is called at the end of the Fortran main program and
+  when before the program stops with a STOP command, the respective file has been
+  compiled with the -fcoarray=lib option.
 
 
 3.3 Querying the image number
@@ -197,13 +198,19 @@ shall be set to a positive value and, if not-@code{NULL}, @var{ERRMSG} shall be
 set to a string describing the failure.  The function returns a pointer to the
 requested memory for the local image as a call to malloc would do.
 
+For CAF_REGTYPE_COARRAY_STATIC and CAF_REGTYPE_COARRAY_ALLOC, the passed size is
+the byte size requested. For CAF_REGTYPE_LOCK_STATIC, CAF_REGTYPE_LOCK_ALLOC
+and CAF_REGTYPE_CRITICAL it is the array size or one for a scalar.
+
 Arguments:
-  size   byte size of the coarray to be allocated
+  size   For normal coarrays, the byte size of the coarray to be
+         allocated; for lock types, the number of elements.
   type   one of the caf_register_t types. Possible values:
          CAF_REGTYPE_COARRAY_STATIC - for nonallocatable coarrays
          CAF_REGTYPE_COARRAY_ALLOC - for allocatable coarrays
          CAF_REGTYPE_LOCK_STATIC - for nonallocatable lock variables
          CAF_REGTYPE_LOCK_ALLOC - for allocatable lock variables
+         CAF_REGTYPE_CRITICAL - for lock variables used for critical sections
 
   token  intent(out) An opaque pointer identifying the coarray.
   stat   intent(out) For allocatable coarrays, stores the STAT=; may be NULL
@@ -227,9 +234,12 @@ NOTE:
   program. This can be achieved by creating constructor functions.  When using
   caf_register, also nonallocatable coarrays the memory is allocated and no
   static memory is used.
-  The token permits to identify the coarray; to the processor, the token is a
-  nonaliasing pointer. The library can, for instance, store the base address
-  of the coarray in the token, some handle or a more complicated struct.
+
+  For normal coarrays, the returned pointer is used for accesses on the local
+  image. For lock types, the value shall only used for checking the allocation
+  status. Note that for critical blocks, the locking is only required on one
+  image; in the locking statement, the processor shall always pass always an
+  image index of one for critical-section lock variables (CAF_REGTYPE_CRITICAL).
 
 GCC:
    (no special notes)
@@ -483,3 +493,77 @@ TODO
   - F2008 requires that one prints the raised exceptions with STOP and ERROR
     STOP. libgfortran's STOP and ERROR STOP do so - the current implementation
     for ERROR STOP does not.
+
+
+3.11  Locking and unlocking
+
+3.11.1  Locking a lock variable
+
+   void caf_lock (caf_token_t token, size_t index, int image_index,
+                  int *aquired_lock, int *stat, char *errmsg,
+                  int errmsg_len)
+
+Acquire a lock on the given image on a scalar locking variable or for the
+given array element for an array-valued variable. If the aquired_lock
+is NULL, the function return after having obtained the lock. If it is
+nonnull, the result is is assigned the value true (one) when the lock could be
+obtained and false (zero) otherwise.  Locking a lock variable which has already
+been locked by the same image is an error.
+
+Arguments:
+  token   intent(in) An opaque pointer identifying the coarray.
+  index   Array index; first array index is 0. For scalars, it is
+          always 0.
+  image_index  The ID of the remote image; must be a positive
+          number.
+  aquired_lock   intent(out) If not NULL, it returns whether lock
+          could be obtained
+  stat    intent(out) For allocatable coarrays, stores the STAT=;
+          may be NULL
+  errmsg  intent(out) When an error occurs, this will be set to
+          an error message; may be NULL
+  errmsg_len  the buffer size of errmsg.
+
+Note:
+  This function is also called for critical sections; for those, the array index
+  is always zero and the image index is one.  Libraries are permitted to use other
+  images for critical-section locking variables.
+
+GCC:
+   (no special notes)
+
+TODO:
+   Change errmsg_len to size_t
+
+
+3.11.2  Unlocking a lock variable
+
+   void caf_unlock (caf_token_t token, size_t index, int image_index,
+                    int *stat, char *errmsg, int errmsg_len)
+
+Release a lock on the given image on a scalar locking variable or for the
+given array element for an array-valued variable. Unlocking a lock variable
+which is unlocked or has been locked by a different image is an error.
+
+Arguments:
+  token   intent(in) An opaque pointer identifying the coarray.
+  index   Array index; first array index is 0. For scalars, it is
+          always 0.
+  image_index  The ID of the remote image; must be a positive
+          number.
+  stat    intent(out) For allocatable coarrays, stores the STAT=;
+          may be NULL
+  errmsg  intent(out) When an error occurs, this will be set to
+          an error message; may be NULL
+  errmsg_len  the buffer size of errmsg.
+
+Note:
+  This function is also called for critical sections; for those, the array index
+  is always zero and the image index is one.  Libraries are permitted to use other
+  images for critical-section locking variables.
+
+GCC:
+   (no special notes)
+
+TODO:
+   Change errmsg_len to size_t
