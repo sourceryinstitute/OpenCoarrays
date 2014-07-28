@@ -681,61 +681,69 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
       
       selectType (GFC_DESCRIPTOR_SIZE (src), &base_type_src);
       selectType (GFC_DESCRIPTOR_SIZE (dest), &base_type_dst);
-
-      for (i = 0; i < size; i++)
-	arr_bl[i] = 1;
       
-      for (i = 0; i < size; i++)
+      if(rank == 1)
+        {
+          MPI_Type_vector(size,1,src->dim[0]._stride, base_type_src, &dt_s);
+          MPI_Type_vector(size,1,dest->dim[0]._stride, base_type_dst, &dt_d);
+        }
+      else
 	{
-	  ptrdiff_t array_offset_dst = 0;
-	  ptrdiff_t stride = 1;
-	  ptrdiff_t extent = 1;
-	  for (j = 0; j < rank-1; j++)
+	  for (i = 0; i < size; i++)
+	    arr_bl[i] = 1;
+	  
+	  for (i = 0; i < size; i++)
 	    {
-	      array_offset_dst += ((i / (extent*stride))
-				   % (dest->dim[j]._ubound
-				      - dest->dim[j].lower_bound + 1))
-		* dest->dim[j]._stride;
-	      extent = (dest->dim[j]._ubound - dest->dim[j].lower_bound + 1);
-	      stride = dest->dim[j]._stride;
-	    }
-	  
-	  array_offset_dst += (i / extent) * dest->dim[rank-1]._stride;
-	  
-	  arr_dsp_d[i] = array_offset_dst;
-	  
-
-	  if (GFC_DESCRIPTOR_RANK (src) != 0)
-	    {
-	      ptrdiff_t array_offset_sr = 0;
-	      stride = 1;
-	      extent = 1;
-	      for (j = 0; j < GFC_DESCRIPTOR_RANK (src)-1; j++)
+	      ptrdiff_t array_offset_dst = 0;
+	      ptrdiff_t stride = 1;
+	      ptrdiff_t extent = 1;
+	      for (j = 0; j < rank-1; j++)
 		{
-		  array_offset_sr += ((i / (extent*stride))
-				      % (src->dim[j]._ubound
-					 - src->dim[j].lower_bound + 1))
-		    * src->dim[j]._stride;
-		  extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1);
-		  stride = src->dim[j]._stride;
+		  array_offset_dst += ((i / (extent*stride))
+				       % (dest->dim[j]._ubound
+					  - dest->dim[j].lower_bound + 1))
+		    * dest->dim[j]._stride;
+		  extent = (dest->dim[j]._ubound - dest->dim[j].lower_bound + 1);
+		  stride = dest->dim[j]._stride;
 		}
 	      
-	      array_offset_sr += (i / extent) * src->dim[rank-1]._stride;
+	      array_offset_dst += (i / extent) * dest->dim[rank-1]._stride;
 	      
-	      arr_dsp_s[i] = array_offset_sr;
+	      arr_dsp_d[i] = array_offset_dst;
+	      
+	      
+	      if (GFC_DESCRIPTOR_RANK (src) != 0)
+		{
+		  ptrdiff_t array_offset_sr = 0;
+		  stride = 1;
+		  extent = 1;
+		  for (j = 0; j < GFC_DESCRIPTOR_RANK (src)-1; j++)
+		    {
+		      array_offset_sr += ((i / (extent*stride))
+					  % (src->dim[j]._ubound
+					     - src->dim[j].lower_bound + 1))
+			* src->dim[j]._stride;
+		      extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1);
+		      stride = src->dim[j]._stride;
+		    }
+		  
+		  array_offset_sr += (i / extent) * src->dim[rank-1]._stride;
+		  
+		  arr_dsp_s[i] = array_offset_sr;
+		}
+	      else
+		arr_dsp_s[i] = 0;
+	      
+	      //dst_offset = offset + array_offset_dst*GFC_DESCRIPTOR_SIZE (dest);
+	      /* void *sr = (void *)((char *) src->base_addr */
+	      /* 			  + array_offset_sr*GFC_DESCRIPTOR_SIZE (src)); */
+	      
 	    }
-	  else
-	    arr_dsp_s[i] = 0;
 	  
-	  //dst_offset = offset + array_offset_dst*GFC_DESCRIPTOR_SIZE (dest);
-	  /* void *sr = (void *)((char *) src->base_addr */
-	  /* 			  + array_offset_sr*GFC_DESCRIPTOR_SIZE (src)); */
-	  
+	  MPI_Type_indexed(size, arr_bl, arr_dsp_s, base_type_src, &dt_s);
+	  MPI_Type_indexed(size, arr_bl, arr_dsp_d, base_type_dst, &dt_d);
 	}
-      
-      MPI_Type_indexed(size, arr_bl, arr_dsp_s, base_type_src, &dt_s);
-      MPI_Type_indexed(size, arr_bl, arr_dsp_d, base_type_dst, &dt_d);
-      
+
       MPI_Type_commit(&dt_s);
       MPI_Type_commit(&dt_d);
       
@@ -945,58 +953,66 @@ PREFIX (get) (caf_token_t token, size_t offset,
   selectType(GFC_DESCRIPTOR_SIZE (src),&base_type_src);
   selectType(GFC_DESCRIPTOR_SIZE (dest),&base_type_dst);
 
-  for(i=0;i<size;i++)
-    arr_bl[i]=1;
-
-  for (i = 0; i < size; i++)
+  if(rank == 1)
     {
-      ptrdiff_t array_offset_dst = 0;
-      ptrdiff_t stride = 1;
-      ptrdiff_t extent = 1;
-      for (j = 0; j < rank-1; j++)
-	{
-	  array_offset_dst += ((i / (extent*stride))
-			       % (dest->dim[j]._ubound
-				  - dest->dim[j].lower_bound + 1))
-			      * dest->dim[j]._stride;
-	  extent = (dest->dim[j]._ubound - dest->dim[j].lower_bound + 1);
-          stride = dest->dim[j]._stride;
-	}
-      array_offset_dst += (i / extent) * dest->dim[rank-1]._stride;
-
-      arr_dsp_d[i] = array_offset_dst;
-
-      ptrdiff_t array_offset_sr = 0;
-      stride = 1;
-      extent = 1;
-      for (j = 0; j < GFC_DESCRIPTOR_RANK (src)-1; j++)
-	{
-	  array_offset_sr += ((i / (extent*stride))
-			   % (src->dim[j]._ubound
-			      - src->dim[j].lower_bound + 1))
-			  * src->dim[j]._stride;
-	  extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1);
-          stride = src->dim[j]._stride;
-	}
-
-      array_offset_sr += (i / extent) * src->dim[rank-1]._stride;
-
-      arr_dsp_s[i] = array_offset_sr;
-
-      /* sr_off = offset + array_offset_sr*GFC_DESCRIPTOR_SIZE (src); */
-      /* void *dst = (void *) ((char *) dest->base_addr */
-      /* 			    + array_offset_dst*GFC_DESCRIPTOR_SIZE (dest)); */
-      /* FIXME: Handle image_index == this_image().  */
-      /*  if (async == false) */
-	/* { */
-	/*   ierr = MPI_Get (dst, GFC_DESCRIPTOR_SIZE (dest), */
-	/* 		  MPI_BYTE, image_index-1, sr_off, */
-	/* 		  GFC_DESCRIPTOR_SIZE (src), MPI_BYTE, *p); */
-	/* } */
+      MPI_Type_vector(size,1,src->dim[0]._stride, base_type_src, &dt_s);
+      MPI_Type_vector(size,1,dest->dim[0]._stride, base_type_dst, &dt_d);
     }
-
-  MPI_Type_indexed(size, arr_bl, arr_dsp_s, base_type_src, &dt_s);
-  MPI_Type_indexed(size, arr_bl, arr_dsp_d, base_type_dst, &dt_d);
+  else
+    {
+      for(i=0;i<size;i++)
+	arr_bl[i]=1;
+      
+      for (i = 0; i < size; i++)
+	{
+	  ptrdiff_t array_offset_dst = 0;
+	  ptrdiff_t stride = 1;
+	  ptrdiff_t extent = 1;
+	  for (j = 0; j < rank-1; j++)
+	    {
+	      array_offset_dst += ((i / (extent*stride))
+				   % (dest->dim[j]._ubound
+				      - dest->dim[j].lower_bound + 1))
+		* dest->dim[j]._stride;
+	      extent = (dest->dim[j]._ubound - dest->dim[j].lower_bound + 1);
+	      stride = dest->dim[j]._stride;
+	    }
+	  array_offset_dst += (i / extent) * dest->dim[rank-1]._stride;
+	  
+	  arr_dsp_d[i] = array_offset_dst;
+	  
+	  ptrdiff_t array_offset_sr = 0;
+	  stride = 1;
+	  extent = 1;
+	  for (j = 0; j < GFC_DESCRIPTOR_RANK (src)-1; j++)
+	    {
+	      array_offset_sr += ((i / (extent*stride))
+				  % (src->dim[j]._ubound
+				     - src->dim[j].lower_bound + 1))
+		* src->dim[j]._stride;
+	      extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1);
+	      stride = src->dim[j]._stride;
+	    }
+	  
+	  array_offset_sr += (i / extent) * src->dim[rank-1]._stride;
+	  
+	  arr_dsp_s[i] = array_offset_sr;
+	  
+	  /* sr_off = offset + array_offset_sr*GFC_DESCRIPTOR_SIZE (src); */
+	  /* void *dst = (void *) ((char *) dest->base_addr */
+	  /* 			    + array_offset_dst*GFC_DESCRIPTOR_SIZE (dest)); */
+	  /* FIXME: Handle image_index == this_image().  */
+	  /*  if (async == false) */
+	  /* { */
+	  /*   ierr = MPI_Get (dst, GFC_DESCRIPTOR_SIZE (dest), */
+	  /* 		  MPI_BYTE, image_index-1, sr_off, */
+	  /* 		  GFC_DESCRIPTOR_SIZE (src), MPI_BYTE, *p); */
+	  /* } */
+	}
+      
+      MPI_Type_indexed(size, arr_bl, arr_dsp_s, base_type_src, &dt_s);
+      MPI_Type_indexed(size, arr_bl, arr_dsp_d, base_type_dst, &dt_d);
+    }
   
   MPI_Type_commit(&dt_s);
   MPI_Type_commit(&dt_d);
