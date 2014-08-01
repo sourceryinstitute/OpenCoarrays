@@ -1405,6 +1405,132 @@ PREFIX (co_max) (gfc_descriptor_t *a, int result_image, int *stat,
   co_reduce_1 (MPI_MAX, a, result_image, stat, errmsg, src_len, errmsg_len);
 }
 
+/* Atomics operations */
+
+void
+_gfortran_caf_atomic_define (caf_token_t token, size_t offset,
+			     int image_index, void *value, int *stat,
+			     int type __attribute__ ((unused)), int kind)
+{
+  MPI_Win *p = token;
+  MPI_Datatype dt;
+  int ierr = 0;
+
+  selectType(kind,&dt);
+
+#if MPI_VERSION >= 3
+  void *bef_acc;
+  bef_acc = malloc(kind);
+  MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
+  ierr = MPI_Fetch_and_op(value, bef_acc, dt, image_index-1, offset,
+			  MPI_REPLACE, *p);
+  MPI_Win_unlock (image_index-1, *p);
+  free(bef_acc);
+#else
+  MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
+  ierr = MPI_Put (value, 1, dt, image_index-1, offset, 1, dt, *p);
+  MPI_Win_unlock (image_index-1, *p);
+#endif
+
+  if (stat)
+    *stat = ierr;
+
+  if (ierr != 0)
+    error_stop (ierr);
+  return;
+}
+
+void
+_gfortran_caf_atomic_ref (caf_token_t token, size_t offset,
+			  int image_index,
+			  void *value, int *stat,
+			  int type __attribute__ ((unused)), int kind)
+{
+  MPI_Win *p = token;
+  MPI_Datatype dt;
+  int ierr = 0;
+
+  selectType(kind,&dt);
+
+#if MPI_VERSION >= 3
+  void *bef_acc;
+  bef_acc = malloc(kind);
+  MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
+  ierr = MPI_Fetch_and_op(value, bef_acc, dt, image_index-1, offset, MPI_NO_OP, *p);
+  MPI_Win_unlock (image_index-1, *p);
+  memcpy(value,bef_acc,kind);  
+  free(bef_acc);
+#else
+  MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
+  ierr = MPI_Get (value, 1, dt, image_index-1, offset, 1, dt, *p);
+  MPI_Win_unlock (image_index-1, *p);
+#endif
+
+  if (stat)
+    *stat = ierr;
+
+  if (ierr != 0)
+    error_stop (ierr);
+  return;
+}
+
+void
+_gfortran_caf_atomic_cas (caf_token_t token, size_t offset,
+			  int image_index, void *old, void *compare,
+			  void *new_val, int *stat,
+			  int type __attribute__ ((unused)), int kind)
+{
+  MPI_Win *p = token;
+  MPI_Datatype dt;
+  int ierr = 0;
+  void *value = NULL;
+
+  selectType(kind,&dt);
+
+#if MPI_VERSION >= 3
+  MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
+  ierr = MPI_compare_and_swap(new_val,compare,old,dt,image_index-1,offset,*p);
+  MPI_Win_unlock (image_index-1, *p);
+#else
+  value = malloc(kind);
+  MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
+  ierr = MPI_Get (value, 1, dt, image_index-1, offset, 1, dt, *p);
+  // We need something to guarantee that MPI_Get terminates without releasing the lock
+  // on the window.
+  if(memcmp(compare, value, kind)==0)
+    {
+      ierr = MPI_Put (new_val, 1, dt, image_index-1, offset, 1, dt, *p);
+      memcpy(old,value,kind);
+    }
+
+  if (stat)
+    *stat = ierr;
+
+  if (ierr != 0)
+    error_stop (ierr);
+  return;
+
+  MPI_Win_unlock (image_index-1, *p);
+  free(value);
+#endif
+
+  if (stat)
+    *stat = ierr;
+
+  if (ierr != 0)
+    error_stop (ierr);
+  return;
+}
+
+void
+_gfortran_caf_atomic_op (int op, caf_token_t token, size_t offset,
+			 int image_index __attribute__ ((unused)),
+			 void *value, void *old, int *stat,
+			 int type __attribute__ ((unused)), int kind)
+{
+  ;
+}
+
 
 /* ERROR STOP the other images.  */
 
