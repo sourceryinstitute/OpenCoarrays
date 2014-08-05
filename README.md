@@ -1,7 +1,7 @@
 # OpenCoarrays #
 
 ## Overview ##
-This archive contains the OpenCoarrays source code, tests, and documentation. OpenCoarrays is an open-source software project for developing, porting and tuning transport layers that support coarray Fortran compilers.  We target compilers that conform to the coarray parallel programming feature set specified in the Fortran 2008 standard.  
+This archive contains the [OpenCoarrays](http://www.opencoarrays.org) source code, tests, and documentation. OpenCoarrays is an open-source software project for developing, porting and tuning transport layers that support coarray Fortran compilers.  We target compilers that conform to the coarray parallel programming feature set specified in the Fortran 2008 standard.  
 
 OpenCoarrays shields compilers from platform- and communication-library dependencies by translating a compiler's communication and synchronization requests into calls to one of several communication libraries.  A user of an OpenCoarray-compatible compiler can link compiler-generated object files to the OpenCoarray library deemed most appropriate and efficient for the application and target platform.  
 
