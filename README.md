@@ -16,7 +16,7 @@ We expect our LIBCAF_MPI library to be the default on systems that have MPI 3.0.
 We also offer a LIBCAF_GASNet that builds atop the Global Address Space Networking ([GASNet](http://gasnet.lbl.gov)) communication library.  We intend for LIBCAF_GASNet to be an ``expert'' alternative capable of outperforming MPI for some applications on some platforms.  LIBCAF_GASNet requires greater care to configure and use.
 
 
-### Installation ###
+## Installation ##
 
 Please see the INSTALL file.
 
@@ -26,8 +26,8 @@ Please see the CONTRIBUTING file.
 
 ## Support ##
 
-* The project team will respond to support questions via the [OpenCoarrays Google Group](https://groups.google.com/forum/#!forum/opencoarrays).
-* Please visit http://opencoarrays.org/services for a list of services the OpenCoarrays project team provides on a contract basis.
+* We respond to support questions via the [OpenCoarrays Google Group](https://groups.google.com/forum/#!forum/opencoarrays).
+* We offer additional an additional [menu](http://opencoarrays.org/services) of services on a contract basis.
 
 ## Acknowledgements ##
 We gratefully acknowledge support from the following institutions:
