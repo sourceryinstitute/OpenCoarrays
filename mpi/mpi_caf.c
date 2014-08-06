@@ -143,6 +143,53 @@ caf_runtime_error (const char *message, ...)
   exit (EXIT_FAILURE);
 }
 
+/* Lock implementation for MPI-2 */
+
+void counter_inc(MPI_Win c_win, int *value, int inc, int image_index)
+{
+  int i, *val;
+
+  val = (int *)calloc(caf_num_images,sizeof(int));
+
+  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, image_index-1, 0, c_win);
+  
+  for(i=0;i<caf_num_images;i++)
+    if(i == caf_this_image-1)
+      MPI_Accumulate(&inc, 1, MPI_INT, image_index-1, i*sizeof(int), 1, MPI_INT, MPI_SUM, c_win);
+    else
+      MPI_Get(&val[i], 1, MPI_INT, image_index-1, i*sizeof(int), 1, MPI_INT, c_win);
+
+  MPI_Win_unlock(image_index-1, c_win);
+
+  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, image_index-1, 0, c_win);
+  MPI_Get(&val[caf_this_image-1], 1, MPI_INT, image_index-1, (caf_this_image-1)*sizeof(int), 1, MPI_INT, c_win);
+  MPI_Win_unlock(image_index-1, c_win);
+
+  *value = -1;
+  
+  for(i=0;i<caf_num_images;i++)
+    *value = *value + val[i];
+
+  free(val);
+
+}
+
+void mutex_lock(MPI_Win win, int image_index)
+{
+  int value=0;
+  counter_inc(win, &value, 1, image_index);
+  while(value != 0)
+    {
+      counter_inc(win, &value, -1, image_index);
+      counter_inc(win, &value, 1, image_index);
+    }
+}
+
+void mutex_unlock(MPI_Win win, int image_index)
+{
+  int value;
+  counter_inc(win, &value, -1, image_index);
+}
 
 /* Initialize coarray program.  This routine assumes that no other
    GASNet initialization happened before. */
@@ -252,6 +299,8 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
 {
   /* int ierr; */
   void *mem;
+  size_t actual_size;
+  int l_var=0, *init_array=NULL;
 
   if (unlikely (caf_is_finalized))
     goto error;
@@ -264,16 +313,35 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
 
   *token = malloc (sizeof(MPI_Win));
 
+  if(type == CAF_REGTYPE_LOCK_STATIC)
+    {
+      /* For a single lock variable we need an array of integers */
+      actual_size = size*sizeof(int)*caf_num_images;
+      l_var = 1;
+    }
+  else
+    actual_size = size;
+
 #if MPI_VERSION >= 3
-  MPI_Win_allocate(size, 1, mpi_info_same_size, MPI_COMM_WORLD,&mem, *token);
+  MPI_Win_allocate(actual_size, 1, mpi_info_same_size, MPI_COMM_WORLD,&mem, *token);
 #else
-  MPI_Alloc_mem(size, MPI_INFO_NULL, &mem);
-  MPI_Win_create(mem, size, 1, MPI_INFO_NULL, MPI_COMM_WORLD, *token);
+  MPI_Alloc_mem(actual_size, MPI_INFO_NULL, &mem);
+  MPI_Win_create(mem, actual_size, 1, MPI_INFO_NULL, MPI_COMM_WORLD, *token);
 #endif
 
   MPI_Win *p = *token;
 
   MPI_Win_fence(0, *p);
+
+  if(l_var)
+    {
+      init_array = (int *)calloc(caf_num_images,sizeof(int));
+      MPI_Win_lock(MPI_LOCK_EXCLUSIVE, caf_this_image-1, 0, *p);
+      MPI_Put (init_array, caf_num_images, MPI_INT, caf_this_image-1,
+       	       0, caf_num_images, MPI_INT, *p);
+      MPI_Win_unlock(caf_this_image-1, *p);
+      free(init_array);
+    }
 
   caf_static_t *tmp = malloc (sizeof (caf_static_t));
   tmp->prev  = caf_tot;
@@ -1405,12 +1473,39 @@ PREFIX (co_max) (gfc_descriptor_t *a, int result_image, int *stat,
   co_reduce_1 (MPI_MAX, a, result_image, stat, errmsg, src_len, errmsg_len);
 }
 
+/* Locking functions */
+
+void
+PREFIX (lock) (caf_token_t token, size_t index, int image_index,
+	       int *aquired_lock, int *stat, char *errmsg,
+	       int errmsg_len)
+{
+
+  MPI_Win *p = token;
+  int ierr = 0, value=0;
+
+  mutex_lock(*p, image_index);
+
+}
+
+void
+PREFIX (unlock)(caf_token_t token, size_t index, int image_index,
+		int *stat, char *errmsg, int errmsg_len)
+{
+
+  MPI_Win *p = token;
+  int value=0,ierr=0;
+
+  mutex_unlock(*p, image_index);
+
+}
+
 /* Atomics operations */
 
 void
-_gfortran_caf_atomic_define (caf_token_t token, size_t offset,
-			     int image_index, void *value, int *stat,
-			     int type __attribute__ ((unused)), int kind)
+PREFIX(atomic_define) (caf_token_t token, size_t offset,
+		       int image_index, void *value, int *stat,
+		       int type __attribute__ ((unused)), int kind)
 {
   MPI_Win *p = token;
   MPI_Datatype dt;
@@ -1441,10 +1536,10 @@ _gfortran_caf_atomic_define (caf_token_t token, size_t offset,
 }
 
 void
-_gfortran_caf_atomic_ref (caf_token_t token, size_t offset,
-			  int image_index,
-			  void *value, int *stat,
-			  int type __attribute__ ((unused)), int kind)
+PREFIX(atomic_ref) (caf_token_t token, size_t offset,
+		    int image_index,
+		    void *value, int *stat,
+		    int type __attribute__ ((unused)), int kind)
 {
   MPI_Win *p = token;
   MPI_Datatype dt;
@@ -1475,10 +1570,10 @@ _gfortran_caf_atomic_ref (caf_token_t token, size_t offset,
 }
 
 void
-_gfortran_caf_atomic_cas (caf_token_t token, size_t offset,
-			  int image_index, void *old, void *compare,
-			  void *new_val, int *stat,
-			  int type __attribute__ ((unused)), int kind)
+PREFIX(atomic_cas) (caf_token_t token, size_t offset,
+		    int image_index, void *old, void *compare,
+		    void *new_val, int *stat,
+		    int type __attribute__ ((unused)), int kind)
 {
   MPI_Win *p = token;
   MPI_Datatype dt;
@@ -1523,7 +1618,7 @@ _gfortran_caf_atomic_cas (caf_token_t token, size_t offset,
 }
 
 void
-_gfortran_caf_atomic_op (int op, caf_token_t token, size_t offset,
+PREFIX(atomic_op) (int op, caf_token_t token, size_t offset,
 			 int image_index __attribute__ ((unused)),
 			 void *value, void *old, int *stat,
 			 int type __attribute__ ((unused)), int kind)
