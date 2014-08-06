@@ -34,6 +34,6 @@ We gratefully acknowledge support from the following institutions:
 
 * [National Center for Atmospheric Research](http://ncar.ucar.edu) for access to the Yellowstone/Caldera supercomputers and for logistics support during the initial development of OpenCoarrays.
 * [CINECA](http://www.cineca.it/en) for access to Eurora/PLX for the project HyPS- BLAS under the ISCRA grant program for 2014.
-* Google for support of a related Google Summer of Code 2014 project.
+* [Google](http://google.com) for support of a related [Google Summer of Code](https://www.google-melange.com) 2014 project.
 * The National Energy Research Scientific Computing Center ([NERSC](http://www.nersc.gov)), which is supported by the Office of Science of the U.S. Department of Energy under Contract No. DE-AC02-05CH11231, for access to the Hopper and Edison supercomputers under the OpenCoarrays project start allocation.
-* Sourcery, Inc., for financial support for the domain registration, web hosting, trademarking, and conference travel.
+* [Sourcery, Inc.](http://www.sourceryinstitute.org), for financial support for the domain registration, web hosting, trademarking, and conference travel.
