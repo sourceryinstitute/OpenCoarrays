@@ -1587,26 +1587,28 @@ PREFIX(atomic_cas) (caf_token_t token, size_t offset,
   ierr = MPI_compare_and_swap(new_val,compare,old,dt,image_index-1,offset,*p);
   MPI_Win_unlock (image_index-1, *p);
 #else
-  value = malloc(kind);
-  MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
-  ierr = MPI_Get (value, 1, dt, image_index-1, offset, 1, dt, *p);
-  // We need something to guarantee that MPI_Get terminates without releasing the lock
-  // on the window.
-  if(memcmp(compare, value, kind)==0)
-    {
-      ierr = MPI_Put (new_val, 1, dt, image_index-1, offset, 1, dt, *p);
-      memcpy(old,value,kind);
-    }
+  printf("We apologize but atomic_cas for MPI-2 is not yet implemented\n");
+  ierr = 1;
+  /* value = malloc(kind); */
+/*   MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p); */
+/*   ierr = MPI_Get (value, 1, dt, image_index-1, offset, 1, dt, *p); */
+/*   // We need something to guarantee that MPI_Get terminates without releasing the lock */
+/*   // on the window. */
+/*   if(memcmp(compare, value, kind)==0) */
+/*     { */
+/*       ierr = MPI_Put (new_val, 1, dt, image_index-1, offset, 1, dt, *p); */
+/*       memcpy(old,value,kind); */
+/*     } */
 
-  if (stat)
-    *stat = ierr;
+/*   if (stat) */
+/*     *stat = ierr; */
 
-  if (ierr != 0)
-    error_stop (ierr);
-  return;
+/*   if (ierr != 0) */
+/*     error_stop (ierr); */
+/*   return; */
 
-  MPI_Win_unlock (image_index-1, *p);
-  free(value);
+/*   MPI_Win_unlock (image_index-1, *p); */
+/*   free(value); */
 #endif
 
   if (stat)
@@ -1619,11 +1621,20 @@ PREFIX(atomic_cas) (caf_token_t token, size_t offset,
 
 void
 PREFIX(atomic_op) (int op, caf_token_t token, size_t offset,
-			 int image_index __attribute__ ((unused)),
-			 void *value, void *old, int *stat,
-			 int type __attribute__ ((unused)), int kind)
+		   int image_index __attribute__ ((unused)),
+		   void *value, void *old, int *stat,
+		   int type __attribute__ ((unused)), int kind)
 {
-  ;
+  printf("We apologize but atomic_op for MPI-2 is not yet implemented\n");
+  ierr = 1;
+  
+  if (stat)
+    *stat = ierr;
+  
+  if (ierr != 0)
+    error_stop (ierr);
+  
+  return;
 }
 
 
