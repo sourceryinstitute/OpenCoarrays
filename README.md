@@ -3,10 +3,9 @@
 ## Overview ##
 This archive contains the [OpenCoarrays](http://www.opencoarrays.org) source code, tests, and documentation. OpenCoarrays is an open-source software project for developing, porting and tuning transport layers that support coarray Fortran compilers.  We target compilers that conform to the coarray parallel programming feature set specified in the Fortran 2008 standard.  
 
-The coarray Fortran features in the Fortran 2008 standard enable programmers to express parallelism without tying their code 
-OpenCoarrays shields compilers from platform- and communication-library dependencies by translating a compiler's communication and synchronization requests into calls to one of several communication libraries.  
+Coarray Fortran enables application developers to express parallel algorithms without hardwiring a particular version of a particular communication library into their code.  Such abstraction makes application code less sensitive to the evolution of the underlying communication libraries and hardware platforms. 
 
-A user of an OpenCoarray-compatible compiler can link compiler-generated object files to the OpenCoarray library deemed most appropriate and efficient for the application and target platform.  
+OpenCoarrays offers similar investment-protection to compiler developers.  Compilers send high-level communication and synchronization requests to the OpenCoarray transport layer of their choice. That layer translates the requests into lower-level calls to the user-specified communication layers.  A user of an OpenCoarray-compatible compiler can link compiler-generated object files to the OpenCoarray library deemed most appropriate and efficient for the target application and platform.  
 
 ## Compatible Compilers ##
 The pre-release GNU Fortran ([GFortran](https://gcc.gnu.org/svn.html)) [4.10/5.0](https://gcc.gnu.org/svn.html) compiler is OpenCoarray-compatible.  If you would like to use OpenCoarrays with a different compiler, please let the compiler vendor and the OpenCoarrays project team know. 
