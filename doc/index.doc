@@ -1,0 +1,156 @@
+/*! \mainpage OpenCoarrays
+\htmlonly
+\endhtmlonly
+
+\section Outline 
+<ul>
+  <li>\ref overview
+  <li>\ref transport_layers 
+  <ul>
+    <li>\ref LIBCAF_MPI
+  </ul>
+  <ul>
+    <li>\ref LIBCAF_GASNet
+  </ul>
+  <ul>
+    <li>\ref LIBCAF_ARMCI
+  </ul>
+  <ul>
+    <li>\ref LIBCAF_OpenSHMEM
+  </ul>
+  <ul>
+    <li>\ref LIBCAF_SINGLE
+  </ul>
+  <li>\ref compatible_compilers
+  <li>\ref example
+</ul>
+
+\section overview Overview
+This archive contains the <A href=http://www.opencoarrays.org>OpenCoarrays</A> source code, tests, and documentation. OpenCoarrays is an open-source transport layer for compilers that support the coarray parallel programming features of Fortran 2008 and 2015.  OpenCoarrays-compatible compilers make high-level communication and synchronization requests to OpenCoarrays, which translates the requests into lower-level calls to a user-specified communication library.  A user of an OpenCoarrays-compatible compiler can link compiler-generated object files to the communication library deemed most appropriate and efficient for the target application and platform.  Currently supported communication libraries include the Message Passing Interface (<A href=http://www.mpi-forum.org>MPI</A>)  and the Global Address Space Network (<A href=http://gasnet.lbl.gov>GASNet</A>).  We are evaluating the feasibility and benefits of adding support for the Aggregate Remote Memory Copy Interface (<A href=http://hpc.pnl.gov/armci/>ARMCI</A>) and for <A href=http://www.openshmem.org>OpenSHMEM</A>.
+
+\section transport_layers Transport Layers
+\subsection LIBCAF_MPI
+We intend for the MPI transport layer to be the default implementation on most platforms.  It has the widest features coverage and is the easiest to install and use.  OpenCoarrays will detect the MPI version and build a transport layer for the  appropriate MPI version.
+
+The preferred MPI standard is MPI 3.0 or later.  To support legacy systems, we will also provide for using MPI 2.0.  The MPI 2.0 transport layer is, however, more complex and thus more difficult to maintain and might therefore become unsupported eventually.  
+
+\subsection LIBCAF_GASNet
+The GASNet transport layer targets expert users.  It provides better performance than the MPI layer, but it requires more effort to install and use.
+
+\subsection LIBCAF_ARMCI
+This library is incomplete and not yet supported.
+
+\subsection LIBCAF_OpenSHMEM
+We do not yet provide an OpenSHMEM transport layer.  We expect to evaluate the utility and performance of OpenSHMEM for supporting coarray Fortran soon.
+
+\subsection LIBCAF_SINGLE
+This library provides stub implementations for use with programs that run in one image only.  LIBCAF_SINGLE is useful for debugging purposes in order to isolate problems related to the compiler versus the transport layer or communication library.
+
+\section compatible_compilers Compatible Compilers
+The pre-release GNU Fortran (GFortran ) compiler version 4.10 (which will likely be reversioned to 5.0 before release) links to OpenCoarrays.  If you would like to use OpenCoarrays with another compiler, please let the compiler vendor and the OpenCoarrays team know.
+
+\section example Example
+Fortran application developers not need understand the mechanics of using OpenCoarrays beyond building the desired transport layer and linking it into executables that use coarrays.  In the intended use case, Fortran programs never directly reference OpenCoarrays procedures.  We provide the following OpenCoarrays example for the benefit of compiler developers: 
+
+\verbatim
+#include <stdlib.h>
+#include <stdio.h>
+#include "libcaf.h"
+#include <sys/types.h>
+#include <sys/errno.h>
+#include <sys/time.h>
+#include <stdbool.h>
+
+static struct timezone tz;
+static struct timeval start_time, finish_time;
+
+/* Start measuring a time delay */
+void start_timer(void)
+{
+    gettimeofday( &start_time, &tz);
+}
+
+/* Return elapsed time in milliseconds */
+double elapsed_time(void)
+{
+    gettimeofday( &finish_time, &tz);
+    return(1000.0*(finish_time.tv_sec - start_time.tv_sec) +
+           (finish_time.tv_usec - start_time.tv_usec)/1000.0 );
+}
+
+/* Return the stopping time in milliseconds */
+double stop_time(void)
+{
+    gettimeofday( &finish_time, &tz);
+    return(1000.0*finish_time.tv_sec + finish_time.tv_usec/1000.0);
+}
+
+/* 
+  hello.c: This program uses OpenCoarrays to send a double array 
+  from image 1 to image 2. User input (via command-line or when  
+  prompted) sets the array extent.                               
+*/
+
+int main(int argc, char **argv)
+{
+  int info = 0, me, n=1, i;
+  double *a_d,*d;
+  caf_token_t token;
+  ptrdiff_t size;
+  char errmsg[255];
+  bool check = true;
+
+  if(argc == 1)
+    {
+      printf("Please insert message size\n");
+      return 1;
+    }
+  
+  sscanf(argv[1],"%d",&n);
+  
+  n = (int)n/sizeof(double);
+
+  size = n*sizeof(double);
+
+  _gfortran_caf_init (&argc, &argv);
+
+  me = _gfortran_caf_this_image (1);
+
+  a_d = _gfortran_caf_register(size,CAF_REGTYPE_COARRAY_STATIC,&token,&info,errmsg,255);
+  
+  start_timer();
+
+  if (me == 1)
+    {
+      d = (double *)calloc(n,sizeof(double));
+      for (i = 0; i < n; i++)
+	d[i] = i;
+      /* Blocking send of double array "d" from image 1 to image 2 */
+      _gfortran_caf_send (token, 0, me+1, d, size, false);
+    }
+  
+  _gfortran_caf_sync_all (&info, errmsg, 255);
+
+  stop_time();
+
+  if(info!=0)
+    printf("Error\n");
+
+  if(me==2)
+    {
+      for (i = 0; i < n; i++)
+	check = check&(a_d[i]==i ? true : false);
+      printf("%s\n",check?"OK":"Fail");
+    }
+
+  if(me==1)
+     printf("Elapsed time (ms): %lf\n",elapsed_time());
+
+  _gfortran_caf_finalize();
+
+  return 0;
+}
+\endverbatim
+\htmlonly
+\endhtmlonly
+*/
