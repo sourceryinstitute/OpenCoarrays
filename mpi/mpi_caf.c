@@ -1584,7 +1584,7 @@ PREFIX(atomic_cas) (caf_token_t token, size_t offset,
 
 #if MPI_VERSION >= 3
   MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
-  ierr = MPI_compare_and_swap(new_val,compare,old,dt,image_index-1,offset,*p);
+  ierr = MPI_Compare_and_swap(new_val,compare,old,dt,image_index-1,offset,*p);
   MPI_Win_unlock (image_index-1, *p);
 #else
   printf("We apologize but atomic_cas for MPI-2 is not yet implemented\n");
@@ -1626,7 +1626,7 @@ PREFIX(atomic_op) (int op, caf_token_t token, size_t offset,
 		   int type __attribute__ ((unused)), int kind)
 {
   printf("We apologize but atomic_op for MPI-2 is not yet implemented\n");
-  ierr = 1;
+  int ierr = 1;
   
   if (stat)
     *stat = ierr;
