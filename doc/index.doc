@@ -50,107 +50,126 @@ This library provides stub implementations for use with programs that run in one
 The pre-release GNU Fortran (GFortran ) compiler version 4.10 (which will likely be reversioned to 5.0 before release) links to OpenCoarrays.  If you would like to use OpenCoarrays with another compiler, please let the compiler vendor and the OpenCoarrays team know.
 
 \section example Example
-Fortran application developers not need understand the mechanics of using OpenCoarrays beyond building the desired transport layer and linking it into executables that use coarrays.  In the intended use case, Fortran programs never directly reference OpenCoarrays procedures.  We provide the following OpenCoarrays example for the benefit of compiler developers: 
+Fortran application developers not need understand the mechanics of using OpenCoarrays beyond building the desired transport layer and linking it into executables that use coarrays.  In the intended use case, Fortran programs never directly reference OpenCoarrays procedures.  We provide the following OpenCoarrays example for the benefit of compiler developers.  This example coarray Fortran program sends the local elements of an array coarray from image 1 to image 2:
 
 \verbatim
-#include <stdlib.h>
-#include <stdio.h>
-#include "libcaf.h"
-#include <sys/types.h>
-#include <sys/errno.h>
-#include <sys/time.h>
-#include <stdbool.h>
+program sendrecv
+  use iso_fortran_env
+  implicit none
 
-static struct timezone tz;
-static struct timeval start_time, finish_time;
+  integer :: me, np, i
+  integer, parameter :: n=1000
+  real(kind=real64), allocatable :: d(:)[:]
 
-/* Start measuring a time delay */
-void start_timer(void)
-{
-    gettimeofday( &start_time, &tz);
-}
-
-/* Return elapsed time in milliseconds */
-double elapsed_time(void)
-{
-    gettimeofday( &finish_time, &tz);
-    return(1000.0*(finish_time.tv_sec - start_time.tv_sec) +
-           (finish_time.tv_usec - start_time.tv_usec)/1000.0 );
-}
-
-/* Return the stopping time in milliseconds */
-double stop_time(void)
-{
-    gettimeofday( &finish_time, &tz);
-    return(1000.0*finish_time.tv_sec + finish_time.tv_usec/1000.0);
-}
-
-/* 
-  hello.c: This program uses OpenCoarrays to send a double array 
-  from image 1 to image 2. User input (via command-line or when  
-  prompted) sets the array extent.                               
-*/
-
-int main(int argc, char **argv)
-{
-  int info = 0, me, n=1, i;
-  double *a_d,*d;
-  caf_token_t token;
-  ptrdiff_t size;
-  char errmsg[255];
-  bool check = true;
-
-  if(argc == 1)
-    {
-      printf("Please insert message size\n");
-      return 1;
-    }
+  allocate(d(n)[*])
   
-  sscanf(argv[1],"%d",&n);
-  
-  n = (int)n/sizeof(double);
+  np = num_images()
+  me = this_image()
 
-  size = n*sizeof(double);
+  do i=1,n
+     d(i) = i
+  enddo
+
+  sync all
+
+  if(me == 1) d(:)[2] = d
+
+  sync all
+  
+  deallocate(d)
+end program
+\endverbatim
+A compiler might generate the follwoing code to translate the above code into calls to an OpenCoarrays transport layer:
+\verbatim
+sendrecv ()
+{
+  struct array2_real(kind=8) d;
+  integer(kind=4) i;
+  integer(kind=4) me;
+  integer(kind=4) np;
+
+  d.data = 0B;
+  {
+    integer(kind=4) overflow.0;
+
+    overflow.0 = 0;
+    if (overflow.0 != 0)
+      {
+        _gfortran_runtime_error (&"Integer overflow when calculating the amount of memory to allocate"[1]{lb: 1 sz: 1});
+      }
+    else
+      {
+        if (d.data != 0B)
+          {
+            _gfortran_runtime_error_at (&"At line 9 of file coarray.f90"[1]{lb: 1 sz: 1}, &"Attempting to allocate already allocated variable \'%s\'"[1]{lb: 1 sz: 1}, &"d"[1]{lb: 1 sz: 1});
+          }
+        else
+          {
+            d.data = (void * restrict) _gfortran_caf_register (8000, 1, &d.token, 0B, 0B, 0);
+          }
+      }
+    d.dtype = 537;
+    d.dim[0].lbound = 1;
+    d.dim[0].ubound = 1000;
+    d.dim[0].stride = 1;
+    d.dim[1].lbound = 1;
+    d.offset = -1;
+    np = _gfortran_caf_num_images (0, -1);
+    me = _gfortran_caf_this_image (0);
+    i = 1;
+    if (i <= 1000)
+      {
+        while (1)
+          {
+            {
+              logical(kind=4) D.2368;
+
+              (*(real(kind=8)[0:] * restrict) d.data)[d.offset + (integer(kind=8)) i] = (real(kind=8)) i;
+              L.1:;
+              D.2368 = i == 1000;
+              i = i + 1;
+              if (D.2368) goto L.2;
+            }
+          }
+      }
+    L.2:;
+    __sync_synchronize ();
+    _gfortran_caf_sync_all (0B, 0B, 0);
+    if (me == 1)
+      {
+        _gfortran_caf_send (d.token, 0, 3 - (integer(kind=4)) d.dim[1].lbound, &d, 0B, &d, 8, 8);
+      }
+    L.3:;
+    __sync_synchronize ();
+    _gfortran_caf_sync_all (0B, 0B, 0);
+    if (d.data == 0B)
+      {
+        _gfortran_runtime_error_at (&"At line 24 of file coarray.f90"[1]{lb: 1 sz: 1}, &"Attempt to DEALLOCATE unallocated \'%s\'"[1]{lb: 1 sz: 1}, &"d"[1]{lb: 1 sz: 1});
+      }
+    else
+      {
+        _gfortran_caf_deregister (&d.token, 0B, 0B, 0);
+      }
+    d.data = 0B;
+  }
+}
+
+
+main (integer(kind=4) argc, character(kind=1) * * argv)
+{
+  static integer(kind=4) options.1[9] = {68, 1023, 0, 0, 1, 1, 0, 0, 31};
 
   _gfortran_caf_init (&argc, &argv);
-
-  me = _gfortran_caf_this_image (1);
-
-  a_d = _gfortran_caf_register(size,CAF_REGTYPE_COARRAY_STATIC,&token,&info,errmsg,255);
-  
-  start_timer();
-
-  if (me == 1)
-    {
-      d = (double *)calloc(n,sizeof(double));
-      for (i = 0; i < n; i++)
-	d[i] = i;
-      /* Blocking send of double array "d" from image 1 to image 2 */
-      _gfortran_caf_send (token, 0, me+1, d, size, false);
-    }
-  
-  _gfortran_caf_sync_all (&info, errmsg, 255);
-
-  stop_time();
-
-  if(info!=0)
-    printf("Error\n");
-
-  if(me==2)
-    {
-      for (i = 0; i < n; i++)
-	check = check&(a_d[i]==i ? true : false);
-      printf("%s\n",check?"OK":"Fail");
-    }
-
-  if(me==1)
-     printf("Elapsed time (ms): %lf\n",elapsed_time());
-
-  _gfortran_caf_finalize();
-
+  _gfortran_set_args (argc, argv);
+  _gfortran_set_options (9, &options.1[0]);
+  sendrecv ();
+  __sync_synchronize ();
+  _gfortran_caf_finalize ();
   return 0;
 }
+
 \endverbatim
 \htmlonly
 \endhtmlonly
 */
+
