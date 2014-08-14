@@ -1,17 +1,17 @@
 # OpenCoarrays #
 
 ## Overview ##
-This archive contains the [OpenCoarrays](http://www.opencoarrays.org) source code, tests, and documentation. OpenCoarrays is an open-source software project for developing, porting and tuning transport layers that support coarray Fortran compilers.  We target compilers that conform to the coarray parallel programming features in Fortran 2008.  
+This archive contains the [OpenCoarrays](http://www.opencoarrays.org) source code, tests, and documentation. OpenCoarrays is an open-source software project for developing, porting and tuning transport layers that support coarray Fortran compilers.  We target compilers that conform to the coarray parallel programming features in Fortran 2008.
 
-Coarray Fortran enables application developers to express parallel algorithms without hardwiring a particular version of a particular communication library into their codes.  Such abstraction makes application code less sensitive to the evolution of the underlying communication libraries and hardware platforms. 
+Coarray Fortran enables application developers to express parallel algorithms without hardwiring a particular version of a particular communication library into their codes.  Such abstraction makes application code less sensitive to the evolution of the underlying communication libraries and hardware platforms.
 
 OpenCoarrays offers similar investment-protection to compiler developers.  Compilers make high-level communication and synchronization requests through OpenCoarrays, which translates the requests into lower-level calls to a user-specified communication library.  A user of an OpenCoarray-compatible compiler can link compiler-generated object files to the communication library deemed most appropriate and efficient for the target application and platform.  Currently supported communication libraries include the Message Passing Interface ([MPI](http://www.mpi-forum.org)) and the Global Address Space Network ([GASNet](http://gasnet.lbl.gov)).
 
 ## Compatible Compilers ##
-The pre-release GNU Fortran ([GFortran](https://gcc.gnu.org/svn.html)) [4.10/5.0](https://gcc.gnu.org/svn.html) compiler is OpenCoarrays-compatible.  If you would like to use OpenCoarrays with a different compiler, please let the compiler vendor and the OpenCoarrays project team know. 
+The current developer version of GNU Fortran ([GFortran](https://gcc.gnu.org/wiki/GFortranBinaries)), which is part of [GCC 5](https://gcc.gnu.org/), is OpenCoarrays-compatible.  If you would like to use OpenCoarrays with a different compiler, please let the compiler vendor and the OpenCoarrays project team know.
 
 ## Prerequisites ##
-We expect our LIBCAF_MPI library to be the default on systems that have MPI 3.0.  LIBCAF_MPI is the most straightforward to install and use and the most robust in terms of its internal complexity.  LIBCAF_MPI currently support the use of the [MPICH](http://www.mpich.org) implementation of MPI.  We plan to offer a different version of LIBCAF_MPI on systems that have only MPI 2.0. 
+We expect our LIBCAF_MPI library to be the default on systems that have MPI 3.0.  LIBCAF_MPI is the most straightforward to install and use and the most robust in terms of its internal complexity.  LIBCAF_MPI currently support the use of the [MPICH](http://www.mpich.org) implementation of MPI.  We plan to offer a different version of LIBCAF_MPI on systems that have only MPI 2.0.
 
 We also offer a LIBCAF_GASNet that builds atop the Global Address Space Networking ([GASNet](http://gasnet.lbl.gov)) communication library.  We intend for LIBCAF_GASNet to be an ``expert'' alternative capable of outperforming MPI for some applications on some platforms.  LIBCAF_GASNet requires greater care to configure and use.
 
