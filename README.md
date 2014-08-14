@@ -26,7 +26,7 @@ Please see the CONTRIBUTING file.
 
 ## Support ##
 
-* We respond to support questions via the [OpenCoarrays Google Group](https://groups.google.com/forum/#!forum/opencoarrays).
+* We respond to support questions via the [OpenCoarrays Google Group](https://groups.google.com/forum/#!forum/opencoarrays); to subscribe, log-in with your Google account or [subscribe](https://groups.google.com/forum/#!forum/opencoarrays/join) with any email address.
 * We offer additional an additional [menu](http://opencoarrays.org/services) of services on a contract basis.
 
 ## Acknowledgements ##
