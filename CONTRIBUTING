@@ -1,13 +1,54 @@
+Contribution procedure
+
+Every contribution must contain several information in order to be
+approved. 
+A patch can be structured in two parts: ChangeLog and actual patch.
+The ChangeLog should contain a description of the problem/bug and how
+the patch fix it, date, author name and email and the signed-off-by line.
+The patch can be automatically created using 
+
+git show > patch.diff
+
+after a local commit on the repository.
+
+Once a patch is created, the ChangeLog can be written on
+top of it in plain-text according to the following format:
+
+/--------------------------------------------------------------------\
+
+<yyyy-mm-dd> + two spaces + <First and Last Name> + two spaces + <email>
+
+optionally followed by <tab> + 4 spaces + Name/email of the second/third/... contributor
+
+Empty line.
+
+And then:
+<tab> + * <filename> (<section1>, <section2>): <what you did>.
+<tab> + (<section3>): <what else you did>.
+<tab> + * <filename2> (<section>): <ditto>.
+
+Signed-off-by: <First and Last Name>  <email> (for each author)
+
+/--------------------------------------------------------------------\
+
+The last line certifies the DCO agreement (see below).
+
+
+Patch submission
+
+In order to submit a patch a contributor should send the .diff file 
+(complete of ChangeLog and source) to https://groups.google.com/forum/#!forum/opencoarrays.
+At that point the patch will be reviewed.
+Once reached a common agreement the patch will be committed on the repository by one
+of the OpenCoarrays's developers.
+
 In order to contribute to the OpenCoarray project, you have to
 certify compliance to the Developer's Certificate of Origin (DCO),
 quoted below.
 
-Sign off (cf. git commit --signoff) patches to certify the DCO
-and send them to the mailing list; see
-  https://groups.google.com/forum/#!forum/opencoarrays
-To subscribe without a Google account, go to
-  https://groups.google.com/forum/#!forum/opencoarrays/join
-and enter your email address.
+If you are a company employee which works on the library on its behalf,
+you are required to send us a specific form which will be made available very
+soon.
 
 --------------------------------------------------------------------
 
