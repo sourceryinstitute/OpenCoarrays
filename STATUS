@@ -1,0 +1,99 @@
+======================================================================
+Coarray Support Status
+======================================================================
+
+For the coarray support of GCC/gfortran on the compiler side, see also
+https://gcc.gnu.org/wiki/Coarray and below.
+
+NOTE: The corrary support in GCC 5 and in OpenCoarrays has still to be
+regarded as experimental and under development.  When avoiding the
+unimplemented items, listed below, it is suitable for production use
+but it has to be used with care.  In any case, bug reports and code
+and documentation contributions are welcome.
+
+
+OpenCoarray's libraries:
+
+* Single: Provides support for a single image, only.
+  Of the implemented features, this version should be the most
+  complete one.  However, it tends to lag a bit behind the libcaf_single
+  included in GCC; considering using the latter.  (When compiling
+  with a different compiler than GCC, note that the latter is GPLv3 with
+  GCC license exception.)
+
+* MPI (Message Passing Interface): Recommended version. Requires a
+  MPI 3 implementation, although most features also work with MPI 2.
+  Similar implementation coverage as single.
+  Consider using the latest version of your MPI implementation as those
+  tend to have improved MPI 3 and remote-memory access (RMA) support.
+
+* GASNet: More complicated to setup, but has higher performance.
+  Implementation lags a bit behind the Single and MPI versions.
+
+* ARMCI: Another communication library. (DONT USE) Currently, no longer
+  maintained. The send/get functions still use the old ABI and
+  newer features are not implemented. Included only as starting
+  point in case someone wants to implement ARMCI support. Its status
+  is not listed below.
+
+
+General To-Do Items
+-------------------
+* Improvement of error handling and diagnostic, including but not
+  limited to filling the ERRMSG= variable in case of errors.
+* Providing a diagnostic mode, which does consistency checks at
+  run time.
+* Improve the documentation and test case coverage
+* Better integration with the test cases of GCC.
+  (see gcc/testsuite/gfortran.dg/ and in particular the "dg-do run"
+   tests under gcc/testsuite/gfortran.dg/coarray*f90 and
+   gcc/testsuite/gfortran.dg/coarray/).
+
+
+Basic Communication Support
+---------------------------
+
+* Mostly complete
+* Vector subscripts not yet implemented
+* For character assignments, still some issues with padding and
+  character kind conversions.
+* For array assignments, still some issues with numeric type conversion
+
+GCC issues:
+* Handling of allocatable/pointer components _of_ derived-type coarrays
+* Issues with accesscing components of the kind "coarray(:,:)[i]%comp",
+  i.e. an array access to the coarray combined with specifying a
+  (scalar) component.
+* Compiler crash (ICE) with nonallocatable polymorphic coarrays and
+  ASSOCIATE or SELECT TYPE
+
+
+Atomics
+-------
+
+* Not implemented (link-time error) in Single and GASNet. For Single,
+  use the version shipping with GCC.
+* MPI: atomic_ref/atomic_define supported by MPI 2 and MPI 3; atomic_cas
+  is only supported by MPI 3. atomic_<op> is not yet supported.
+
+Locking
+-------
+
+* Not implemented (link-time error) in Single and GASNet. For Single,
+  use the version shipping with GCC.
+* MPI: Implemented.
+
+GCC issues:
+* Only CRITICAL implemented. Locking variables are currently not
+  supported but silently accepted.
+
+
+Collectives
+-----------
+
+* CO_REDUCE, CO_BROADCAST: Unsupported by OpenCoarrays and GCC
+
+For CO_MIN, CO_MAX, CO_MIN:
+* Single: Full support.
+* MPI: Supported, issues with character arguments and numeric types
+  which do not map to MPI types such as integer(16) or real(16).

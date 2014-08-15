@@ -1,0 +1,77 @@
+INSTALLATION
+
+See also the implementation status in the file STATUS
+
+OpenCoarrays contains four libraries:
+
+* single
+  Provides a stub library with a single image. To be used for testing or
+  to turn a parallel program into a single-image program to avoid dependencies
+  on other libraries.
+  Requires only a C compiler.
+
+* mpi - recommended version
+  Communication library base on the Message Passing Interface (MPI); requires
+  an MPI 3 implementation. (MPI 2 works with some restrictions.)
+  MPICH, Open MPI, MVAPICH are common free implementations; vendor MPI
+  implementations are typically based on either of them.  As MPI 3 is new and
+  several MPI implementations have recently improved the one-sided
+  communication (RMA, remote-memory access), consider using the newest release.
+
+* gasnet
+  Communication library based on GASNet (Global Address Space Network,
+  http://gasnet.lbl.gov/). More difficult to setup and use but has typically a
+  higher performance than MPI. Requires that the same compiler is used for both
+  the compilation of GASNet itself and for the library.
+
+* armci - unsupported/not working
+  Communication library based on ARMCI (Aggregate Remote Memory Copy Interface,
+  http://hpc.pnl.gov/armci/).  The libcaf_armci library is currently not
+  supported in OpenCoarrays and uses an older ABI.
+  Only included in OpenCoarrays to make it simpler for interested parties to
+  implement a working libcaf_armci without starting from scratch.
+
+Note:
+* It is sufficient to compile only the library you are interested in.
+* Any C compiler can be used, in particular older GCC or different compilers
+  work as well.	 However, for MPI ABI compatibility, using a recent GCC for
+  compilation is preferred
+
+
+Prerequisites
+-------------
+
+- Single: (none except for a C compiler)
+- MPI: Installed MPI implementation with the "mpicc" wrapper either in the
+  path
+- GASNet: Installed GASNet; same C compiler as used for compiling GASNet;
+  knowledge where GASNet has been installed.
+
+
+Building the libraries
+----------------------
+
+Run "make" followed by the library which should be build, e.g.
+  make single mpi
+
+You may need to edit the "make.inc" file for your system settings, e.g.
+you may need to remove the "-Werror" option from the compile flags, set
+a different compiler or similar.
+
+For GASNet, you have to set GASNET_MAK to point to your GASNet installation
+with the conduit which should be used.
+
+
+Compiling on CRAY:
+
+* Rename "make.inc.Cray-XE" to "make.inc"
+* Run: module swap PrgEnv-cray PrgEnv-gnu
+* You may need to update the GASNet path and the used compiler for GASNet
+  or change other settings
+* Run "make" with the library which should be created
+
+
+Consider to install the just compiled libraries (single/libcaf_single.a,
+mpi/libcaf_mpi.a etc.) into a library directory.
+
+Consider to run the testsuite or examples (tests/) in the subdirectories.

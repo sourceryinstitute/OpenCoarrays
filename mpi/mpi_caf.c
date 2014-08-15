@@ -1473,6 +1473,7 @@ PREFIX (co_max) (gfc_descriptor_t *a, int result_image, int *stat,
   co_reduce_1 (MPI_MAX, a, result_image, stat, errmsg, src_len, errmsg_len);
 }
 
+
 /* Locking functions */
 
 void
@@ -1480,32 +1481,29 @@ PREFIX (lock) (caf_token_t token, size_t index, int image_index,
 	       int *aquired_lock, int *stat, char *errmsg,
 	       int errmsg_len)
 {
-
   MPI_Win *p = token;
-  int ierr = 0, value=0;
+  /* int ierr = 0, value = 0;  */
 
   mutex_lock(*p, image_index);
-
 }
 
-void
-PREFIX (unlock)(caf_token_t token, size_t index, int image_index,
-		int *stat, char *errmsg, int errmsg_len)
-{
 
+void
+PREFIX (unlock) (caf_token_t token, size_t index, int image_index,
+		 int *stat, char *errmsg, int errmsg_len)
+{
   MPI_Win *p = token;
-  int value=0,ierr=0;
+  /* int value = 0, ierr = 0;  */
 
   mutex_unlock(*p, image_index);
-
 }
 
 /* Atomics operations */
 
 void
-PREFIX(atomic_define) (caf_token_t token, size_t offset,
-		       int image_index, void *value, int *stat,
-		       int type __attribute__ ((unused)), int kind)
+PREFIX (atomic_define) (caf_token_t token, size_t offset,
+			int image_index, void *value, int *stat,
+			int type __attribute__ ((unused)), int kind)
 {
   MPI_Win *p = token;
   MPI_Datatype dt;
@@ -1529,9 +1527,9 @@ PREFIX(atomic_define) (caf_token_t token, size_t offset,
 
   if (stat)
     *stat = ierr;
-
-  if (ierr != 0)
+  else if (ierr != 0)
     error_stop (ierr);
+
   return;
 }
 
@@ -1563,11 +1561,12 @@ PREFIX(atomic_ref) (caf_token_t token, size_t offset,
 
   if (stat)
     *stat = ierr;
-
-  if (ierr != 0)
+  else if (ierr != 0)
     error_stop (ierr);
+
   return;
 }
+
 
 void
 PREFIX(atomic_cas) (caf_token_t token, size_t offset,
@@ -1575,19 +1574,21 @@ PREFIX(atomic_cas) (caf_token_t token, size_t offset,
 		    void *new_val, int *stat,
 		    int type __attribute__ ((unused)), int kind)
 {
-  MPI_Win *p = token;
+  /* MPI_Win *p = token; */
   MPI_Datatype dt;
   int ierr = 0;
-  void *value = NULL;
+  /* void *value = NULL; */
 
-  selectType(kind,&dt);
+  selectType (kind, &dt);
 
 #if MPI_VERSION >= 3
   MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
-  ierr = MPI_Compare_and_swap(new_val,compare,old,dt,image_index-1,offset,*p);
+  ierr = MPI_Compare_and_swap (new_val, compare, old, dt, image_index-1,
+			       offset, *p);
   MPI_Win_unlock (image_index-1, *p);
 #else
-  printf("We apologize but atomic_cas for MPI-2 is not yet implemented\n");
+#warning atomic_cas for MPI-2 is not yet implemented
+  printf ("We apologize but atomic_cas for MPI-2 is not yet implemented\n");
   ierr = 1;
   /* value = malloc(kind); */
 /*   MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p); */
@@ -1613,25 +1614,30 @@ PREFIX(atomic_cas) (caf_token_t token, size_t offset,
 
   if (stat)
     *stat = ierr;
-
-  if (ierr != 0)
+  else if (ierr != 0)
     error_stop (ierr);
+
   return;
 }
 
 void
-PREFIX(atomic_op) (int op, caf_token_t token, size_t offset,
-		   int image_index __attribute__ ((unused)),
-		   void *value, void *old, int *stat,
-		   int type __attribute__ ((unused)), int kind)
+PREFIX (atomic_op) (int op __attribute__ ((unused)),
+		    caf_token_t token __attribute__ ((unused)),
+		    size_t offset __attribute__ ((unused)),
+		    int image_index __attribute__ ((unused)),
+		    void *value __attribute__ ((unused)),
+		    void *old __attribute__ ((unused)),
+		    int *stat,
+		    int type __attribute__ ((unused)),
+		    int kind __attribute__ ((unused)))
 {
-  printf("We apologize but atomic_op for MPI-2 is not yet implemented\n");
   int ierr = 1;
   
+#warning atomic_cas for MPI is not yet implemented
+  printf ("We apologize but atomic_op for MPI is not yet implemented\n");
   if (stat)
     *stat = ierr;
-  
-  if (ierr != 0)
+  else if (ierr != 0)
     error_stop (ierr);
   
   return;

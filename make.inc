@@ -15,7 +15,7 @@ ARMCI_LDFLAGS += -L$(ARMCI_DIR)/lib -L$(ARMCI_DIR)/lib64 -larmci
 ARMCI_CC = mpicc
 ARMCI_RUN = mpirun -np 2
 
-MPI_CFLAGS += -Werror -Wall -Wextra
+MPI_CFLAGS += -Werror -Wall -Wextra -Wno-error=cpp -Wno-error=unused-parameter
 #MPICC =
 MPI_RUN = mpirun -np 2
 
