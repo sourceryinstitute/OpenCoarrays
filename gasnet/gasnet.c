@@ -210,7 +210,23 @@ PREFIX (init) (int *argc, char ***argv)
 
       initImageSync ();
 
-      remoteMemorySize = gasnet_getMaxLocalSegmentSize();
+      char *envvar = NULL;
+
+      envvar = getenv ("GASNET_NPAGES");
+
+      if(!envvar)
+        {
+          remoteMemorySize = gasnet_getMaxLocalSegmentSize();
+        }
+      else
+        {
+          long n_pages = 4096;
+          sscanf(envvar,"%ld",&n_pages);
+#ifdef DEBUG
+          printf("n_pages %ld\n",n_pages);
+#endif
+          remoteMemorySize = n_pages*GASNET_PAGESIZE;
+        }
 
       /* It creates the remote memory on each image */
       if (remote_memory==NULL)
@@ -317,6 +333,10 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
 
   /* Here there was the if statement for remote allocation */
   /* Now it is included in init */
+
+#ifdef DEBUG
+  printf("image: %d memorysize: %ld Requested: %ld, status: %ld\n",caf_this_image,remoteMemorySize,size,r_pointer);
+#endif
 
   /* Allocation check */
   if ((size+r_pointer) > remoteMemorySize)
