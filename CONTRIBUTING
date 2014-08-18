@@ -1,6 +1,6 @@
 Contribution procedure
 
-This document describes several several pieces of information required for
+This document describes several pieces of information required for
 a contribution of code to OpenCoarrays to be approved.  A patch can be
 structured in two parts: ChangeLog and actual patch.  The ChangeLog 
 should contain a description of the problem/bug, how the patch fixes the
