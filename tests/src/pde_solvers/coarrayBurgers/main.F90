@@ -23,6 +23,13 @@
 ! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+!****m* coarrayBurgers/initializer
+! NAME
+!   initializer
+! SYNOPSIS
+!   Define initial conditions for the 1D Burgers equation solver.
+!******
+
 module initializer
   use kind_parameters ,only : rkind
   implicit none
@@ -36,6 +43,14 @@ contains
     zero = 0.
   end function
 end module 
+
+!****p* coarrayBurgers/main
+! NAME
+!   main
+! SYNOPSIS
+!   Solve the one-dimensional (1D) Burgers partial differntial equation using
+!   central finite differences in space and 2nd-order Runge-Kutta in time.
+!******
 
 program main
   use kind_parameters ,only : rkind

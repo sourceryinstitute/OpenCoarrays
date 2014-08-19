@@ -1,31 +1,35 @@
-! This code tests the transpose routines used in Fourier-spectral simulations of homogeneous turbulence.
-! The data is presented to the physics routines as groups of y-z or x-z planes distributed among the images.
-! The (out-of-place) transpose routines do the x <--> y transposes required and consist of transposes within
-! data blocks (intra-image) and a transpose of the distribution of these blocks among the images (inter-image).
-! Two methods are tested here:
-!   RECEIVE: receive block from other image and transpose it
-!   SEND:    transpose block and send it to other image
-
+!****m* dist_transpose/run_size
+! NAME
+!   run_size
+!  SYNOPSIS
+!   Encapsulate problem state, wall-clock timer interface, integer broadcasts, and a data copy.
+!******
 !==================  test transposes with integer x,y,z values  ===============================
-
 module run_size
+    use iso_fortran_env, only : int64,real64
     implicit none
-        integer(8), codimension[*] :: nx, ny, nz
-        integer(8), codimension[*] :: my, mx, first_y, last_y, first_x, last_x
-        integer(8) :: my_node, num_nodes
-        real(8), codimension[*] :: tran_time
+        integer(int64), codimension[*] :: nx, ny, nz
+        integer(int64), codimension[*] :: my, mx, first_y, last_y, first_x, last_x
+        integer(int64) :: my_node, num_nodes
+        real(real64), codimension[*] :: tran_time
 
 interface
    function WALLTIME() bind(C, name = "WALLTIME")
-       real(8) :: WALLTIME
+       real(real64) :: WALLTIME
    end function WALLTIME
 end interface
 
 contains
 
+!****s* run_size/broadcast_int
+! NAME
+!   broadcast_int
+!  SYNOPSIS
+!   Broadcast a scalar coarray integer from image 1 to all other images.
+!******
     subroutine broadcast_int( variable )
-        integer(8), codimension[*] :: variable
-        integer(8) :: i
+        integer(int64), codimension[*] :: variable
+        integer(int64) :: i
         if( my_node == 1 ) then
             do i = 2, num_nodes;    variable[i] = variable;      end do
         end if
@@ -35,10 +39,10 @@ subroutine copy3( A,B, n1, sA1, sB1, n2, sA2, sB2, n3, sA3, sB3 )
   implicit none
   complex, intent(in)  :: A(0:*)
   complex, intent(out) :: B(0:*)
-  integer(8), intent(in) :: n1, sA1, sB1
-  integer(8), intent(in) :: n2, sA2, sB2
-  integer(8), intent(in) :: n3, sA3, sB3
-  integer(8) i,j,k
+  integer(int64), intent(in) :: n1, sA1, sB1
+  integer(int64), intent(in) :: n2, sA2, sB2
+  integer(int64), intent(in) :: n3, sA3, sB3
+  integer(int64) i,j,k
 
   do k=0,n3-1
      do j=0,n2-1
@@ -51,7 +55,21 @@ end subroutine copy3
 
 end module run_size
 
-program yyy
+!****p* dist_transpose/coarray_distributed_transpose
+! NAME
+!   coarray_distributed_transpose
+! SYNOPSIS 
+!   This program tests the transpose routines used in Fourier-spectral simulations of homogeneous turbulence.
+!   The data is presented to the physics routines as groups of y-z or x-z planes distributed among the images.
+!   The (out-of-place) transpose routines do the x <--> y transposes required and consist of transposes within
+!   data blocks (intra-image) and a transpose of the distribution of these blocks among the images (inter-image).
+!
+!   Two methods are tested here:
+!   RECEIVE: receive block from other image and transpose it
+!   SEND:    transpose block and send it to other image
+!******
+
+program coarray_distributed_transpose
   !(***********************************************************************************************************
   !                   m a i n   p r o g r a m
   !***********************************************************************************************************)
@@ -62,7 +80,7 @@ program yyy
       complex, allocatable ::  ur(:,:,:,:)[:]   !ur(nz,4,first_y:last_y,nx/2)[*]  !(*-- nx/2 = mx * num_nodes --*)
       complex, allocatable :: bufr_X_Y(:,:,:,:)
       complex, allocatable :: bufr_Y_X(:,:,:,:)
-      integer(8) :: x, y, z, msg_size, iter
+      integer(int64) :: x, y, z, msg_size, iter
 
       num_nodes = num_images()
       my_node = this_image()
@@ -163,7 +181,7 @@ contains
     use run_size
     implicit none
 
-    integer(8) :: i,stage
+    integer(int64) :: i,stage
 
     sync all   !--  wait for other nodes to finish compute
     tran_time = tran_time - WALLTIME()
@@ -210,7 +228,7 @@ subroutine transpose_Y_X
     use run_size
     implicit none
 
-    integer(8) :: i, stage
+    integer(int64) :: i, stage
 
     sync all   !--  wait for other nodes to finish compute
     tran_time = tran_time - WALLTIME()
@@ -252,4 +270,4 @@ subroutine transpose_Y_X
  end  subroutine transpose_Y_X
 
 
-end program yyy
+end program coarray_distributed_transpose

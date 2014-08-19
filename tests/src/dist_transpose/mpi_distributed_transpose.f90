@@ -1,36 +1,33 @@
-! This code tests the transpose routines used in Fourier-spectral simulations of homogeneous turbulence.
-! The data is presented to the physics routines as groups of y-z or x-z planes distributed among the images.
-! The (out-of-place) transpose routines do the x <--> y transposes required and consist of transposes within
-! data blocks (intra-image) and a transpose of the distribution of these blocks among the images (inter-image).
-! Two methods are tested here:
-!   RECEIVE: receive block from other image and transpose it
-!   SEND:    transpose block and send it to other image
-
+!****m* dist_transpose/mpi_run_size
+! NAME
+!   mpi_run_size
+! SYNOPSIS
+!   Encapsulate the problem state, wall-clock timer interface, integer broadcasts, and a data copy.
+!******
 !==================  test transposes with integer x,y,z values  ===============================
-
-module run_size
+module mpi_run_size
     implicit none
-        integer(8) :: nx, ny, nz
-        integer(8) :: my, mx, first_y, last_y, first_x, last_x
-        integer(8) :: my_node, num_nodes
-        real(8) :: tran_time
+        integer(int64) :: nx, ny, nz
+        integer(int64) :: my, mx, first_y, last_y, first_x, last_x
+        integer(int64) :: my_node, num_nodes
+        real(real64) :: tran_time
 
 interface
    function WALLTIME() bind(C, name = "WALLTIME")
-       real(8) :: WALLTIME
+       real(real64) :: WALLTIME
    end function WALLTIME
 end interface
 
 contains
 
-subroutine copy3( A,B, n1, sA1, sB1, n2, sA2, sB2, n3, sA3, sB3 )
+subroutine mpi_copy3( A,B, n1, sA1, sB1, n2, sA2, sB2, n3, sA3, sB3 )
   implicit none
   complex, intent(in)  :: A(0:*)
   complex, intent(out) :: B(0:*)
-  integer(8), intent(in) :: n1, sA1, sB1
-  integer(8), intent(in) :: n2, sA2, sB2
-  integer(8), intent(in) :: n3, sA3, sB3
-  integer(8) i,j,k
+  integer(int64), intent(in) :: n1, sA1, sB1
+  integer(int64), intent(in) :: n2, sA2, sB2
+  integer(int64), intent(in) :: n3, sA3, sB3
+  integer(int64) i,j,k
 
   do k=0,n3-1
      do j=0,n2-1
@@ -39,15 +36,23 @@ subroutine copy3( A,B, n1, sA1, sB1, n2, sA2, sB2, n3, sA3, sB3 )
         end do
      end do
   end do
-end subroutine copy3
+end subroutine mpi_copy3
 
-end module run_size
+end module mpi_run_size
 
-program zzz
+!****p* dist_transose/mpi_distributed_transpose
+! NAME
+!   mpi_distributed_transpose
+! SYNOPSIS 
+!   This program is the MPI analogue of coarray_distributed_transpose. It tests the transpose routines used 
+!   in Fourier-spectral simulations of homogeneous turbulence.
+!******
+
+program mpi_distributed_transpose
   !(***********************************************************************************************************
   !                   m a i n   p r o g r a m
   !***********************************************************************************************************)
-      use run_size
+      use mpi_run_size
       implicit none
       include 'mpif.h'
       
@@ -55,8 +60,8 @@ program zzz
       complex, allocatable ::  ur(:,:,:,:)   !ur(nz,4,first_y:last_y,nx/2)  !(*-- nx/2 = mx * num_nodes --*)
       complex, allocatable :: bufr(:)
 
-      integer(8) :: x, y, z, msg_size, iter
-      integer(8) :: ierror
+      integer(int64) :: x, y, z, msg_size, iter
+      integer(int64) :: ierror
 
   call MPI_INIT(ierror)
   call MPI_COMM_RANK(MPI_COMM_WORLD, my_node, ierror)
@@ -159,12 +164,12 @@ contains
 
  subroutine transpose_X_Y
 
-    use run_size
+    use mpi_run_size
     implicit none
 
-    integer(8) :: to, from, send_tag, recv_tag
+    integer(int64) :: to, from, send_tag, recv_tag
     integer :: stage, idr(0:num_nodes-1), ids(0:num_nodes-1)
-    integer(8) :: send_status(MPI_STATUS_SIZE), recv_status(MPI_STATUS_SIZE)
+    integer(int64) :: send_status(MPI_STATUS_SIZE), recv_status(MPI_STATUS_SIZE)
     character*(MPI_MAX_ERROR_STRING) errs
 
     call MPI_BARRIER(MPI_COMM_WORLD, ierror)   !--  wait for other nodes to finish compute
@@ -172,7 +177,7 @@ contains
 
 !--------------   transpose my image's block (no communication needed)  ------------------
 
-    call copy3 (    u(1,1,first_x,1+my_node*my) &                   !-- intra-node transpose
+    call mpi_copy3 (    u(1,1,first_x,1+my_node*my) &                   !-- intra-node transpose
                 ,  ur(1,1,first_y,1+my_node*mx) &                   !-- no inter-node transpose needed
                 ,   nz*3, 1_8, 1_8        &                                 !-- note: only 3 of 4 words needed
                 ,   mx, nz*4, nz*4*my &
@@ -198,7 +203,7 @@ contains
         call MPI_RECV  ( bufr &
                         ,   msg_size*2,  MPI_REAL,  from, recv_tag,  MPI_COMM_WORLD,  recv_status,  ierror)
 
-        call copy3 ( bufr, ur(1,1,first_y,1+from*mx)  &                !-- intra-node transpose from buffer
+        call mpi_copy3 ( bufr, ur(1,1,first_y,1+from*mx)  &                !-- intra-node transpose from buffer
                         ,   nz*3, 1_8, 1_8        &                             !-- note: only 3 of 4 words needed
                         ,   mx, nz*4, nz*4*my &
                         ,   my, nz*4*mx, nz*4 )
@@ -221,7 +226,7 @@ contains
     do stage = 1, num_nodes-1   !-- process sends in order
         to = mod( my_node+stage, num_nodes )
         send_tag = 256*to + my_node
-        call copy3 ( u(1,1,first_x,1+to*my), bufr &                !-- intra-node transpose from buffer
+        call mpi_copy3 ( u(1,1,first_x,1+to*my), bufr &                !-- intra-node transpose from buffer
                 ,   nz*3, 1_8, 1_8        &                             !-- note: only 3 of 4 words needed
                 ,   mx, nz*4, nz*4*my &
                 ,   my, nz*4*mx, nz*4 )
@@ -249,20 +254,20 @@ call MPI_BARRIER(MPI_COMM_WORLD, ierror)     !--  wait for other nodes to finish
 
  subroutine transpose_Y_X
 
-    use run_size
+    use mpi_run_size
     implicit none
 
-    integer(8) :: to, from, send_tag, recv_tag
+    integer(int64) :: to, from, send_tag, recv_tag
     integer :: stage, idr(0:num_nodes-1), ids(0:num_nodes-1)
     character*(MPI_MAX_ERROR_STRING) errs
-    integer(8) :: send_status(MPI_STATUS_SIZE), recv_status(MPI_STATUS_SIZE)
+    /nteger(int64) :: send_status(MPI_STATUS_SIZE), recv_status(MPI_STATUS_SIZE)
 
     call MPI_BARRIER(MPI_COMM_WORLD, ierror)   !--  wait for other nodes to finish compute
     tran_time = tran_time - WALLTIME()
 
 !--------------   transpose my image's block (no communication needed)  ------------------
 
-    call copy3 (   ur(1,1,first_y,1+my_node*mx) &                   !-- intra-node transpose
+    call mpi_copy3 (   ur(1,1,first_y,1+my_node*mx) &                   !-- intra-node transpose
                 ,   u(1,1,first_x,1+my_node*my) &                   !-- no inter-node transpose needed
                 ,   nz*4, 1_8, 1_8        &                                 !-- note: all 4 words needed
                 ,   my, nz*4, nz*4*mx &
@@ -289,7 +294,7 @@ call MPI_BARRIER(MPI_COMM_WORLD, ierror)     !--  wait for other nodes to finish
         call MPI_RECV  ( bufr  &
                         ,   msg_size*2,  MPI_REAL,  from, recv_tag,  MPI_COMM_WORLD,  recv_status,  ierror)
 
-        call copy3 ( bufr, u(1,1,first_x,1+from*my)  &                 !-- intra-node transpose from buffer
+        call mpi_copy3 ( bufr, u(1,1,first_x,1+from*my)  &                 !-- intra-node transpose from buffer
                     ,   nz*4, 1_8, 1_8        &
                     ,   my, nz*4, nz*4*mx &
                     ,   mx, nz*4*my, nz*4 )
@@ -312,7 +317,7 @@ call MPI_BARRIER(MPI_COMM_WORLD, ierror)     !--  wait for other nodes to finish
     do stage = 1, num_nodes-1   !-- process sends in order
         to = mod( my_node+stage, num_nodes )
         send_tag = 256*to + my_node
-        call copy3 ( ur(1,1,first_y,1+to*mx), bufr &                !-- intra-node transpose from buffer
+        call mpi_copy3 ( ur(1,1,first_y,1+to*mx), bufr &                !-- intra-node transpose from buffer
                 ,   nz*4, 1_8, 1_8        &                                 !-- note: all 4 words needed
                 ,   my, nz*4, nz*4*mx &
                 ,   mx, nz*4*my, nz*4 )
@@ -334,4 +339,4 @@ call MPI_BARRIER(MPI_COMM_WORLD, ierror)     !--  wait for other nodes to finish
  !   deallocate(ids,idr)
  end  subroutine transpose_Y_X
 
-end program zzz
+end program mpi_distributed_transpose

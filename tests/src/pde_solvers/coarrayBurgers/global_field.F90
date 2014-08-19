@@ -33,6 +33,12 @@ module global_field_module
   implicit none
   private
   public :: global_field, initial_field
+  !****d* global_field_module/global_field
+  ! NAME
+  !   global_field
+  ! SYNOPSIS
+  !   Encapsulate and communicate 1D scalar field data across the entire problem domain Bind mathematical operators to the type. 
+  !******
   type, extends(co_object) :: global_field
     private
     real(rkind), allocatable :: global_f(:)[:]

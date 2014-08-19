@@ -20,6 +20,10 @@ We also offer a LIBCAF_GASNet that builds atop the Global Address Space Networki
 
 Please see the INSTALL file.
 
+## Documentation ##
+
+To generate automated documentation, execute Doxygen on doc/Doxyfile (e.g., cd doc; doxygen Doxyfile).  Then open the resulting doc/html/index.html file with a web browser.
+
 ## Contributing ##
 
 Please see the CONTRIBUTING file.

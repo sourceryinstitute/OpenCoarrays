@@ -1,36 +1,9 @@
-# Choose desired compiler (options: gnu, intel, cray, tau_intel):
-compiler=gnu
-include_path=../include-files
-library_path=../library
+# Edit the line below to the opencarrays installation directory
+opencoarrays=/opt/opencoarrays
 executable=hello_multiverse
-
-ifeq ($(compiler),gnu)
-  opencoarrays_dir=../../../../../
-  opt=-L $(opencoarrays_dir)/dev/mpi
-  libcaf_dir = $(opencoarrays_dir)/dev/
-  compile=mpif90 -fcoarray=lib -L $(libcaf_dir)
-  lib=-lcaf_mpi
-else
-  ifeq ($(compiler),intel)
-    compile=ifort -coarray=shared -standard-semantics -O3 -coarray-num-images=2
-  else
-    ifeq ($(compiler),cray)
-      compile=ftn -ew -h caf
-    else
-      ifeq ($(compiler),tau_intel)
-        compile=tauf90 -tau:serial,icpc,pdt  -coarray=shared -standard-semantics -O3 -coarray-num-images=4 -DTAU=1
-      else
-        ifeq ($(compiler),tau_aciss)
-          tau_aciss=tau_f90.sh -v -Bdynamic -coarray=shared -standard-semantics -O3
-        else
-          ifeq ($(compiler),tau_cray)
-            tau_hopper=tau_f90.sh -optCompInst -ew -h caf -g
-          endif
-        endif
-      endif
-    endif
-  endif
-endif
+opt=-L $(opencoarrays)/lib
+compile=mpif90 -fcoarray=lib 
+lib=-lcaf_mpi
 
 $(executable): hello_multiverse.o  Makefile
 	$(compile) $(opt) hello_multiverse.o -o $(executable) $(lib)
