@@ -1582,7 +1582,7 @@ PREFIX(atomic_cas) (caf_token_t token, size_t offset,
 		    void *new_val, int *stat,
 		    int type __attribute__ ((unused)), int kind)
 {
-  /* MPI_Win *p = token; */
+  MPI_Win *p = token;
   MPI_Datatype dt;
   int ierr = 0;
   /* void *value = NULL; */
