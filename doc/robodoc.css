@@ -1,10 +1,7 @@
 /****h* ROBODoc/ROBODoc Cascading Style Sheet
  * FUNCTION
- *   This is the default cascading style sheet for documentation
- *   generated with ROBODoc.
- *   You can edit this file to your own liking and then use
- *   it with the option
- *      --css <filename>
+ *   This is a modified version of the default Robodoc cascading 
+ *   style sheet generated with ROBODoc.
  *
  *   This style-sheet defines the following layout
  *      +----------------------------------------+
@@ -20,9 +17,9 @@
  *      |    footer                              |
  *      +----------------------------------------+
  *
- *   This style-sheet is based on a style-sheet that was automatically
- *   generated with the Strange Banana stylesheet generator.
- *   See http://www.strangebanana.com/generator.aspx
+ *   The Robodoc default style sheet is based on a style sheet
+ *   that was automatically generated with the Strange Banana style
+ *   sheet generator.  See http://www.strangebanana.com/generator.aspx
  *
  ******
  * $Id: html_generator.c,v 1.94 2008/06/17 11:49:27 gumpu Exp $
@@ -47,7 +44,7 @@ pre
 
 pre.source
 {
-    background-color: #ffe;
+    background-color: rgb(192,192,192);
     border: dashed #aa9 1px;
 }
 
@@ -161,7 +158,7 @@ a.indexitem
     display: block;
 }
 
-h1
+h1, h3, h5, h6
 {
     background-color: rgb(192,192,192);
     font-family:      Arial, serif;
@@ -171,7 +168,7 @@ h1
     font-weight:      normal;
 }
 
-h2, h3, h4, h5, h6
+h2, h4
 {
     background-color: rgb(255,255,255);
     font-family:      Arial, serif;
@@ -276,7 +273,7 @@ div#footer p
 
 span.keyword
 {
-    color: #ffe;
+    color: #000;
 }
 
 span.comment

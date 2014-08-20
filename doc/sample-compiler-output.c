@@ -1,3 +1,16 @@
+/****p* doc/sample-compiler-output.c
+ * NAME
+ *   sendrcv
+ * SYNOPSIS
+ *   This C program represents the code an OpenCoarrays-compatible 
+ *   Fortran compiler might generate from doc/sample-fortran-source.f90.
+ *   The code delegates all necessary synchronization and communicaiton
+ *   to an OpenCoarrays transport layer.  In this program, image 1 puts 
+ *   its local elements of an array coarray into the corresponding 
+ *   elements of image 2.  
+ *   
+ * SOURCE
+*/
 sendrecv ()
 {
   struct array2_real(kind=8) d;
@@ -12,13 +25,18 @@ sendrecv ()
     overflow.0 = 0;
     if (overflow.0 != 0)
       {
-        _gfortran_runtime_error (&"Integer overflow when calculating the amount of memory to allocate"[1]{lb: 1 sz: 1});
+        _gfortran_runtime_error (
+         &"Integer overflow when calculating the amount of memory to allocate"[1]{lb: 1 sz: 1}
+        );
       }
     else
       {
         if (d.data != 0B)
           {
-            _gfortran_runtime_error_at (&"At line 9 of file coarray.f90"[1]{lb: 1 sz: 1}, &"Attempting to allocate already allocated variable \'%s\'"[1]{lb: 1 sz: 1}, &"d"[1]{lb: 1 sz: 1});
+            _gfortran_runtime_error_at (
+              &"At line 9 of file sample-fortran-source.f90"[1]{lb: 1 sz: 1}, 
+              &"Attempting to allocate already allocated variable \'%s\'"[1]{lb: 1 sz: 1}, &"d"[1]{lb: 1 sz: 1}
+            );
           }
         else
           {
@@ -61,7 +79,10 @@ sendrecv ()
     _gfortran_caf_sync_all (0B, 0B, 0);
     if (d.data == 0B)
       {
-        _gfortran_runtime_error_at (&"At line 24 of file coarray.f90"[1]{lb: 1 sz: 1}, &"Attempt to DEALLOCATE unallocated \'%s\'"[1]{lb: 1 sz: 1}, &"d"[1]{lb: 1 sz: 1});
+        _gfortran_runtime_error_at (
+         &"At line 24 of file sample-fortran-source.f90"[1]{lb: 1 sz: 1}, 
+         &"Attempt to DEALLOCATE unallocated \'%s\'"[1]{lb: 1 sz: 1}, &"d"[1]{lb: 1 sz: 1}
+        );
       }
     else
       {
@@ -84,5 +105,4 @@ main (integer(kind=4) argc, character(kind=1) * * argv)
   _gfortran_caf_finalize ();
   return 0;
 }
-
-
+/******
