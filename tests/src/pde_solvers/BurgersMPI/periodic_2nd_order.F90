@@ -1,3 +1,4 @@
+! Copyright (c) 2011, Damian Rouson, Jim Xia, and Xiaofeng Xu.
 ! All rights reserved.
 !
 ! Redistribution and use in source and binary forms, with or without

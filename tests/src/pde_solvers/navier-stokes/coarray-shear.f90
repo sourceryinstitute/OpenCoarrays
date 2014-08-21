@@ -1,3 +1,30 @@
+! Coarray 3D Navier-Stokes Solver Test
+!
+! Copyright (c) 2012-2014, Sourcery, Inc.
+! All rights reserved.
+! 
+! Redistribution and use in source and binary forms, with or without
+! modification, are permitted provided that the following conditions are met:
+!     * Redistributions of source code must retain the above copyright
+!       notice, this list of conditions and the following disclaimer.
+!     * Redistributions in binary form must reproduce the above copyright
+!       notice, this list of conditions and the following disclaimer in the
+!       documentation and/or other materials provided with the distribution.
+!     * Neither the name of the Sourcery, Inc., nor the
+!       names of its contributors may be used to endorse or promote products
+!       derived from this software without specific prior written permission.
+! 
+! THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+! ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+! WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+! DISCLAIMED. IN NO EVENT SHALL SOURCERY, INC., BE LIABLE FOR ANY
+! DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+! (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+! LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+! ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+!
+
 !(*----------------------------------------------------------------------------------------------------------------------
 !         basic in-core shear code ( 7 words/node, not threaded, in-core, no file read/write )
 !------------------------------------------------------------------------------------------------------------------------*)
@@ -38,9 +65,11 @@ contains
             open(newunit=un, file="/dev/urandom", access="stream", &
                  form="unformatted", action="read", status="old", iostat=istat)
             if (istat == 0) then
+               if (this_image()==1) print *,"OS provides random number generator"
                read(un) seed
                close(un)
             else
+               if (this_image()==1) print *,"OS does not provide random number generator"
                ! Fallback to XOR:ing the current time and pid. The PID is
                ! useful in case one launches multiple instances of the same
                ! program in parallel.
@@ -79,16 +108,15 @@ contains
 end module random_module
 
 module run_size
-    use iso_fortran_env, only : int64,real64
+    use iso_fortran_env, only : int64,real64 ! 64-bit integer and real kind parameters
+    use constants_module, only : one         ! 64-bit unit to ensure argument kind match
     implicit none
-      include 'mpif.h'
-        real ::  viscos, shear, b11, b22, b33, b12, velmax, max_velmax
-        integer(int64) ::  nx, ny, nz, nsteps, output_step
-        integer(int64) :: my, mx, first_y, last_y, first_x, last_x
-        integer(int64) :: ierror
-        real(real64) :: cpu_time, tran_time, total_time
-        real(real64) :: max_cpu_time, max_tran_time, max_total_time
-        real(real64) :: min_cpu_time, min_tran_time, min_total_time
+        real, codimension[*] ::  viscos, shear, b11, b22, b33, b12, velmax
+        integer(int64), codimension[*] ::  nx, ny, nz, nsteps, output_step
+        integer(int64), codimension[*] :: my, mx, first_y, last_y, first_x, last_x
+        real(real64), codimension[*] :: cpu_time, tran_time, sync_time, total_time
+        real(real64), codimension[*] :: max_cpu_time, max_tran_time, max_sync_time, max_total_time
+        real(real64), codimension[*] :: min_cpu_time, min_tran_time, min_sync_time, min_total_time
 
         real ::  time, cfl, dt
         integer(int64) :: my_node, num_nodes
@@ -96,13 +124,42 @@ module run_size
 
 contains
 
+    subroutine max_velmax()
+        integer(int64) :: i
+
+        sync all
+        if( my_node == 1) then
+            do i = 2, num_nodes;     velmax = max( velmax, velmax[i] );    end do
+        end if
+        sync all
+        velmax = velmax[1]
+        sync all
+    end subroutine max_velmax
+
     subroutine global_times()
-        call MPI_REDUCE(total_time, max_total_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD, ierror)
-        call MPI_REDUCE(total_time, min_total_time, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD, ierror)
-        call MPI_REDUCE(tran_time, max_tran_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD, ierror)
-        call MPI_REDUCE(tran_time, min_tran_time, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD, ierror)
-        call MPI_REDUCE(cpu_time, max_cpu_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD, ierror)
-        call MPI_REDUCE(cpu_time, min_cpu_time, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD, ierror)
+        integer(int64) :: i, stage
+
+        max_cpu_time = cpu_time
+        max_tran_time = tran_time
+        max_total_time = sync_time
+        max_total_time = total_time
+        min_cpu_time = cpu_time
+        min_tran_time = tran_time
+        min_total_time = sync_time
+        min_total_time = total_time
+
+        do stage = 1, num_nodes-1
+            i = 1 + mod( my_node-1+stage, num_nodes )
+            max_cpu_time = max( max_cpu_time, cpu_time[i] )
+            min_cpu_time = min( min_cpu_time, cpu_time[i] )
+            max_tran_time = max( max_tran_time, tran_time[i] )
+            min_tran_time = min( min_tran_time, tran_time[i] )
+            max_sync_time = max( max_sync_time, sync_time[i] )
+            min_sync_time = min( min_sync_time, sync_time[i] )
+            max_total_time = max( max_total_time, total_time[i] )
+            min_total_time = min( min_total_time, total_time[i] )
+        end do
+        sync all
     end subroutine global_times
 
 subroutine copy3( A,B, n1, sA1, sB1, n2, sA2, sB2, n3, sA3, sB3 )
@@ -125,11 +182,12 @@ end subroutine copy3
 
 end module run_size
 
-program mshear
+program cshear
   
   !(***********************************************************************************************************
   !                   m a i n   p r o g r a m
   !***********************************************************************************************************)
+      use iso_fortran_env, only : int64,real64 ! 64-bit integer and real kind parameters
       use run_size
       implicit none
 
@@ -138,11 +196,10 @@ program mshear
         end subroutine solve_navier_stokes
       end interface
 
-  call MPI_INIT(ierror)
-  call MPI_COMM_RANK(MPI_COMM_WORLD, my_node, ierror)
-  call MPI_COMM_SIZE(MPI_COMM_WORLD, num_nodes, ierror)
+      num_nodes = num_images()
+      my_node = this_image()
 
-      if( my_node == 0 ) then
+      if( my_node == 1 ) then
 
         write(6,*) "nx,ny,nz : ";               read(5,*) nx, ny, nz
         if ( mod(nx/2,num_nodes) /= 0) then;    write(6,*) "nx/2 not multiple of num_nodes";    stop;   end if
@@ -161,26 +218,23 @@ program mshear
 
       end if
 
-        call MPI_BCAST( nx, 1, MPI_INT, 0, MPI_COMM_WORLD, ierror )
-        call MPI_BCAST( ny, 1, MPI_INT, 0, MPI_COMM_WORLD, ierror )
-        call MPI_BCAST( nz, 1, MPI_INT, 0, MPI_COMM_WORLD, ierror )
+      sync all  !--- images > 1 wait on inputs from image = 1 !
 
-        call MPI_BCAST( viscos, 1, MPI_FLOAT, 0, MPI_COMM_WORLD, ierror )
-        call MPI_BCAST( shear, 1, MPI_FLOAT, 0, MPI_COMM_WORLD, ierror )
-        call MPI_BCAST( b11, 1, MPI_FLOAT, 0, MPI_COMM_WORLD, ierror )
-        call MPI_BCAST( b22, 1, MPI_FLOAT, 0, MPI_COMM_WORLD, ierror )
-        call MPI_BCAST( b33, 1, MPI_FLOAT, 0, MPI_COMM_WORLD, ierror )
-        call MPI_BCAST( b12, 1, MPI_FLOAT, 0, MPI_COMM_WORLD, ierror )
-        call MPI_BCAST( nsteps, 1, MPI_INT, 0, MPI_COMM_WORLD, ierror )
-        call MPI_BCAST( output_step, 1, MPI_INT, 0, MPI_COMM_WORLD, ierror )
-        call MPI_BARRIER(MPI_COMM_WORLD, ierror)
- 
- 	    mx = nx/2 / num_nodes;  first_x = my_node*mx + 1;   last_x  = my_node*mx + mx
-        my = ny / num_nodes;    first_y = my_node*my + 1;   last_y  = my_node*my + my
+      if( my_node > 1 ) then
+        nx = nx[1];     ny = ny[1];     nz = nz[1]
+        viscos = viscos[1];     shear = shear[1]
+        b11 = b11[1];   b22 = b22[1];   b33 = b33[1];   b12 = b12[1]
+        nsteps = nsteps[1];     output_step = output_step[1]
+      end if
+
+ 	    mx = nx/2 / num_nodes;  first_x = (my_node-1)*mx + 1;   last_x  = (my_node-1)*mx + mx
+        my = ny / num_nodes;    first_y = (my_node-1)*my + 1;   last_y  = (my_node-1)*my + my
+
+      if(my_node == 1 ) write(6,fmt="(A, f6.2)") "message size (MB) = ", real(nz*4*mx*my*8)/real(1024*1024) 
 
     call solve_navier_stokes
 
-end program mshear
+end program cshear
 
 !  (***********************************************************************************************************
 !             n a v i e r - s t o k e s   s o l v e r
@@ -192,16 +246,17 @@ end program mshear
 
   !(*****************************   declarations     ****************************************)
   
-       integer(int64) ::  stop, rflag, oflag, step, rkstep, nshells, msg_size
+       integer(int64) ::  stop, rflag, oflag, step, rkstep, nshells
        real ::  k1(nx/2), k2(ny), k3(nz), mk1(nx/2), mk2(ny), mk3(nz) &
               , kx(nx/2), ky_(nx/2,ny), ky(nx/2,ny), kz(nz)
        complex :: sx(nx/2,3), sy(ny,3), sz(nz,3)
        integer(int64) :: trigx, trigy, trigz, trigxy
 
-       complex, allocatable ::  u(:,:,:,:)    ! u(nz,4,first_x:last_x,ny)    !(*-- x-y planes --*)
-       complex, allocatable ::  ur(:,:,:,:)   !ur(nz,4,first_y:last_y,nx/2)  !(*-- x-z planes --*)
-       complex, allocatable ::  un(:,:,:,:)   !un(nz,3,first_x:last_x,ny)    !(*-- x-y planes --*)
-       complex, allocatable :: bufr(:)
+       complex, allocatable ::  u(:,:,:,:)[:]    ! u(nz,4,first_x:last_x,ny)[*]    !(*-- x-y planes --*)
+       complex, allocatable ::  ur(:,:,:,:)[:]   !ur(nz,4,first_y:last_y,nx/2)[*]  !(*-- x-z planes --*)
+       complex, allocatable ::  un(:,:,:,:)      !un(nz,3,first_x:last_x,ny)[*]    !(*-- x-y planes --*)
+       complex, allocatable :: bufr_X_Y(:,:,:,:)
+       complex, allocatable :: bufr_Y_X(:,:,:,:)
 
 interface
 !--------    note: integer(int64)'s required for FFT's and other assembly-coded externals   ------
@@ -243,12 +298,12 @@ end interface
        trigz = ctrig( nz )
 	   trigxy = ctrig( nx+ny )
 
-       msg_size = nz*4*mx*my     !-- message size (complex data items)
+       allocate (  u(nz , 4 , first_x:last_x , ny)[*] )     !(*-- y-z planes --*)
+       allocate ( ur(nz , 4 , first_y:last_y , nx/2)[*] )   !(*-- x-z planes --*)
+       allocate ( un(nz , 3 , first_x:last_x , ny) )        !(*-- y-z planes --*)
+       allocate ( bufr_X_Y(nz,4,mx,my) )
+       allocate ( bufr_Y_X(nz,4,my,mx) )
 
-       allocate (  u(nz , 4 , first_x:last_x , ny)   )   !(*-- y-z planes --*)
-       allocate ( ur(nz , 4 , first_y:last_y , nx/2) )   !(*-- x-z planes --*)
-       allocate ( un(nz , 3 , first_x:last_x , ny)   )   !(*-- y-z planes --*)
-       allocate ( bufr(msg_size) )
 
        stop = 0;   step = 0;  rkstep = 2;  rflag = 0;  cfl = 1;   dt = 0
        nshells = max( nx,ny,nz )
@@ -261,7 +316,7 @@ end interface
 
        total_time =  -WALLTIME()      !-- start the clock
 
-       tran_time = 0;   cpu_time = -WALLTIME()
+       tran_time = 0;       cpu_time = -WALLTIME()
   
   !(*********************************   begin execution loop   *****************************************)
 
@@ -296,20 +351,20 @@ end interface
   !(*********************************   end execution loop   ***********************************************)
 
        deallocate ( u, ur, un )
-       deallocate ( bufr )
-       call MPI_BARRIER(MPI_COMM_WORLD, ierror)  !-- other nodes wait for broadcast!
+       deallocate ( bufr_X_Y );    deallocate ( bufr_Y_X )
+       sync all     !-- wait for all images to finish!
 
        total_time =  total_time + WALLTIME()    !-- stop the clock
        cpu_time =  cpu_time + WALLTIME()    !-- stop the clock
        call global_times
 
-       if (my_node == 0 )   write(6,fmt="(3(10X,A,2f7.2))")  &
+       if (my_node == 1 )   write(6,fmt="(3(10X,A,2f7.2))")  &
                             , "total_time ", min_total_time/step, max_total_time/step &
                             , "cpu_time ", min_cpu_time/step, max_cpu_time/step &
                             , "tran_time ", min_tran_time/step, max_tran_time/step
   
 
-!       write(6,fmt="(A,i4,3f7.2)")  "image ", my_node, total_time/step, cpu_time/step, tran_time/step
+       write(6,fmt="(A,i4,3f7.2)")  "image ", my_node, total_time/step, cpu_time/step, tran_time/step
   
 
 contains
@@ -330,52 +385,28 @@ contains
     use run_size
     implicit none
 
-    integer(int64) :: to, from, stage, idr(0:num_nodes-1), ids, send_tag, recv_tag
-    integer(int64) :: send_status(MPI_STATUS_SIZE), recv_status(MPI_STATUS_SIZE)
+    integer(int64) :: i,stage
 
     cpu_time = cpu_time + WALLTIME()
- call MPI_BARRIER(MPI_COMM_WORLD, ierror)   !--  wait for other nodes to finish compute
+    sync all   !--  wait for other nodes to finish compute
     tran_time = tran_time - WALLTIME()
 
-!--------------   issue all block receives ... tags = 256*dst_image+src_image  ------------------
-
-    do stage = 1, num_nodes-1
-        from = mod( my_node+stage, num_nodes )
-        recv_tag = 256*my_node + from
-        call MPI_IRECV  ( ur(1,1,first_y,1+from*mx) &
-                        ,   msg_size*2,  MPI_REAL,  from, recv_tag,  MPI_COMM_WORLD,  idr(stage),  ierror)
-    end do
-
-!--------------   transpose my image's block (no communication needed)  ------------------
-
-    call copy3 (    u(1,1,first_x,1+my_node*my) &                   !-- intra-node transpose
-                ,  ur(1,1,first_y,1+my_node*mx) &                   !-- no inter-node transpose needed
+    call copy3 (    u(1,1,first_x,1+(my_node-1)*my) &                   !-- intra-node transpose
+                ,  ur(1,1,first_y,1+(my_node-1)*mx) &                   !-- no inter-node transpose needed
                 ,   nz*3, one, one        &                                 !-- note: only 3 of 4 words needed
                 ,   mx, nz*4, nz*4*my &
                 ,   my, nz*4*mx, nz*4 )
 
-!--------------   issue all block sends ... tags = 256*dst_image+src_image  ------------------
-
-
-    do stage = 1, num_nodes-1   !-- process sends in order
-        to = mod( my_node+stage, num_nodes )
-        send_tag = 256*to + my_node
-        call copy3 ( u(1,1,first_x,1+to*my), bufr &                !-- intra-node transpose from buffer
-                ,   nz*3, one, one        &                             !-- note: only 3 of 4 words needed
-                ,   mx, nz*4, nz*4*my &
-                ,   my, nz*4*mx, nz*4 )
-
-        call MPI_SEND ( bufr &
-                        ,   msg_size*2,  MPI_REAL,  to, send_tag,  MPI_COMM_WORLD,  ierror)
-    end do
-
-!--------------   wait on receives   ------------------
-
     do stage = 1, num_nodes-1
-        call MPI_WAIT( idr(stage),  recv_status,  ierror )
+        i = 1 + mod( my_node-1+stage, num_nodes )
+        bufr_X_Y(:,:,:,:) = u(:,:,:,1+(my_node-1)*my:my_node*my)[i]         !-- inter-node transpose to buffer
+        call copy3 ( bufr_X_Y, ur(1,1,first_y,1+(i-1)*mx)  &                !-- intra-node transpose from buffer
+                        ,   nz*3, one, one        &                             !-- note: only 3 of 4 words needed
+                        ,   mx, nz*4, nz*4*my &
+                        ,   my, nz*4*mx, nz*4 )
     end do
 
-call MPI_BARRIER(MPI_COMM_WORLD, ierror)     !--  wait for other nodes to finish transpose (not needed)
+    sync all     !--  wait for other nodes to finish transpose
     tran_time = tran_time + WALLTIME()
     cpu_time = cpu_time - WALLTIME()
 
@@ -383,58 +414,32 @@ call MPI_BARRIER(MPI_COMM_WORLD, ierror)     !--  wait for other nodes to finish
 
 !-------------   out-of-place transpose data_r --> data_s  ----------------------------
 
- subroutine transpose_Y_X
-
-    use constants_module, only : one
+subroutine transpose_Y_X
     use run_size
     implicit none
 
-    integer(int64) :: to, from, stage, idr(0:num_nodes-1), ids, send_tag, recv_tag
-    integer(int64) :: send_status(MPI_STATUS_SIZE), recv_status(MPI_STATUS_SIZE)
+    integer(int64) :: i, stage
 
     cpu_time = cpu_time + WALLTIME()
- call MPI_BARRIER(MPI_COMM_WORLD, ierror)   !--  wait for other nodes to finish compute
+    sync all   !--  wait for other nodes to finish compute
     tran_time = tran_time - WALLTIME()
 
-!--------------   issue all block receives ... tags = 256*dst_image+src_image  ------------------
-
-    do stage = 1, num_nodes-1
-        from = mod( my_node+stage, num_nodes )
-        recv_tag = 256*my_node + from
-        call MPI_IRECV  ( u(1,1,first_x,1+from*my) &
-                        ,   msg_size*2,  MPI_REAL,  from, recv_tag,  MPI_COMM_WORLD,  idr(stage),  ierror)
-    end do
-
-!--------------   transpose my image's block (no communication needed)  ------------------
-
-    call copy3 (   ur(1,1,first_y,1+my_node*mx) &                   !-- intra-node transpose
-                ,   u(1,1,first_x,1+my_node*my) &                   !-- no inter-node transpose needed
-                ,   nz*4, one, one    &                                 !-- note: all 4 words needed
+    call copy3 (   ur(1,1,first_y,1+(my_node-1)*mx) &                   !-- intra-node transpose
+                ,   u(1,1,first_x,1+(my_node-1)*my) &                   !-- no inter-node transpose needed
+                ,   nz*4, one, one        &                                 !-- note: all 4 words needed
                 ,   my, nz*4, nz*4*mx &
                 ,   mx, nz*4*my, nz*4 )
 
-!--------------   issue all block sends ... tags = 256*dst_image+src_image  ------------------
-
-
-    do stage = 1, num_nodes-1   !-- process sends in order
-        to = mod( my_node+stage, num_nodes )
-        send_tag = 256*to + my_node
-        call copy3 ( ur(1,1,first_y,1+to*mx), bufr &                !-- intra-node transpose from buffer
-                ,   nz*4, one, one    &                                 !-- note: all 4 words needed
-                ,   my, nz*4, nz*4*mx &
-                ,   mx, nz*4*my, nz*4 )
-
-        call MPI_SEND ( bufr &
-                        ,   msg_size*2,  MPI_REAL,  to, send_tag,  MPI_COMM_WORLD,  ierror)
-    end do
-
-!--------------   wait on receives   ------------------
-
     do stage = 1, num_nodes-1
-        call MPI_WAIT( idr(stage),  recv_status,  ierror )
+        i = 1 + mod( my_node-1+stage, num_nodes )
+        bufr_Y_X(:,:,:,:) = ur(:,:,:,1+(my_node-1)*mx:my_node*mx)[i]        !-- inter-node transpose to buffer
+        call copy3 ( bufr_Y_X, u(1,1,first_x,1+(i-1)*my)  &                 !-- intra-node transpose from buffer
+                    ,   nz*4, one, one        &
+                    ,   my, nz*4, nz*4*mx &
+                    ,   mx, nz*4*my, nz*4 )
     end do
 
-call MPI_BARRIER(MPI_COMM_WORLD, ierror)     !--  wait for other nodes to finish transpose
+    sync all     !--  wait for other nodes to finish transpose
     tran_time = tran_time + WALLTIME()
     cpu_time = cpu_time - WALLTIME()
 
@@ -451,7 +456,7 @@ call MPI_BARRIER(MPI_COMM_WORLD, ierror)     !--  wait for other nodes to finish
 
 !(*------------------------- un( K ) = conjg( un( -K ) ) ---------------------*)
 
-    if (my_node == 0 ) then     !-- x=1 is in node=1
+    if (my_node == 1 ) then     !-- x=1 is in node=1
         x = 1
         do i = 1, 3
             z = 1;              y = 1;              un(z,i,x,y) = 0
@@ -474,7 +479,7 @@ end  subroutine enforce_conjugate_symmetry
     integer(int64) :: k, x, y, z
     real :: kk, ww, uw, uu, uv, duu, factor   &
           , ek(nshells), dk(nshells), hk(nshells), tk(nshells), sample(nshells) 
-    real, save ::  sum_ek, sum_dk, sum_hk, sum_tk, ek_sum, dk_sum, hk_sum, tk_sum
+    real, save, codimension[*] ::  sum_ek, sum_dk, sum_hk, sum_tk
 
       total_time =  total_time + WALLTIME()     !-- stop the clock!  time/step does not include spectra time
 
@@ -526,13 +531,15 @@ end  subroutine enforce_conjugate_symmetry
         sum_tk  = sum_tk + tk(k)
     end do
 
-    call MPI_BARRIER(MPI_COMM_WORLD, ierror)
-    call MPI_REDUCE(sum_ek, ek_sum, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD, ierror);  sum_ek = ek_sum
-    call MPI_REDUCE(sum_dk, dk_sum, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD, ierror);  sum_dk = dk_sum
-    call MPI_REDUCE(sum_hk, hk_sum, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD, ierror);  sum_hk = hk_sum
-    call MPI_REDUCE(sum_tk, tk_sum, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD, ierror);  sum_tk = tk_sum
+    sync all
+    if (my_node == 1)  then
+        do k = 2, num_nodes
+            sum_ek = sum_ek + sum_ek[k]
+            sum_dk = sum_dk + sum_dk[k]
+            sum_hk = sum_hk + sum_hk[k]
+            sum_tk = sum_tk + sum_tk[k]
+        end do
 
-    if (my_node == 0 ) then
         if (step == 0)   write(6,*) "step   time     energy    enstrophy   helicity   transfer"
         write(6,fmt="(i3, 5e11.3)")  step,  time,    sum_ek,   sum_dk,     sum_hk,    sum_tk
     end if
@@ -546,8 +553,9 @@ end  subroutine enforce_conjugate_symmetry
   
  subroutine define_field
 
-    use random_module, only : init_random_seed
+    use constants_module, only : zero
     use run_size
+    use random_module
     implicit none
 
     real ::     k, k12, f, phi, theta1, theta2
@@ -555,15 +563,15 @@ end  subroutine enforce_conjugate_symmetry
     integer(int64) ::  x, y, z
     real, parameter :: klo=8, khi=16
 
+   call init_random_seed !(* seed a different pseudo-random number sequence for each image *)
    time = 0
-   call init_random_seed
 
    do x = first_x, last_x
        do  y = 1, ny
             do z = 1, nz
-                 call random_number(theta1)
-                 call random_number(theta2)
-                 call random_number(phi   )
+                 call random_number(theta1 )
+                 call random_number(theta2 )
+                 call random_number(phi    )
                  k   = sqrt( kx(x)**2 + ky(x,y)**2 + kz(z)**2 )
                  k12 = sqrt( kx(x)**2 + ky(x,y)**2 )
                  
@@ -593,13 +601,14 @@ end  subroutine enforce_conjugate_symmetry
  ! ***********************************************************************************************************)
   
     subroutine  define_shifts
+    use constants_module, only : zero
     use run_size
     implicit none
 
-           integer ::  seed_size
-           integer(int64) ::  x, y, z, i
+           integer(int64) ::  x, y, z
            integer(int64), save ::  init = 0
            real :: delta_x, delta_y, delta_z
+           integer :: i,seed_size
 
            if (init == 0) &     !-- Note: delta's not carried over from previous run
            then;
@@ -610,17 +619,17 @@ end  subroutine enforce_conjugate_symmetry
                 do  y = 1, ny  ;  sy(y,3) = exp (  (0,1) * ( pi / ny ) * k2(y) ); end do
                 do  z = 1, nz  ;  sz(z,3) = exp (  (0,1) * ( pi / nz ) * k3(z) ); end do
             else;
-                call random_number(delta_x);delta_x = 2*pi / nx * delta_x
+                call random_number(delta_x); delta_x = 2*pi / nx * delta_x
                 do  x = 1, nx/2;  sx(x,1) = sx(x,3)
                                   sx(x,2) = exp (  (0,1) * delta_x * k1(x) )
                                   sx(x,3) = exp (  (0,1) * ( delta_x + pi / nx ) * k1(x) ); end do
 
-                call random_number(delta_y);delta_y = 2*pi / ny * delta_y
+                call random_number(delta_y); delta_y = 2*pi / ny * delta_y
                 do  y = 1, ny  ;  sy(y,1) = sy(y,3)
                                   sy(y,2) = exp (  (0,1) * delta_y * k2(y) )
                                   sy(y,3) = exp (  (0,1) * ( delta_y + pi / ny ) * k2(y) ); end do
 
-                call random_number(delta_z);delta_z = 2*pi / nz * delta_z
+                call random_number(delta_z); delta_z = 2*pi / nz * delta_z
                 do  z = 1, nz  ;  sz(z,1) = sz(z,3)
                                   sz(z,2) = exp (  (0,1) * delta_z * k3(z) )
                                   sz(z,3) = exp (  (0,1) * ( delta_z + pi / nz ) * k3(z) ); end do
@@ -636,12 +645,11 @@ end  subroutine enforce_conjugate_symmetry
       use run_size
       implicit none
 
-    call MPI_BARRIER(MPI_COMM_WORLD, ierror)
+    sync all
 
     if (cfl /= 0) then
 cpu_time = cpu_time + WALLTIME()
-        call MPI_ALLREDUCE(velmax, max_velmax, 1, MPI_REAL, MPI_MAX, MPI_COMM_WORLD, ierror)
-        velmax = max_velmax
+        call max_velmax
 cpu_time = cpu_time - WALLTIME()
         dt = cfl / velmax
     end if
@@ -693,7 +701,6 @@ end   subroutine    define_kspace
   
   subroutine  phase1
 
-      use constants_module, only : one
       use run_size
       implicit none
 
@@ -724,7 +731,6 @@ end   subroutine    define_kspace
  
  subroutine  phase2
 
-     use constants_module, only : one
      use run_size
      implicit none
 
@@ -796,7 +802,6 @@ end   subroutine    define_kspace
   
   subroutine  phase3
 
-      use constants_module, only : one
       use run_size
       implicit none
 
@@ -885,7 +890,7 @@ subroutine   remesh
                 do  y = nx+ny/2+2, nx+ny  ;   u2(y,z) = u(z,i,x,y-nx);  end do
             end do
 
-            call cfft ( nx+ny, nz, u2, one, nx+ny, trigxy, one )
+            call cfft ( nx+ny, nz, u2, one , nx+ny, trigxy, one )
 
             do  z = 1, nz ;  do  y = 1, nx+ny ;     u2(y,z) = u2(y,z) * shift(y);  end do;  end do
 
@@ -1005,7 +1010,3 @@ subroutine   remesh
  end  subroutine  advance
 
  end   subroutine solve_navier_stokes
-
-
-
-

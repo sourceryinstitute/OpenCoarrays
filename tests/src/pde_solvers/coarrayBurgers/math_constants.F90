@@ -23,11 +23,22 @@
 ! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+!****m* coarrayBurgers/math_constants
+! NAME
+!   math_constants
+! SYNOPSIS
+!   Publish constants of the kind specified in the kind_parameters module.
+! USAGE
+!   use math_constants, only : pi
+! PUBLIC
+!   zero,one,two,pi
+!******
+
 module math_constants
   use kind_parameters ,only : rkind
   implicit none
-  real(rkind) ,parameter :: pi=acos(-1._rkind)
-  real(rkind) ,parameter :: one=1._rkind
   real(rkind) ,parameter :: zero=0._rkind
+  real(rkind) ,parameter :: one=1._rkind
   real(rkind) ,parameter :: two=2._rkind
+  real(rkind) ,parameter :: pi=acos(-1._rkind)
 end module

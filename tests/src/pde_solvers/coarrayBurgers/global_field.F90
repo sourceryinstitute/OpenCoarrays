@@ -23,8 +23,15 @@
 ! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+!****m* coarrayBurgers/global_field_module
+! NAME
+!   global_field_module
+! SYNOPSIS
+!   Publish a global_field derived type and type-bound operators.
+! USAGE
+!   use global_field_module, only : global_field
+!******
 module global_field_module
-#include "compiler_capabilities.txt"
   use ForTrilinos_assertion_utility, only : assert,error_message
   use co_object_interface, only : co_object
   use kind_parameters ,only : rkind, ikind
@@ -37,7 +44,13 @@ module global_field_module
   ! NAME
   !   global_field
   ! SYNOPSIS
-  !   Encapsulate and communicate 1D scalar field data across the entire problem domain Bind mathematical operators to the type. 
+  !   Encapsulate and communicate 1D scalar field data across the entire problem domain 
+  !   and mathematical operators to the type. 
+  ! PUBLIC 
+  !   x,xx,runge_kutta_2nd_step,operator(+),operator(*),assignment(=),has_zero_at,set_time,get_time,construct
+  ! USAGE
+  !     type(global_field) :: u,du_dt; 
+  !     du_dt = u*u%x() 
   !******
   type, extends(co_object) :: global_field
     private
@@ -169,11 +182,7 @@ contains
     local_grid = grid() ! This line was not in the textbook 
     this%global_f(:) = local_grid ! The textbook version directly assigns grid() to this%global_f(:)
 
-#ifdef COMPILER_LACKS_DO_CONCURRENT
-    do i = 1,local_grid_size
-#else
     do concurrent(i = 1:local_grid_size)
-#endif
       this%global_f(i) = initial(this%global_f(i))
     end do
 
@@ -194,11 +203,7 @@ contains
     call tau_pure_start('global_field%grid')
 #endif
       allocate(grid(local_grid_size))
-#ifdef COMPILER_LACKS_DO_CONCURRENT
-      do i=1,local_grid_size
-#else
       do concurrent(i=1:local_grid_size)
-#endif
         grid(i)  = 2.*pi*(local_grid_size*(this_image()-1)+i-1) &
                    /real(num_grid_pts,rkind)  
       end do
@@ -322,11 +327,7 @@ contains
       tmp_local_field_array(nx) = &
          0.5*(this%global_f(1)[east_of(this_image())]-this%global_f(nx-1))/dx
 
-#ifdef COMPILER_LACKS_DO_CONCURRENT
-      do i=2,nx-1
-#else
       do concurrent(i=2:nx-1)
-#endif
         tmp_local_field_array(i)=&
           0.5*(this%global_f(i+1)-this%global_f(i-1))/dx
       end do
@@ -365,11 +366,7 @@ contains
          (this%global_f(1)[east_of(this_image())]-2.0*this%global_f(nx)+this%global_f(nx-1))&
          /dx**2
   
-#ifdef COMPILER_LACKS_DO_CONCURRENT
-      do i=2,nx-1
-#else
       do concurrent(i=2:nx-1)
-#endif
         tmp_local_field_array(i)=&
           (this%global_f(i+1)-2.0*this%global_f(i)+this%global_f(i-1))&
           /dx**2

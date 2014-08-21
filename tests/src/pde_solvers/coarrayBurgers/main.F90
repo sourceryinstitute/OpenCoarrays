@@ -44,15 +44,15 @@ contains
   end function
 end module 
 
-!****p* coarrayBurgers/main
+!****e* coarrayBurgers/main
 ! NAME
 !   main
 ! SYNOPSIS
-!   Solve the one-dimensional (1D) Burgers partial differntial equation using
+!   Solve the one-dimensional (1D) Burgers partial differential equation using
 !   central finite differences in space and 2nd-order Runge-Kutta in time.
 !******
 
-program main
+program coarrayBurgers
   use kind_parameters ,only : rkind
   use global_field_module, only : global_field, initial_field
   use initializer ,only : u_initial,zero

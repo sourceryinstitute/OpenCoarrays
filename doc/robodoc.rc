@@ -10,9 +10,8 @@ items:
     INPUTS
     OUTPUTS
     USAGE
+    PUBLIC
 preformatted items:
-    INPUTS
-    OUTPUTS
 ignore files:
 options:
     --doc html
@@ -36,6 +35,7 @@ headertypes:
     f  "Functions"             robo_functions   3
     s  "Subroutines"           robo_subroutines 3
     l  "Libraries"             robo_libraries 1
+    e  "Tests"                 robo_tests 1
 ignore files:
     README
     *~

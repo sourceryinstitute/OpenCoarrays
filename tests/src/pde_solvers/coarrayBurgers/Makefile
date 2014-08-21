@@ -1,14 +1,13 @@
 # Choose desired compiler (options: gnu, intel, cray, tau_intel):
 compiler=gnu
-library_root=./library/
-include_root=./include-files/
+library_root=../library/
+include_root=../include-files/
 executable=burgers_caf
 
 ifeq ($(compiler),gnu)
-  opencoarrays_dir=../../../../../
-  opt=-L $(opencoarrays_dir)/dev/mpi
-  libcaf_dir = $(opencoarrays_dir)/dev/
-  compile=mpif90 -fcoarray=lib -L $(libcaf_dir)
+  opencoarrays_dir=/opt/opencoarrays
+  opt=-L $(opencoarrays_dir)/lib
+  compile=mpif90 -fcoarray=lib 
   lib=-lcaf_mpi
 else
   ifeq ($(compiler),intel)
@@ -34,7 +33,7 @@ endif
 
 
 OPTS=
-objects = local_field.o global_field.o kind_parameters.o co_object_interface.o object_interface.o ForTrilinos_assertion_utility.o ForTrilinos_error.o math_constants.o burgers.o
+objects = local_field.o global_field.o kind_parameters.o co_object_interface.o object_interface.o ForTrilinos_assertion_utility.o ForTrilinos_error.o math_constants.o 
 
 $(executable): main.o $(objects) Makefile
 	$(compile) $(opt)  main.o $(objects) -o $(executable) $(lib)
@@ -48,10 +47,7 @@ global_field.o: global_field.F90 local_field.o kind_parameters.o co_object_inter
 local_field.o: local_field.F90 kind_parameters.o object_interface.o ForTrilinos_assertion_utility.o ForTrilinos_error.o Makefile
 	$(compile) $(OPTS) -c local_field.F90
 
-burgers.o: burgers.F90 kind_parameters.o object_interface.o ForTrilinos_assertion_utility.o ForTrilinos_error.o math_constants.o Makefile
-	$(compile) $(OPTS) -c burgers.F90
-
-math_constants.o: math_constants.o kind_parameters.o Makefile
+math_constants.o: math_constants.F90 kind_parameters.o Makefile
 	$(compile) $(OPTS) -c math_constants.F90
 
 kind_parameters.o: kind_parameters.F90 Makefile

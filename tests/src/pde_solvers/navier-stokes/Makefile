@@ -20,20 +20,20 @@ endif
 
 objects = walltime.o 
 
-all: cshear mshear
+all: coarray-shear mpi-shear
 
-cshear: cshear.o $(objects) Makefile
-	$(compile) $(opt) cshear.o $(objects) -o cshear $(lib) $(fft)
+coarray-shear: coarray-shear.o $(objects) Makefile
+	$(compile) $(opt) coarray-shear.o $(objects) -o coarray-shear $(lib) $(fft)
 
-mshear: mshear.o $(objects) Makefile
-	$(compile) mshear.o $(objects) -o mshear $(fft)
+mpi-shear: mpi-shear.o $(objects) Makefile
+	$(compile) mpi-shear.o $(objects) -o mpi-shear $(fft)
 
-cshear.o: cshear.f90 $(objects) Makefile
-	$(compile) $(opt) -c cshear.f90 
+coarray-shear.o: coarray-shear.f90 $(objects) Makefile
+	$(compile) $(opt) -c coarray-shear.f90 
 
-mshear.o: mshear.f90 $(objects) Makefile
-	$(compile) -c mshear.f90
+mpi-shear.o: mpi-shear.f90 $(objects) Makefile
+	$(compile) -c mpi-shear.f90
 
 .PHONY : clean
 clean :
-	-rm -f  cshear.o cshear mshear.o mshear cshear core fort.* 
+	-rm -f  coarray-shear.o coarray-shear mpi-shear.o mpi-shear coarray-shear core fort.* *.mod

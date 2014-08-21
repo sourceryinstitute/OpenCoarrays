@@ -23,6 +23,19 @@
 ! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+!****m* coarrayBurgers/kind_parameters
+! NAME
+!   kind_parameters
+! SYNOPSIS
+!   Publish a constant kind parameters for use in declarations.
+! USAGE
+!   real(rkind) :: x
+! PUBLIC
+!   rkind: real kind
+!   ikind: integer kind
+!   ckind: character kind
+!******
+
 module kind_parameters      
   implicit none
   private

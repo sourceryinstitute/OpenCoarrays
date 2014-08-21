@@ -23,6 +23,16 @@
 ! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+!****m* coarrayBurgers/local_field_module
+! NAME
+!   local_field_module
+! SYNOPSIS
+!   Publish a local_field derived type and type-bound operators for operations
+!   that require no communication.
+! USAGE
+!   use local_field_module, only : local_field
+!******
+
 module local_field_module
   use ForTrilinos_assertion_utility, only : assert,error_message
   use object_interface, only : object
@@ -30,6 +40,19 @@ module local_field_module
   implicit none
   private
   public :: local_field
+
+  !****d* local_field_module/local_field
+  ! NAME
+  !   local_field
+  ! SYNOPSIS
+  !   Encapsulate 1D scalar field data locally to one image along with
+  !   mathematical operators that require no communication. 
+  ! PUBLIC 
+  !   operator(-),operator(*),assignment(=),output,state
+  ! USAGE
+  !     type(local_field) :: a,b,c
+  !     c = a - b
+  !******
   type, extends(object) :: local_field 
     real(rkind), allocatable :: f(:)
   contains

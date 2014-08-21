@@ -3,10 +3,9 @@ compiler=gnu
 executable=co_heat
 
 ifeq ($(compiler),gnu)
-  opencoarrays_dir=../../../../../
-  opt=-L $(opencoarrays_dir)/dev/mpi
-  libcaf_dir = $(opencoarrays_dir)/dev/
-  compile=mpif90 -fcoarray=lib -L $(libcaf_dir)
+  opencoarrays_dir=/opt/opencoarrays
+  opt=-L $(opencoarrays_dir)/lib
+  compile=mpif90 -fcoarray=lib
   lib=-lcaf_mpi
 else
   ifeq ($(compiler),intel)
