@@ -132,7 +132,7 @@ contains
             do i = 2, num_nodes;     velmax = max( velmax, velmax[i] );    end do
         end if
         sync all
-        velmax = velmax[1]
+        if (my_node>1) velmax = velmax[1]
         sync all
     end subroutine max_velmax
 
