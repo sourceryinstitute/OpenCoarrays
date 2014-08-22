@@ -1520,13 +1520,10 @@ PREFIX (atomic_define) (caf_token_t token, size_t offset,
   selectType(kind,&dt);
 
 #if MPI_VERSION >= 3
-  void *bef_acc;
-  bef_acc = malloc(kind);
   MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
-  ierr = MPI_Fetch_and_op(value, bef_acc, dt, image_index-1, offset,
+  ierr = MPI_Fetch_and_op(value, NULL, dt, image_index-1, offset,
 			  MPI_REPLACE, *p);
   MPI_Win_unlock (image_index-1, *p);
-  free(bef_acc);
 #else
   MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
   ierr = MPI_Put (value, 1, dt, image_index-1, offset, 1, dt, *p);
@@ -1554,13 +1551,9 @@ PREFIX(atomic_ref) (caf_token_t token, size_t offset,
   selectType(kind,&dt);
 
 #if MPI_VERSION >= 3
-  void *bef_acc;
-  bef_acc = malloc(kind);
   MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
-  ierr = MPI_Fetch_and_op(value, bef_acc, dt, image_index-1, offset, MPI_NO_OP, *p);
+  ierr = MPI_Fetch_and_op(NULL, value, dt, image_index-1, offset, MPI_NO_OP, *p);
   MPI_Win_unlock (image_index-1, *p);
-  memcpy(value,bef_acc,kind);  
-  free(bef_acc);
 #else
   MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
   ierr = MPI_Get (value, 1, dt, image_index-1, offset, 1, dt, *p);
