@@ -82,6 +82,13 @@ int done_am=0;
 
 char err_buffer[MPI_MAX_ERROR_STRING];
 
+/* All CAF runtime calls should use this comm instead of 
+ * MPI_COMM_WORLD for interoperability purposes. */
+MPI_Comm CAF_COMM_WORLD;
+
+/* For MPI interoperability, allow external initialization
+ * (and thus finalization) of MPI. */
+int caf_owns_mpi = 0;
 
 #ifdef HELPER
 void helperFunction()
@@ -94,7 +101,7 @@ void helperFunction()
   dts = calloc(caf_num_images,sizeof(MPI_Datatype));
 
   for(i=0;i<caf_num_images;i++)
-    MPI_Irecv(buff_am[i], 1000, MPI_PACKED, i, 1, MPI_COMM_WORLD, &req_am[i]);
+    MPI_Irecv(buff_am[i], 1000, MPI_PACKED, i, 1, CAF_COMM_WORLD, &req_am[i]);
 
   while(1)
     {
@@ -107,7 +114,7 @@ void helperFunction()
               if(flag==1)
                 {
                   position = 0;
-                  MPI_Unpack(buff_am[i], 1000, &position, &msgid, 1, MPI_INT, MPI_COMM_WORLD);
+                  MPI_Unpack(buff_am[i], 1000, &position, &msgid, 1, MPI_INT, CAF_COMM_WORLD);
 		  /* msgid=2 was initially assigned to strided transfers, it can be reused */
 		  /* Strided transfers Msgid=2 */
 		  
@@ -117,7 +124,7 @@ void helperFunction()
                     {
                       msgid=0; position=0;
                     }
-                  MPI_Irecv(buff_am[i], 1000, MPI_PACKED, i, 1, MPI_COMM_WORLD, &req_am[i]);
+                  MPI_Irecv(buff_am[i], 1000, MPI_PACKED, i, 1, CAF_COMM_WORLD, &req_am[i]);
                   flag=0;
                 }
             }
@@ -208,20 +215,42 @@ PREFIX (init) (int *argc, char ***argv)
   if (caf_num_images == 0)
     {
       int ierr = 0, i = 0, j = 0;
+
+      int is_init = 0, prior_thread_level = MPI_THREAD_SINGLE;
+      MPI_Initialized(&is_init);
+
+      if (is_init) {
+          MPI_Query_thread(&prior_thread_level);
+      }
 #ifdef HELPER
       int prov_lev=0;
-      MPI_Init_thread(argc, argv, MPI_THREAD_MULTIPLE, &prov_lev);
+      if (is_init) {
+          prov_lev = prior_thread_level;
+          caf_owns_mpi = 0;
+      } else {
+          MPI_Init_thread(argc, argv, MPI_THREAD_MULTIPLE, &prov_lev);
+          caf_owns_mpi = 1;
+      }
 
       if(caf_this_image == 0 && MPI_THREAD_MULTIPLE != prov_lev)
 	caf_runtime_error ("MPI_THREAD_MULTIPLE is not supported: %d", prov_lev);
 #else
-      MPI_Init(argc,argv);
+      if (is_init) {
+          caf_owns_mpi = 0;
+      } else {
+          MPI_Init(argc,argv);
+          caf_owns_mpi = 1;
+      }
 #endif
       if (unlikely ((ierr != MPI_SUCCESS)))
 	caf_runtime_error ("Failure when initializing MPI: %d", ierr);
 
-      MPI_Comm_size(MPI_COMM_WORLD,&caf_num_images);
-      MPI_Comm_rank(MPI_COMM_WORLD,&caf_this_image);
+      /* Jeff: Duplicate world so that no CAF internal functions
+       * use it - this is critical for MPI-interoperability. */
+      MPI_Comm_dup(MPI_COMM_WORLD, &CAF_COMM_WORLD);
+
+      MPI_Comm_size(CAF_COMM_WORLD,&caf_num_images);
+      MPI_Comm_rank(CAF_COMM_WORLD,&caf_this_image);
 
       caf_this_image++;
       caf_is_finalized = 0;
@@ -254,7 +283,7 @@ void
 PREFIX (finalize) (void)
 {
 
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(CAF_COMM_WORLD);
 
   while (caf_static_list != NULL)
     {
@@ -279,7 +308,12 @@ PREFIX (finalize) (void)
   MPI_Info_free (&mpi_info_same_size);
 #endif
 
-  MPI_Finalize();
+  MPI_Comm_free(&CAF_COMM_WORLD);
+
+  /* Only call Finalize if CAF runtime Initialized MPI. */
+  if (caf_owns_mpi) {
+      MPI_Finalize();
+  }
   pthread_mutex_lock(&lock_am);
   caf_is_finalized = 1;
   pthread_mutex_unlock(&lock_am);
@@ -331,10 +365,10 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
     actual_size = size;
 
 #if MPI_VERSION >= 3
-  MPI_Win_allocate(actual_size, 1, mpi_info_same_size, MPI_COMM_WORLD,&mem, *token);
+  MPI_Win_allocate(actual_size, 1, mpi_info_same_size, CAF_COMM_WORLD,&mem, *token);
 #else
   MPI_Alloc_mem(actual_size, MPI_INFO_NULL, &mem);
-  MPI_Win_create(mem, actual_size, 1, MPI_INFO_NULL, MPI_COMM_WORLD, *token);
+  MPI_Win_create(mem, actual_size, 1, MPI_INFO_NULL, CAF_COMM_WORLD, *token);
 #endif
 
   MPI_Win *p = *token;
@@ -487,7 +521,7 @@ PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
           tmp = next;
 	}
 #endif
-      MPI_Barrier(MPI_COMM_WORLD);
+      MPI_Barrier(CAF_COMM_WORLD);
       ierr = 0;
     }
 
@@ -843,21 +877,21 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
       free (arr_dsp_d);
       
       /* msg = 2; */
-      /* MPI_Pack(&msg, 1, MPI_INT, buff_am[caf_this_image], 1000, &position, MPI_COMM_WORLD); */
-      /* MPI_Pack(&rank, 1, MPI_INT, buff_am[caf_this_image], 1000, &position, MPI_COMM_WORLD); */
+      /* MPI_Pack(&msg, 1, MPI_INT, buff_am[caf_this_image], 1000, &position, CAF_COMM_WORLD); */
+      /* MPI_Pack(&rank, 1, MPI_INT, buff_am[caf_this_image], 1000, &position, CAF_COMM_WORLD); */
       
       /* for(j=0;j<rank;j++) */
       /*   { */
-      /*     MPI_Pack(&(dest->dim[j]._stride), 1, MPI_INT, buff_am[caf_this_image], 1000, &position, MPI_COMM_WORLD); */
-      /*     MPI_Pack(&(dest->dim[j].lower_bound), 1, MPI_INT, buff_am[caf_this_image], 1000, &position, MPI_COMM_WORLD); */
-      /*     MPI_Pack(&(dest->dim[j]._ubound), 1, MPI_INT, buff_am[caf_this_image], 1000, &position, MPI_COMM_WORLD); */
+      /*     MPI_Pack(&(dest->dim[j]._stride), 1, MPI_INT, buff_am[caf_this_image], 1000, &position, CAF_COMM_WORLD); */
+      /*     MPI_Pack(&(dest->dim[j].lower_bound), 1, MPI_INT, buff_am[caf_this_image], 1000, &position, CAF_COMM_WORLD); */
+      /*     MPI_Pack(&(dest->dim[j]._ubound), 1, MPI_INT, buff_am[caf_this_image], 1000, &position, CAF_COMM_WORLD); */
       /*   } */
       
-      /* MPI_Pack(&size, 1, MPI_INT, buff_am[caf_this_image], 1000, &position, MPI_COMM_WORLD); */
+      /* MPI_Pack(&size, 1, MPI_INT, buff_am[caf_this_image], 1000, &position, CAF_COMM_WORLD); */
       
       /* /\* non-blocking send *\/ */
       
-      /* MPI_Issend(buff_am[caf_this_image],position,MPI_PACKED,image_index-1,1,MPI_COMM_WORLD,&reqdt); */
+      /* MPI_Issend(buff_am[caf_this_image],position,MPI_PACKED,image_index-1,1,CAF_COMM_WORLD,&reqdt); */
       
       /* msgbody = calloc(size,sizeof(char)); */
       
@@ -889,7 +923,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
       
       /* MPI_Wait(&reqdt, &stadt); */
       
-      /* MPI_Ssend(msgbody,size,MPI_BYTE,image_index-1,1,MPI_COMM_WORLD); */
+      /* MPI_Ssend(msgbody,size,MPI_BYTE,image_index-1,1,CAF_COMM_WORLD); */
       
       /* free(msgbody); */
       
@@ -1211,10 +1245,10 @@ PREFIX (sync_images) (int count, int images[], int *stat, char *errmsg,
 	}
 
        for(i = 0; i < count; i++)
-	   ierr = MPI_Irecv(&arrived[images[i]-1], 1, MPI_INT, images[i]-1, 0, MPI_COMM_WORLD, &handlers[images[i]-1]);
+	   ierr = MPI_Irecv(&arrived[images[i]-1], 1, MPI_INT, images[i]-1, 0, CAF_COMM_WORLD, &handlers[images[i]-1]);
 
        for(i=0; i < count; i++)
-	 ierr = MPI_Send(&caf_this_image, 1, MPI_INT, images[i]-1, 0, MPI_COMM_WORLD);
+	 ierr = MPI_Send(&caf_this_image, 1, MPI_INT, images[i]-1, 0, CAF_COMM_WORLD);
 
        for(i=0; i < count; i++)
 	 ierr = MPI_Wait(&handlers[images[i]-1], &s);
@@ -1391,13 +1425,13 @@ co_reduce_1 (MPI_Op op, gfc_descriptor_t *source, int result_image, int *stat,
     {
       if (result_image == 0)
 	ierr = MPI_Allreduce (MPI_IN_PLACE, source->base_addr, size, datatype,
-			      op, MPI_COMM_WORLD);
+			      op, CAF_COMM_WORLD);
       else if (result_image == caf_this_image)
 	ierr = MPI_Reduce (MPI_IN_PLACE, source->base_addr, size, datatype, op,
-			   result_image-1, MPI_COMM_WORLD);
+			   result_image-1, CAF_COMM_WORLD);
       else
 	ierr = MPI_Reduce (source->base_addr, NULL, size, datatype, op,
-			   result_image-1, MPI_COMM_WORLD);
+			   result_image-1, CAF_COMM_WORLD);
       if (ierr)
 	goto error;
       return;
@@ -1422,13 +1456,13 @@ co_reduce_1 (MPI_Op op, gfc_descriptor_t *source, int result_image, int *stat,
 			  + array_offset_sr*GFC_DESCRIPTOR_SIZE (source));
       if (result_image == 0)
 	ierr = MPI_Allreduce (MPI_IN_PLACE, sr, 1, datatype, op,
-			      MPI_COMM_WORLD);
+			      CAF_COMM_WORLD);
       else if (result_image == caf_this_image)
 	ierr = MPI_Reduce (MPI_IN_PLACE, sr, 1, datatype, op,
-			   result_image-1, MPI_COMM_WORLD);
+			   result_image-1, CAF_COMM_WORLD);
       else
 	ierr = MPI_Reduce (sr, NULL, 1, datatype, op, result_image-1,
-			   MPI_COMM_WORLD);
+			   CAF_COMM_WORLD);
       if (ierr)
 	goto error;
     }
@@ -1652,7 +1686,7 @@ error_stop (int error)
 {
   /* FIXME: Shutdown the Fortran RTL to flush the buffer.  PR 43849.  */
   /* FIXME: Do some more effort than just gasnet_exit().  */
-  MPI_Abort(MPI_COMM_WORLD, error);
+  MPI_Abort(CAF_COMM_WORLD, error);
 
   /* Should be unreachable, but to make sure also call exit.  */
   exit (error);
