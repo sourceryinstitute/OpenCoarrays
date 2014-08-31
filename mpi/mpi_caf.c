@@ -584,7 +584,7 @@ PREFIX (sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
 		  caf_token_t token_g, size_t offset_g,
 		  int image_index_g, gfc_descriptor_t *src ,
 		  caf_vector_t *src_vector __attribute__ ((unused)),
-		  int src_kind, int dst_kind)
+		  int src_kind, int dst_kind, bool mrt)
 {
   int ierr = 0;
   size_t i, size;
@@ -712,12 +712,14 @@ PREFIX (sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
 }
 
 /* Send array data from src to dest on a remote image.  */
+/* The last argument means may_require_temporary */
 
 void
 PREFIX (send) (caf_token_t token, size_t offset, int image_index,
 	       gfc_descriptor_t *dest,
 	       caf_vector_t *dst_vector __attribute__ ((unused)),
-	       gfc_descriptor_t *src, int dst_kind, int src_kind)
+	       gfc_descriptor_t *src, int dst_kind, int src_kind, 
+	       bool mrt)
 {
   /* FIXME: Implement vector subscripts, type conversion and check whether
      string-kind conversions are permitted.
@@ -989,7 +991,8 @@ PREFIX (get) (caf_token_t token, size_t offset,
 	      int image_index __attribute__ ((unused)),
 	      gfc_descriptor_t *src ,
 	      caf_vector_t *src_vector __attribute__ ((unused)),
-	      gfc_descriptor_t *dest, int src_kind, int dst_kind)
+	      gfc_descriptor_t *dest, int src_kind, int dst_kind,
+	      bool mrt)
 {
   size_t i, size;
   int ierr = 0;
