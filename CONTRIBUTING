@@ -1,8 +1,31 @@
 Contribution procedure
 
 This document describes several pieces of information required for
-a contribution of code to OpenCoarrays to be approved.  A patch can be
-structured in two parts: ChangeLog and actual patch.  The ChangeLog 
+a contribution of code to OpenCoarrays to be approved.  
+
+----------------------------------------------------------------------
+
+Small patches
+
+For a small and simple patch we accept a pull request
+on the BitBucket repository.
+Please follow the procedure explained at
+https://confluence.atlassian.com/display/BITBUCKET/Work+with+pull+requests.
+
+Remember to use the following command
+
+git commit --signoff
+
+in order to accept the DCO.
+
+For a more complex and invasive patch please follow the Regular patches 
+procedure.
+
+----------------------------------------------------------------------
+
+Regular patches
+
+A patch can be structured in two parts: ChangeLog and actual patch.  The ChangeLog 
 should contain a description of the problem/bug, how the patch fixes the
 problem/bug, the date, the author name and email address, and the 
 signed-off-by line as detailed below.
