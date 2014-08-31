@@ -3,8 +3,12 @@ FC=gfortran
 CC=gcc
 MPFC=mpifort
 
-FFLAGS += -O2 -g -fcoarray=lib
-CFLAGS += -DPREFIX_NAME=$(PREFIX_NAME) -g -O2 -DHAVE_INT128_T
+FFLAGS = -O2 -g
+CFLAGS = -O2 -g
+FFLAGS_EXTRA = -fcoarray=lib
+CFLAGS_EXTRA = -DPREFIX_NAME=$(PREFIX_NAME) -DHAVE_INT128_T
+FFLAGS += $(FFLAGS_EXTRA)
+CFLAGS += $(CFLAGS_EXTRA)
 LDFLAGS +=
 
 SINGLE_CFLAGS += -Wall -Wextra
@@ -15,7 +19,8 @@ ARMCI_LDFLAGS += -L$(ARMCI_DIR)/lib -L$(ARMCI_DIR)/lib64 -larmci
 ARMCI_CC = mpicc
 ARMCI_RUN = mpirun -np 2
 
-MPI_CFLAGS += -Wall -Wextra -Wno-error=cpp -Wno-error=unused-parameter
+MPI_EXTRA_FLAGS = -Wall -Wextra -Wno-error=cpp -Wno-error=unused-parameter
+MPI_CFLAGS += $(MPI_EXTRA_FLAGS)
 #MPICC =
 MPI_RUN = mpirun -np 2
 
