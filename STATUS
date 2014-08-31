@@ -39,6 +39,18 @@ OpenCoarray's libraries:
 
 General To-Do Items
 -------------------
+* Move to new ABI (2014-08-31) for caf_send/caf_get/caf_sendget,
+  which passes an additional may_require_tmp argument; cf.
+  https://gcc.gnu.org/ml/fortran/2014-08/msg00118.html,
+  previous OC and fortran@gcc discussion. See documentation at
+  https://gcc.gnu.org/onlinedocs/gfortran/Function-ABI-Documentation.html
+  for the relevant functions.
+  Note: The new argument is passed to make it simpler for the
+  library to decide whether a temporary variable is needed or not.
+  Note 2: As the new ABI puts an additional argument on the stack,
+  newer GCC are backward compatible with an older library, while
+  the ABI change will break compiling with older GCC.
+
 * Improvement of error handling and diagnostic, including but not
   limited to filling the ERRMSG= variable in case of errors.
 * Providing a diagnostic mode, which does consistency checks at
