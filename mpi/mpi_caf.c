@@ -617,7 +617,7 @@ PREFIX (sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
 	  && PREFIX (is_contiguous) (dest) && PREFIX (is_contiguous) (src)))
     {
       tmp = (char *) calloc (size, dst_size);
-
+      
       MPI_Win_lock (MPI_LOCK_SHARED, image_index_g-1, 0, *p_g);
       ierr = MPI_Get (tmp, dst_size*size, MPI_BYTE,
 		      image_index_g-1, offset_g, dst_size*size, MPI_BYTE, *p_g);
@@ -625,7 +625,7 @@ PREFIX (sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
 	memcpy ((char *) tmp + src_size, pad_str,
 		dst_size-src_size);
       MPI_Win_unlock (image_index_g-1, *p_g);
-
+      
       MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index_s-1, 0, *p_s);
       if (GFC_DESCRIPTOR_TYPE (dest) == GFC_DESCRIPTOR_TYPE (src)
 	  && dst_kind == src_kind)
@@ -637,10 +637,11 @@ PREFIX (sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
 	ierr = MPI_Put (pad_str, dst_size-src_size, MPI_BYTE, image_index_s-1,
 			offset_s, dst_size - src_size, MPI_BYTE, *p_s);
       MPI_Win_unlock (image_index_s-1, *p_s);
+      
       if (ierr != 0)
 	error_stop (ierr);
       return;
-
+      
       free(tmp);
     }
   else
@@ -756,7 +757,6 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
 	for (i = 0; i < (dst_size-src_size)/4; i++)
 	      ((int32_t*) pad_str)[i] = (int32_t) ' ';
     }
-  
   if (rank == 0
       || (GFC_DESCRIPTOR_TYPE (dest) == GFC_DESCRIPTOR_TYPE (src)
 	  && dst_kind == src_kind && GFC_DESCRIPTOR_RANK (src) != 0
@@ -1044,7 +1044,6 @@ PREFIX (get) (caf_token_t token, size_t offset,
     {
       /* FIXME: Handle image_index == this_image().  */
       /*  if (async == false) */
-      printf("me: %d mrt %d\n",caf_this_image,mrt);
       if(caf_this_image == image_index)
 	{
 	  void *src_tmp = (void *) ((char *) src->base_addr + offset);
