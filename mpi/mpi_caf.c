@@ -756,24 +756,34 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
 	for (i = 0; i < (dst_size-src_size)/4; i++)
 	      ((int32_t*) pad_str)[i] = (int32_t) ' ';
     }
-
+  
   if (rank == 0
       || (GFC_DESCRIPTOR_TYPE (dest) == GFC_DESCRIPTOR_TYPE (src)
 	  && dst_kind == src_kind && GFC_DESCRIPTOR_RANK (src) != 0
           && (GFC_DESCRIPTOR_TYPE (dest) != BT_CHARACTER || dst_size == src_size)
 	  && PREFIX (is_contiguous) (dest) && PREFIX (is_contiguous) (src)))
     {
-      MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
-      if (GFC_DESCRIPTOR_TYPE (dest) == GFC_DESCRIPTOR_TYPE (src)
-	  && dst_kind == src_kind)
-	ierr = MPI_Put (src->base_addr, dst_size*size, MPI_BYTE,
-			image_index-1, offset,
-			(dst_size > src_size ? src_size : dst_size) * size,
-			MPI_BYTE, *p);
-      if (pad_str)
-	ierr = MPI_Put (pad_str, dst_size-src_size, MPI_BYTE, image_index-1,
-			offset, dst_size - src_size, MPI_BYTE, *p);
-      MPI_Win_unlock (image_index-1, *p);
+      if(caf_this_image == image_index)
+	{
+	  void *dest_tmp = (void *) ((char *) dest->base_addr + offset);
+	  memmove (dest_tmp,src->base_addr,size*dst_size);
+	  return;
+	}
+      else
+	{
+	  MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
+	  if (GFC_DESCRIPTOR_TYPE (dest) == GFC_DESCRIPTOR_TYPE (src)
+	      && dst_kind == src_kind)
+	    ierr = MPI_Put (src->base_addr, dst_size*size, MPI_BYTE,
+			    image_index-1, offset,
+			    (dst_size > src_size ? src_size : dst_size) * size,
+			    MPI_BYTE, *p);
+	  if (pad_str)
+	    ierr = MPI_Put (pad_str, dst_size-src_size, MPI_BYTE, image_index-1,
+			    offset, dst_size - src_size, MPI_BYTE, *p);
+	  MPI_Win_unlock (image_index-1, *p);
+	} 
+
       if (ierr != 0)
 	error_stop (ierr);
       return;
@@ -1034,6 +1044,14 @@ PREFIX (get) (caf_token_t token, size_t offset,
     {
       /* FIXME: Handle image_index == this_image().  */
       /*  if (async == false) */
+      printf("me: %d mrt %d\n",caf_this_image,mrt);
+      if(caf_this_image == image_index)
+	{
+	  void *src_tmp = (void *) ((char *) src->base_addr + offset);
+	  memmove (src_tmp,dest->base_addr,size*src_size);
+	  return;
+	}
+      else
 	{
 	  MPI_Win_lock (MPI_LOCK_SHARED, image_index-1, 0, *p);
 	  ierr = MPI_Get (dest->base_addr, dst_size*size, MPI_BYTE,
