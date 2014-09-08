@@ -1669,10 +1669,13 @@ PREFIX (atomic_define) (caf_token_t token, size_t offset,
   selectType(kind, &dt);
 
 #if MPI_VERSION >= 3
+  void *bef_acc;
+  bef_acc = malloc(kind);
   MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
-  ierr = MPI_Fetch_and_op(value, NULL, dt, image_index-1, offset,
+  ierr = MPI_Fetch_and_op(value, bef_acc, dt, image_index-1, offset,
 			  MPI_REPLACE, *p);
   MPI_Win_unlock (image_index-1, *p);
+  free(bef_acc);
 #else
   MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
   ierr = MPI_Put (value, 1, dt, image_index-1, offset, 1, dt, *p);
@@ -1771,20 +1774,32 @@ PREFIX(atomic_cas) (caf_token_t token, size_t offset,
 }
 
 void
-PREFIX (atomic_op) (int op __attribute__ ((unused)),
-		    caf_token_t token __attribute__ ((unused)),
-		    size_t offset __attribute__ ((unused)),
-		    int image_index __attribute__ ((unused)),
-		    void *value __attribute__ ((unused)),
-		    void *old __attribute__ ((unused)),
-		    int *stat,
+PREFIX (atomic_op) (int op, caf_token_t token ,
+		    size_t offset, int image_index,
+		    void *value, void *old, int *stat, 
 		    int type __attribute__ ((unused)),
-		    int kind __attribute__ ((unused)))
+		    int kind)
 {
-  int ierr = 1;
+  int ierr = 0;
+  void *bef_acc;
+  MPI_Datatype dt;
+  MPI_Win *p = token;
 
-#warning atomic_cas for MPI is not yet implemented
-  printf ("We apologize but atomic_op for MPI is not yet implemented\n");
+  old = malloc(kind);
+  selectType (kind, &dt);
+
+  /* Atomic_add */
+  if(op == 1)
+    {
+      MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
+      ierr = MPI_Fetch_and_op(value, old, dt, image_index-1, offset, MPI_SUM, *p);
+      MPI_Win_unlock (image_index-1, *p);
+    }
+
+  free(old);
+
+/* #warning atomic_cas for MPI is not yet implemented */
+/*   printf ("We apologize but atomic_op for MPI is not yet implemented\n"); */
   if (stat)
     *stat = ierr;
   else if (ierr != 0)
