@@ -1098,7 +1098,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
       if(caf_this_image == image_index)
 	{
 	  void *src_tmp = (void *) ((char *) src->base_addr + offset);
-	  memmove (src_tmp,dest->base_addr,size*src_size);
+	  memmove(dest->base_addr,src_tmp,size*src_size);
 	  return;
 	}
       else

@@ -59,6 +59,8 @@ Basic Communication Support
 * For character assignments, still some issues with padding and
   character kind conversions.
 * For array assignments, still some issues with numeric type conversion
+* Efficient strided trasfer support available only for 
+  primitive data types.
 
 GCC issues:
 * Handling of allocatable/pointer components _of_ derived-type coarrays
