@@ -1784,7 +1784,7 @@ PREFIX (atomic_op) (int op, caf_token_t token ,
   void *bef_acc;
   MPI_Datatype dt;
   MPI_Win *p = token;
-
+#if MPI_VERSION >= 3
   old = malloc(kind);
   selectType (kind, &dt);
 
@@ -1797,9 +1797,10 @@ PREFIX (atomic_op) (int op, caf_token_t token ,
     }
 
   free(old);
-
-/* #warning atomic_cas for MPI is not yet implemented */
-/*   printf ("We apologize but atomic_op for MPI is not yet implemented\n"); */
+#else
+ #warning atomic_op for MPI is not yet implemented
+   printf ("We apologize but atomic_op for MPI is not yet implemented\n");
+#endif
   if (stat)
     *stat = ierr;
   else if (ierr != 0)
