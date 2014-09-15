@@ -1795,6 +1795,28 @@ PREFIX (atomic_op) (int op, caf_token_t token ,
       ierr = MPI_Fetch_and_op(value, old, dt, image_index-1, offset, MPI_SUM, *p);
       MPI_Win_unlock (image_index-1, *p);
     }
+  /* Atomic_and */
+  else if(op == 2)
+    {
+      MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
+      ierr = MPI_Fetch_and_op(value, old, dt, image_index-1, offset, MPI_BAND, *p);
+      MPI_Win_unlock (image_index-1, *p);
+    }
+  /* Atomic_or */
+  else if(op == 4)
+    {
+      MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
+      ierr = MPI_Fetch_and_op(value, old, dt, image_index-1, offset, MPI_BOR, *p);
+      MPI_Win_unlock (image_index-1, *p);
+    }
+  else if(op == 5)
+    {
+      MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
+      ierr = MPI_Fetch_and_op(value, old, dt, image_index-1, offset, MPI_BXOR, *p);
+      MPI_Win_unlock (image_index-1, *p);
+    }
+  else
+    printf ("We apologize but the atomic operation requested for MPI is not yet implemented\n");
 
   free(old);
 #else
