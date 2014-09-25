@@ -18,8 +18,8 @@ OpenCoarray's libraries:
   Of the implemented features, this version should be the most
   complete one.  However, it tends to lag a bit behind the libcaf_single
   included in GCC; considering using the latter.  (When compiling
-  with a different compiler than GCC, note that the latter is GPLv3 with
-  GCC license exception.)
+  with a different compiler than GCC, note that the libcaf_single shipping
+  with GCC is released under the GPLv3 with GCC license exception.)
 
 * MPI (Message Passing Interface): Recommended version. Requires a
   MPI 3 implementation, although most features also work with MPI 2.
@@ -94,7 +94,9 @@ GCC issues:
 Collectives
 -----------
 
-* CO_REDUCE, CO_BROADCAST: Unsupported by OpenCoarrays and GCC
+* CO_BROADCAST: Unsupported by OpenCoarrays. GCC's implementation lacks
+  finalization and support for allocatable components.
+* CO_REDUCE: Unsupported by OpenCoarrays and GCC
 
 For CO_MIN, CO_MAX, CO_MIN:
 * Single: Full support.
