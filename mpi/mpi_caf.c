@@ -1606,6 +1606,81 @@ error:
     memset (&errmsg[len], '\0', errmsg_len - len);
 }
 
+void
+PREFIX (co_broadcast) (gfc_descriptor_t *a, int source_image, int *stat, char *errmsg,
+		       int errmsg_len)
+{
+  size_t i, size;
+  int j, ierr;
+  int rank = GFC_DESCRIPTOR_RANK (a);
+  
+  MPI_Datatype datatype = get_MPI_datatype (a);
+
+  size = 1;
+  for (j = 0; j < rank; j++)
+    {
+      ptrdiff_t dimextent = a->dim[j]._ubound
+			    - a->dim[j].lower_bound + 1;
+      if (dimextent < 0)
+	dimextent = 0;
+      size *= dimextent;
+    }
+
+  if (rank == 0)
+    {
+      ierr = MPI_Bcast(a->base_addr, size, datatype, source_image-1, CAF_COMM_WORLD);
+
+      if (ierr)
+	goto error;
+      return;
+    }
+
+  for (i = 0; i < size; i++)
+    {
+      ptrdiff_t array_offset_sr = 0;
+      ptrdiff_t stride = 1;
+      ptrdiff_t extent = 1;
+      for (j = 0; j < GFC_DESCRIPTOR_RANK (a)-1; j++)
+	{
+	  array_offset_sr += ((i / (extent*stride))
+			   % (a->dim[j]._ubound
+			      - a->dim[j].lower_bound + 1))
+			  * a->dim[j]._stride;
+	  extent = (a->dim[j]._ubound - a->dim[j].lower_bound + 1);
+          stride = a->dim[j]._stride;
+	}
+      array_offset_sr += (i / extent) * a->dim[rank-1]._stride;
+      void *sr = (void *)((char *) a->base_addr
+			  + array_offset_sr*GFC_DESCRIPTOR_SIZE (a));
+
+      ierr = MPI_Bcast(sr, 1, datatype, source_image-1, CAF_COMM_WORLD);
+      
+      if (ierr)
+	goto error;
+    }
+
+  return;
+
+error:
+  /* FIXME: Put this in an extra function and use it elsewhere.  */
+  if (stat)
+    {
+      *stat = ierr;
+      if (!errmsg)
+	return;
+    }
+
+  int len = sizeof (err_buffer);
+  MPI_Error_string (ierr, err_buffer, &len);
+  if (!stat)
+    {
+      err_buffer[len == sizeof (err_buffer) ? len-1 : len] = '\0';
+      caf_runtime_error ("CO_SUM failed with %s\n", err_buffer);
+    }
+  memcpy (errmsg, err_buffer, errmsg_len > len ? len : errmsg_len);
+  if (errmsg_len > len)
+    memset (&errmsg[len], '\0', errmsg_len - len);
+}
 
 void
 PREFIX (co_sum) (gfc_descriptor_t *a, int result_image, int *stat, char *errmsg,
