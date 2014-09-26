@@ -77,7 +77,7 @@ Atomics
 * Not implemented (link-time error) in Single and GASNet. For Single,
   use the version shipping with GCC.
 * MPI: atomic_ref/atomic_define supported by MPI 2 and MPI 3; atomic_cas
-  is only supported by MPI 3. atomic_<op> is not yet supported.
+  and atomic_<op> are only supported by MPI 3.
 
 Locking
 -------
@@ -90,11 +90,15 @@ GCC issues:
 * Only CRITICAL implemented. Locking variables are currently not
   supported but silently accepted.
 
+Critical
+--------
+
+* MPI: Not yet implemented.
 
 Collectives
 -----------
 
-* CO_BROADCAST: Unsupported by OpenCoarrays. GCC's implementation lacks
+* CO_BROADCAST: Implemented only in libcaf_mpi. GCC's implementation lacks
   finalization and support for allocatable components.
 * CO_REDUCE: Unsupported by OpenCoarrays and GCC
 
