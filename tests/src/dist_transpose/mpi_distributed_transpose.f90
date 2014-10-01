@@ -36,6 +36,7 @@
 !******
 !==================  test transposes with integer x,y,z values  ===============================
 module mpi_run_size
+    use iso_fortran_env
     implicit none
         integer(int64) :: nx, ny, nz
         integer(int64) :: my, mx, first_y, last_y, first_x, last_x
@@ -44,6 +45,7 @@ module mpi_run_size
 
 interface
    function WALLTIME() bind(C, name = "WALLTIME")
+   use iso_fortran_env
        real(real64) :: WALLTIME
    end function WALLTIME
 end interface
@@ -51,6 +53,7 @@ end interface
 contains
 
 subroutine mpi_copy3( A,B, n1, sA1, sB1, n2, sA2, sB2, n3, sA3, sB3 )
+  use iso_fortran_env
   implicit none
   complex, intent(in)  :: A(0:*)
   complex, intent(out) :: B(0:*)
@@ -290,7 +293,7 @@ call MPI_BARRIER(MPI_COMM_WORLD, ierror)     !--  wait for other nodes to finish
     integer(int64) :: to, from, send_tag, recv_tag
     integer :: stage, idr(0:num_nodes-1), ids(0:num_nodes-1)
     character*(MPI_MAX_ERROR_STRING) errs
-    /nteger(int64) :: send_status(MPI_STATUS_SIZE), recv_status(MPI_STATUS_SIZE)
+    integer(int64) :: send_status(MPI_STATUS_SIZE), recv_status(MPI_STATUS_SIZE)
 
     call MPI_BARRIER(MPI_COMM_WORLD, ierror)   !--  wait for other nodes to finish compute
     tran_time = tran_time - WALLTIME()

@@ -33,7 +33,7 @@
 !******
 !==================  test transposes with integer x,y,z values  ===============================
 module run_size
-    use iso_fortran_env, only : int64,real64
+    use iso_fortran_env
     implicit none
         integer(int64), codimension[*] :: nx, ny, nz
         integer(int64), codimension[*] :: my, mx, first_y, last_y, first_x, last_x
@@ -42,6 +42,7 @@ module run_size
 
 interface
    function WALLTIME() bind(C, name = "WALLTIME")
+   use iso_fortran_env
        real(real64) :: WALLTIME
    end function WALLTIME
 end interface
