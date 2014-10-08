@@ -17,6 +17,7 @@ OpenCoarrays contains four libraries:
   implementations are typically based on either of them.  As MPI 3 is new and
   several MPI implementations have recently improved the one-sided
   communication (RMA, remote-memory access), consider using the newest release.
+  We recommend to use MPICH or MVAPICH.
 
 * gasnet
   Communication library based on GASNet (Global Address Space Network,
