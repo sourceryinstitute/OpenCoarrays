@@ -11,7 +11,7 @@ OpenCoarrays offers similar investment-protection to compiler developers.  Compi
 The current developer version of GNU Fortran ([GFortran](https://gcc.gnu.org/wiki/GFortranBinaries)), which is part of [GCC 5](https://gcc.gnu.org/), is OpenCoarrays-compatible.  If you would like to use OpenCoarrays with a different compiler, please let the compiler vendor and the OpenCoarrays project team know.
 
 ## Prerequisites ##
-We expect our LIBCAF_MPI library to be the default on systems that have MPI 3.0.  LIBCAF_MPI is the most straightforward to install and use and the most robust in terms of its internal complexity.  LIBCAF_MPI currently support the use of the [MPICH](http://www.mpich.org) implementation of MPI.  We also recommend to use MVAPICH when possible in order to get higher performance.
+We expect our LIBCAF_MPI library to be the default on systems that have MPI 3.0.  LIBCAF_MPI is the most straightforward to install and use and the most robust in terms of its internal complexity.  LIBCAF_MPI currently support the use of the [MPICH](http://www.mpich.org) implementation of MPI.  We also recommend to use [MVAPICH](http://mvapich.cse.ohio-state.edu/) when possible in order to get higher performance.
 
 We also offer a LIBCAF_GASNet that builds atop the Global Address Space Networking ([GASNet](http://gasnet.lbl.gov)) communication library.  We intend for LIBCAF_GASNet to be an ``expert'' alternative capable of outperforming MPI for some applications on some platforms.  LIBCAF_GASNet requires greater care to configure and use.
 
