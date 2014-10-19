@@ -1740,21 +1740,27 @@ PREFIX (atomic_define) (caf_token_t token, size_t offset,
   MPI_Win *p = token;
   MPI_Datatype dt;
   int ierr = 0;
+  int image;
+
+  if(image_index != 0)
+    image = image_index-1;
+  else
+    image = caf_this_image-1;
 
   selectType(kind, &dt);
 
 #if MPI_VERSION >= 3
   void *bef_acc;
   bef_acc = malloc(kind);
-  MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
-  ierr = MPI_Fetch_and_op(value, bef_acc, dt, image_index-1, offset,
+  MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image, 0, *p);
+  ierr = MPI_Fetch_and_op(value, bef_acc, dt, image, offset,
 			  MPI_REPLACE, *p);
-  MPI_Win_unlock (image_index-1, *p);
+  MPI_Win_unlock (image, *p);
   free(bef_acc);
 #else
-  MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
-  ierr = MPI_Put (value, 1, dt, image_index-1, offset, 1, dt, *p);
-  MPI_Win_unlock (image_index-1, *p);
+  MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image, 0, *p);
+  ierr = MPI_Put (value, 1, dt, image, offset, 1, dt, *p);
+  MPI_Win_unlock (image, *p);
 #endif
 
   if (stat)
@@ -1774,17 +1780,23 @@ PREFIX(atomic_ref) (caf_token_t token, size_t offset,
   MPI_Win *p = token;
   MPI_Datatype dt;
   int ierr = 0;
+  int image;
+
+  if(image_index != 0)
+    image = image_index-1;
+  else
+    image = caf_this_image-1;
 
   selectType(kind, &dt);
 
 #if MPI_VERSION >= 3
-  MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
-  ierr = MPI_Fetch_and_op(NULL, value, dt, image_index-1, offset, MPI_NO_OP, *p);
-  MPI_Win_unlock (image_index-1, *p);
+  MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image, 0, *p);
+  ierr = MPI_Fetch_and_op(NULL, value, dt, image, offset, MPI_NO_OP, *p);
+  MPI_Win_unlock (image, *p);
 #else
-  MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
-  ierr = MPI_Get (value, 1, dt, image_index-1, offset, 1, dt, *p);
-  MPI_Win_unlock (image_index-1, *p);
+  MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image, 0, *p);
+  ierr = MPI_Get (value, 1, dt, image, offset, 1, dt, *p);
+  MPI_Win_unlock (image, *p);
 #endif
 
   if (stat)
@@ -1805,15 +1817,20 @@ PREFIX(atomic_cas) (caf_token_t token, size_t offset,
   MPI_Win *p = token;
   MPI_Datatype dt;
   int ierr = 0;
-  /* void *value = NULL; */
+  int image;
+
+  if(image_index != 0)
+    image = image_index-1;
+  else
+    image = caf_this_image-1;
 
   selectType (kind, &dt);
 
 #if MPI_VERSION >= 3
-  MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
-  ierr = MPI_Compare_and_swap (new_val, compare, old, dt, image_index-1,
+  MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image, 0, *p);
+  ierr = MPI_Compare_and_swap (new_val, compare, old, dt, image,
 			       offset, *p);
-  MPI_Win_unlock (image_index-1, *p);
+  MPI_Win_unlock (image, *p);
 #else
 #warning atomic_cas for MPI-2 is not yet implemented
   printf ("We apologize but atomic_cas for MPI-2 is not yet implemented\n");
@@ -1859,36 +1876,44 @@ PREFIX (atomic_op) (int op, caf_token_t token ,
   void *bef_acc;
   MPI_Datatype dt;
   MPI_Win *p = token;
+  int image;
+
 #if MPI_VERSION >= 3
   old = malloc(kind);
+
+  if(image_index != 0)
+    image = image_index-1;
+  else
+    image = caf_this_image-1;
+
   selectType (kind, &dt);
 
   /* Atomic_add */
   if(op == 1)
     {
-      MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
-      ierr = MPI_Fetch_and_op(value, old, dt, image_index-1, offset, MPI_SUM, *p);
-      MPI_Win_unlock (image_index-1, *p);
+      MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image, 0, *p);
+      ierr = MPI_Fetch_and_op(value, old, dt, image, offset, MPI_SUM, *p);
+      MPI_Win_unlock (image, *p);
     }
   /* Atomic_and */
   else if(op == 2)
     {
-      MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
-      ierr = MPI_Fetch_and_op(value, old, dt, image_index-1, offset, MPI_BAND, *p);
-      MPI_Win_unlock (image_index-1, *p);
+      MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image, 0, *p);
+      ierr = MPI_Fetch_and_op(value, old, dt, image, offset, MPI_BAND, *p);
+      MPI_Win_unlock (image, *p);
     }
   /* Atomic_or */
   else if(op == 4)
     {
-      MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
-      ierr = MPI_Fetch_and_op(value, old, dt, image_index-1, offset, MPI_BOR, *p);
-      MPI_Win_unlock (image_index-1, *p);
+      MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image, 0, *p);
+      ierr = MPI_Fetch_and_op(value, old, dt, image, offset, MPI_BOR, *p);
+      MPI_Win_unlock (image, *p);
     }
   else if(op == 5)
     {
-      MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
-      ierr = MPI_Fetch_and_op(value, old, dt, image_index-1, offset, MPI_BXOR, *p);
-      MPI_Win_unlock (image_index-1, *p);
+      MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image, 0, *p);
+      ierr = MPI_Fetch_and_op(value, old, dt, image, offset, MPI_BXOR, *p);
+      MPI_Win_unlock (image, *p);
     }
   else
     printf ("We apologize but the atomic operation requested for MPI is not yet implemented\n");
