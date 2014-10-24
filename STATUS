@@ -100,7 +100,8 @@ Collectives
 
 * CO_BROADCAST: Implemented only in libcaf_mpi. GCC's implementation lacks
   finalization and support for allocatable components.
-* CO_REDUCE: Unsupported by OpenCoarrays and GCC
+* CO_REDUCE: Currently, only supported by GCC and lacking finalization
+  and support for allocatable components. libcaf_mpi/gasnet support pending.
 
 For CO_MIN, CO_MAX, CO_MIN:
 * Single: Full support.
