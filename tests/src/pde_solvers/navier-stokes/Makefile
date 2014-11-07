@@ -1,7 +1,7 @@
 # Choose desired compiler (options: gnu, intel, cray):
 compiler=gnu
 fft=fft_sse.a
-opencoarrays_dir=/opt/opencoarrays/lib
+opencoarrays_dir=/home/alex/Documents/opencoarrays/mpi
 
 ifeq ($(compiler),gnu)
   opt=-L $(opencoarrays_dir) -fcoarray=lib 
@@ -23,16 +23,16 @@ objects = walltime.o
 all: coarray-shear mpi-shear
 
 coarray-shear: coarray-shear.o $(objects) Makefile
-	$(compile) $(opt) coarray-shear.o $(objects) -o coarray-shear $(lib) $(fft)
+	$(compile) $(opt) -pg coarray-shear.o $(objects) -o coarray-shear $(lib) $(fft)
 
 mpi-shear: mpi-shear.o $(objects) Makefile
-	$(compile) mpi-shear.o $(objects) -o mpi-shear $(fft)
+	$(compile) -pg mpi-shear.o $(objects) -o mpi-shear $(fft)
 
 coarray-shear.o: coarray-shear.f90 $(objects) Makefile
-	$(compile) $(opt) -c coarray-shear.f90 
+	$(compile) $(opt) -pg -c coarray-shear.f90 
 
 mpi-shear.o: mpi-shear.f90 $(objects) Makefile
-	$(compile) -c mpi-shear.f90
+	$(compile) -pg -c mpi-shear.f90
 
 .PHONY : clean
 clean :

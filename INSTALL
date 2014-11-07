@@ -2,6 +2,52 @@ INSTALLATION
 
 See also the implementation status in the file STATUS
 
+Introduction
+------------
+
+The following documentation provides instructions on how to set up the coarray
+support on GNU Fortran, using the OpenCoarrays library, and how to compile and
+run a simple coarray program.
+
+GNU Fortran Configuration
+-------------------------
+
+The coarray support on GFortran is available since version GCC-5.0.
+Currently, GCC-5.0 is downloadable from the trunk using SVN/GIT or 
+from a snapshot; in both cases the user is supposed to compile GCC from source.
+We provide quick instructions on how to build a minimal GCC version; the
+official and complete instructions on how to build GCC from source are available
+at: https://gcc.gnu.org/install/.
+
+1) From the main directory create a build directory using:
+
+   mkdir build
+
+2) GCC requires various tools and packages like GMP, MPFR, MPC. These and others
+   can be automatically downloaded typing the following command inside the main
+   directory:
+
+   ./contrib/download_prerequisites 
+
+3) Inside the build directory type the following configure string customizing
+   the installation path:
+
+   ../configure --prefix=/your/path --enable-language=c,c++,fortran
+   --disable-multilib
+
+4) Type
+
+   make -jN
+
+   where N is the number of cores on your machine +1. (This may take a while).
+
+5) Type:
+
+   make install
+
+OpenCoarrays Installation
+-------------------------
+
 OpenCoarrays contains four libraries:
 
 * single
@@ -76,3 +122,22 @@ Consider to install the just compiled libraries (single/libcaf_single.a,
 mpi/libcaf_mpi.a etc.) into a library directory.
 
 Consider to run the testsuite or examples (tests/) in the subdirectories.
+
+
+How to compile and run a coarray program
+----------------------------------------
+
+We assume that the user has already installed GCC-5.0 and the latest version of
+LIBCAF_MPI.
+
+A hello_coarray.f90 program can compiled in a single step using the following
+string:
+
+mpifort -fcoarray=lib -L/path/to/opencoarrays/mpi hello_coarray.f90 -lcaf_mpi -o
+hello
+
+For running the program:
+
+mpirun -np m ./hello
+
+where m is the number of images you want to use.
