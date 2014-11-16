@@ -1047,7 +1047,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
 
 void
 PREFIX (get) (caf_token_t token, size_t offset,
-	      int image_index __attribute__ ((unused)),
+	      int image_index,
 	      gfc_descriptor_t *src ,
 	      caf_vector_t *src_vector __attribute__ ((unused)),
 	      gfc_descriptor_t *dest, int src_kind, int dst_kind,
@@ -1057,7 +1057,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
   int ierr = 0;
   int j;
   MPI_Win *p = token;
-  int rank = GFC_DESCRIPTOR_RANK (dest);
+  int rank = GFC_DESCRIPTOR_RANK (src);
   size_t src_size = GFC_DESCRIPTOR_SIZE (src);
   size_t dst_size = GFC_DESCRIPTOR_SIZE (dest);
   void *t_buff = NULL;
@@ -1260,7 +1260,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
 	{
 	  /* Is this needed? */
 	  if(!mrt)
-	    memmove(dst,src->base_addr+array_offset_sr,GFC_DESCRIPTOR_SIZE (src));
+	    memmove(dst,src->base_addr+array_offset_sr*GFC_DESCRIPTOR_SIZE(src),GFC_DESCRIPTOR_SIZE (src));
 	  else
 	    {
 	      memmove(t_buff+i*GFC_DESCRIPTOR_SIZE (dest),dst,GFC_DESCRIPTOR_SIZE (dest));
