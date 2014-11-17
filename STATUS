@@ -93,7 +93,7 @@ GCC issues:
 Critical
 --------
 
-* MPI: Not yet implemented.
+* MPI: Implemented.
 
 Collectives
 -----------
