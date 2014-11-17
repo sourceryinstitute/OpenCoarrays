@@ -355,7 +355,7 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
 
   *token = malloc (sizeof(MPI_Win));
 
-  if(type == CAF_REGTYPE_LOCK_STATIC)
+  if(type == CAF_REGTYPE_LOCK_STATIC || type == CAF_REGTYPE_CRITICAL)
     {
       /* For a single lock variable we need an array of integers */
       actual_size = size*sizeof(int)*caf_num_images;
