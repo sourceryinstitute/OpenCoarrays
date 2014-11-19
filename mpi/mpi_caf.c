@@ -767,7 +767,9 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
     {
       if(caf_this_image == image_index)
 	{
-	  void *dest_tmp = (void *) ((char *) dest->base_addr + offset);
+	  /* The address of source passed by the compiler points on the right
+	   * memory location. No offset summation is needed.  */
+	  void *dest_tmp = (void *) ((char *) dest->base_addr);// + offset);
 	  memmove (dest_tmp,src->base_addr,size*dst_size);
 	  return;
 	}
@@ -1097,7 +1099,9 @@ PREFIX (get) (caf_token_t token, size_t offset,
       /*  if (async == false) */
       if(caf_this_image == image_index)
 	{
-	  void *src_tmp = (void *) ((char *) src->base_addr + offset);
+	  /* The address of source passed by the compiler points on the right
+	   * memory location. No offset summation is needed.  */
+	  void *src_tmp = (void *) ((char *) src->base_addr);// + offset);
 	  memmove(dest->base_addr,src_tmp,size*src_size);
 	  return;
 	}

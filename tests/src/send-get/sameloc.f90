@@ -1,3 +1,7 @@
+! This program tests the capability of copying data on the
+! same memory location and within the same image from
+! different memory locations.
+! NOTE:
 ! In order to run this test successfully the efficient
 ! strided transfer support must be disabled.
 program sameloc
@@ -44,12 +48,28 @@ program sameloc
     do i=1,10
       if(m(9,i)[1] /= t(i)) then
 	write(*,*) 'pos',i,'value get',m(9,i)[1],'value t',t(i)
-!	call abort()
-      else
-	write(*,*) 'Ok get element from matrix'
+	call abort()
       endif
     enddo
   endif
+
+  if(this_image() == 1) write(*,*) 'Ok get element from matrix'
+
+  sync all
+
+  m(9,:) = 1
+
+  if(this_image() == 1) then
+    do i=1,10
+      m(9,i)[1] = i
+      if(m(9,i)[1] /= t(i)) then
+        write(*,*) 'pos',i,'value get',m(9,i)[1],'value t',t(i)
+        call abort()
+      endif
+    enddo
+  endif
+
+  if(this_image() == 1 ) write(*,*) 'Ok put element from matrix'
 
   t(:) = b(:)
   t(1:5) = b(2:6)
