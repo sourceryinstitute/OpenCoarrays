@@ -10,7 +10,7 @@
 !     * Redistributions in binary form must reproduce the above copyright
 !       notice, this list of conditions and the following disclaimer in the
 !       documentation and/or other materials provided with the distribution.
-!     * Neither the name of the Sourcery, Inc., nor the
+!     * Neither the name of Sourcery, Inc., nor the
 !       names of its contributors may be used to endorse or promote products
 !       derived from this software without specific prior written permission.
 ! 
@@ -23,6 +23,7 @@
 ! LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ! ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 ! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
 !
 
 !(*----------------------------------------------------------------------------------------------------------------------
@@ -32,7 +33,7 @@
 ! Define universal constants:
 ! In the case of exactly representable numbers, the definitions are useful 
 ! to ensure subprogram argument type/kind/rank matching without having to
-! repind kind specifiers everywhere.
+! repeat kind specifiers everywhere.
 module constants_module
   use iso_fortran_env, only : int64
   implicit none
@@ -44,7 +45,7 @@ end module
 ! Initialize the random seed with a varying seed to ensure a different
 ! random number sequence for each invocation of subroutine, e.g. for 
 ! invocations on different images of a coarray parallel program.
-! Setting any seed values to zero is depcretated because it can result
+! Setting any seed values to zero is deprecated because it can result
 ! in low-quality random number sequences.
 ! (Source: https://gcc.gnu.org/onlinedocs/gfortran/RANDOM_005fSEED.html)
 module random_module
