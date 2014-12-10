@@ -98,7 +98,7 @@ void helperFunction()
 
   s_am = calloc(caf_num_images, sizeof(MPI_Status));
   req_am = calloc(caf_num_images, sizeof(MPI_Request));
-*  dts = calloc(caf_num_images, sizeof(MPI_Datatype));
+  dts = calloc(caf_num_images, sizeof(MPI_Datatype));
 
   for(i=0;i<caf_num_images;i++)
     MPI_Irecv(buff_am[i], 1000, MPI_PACKED, i, 1, CAF_COMM_WORLD, &req_am[i]);
