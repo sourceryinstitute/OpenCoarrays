@@ -9,46 +9,15 @@ The following documentation provides instructions on how to set up the coarray
 support on GNU Fortran, using the OpenCoarrays library, and how to compile and
 run a simple coarray program.
 
-GNU Fortran Configuration
--------------------------
+As prerequisite for using OpenCoarrays, gfortran from GCC 5 is required; see
+below for how to obtain it.  The OpenCoarrays libraries can also build with
+other compilers than GCC 5.
 
-The coarray support on GFortran is available since version GCC-5.0.
-Currently, GCC-5.0 is downloadable from the trunk using SVN/GIT or 
-from a snapshot; in both cases the user is supposed to compile GCC from source.
-We provide quick instructions on how to build a minimal GCC version; the
-official and complete instructions on how to build GCC from source are available
-at: https://gcc.gnu.org/install/.
-
-1) From the main directory create a build directory using:
-
-   mkdir build
-
-2) GCC requires various tools and packages like GMP, MPFR, MPC. These and others
-   can be automatically downloaded typing the following command inside the main
-   directory:
-
-   ./contrib/download_prerequisites 
-
-3) Inside the build directory type the following configure string customizing
-   the installation path:
-
-   ../configure --prefix=/your/path --enable-language=c,c++,fortran
-   --disable-multilib
-
-4) Type
-
-   make -jN
-
-   where N is the number of cores on your machine +1. (This may take a while).
-
-5) Type:
-
-   make install
 
 OpenCoarrays Installation
 -------------------------
 
-OpenCoarrays contains four libraries:
+OpenCoarrays contains four libraries; in doubt, use the MPI version:
 
 * single
   Provides a stub library with a single image. To be used for testing or
@@ -127,17 +96,59 @@ Consider to run the testsuite or examples (tests/) in the subdirectories.
 How to compile and run a coarray program
 ----------------------------------------
 
-We assume that the user has already installed GCC-5.0 and the latest version of
+We assume that the user has already installed GCC 5 and the latest version of
 LIBCAF_MPI.
 
 A hello_coarray.f90 program can compiled in a single step using the following
 string:
 
-mpifort -fcoarray=lib -L/path/to/opencoarrays/mpi hello_coarray.f90 -lcaf_mpi -o
-hello
+  mpifort -fcoarray=lib -L/path/to/opencoarrays/mpi hello_coarray.f90 \
+          -lcaf_mpi -o hello
 
 For running the program:
 
-mpirun -np m ./hello
+  mpirun -np m ./hello
 
 where m is the number of images you want to use.
+
+
+GNU Fortran Configuration
+-------------------------
+
+The coarray support on GFortran is available since version GCC 5.
+
+GCC 5 can either be build as outlined below; however, there are also unofficial
+binary builds https://gcc.gnu.org/wiki/GFortranBinaries ; some Linux
+distributions already offer GCC 5 as preview.
+
+For building GCC from source, first download GCC 5 - either as snapshot from
+the mirror or using the latest version by using the SVN trunk/GIT master.
+We provide quick instructions on how to build a minimal GCC version.
+See also https://gcc.gnu.org/wiki/GFortranBinaries#FromSource and the
+official and complete instructions at https://gcc.gnu.org/install/.
+
+1) From the main directory create a build directory using:
+
+   mkdir build
+
+2) GCC requires various tools and packages like GMP, MPFR, MPC. These and others
+   can be automatically downloaded typing the following command inside the main
+   directory:
+
+   ./contrib/download_prerequisites
+
+3) Inside the build directory type the following configure string customizing
+   the installation path:
+
+   ../configure --prefix=/your/path --enable-language=c,c++,fortran \
+                --disable-multilib
+
+4) Type
+
+   make -jN
+
+   where N is the number of cores on your machine + 1. (This may take a while).
+
+5) Type:
+
+   make install
