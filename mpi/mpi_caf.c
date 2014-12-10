@@ -98,7 +98,7 @@ void helperFunction()
 
   s_am = calloc(caf_num_images, sizeof(MPI_Status));
   req_am = calloc(caf_num_images, sizeof(MPI_Request));
-  dts = calloc(caf_num_images, sizeof(MPI_Datatype));
+*  dts = calloc(caf_num_images, sizeof(MPI_Datatype));
 
   for(i=0;i<caf_num_images;i++)
     MPI_Irecv(buff_am[i], 1000, MPI_PACKED, i, 1, CAF_COMM_WORLD, &req_am[i]);
@@ -801,10 +801,6 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
 
       void *sr = src->base_addr;
 
-      arr_bl = calloc (size, sizeof (int));
-      arr_dsp_s = calloc (size, sizeof (int));
-      arr_dsp_d = calloc (size, sizeof (int));
-
       selectType (GFC_DESCRIPTOR_SIZE (src), &base_type_src);
       selectType (GFC_DESCRIPTOR_SIZE (dest), &base_type_dst);
 
@@ -813,8 +809,17 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
           MPI_Type_vector(size, 1, src->dim[0]._stride, base_type_src, &dt_s);
           MPI_Type_vector(size, 1, dest->dim[0]._stride, base_type_dst, &dt_d);
         }
+      else if(rank == 2)
+	{
+	  MPI_Type_vector(size/src->dim[0]._ubound, src->dim[0]._ubound, src->dim[1]._stride, base_type_src, &dt_s);
+          MPI_Type_vector(size/dest->dim[0]._ubound, dest->dim[0]._ubound, dest->dim[1]._stride, base_type_dst, &dt_d);
+	}
       else
 	{
+	  arr_bl = calloc (size, sizeof (int));
+	  arr_dsp_s = calloc (size, sizeof (int));
+	  arr_dsp_d = calloc (size, sizeof (int));
+
 	  for (i = 0; i < size; i++)
 	    arr_bl[i] = 1;
 
@@ -865,6 +870,10 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
 
 	  MPI_Type_indexed(size, arr_bl, arr_dsp_s, base_type_src, &dt_s);
 	  MPI_Type_indexed(size, arr_bl, arr_dsp_d, base_type_dst, &dt_d);
+
+	  free (arr_bl);
+	  free (arr_dsp_s);
+	  free (arr_dsp_d);
 	}
 
       MPI_Type_commit(&dt_s);
@@ -884,10 +893,6 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
 
       MPI_Type_free (&dt_s);
       MPI_Type_free (&dt_d);
-
-      free (arr_bl);
-      free (arr_dsp_s);
-      free (arr_dsp_d);
 
       /* msg = 2; */
       /* MPI_Pack(&msg, 1, MPI_INT, buff_am[caf_this_image], 1000, &position, CAF_COMM_WORLD); */
@@ -1128,10 +1133,6 @@ PREFIX (get) (caf_token_t token, size_t offset,
 
   void *dst = dest->base_addr;
 
-  arr_bl = calloc(size, sizeof(int));
-  arr_dsp_s = calloc(size, sizeof(int));
-  arr_dsp_d = calloc(size, sizeof(int));
-
   selectType(GFC_DESCRIPTOR_SIZE (src), &base_type_src);
   selectType(GFC_DESCRIPTOR_SIZE (dest), &base_type_dst);
 
@@ -1140,8 +1141,17 @@ PREFIX (get) (caf_token_t token, size_t offset,
       MPI_Type_vector(size, 1, src->dim[0]._stride, base_type_src, &dt_s);
       MPI_Type_vector(size, 1, dest->dim[0]._stride, base_type_dst, &dt_d);
     }
+  else if(rank == 2)
+    {
+      MPI_Type_vector(size/src->dim[0]._ubound, src->dim[0]._ubound, src->dim[1]._stride, base_type_src, &dt_s);
+      MPI_Type_vector(size/dest->dim[0]._ubound, dest->dim[0]._ubound, dest->dim[1]._stride, base_type_dst, &dt_d);
+    }
   else
     {
+      arr_bl = calloc(size, sizeof(int));
+      arr_dsp_s = calloc(size, sizeof(int));
+      arr_dsp_d = calloc(size, sizeof(int));
+
       for(i=0;i<size;i++)
 	arr_bl[i]=1;
 
@@ -1191,8 +1201,13 @@ PREFIX (get) (caf_token_t token, size_t offset,
 	  /* 		  GFC_DESCRIPTOR_SIZE (src), MPI_BYTE, *p); */
 	  /* } */
 	}
+
       MPI_Type_indexed(size, arr_bl, arr_dsp_s, base_type_src, &dt_s);
       MPI_Type_indexed(size, arr_bl, arr_dsp_d, base_type_dst, &dt_d);
+
+      free(arr_bl);
+      free(arr_dsp_s);
+      free(arr_dsp_d);
     }
 
   MPI_Type_commit(&dt_s);
@@ -1211,10 +1226,6 @@ PREFIX (get) (caf_token_t token, size_t offset,
 
   MPI_Type_free(&dt_s);
   MPI_Type_free(&dt_d);
-
-  free(arr_bl);
-  free(arr_dsp_s);
-  free(arr_dsp_d);
 
 #else
   if(caf_this_image == image_index && mrt)

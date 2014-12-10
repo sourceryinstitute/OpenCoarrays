@@ -7,6 +7,9 @@ export
 .PHONY : mpi
 #.PHONY : armci
 
+mpi: common
+	$(MAKE) -C $@
+
 all: common single gasnet mpi # armci 
 
 common:
@@ -19,9 +22,6 @@ single: common
 #	$(MAKE) -C $@
 
 gasnet: common
-	$(MAKE) -C $@
-
-mpi: common
 	$(MAKE) -C $@
 
 test: single gasnet mpi #armci 
