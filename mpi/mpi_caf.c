@@ -159,6 +159,7 @@ caf_runtime_error (const char *message, ...)
 }
 
 /* Lock implementation for MPI-2 */
+/* Deprecated */
 
 void counter_inc(MPI_Win c_win, int *value, int inc, int image_index)
 {
@@ -191,19 +192,34 @@ void counter_inc(MPI_Win c_win, int *value, int inc, int image_index)
 
 void mutex_lock(MPI_Win win, int image_index)
 {
-  int value=0;
-  counter_inc(win, &value, 1, image_index);
-  while(value != 0)
+#if MPI_VERSION >= 3
+  int value=1, compare = 0, newval = 1;
+  while(value == 1)
     {
-      counter_inc(win, &value, -1, image_index);
-      counter_inc(win, &value, 1, image_index);
+      MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, win);
+      MPI_Compare_and_swap (&newval,&compare,&value, MPI_INT,image_index-1,
+			    0, win);
+      MPI_Win_unlock (image_index-1, win);
     }
+#else
+#warning Locking for MPI-2 is not implemented
+  printf ("Locking for MPI-2 is not supported, please update your MPI implementation\n");
+#endif  
 }
 
 void mutex_unlock(MPI_Win win, int image_index)
 {
-  int value;
-  counter_inc(win, &value, -1, image_index);
+#if MPI_VERSION >= 3
+  int value=1, compare = 1, newval = 0;
+  MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, win);
+  MPI_Compare_and_swap (&newval,&compare,&value, MPI_INT,image_index-1,
+    0, win);
+  MPI_Win_unlock (image_index-1, win);
+  if(value == 0) printf("Unlock on a unlocked variable\n");
+#else
+#warning Locking for MPI-2 is not implemented
+  printf ("Locking for MPI-2 is not supported, please update your MPI implementation\n");
+#endif 
 }
 
 /* Initialize coarray program.  This routine assumes that no other
@@ -1729,7 +1745,6 @@ PREFIX (lock) (caf_token_t token, size_t index, int image_index,
 	       int errmsg_len)
 {
   MPI_Win *p = token;
-  /* int ierr = 0, value = 0;  */
 
   mutex_lock(*p, image_index);
 }
