@@ -1,116 +1,86 @@
-! Copyright (c) 2011, Damian Rouson, Jim Xia, and Xiaofeng Xu.
-! All rights reserved.
-!
-! Redistribution and use in source and binary forms, with or without
-! modification, are permitted provided that the following conditions are met:
-!     * Redistributions of source code must retain the above copyright
-!       notice, this list of conditions and the following disclaimer.
-!     * Redistributions in binary form must reproduce the above copyright
-!       notice, this list of conditions and the following disclaimer in the
-!       documentation and/or other materials provided with the distribution.
-!     * Neither the names of Damian Rouson, Jim Xia, and Xiaofeng Xu nor the
-!       names of any other contributors may be used to endorse or promote products
-!       derived from this software without specific prior written permission.
-!
-! THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-! ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-! WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-! DISCLAIMED. IN NO EVENT SHALL DAMIAN ROUSON, JIM XIA, and XIAOFENG XU BE LIABLE 
-! FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-! (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-! LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-! ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-!****m* coarrayBurgers/initializer
-! NAME
-!   initializer
-! SYNOPSIS
-!   Define initial conditions for the 1D Burgers equation solver.
-!******
-
-module initializer
-  use kind_parameters ,only : rkind
+program main
+  use iso_fortran_env, only : real64,int64,compiler_version,compiler_options
+  use ieee_arithmetic, only : ieee_is_nan
+  use global_field_module, only : global_field,initial_condition
+  use ForTrilinos_assertion_utility, only : assert,error_message
   implicit none
-contains
-  real(rkind) pure function u_initial(x)
-    real(rkind) ,intent(in) :: x
-    u_initial = 10._rkind*sin(x)
-  end function
-  real(rkind) pure function zero(x)
-    real(rkind) ,intent(in) :: x
-    zero = 0.
-  end function
-end module 
+  type(global_field) :: u,u_half,half_uu
+  real(real64), parameter :: nu=1.,final_time=0.6_real64,tolerance=1.E-3_real64,safety_factor=0.1_real64
+  real(real64) :: time=0.,dt,dx
+  integer(int64), parameter :: nodes=16
+  procedure(initial_condition), pointer :: initial_u=>ten_sin
 
-!****e* coarrayBurgers/main
-! NAME
-!   main
-! SYNOPSIS
-!   Solve the one-dimensional (1D) Burgers partial differential equation using
-!   central finite differences in space and 2nd-order Runge-Kutta in time.
-!******
-
-program coarrayBurgers
-  use kind_parameters ,only : rkind
-  use global_field_module, only : global_field, initial_field
-  use initializer ,only : u_initial,zero
-  use iso_fortran_env, only : output_unit
-
-  implicit none
-  type(global_field), save :: u,half_uu,u_half
-  real(rkind) :: dt
-  real(rkind), parameter :: half=0.5_rkind,t_final=.1_rkind,nu=1._rkind
-  real(rkind), parameter :: pi=acos(-1._rkind),expected_zero_location=pi
-  integer ,parameter     :: num_steps=100,grid_resolution=1024
-  integer :: iostat,step
-  procedure(initial_field) ,pointer :: initial
-  character(len=256) :: iomsg
-  logical, parameter :: performance_analysis=.true.
-
-  ! Starting TAU 
+#ifdef TAU
+  call TAU_PROFILE_SET_NODE(this_image()-1) ! Start TAU (Cray or GNU compiler)
+#else
 #ifdef TAU_INTEL
-  call TAU_PROFILE_SET_NODE(this_image())  !Intel coarray implementation
+  call TAU_PROFILE_SET_NODE(this_image())   ! Start TAU (Intel compiler)
 #endif
-#ifdef TAU_CRAY
-  call TAU_PROFILE_SET_NODE(this_image()-1) !Cray coarray implementation
 #endif
 
-  initial => u_initial
-  call u%construct(initial,grid_resolution)
-  initial => zero
-  call half_uu%construct(initial,grid_resolution)
-  call u_half%construct(initial,grid_resolution)
+  call u%set(initial_u,num_points=nodes)
+  dx = u%grid_spacing()
+  dt = safety_factor*diffusion_stability_limit(nu,dx,order_of_accuracy=2)
+  do while(time<final_time)
+    half_uu = 0.5_real64*(u*u)
+    u_half = u + (dt/2._real64)*(nu*u%xx() - half_uu%x())
+    half_uu = 0.5_real64*(u_half*u_half)
+    u      = u + dt*(nu*u_half%xx() - half_uu%x())
+    time = time + dt
+  end do
+  if (this_image()==1) print *,"Time =",time
+  print *,"On image ",this_image(),"u =",u%state()
+  call test(u)
+  sync all
+  if (this_image()==1) print *,"Test passed."
 
-  dt = u%runge_kutta_2nd_step(nu ,grid_resolution)
-  call u%set_time(time_stamp=0._rkind)
-  if (performance_analysis) then
-    ! Integrate over a fixed number of time steps so we do a fixed number of FLOPS
-    do step=1,num_steps 
-      call runge_kutta_2nd_order_time_step
-    end do
-  else 
-    ! Integrate over the time interval [0,t_final)
-    do while (u%get_time()<=t_final) ! 2nd-order Runge-Kutta:
-      call runge_kutta_2nd_order_time_step
-    end do
-  end if
-  call u%output(output_unit,'DT',[0],iostat,iomsg)
-  if (this_image_contains_midpoint()) then
-    if (.not. u%has_a_zero_at(expected_zero_location)) error stop "Test failed."
-    print *,'Test passed.'
-  end if
 contains
-  subroutine runge_kutta_2nd_order_time_step
-    half_uu = u*u*half
-    u_half = u + (u%xx()*nu - half_uu%x())*dt*half ! first substep
-    half_uu = u_half*u_half*half
-    u  = u + (u_half%xx()*nu - half_uu%x())*dt ! second substep
-    call u%set_time(u%get_time()+dt)
+  subroutine test(burgers_solution)
+    type(global_field), intent(in) :: burgers_solution
+    call assert(.not.any(ieee_is_nan(u%state())),error_message("Test failed: u is not a number."))
+    call assert(sinusoid(u),error_message("Test failed: improper shape."))
   end subroutine
-  function this_image_contains_midpoint() result(within_bounds)
-    logical within_bounds
-    within_bounds = merge(.true.,.false., (this_image()==num_images()/2+1) )
+
+  function sinusoid(u_solution) result(is_sinusoid)
+    type(global_field), intent(in) :: u_solution
+    type(global_field) :: u_xx
+    logical :: is_sinusoid
+    real(real64), parameter :: threshold=-0.001,cap=0.001
+    real(real64), allocatable :: u_xx_state(:)
+    u_xx = u_solution%xx()
+    u_xx_state = u_xx%state()
+    if (num_images()/=1) then
+      ! Ensure that the global midpoint is a local endpoint for whatever image contains the midpoint:
+      call assert(mod(num_images(),2)==0,error_message("Test failed: uneven number of images."))
+      ! Ensure that the left and right halves of the solution are concave down and up, respectively:
+      if (this_image()<=num_images()/2) then
+        call assert(all(u_xx_state<cap),error_message("Test failed: right half not concave up."))
+      else
+        call assert(all(u_xx_state>threshold),error_message("Test failed: left half not concave down."))
+      end if
+    else
+      block
+        integer :: size_u_xx
+        size_u_xx = size(u_xx_state)
+        call assert(all(u_xx_state(1:size_u_xx/2)<cap),error_message("Test failed: left half not concave down."))
+        call assert(all(u_xx_state(size_u_xx/2+1:size_u_xx)>threshold),error_message("Test failed: right half not concave up."))
+      end block
+    end if
+    is_sinusoid=.true.
+  end function
+
+  pure function diffusion_stability_limit(diffusivity,delta_x,order_of_accuracy)  result(stable_time_step)
+    real(real64), intent(in) :: diffusivity,delta_x
+    integer, intent(in) :: order_of_accuracy
+    real(real64) :: stable_time_step
+    real(real64), parameter, dimension(*) :: stability_limit=[2.,2.,2.5,2.79] ! third value needs to be checked
+    ! See Moin, P. (2010) Fundamentals of Engineering Numerical Analysis, 2nd ed., pp. 111-116.
+    stable_time_step = safety_factor*stability_limit(order_of_accuracy)*(delta_x**2)/(4._real64*diffusivity)
+  end function
+
+  pure function ten_sin(x) result(ten_sin_x)
+    real(real64), intent(in) :: x
+    real(real64) :: ten_sin_x
+    ten_sin_x = 10._real64*sin(x)
   end function
 end program

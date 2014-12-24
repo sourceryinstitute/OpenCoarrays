@@ -1,49 +1,53 @@
 # Choose desired platform (options: virtual, cees):
 machine=virtual
-# Choose desired compiler (options: gnu, intel, cray, pg, ibm, nag, tau_intel, tau_aciss, tau_cray):
-compiler=gnu
+# Choose desired compiler (options: gnu, intel, cray, tau_intel):
+compiler=tau_gnu
 
 executable=burgers
+mofo_root=../../../../../
 library_path=./library
 include_path=./include-files
 
 ifeq ($(compiler),gnu)
-# Use these two lines to compile executables that will ONLY work in single-image runs 
-# lib=-lcaf_single
-# compile=gfortran -fcoarray=single
   lib=-lcaf_mpi
   compile=mpif90 -fcoarray=lib
   ifeq ($(machine),virtual)
-    opt=-L ../../../../mpi
+    libpath=-L /opt/opencoarrays/lib
   else
     ifeq ($(machine),cees)
-    opt=-L /opt/opencoarrays-src/mpi
+      libpath=-L /opt/opencoarrays-src/mpi
     endif
   endif
 else
-  ifeq ($(compiler),intel)
-    compile=ifort -standard-semantics -O3 
+  ifeq ($(compiler),tau_gnu)
+    compile=tau_f90.sh -L/opt/opencoarrays/lib -fcoarray=lib -DTAU=1 -O3 -g
+    lib=-lcaf_mpi
+    libpath=
   else
-    ifeq ($(compiler),cray)
-      compile=ftn -ew 
+    ifeq ($(compiler),intel)
+      compile=ifort -standard-semantics -O3 
     else
-      ifeq ($(compiler),tau_intel)
-        compile=tauF90 -tau:serial,icpc,pdt  -standard-semantics -O3 -DTAU=1
+      ifeq ($(compiler),cray)
+        compile=ftn -ew 
       else
-        ifeq ($(compiler),tau_aciss)
-          compile=tau_F90.sh -standard-semantics -O3
+        ifeq ($(compiler),tau_intel)
+          compile=tauf90 -tau:serial,icpc,pdt  -standard-semantics -O3 -DTAU=1
         else
-          ifeq ($(compiler),tau_cray)
-            compile=tau_F90.sh -optCompInst -ew 
+          ifeq ($(compiler),tau_aciss)
+            compile=tau_f90.sh -standard-semantics -O3
           else
-            ifeq ($(compiler),pg)
-              compile=pgfortran -Mallocatable=03
+            ifeq ($(compiler),tau_cray)
+            compile=tau_f90.sh -optCompInst -ew 
             else
-              ifeq ($(compiler),ibm)
-                compile=xlf2003
+              ifeq ($(compiler),pg)
+                compile=pgfortran -Mallocatable=03
               else
-                ifeq ($(compiler),nag)
-                  compile=nagfor -f2008 -fpp -C=all
+                ifeq ($(compiler),ibm)
+                  compile=xlf2003
+                else
+                  ifeq ($(compiler),nag)
+                    compile=nagfor -f2008 -fpp -C=all
+                  endif
                 endif
               endif
             endif
@@ -59,7 +63,7 @@ objects = local_field.o global_field.o co_object_interface.o object_interface.o 
 $(executable): main.o $(objects) Makefile
 	$(compile) $(opt)  main.o $(objects) -o $(executable)  $(lib)
 
-main.o: main.F90 $(objects) ForTrilinos_assertion_utility.o ForTrilinos_error.o global_field.o Makefile
+main.o: main.F90 $(objects) Makefile
 	$(compile)  -c main.F90
 
 global_field.o: global_field.F90 local_field.o co_object_interface.o ForTrilinos_assertion_utility.o ForTrilinos_error.o preprocessor_definitions Makefile
@@ -86,13 +90,21 @@ clean :
 
 preprocessor_definitions: 
 ifeq ($(compiler),gnu)
+	cp $(include_path)/gfortran_capabilities.txt compiler_capabilities.txt
 	cp $(include_path)/gfortran_capabilities.txt $(library_path)/compiler_capabilities.txt
 else
-  ifeq ($(compiler),intel)
-	cp $(include_path)/intel_capabilities.txt $(library_path)/compiler_capabilities.txt
+  ifeq ($(compiler),tau_gnu)
+	cp $(include_path)/gfortran_capabilities.txt compiler_capabilities.txt
+	cp $(include_path)/gfortran_capabilities.txt $(library_path)/compiler_capabilities.txt
   else
-    ifeq ($(compiler),cray)
+    ifeq ($(compiler),intel)
+	cp $(include_path)/intel_capabilities.txt compiler_capabilities.txt
+	cp $(include_path)/intel_capabilities.txt $(library_path)/compiler_capabilities.txt
+    else
+      ifeq ($(compiler),cray)
+	cp $(include_path)/cray_capabilities.txt compiler_capabilities.txt
 	cp $(include_path)/cray_capabilities.txt $(library_path)/compiler_capabilities.txt
+      endif
     endif
   endif
 endif

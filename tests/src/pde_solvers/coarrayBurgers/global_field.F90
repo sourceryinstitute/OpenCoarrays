@@ -1,151 +1,63 @@
-! Copyright (c) 2011, Damian Rouson, Jim Xia, and Xiaofeng Xu.
-! All rights reserved.
-!
-! Redistribution and use in source and binary forms, with or without
-! modification, are permitted provided that the following conditions are met:
-!     * Redistributions of source code must retain the above copyright
-!       notice, this list of conditions and the following disclaimer.
-!     * Redistributions in binary form must reproduce the above copyright
-!       notice, this list of conditions and the following disclaimer in the
-!       documentation and/or other materials provided with the distribution.
-!     * Neither the names of Damian Rouson, Jim Xia, and Xiaofeng Xu nor the
-!       names of any other contributors may be used to endorse or promote products
-!       derived from this software without specific prior written permission.
-!
-! THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-! ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-! WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-! DISCLAIMED. IN NO EVENT SHALL DAMIAN ROUSON, JIM XIA, and XIAOFENG XU BE LIABLE 
-! FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-! (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-! LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-! ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-!****m* coarrayBurgers/global_field_module
-! NAME
-!   global_field_module
-! SYNOPSIS
-!   Publish a global_field derived type and type-bound operators.
-! USAGE
-!   use global_field_module, only : global_field
-!******
 module global_field_module
-  use ForTrilinos_assertion_utility, only : assert,error_message
+  use iso_fortran_env, only : real64,int64
   use co_object_interface, only : co_object
-  use kind_parameters ,only : rkind, ikind
-  use local_field_module ,only : local_field
-
+  use ForTrilinos_assertion_utility, only : assert,error_message
+  use local_field_module, only : local_field
   implicit none
   private
-  public :: global_field, initial_field
-  !****d* global_field_module/global_field
-  ! NAME
-  !   global_field
-  ! SYNOPSIS
-  !   Encapsulate and communicate 1D scalar field data across the entire problem domain 
-  !   and mathematical operators to the type. 
-  ! PUBLIC 
-  !   x,xx,runge_kutta_2nd_step,operator(+),operator(*),assignment(=),has_zero_at,set_time,get_time,construct
-  ! USAGE
-  !     type(global_field) :: u,du_dt; 
-  !     du_dt = u*u%x() 
-  !******
+  public :: global_field,initial_condition
+
   type, extends(co_object) :: global_field
     private
-    real(rkind), allocatable :: global_f(:)[:]
+    real(real64), allocatable :: values(:)[:]
   contains
-    procedure :: construct
-    procedure :: assign        => copy
-    procedure :: add           => add_local_field
-    procedure :: multiply      => multiply_local_field
-    procedure :: x             
-    procedure :: xx            
-    procedure :: runge_kutta_2nd_step => rk2_dt
-    procedure, nopass :: set_time
-    procedure, nopass :: get_time
+    procedure :: set
+    procedure :: state
+    procedure :: x
+    procedure :: xx
+    procedure, nopass :: grid_spacing
+    procedure, private :: assign_local_field
+    procedure, private :: add_local_field
+    procedure, private, pass(rhs) :: subtract_from_local_field
+    procedure, private :: multiply 
+    generic :: operator(-) => subtract_from_local_field
+    generic :: operator(*) => multiply
+    generic :: operator(+) => add_local_field
+    generic :: assignment(=) => assign_local_field
     procedure :: output
-   !generic   :: write=>output
-    generic   :: assignment(=) => assign
-    generic   :: operator(+)   => add
-    generic   :: operator(*)   => multiply
-    procedure :: has_a_zero_at
   end type
 
-  real(rkind) ,parameter :: pi=acos(-1._rkind)
-  real, save, allocatable :: local_grid(:)
-  real, save :: time=0.
-
   abstract interface
-    real(rkind) pure function initial_field(x)
-      import :: rkind
-      real(rkind) ,intent(in) :: x
+    pure function initial_condition(x) result(initial_values)
+      import :: real64
+      real(real64), intent(in) :: x
+      real(real64) :: initial_values
     end function
   end interface
 
-#ifdef TAU
-  interface
-   pure subroutine tau_pure_start(x)
-     character(len=*), intent(in):: x
-   end subroutine tau_pure_start
-   pure subroutine tau_pure_stop(x)
-     character(len=*), intent(in):: x
-   end subroutine tau_pure_stop
-  end interface
-#endif
+  real(real64), allocatable :: dx
+  integer(int64), allocatable :: num_global_points,num_local_points
+  integer(int64), parameter:: num_end_points=2_int64
+  real(real64) :: boundary_vals(num_end_points)
 
 contains
 
-  subroutine set_time(time_stamp)
-    real(rkind), intent(in) :: time_stamp
-#ifdef TAU
-    call TAU_START('global_field%set_time')
-#endif
-    time = time_stamp
-#ifdef TAU
-    call TAU_STOP('global_field%set_time')
-#endif
-  end subroutine
-
-  pure function get_time() result(t)
-    real(rkind) :: t
-#ifdef TAU
-    call tau_pure_start('global_field%get_time')
-#endif
-    t = time
-#ifdef TAU
-    call tau_pure_stop('global_field%get_time')
-#endif
+  function grid_spacing() result(delta_x)
+    real(real64) :: delta_x
+    call assert(allocated(dx),error_message("global_field%grid_spacing: dx not allocated"))
+    delta_x = dx
   end function
 
-  subroutine output(this,unit,iotype,v_list,iostat,iomsg)
+  pure function state(this) result(local_values)
     class(global_field), intent(in) :: this
-    integer, intent(in) :: unit ! Unit on which output happens (negative for internal file)
-    character(*), intent(in) :: iotype ! Allowable values: ’LISTDIRECTED’,’NAMELIST’, or ’DT’
-    integer, intent(in) :: v_list(:)
-    integer, intent(out) :: iostat
-    character(*), intent(inout) :: iomsg
-    integer(ikind) i
-#ifdef TAU
-    call TAU_START('global_field%output')
-#endif
+    real(real64), allocatable :: local_values(:)
     ! Requires
-    call assert(this%user_defined(),error_message("global_field%output recieved unitialized object."))
-    do i = 1, size(this%global_f)
-      write (unit=unit,iostat=iostat,fmt="(i8,3(f12.4,2x))") &
-      (this_image()-1)*size(this%global_f) + i, local_grid(i),time,this%global_f(i)
-    end do
-#ifdef TAU
-    call TAU_STOP('global_field%output')
-#endif
-  end subroutine
+    if (this%user_defined()) then 
+      local_values = this%values
+    end if
+  end function
 
-  ! This procedure was not in the textbook:
   subroutine synchronize()
-#ifdef TAU
-    call TAU_START('global_field%synchronize')
-#endif
     if (num_images()>1) then
       associate(me=>this_image())
         if (me==1) then
@@ -157,246 +69,144 @@ contains
         end if
       end associate
     end if
-#ifdef TAU
-    call TAU_STOP('global_field%synchronize')
-#endif
   end subroutine
 
-  subroutine construct (this, initial, num_grid_pts)
+  subroutine set(this,initial_function,num_points)
     class(global_field), intent(inout) :: this
-    procedure(initial_field) ,pointer :: initial
-    integer(ikind) ,intent(in) :: num_grid_pts
-    integer :: i, local_grid_size
-#ifdef TAU
-    call TAU_START('global_field%construct')
-#endif
+    integer(int64), intent(in) :: num_points
+    procedure(initial_condition), pointer :: initial_function
+    integer(int64) :: num_intervals,i
+    real(real64), parameter :: two_pi=2.*3.1415926535897932384626433832795028842_real64
+    real(real64), allocatable :: local_grid(:)
+
     ! Requires
-    call assert(mod(num_grid_pts,num_images())==0,error_message("Number of grid points must be divisible by number of images"))
-    ! The above check was not in the textbook.
+    call assert(mod(num_points,num_images())==0,error_message("global_field%set: num_points not evenly divisible by num_images()"))
 
-    local_grid_size = num_grid_pts / num_images()
+    num_global_points=num_points
+    num_local_points=num_points/num_images()
+    num_intervals = num_global_points ! right-side boundary point is redundant and therefore not counted or stored
+    dx=two_pi/real(num_intervals,real64)
 
-    ! set up the global grid points
-    allocate (this%global_f(local_grid_size)[*])
-
-    local_grid = grid() ! This line was not in the textbook 
-    this%global_f(:) = local_grid ! The textbook version directly assigns grid() to this%global_f(:)
-
-    do concurrent(i = 1:local_grid_size)
-      this%global_f(i) = initial(this%global_f(i))
+    if (.not.allocated(this%values)) allocate(this%values(num_local_points)[*])
+    local_grid = [((this_image()-1)*num_local_points+i-1,i=1,num_local_points)]*dx
+    do concurrent(i=1:num_local_points)
+      this%values(i) = initial_function(local_grid(i))
     end do
-
-    ! In the textbook, this was a "sync all". This call invokes "sync images" to improve performance:
     call synchronize()
-    
+
     ! Ensures
     call this%mark_as_defined
-#ifdef TAU
-    call TAU_STOP('global_field%construct')
-#endif
-
-  contains
-    pure function grid()
-      integer(ikind) :: i
-      real(rkind) ,dimension(:) ,allocatable :: grid
-#ifdef TAU
-    call tau_pure_start('global_field%grid')
-#endif
-      allocate(grid(local_grid_size))
-      do concurrent(i=1:local_grid_size)
-        grid(i)  = 2.*pi*(local_grid_size*(this_image()-1)+i-1) &
-                   /real(num_grid_pts,rkind)  
-      end do
-#ifdef TAU
-    call tau_pure_stop('global_field%grid')
-#endif
-    end function
+    call assert(allocated(dx),error_message("global_field%set: dx has not been allocated"))
+    call assert(allocated(num_global_points),error_message("global_field%set: num_global_points has not been allocated"))
+    call assert(allocated(num_local_points),error_message("global_field%set: num_local_points has not been allocated"))
   end subroutine
 
-  real(rkind) function rk2_dt(this,nu, num_grid_pts) 
-    class(global_field) ,intent(in) :: this
-    real(rkind) ,intent(in) :: nu
-    integer(ikind) ,intent(in) :: num_grid_pts
-    real(rkind)             :: dx, CFL, k_max 
-#ifdef TAU
-    call TAU_START('global_field%rk2_dt')
-#endif
-    dx=2.0*pi/num_grid_pts
-    k_max=num_grid_pts/2.0_rkind
-    CFL=1.0/(1.0-cos(k_max*dx))
-    rk2_dt = CFL*dx**2/nu 
-#ifdef TAU
-    call TAU_STOP('global_field%rk2_dt')
-#endif
-  end function
-
-  ! this is the assignment
-  subroutine copy(lhs,rhs)
-    class(global_field) ,intent(inout) :: lhs
-    class(local_field) ,intent(in) :: rhs
-#ifdef TAU
-    call TAU_START('global_field%copy')
-#endif
-    lhs%global_f(:) = rhs%state()
-
-    ! In the textbook, this was a "sync all". This call invokes "sync images" to improve performance:
-    call synchronize()
-#ifdef TAU
-    call TAU_STOP('global_field%copy')
-#endif
-  end subroutine
-
-  function add_local_field (lhs,rhs)
-    class(global_field), intent(in) :: lhs 
+  subroutine assign_local_field(lhs,rhs)
+    class(global_field), intent(inout) :: lhs
     class(local_field), intent(in) :: rhs
-    type(local_field) :: add_local_field
-#ifdef TAU
-    call TAU_START('global_field%add_local_field')
-#endif
-    if (rhs%user_defined()) then
-      add_local_field = rhs%state()+lhs%global_f(:)
-      ! Ensures
-      call add_local_field%mark_as_defined
-    end if
-#ifdef TAU
-    call TAU_STOP('global_field%add_local_field')
-#endif
-  end function
-
-  function multiply_local_field (lhs,rhs)
-    class(global_field), intent(in) :: lhs, rhs
-    type(local_field) :: multiply_local_field
-#ifdef TAU
-    call TAU_START('global_field%multiply_local_field')
-#endif
-    if (rhs%user_defined()) then
-      multiply_local_field = lhs%global_f(:)*rhs%global_f(:)
-      ! Ensures
-      call multiply_local_field%mark_as_defined
-    end if
-#ifdef TAU
-    call TAU_STOP('global_field%multiply_local_field')
-#endif
-  end function
-
-  function west_of(me) result(which_way)
-    integer(ikind), intent(in) :: me
-    integer(ikind) :: which_way
-#ifdef TAU
-    call TAU_START('global_field%west_of')
-#endif
-    which_way = merge(num_images(),me-1,me==1)
-#ifdef TAU
-    call TAU_STOP('global_field%west_of')
-#endif
-  end function
-
-  function east_of(me) result(which_way)
-    integer(ikind), intent(in) :: me
-    integer(ikind) :: which_way
-#ifdef TAU
-    call TAU_START('global_field%east_of')
-#endif
-    which_way = merge(1,me+1,me==num_images())
-#ifdef TAU
-    call TAU_STOP('global_field%east_of')
-#endif
-  end function
-
-  function x(this) result(df_dx)
-    class(global_field), intent(in) :: this
-    type(local_field) :: df_dx
-    integer(ikind) :: i,nx 
-    real(rkind) :: dx
-    real(rkind), allocatable :: tmp_local_field_array(:)
-   
-#ifdef TAU
-    call TAU_START('global_field%x')
-#endif
+    real(real64), allocatable :: values(:)
     ! Requires
-    if (this%user_defined()) then 
+    if (.not.allocated(num_local_points)) error stop "global_field: no value established for memory allocation yet."
+    if (.not.allocated(lhs%values)) allocate(lhs%values(num_local_points)[*])
+    call assert(rhs%user_defined(),error_message("global_field%assign_local_field received uninitialized RHS."))
+    lhs%values(:) = rhs%state()
+    call synchronize()
+    ! Ensures
+    call lhs%mark_as_defined
+  end subroutine
 
-      nx=size(this%global_f)
-      dx=2.*pi/(real(nx,rkind)*num_images())
-  
-      allocate(tmp_local_field_array(nx))
-  
-      tmp_local_field_array(1) = &
-         0.5*(this%global_f(2)-this%global_f(nx)[west_of(this_image())])/dx
- 
-      tmp_local_field_array(nx) = &
-         0.5*(this%global_f(1)[east_of(this_image())]-this%global_f(nx-1))/dx
-
-      do concurrent(i=2:nx-1)
-        tmp_local_field_array(i)=&
-          0.5*(this%global_f(i+1)-this%global_f(i-1))/dx
-      end do
-
-      df_dx = tmp_local_field_array
-      ! Ensures
-      call df_dx%mark_as_defined
-    end if
-#ifdef TAU
-    call TAU_STOP('global_field%x')
-#endif
-  end function
-
-  function xx(this) result(d2f_dx2)
-    class(global_field), intent(in) :: this
-    type(local_field) :: d2f_dx2
-    integer(ikind) :: i,nx
-    real(rkind) :: dx
-    real(rkind), allocatable :: tmp_local_field_array(:)
-
-#ifdef TAU
-    call TAU_START('global_field%xx')
-#endif
+  pure function add_local_field(lhs,rhs) result(total)
+    class(global_field), intent(in) :: lhs
+    type(local_field), intent(in) :: rhs
+    type(local_field) :: total
     ! Requires
-    if (this%user_defined()) then 
-      nx=size(this%global_f)
-      dx=2.*pi/(real(nx,rkind)*num_images())
-  
-      allocate(tmp_local_field_array(nx))
-  
-      tmp_local_field_array(1) = &
-         (this%global_f(2)-2.0*this%global_f(1)+this%global_f(nx)[west_of(this_image())])&
-         /dx**2
-  
-      tmp_local_field_array(nx) =&
-         (this%global_f(1)[east_of(this_image())]-2.0*this%global_f(nx)+this%global_f(nx-1))&
-         /dx**2
-  
-      do concurrent(i=2:nx-1)
-        tmp_local_field_array(i)=&
-          (this%global_f(i+1)-2.0*this%global_f(i)+this%global_f(i-1))&
-          /dx**2
-      end do
-  
-       d2f_dx2 = tmp_local_field_array
-      ! Ensures
-      call d2f_dx2%mark_as_defined
+    if (lhs%user_defined() .and. rhs%user_defined()) then
+      total = lhs%values + rhs%state()
+      call total%mark_as_defined
     end if
-#ifdef TAU
-    call TAU_STOP('global_field%xx')
-#endif
   end function
 
-  ! The following procedures were not included in the initial publication of the textbook:
-
-  pure function has_a_zero_at(this, expected_location) result(zero_at_expected_location)
-    class(global_field) ,intent(in) :: this
-    real(rkind) ,intent(in) :: expected_location
-    real(rkind), parameter :: tolerance = 1.0E-06_rkind
-    integer :: nearest_grid_point
-    logical :: zero_at_expected_location
-#ifdef TAU
-    call tau_pure_start('global_field%has_a_zero_at')
-#endif
-    nearest_grid_point = minloc(abs(local_grid-expected_location),dim=1)
-    zero_at_expected_location = merge(.true.,.false., abs(this%global_f(nearest_grid_point)) < tolerance  )
-#ifdef TAU
-    call tau_pure_stop('global_field%has_a_zero_at')
-#endif
+  pure function subtract_from_local_field(lhs,rhs) result(difference)
+    class(global_field), intent(in) :: rhs
+    type(local_field), intent(in) :: lhs
+    type(local_field) :: difference
+    ! Requires
+    if (lhs%user_defined() .and. rhs%user_defined()) then
+      difference = lhs%state() - rhs%values
+      call difference%mark_as_defined
+    end if
   end function
+
+  pure function multiply(lhs,rhs) result(product_)
+    class(global_field), intent(in) :: lhs,rhs
+    type(local_field) :: product_
+    ! Requires
+    if (lhs%user_defined() .and. rhs%user_defined()) then
+      product_= lhs%values * rhs%values
+      call product_%mark_as_defined
+    end if
+  end function
+
+ pure function x(this) result(this_x)
+    class(global_field), intent(in) :: this
+    type(local_field) :: this_x
+    real(real64) :: local_this_x(num_local_points)
+    integer(int64) :: i,left_neighbor,right_neighbor
+    ! Requires
+    if (this%user_defined() .and. allocated(dx) .and. allocated(num_local_points)) then
+      associate(N=>num_local_points,me=>this_image())
+        left_neighbor = merge(num_images(),me-1,me==1)
+        local_this_x(1)=(this%values(2)-this%values(N)[left_neighbor])/(2._real64*dx)
+        do concurrent(i=2:N-1)
+          local_this_x(i)=(this%values(i+1)-this%values(i-1))/(2._real64*dx)
+        end do
+        right_neighbor = merge(1,me+1,me==num_images())
+        local_this_x(N)=(this%values(1)[right_neighbor]-this%values(N-1))/(2._real64*dx)
+      end associate
+      this_x = local_this_x
+      ! Ensures
+      call this_x%mark_as_defined
+    end if
+  end function
+
+ !pure function xx(this) result(this_xx)
+  function xx(this) result(this_xx)
+    class(global_field), intent(in) :: this
+    type(local_field) :: this_xx
+    real(real64) :: local_this_xx(num_local_points)
+    integer(int64) :: i,left_neighbor,right_neighbor
+    ! Requires
+    if (this%user_defined() .and. allocated(dx) .and. allocated(num_local_points)) then
+      associate(N=>num_local_points,me=>this_image())
+        left_neighbor = merge(num_images(),me-1,me==1)
+        local_this_xx(1)=(this%values(2)-2._real64*this%values(1)+this%values(N)[left_neighbor])/dx**2
+        do concurrent(i=2:N-1)
+          local_this_xx(i)=(this%values(i+1)-2._real64*this%values(i)+this%values(i-1))/dx**2
+        end do
+        right_neighbor = merge(1,me+1,me==num_images())
+        local_this_xx(N)=(this%values(1)[right_neighbor]-2._real64*this%values(N)+this%values(N-1))/dx**2
+      end associate
+      this_xx = local_this_xx
+      ! Ensures
+      call this_xx%mark_as_defined
+     !print *,"On image ",this_image(),", local_this_xx=",local_this_xx
+     !stop
+    end if
+  end function
+
+  subroutine output(this,unit,iotype,v_list,iostat,iomsg)
+    class(global_field), intent(in) :: this
+    integer, intent(in) :: unit ! Unit on which output happens (negative for internal file)
+    character(*), intent(in) :: iotype ! Allowable values: ’LISTDIRECTED’,’NAMELIST’, or ’DT’
+    integer, intent(in) :: v_list(:)
+    integer, intent(out) :: iostat
+    character(*), intent(inout) :: iomsg
+    integer(int64) :: i
+    ! Requires
+    call assert(this%user_defined(),error_message("global_field%output received uninitialized object"))
+    do i=1,size(this%values)
+      write(unit,iostat=iostat) (this_image()-1)*size(this%values) + i, this%values(i)
+    end do
+  end subroutine
 
 end module
