@@ -67,7 +67,9 @@ Prerequisites
 Building the libraries
 ----------------------
 
-Run "make" followed by the library which should be build, e.g.
+Running "make" LIBCAF_MPI will be built by default.
+
+Alternatively, run "make" followed by the library which should be built, e.g.
   make single mpi
 
 You may need to edit the "make.inc" file for your system settings, e.g.
@@ -76,6 +78,9 @@ a different compiler or similar.
 
 For GASNet, you have to set GASNET_MAK to point to your GASNet installation
 with the conduit which should be used.
+
+In order to activate the efficient strided transfer support you have to
+uncomment the -DSTRIDED flag inside the "make.inc" file.
 
 
 Compiling on CRAY:
@@ -140,7 +145,7 @@ official and complete instructions at https://gcc.gnu.org/install/.
 3) Inside the build directory type the following configure string customizing
    the installation path:
 
-   ../configure --prefix=/your/path --enable-language=c,c++,fortran \
+   ../configure --prefix=/your/path --enable-languages=c,c++,fortran \
                 --disable-multilib
 
 4) Type

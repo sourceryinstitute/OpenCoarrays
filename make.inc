@@ -19,12 +19,12 @@ ARMCI_LDFLAGS += -L$(ARMCI_DIR)/lib -L$(ARMCI_DIR)/lib64 -larmci
 ARMCI_CC = mpicc
 ARMCI_RUN = mpirun -np 2
 
-MPI_EXTRA_FLAGS = -Wall -Wextra -Wno-error=cpp -Wno-error=unused-parameter
+MPI_EXTRA_FLAGS = -Wall -Wextra -Wno-error=cpp -Wno-error=unused-parameter #-DSTRIDED
 MPI_CFLAGS += $(MPI_EXTRA_FLAGS)
 #MPICC =
 MPI_RUN = mpirun -np 2
 
-GASNET_CFLAGS +=
+GASNET_CFLAGS += #-DSTRIDED
 GASNET_MAK = /home/rouson/Downloads/GASNet-1.22.4/smp-conduit/smp-par.mak
 GASNET_LDFLAGS +=$(GASNET_LIBS)
 GASNET_RUN = mpirun -np 2
