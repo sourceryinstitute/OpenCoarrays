@@ -164,12 +164,12 @@ void mutex_lock(MPI_Win win, int image_index)
   int value=1, compare = 0, newval = 1;
   while(value == 1)
     {
-# if CAF_MPI_LOCK_UNLOCK
+# ifdef CAF_MPI_LOCK_UNLOCK
       MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, win);
 # endif // CAF_MPI_LOCK_UNLOCK
       MPI_Compare_and_swap (&newval,&compare,&value, MPI_INT,image_index-1,
                             0, win);
-# if CAF_MPI_LOCK_UNLOCK
+# ifdef CAF_MPI_LOCK_UNLOCK
       MPI_Win_unlock (image_index-1, win);
 # else // CAF_MPI_LOCK_UNLOCK
       MPI_Win_flush (image_index-1, win);
@@ -185,12 +185,12 @@ void mutex_unlock(MPI_Win win, int image_index)
 {
 #if MPI_VERSION >= 3
   int value=1, compare = 1, newval = 0;
-# if CAF_MPI_LOCK_UNLOCK
+# ifdef CAF_MPI_LOCK_UNLOCK
   MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, win);
 # endif // CAF_MPI_LOCK_UNLOCK
   MPI_Compare_and_swap (&newval,&compare,&value, MPI_INT,image_index-1,
     0, win);
-# if CAF_MPI_LOCK_UNLOCK
+# ifdef CAF_MPI_LOCK_UNLOCK
   MPI_Win_unlock (image_index-1, win);
 # else // CAF_MPI_LOCK_UNLOCK
   MPI_Win_flush (image_index-1, win);
@@ -372,12 +372,12 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
   if(l_var)
     {
       init_array = (int *)calloc(caf_num_images, sizeof(int));
-# if CAF_MPI_LOCK_UNLOCK
+# ifdef CAF_MPI_LOCK_UNLOCK
       MPI_Win_lock(MPI_LOCK_EXCLUSIVE, caf_this_image-1, 0, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
       MPI_Put (init_array, caf_num_images, MPI_INT, caf_this_image-1,
                       0, caf_num_images, MPI_INT, *p);
-# if CAF_MPI_LOCK_UNLOCK
+# ifdef CAF_MPI_LOCK_UNLOCK
       MPI_Win_unlock(caf_this_image-1, *p);
 # else // CAF_MPI_LOCK_UNLOCK
       MPI_Win_flush(caf_this_image-1, *p);
@@ -605,7 +605,7 @@ PREFIX (sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
     {
       tmp = (char *) calloc (size, dst_size);
       
-# if CAF_MPI_LOCK_UNLOCK
+# ifdef CAF_MPI_LOCK_UNLOCK
       MPI_Win_lock (MPI_LOCK_SHARED, image_index_g-1, 0, *p_g);
 # endif // CAF_MPI_LOCK_UNLOCK
       ierr = MPI_Get (tmp, dst_size*size, MPI_BYTE,
@@ -613,13 +613,13 @@ PREFIX (sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
       if (pad_str)
         memcpy ((char *) tmp + src_size, pad_str,
                 dst_size-src_size);
-# if CAF_MPI_LOCK_UNLOCK
+# ifdef CAF_MPI_LOCK_UNLOCK
       MPI_Win_unlock (image_index_g-1, *p_g);
 # else // CAF_MPI_LOCK_UNLOCK
       MPI_Win_flush (image_index_g-1, *p_g);
 # endif // CAF_MPI_LOCK_UNLOCK
       
-# if CAF_MPI_LOCK_UNLOCK
+# ifdef CAF_MPI_LOCK_UNLOCK
       MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index_s-1, 0, *p_s);
 # endif // CAF_MPI_LOCK_UNLOCK
       if (GFC_DESCRIPTOR_TYPE (dest) == GFC_DESCRIPTOR_TYPE (src)
@@ -631,7 +631,7 @@ PREFIX (sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
       if (pad_str)
         ierr = MPI_Put (pad_str, dst_size-src_size, MPI_BYTE, image_index_s-1,
                         offset_s, dst_size - src_size, MPI_BYTE, *p_s);
-# if CAF_MPI_LOCK_UNLOCK
+# ifdef CAF_MPI_LOCK_UNLOCK
       MPI_Win_unlock (image_index_s-1, *p_s);
 # else // CAF_MPI_LOCK_UNLOCK
       MPI_Win_flush (image_index_s-1, *p_s);
@@ -683,20 +683,20 @@ PREFIX (sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
             }
           src_offset = offset_g + array_offset_sr;
 
-# if CAF_MPI_LOCK_UNLOCK
+# ifdef CAF_MPI_LOCK_UNLOCK
           MPI_Win_lock (MPI_LOCK_SHARED, image_index_g-1, 0, *p_g);
 # endif // CAF_MPI_LOCK_UNLOCK
 
           ierr = MPI_Get (tmp, dst_size, MPI_BYTE,
                           image_index_g-1, src_offset, src_size, MPI_BYTE, *p_g);
 
-# if CAF_MPI_LOCK_UNLOCK
+# ifdef CAF_MPI_LOCK_UNLOCK
           MPI_Win_unlock (image_index_g-1, *p_g);
 # else // CAF_MPI_LOCK_UNLOCK
           MPI_Win_flush (image_index_g-1, *p_g);
 # endif // CAF_MPI_LOCK_UNLOCK
 
-# if CAF_MPI_LOCK_UNLOCK
+# ifdef CAF_MPI_LOCK_UNLOCK
           MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index_s-1, 0, *p_s);
 # endif // CAF_MPI_LOCK_UNLOCK
 
@@ -706,7 +706,7 @@ PREFIX (sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
             ierr = MPI_Put (pad_str, dst_size - src_size, MPI_BYTE, image_index_s-1,
                             dst_offset, dst_size - src_size, MPI_BYTE, *p_s);
 
-# if CAF_MPI_LOCK_UNLOCK
+# ifdef CAF_MPI_LOCK_UNLOCK
           MPI_Win_unlock (image_index_s-1, *p_s);
 # else // CAF_MPI_LOCK_UNLOCK
           MPI_Win_flush (image_index_s-1, *p_s);
@@ -786,7 +786,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
         }
       else
         {
-# if CAF_MPI_LOCK_UNLOCK
+# ifdef CAF_MPI_LOCK_UNLOCK
           MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
           if (GFC_DESCRIPTOR_TYPE (dest) == GFC_DESCRIPTOR_TYPE (src)
@@ -798,7 +798,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
           if (pad_str)
             ierr = MPI_Put (pad_str, dst_size-src_size, MPI_BYTE, image_index-1,
                             offset, dst_size - src_size, MPI_BYTE, *p);
-# if CAF_MPI_LOCK_UNLOCK
+# ifdef CAF_MPI_LOCK_UNLOCK
           MPI_Win_unlock (image_index-1, *p);
 # else // CAF_MPI_LOCK_UNLOCK
           MPI_Win_flush (image_index-1, *p);
@@ -898,11 +898,11 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
 
       dst_offset = offset;
 
-# if CAF_MPI_LOCK_UNLOCK
+# ifdef CAF_MPI_LOCK_UNLOCK
       MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
       ierr = MPI_Put (sr, 1, dt_s, image_index-1, dst_offset, 1, dt_d, *p);
-# if CAF_MPI_LOCK_UNLOCK
+# ifdef CAF_MPI_LOCK_UNLOCK
       MPI_Win_unlock (image_index-1, *p);
 # else // CAF_MPI_LOCK_UNLOCK
       MPI_Win_flush (image_index-1, *p);
@@ -975,7 +975,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
           buff_map = calloc(size,sizeof(bool));
         }
 
-# if CAF_MPI_LOCK_UNLOCK
+# ifdef CAF_MPI_LOCK_UNLOCK
       MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
       for (i = 0; i < size; i++)
@@ -1069,7 +1069,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
           free(t_buff);
           free(buff_map);
         }
-# if CAF_MPI_LOCK_UNLOCK
+# ifdef CAF_MPI_LOCK_UNLOCK
       MPI_Win_unlock (image_index-1, *p);
 # else // CAF_MPI_LOCK_UNLOCK
       MPI_Win_flush (image_index-1, *p);
@@ -1141,7 +1141,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
         }
       else
         {
-# if CAF_MPI_LOCK_UNLOCK
+# ifdef CAF_MPI_LOCK_UNLOCK
           MPI_Win_lock (MPI_LOCK_SHARED, image_index-1, 0, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
           ierr = MPI_Get (dest->base_addr, dst_size*size, MPI_BYTE,
@@ -1149,7 +1149,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
           if (pad_str)
             memcpy ((char *) dest->base_addr + src_size, pad_str,
                     dst_size-src_size);
-# if CAF_MPI_LOCK_UNLOCK
+# ifdef CAF_MPI_LOCK_UNLOCK
           MPI_Win_unlock (image_index-1, *p);
 # else // CAF_MPI_LOCK_UNLOCK
           MPI_Win_flush (image_index-1, *p);
@@ -1250,13 +1250,13 @@ PREFIX (get) (caf_token_t token, size_t offset,
 
   //sr_off = offset;
 
-# if CAF_MPI_LOCK_UNLOCK
+# ifdef CAF_MPI_LOCK_UNLOCK
   MPI_Win_lock (MPI_LOCK_SHARED, image_index-1, 0, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
 
   ierr = MPI_Get (dst, 1, dt_d, image_index-1, offset, 1, dt_s, *p);
 
-# if CAF_MPI_LOCK_UNLOCK
+# ifdef CAF_MPI_LOCK_UNLOCK
   MPI_Win_unlock (image_index-1, *p);
 # else // CAF_MPI_LOCK_UNLOCK
   MPI_Win_flush (image_index-1, *p);
@@ -1275,7 +1275,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
       buff_map = calloc(size,sizeof(bool));
     }
 
-# if CAF_MPI_LOCK_UNLOCK
+# ifdef CAF_MPI_LOCK_UNLOCK
   MPI_Win_lock (MPI_LOCK_SHARED, image_index-1, 0, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
   for (i = 0; i < size; i++)
@@ -1365,7 +1365,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
       free(t_buff);
       free(buff_map);
     }
-# if CAF_MPI_LOCK_UNLOCK
+# ifdef CAF_MPI_LOCK_UNLOCK
   MPI_Win_unlock (image_index-1, *p);
 # else // CAF_MPI_LOCK_UNLOCK
   MPI_Win_flush (image_index-1, *p);
@@ -1811,12 +1811,12 @@ PREFIX (atomic_define) (caf_token_t token, size_t offset,
   selectType(kind, &dt);
 
 #if MPI_VERSION >= 3
-# if CAF_MPI_LOCK_UNLOCK
+# ifdef CAF_MPI_LOCK_UNLOCK
   MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image, 0, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
   ierr = MPI_Fetch_and_op(value, NULL, dt, image, offset,
                           MPI_REPLACE, *p);
-# if CAF_MPI_LOCK_UNLOCK
+# ifdef CAF_MPI_LOCK_UNLOCK
   MPI_Win_unlock (image, *p);
 # else // CAF_MPI_LOCK_UNLOCK
   MPI_Win_flush (image, *p);
@@ -1854,11 +1854,11 @@ PREFIX(atomic_ref) (caf_token_t token, size_t offset,
   selectType(kind, &dt);
 
 #if MPI_VERSION >= 3
-# if CAF_MPI_LOCK_UNLOCK
+# ifdef CAF_MPI_LOCK_UNLOCK
   MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image, 0, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
   ierr = MPI_Fetch_and_op(NULL, value, dt, image, offset, MPI_NO_OP, *p);
-# if CAF_MPI_LOCK_UNLOCK
+# ifdef CAF_MPI_LOCK_UNLOCK
   MPI_Win_unlock (image, *p);
 # else // CAF_MPI_LOCK_UNLOCK
   MPI_Win_flush (image, *p);
@@ -1897,12 +1897,12 @@ PREFIX(atomic_cas) (caf_token_t token, size_t offset,
   selectType (kind, &dt);
 
 #if MPI_VERSION >= 3
-# if CAF_MPI_LOCK_UNLOCK
+# ifdef CAF_MPI_LOCK_UNLOCK
   MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image, 0, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
   ierr = MPI_Compare_and_swap (new_val, compare, old, dt, image,
                                offset, *p);
-# if CAF_MPI_LOCK_UNLOCK
+# ifdef CAF_MPI_LOCK_UNLOCK
   MPI_Win_unlock (image, *p);
 # else // CAF_MPI_LOCK_UNLOCK
   MPI_Win_flush (image, *p);
@@ -1943,7 +1943,7 @@ PREFIX (atomic_op) (int op, caf_token_t token ,
 
   selectType (kind, &dt);
 
-# if CAF_MPI_LOCK_UNLOCK
+# ifdef CAF_MPI_LOCK_UNLOCK
       MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image, 0, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
   /* Atomic_add */
@@ -1964,7 +1964,7 @@ PREFIX (atomic_op) (int op, caf_token_t token ,
               printf ("We apologize but the atomic operation requested for MPI is not yet implemented\n");
               break;
       }
-# if CAF_MPI_LOCK_UNLOCK
+# ifdef CAF_MPI_LOCK_UNLOCK
       MPI_Win_unlock (image, *p);
 # else // CAF_MPI_LOCK_UNLOCK
       MPI_Win_flush (image, *p);
