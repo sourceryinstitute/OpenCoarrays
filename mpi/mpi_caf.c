@@ -1970,15 +1970,6 @@ PREFIX (atomic_op) (int op, caf_token_t token ,
               printf ("We apologize but the atomic operation requested for MPI is not yet implemented\n");
               break;
       }
-#if 0
-  if(op == 1) { ierr = MPI_Fetch_and_op(value, old, dt, image, offset, MPI_SUM, *p); }
-  /* Atomic_and */
-  else if(op == 2) { ierr = MPI_Fetch_and_op(value, old, dt, image, offset, MPI_BAND, *p); }
-  /* Atomic_or */
-  else if(op == 4) { ierr = MPI_Fetch_and_op(value, old, dt, image, offset, MPI_BOR, *p); }
-  else if(op == 5) { ierr = MPI_Fetch_and_op(value, old, dt, image, offset, MPI_BXOR, *p); }
-  else { printf ("We apologize but the atomic operation requested for MPI is not yet implemented\n"); }
-#endif
 # if CAF_MPI_LOCK_UNLOCK
       MPI_Win_unlock (image, *p);
 # else // CAF_MPI_LOCK_UNLOCK
