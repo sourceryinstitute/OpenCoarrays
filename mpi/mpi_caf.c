@@ -158,38 +158,6 @@ caf_runtime_error (const char *message, ...)
   exit (EXIT_FAILURE);
 }
 
-/* Lock implementation for MPI-2 */
-/* Deprecated */
-
-void counter_inc(MPI_Win c_win, int *value, int inc, int image_index)
-{
-  int i, *val;
-
-  val = (int *)calloc(caf_num_images, sizeof(int));
-
-  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, image_index-1, 0, c_win);
-
-  for(i=0;i<caf_num_images;i++)
-    if(i == caf_this_image-1)
-      MPI_Accumulate(&inc, 1, MPI_INT, image_index-1, i*sizeof(int), 1, MPI_INT, MPI_SUM, c_win);
-    else
-      MPI_Get(&val[i], 1, MPI_INT, image_index-1, i*sizeof(int), 1, MPI_INT, c_win);
-
-  MPI_Win_unlock(image_index-1, c_win);
-
-  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, image_index-1, 0, c_win);
-  MPI_Get(&val[caf_this_image-1], 1, MPI_INT, image_index-1, (caf_this_image-1)*sizeof(int), 1, MPI_INT, c_win);
-  MPI_Win_unlock(image_index-1, c_win);
-
-  *value = -1;
-
-  for(i=0;i<caf_num_images;i++)
-    *value = *value + val[i];
-
-  free(val);
-
-}
-
 void mutex_lock(MPI_Win win, int image_index)
 {
 #if MPI_VERSION >= 3
@@ -389,8 +357,6 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
 
   MPI_Win *p = *token;
 
-  MPI_Win_fence(0, *p);
-
   if(l_var)
     {
       init_array = (int *)calloc(caf_num_images, sizeof(int));
@@ -524,19 +490,6 @@ PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
     ierr = STAT_STOPPED_IMAGE;
   else
     {
-#if 0
-      /* MPI_Win_unlock implies synchronization, hence, the MPI_Win_fence is not
-	 required.  */
-      MPI_Win *p;
-      caf_static_t *tmp, *next;
-      for (tmp = caf_tot; tmp; )
-	{
-	  next = tmp->prev;
-	  p = tmp->token;
-	  MPI_Win_fence (0, *p);
-          tmp = next;
-	}
-#endif
       MPI_Barrier(CAF_COMM_WORLD);
       ierr = 0;
     }
