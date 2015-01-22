@@ -1959,59 +1959,37 @@ PREFIX (atomic_op) (int op, caf_token_t token ,
 
   selectType (kind, &dt);
 
-  /* Atomic_add */
-  if(op == 1)
-    {
 # if CAF_MPI_LOCK_UNLOCK
       MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image, 0, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
+  /* Atomic_add */
+  if(op == 1)
+    {
       ierr = MPI_Fetch_and_op(value, old, dt, image, offset, MPI_SUM, *p);
-# if CAF_MPI_LOCK_UNLOCK
-      MPI_Win_unlock (image, *p);
-# else // CAF_MPI_LOCK_UNLOCK
-      MPI_Win_flush (image, *p);
-# endif // CAF_MPI_LOCK_UNLOCK
     }
   /* Atomic_and */
   else if(op == 2)
     {
-# if CAF_MPI_LOCK_UNLOCK
-      MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image, 0, *p);
-# endif // CAF_MPI_LOCK_UNLOCK
       ierr = MPI_Fetch_and_op(value, old, dt, image, offset, MPI_BAND, *p);
-# if CAF_MPI_LOCK_UNLOCK
-      MPI_Win_unlock (image, *p);
-# else // CAF_MPI_LOCK_UNLOCK
-      MPI_Win_flush (image, *p);
-# endif // CAF_MPI_LOCK_UNLOCK
     }
   /* Atomic_or */
   else if(op == 4)
     {
-# if CAF_MPI_LOCK_UNLOCK
-      MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image, 0, *p);
-# endif // CAF_MPI_LOCK_UNLOCK
       ierr = MPI_Fetch_and_op(value, old, dt, image, offset, MPI_BOR, *p);
-# if CAF_MPI_LOCK_UNLOCK
-      MPI_Win_unlock (image, *p);
-# else // CAF_MPI_LOCK_UNLOCK
-      MPI_Win_flush (image, *p);
-# endif // CAF_MPI_LOCK_UNLOCK
     }
   else if(op == 5)
     {
-# if CAF_MPI_LOCK_UNLOCK
-      MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image, 0, *p);
-# endif // CAF_MPI_LOCK_UNLOCK
       ierr = MPI_Fetch_and_op(value, old, dt, image, offset, MPI_BXOR, *p);
+    }
+  else 
+    {
+      printf ("We apologize but the atomic operation requested for MPI is not yet implemented\n");
+    }
 # if CAF_MPI_LOCK_UNLOCK
       MPI_Win_unlock (image, *p);
 # else // CAF_MPI_LOCK_UNLOCK
       MPI_Win_flush (image, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
-    }
-  else
-    printf ("We apologize but the atomic operation requested for MPI is not yet implemented\n");
 
   free(old);
 #else // MPI_VERSION
