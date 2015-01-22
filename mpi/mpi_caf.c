@@ -1811,19 +1811,16 @@ PREFIX (atomic_define) (caf_token_t token, size_t offset,
   selectType(kind, &dt);
 
 #if MPI_VERSION >= 3
-  void *bef_acc;
-  bef_acc = malloc(kind);
 # if CAF_MPI_LOCK_UNLOCK
   MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image, 0, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
-  ierr = MPI_Fetch_and_op(value, bef_acc, dt, image, offset,
+  ierr = MPI_Fetch_and_op(value, NULL, dt, image, offset,
 			  MPI_REPLACE, *p);
 # if CAF_MPI_LOCK_UNLOCK
   MPI_Win_unlock (image, *p);
 # else // CAF_MPI_LOCK_UNLOCK
   MPI_Win_flush (image, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
-  free(bef_acc);
 #else // MPI_VERSION
   MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image, 0, *p);
   ierr = MPI_Put (value, 1, dt, image, offset, 1, dt, *p);
@@ -1938,7 +1935,6 @@ PREFIX (atomic_op) (int op, caf_token_t token ,
 		    int kind)
 {
   int ierr = 0;
-  void *bef_acc;
   MPI_Datatype dt;
   MPI_Win *p = token;
   int image;
