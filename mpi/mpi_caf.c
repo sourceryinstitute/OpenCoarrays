@@ -374,12 +374,12 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
       init_array = (int *)calloc(caf_num_images, sizeof(int));
 # if CAF_MPI_LOCK_UNLOCK
       MPI_Win_lock(MPI_LOCK_EXCLUSIVE, caf_this_image-1, 0, *p);
-# endif // CAF_MPI_LOCK_UNLOCK
       MPI_Put (init_array, caf_num_images, MPI_INT, caf_this_image-1,
        	       0, caf_num_images, MPI_INT, *p);
-# if CAF_MPI_LOCK_UNLOCK
       MPI_Win_unlock(caf_this_image-1, *p);
-# else // CAF_MPI_LOCK_UNLOCK
+#else
+      MPI_Accumulate (init_array, caf_num_images, MPI_INT, caf_this_image-1,
+       	              0, caf_num_images, MPI_INT, MPI_REPLACE, *p);
       MPI_Win_flush(caf_this_image-1, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
       free(init_array);
