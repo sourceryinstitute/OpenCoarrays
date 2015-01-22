@@ -1824,17 +1824,11 @@ PREFIX (atomic_define) (caf_token_t token, size_t offset,
   MPI_Win_flush (image, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
   free(bef_acc);
-#else
-# if CAF_MPI_LOCK_UNLOCK
+#else // MPI_VERSION
   MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image, 0, *p);
-# endif // CAF_MPI_LOCK_UNLOCK
   ierr = MPI_Put (value, 1, dt, image, offset, 1, dt, *p);
-# if CAF_MPI_LOCK_UNLOCK
   MPI_Win_unlock (image, *p);
-# else // CAF_MPI_LOCK_UNLOCK
-  MPI_Win_flush (image, *p);
-# endif // CAF_MPI_LOCK_UNLOCK
-#endif
+#endif // MPI_VERSION
 
   if (stat)
     *stat = ierr;
