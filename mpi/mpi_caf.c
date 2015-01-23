@@ -1823,8 +1823,7 @@ PREFIX (atomic_define) (caf_token_t token, size_t offset,
 # ifdef CAF_MPI_LOCK_UNLOCK
   MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image, 0, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
-  ierr = MPI_Fetch_and_op(value, NULL, dt, image, offset,
-                          MPI_REPLACE, *p);
+  ierr = MPI_Accumulate (value, 1, dt, image, offset, 1, dt, MPI_REPLACE, *p);
 # ifdef CAF_MPI_LOCK_UNLOCK
   MPI_Win_unlock (image, *p);
 # else // CAF_MPI_LOCK_UNLOCK
