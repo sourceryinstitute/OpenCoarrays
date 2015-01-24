@@ -22,7 +22,8 @@ OpenCoarray's libraries:
   with GCC is released under the GPLv3 with GCC license exception.)
 
 * MPI (Message Passing Interface): Recommended version. Requires a
-  MPI 3 implementation, although most features also work with MPI 2.
+  MPI 3 implementation, although most features also work with MPI 2
+  (activatable using the CAF_MPI_LOCK_UNLOCK flag during compilation).
   Similar implementation coverage as single.
   Consider using the latest version of your MPI implementation as those
   tend to have improved MPI 3 and remote-memory access (RMA) support.
