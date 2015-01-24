@@ -354,6 +354,8 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
 
   *token = malloc (sizeof(MPI_Win));
 
+  MPI_Win *p = *token;
+
   if(type == CAF_REGTYPE_LOCK_STATIC || type == CAF_REGTYPE_CRITICAL)
     {
       /* For a single lock variable we need an array of integers */
@@ -366,14 +368,14 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
 #if MPI_VERSION >= 3
   MPI_Win_allocate(actual_size, 1, mpi_info_same_size, CAF_COMM_WORLD, &mem, *token);
 # ifndef CAF_MPI_LOCK_UNLOCK
-  MPI_Win_lock_all(MPI_MODE_NOCHECK, *token);
+  MPI_Win_lock_all(MPI_MODE_NOCHECK, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
 #else // MPI_VERSION
   MPI_Alloc_mem(actual_size, MPI_INFO_NULL, &mem);
   MPI_Win_create(mem, actual_size, 1, MPI_INFO_NULL, CAF_COMM_WORLD, *token);
 #endif // MPI_VERSION
 
-  MPI_Win *p = *token;
+  p = *token;
 
   if(l_var)
     {
