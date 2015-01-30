@@ -71,6 +71,7 @@ static int *arrived;
 #if defined(NONBLOCKING_PUT) && !defined(CAF_MPI_LOCK_UNLOCK)
 typedef struct win_sync {
   MPI_Win *win;
+  int img;
   struct win_sync *next;
 } win_sync;
 
@@ -109,7 +110,7 @@ void explicit_flush()
   while(w != NULL)
     {
       p = w->win;
-      MPI_Win_flush_all(*p);
+      MPI_Win_flush(w->img,*p);
       t = w;
       w = w->next;
       free(t);
@@ -850,6 +851,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
 	      pending_puts = calloc(1,sizeof(win_sync));
 	      pending_puts->next=NULL;
 	      pending_puts->win = token;
+	      pending_puts->img = image_index-1;
 	      last_elem = pending_puts;
 	      last_elem->next = NULL;
 	    }
@@ -858,6 +860,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
 	      last_elem->next = calloc(1,sizeof(win_sync));
 	      last_elem = last_elem->next;
 	      last_elem->win = token;
+	      last_elem->img = image_index-1;
 	      last_elem->next = NULL;
 	    }
 #else
