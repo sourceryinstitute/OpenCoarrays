@@ -67,6 +67,17 @@ MPI_Request *handlers;
 static int *images_full;
 static int *arrived;
 
+/* Pending puts */
+#if defined(NONBLOCKING_PUT) && !defined(CAF_MPI_LOCK_UNLOCK)
+typedef struct win_sync {
+  MPI_Win *win;
+  struct win_sync *next;
+} win_sync;
+
+static win_sync *last_elem = NULL;
+static win_sync *pending_puts = NULL;
+#endif
+
 caf_static_t *caf_static_list = NULL;
 caf_static_t *caf_tot = NULL;
 
@@ -89,6 +100,24 @@ MPI_Comm CAF_COMM_WORLD;
 /* For MPI interoperability, allow external initialization
    (and thus finalization) of MPI. */
 bool caf_owns_mpi = false;
+
+#if defined(NONBLOCKING_PUT) && !defined(CAF_MPI_LOCK_UNLOCK)
+void explicit_flush()
+{
+  win_sync *w=pending_puts, *t;
+  MPI_Win *p;
+  while(w != NULL)
+    {
+      p = w->win;
+      MPI_Win_flush_all(*p);
+      t = w;
+      w = w->next;
+      free(t);
+    }
+  last_elem = NULL;
+  pending_puts = NULL;
+}
+#endif
 
 #ifdef HELPER
 void helperFunction()
@@ -519,6 +548,9 @@ PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
     ierr = STAT_STOPPED_IMAGE;
   else
     {
+#if defined(NONBLOCKING_PUT) && !defined(CAF_MPI_LOCK_UNLOCK)
+      explicit_flush();
+#endif
       MPI_Barrier(CAF_COMM_WORLD);
       ierr = 0;
     }
@@ -811,11 +843,28 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
                             offset, dst_size - src_size, MPI_BYTE, *p);
 # ifdef CAF_MPI_LOCK_UNLOCK
           MPI_Win_unlock (image_index-1, *p);
-# else // CAF_MPI_LOCK_UNLOCK
-          MPI_Win_flush (image_index-1, *p);
+# elseifdef NONBLOCKING_PUT
+	  /* Pending puts init */
+	  if(pending_puts == NULL)
+	    {
+	      pending_puts = calloc(1,sizeof(win_sync));
+	      pending_puts->next=NULL;
+	      pending_puts->win = token;
+	      last_elem = pending_puts;
+	      last_elem->next = NULL;
+	    }
+	  else
+	    {
+	      last_elem->next = calloc(1,sizeof(win_sync));
+	      last_elem = last_elem->next;
+	      last_elem->win = token;
+	      last_elem->next = NULL;
+	    }
+#else
+	  MPI_Win_flush (image_index-1, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
         } 
-
+	
       if (ierr != 0)
         error_stop (ierr);
       return;
@@ -1437,6 +1486,10 @@ PREFIX (sync_images) (int count, int images[], int *stat, char *errmsg,
 
        for(i=0; i < count; i++)
          ierr = MPI_Send(&caf_this_image, 1, MPI_INT, images[i]-1, 0, CAF_COMM_WORLD);
+
+#if defined(NONBLOCKING_PUT) && !defined(CAF_MPI_LOCK_UNLOCK)
+       explicit_flush();
+#endif
 
        for(i=0; i < count; i++)
          ierr = MPI_Wait(&handlers[images[i]-1], &s);
