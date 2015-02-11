@@ -830,9 +830,9 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
         }
       else
         {
-# ifdef CAF_MPI_LOCK_UNLOCK
+#ifdef CAF_MPI_LOCK_UNLOCK
           MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
-# endif // CAF_MPI_LOCK_UNLOCK
+#endif // CAF_MPI_LOCK_UNLOCK
           if (GFC_DESCRIPTOR_TYPE (dest) == GFC_DESCRIPTOR_TYPE (src)
               && dst_kind == src_kind)
             ierr = MPI_Put (src->base_addr, dst_size*size, MPI_BYTE,
@@ -842,9 +842,9 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
           if (pad_str)
             ierr = MPI_Put (pad_str, dst_size-src_size, MPI_BYTE, image_index-1,
                             offset, dst_size - src_size, MPI_BYTE, *p);
-# ifdef CAF_MPI_LOCK_UNLOCK
+#ifdef CAF_MPI_LOCK_UNLOCK
           MPI_Win_unlock (image_index-1, *p);
-# elseifdef NONBLOCKING_PUT
+#elif NONBLOCKING_PUT
 	  /* Pending puts init */
 	  if(pending_puts == NULL)
 	    {
@@ -865,7 +865,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
 	    }
 #else
 	  MPI_Win_flush (image_index-1, *p);
-# endif // CAF_MPI_LOCK_UNLOCK
+#endif // CAF_MPI_LOCK_UNLOCK
         } 
 	
       if (ierr != 0)
