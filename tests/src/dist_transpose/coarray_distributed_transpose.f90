@@ -239,7 +239,7 @@ contains
     do stage = 1, num_nodes-1
         i = 1 + mod( my_node-1+stage, num_nodes )
         call  copy3 ( u(1,1,first_x,1+(i-1)*my), bufr_Y_X   &        !-- intra-node transpose to buffer
-                    ,   nz*3, 1, 1        &
+                    ,   nz*3, 1_8, 1_8        &
                     ,   mx, nz*4, nz*4*my &
                     ,   my, nz*4*mx, nz*4 )
         ur(:,:,:,1+(my_node-1)*mx:my_node*mx)[i] = bufr_Y_X(:,:,:,:)        !-- inter-node transpose from buffer
