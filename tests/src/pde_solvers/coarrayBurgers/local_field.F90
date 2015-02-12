@@ -23,7 +23,7 @@ module local_field_module
 contains
 
   pure subroutine assign_array(lhs,rhs)
-    class(local_field), intent(out) :: lhs
+    class(local_field), intent(inout) :: lhs
     real(real64), intent(in) :: rhs(:)
     lhs%values = rhs
     ! Ensures

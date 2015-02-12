@@ -18,9 +18,7 @@ module global_field_module
     procedure, nopass :: grid_spacing
     procedure, private :: assign_local_field
     procedure, private :: add_local_field
-    procedure, private, pass(rhs) :: subtract_from_local_field
     procedure, private :: multiply 
-    generic :: operator(-) => subtract_from_local_field
     generic :: operator(*) => multiply
     generic :: operator(+) => add_local_field
     generic :: assignment(=) => assign_local_field
@@ -123,17 +121,6 @@ contains
     if (lhs%user_defined() .and. rhs%user_defined()) then
       total = lhs%values + rhs%state()
       call total%mark_as_defined
-    end if
-  end function
-
-  pure function subtract_from_local_field(lhs,rhs) result(difference)
-    class(global_field), intent(in) :: rhs
-    type(local_field), intent(in) :: lhs
-    type(local_field) :: difference
-    ! Requires
-    if (lhs%user_defined() .and. rhs%user_defined()) then
-      difference = lhs%state() - rhs%values
-      call difference%mark_as_defined
     end if
   end function
 
