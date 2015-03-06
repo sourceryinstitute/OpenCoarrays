@@ -388,8 +388,7 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
 
   if(type == CAF_REGTYPE_LOCK_STATIC || type == CAF_REGTYPE_CRITICAL)
     {
-      /* For a single lock variable we need an array of integers */
-      actual_size = size*sizeof(int)*caf_num_images;
+      actual_size = size*sizeof(int);
       l_var = 1;
     }
   else
@@ -409,12 +408,12 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
 
   if(l_var)
     {
-      init_array = (int *)calloc(caf_num_images, sizeof(int));
+      init_array = (int *)calloc(1, sizeof(int));
 # ifdef CAF_MPI_LOCK_UNLOCK
       MPI_Win_lock(MPI_LOCK_EXCLUSIVE, caf_this_image-1, 0, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
       MPI_Put (init_array, caf_num_images, MPI_INT, caf_this_image-1,
-                      0, caf_num_images, MPI_INT, *p);
+                      0, 1, MPI_INT, *p);
 # ifdef CAF_MPI_LOCK_UNLOCK
       MPI_Win_unlock(caf_this_image-1, *p);
 # else // CAF_MPI_LOCK_UNLOCK
@@ -537,6 +536,15 @@ PREFIX (deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len
   //gasnet_exit(0);
 
   free (*token);
+}
+
+void
+PREFIX (sync_memory) (int *stat, char *errmsg, int errmsg_len)
+{
+#if defined(NONBLOCKING_PUT) && !defined(CAF_MPI_LOCK_UNLOCK)
+  explicit_flush();
+#endif
+  __sync_synchronize ();
 }
 
 
