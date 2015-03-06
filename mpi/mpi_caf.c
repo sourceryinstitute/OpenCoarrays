@@ -412,7 +412,7 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
 # ifdef CAF_MPI_LOCK_UNLOCK
       MPI_Win_lock(MPI_LOCK_EXCLUSIVE, caf_this_image-1, 0, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
-      MPI_Put (init_array, caf_num_images, MPI_INT, caf_this_image-1,
+      MPI_Put (init_array, 1, MPI_INT, caf_this_image-1,
                       0, 1, MPI_INT, *p);
 # ifdef CAF_MPI_LOCK_UNLOCK
       MPI_Win_unlock(caf_this_image-1, *p);
