@@ -188,44 +188,90 @@ caf_runtime_error (const char *message, ...)
   exit (EXIT_FAILURE);
 }
 
-void mutex_lock(MPI_Win win, int image_index)
+void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
+		int *acquired_lock)
 {
 #if MPI_VERSION >= 3
   int value=1, compare = 0, newval = 1;
+
+  if(stat != NULL)
+    *stat = 0;
+
+# ifdef CAF_MPI_LOCK_UNLOCK
+      MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, win);
+# endif // CAF_MPI_LOCK_UNLOCK
+      MPI_Compare_and_swap (&newval,&compare,&value, MPI_INT,image_index-1,
+                            index*sizeof(int), win);
+# ifdef CAF_MPI_LOCK_UNLOCK
+      MPI_Win_unlock (image_index-1, win);
+# else // CAF_MPI_LOCK_UNLOCK
+      MPI_Win_flush (image_index-1, win);
+# endif // CAF_MPI_LOCK_UNLOCK
+
+  if(value == 1 && image_index == caf_this_image)
+    goto stat_error;
+
+  if(acquired_lock != NULL)
+    {
+      if(value == 0)
+        *acquired_lock = 1;
+      else
+	*acquired_lock = 0;
+      return;
+    }
+
   while(value == 1)
     {
 # ifdef CAF_MPI_LOCK_UNLOCK
       MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, win);
 # endif // CAF_MPI_LOCK_UNLOCK
       MPI_Compare_and_swap (&newval,&compare,&value, MPI_INT,image_index-1,
-                            0, win);
+                            index*sizeof(int), win);
 # ifdef CAF_MPI_LOCK_UNLOCK
       MPI_Win_unlock (image_index-1, win);
 # else // CAF_MPI_LOCK_UNLOCK
       MPI_Win_flush (image_index-1, win);
 # endif // CAF_MPI_LOCK_UNLOCK
     }
+  return;
+stat_error:
+  if(stat != NULL)
+    *stat = 99;
+  else
+    error_stop(99);
 #else // MPI_VERSION
 #warning Locking for MPI-2 is not implemented
   printf ("Locking for MPI-2 is not supported, please update your MPI implementation\n");
 #endif // MPI_VERSION
 }
 
-void mutex_unlock(MPI_Win win, int image_index)
+void mutex_unlock(MPI_Win win, int image_index, int index, int *stat)
 {
+  if(stat != NULL)
+    *stat = 0;
 #if MPI_VERSION >= 3
   int value=1, compare = 1, newval = 0;
 # ifdef CAF_MPI_LOCK_UNLOCK
   MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, win);
 # endif // CAF_MPI_LOCK_UNLOCK
   MPI_Compare_and_swap (&newval,&compare,&value, MPI_INT,image_index-1,
-    0, win);
+			index*sizeof(int), win);
 # ifdef CAF_MPI_LOCK_UNLOCK
   MPI_Win_unlock (image_index-1, win);
 # else // CAF_MPI_LOCK_UNLOCK
   MPI_Win_flush (image_index-1, win);
 # endif // CAF_MPI_LOCK_UNLOCK
-  if(value == 0) printf("Unlock on a unlocked variable\n");
+
+  if(value == 0)
+    goto stat_error;
+
+  return;
+
+stat_error:
+  if(stat != NULL)
+    *stat = 99;
+  else
+    error_stop(99);
 #else // MPI_VERSION
 #warning Locking for MPI-2 is not implemented
   printf ("Locking for MPI-2 is not supported, please update your MPI implementation\n");
@@ -386,7 +432,8 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
 
   MPI_Win *p = *token;
 
-  if(type == CAF_REGTYPE_LOCK_STATIC || type == CAF_REGTYPE_CRITICAL)
+  if(type == CAF_REGTYPE_LOCK_STATIC || type == CAF_REGTYPE_LOCK_ALLOC ||
+     type == CAF_REGTYPE_CRITICAL)
     {
       actual_size = size*sizeof(int);
       l_var = 1;
@@ -408,12 +455,12 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
 
   if(l_var)
     {
-      init_array = (int *)calloc(1, sizeof(int));
+      init_array = (int *)calloc(size, sizeof(int));
 # ifdef CAF_MPI_LOCK_UNLOCK
       MPI_Win_lock(MPI_LOCK_EXCLUSIVE, caf_this_image-1, 0, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
-      MPI_Put (init_array, 1, MPI_INT, caf_this_image-1,
-                      0, 1, MPI_INT, *p);
+      MPI_Put (init_array, size, MPI_INT, caf_this_image-1,
+                      0, size, MPI_INT, *p);
 # ifdef CAF_MPI_LOCK_UNLOCK
       MPI_Win_unlock(caf_this_image-1, *p);
 # else // CAF_MPI_LOCK_UNLOCK
@@ -1847,12 +1894,18 @@ PREFIX (co_max) (gfc_descriptor_t *a, int result_image, int *stat,
 
 void
 PREFIX (lock) (caf_token_t token, size_t index, int image_index,
-               int *aquired_lock, int *stat, char *errmsg,
+               int *acquired_lock, int *stat, char *errmsg,
                int errmsg_len)
 {
+  int dest_img;
   MPI_Win *p = token;
 
-  mutex_lock(*p, image_index);
+  if(image_index == 0)
+    dest_img = caf_this_image;
+  else
+    dest_img = image_index;
+
+  mutex_lock(*p, dest_img, index, stat, acquired_lock);
 }
 
 
@@ -1860,10 +1913,15 @@ void
 PREFIX (unlock) (caf_token_t token, size_t index, int image_index,
                  int *stat, char *errmsg, int errmsg_len)
 {
+  int dest_img;
   MPI_Win *p = token;
-  /* int value = 0, ierr = 0;  */
 
-  mutex_unlock(*p, image_index);
+  if(image_index == 0)
+    dest_img = caf_this_image;
+  else
+    dest_img = image_index;
+
+  mutex_unlock(*p, dest_img, index, stat);
 }
 
 /* Atomics operations */
