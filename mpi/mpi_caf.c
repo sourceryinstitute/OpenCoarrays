@@ -188,6 +188,21 @@ caf_runtime_error (const char *message, ...)
   exit (EXIT_FAILURE);
 }
 
+void inline locking_atomic_op(MPI_Win win, int *value, int newval, 
+			      int compare, int image_index, int index)
+{
+# ifdef CAF_MPI_LOCK_UNLOCK
+      MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, win);
+# endif // CAF_MPI_LOCK_UNLOCK
+      MPI_Compare_and_swap (&newval,&compare,value, MPI_INT,image_index-1,
+                            index*sizeof(int), win);
+# ifdef CAF_MPI_LOCK_UNLOCK
+      MPI_Win_unlock (image_index-1, win);
+# else // CAF_MPI_LOCK_UNLOCK
+      MPI_Win_flush (image_index-1, win);
+# endif // CAF_MPI_LOCK_UNLOCK
+}
+
 void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
 		int *acquired_lock)
 {
@@ -197,16 +212,7 @@ void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
   if(stat != NULL)
     *stat = 0;
 
-# ifdef CAF_MPI_LOCK_UNLOCK
-      MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, win);
-# endif // CAF_MPI_LOCK_UNLOCK
-      MPI_Compare_and_swap (&newval,&compare,&value, MPI_INT,image_index-1,
-                            index*sizeof(int), win);
-# ifdef CAF_MPI_LOCK_UNLOCK
-      MPI_Win_unlock (image_index-1, win);
-# else // CAF_MPI_LOCK_UNLOCK
-      MPI_Win_flush (image_index-1, win);
-# endif // CAF_MPI_LOCK_UNLOCK
+  locking_atomic_op(win, &value, newval, compare, image_index, index);
 
   if(value == 1 && image_index == caf_this_image)
     goto stat_error;
@@ -221,19 +227,10 @@ void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
     }
 
   while(value == 1)
-    {
-# ifdef CAF_MPI_LOCK_UNLOCK
-      MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, win);
-# endif // CAF_MPI_LOCK_UNLOCK
-      MPI_Compare_and_swap (&newval,&compare,&value, MPI_INT,image_index-1,
-                            index*sizeof(int), win);
-# ifdef CAF_MPI_LOCK_UNLOCK
-      MPI_Win_unlock (image_index-1, win);
-# else // CAF_MPI_LOCK_UNLOCK
-      MPI_Win_flush (image_index-1, win);
-# endif // CAF_MPI_LOCK_UNLOCK
-    }
+    locking_atomic_op(win, &value, newval, compare, image_index, index);
+
   return;
+
 stat_error:
   if(stat != NULL)
     *stat = 99;
@@ -251,16 +248,8 @@ void mutex_unlock(MPI_Win win, int image_index, int index, int *stat)
     *stat = 0;
 #if MPI_VERSION >= 3
   int value=1, compare = 1, newval = 0;
-# ifdef CAF_MPI_LOCK_UNLOCK
-  MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, win);
-# endif // CAF_MPI_LOCK_UNLOCK
-  MPI_Compare_and_swap (&newval,&compare,&value, MPI_INT,image_index-1,
-			index*sizeof(int), win);
-# ifdef CAF_MPI_LOCK_UNLOCK
-  MPI_Win_unlock (image_index-1, win);
-# else // CAF_MPI_LOCK_UNLOCK
-  MPI_Win_flush (image_index-1, win);
-# endif // CAF_MPI_LOCK_UNLOCK
+  
+  locking_atomic_op(win, &value, newval, compare, image_index, index);
 
   if(value == 0)
     goto stat_error;
