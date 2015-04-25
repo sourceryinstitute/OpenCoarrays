@@ -18,7 +18,7 @@ We also offer a LIBCAF_GASNet that builds atop the Global Address Space Networki
 
 ## Installation ##
 
-Please see the INSTALL file.
+Please see the [INSTALL](INSTALL) file.
 
 ## Documentation ##
 
