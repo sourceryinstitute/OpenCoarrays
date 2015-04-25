@@ -88,10 +88,6 @@ Locking
   use the version shipping with GCC.
 * MPI: Implemented.
 
-GCC issues:
-* Only CRITICAL implemented. Locking variables are currently not
-  supported but silently accepted.
-
 Critical
 --------
 

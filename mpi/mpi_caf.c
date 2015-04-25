@@ -204,8 +204,9 @@ void inline locking_atomic_op(MPI_Win win, int *value, int newval,
 }
 
 void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
-		int *acquired_lock)
+		int *acquired_lock, char *errmsg, int errmsg_len)
 {
+  const char msg[] = "Already locked";
 #if MPI_VERSION >= 3
   int value=1, compare = 0, newval = 1;
 
@@ -232,6 +233,11 @@ void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
   return;
 
 stat_error:
+  if(errmsg != NULL)
+    {
+      memset(errmsg,0,errmsg_len);
+      strncat(errmsg, msg, errmsg_len);
+    }
   if(stat != NULL)
     *stat = 99;
   else
@@ -242,8 +248,10 @@ stat_error:
 #endif // MPI_VERSION
 }
 
-void mutex_unlock(MPI_Win win, int image_index, int index, int *stat)
+void mutex_unlock(MPI_Win win, int image_index, int index, int *stat,
+		  char* errmsg, int errmsg_len)
 {
+  const char msg[] = "Variable is not locked";
   if(stat != NULL)
     *stat = 0;
 #if MPI_VERSION >= 3
@@ -257,6 +265,11 @@ void mutex_unlock(MPI_Win win, int image_index, int index, int *stat)
   return;
 
 stat_error:
+  if(errmsg != NULL)
+    {
+      memset(errmsg,0,errmsg_len);
+      strncat(errmsg, msg, errmsg_len);
+    }
   if(stat != NULL)
     *stat = 99;
   else
@@ -1528,15 +1541,15 @@ PREFIX (sync_images) (int count, int images[], int *stat, char *errmsg,
             orders[images[i]-1]++;
         }
 
+#if defined(NONBLOCKING_PUT) && !defined(CAF_MPI_LOCK_UNLOCK)
+       explicit_flush();
+#endif
+
        for(i = 0; i < count; i++)
            ierr = MPI_Irecv(&arrived[images[i]-1], 1, MPI_INT, images[i]-1, 0, CAF_COMM_WORLD, &handlers[images[i]-1]);
 
        for(i=0; i < count; i++)
          ierr = MPI_Send(&caf_this_image, 1, MPI_INT, images[i]-1, 0, CAF_COMM_WORLD);
-
-#if defined(NONBLOCKING_PUT) && !defined(CAF_MPI_LOCK_UNLOCK)
-       explicit_flush();
-#endif
 
        for(i=0; i < count; i++)
          ierr = MPI_Wait(&handlers[images[i]-1], &s);
@@ -1894,7 +1907,7 @@ PREFIX (lock) (caf_token_t token, size_t index, int image_index,
   else
     dest_img = image_index;
 
-  mutex_lock(*p, dest_img, index, stat, acquired_lock);
+  mutex_lock(*p, dest_img, index, stat, acquired_lock, errmsg, errmsg_len);
 }
 
 
@@ -1910,7 +1923,7 @@ PREFIX (unlock) (caf_token_t token, size_t index, int image_index,
   else
     dest_img = image_index;
 
-  mutex_unlock(*p, dest_img, index, stat);
+  mutex_unlock(*p, dest_img, index, stat, errmsg, errmsg_len);
 }
 
 /* Atomics operations */
