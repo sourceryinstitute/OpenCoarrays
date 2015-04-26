@@ -1722,7 +1722,7 @@ co_reduce_1 (MPI_Op op, gfc_descriptor_t *source, int result_image, int *stat,
       size *= dimextent;
     }
 
-  if (rank == 0)
+  if (rank == 0 || rank == 1)
     {
       if (result_image == 0)
         ierr = MPI_Allreduce (MPI_IN_PLACE, source->base_addr, size, datatype,
