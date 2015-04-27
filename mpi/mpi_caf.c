@@ -102,6 +102,8 @@ MPI_Comm CAF_COMM_WORLD;
    (and thus finalization) of MPI. */
 bool caf_owns_mpi = false;
 
+#define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
+
 #if defined(NONBLOCKING_PUT) && !defined(CAF_MPI_LOCK_UNLOCK)
 void explicit_flush()
 {
@@ -236,7 +238,7 @@ stat_error:
   if(errmsg != NULL)
     {
       memset(errmsg,0,errmsg_len);
-      strncat(errmsg, msg, errmsg_len);
+      memcpy(errmsg, msg, MIN(errmsg_len,strlen(msg)));
     }
   if(stat != NULL)
     *stat = 99;
@@ -268,7 +270,7 @@ stat_error:
   if(errmsg != NULL)
     {
       memset(errmsg,0,errmsg_len);
-      strncat(errmsg, msg, errmsg_len);
+      memcpy(errmsg, msg, MIN(errmsg_len,strlen(msg)));
     }
   if(stat != NULL)
     *stat = 99;
@@ -1722,7 +1724,7 @@ co_reduce_1 (MPI_Op op, gfc_descriptor_t *source, int result_image, int *stat,
       size *= dimextent;
     }
 
-  if (rank == 0 || rank == 1)
+  if (rank == 0 || PREFIX (is_contiguous) (source))
     {
       if (result_image == 0)
         ierr = MPI_Allreduce (MPI_IN_PLACE, source->base_addr, size, datatype,
