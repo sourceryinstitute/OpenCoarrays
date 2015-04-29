@@ -237,7 +237,7 @@ void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
 stat_error:
   if(errmsg != NULL)
     {
-      memset(errmsg,0,errmsg_len);
+      memset(errmsg,' ',errmsg_len);
       memcpy(errmsg, msg, MIN(errmsg_len,strlen(msg)));
     }
   if(stat != NULL)
@@ -269,7 +269,7 @@ void mutex_unlock(MPI_Win win, int image_index, int index, int *stat,
 stat_error:
   if(errmsg != NULL)
     {
-      memset(errmsg,0,errmsg_len);
+      memset(errmsg,' ',errmsg_len);
       memcpy(errmsg, msg, MIN(errmsg_len,strlen(msg)));
     }
   if(stat != NULL)
