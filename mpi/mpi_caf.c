@@ -2129,6 +2129,7 @@ PREFIX (event_post) (caf_token_t token, size_t index,
 {
   int image, value=1, ierr=0;
   MPI_Win *p = token;
+  const char msg[] = "Error on event post";
 
   if(image_index == 0)
     image = caf_this_image-1;
@@ -2152,8 +2153,16 @@ PREFIX (event_post) (caf_token_t token, size_t index,
   #warning Events for MPI-2 are not implemented
   printf ("Events for MPI-2 are not supported, please update your MPI implementation\n");
 #endif // MPI_VERSION
-  if(ierr != MPI_SUCCESS && stat != NULL)
-    *stat = ierr;
+  if(ierr != MPI_SUCCESS)
+    {
+      if(stat != NULL)
+	*stat = ierr;
+      if(errmsg != NULL)
+	{
+	  memset(errmsg,' ',errmsg_len);
+	  memcpy(errmsg, msg, MIN(errmsg_len,strlen(msg)));
+	}
+    }
 }
 
 void
@@ -2166,6 +2175,7 @@ PREFIX (event_wait) (caf_token_t token, size_t index,
   int newval=0;
   const int spin_loop_max = 10000;
   MPI_Win *p = token;
+  const char msg[] = "Error on event wait";
 
   if(stat != NULL)
     *stat = 0;
@@ -2203,8 +2213,16 @@ PREFIX (event_wait) (caf_token_t token, size_t index,
 # else // CAF_MPI_LOCK_UNLOCK
   MPI_Win_flush (image, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
-  if(stat != NULL && ierr != MPI_SUCCESS)
-    *stat = ierr;
+  if(ierr != MPI_SUCCESS)
+    {
+      if(stat != NULL)
+	*stat = ierr;
+      if(errmsg != NULL)
+	{
+	  memset(errmsg,' ',errmsg_len);
+	  memcpy(errmsg, msg, MIN(errmsg_len,strlen(msg)));
+	}
+    }
 }
 
 void
