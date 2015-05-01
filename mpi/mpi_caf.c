@@ -190,7 +190,7 @@ caf_runtime_error (const char *message, ...)
   exit (EXIT_FAILURE);
 }
 
-void inline locking_atomic_op(MPI_Win win, int *value, int newval, 
+inline void locking_atomic_op(MPI_Win win, int *value, int newval, 
 			      int compare, int image_index, int index)
 {
 # ifdef CAF_MPI_LOCK_UNLOCK
@@ -2119,6 +2119,121 @@ PREFIX (atomic_op) (int op, caf_token_t token ,
   return;
 }
 
+/* Events */
+
+void
+PREFIX (event_post) (caf_token_t token, size_t index, 
+		     int image_index, int *stat, 
+		     char *errmsg, int errmsg_len)
+{
+  int image, value=1, ierr=0;
+  MPI_Win *p = token;
+
+  if(image_index == 0)
+    image = caf_this_image-1;
+  else
+    image = image_index-1;
+
+  if(stat != NULL)
+    *stat = 0;
+
+  #if MPI_VERSION >= 3
+# ifdef CAF_MPI_LOCK_UNLOCK
+  MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image, 0, *p);
+# endif // CAF_MPI_LOCK_UNLOCK
+  ierr = MPI_Accumulate (&value, 1, MPI_INT, image, index*sizeof(int), 1, MPI_INT, MPI_SUM, *p);
+# ifdef CAF_MPI_LOCK_UNLOCK
+  MPI_Win_unlock (image, *p);
+# else // CAF_MPI_LOCK_UNLOCK
+  MPI_Win_flush (image, *p);
+# endif // CAF_MPI_LOCK_UNLOCK
+#else // MPI_VERSION
+  #warning Events for MPI-2 are not implemented
+  printf ("Events for MPI-2 are not supported, please update your MPI implementation\n");
+#endif // MPI_VERSION
+  if(ierr != MPI_SUCCESS && stat != NULL)
+    *stat = ierr;
+}
+
+void
+PREFIX (event_wait) (caf_token_t token, size_t index, 
+		     int until_count, int *stat,
+		     char *errmsg, int errmsg_len)
+{
+  int ierr=0,count=0,i,image=caf_this_image-1;
+  int *var=NULL,flag,old=0;
+  int newval=0;
+  const int spin_loop_max = 100;
+  MPI_Win *p = token;
+
+  if(stat != NULL)
+    *stat = 0;
+
+  MPI_Win_get_attr(*p,MPI_WIN_BASE,&var,&flag);
+
+  for(i = 0; i < spin_loop_max; ++i)
+    {
+      count = var[index];
+      if(count >= until_count)
+	break;
+    }
+
+  if(count < until_count)
+    for(i = 0; i < spin_loop_max; ++i)
+      {
+	count = var[index];
+	if(count >= until_count)
+	  break;
+	usleep(10*i);
+      }
+
+  newval = -until_count;
+
+# ifdef CAF_MPI_LOCK_UNLOCK
+  MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image, 0, *p);
+# endif // CAF_MPI_LOCK_UNLOCK
+  ierr = MPI_Fetch_and_op(&newval, &old, MPI_INT, image, index*sizeof(int), MPI_SUM, *p);
+# ifdef CAF_MPI_LOCK_UNLOCK
+  MPI_Win_unlock (image, *p);
+# else // CAF_MPI_LOCK_UNLOCK
+  MPI_Win_flush (image, *p);
+# endif // CAF_MPI_LOCK_UNLOCK
+  if(stat != NULL && ierr != MPI_SUCCESS)
+    *stat = ierr;
+}
+
+void
+PREFIX (event_query) (caf_token_t token, size_t index, 
+		      int image_index, int *count, int *stat)
+{
+  int image,ierr=0;
+  MPI_Win *p = token;
+
+  if(image_index == 0)
+    image = caf_this_image-1;
+  else
+    image = image_index-1;
+
+  if(stat != NULL)
+    *stat = 0;
+
+#if MPI_VERSION >= 3
+# ifdef CAF_MPI_LOCK_UNLOCK
+  MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image, 0, *p);
+# endif // CAF_MPI_LOCK_UNLOCK
+  ierr = MPI_Fetch_and_op(NULL, count, MPI_INT, image, index*sizeof(int), MPI_NO_OP, *p);
+# ifdef CAF_MPI_LOCK_UNLOCK
+  MPI_Win_unlock (image, *p);
+# else // CAF_MPI_LOCK_UNLOCK
+  MPI_Win_flush (image, *p);
+# endif // CAF_MPI_LOCK_UNLOCK
+#else // MPI_VERSION
+#warning Events for MPI-2 are not implemented
+  printf ("Events for MPI-2 are not supported, please update your MPI implementation\n");
+#endif // MPI_VERSION
+  if(ierr != MPI_SUCCESS && stat != NULL)
+    *stat = ierr;
+}
 
 /* ERROR STOP the other images.  */
 
