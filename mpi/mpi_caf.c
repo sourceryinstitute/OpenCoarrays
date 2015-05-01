@@ -437,7 +437,8 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
   MPI_Win *p = *token;
 
   if(type == CAF_REGTYPE_LOCK_STATIC || type == CAF_REGTYPE_LOCK_ALLOC ||
-     type == CAF_REGTYPE_CRITICAL)
+     type == CAF_REGTYPE_CRITICAL || type == CAF_REGTYPE_EVENT_STATIC ||
+     type == CAF_REGTYPE_EVENT_ALLOC)
     {
       actual_size = size*sizeof(int);
       l_var = 1;
@@ -2163,7 +2164,7 @@ PREFIX (event_wait) (caf_token_t token, size_t index,
   int ierr=0,count=0,i,image=caf_this_image-1;
   int *var=NULL,flag,old=0;
   int newval=0;
-  const int spin_loop_max = 100;
+  const int spin_loop_max = 10000;
   MPI_Win *p = token;
 
   if(stat != NULL)
@@ -2173,18 +2174,22 @@ PREFIX (event_wait) (caf_token_t token, size_t index,
 
   for(i = 0; i < spin_loop_max; ++i)
     {
+      MPI_Win_sync(*p);
       count = var[index];
       if(count >= until_count)
 	break;
     }
 
-  if(count < until_count)
-    for(i = 0; i < spin_loop_max; ++i)
+  i=1;
+  while(count < until_count)
+    /* for(i = 0; i < spin_loop_max; ++i) */
       {
+	MPI_Win_sync(*p);
 	count = var[index];
-	if(count >= until_count)
-	  break;
+	/* if(count >= until_count) */
+	/*   break; */
 	usleep(10*i);
+	i++;
       }
 
   newval = -until_count;

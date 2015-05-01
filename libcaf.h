@@ -66,7 +66,9 @@ typedef enum caf_register_t {
   CAF_REGTYPE_COARRAY_ALLOC,
   CAF_REGTYPE_LOCK_STATIC,
   CAF_REGTYPE_LOCK_ALLOC,
-  CAF_REGTYPE_CRITICAL
+  CAF_REGTYPE_CRITICAL,
+  CAF_REGTYPE_EVENT_STATIC,
+  CAF_REGTYPE_EVENT_ALLOC
 }
 caf_register_t;
 
@@ -145,5 +147,7 @@ void PREFIX (atomic_op) (int, caf_token_t, size_t, int, void *, void *,
 
 void PREFIX (lock) (caf_token_t, size_t, int, int *, int *, char *, int);
 void PREFIX (unlock) (caf_token_t, size_t, int, int *, char *, int);
-
+void PREFIX (event_post) (caf_token_t, size_t, int, int *, char *, int);
+void PREFIX (event_wait) (caf_token_t, size_t, int, int *, char *, int);
+void PREFIX (event_query) (caf_token_t, size_t, int, int *, int *);
 #endif  /* LIBCAF_H  */
