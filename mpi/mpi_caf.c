@@ -596,7 +596,6 @@ PREFIX (sync_memory) (int *stat, char *errmsg, int errmsg_len)
 #if defined(NONBLOCKING_PUT) && !defined(CAF_MPI_LOCK_UNLOCK)
   explicit_flush();
 #endif
-  __sync_synchronize ();
 }
 
 
@@ -666,6 +665,23 @@ void selectType(int size, MPI_Datatype *dt)
       *dt=MPI_DOUBLE;
       return;
     }
+
+  MPI_Type_size(MPI_COMPLEX, &t_s);
+
+  if(t_s==size)
+    {
+      *dt=MPI_COMPLEX;
+      return;
+    }
+
+  MPI_Type_size(MPI_DOUBLE_COMPLEX, &t_s);
+
+  if(t_s==size)
+    {
+      *dt=MPI_DOUBLE_COMPLEX;
+      return;
+    }
+
 }
 
 void
@@ -1494,6 +1510,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
   MPI_Win_flush (image_index-1, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
 #endif
+  __sync_synchronize();
 }
 
 
