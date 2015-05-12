@@ -2201,13 +2201,13 @@ PREFIX (event_wait) (caf_token_t token, size_t index,
 
   MPI_Win_get_attr(*p,MPI_WIN_BASE,&var,&flag);
 
-  for(i = 0; i < spin_loop_max; ++i)
+  /*for(i = 0; i < spin_loop_max; ++i)
     {
       MPI_Win_sync(*p);
       count = var[index];
       if(count >= until_count)
 	break;
-    }
+    }*/
 
   i=1;
   while(count < until_count)
