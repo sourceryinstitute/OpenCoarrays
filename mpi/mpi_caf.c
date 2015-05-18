@@ -210,14 +210,14 @@ void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
 {
   const char msg[] = "Already locked";
 #if MPI_VERSION >= 3
-  int value=1, compare = 0, newval = 1;
+  int value=1, compare = 0, newval = caf_this_image, i = 1;
 
   if(stat != NULL)
     *stat = 0;
 
   locking_atomic_op(win, &value, newval, compare, image_index, index);
 
-  if(value == 1 && image_index == caf_this_image)
+  if(value == caf_this_image && image_index == caf_this_image)
     goto stat_error;
 
   if(acquired_lock != NULL)
@@ -229,8 +229,12 @@ void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
       return;
     }
 
-  while(value == 1)
-    locking_atomic_op(win, &value, newval, compare, image_index, index);
+  while(value != 0)
+    {
+      locking_atomic_op(win, &value, newval, compare, image_index, index);
+      usleep(caf_this_image*i);
+      i++;
+    }
 
   return;
 
@@ -259,7 +263,17 @@ void mutex_unlock(MPI_Win win, int image_index, int index, int *stat,
 #if MPI_VERSION >= 3
   int value=1, compare = 1, newval = 0;
   
-  locking_atomic_op(win, &value, newval, compare, image_index, index);
+  /* locking_atomic_op(win, &value, newval, compare, image_index, index); */
+  
+# ifdef CAF_MPI_LOCK_UNLOCK
+  MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, win);
+# endif // CAF_MPI_LOCK_UNLOCK
+  MPI_Fetch_and_op(&newval, &value, MPI_INT, image_index-1, index*sizeof(int), MPI_REPLACE, win);
+# ifdef CAF_MPI_LOCK_UNLOCK
+  MPI_Win_unlock (image_index-1, win);
+# else // CAF_MPI_LOCK_UNLOCK
+  MPI_Win_flush (image_index-1, win);
+# endif // CAF_MPI_LOCK_UNLOCK
 
   if(value == 0)
     goto stat_error;
