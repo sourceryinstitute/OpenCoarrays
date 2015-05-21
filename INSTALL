@@ -5,6 +5,15 @@ See also the implementation status in the file STATUS
 Introduction
 ------------
 
+This file targets system administrators and developers who require access to
+the entire OpenCoarrays distribution, including experimental libraries that
+are intended only for advanced users.  Most end users will find it simpler 
+to install the subset of the OpenCoarrays distribution that is included in  
+the tar ball on http://www.opencoarrays.org.  Users can either access that
+tar ball directly and build using CMake or Make or install the contents of
+the tar ball using package management software such as Macports for OS X,
+apt-get for Linux, or Cygwin for Windows.
+
 The following documentation provides instructions on how to set up the coarray
 support on GNU Fortran, using the OpenCoarrays library, and how to compile and
 run a simple coarray program.
