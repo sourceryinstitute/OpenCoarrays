@@ -190,7 +190,10 @@ caf_runtime_error (const char *message, ...)
   exit (EXIT_FAILURE);
 }
 
-inline void locking_atomic_op(MPI_Win win, int *value, int newval, 
+/* FIXME: CMake chokes on the "inline" keyword below.  If we can detect that CMake is  */
+/*        being used, we could add something of the form "#ifdef _CMAKE" to remove the */
+/*        keyword only when building with CMake */
+/* inline */ void locking_atomic_op(MPI_Win win, int *value, int newval, 
 			      int compare, int image_index, int index)
 {
 # ifdef CAF_MPI_LOCK_UNLOCK
