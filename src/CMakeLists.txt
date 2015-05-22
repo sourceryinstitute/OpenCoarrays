@@ -47,7 +47,7 @@ install(EXPORT OpenCoarraysTargets
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
   "${CMAKE_CURRENT_BINARY_DIR}/OpenCoarraysConfigVersion.cmake"
-  VERSION 1.1
+  VERSION 1.0
   COMPATIBILITY AnyNewerVersion
 )
 
