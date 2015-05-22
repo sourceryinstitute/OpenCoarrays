@@ -26,7 +26,7 @@ other compilers than GCC 5.
 OpenCoarrays Installation
 -------------------------
 
-OpenCoarrays contains four libraries; in doubt, use the MPI version:
+OpenCoarrays contains four libraries; if in doubt, use the MPI version:
 
 * single
   Provides a stub library with a single image. To be used for testing or
@@ -58,7 +58,7 @@ OpenCoarrays contains four libraries; in doubt, use the MPI version:
 
 Note:
 * It is sufficient to compile only the library you are interested in.
-* Any C compiler can be used, in particular older GCC or different compilers
+* Any C compiler can be used. In particular, older GCC or different compilers
   work as well.	 However, for MPI ABI compatibility, using a recent GCC for
   compilation is preferred
 
@@ -75,24 +75,45 @@ Prerequisites
 
 Building the libraries
 ----------------------
+Although CMake (http://www.cmake.org) is the preferred build system, we also 
+provide a static Makefile inside the src source directory.  CMake is 
+cross-platform and more automated than Make and therefore less work to maintain.
+An sample Bourne shell script for building with CMake is in the file
+buildScripts/gnu-compilers-cmake.sh.  After editing it to match your set-up,
+build with steps such as the following:
 
-Running "make" LIBCAF_MPI will be built by default.
+mkdir Build
+cd Build
+../buildScripts/gnu-compilers-cmake.sh
+make
+make test
 
-Alternatively, run "make" followed by the library which should be built, e.g.
-  make single mpi
+The latter step runs the OpenCoarrays tests and reports the test results.  We 
+advise running the tests to verify the correct building, installation, and
+execution of the library. The tests directory includes unit tests, integration 
+tests (small applications), and performance tests.  Please report any test 
+failures to opencoarrays@googlegroups.com.  
 
-You may need to edit the "make.inc" file for your system settings, e.g.
-you may need to remove the "-Werror" option from the compile flags, set
+To build with Make, use steps such as the following: 
+
+cd src
+make single mpi
+
+which builds libcaf_single.a and libcaf_mpi.a.  Or drop the "single mpi" above
+to build the default library (libcaf_mpi.a).
+
+You might need to edit the "make.inc" file for your system settings, e.g.
+you migt need to remove the "-Werror" option from the compile flags, set
 a different compiler or similar.
 
-For GASNet, you have to set GASNET_MAK to point to your GASNet installation
+For GASNet, set GASNET_MAK to point to your GASNet installation
 with the conduit which should be used.
 
-In order to activate the efficient strided transfer support you have to
-uncomment the -DSTRIDED flag inside the "make.inc" file.
+In order to activate efficient strided-array transfer support, uncomment
+the -DSTRIDED flag inside the "make.inc" file.
 
 
-Compiling on CRAY:
+Compiling with Make on CRAY:
 
 * Rename "make.inc.Cray-XE" to "make.inc"
 * Run: module swap PrgEnv-cray PrgEnv-gnu
@@ -100,12 +121,15 @@ Compiling on CRAY:
   or change other settings
 * Run "make" with the library which should be created
 
+We currently don't have a "make install" option.  If you build with Make,
+then install the libraries in the directly of your choice by simply copying
+from where Make puts them in their respective source-tree subdirectory 
+(src/single/libcaf_single.a, src/mpi/libcaf_mpi.a, etc.) to the location
+of your choice.
 
-Consider to install the just compiled libraries (single/libcaf_single.a,
-mpi/libcaf_mpi.a etc.) into a library directory.
-
-Consider to run the testsuite or examples (tests/) in the subdirectories.
-
+Many of the tests have static Makefiles in their respective subdirectories
+(e.g., src/tests/integration/coarrayHelloWorld/Makefile).  Please run several
+tests to ensure verify correct installation and execution of the library.
 
 How to compile and run a coarray program
 ----------------------------------------
