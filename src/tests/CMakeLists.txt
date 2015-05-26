@@ -1,3 +1,3 @@
 add_subdirectory(integration)
 add_subdirectory(unit)
-add_subdirectory(performance)
+#add_subdirectory(performance)

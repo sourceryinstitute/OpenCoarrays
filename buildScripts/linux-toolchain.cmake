@@ -1,3 +1,4 @@
+set(HIGH_RESOLUTION_TIMER TRUE)
 set(CMAKE_Fortran_FLAGS "-std=f2008 -fcoarray=lib -Wall -fcheck=all -Ofast -Wintrinsics-std")
 set(CMAKE_SYSTEM_NAME Linux)
 include(CMakeForceCompiler)
