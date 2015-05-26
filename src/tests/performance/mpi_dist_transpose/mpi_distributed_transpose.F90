@@ -37,18 +37,23 @@
 !==================  test transposes with integer x,y,z values  ===============================
 module mpi_run_size
     use iso_fortran_env
+#ifndef HAVE_WALLTIME
+    use MPI, only : WALLTIME=>MPI_WTIME
+#endif
     implicit none
         integer(int64) :: nx, ny, nz
         integer(int64) :: my, mx, first_y, last_y, first_x, last_x
         integer(int64) :: my_node, num_nodes
         real(real64) :: tran_time
 
+#ifdef HAVE_WALLTIME
 interface
    function WALLTIME() bind(C, name = "WALLTIME")
    use iso_fortran_env
        real(real64) :: WALLTIME
    end function WALLTIME
 end interface
+#endif
 
 contains
 

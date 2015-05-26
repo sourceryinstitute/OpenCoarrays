@@ -34,18 +34,23 @@
 !==================  test transposes with integer x,y,z values  ===============================
 module run_size
     use iso_fortran_env
+#ifndef HAVE_WALLTIME
+    use MPI, only : WALLTIME=>MPI_WTIME
+#endif
     implicit none
         integer(int64), codimension[*] :: nx, ny, nz
         integer(int64), codimension[*] :: my, mx, first_y, last_y, first_x, last_x
         integer(int64) :: my_node, num_nodes
         real(real64), codimension[*] :: tran_time
 
+#ifdef HAVE_WALLTIME
 interface
    function WALLTIME() bind(C, name = "WALLTIME")
    use iso_fortran_env
        real(real64) :: WALLTIME
    end function WALLTIME
 end interface
+#endif
 
 contains
 
@@ -123,7 +128,7 @@ program coarray_distributed_transpose
       sync all  !-- other nodes wait for broadcast!
 
 
- 	  if ( mod(ny,num_nodes) == 0)  then;   my = ny / num_nodes
+      if ( mod(ny,num_nodes) == 0)  then;   my = ny / num_nodes
                                     else;   write(6,*) "node ", my_node, " ny not multiple of num_nodes";     error stop
       end if
 

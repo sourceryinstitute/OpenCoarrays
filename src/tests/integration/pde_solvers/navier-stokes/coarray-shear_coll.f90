@@ -111,11 +111,14 @@ end module random_module
 module run_size
     use iso_fortran_env, only : int64,real64 ! 64-bit integer and real kind parameters
     use constants_module, only : one         ! 64-bit unit to ensure argument kind match
+#ifndef HAVE_WALLTIME
+    use MPI, only : WALLTIME=>MPI_WTIME
+#endif
     implicit none
         real, codimension[*] ::  viscos, shear, b11, b22, b33, b12, velmax
         integer(int64), codimension[*] ::  nx, ny, nz, nsteps, output_step
         integer(int64), codimension[*] :: my, mx, first_y, last_y, first_x, last_x
-        real(real64), codimension[*] :: cpu_time, tran_time, sync_time, total_time
+        real(real64), codimension[*] :: cpu_time_, tran_time, sync_time, total_time
         real(real64), codimension[*] :: max_cpu_time, max_tran_time, max_sync_time, max_total_time
         real(real64), codimension[*] :: min_cpu_time, min_tran_time, min_sync_time, min_total_time
 
@@ -141,19 +144,19 @@ contains
     subroutine global_times()
         integer(int64) :: i, stage
 
-        max_cpu_time = cpu_time
+        max_cpu_time = cpu_time_
         max_tran_time = tran_time
         max_total_time = sync_time
         max_total_time = total_time
-        min_cpu_time = cpu_time
+        min_cpu_time = cpu_time_
         min_tran_time = tran_time
         min_total_time = sync_time
         min_total_time = total_time
 
         do stage = 1, num_nodes-1
             i = 1 + mod( my_node-1+stage, num_nodes )
-            max_cpu_time = max( max_cpu_time, cpu_time[i] )
-            min_cpu_time = min( min_cpu_time, cpu_time[i] )
+            max_cpu_time = max( max_cpu_time, cpu_time_[i] )
+            min_cpu_time = min( min_cpu_time, cpu_time_[i] )
             max_tran_time = max( max_tran_time, tran_time[i] )
             min_tran_time = min( min_tran_time, tran_time[i] )
             max_sync_time = max( max_sync_time, sync_time[i] )
@@ -234,7 +237,7 @@ program cshear
         nsteps = nsteps[1];     output_step = output_step[1]
       end if
 
- 	    mx = nx/2 / num_nodes;  first_x = (my_node-1)*mx + 1;   last_x  = (my_node-1)*mx + mx
+        mx = nx/2 / num_nodes;  first_x = (my_node-1)*mx + 1;   last_x  = (my_node-1)*mx + mx
         my = ny / num_nodes;    first_y = (my_node-1)*my + 1;   last_y  = (my_node-1)*my + my
 
       if(my_node == 1 ) write(6,fmt="(A, f6.2)") "message size (MB) = ", real(nz*4*mx*my*8)/real(1024*1024) 
@@ -264,6 +267,7 @@ end program cshear
        complex, allocatable ::  un(:,:,:,:)      !un(nz,3,first_x:last_x,ny)[*]    !(*-- x-y planes --*)
        complex, allocatable :: bufr_X_Y(:,:,:,:)
        complex, allocatable :: bufr_Y_X(:,:,:,:)
+       real :: t_start,t_end
 
 interface
 !--------    note: integer(int64)'s required for FFT's and other assembly-coded externals   ------
@@ -292,10 +296,12 @@ interface
         complex, dimension(0:0), intent(in) :: data
    end subroutine rfft
 
+#ifdef HAVE_WALLTIME
    function WALLTIME() bind(C, name = "WALLTIME")
        import real64
        real(real64) :: WALLTIME
    end function WALLTIME
+#endif
 
 
 end interface
@@ -303,7 +309,7 @@ end interface
        trigx = rtrig( nx )
        trigy = ctrig( ny )
        trigz = ctrig( nz )
-	   trigxy = ctrig( nx+ny )
+       trigxy = ctrig( nx+ny )
 
        allocate (  u(nz , 4 , first_x:last_x , ny)[*] )     !(*-- y-z planes --*)
        allocate ( ur(nz , 4 , first_y:last_y , nx/2)[*] )   !(*-- x-z planes --*)
@@ -318,12 +324,11 @@ end interface
                         call define_kspace
                         call define_field
                         call enforce_conjugate_symmetry
-						call copy_n_s
+                        call copy_n_s
                         call define_shifts 
 
        total_time =  -WALLTIME()      !-- start the clock
-
-       tran_time = 0;       cpu_time = -WALLTIME()
+       tran_time = 0;       cpu_time_ = -WALLTIME()
   
   !(*********************************   begin execution loop   *****************************************)
 
@@ -338,7 +343,7 @@ end interface
                         call define_shifts
                         call phase3
                         call pressure
-		if (oflag /= 0) call spectra
+        if (oflag /= 0) call spectra
                         call advance
                         call phase1
             rkstep = 2
@@ -351,7 +356,7 @@ end interface
         if (rflag /= 0) call remesh
                         call copy_s_n
 
-                		step = step + 1
+                        step = step + 1
                         time = time + dt
        end do
 
@@ -362,16 +367,16 @@ end interface
        sync all     !-- wait for all images to finish!
 
        total_time =  total_time + WALLTIME()    !-- stop the clock
-       cpu_time =  cpu_time + WALLTIME()    !-- stop the clock
+       cpu_time_ =  cpu_time_ + WALLTIME()    !-- stop the clock
        call global_times
 
        if (my_node == 1 )   write(6,fmt="(3(10X,A,2f7.2))")  &
-                            , "total_time ", min_total_time/step, max_total_time/step &
-                            , "cpu_time ", min_cpu_time/step, max_cpu_time/step &
+                              "total_time ", min_total_time/step, max_total_time/step &
+                            , "cpu_time_ ", min_cpu_time/step, max_cpu_time/step &
                             , "tran_time ", min_tran_time/step, max_tran_time/step
   
 
-       write(6,fmt="(A,i4,3f7.2)")  "image ", my_node, total_time/step, cpu_time/step, tran_time/step
+       write(6,fmt="(A,i4,3f7.2)")  "image ", my_node, total_time/step, cpu_time_/step, tran_time/step
   
 
 contains
@@ -393,8 +398,9 @@ contains
     implicit none
 
     integer(int64) :: i,stage
+    real :: t_start,t_end
 
-    cpu_time = cpu_time + WALLTIME()
+    cpu_time_ = cpu_time_ + WALLTIME()
     sync all   !--  wait for other nodes to finish compute
     tran_time = tran_time - WALLTIME()
 
@@ -415,7 +421,7 @@ contains
 
     sync all     !--  wait for other nodes to finish transpose
     tran_time = tran_time + WALLTIME()
-    cpu_time = cpu_time - WALLTIME()
+    cpu_time_ = cpu_time_ - WALLTIME()
 
  end  subroutine transpose_X_Y
 
@@ -427,7 +433,7 @@ subroutine transpose_Y_X
 
     integer(int64) :: i, stage
 
-    cpu_time = cpu_time + WALLTIME()
+    cpu_time_ = cpu_time_ + WALLTIME()
     sync all   !--  wait for other nodes to finish compute
     tran_time = tran_time - WALLTIME()
 
@@ -448,7 +454,7 @@ subroutine transpose_Y_X
 
     sync all     !--  wait for other nodes to finish transpose
     tran_time = tran_time + WALLTIME()
-    cpu_time = cpu_time - WALLTIME()
+    cpu_time_ = cpu_time_ - WALLTIME()
 
  end  subroutine transpose_Y_X
 
@@ -469,7 +475,7 @@ subroutine transpose_Y_X
             z = 1;              y = 1;              un(z,i,x,y) = 0
             z = 1;              do y = 2, ny/2;     un(z,i,x,y) = conjg( un(z,i,x,ny+2-y) );        end do
             do z = 2, nz/2;     y = 1;              un(z,i,x,y) = conjg( un(nz+2-z,i,x,y) );        end do
-            do z = 2, nz/2;     do y = 2, ny;       un(z,i,x,y) = conjg( un(nz+2-z,i,x,ny+2-y) );   end do;	end do
+            do z = 2, nz/2;     do y = 2, ny;       un(z,i,x,y) = conjg( un(nz+2-z,i,x,ny+2-y) );   end do; end do
         end do
     end if
 end  subroutine enforce_conjugate_symmetry
@@ -490,7 +496,7 @@ end  subroutine enforce_conjugate_symmetry
 
       total_time =  total_time + WALLTIME()     !-- stop the clock!  time/step does not include spectra time
 
-	  oflag = 0
+      oflag = 0
       ek = 0;       dk = 0;       hk = 0;     tk = 0;   sample = 0
  
  !(*---------------------   three dimensional spectra  -----------------------*)
@@ -506,7 +512,7 @@ end  subroutine enforce_conjugate_symmetry
             kk = kx(x)**2 + ky(x,y)**2 + kz(z)**2
             k = 1 + int( sqrt( kk ) + 0.5 )
 
-			  uu = factor * real( un(z,1,x,y) * conjg( un(z,1,x,y) ) &
+              uu = factor * real( un(z,1,x,y) * conjg( un(z,1,x,y) ) &
                                 + un(z,2,x,y) * conjg( un(z,2,x,y) ) &
                                 + un(z,3,x,y) * conjg( un(z,3,x,y) ) )
               ww = kk * uu
@@ -516,9 +522,9 @@ end  subroutine enforce_conjugate_symmetry
                                      + ky(x,y) * un(z,3,x,y) * conjg( un(z,1,x,y) ) &
                                      + kz(z) *   un(z,1,x,y) * conjg( un(z,2,x,y) ) )
 
-			  duu = factor * real( un(z,1,x,y) * conjg( u(z,1,x,y) ) &
+              duu = factor * real( un(z,1,x,y) * conjg( u(z,1,x,y) ) &
                                  + un(z,2,x,y) * conjg( u(z,2,x,y) ) &
-								 + un(z,3,x,y) * conjg( u(z,3,x,y) ) ) / (dt/2) + shear * uv
+                                 + un(z,3,x,y) * conjg( u(z,3,x,y) ) ) / (dt/2) + shear * uv
 
               sample(k) = sample(k) + factor        !(*-- shell sample --*)
               ek(k) = ek(k) + uu                    !(*-- 2 * energy sum --*)
@@ -659,9 +665,9 @@ end  subroutine enforce_conjugate_symmetry
     sync all
 
     if (cfl /= 0) then
-cpu_time = cpu_time + WALLTIME()
+cpu_time_ = cpu_time_ + WALLTIME()
         call max_velmax
-cpu_time = cpu_time - WALLTIME()
+cpu_time_ = cpu_time_ - WALLTIME()
         dt = cfl / velmax
     end if
 
@@ -718,9 +724,9 @@ end   subroutine    define_kspace
     complex :: shift
     integer(int64) :: i, x, y, z
 
-   	do  x = first_x, last_x
+        do  x = first_x, last_x
 
-   		do  y = 1, ny;    do  z = 1, nz
+          do  y = 1, ny;    do  z = 1, nz
              shift = sz(z,rkstep+1) * sy(y,rkstep+1) * sx(x,rkstep+1)
              u(z,1,x,y) = shift * u(z,1,x,y)
              u(z,2,x,y) = shift * u(z,2,x,y)
@@ -731,7 +737,7 @@ end   subroutine    define_kspace
 
         do i = 1, 3
             call cfft ( ny, nz, u(1,i,x,1), nz*4*mx, one, trigy, one );    end do
-	end do
+        end do
 
  end   subroutine  phase1
  
@@ -859,7 +865,7 @@ end   subroutine    define_kspace
                         u(z,2,x,y) = u(z,2,x,y) - ky(x,y) * psi
                         u(z,3,x,y) = u(z,3,x,y) - kz(z) * psi
                    end do
-			else if ( y /= 1 )  then
+            else if ( y /= 1 )  then
                   do  z = 1, nz
                         psi = ( ky(1,y) * u(z,2,1,y) + kz(z) * u(z,3,1,y) ) &
                               / ( ky(1,y)**2 + kz(z)**2 )
@@ -869,7 +875,7 @@ end   subroutine    define_kspace
             else
                   do  z = 1, nz ;    u(z,3,1,1) = 0;     end do
             end if
-	 end do;    end do
+      end do;    end do
 
 end   subroutine  pressure
 
@@ -941,13 +947,13 @@ subroutine   remesh
      use run_size
      implicit none
 
-	integer(int64) ::  x, y, z
+     integer(int64) ::  x, y, z
 
-	do y = 1, ny;    do x = first_x, last_x;   do z = 1, nz
-		u(z,1,x,y) = un(z,1,x,y)
-		u(z,2,x,y) = un(z,2,x,y)
-    	u(z,3,x,y) = un(z,3,x,y)
-	end do; end do; end do
+     do y = 1, ny;    do x = first_x, last_x;   do z = 1, nz
+        u(z,1,x,y) = un(z,1,x,y)
+        u(z,2,x,y) = un(z,2,x,y)
+        u(z,3,x,y) = un(z,3,x,y)
+     end do; end do; end do
  end  subroutine  copy_n_s
 
  subroutine  copy_s_n
@@ -955,12 +961,12 @@ subroutine   remesh
      use run_size
      implicit none
 
-	integer(int64) ::  x, y, z
+     integer(int64) ::  x, y, z
 
-	do y = 1, ny;	do x = first_x, last_x;     do z = 1, nz
-		un(z,1,x,y) = u(z,1,x,y)
-		un(z,2,x,y) = u(z,2,x,y)
-		un(z,3,x,y) = u(z,3,x,y)
+     do y = 1, ny; do x = first_x, last_x;     do z = 1, nz
+       un(z,1,x,y) = u(z,1,x,y)
+       un(z,2,x,y) = u(z,2,x,y)
+       un(z,3,x,y) = u(z,3,x,y)
     end do; end do; end do
 
  end  subroutine  copy_s_n
@@ -975,7 +981,7 @@ subroutine   remesh
      implicit none
 
     integer(int64) ::  x, y, z
-    real :: factor, xyfac, zfac(nz)	  !(* viscous integrating factors *) 
+    real :: factor, xyfac, zfac(nz)  !(* viscous integrating factors *) 
  
     if (rkstep == 1) then
         do z = 1, nz;     zfac(z) = exp( - viscos * dt * kz(z)**2 ); end do

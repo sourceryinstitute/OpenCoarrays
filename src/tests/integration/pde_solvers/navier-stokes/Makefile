@@ -28,8 +28,8 @@ coarray-shear-collective: coarray-shear_coll.o $(objects) Makefile
 mpi-shear: mpi-shear.o $(objects) Makefile
 	$(compile)  mpi-shear.o $(objects) -o mpi-shear $(fft)
 
-coarray-shear_coll.o: coarray-shear_coll.f90 $(objects) Makefile
-	$(compile) $(opt)  -c coarray-shear_coll.f90 
+coarray-shear_coll.o: coarray-shear_coll.F90 $(objects) Makefile
+	$(compile) $(opt)  -c coarray-shear_coll.F90 
 
 mpi-shear.o: mpi-shear.f90 $(objects) Makefile
 	$(compile)  -c mpi-shear.f90

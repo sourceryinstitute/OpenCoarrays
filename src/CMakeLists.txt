@@ -79,8 +79,10 @@ set_tests_properties(burgers_pde PROPERTIES PASS_REGULAR_EXPRESSION "Test passed
 add_test(heat_equation tests/integration/pde_solvers/coarrayHeatSimplified/co_heat)
 set_tests_properties(heat_equation PROPERTIES PASS_REGULAR_EXPRESSION "Test passed.")
 
-add_test(navier-stokes tests/integration/pde_solvers/navier-stokes/coarray_navier_stokes)
-set_tests_properties(navier-stokes PROPERTIES PASS_REGULAR_EXPRESSION "Test passed.")
+if ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux" )
+  add_test(navier-stokes tests/integration/pde_solvers/navier-stokes/coarray_navier_stokes)
+  set_tests_properties(navier-stokes PROPERTIES PASS_REGULAR_EXPRESSION "Test passed.")
+endif()
 
 add_test(sync_images tests/unit/simple/sync_images)
 set_tests_properties(sync_images PROPERTIES PASS_REGULAR_EXPRESSION "Test passed.")

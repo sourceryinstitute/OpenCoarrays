@@ -71,7 +71,7 @@ contains
 
   subroutine set(this,initial_function,num_points)
     class(global_field), intent(inout) :: this
-    integer(int64), intent(in) :: num_points
+    integer, intent(in) :: num_points
     procedure(initial_condition), pointer :: initial_function
     integer(int64) :: num_intervals,i
     real(real64), parameter :: two_pi=2.*3.1415926535897932384626433832795028842_real64

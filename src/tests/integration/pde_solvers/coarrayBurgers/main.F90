@@ -7,7 +7,7 @@ program main
   type(global_field) :: u,u_half,half_uu
   real(real64), parameter :: nu=1.,final_time=0.6_real64,tolerance=1.E-3_real64,safety_factor=0.1_real64
   real(real64) :: time=0.,dt,dx
-  integer(int64), parameter :: nodes=16
+  integer, parameter :: nodes=16
   procedure(initial_condition), pointer :: initial_u=>ten_sin
 
 #ifdef TAU
