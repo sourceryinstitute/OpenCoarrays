@@ -73,27 +73,41 @@ Prerequisites
   knowledge where GASNet has been installed.
 
 
-Building the libraries
-----------------------
+Build the libraries with CMake (preferred)
+------------------------------------------
 Although CMake (http://www.cmake.org) is the preferred build system, we also 
 provide a static Makefile inside the src source directory.  CMake is 
 cross-platform and more automated than Make and therefore less work to maintain.
-An sample Bourne shell script for building with CMake is in the file
-buildScripts/gnu-compilers-cmake.sh.  After editing it to match your set-up,
-build with steps such as the following:
+Our CMake scripts require build in a directory outside the source tree.  As an 
+example, one might set the requisite environment variables and generate the
+Makefiles inside a neighboring directory in the bash shell as follows:
 
 mkdir Build
 cd Build
-../buildScripts/gnu-compilers-cmake.sh
+CC=mpicc FC=mpif90 cmake ../opencoarrays/ -DCMAKE_INSTALL_PREFIX=${PWD}
+
+whereupon the following commands respectively build the OpenCoarrays static
+libraries libcaf_mpi.a and libcaf_single.a, install them in the present 
+working inside a subdirectory named "lib", and run all tests:
+
 make
-make test
+make install
+ctest
 
-The latter step runs the OpenCoarrays tests and reports the test results.  We 
-advise running the tests to verify the correct building, installation, and
-execution of the library. The tests directory includes unit tests, integration 
-tests (small applications), and performance tests.  Please report any test 
-failures to opencoarrays@googlegroups.com.  
+We recommend running the tests to ensure a correct installation.  The tests 
+directory includes unit tests, integration tests (small applications), and 
+performance tests.  Please report any test failures to opencoarrays@googlegroups.com.  
 
+In order to work around compiler-specific bugs or missing language features, the
+CMake set-up creates include files named "compiler_capabilities.txt"  into the source 
+tree. Typing "make clean" inside the top level of your build directory will remove these.  
+
+Advanced options (these affect only three tests and most users should not use them): 
+  -DLEGACY_ARCHITECTURE=OFF enables the use of FFT libraries that employ AVX instructions
+  -DHIGH_RESOLUTION_TIMER=ON enables timers that tick once per clock cycle
+
+How to build OpenCoarrays with Make
+-----------------------------------
 To build with Make, use steps such as the following: 
 
 cd src
