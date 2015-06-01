@@ -47,9 +47,9 @@ run-single: single
 	$(MAKE) -C testsuite run-single
 
 clean:
-	$(MAKE) -k -C common clean
-	$(MAKE) -k -C single clean
-	$(MAKE) -k -C gasnet clean
+#	$(MAKE) -k -C common clean
+#	$(MAKE) -k -C single clean
+#	$(MAKE) -k -C gasnet clean
 	$(MAKE) -k -C mpi clean
 #	$(MAKE) -k -C tests clean
 #	$(MAKE) -k -C armci clean
