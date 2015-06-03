@@ -65,27 +65,26 @@ target_link_libraries(OpenCoarrays INTERFACE caf_mpi)
 
 enable_testing()
 
-set(tests_to_build 
- hello_multiverse
- coarray_distributed_transpose 
- coarray_burgers_pde 
- co_heat
- sync_images 
- is_there_a_better_name 
- increment_my_neighbor 
- co_broadcast 
- atomics 
- C_hello_world
- C_sync_images
-)
+function(add_mpi_test name num_mpi_proc path)
+   set(test_parameters ${MPIEXEC_NUMPROC_FLAG} ${num_mpi_proc} )
+   add_test(NAME ${name} COMMAND ${MPIEXEC} ${test_parameters} "${path}")
+   set_property(TEST ${name} PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
+endfunction(add_mpi_test)
 
-# Define the string that each test output must contain to indicate passing
-foreach(tests ${tests_to_build})
-  add_test(NAME ${tests} COMMAND ${tests})
-  set_property(TEST ${tests} PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
-endforeach()
+set(tests_root ${CMAKE_CURRENT_BINARY_DIR}/src/tests)
+
+# Unit tests targeting each libcaf_mpi function, argument, and branch of code
+add_mpi_test(initialize_mpi 2 ${tests_root}/unit/init_register/initialize_mpi)
+add_mpi_test(register 2 ${tests_root}/unit/init_register/register)
+add_mpi_test(register_rename_me 2 ${tests_root}/unit/init_register/register_rename_me)
+add_mpi_test(register_rename_me_too 2 ${tests_root}/unit/init_register/register_rename_me_too)
+
+# Integration tests verifying the use of libcaf_mpi in applications
+add_mpi_test(hello_multiverse 2 ${tests_root}/integration/coarrayHelloWorld/hello_multiverse)
+add_mpi_test(coarray_burgers_pde 2 ${tests_root}/integration/pde_solvers/coarrayBurgers/coarray_burgers_pde)
+add_mpi_test(co_heat 2 ${tests_root}/integration/pde_solvers/coarrayHeatSimplified/co_heat)
 
 if ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux" )
-  add_test(NAME navier-stokes COMMAND coarray_navier_stokes)
-  set_property(TEST navier-stokes PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
+  add_mpi_test(coarray_navier_stokes 2 ${tests_root}/integration/pde_solvers/navier-stokes/coarray_navier_stokes)
+  set_property(TEST coarray_navier_stokes PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
 endif()
