@@ -1,4 +1,4 @@
-! Unit test for register procedure. Testing static coarrays.
+! Unit test for register procedure. Testing allocatable arrays coarrays.
 !
 ! Copyright (c) 2012-2014, Sourcery, Inc.
 ! All rights reserved.
@@ -25,37 +25,25 @@
 ! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-program register1
+program register3
   implicit none
-  include 'mpif.h'
-  integer :: np,ierr,me_next
+  integer, parameter :: invalid_rank=-2
+  integer :: np=invalid_rank,array_size=10
+  integer,allocatable :: array(:)[:]
 
-  np = -2
   np = num_images()
+  allocate(array(array_size)[*],source=this_image())
 
-  call image()
+  block
+    logical :: res = .true.
+    if(this_image() == 1) then
+      if(size(array) /= array_size) error stop "Test failed."
+    endif
+
+    deallocate(array)
   
-  if(this_image() == 1) then
-     call image(me_next)
-     if(me_next == 2) then 
-        write(*,*) 'Test passed.'
-     else
-        write(*,*) 'Test failed.'
-     end if
-  endif
-
-contains
-
-subroutine image(me_next)
-  implicit none
-  integer,intent(out),optional :: me_next
-  integer,save :: me[*] = -1
-  if(me == -1) then
-     me = this_image()
-  end if
-  if(present(me_next) .and. me == 1) then
-     me_next = me[2]
-  end if
-end subroutine image
+    if(allocated(array)) error stop "Test failed."
+    if(this_image() == 1) print *,"Test passed."
+  end block
   
-end program register1
+end program 

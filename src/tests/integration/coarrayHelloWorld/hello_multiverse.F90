@@ -51,7 +51,7 @@ program hello_multiverse
     block 
       integer, parameter :: expected_location=23,max_single_digit=9
       do image=2,min(num_images(),max_single_digit)
-        ! Verify that the greetings have their image number at the expected location:
+        ! Verify that the greetings of images 1-9 have their image number at the expected location:
         if (scan(greeting[image],set="123456789")/=expected_location) error stop "Test failed."
       end do
     end block

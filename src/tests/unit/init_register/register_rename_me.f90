@@ -1,4 +1,4 @@
-! Unit test for init procedure. MPI is initialized by LIBCAF_MPI.
+! Unit test for register procedure. Testing static arrays coarrays.
 !
 ! Copyright (c) 2012-2014, Sourcery, Inc.
 ! All rights reserved.
@@ -25,20 +25,19 @@
 ! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-program initmpi1
+program register2
   implicit none
-  include 'mpif.h'
+  integer, parameter :: array_size=10
+  integer :: np, arr1(array_size)[*]
 
-  integer :: me,np,ierr
-  me = -1
-  np = -2
-  me = this_image()
-  call MPI_COMM_SIZE(MPI_COMM_WORLD,np,ierr)
+  np = num_images()
+  arr1 = this_image()
+
+  sync all
   
-  if(me /= -1 .and. np /= -2) then
-     if(me==1) write(*,*) 'Test passed.'
-  else
-     write(*,*) 'Test failed.'
-  end if
-
-end program initmpi1
+  if(this_image() == 1) then
+     if(size(arr1) /= array_size) error stop 'Test failed.'
+     print *,'Test passed.'
+  endif
+  
+end program 

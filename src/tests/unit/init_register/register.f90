@@ -1,4 +1,4 @@
-! Unit test for register procedure. Testing static arrays coarrays.
+! Unit test for register procedure. Testing static coarrays.
 !
 ! Copyright (c) 2012-2014, Sourcery, Inc.
 ! All rights reserved.
@@ -25,24 +25,22 @@
 ! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-program register2
+program register
   implicit none
-  include 'mpif.h'
-  integer :: np,ierr
-  integer,dimension(10),codimension[*] :: arr1
+  integer, parameter :: invalid_image_number=-1
+  integer, save :: me[*] = invalid_image_number
 
-  np = -2
-  np = num_images()
-  arr1 = this_image()
+  if (num_images()<2) error stop "This test requires at least 2 images."
 
-  sync all
+  me = this_image()
   
-  if(this_image() == 1) then
-     if(size(arr1) == 10) then
-        write(*,*) 'Test passed.'
-     else
-        write(*,*) 'Test failed.'
-     end if
-  endif
-  
-end program register2
+  if(me == 1) then
+    block 
+      integer :: image2number
+      image2number = me[2]
+      if (image2number/= 2) error stop "Test failed."
+      print *,"Test passed."
+    end block
+  end if
+
+end program 

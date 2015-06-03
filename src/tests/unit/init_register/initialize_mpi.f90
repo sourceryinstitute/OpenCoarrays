@@ -1,4 +1,4 @@
-! Unit test for register procedure. Testing allocatable arrays coarrays.
+! Unit test for initializion of MPI by LIBCAF_MPI.
 !
 ! Copyright (c) 2012-2014, Sourcery, Inc.
 ! All rights reserved.
@@ -24,37 +24,23 @@
 ! ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 ! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-program register3
+!
+program initialize_mpi
+  use mpi, only : MPI_COMM_SIZE,MPI_COMM_WORLD
   implicit none
-  include 'mpif.h'
-  integer :: np,ierr
-  integer,allocatable :: arr1(:)[:]
-  logical :: res = .true.
 
-  np = -2
-  np = num_images()
+  ! Set invalid default image number and number of ranks
+  integer :: me=-1,np=-1,ierr
 
-  allocate(arr1(10)[*])
+  ! Get image number
+  me = this_image()
 
-  arr1 = this_image()
-
-  if(this_image() == 1) then
-     if(size(arr1) == 10) then
-        res = res .and. .true.
-     else
-        res = res .and. .false.
-     end if
-  endif
-
-  deallocate(arr1)
-
-  if(this_image() == 1) then
-     if(.not.allocated(arr1) .and. res.eqv..true.) then
-        write(*,*) 'Test passed.'
-     else
-        write(*,*) 'Test failed.'
-     end if
-  end if
+  ! Get number of ranks (np)
+  call MPI_COMM_SIZE(MPI_COMM_WORLD,np,ierr)
   
-end program register3
+  ! Everybody verifies that they have a valid image number and rank
+  if(me < 1 .or. np < 1) error stop "Test failed."
+
+  ! Image 1 reports test success
+  if(me==1) print *,"Test passed."
+end program 

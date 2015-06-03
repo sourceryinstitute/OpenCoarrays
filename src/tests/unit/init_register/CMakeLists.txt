@@ -1,11 +1,11 @@
-add_executable(initmpi1 initmpi1.f90)
-target_link_libraries(initmpi1 OpenCoarrays)
+add_executable(initialize_mpi initialize_mpi.f90)
+target_link_libraries(initialize_mpi OpenCoarrays)
 
-add_executable(register1 register1.f90)
-target_link_libraries(register1 OpenCoarrays)
+add_executable(register register.f90)
+target_link_libraries(register OpenCoarrays)
 
-add_executable(register2 register2.f90)
-target_link_libraries(register2 OpenCoarrays)
+add_executable(register_rename_me register_rename_me.f90)
+target_link_libraries(register_rename_me OpenCoarrays)
 
-add_executable(register3 register3.f90)
-target_link_libraries(register3 OpenCoarrays)
+add_executable(register_rename_me_too register_rename_me_too.f90)
+target_link_libraries(register_rename_me_too OpenCoarrays)
