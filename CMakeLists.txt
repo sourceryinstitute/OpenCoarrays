@@ -4,8 +4,8 @@ cmake_minimum_required(VERSION 3.0)
 project(opencoarrays C Fortran)
 
 #Print an error message on an attempt to build inside the source directory tree:
-IF ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
-  MESSAGE(FATAL_ERROR "ERROR! "
+if ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
+  message(FATAL_ERROR "ERROR! "
     "CMAKE_CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
     " == CMAKE_CURRENT_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}"
     "\nThis archive does not support in-source builds:\n"
@@ -19,23 +19,30 @@ IF ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
     "  $ cd MY_BUILD\n"
     "  $ cmake [OPTIONS] .."
     )
-ENDIF()
+endif()
 
 #Report untested Fortran compiler unless explicitly directed to build all examples.
 if ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "GNU" )
   add_definitions(-DPREFIX_NAME=_gfortran_caf_)
 else()
-  message("\n*** Attempting to build with untested Fortran compiler: ${CMAKE_Fortran_COMPILER_ID}.  ***\n")
-  message("\n*** Please report any failures to damian@sourceryinstitute.org    ***\n")
+  message(WARNING 
+    "*** Attempting to build with untested Fortran compiler: ${CMAKE_Fortran_COMPILER_ID}."
+    "*** Please report any failures to opencoarrays@googlegroups.com"
+  )
 endif()
+
+include(CheckFortranSourceCompiles.cmake)
+CHECK_Fortran_SOURCE_COMPILES("
+  program main
+    implicit none
+    integer :: i
+    i = this_image()
+  end program
+" Check_Simple_Coarray_Fortran_Source_Compiles)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 add_subdirectory(src)
-#set(directories_to_build src/single src/mpi src/tests)
-#foreach(directory ${directories_to_build})
-#  add_subdirectory(${directory})
-#endforeach()
 
 install(EXPORT OpenCoarraysTargets 
   NAMESPACE
