@@ -14,10 +14,12 @@ if ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
     "\nYou must now run something like:\n"
     "  $ rm -r CMakeCache.txt CMakeFiles/"
     "\n"
-    "Please create a different directory and configure the tests under that different directory such as\n"
-    "  $ mkdir MY_BUILD\n"
-    "  $ cd MY_BUILD\n"
-    "  $ cmake [OPTIONS] .."
+    "Please create a directory outside the opencoarrays source tree and build under that outside directory "
+    "in a manner such as\n"
+    "  $ mkdir build-opencarrays\n"
+    "  $ cd build-opencoarrays\n"
+    "  $ CC=mpicc FC=mpif90 cmake <path-to-opencoarrays-source-directory> -DCMAKE_INSTALL_PREFIX=<path-to-install-directory>\n"
+    "\nsubstituting the appropriate syntax for your shell (the above line assumes the bash shell)."
     )
 endif()
 
