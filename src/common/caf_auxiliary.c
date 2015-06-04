@@ -50,7 +50,7 @@ PREFIX (is_contiguous) (gfc_descriptor_t *array)
       dim_extent = array->dim[i]._ubound - array->dim[i].lower_bound + 1;
       if (dim_extent <= 0)
 	return true;  /* Zero-sized array.  */
-      else if (dim_extent == 1)
+      else if (dim_extent == 1 && GFC_DESCRIPTOR_RANK(array) == 1)
         element = true;
       else if (element)
 	return false;
