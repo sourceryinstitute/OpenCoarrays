@@ -72,6 +72,8 @@ add_library(OpenCoarrays INTERFACE)
 target_compile_options(OpenCoarrays INTERFACE -fcoarray=lib)
 target_link_libraries(OpenCoarrays INTERFACE caf_mpi)
 
+install(DIRECTORY  ${CMAKE_BINARY_DIR}/mod DESTINATION .)
+
 enable_testing()
 
 function(add_mpi_test name num_mpi_proc path)

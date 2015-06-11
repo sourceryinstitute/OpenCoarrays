@@ -26,12 +26,15 @@
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
 !
 module opencoarrays
+#ifdef COMPILER_SUPPORTS_ATOMICS
   use iso_fortran_env, only : atomic_int_kind
+#endif
   use iso_c_binding, only : c_int,c_char,c_ptr,c_loc,c_long
   implicit none
 
   private
   public :: co_sum
+#ifdef COMPILER_SUPPORTS_ATOMICS
   public :: event_type
   public :: event_post
   
@@ -39,10 +42,11 @@ module opencoarrays
     private
     integer(atomic_int_kind), allocatable :: atom[:]
   end type
+#endif
 
   interface co_sum
-    procedure co_sum_integer
-  end interface
+     module procedure co_sum_integer_scalar
+  end interface co_sum
 
   ! Bindings for OpenCoarrays C procedures
   interface 
@@ -115,47 +119,45 @@ contains
 
 
   ! Proposed Fortran 2015 co_sum parallel collective sum reduction
-  subroutine co_sum_integer(a,result_image,stat,errmsg)
-    integer(c_int), intent(inout), volatile, target :: a(*)
+  subroutine co_sum_integer_scalar(a,result_image,stat,errmsg)
+    ! use iso_c_binding
+    implicit none
+    ! integer(c_int), intent(inout), volatile, target :: a(*)
+    integer(c_int), intent(inout), volatile, target :: a
     integer(c_int), intent(in), optional :: result_image
-    integer(c_int), intent(out), optional:: stat 
-    character(kind=c_char,len=*), intent(out), optional :: errmsg
+    integer(c_int), intent(out), optional:: stat
+    character(kind=1,len=*), intent(out), optional :: errmsg
 
     !gfc_descriptor struct array5_integer(kind=4) parm.7;
-    type(gfc_descriptor_t) :: a_descriptor
+    type(gfc_descriptor_t),target :: a_descriptor
 
-    error stop "Build a_descriptor"
-      
-     ! C example:
-     !parm_7%dtype = 269;
-     !parm_7%dim(0).lbound = 1;
-     !parm_7%dim(0).ubound = 1;
-     !parm_7%dim(0).stride = 1;
-     !parm_7%dim(1).lbound = 1;
-     !parm_7%dim(1).ubound = 1;
-     !parm_7%dim(1).stride = 1;
-     !...
-     !parm_7%data = (void *) &a[0];
-     !parm_7%offset = -9;
+    integer :: i, l_stat = 0
+    character(len=255) :: l_errmsg
+    integer,allocatable :: upper_limits,lower_limits
+    
+    write(*,*) 'Inside extension opencoarrays'
 
-      if (.not. present(stat)) stat=0
-      if (.not.present(errmsg)) errmsg=""
-      block 
-        ! Local replacement for the corresponding intent(in) dummy argument:
-        integer(c_int) :: result_image_
-        integer(c_int), parameter :: default_result_image=0
-        result_image_ = merge(result_image,default_result_image,present(result_image)) 
-        call caf_co_sum_integer(c_loc(a),result_image, stat, errmsg, len(errmsg)) 
-      end block
-      
+    a_descriptor%dtype = 264
+    a_descriptor%offset = -1
+    a_descriptor%base_addr = c_loc(a)
+    block
+      integer(c_int) :: result_image_
+      integer(c_int), parameter :: default_result_image=0
+      ! Local replacement for the corresponding intent(in) dummy argument:
+      result_image_ = merge(result_image,default_result_image,present(result_image)) 
+      call caf_co_sum_integer(c_loc(a_descriptor),result_image_, l_stat, l_errmsg, len(l_errmsg)) 
+    end block
+    
   end subroutine
 
-  ! Proposed Fortran 2015 event_post procedure
-  subroutine event_post(this)
-    class(event_type), intent(inout) ::  this
-    if (.not.allocated(this%atom)) this%atom=0
-    call atomic_define ( this%atom, this%atom + 1_atomic_int_kind )
-  end subroutine
+#ifdef COMPILER_SUPPORTS_ATOMICS
+    Proposed Fortran 2015 event_post procedure
+    subroutine event_post(this)
+      class(event_type), intent(inout) ::  this
+      if (.not.allocated(this%atom)) this%atom=0
+      call atomic_define ( this%atom, this%atom + 1_atomic_int_kind )
+    end subroutine
+#endif 
 
 end module
 
