@@ -117,41 +117,39 @@ module opencoarrays
 
 contains
 
-
   ! Proposed Fortran 2015 co_sum parallel collective sum reduction
   subroutine co_sum_integer_scalar(a,result_image,stat,errmsg)
-    ! use iso_c_binding
     implicit none
-    ! integer(c_int), intent(inout), volatile, target :: a(*)
-    integer(c_int), intent(inout), volatile, target :: a
+    integer(c_int), intent(inout), volatile, target, contiguous :: a(..)
     integer(c_int), intent(in), optional :: result_image
     integer(c_int), intent(out), optional:: stat
     character(kind=1,len=*), intent(out), optional :: errmsg
+    ! Local variables
+    integer :: my_rank
+    integer, parameter :: scalar_dtype=264,scalar_offset=-1
+    type(gfc_descriptor_t), target :: a_descriptor
 
-    !gfc_descriptor struct array5_integer(kind=4) parm.7;
-    type(gfc_descriptor_t),target :: a_descriptor
-
-    integer :: i, l_stat = 0
-    character(len=255) :: l_errmsg
-    integer,allocatable :: upper_limits,lower_limits
-    
-    write(*,*) 'Inside extension opencoarrays'
-
-    a_descriptor%dtype = 264
-    a_descriptor%offset = -1
-    a_descriptor%base_addr = c_loc(a)
+    my_rank=rank(a)
+    a_descriptor%dtype = scalar_dtype + my_rank
+    a_descriptor%offset = scalar_offset + my_rank
+    a_descriptor%base_addr = c_loc(a) ! data
     block
-      integer(c_int) :: result_image_
-      integer(c_int), parameter :: default_result_image=0
+      integer(c_int) :: result_image_,i
+      integer(c_int), parameter :: default_result_image=0,unit_stride=1
+      do concurrent(i=1:rank(a))
+        a_descriptor%dim_(i)%stride  = unit_stride
+        a_descriptor%dim_(i)%lower_bound = lbound(a,i)
+        a_descriptor%dim_(i)%ubound_ = ubound(a,i)
+      end do
       ! Local replacement for the corresponding intent(in) dummy argument:
       result_image_ = merge(result_image,default_result_image,present(result_image)) 
-      call caf_co_sum_integer(c_loc(a_descriptor),result_image_, l_stat, l_errmsg, len(l_errmsg)) 
+      call caf_co_sum_integer(c_loc(a_descriptor),result_image_, stat, errmsg, len(errmsg)) 
     end block
     
   end subroutine
 
 #ifdef COMPILER_SUPPORTS_ATOMICS
-    Proposed Fortran 2015 event_post procedure
+   !Proposed Fortran 2015 event_post procedure
     subroutine event_post(this)
       class(event_type), intent(inout) ::  this
       if (.not.allocated(this%atom)) this%atom=0
