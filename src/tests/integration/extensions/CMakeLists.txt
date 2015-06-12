@@ -1,0 +1,3 @@
+add_executable(tally_image_numbers tally_image_numbers.f90)
+target_link_libraries(tally_image_numbers OpenCoarrays)
+include_directories(${CMAKE_BINARY_DIR}/mod)

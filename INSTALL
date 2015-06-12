@@ -148,13 +148,22 @@ tests to ensure verify correct installation and execution of the library.
 How to compile and run a coarray program
 ----------------------------------------
 
-We assume that the user has already installed GCC 5 and the latest version of
-LIBCAF_MPI.
+The following explanation assumes the reader will use the OpenCoarrays MPI transport layer and
+has installed it to the path /opt/opencarrays/, in which case there will be one subdirectory
+/opt/opencoarrays/lib containing libcaf_mpi.a and another subdirectory /opt/opencoarrays/mod
+containing a compiler generated module file.  Otherwise, substitute the appropriate path
+for paths that appear below.
 
-A hello_coarray.f90 program can compiled in a single step using the following
+We originally OpenCoarrays for use with compilers that are capable of generating calls directly
+to an OpenCoarrays transport layer (e.g., libcaf_mpi.a) automatically.  In response to a user
+request, however, we now offer limited support for use with other compilers.  Both use cases
+are described below.
+
+1. Use with an OpenCoarrays-enabled compiler (e.g., GCC 5.0.1 or later):  
+A hello.f90 program can compiled in a single step using the following
 string:
 
-  mpifort -fcoarray=lib -L/path/to/opencoarrays/mpi hello_coarray.f90 \
+  mpifort -fcoarray=lib -L/opt/opencoarrays/ hello.f90 \
           -lcaf_mpi -o hello
 
 For running the program:
@@ -163,6 +172,20 @@ For running the program:
 
 where m is the number of images you want to use.
 
+2. Use with an non-OpenCoarrays-enabled compiler:  
+If a user's compiler provides limited or no coarray support, the user can directly reference a
+subset of the OpenCoarrays procedures and types through a Fortran module named "opencoararys"
+in the "mod" subdirectory of the user's chosen OpenCoarrays installation path.  The module
+provides wrappers for some basic Fortran 2008 parallel programming capabilities along with some 
+more advanced features that have been proposed for Fortran 2015 in the draft Technical 
+Specification TS18508 Additional Parallel Features in Fortran (visit www.opencoarrays.org for a
+link to this document, which gets updated periodically).  An example of the use of the opencoarrays
+Fortran module is in the tally_images_numbers.F90 file in the test suite.  The following commands
+compile that program:
+
+  cd src/tests/integration/extensions/
+  mpif90 -L /opt/opencoarrays/lib/ -I /opt/opencoarrays/mod/ -fcoarray=lib -lcaf_mpi tally_image_numbers.f90 -o tally
+  mpirun -np 8 ./tally
 
 GNU Fortran Configuration
 -------------------------

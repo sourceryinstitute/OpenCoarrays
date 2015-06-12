@@ -94,6 +94,7 @@ add_mpi_test(register_rename_me_too 2 ${tests_root}/unit/init_register/register_
 add_mpi_test(hello_multiverse 2 ${tests_root}/integration/coarrayHelloWorld/hello_multiverse)
 add_mpi_test(coarray_burgers_pde 2 ${tests_root}/integration/pde_solvers/coarrayBurgers/coarray_burgers_pde)
 add_mpi_test(co_heat 2 ${tests_root}/integration/pde_solvers/coarrayHeatSimplified/co_heat)
+add_mpi_test(tally_image_numbers 4 ${tests_root}/integration/extensions/tally_image_numbers)
 
 if ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux" )
   add_mpi_test(coarray_navier_stokes 2 ${tests_root}/integration/pde_solvers/navier-stokes/coarray_navier_stokes)
