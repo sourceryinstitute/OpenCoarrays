@@ -1149,7 +1149,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
               extent = (dest->dim[j]._ubound - dest->dim[j].lower_bound + 1);
               stride = dest->dim[j]._stride;
             }
-	  extent = (dest->dim[rank-1]._ubound - dest->dim[rank-1].lower_bound + 1);
+	  //	  extent = (dest->dim[rank-1]._ubound - dest->dim[rank-1].lower_bound + 1);
           array_offset_dst += (i / extent) * dest->dim[rank-1]._stride;
           dst_offset = offset + array_offset_dst*GFC_DESCRIPTOR_SIZE (dest);
 
@@ -1169,7 +1169,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
                   stride = src->dim[j]._stride;
                 }
 
-	      extent = (src->dim[rank-1]._ubound - src->dim[rank-1].lower_bound + 1);
+	      //extent = (src->dim[rank-1]._ubound - src->dim[rank-1].lower_bound + 1);
               array_offset_sr += (i / extent) * src->dim[rank-1]._stride;
               sr = (void *)((char *) src->base_addr
                             + array_offset_sr*GFC_DESCRIPTOR_SIZE (src));
@@ -1222,7 +1222,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
                       stride = dest->dim[j]._stride;
                     }
 
-		  extent = (dest->dim[rank-1]._ubound - dest->dim[rank-1].lower_bound + 1);
+		  //extent = (dest->dim[rank-1]._ubound - dest->dim[rank-1].lower_bound + 1);
                   array_offset_dst += (i / extent) * dest->dim[rank-1]._stride;
                   dst_offset = offset + array_offset_dst*GFC_DESCRIPTOR_SIZE (dest);
                   memmove(src->base_addr+dst_offset,t_buff+i*GFC_DESCRIPTOR_SIZE (src),GFC_DESCRIPTOR_SIZE (src));
@@ -1446,7 +1446,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
           stride = dest->dim[j]._stride;
         }
 
-      extent = (dest->dim[rank-1]._ubound - dest->dim[rank-1].lower_bound + 1);
+      //extent = (dest->dim[rank-1]._ubound - dest->dim[rank-1].lower_bound + 1);
       array_offset_dst += (i / extent) * dest->dim[rank-1]._stride;
 
       ptrdiff_t array_offset_sr = 0;
@@ -1462,7 +1462,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
           stride = src->dim[j]._stride;
         }
 
-      extent = (src->dim[rank-1]._ubound - src->dim[rank-1].lower_bound + 1);
+      //extent = (src->dim[rank-1]._ubound - src->dim[rank-1].lower_bound + 1);
       array_offset_sr += (i / extent) * src->dim[rank-1]._stride;
 
       size_t sr_off = offset + array_offset_sr*GFC_DESCRIPTOR_SIZE (src);
@@ -1512,7 +1512,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
                   stride = src->dim[j]._stride;
                 }
 
-	      extent = (src->dim[rank-1]._ubound - src->dim[rank-1].lower_bound + 1);
+	      //extent = (src->dim[rank-1]._ubound - src->dim[rank-1].lower_bound + 1);
               array_offset_sr += (i / extent) * src->dim[rank-1]._stride;
               
               size_t sr_off = offset + array_offset_sr*GFC_DESCRIPTOR_SIZE (src);
@@ -1529,7 +1529,6 @@ PREFIX (get) (caf_token_t token, size_t offset,
   MPI_Win_flush (image_index-1, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
 #endif
-  __sync_synchronize();
 }
 
 
