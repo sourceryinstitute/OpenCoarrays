@@ -986,11 +986,11 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
           MPI_Type_vector(size, 1, src->dim[0]._stride, base_type_src, &dt_s);
           MPI_Type_vector(size, 1, dest->dim[0]._stride, base_type_dst, &dt_d);
         }
-      else if(rank == 2)
-        {
-          MPI_Type_vector(size/src->dim[0]._ubound, src->dim[0]._ubound, src->dim[1]._stride, base_type_src, &dt_s);
-          MPI_Type_vector(size/dest->dim[0]._ubound, dest->dim[0]._ubound, dest->dim[1]._stride, base_type_dst, &dt_d);
-        }
+      /* else if(rank == 2) */
+      /*   { */
+      /*     MPI_Type_vector(size/src->dim[0]._ubound, src->dim[0]._ubound, src->dim[1]._stride, base_type_src, &dt_s); */
+      /*     MPI_Type_vector(size/dest->dim[0]._ubound, dest->dim[0]._ubound, dest->dim[1]._stride, base_type_dst, &dt_d); */
+      /*   } */
       else
         {
           arr_bl = calloc (size, sizeof (int));
@@ -1015,7 +1015,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
                   stride = dest->dim[j]._stride;
                 }
 
-	      extent = (dest->dim[rank-1]._ubound - dest->dim[rank-1].lower_bound + 1);
+	      //extent = (dest->dim[rank-1]._ubound - dest->dim[rank-1].lower_bound + 1);
               array_offset_dst += (i / extent) * dest->dim[rank-1]._stride;
               arr_dsp_d[i] = array_offset_dst;
 
@@ -1034,7 +1034,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
                       stride = src->dim[j]._stride;
                     }
 
-		  extent = (src->dim[rank-1]._ubound - src->dim[rank-1].lower_bound + 1);
+		  //extent = (src->dim[rank-1]._ubound - src->dim[rank-1].lower_bound + 1);
                   array_offset_sr += (i / extent) * src->dim[rank-1]._stride;
                   arr_dsp_s[i] = array_offset_sr;
                 }
@@ -1338,11 +1338,11 @@ PREFIX (get) (caf_token_t token, size_t offset,
       MPI_Type_vector(size, 1, src->dim[0]._stride, base_type_src, &dt_s);
       MPI_Type_vector(size, 1, dest->dim[0]._stride, base_type_dst, &dt_d);
     }
-  else if(rank == 2)
-    {
-      MPI_Type_vector(size/src->dim[0]._ubound, src->dim[0]._ubound, src->dim[1]._stride, base_type_src, &dt_s);
-      MPI_Type_vector(size/dest->dim[0]._ubound, dest->dim[0]._ubound, dest->dim[1]._stride, base_type_dst, &dt_d);
-    }
+  /* else if(rank == 2) */
+  /*   { */
+  /*     MPI_Type_vector(size/src->dim[0]._ubound, src->dim[0]._ubound, src->dim[1]._stride, base_type_src, &dt_s); */
+  /*     MPI_Type_vector(size/dest->dim[0]._ubound, dest->dim[0]._ubound, dest->dim[1]._stride, base_type_dst, &dt_d); */
+  /*   } */
   else
     {
       arr_bl = calloc(size, sizeof(int));
@@ -1367,7 +1367,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
               stride = dest->dim[j]._stride;
             }
 
-	  extent = (dest->dim[rank-1]._ubound - dest->dim[rank-1].lower_bound + 1);
+	  //extent = (dest->dim[rank-1]._ubound - dest->dim[rank-1].lower_bound + 1);
           array_offset_dst += (i / extent) * dest->dim[rank-1]._stride;
           arr_dsp_d[i] = array_offset_dst;
 
@@ -1384,7 +1384,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
               stride = src->dim[j]._stride;
             }
 
-	  extent = (src->dim[rank-1]._ubound - src->dim[rank-1].lower_bound + 1);
+	  //extent = (src->dim[rank-1]._ubound - src->dim[rank-1].lower_bound + 1);
           array_offset_sr += (i / extent) * src->dim[rank-1]._stride;
           arr_dsp_s[i] = array_offset_sr;
 
