@@ -9,3 +9,9 @@ target_link_libraries(register_rename_me OpenCoarrays)
 
 add_executable(register_rename_me_too register_rename_me_too.f90)
 target_link_libraries(register_rename_me_too OpenCoarrays)
+
+add_executable(allocate_as_barrier allocate_as_barrier.f90)
+target_link_libraries(allocate_as_barrier OpenCoarrays)
+
+add_executable(allocate_as_barrier_proc allocate_as_barrier_proc.f90)
+target_link_libraries(allocate_as_barrier_proc OpenCoarrays)
