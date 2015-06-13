@@ -89,6 +89,8 @@ add_mpi_test(initialize_mpi 2 ${tests_root}/unit/init_register/initialize_mpi)
 add_mpi_test(register 2 ${tests_root}/unit/init_register/register)
 add_mpi_test(register_rename_me 2 ${tests_root}/unit/init_register/register_rename_me)
 add_mpi_test(register_rename_me_too 2 ${tests_root}/unit/init_register/register_rename_me_too)
+add_mpi_test(get_array 2 ${tests_root}/unit/send-get/get_array)
+add_mpi_test(send_array 2 ${tests_root}/unit/send-get/send_array)
 
 # Integration tests verifying the use of libcaf_mpi in applications
 add_mpi_test(hello_multiverse 2 ${tests_root}/integration/coarrayHelloWorld/hello_multiverse)
