@@ -184,7 +184,7 @@ Fortran module is in the tally_images_numbers.F90 file in the test suite.  The f
 compile that program:
 
   cd src/tests/integration/extensions/
-  mpif90 -L /opt/opencoarrays/lib/ -I /opt/opencoarrays/mod/ -fcoarray=lib -lcaf_mpi tally_image_numbers.f90 -o tally
+  mpif90 -L /opt/opencoarrays/lib/ -I /opt/opencoarrays/mod/ -fcoarray=lib tally_image_numbers.f90 -lcaf_mpi -o tally
   mpirun -np 8 ./tally
 
 GNU Fortran Configuration
