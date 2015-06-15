@@ -163,8 +163,8 @@ are described below.
 A hello.f90 program can compiled in a single step using the following
 string:
 
-  mpifort -fcoarray=lib -L/opt/opencoarrays/ hello.f90 \
-          -lcaf_mpi -o hello
+  mpif90 -fcoarray=lib -L/opt/opencoarrays/ hello.f90 \
+         -lcaf_mpi -o hello
 
 For running the program:
 

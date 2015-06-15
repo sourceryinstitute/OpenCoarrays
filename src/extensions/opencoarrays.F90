@@ -1,4 +1,4 @@
-! Fortran 2015 feature support for Fortarn 2008 compilers
+! Fortran 2015 feature support for Fortran 2008 compilers
 ! 
 ! Copyright (c) 2015, Sourcery, Inc.
 ! All rights reserved.
