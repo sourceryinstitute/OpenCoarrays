@@ -9,7 +9,7 @@ program strided_get
 
 !  allocate(a(0:11,-10:-5,-1:0,-1:5)[*],b(6,5,2,6))
   allocate(a(0:2,-1:1,1:2)[*],b(3,3,2))
-
+!  allocate(a(0:2,-1:0)[*],b(3,2))
   a = me
   b = me
 

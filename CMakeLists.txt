@@ -94,6 +94,7 @@ add_mpi_test(allocate_as_barrier_proc 2 ${tests_root}/unit/init_register/allocat
 add_mpi_test(get_array 2 ${tests_root}/unit/send-get/get_array)
 add_mpi_test(send_array 2 ${tests_root}/unit/send-get/send_array)
 add_mpi_test(get_with_offset_1d 2 ${tests_root}/unit/send-get/get_with_offset_1d)
+add_mpi_test(whole_get_array 2 ${tests_root}/unit/send-get/whole_get_array)
 
 # Integration tests verifying the use of libcaf_mpi in applications
 add_mpi_test(hello_multiverse 2 ${tests_root}/integration/coarrayHelloWorld/hello_multiverse)
