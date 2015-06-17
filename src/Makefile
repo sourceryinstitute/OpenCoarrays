@@ -56,8 +56,8 @@ clean:
 
 distclean: clean
 	$(MAKE) -k -C common distclean
-	$(MAKE) -k -C single distclean
-	$(MAKE) -k -C gasnet distclean
-	$(MAKE) -k -C gasnet distclean
-	$(MAKE) -k -C testsuite distclean
+#	$(MAKE) -k -C single distclean
+	$(MAKE) -k -C mpi distclean
+#	$(MAKE) -k -C gasnet distclean
+#	$(MAKE) -k -C testsuite distclean
 #	(MAKE) -k -C armci distclean
