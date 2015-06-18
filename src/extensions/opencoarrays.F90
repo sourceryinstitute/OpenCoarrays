@@ -34,10 +34,8 @@ module opencoarrays
 
   private
   public :: co_sum
-#ifndef COMPILER_SUPPORTS_CAF_INTRINSICS
   public :: this_image
   public :: num_images
-#endif
   public :: error_stop
   public :: sync_all
 #ifdef COMPILER_SUPPORTS_ATOMICS
@@ -75,7 +73,6 @@ module opencoarrays
       integer(c_int), intent(in), value :: errmsg_len
     end subroutine
 
-#ifndef COMPILER_SUPPORTS_CAF_INTRINSICS
     ! C function prototype from ../libcaf.h:
     ! int PREFIX (this_image) (int);
     function caf_this_image(coarray) bind(C,name="_gfortran_caf_this_image") result(image_num)
@@ -84,7 +81,6 @@ module opencoarrays
       integer(c_int)  :: image_num
     end function
 
-
     ! C function prototype from ../libcaf.h:
     ! int PREFIX (num_images) (int, int);
     function caf_num_images(coarray,dim_) bind(C,name="_gfortran_caf_num_images") result(num_images_)
@@ -92,7 +88,6 @@ module opencoarrays
       integer(c_int), value, intent(in) :: coarray,dim_
       integer(c_int) :: num_images_
     end function
-#endif
 
     ! C function prototype from ../libcaf.h
     ! void PREFIX (error_stop) (int32_t) __attribute__ ((noreturn));
@@ -203,7 +198,6 @@ contains
     
   end subroutine
 
-#ifndef COMPILER_SUPPORTS_CAF_INTRINSICS
   ! Return the image number (MPI rank + 1)
   function this_image()  result(image_num)
     integer(c_int) :: image_num,unused
@@ -215,7 +209,6 @@ contains
     integer(c_int) :: num_images_,unused_coarray,unused_scalar
     num_images_ = caf_num_images(unused_coarray,unused_scalar)
   end function
-#endif
 
   ! Halt the execution of all images
   subroutine error_stop(stop_code)

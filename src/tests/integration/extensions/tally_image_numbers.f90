@@ -4,14 +4,9 @@
 program main
   use iso_fortran_env, only : error_unit
   use iso_c_binding, only : c_int ,c_int32_t
-#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
-  use opencoarrays, only : co_sum,error_stop,sync_all
-#else
   use opencoarrays, only : co_sum,error_stop,sync_all,this_image,num_images
-#endif
   implicit none    
   integer(c_int) :: me,image
-  print *,"Hello from image ",this_image()
   me=this_image()
   call co_sum(me)
   call sync_all
