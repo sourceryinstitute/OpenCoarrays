@@ -34,8 +34,10 @@ module opencoarrays
 
   private
   public :: co_sum
+#ifndef COMPILER_SUPPORTS_CAF_INTRINSICS
   public :: this_image
   public :: num_images
+#endif
   public :: error_stop
   public :: sync_all
 #ifdef COMPILER_SUPPORTS_ATOMICS
@@ -60,7 +62,11 @@ module opencoarrays
     ! void
     ! PREFIX (co_sum) (gfc_descriptor_t *a, int result_image, int *stat, char *errmsg,
     !                  int errmsg_len)
+#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
+    subroutine caf_co_sum_integer(a,result_image, stat, errmsg, errmsg_len) bind(C,name="_caf_extensions_co_sum")
+#else
     subroutine caf_co_sum_integer(a,result_image, stat, errmsg, errmsg_len) bind(C,name="_gfortran_caf_co_sum")
+#endif
       import :: c_int,c_char,c_ptr
       type(c_ptr), intent(in), value :: a
       integer(c_int), intent(in),  value :: result_image
@@ -69,6 +75,7 @@ module opencoarrays
       integer(c_int), intent(in), value :: errmsg_len
     end subroutine
 
+#ifndef COMPILER_SUPPORTS_CAF_INTRINSICS
     ! C function prototype from ../libcaf.h:
     ! int PREFIX (this_image) (int);
     function caf_this_image(coarray) bind(C,name="_gfortran_caf_this_image") result(image_num)
@@ -77,6 +84,7 @@ module opencoarrays
       integer(c_int)  :: image_num
     end function
 
+
     ! C function prototype from ../libcaf.h:
     ! int PREFIX (num_images) (int, int);
     function caf_num_images(coarray,dim_) bind(C,name="_gfortran_caf_num_images") result(num_images_)
@@ -84,17 +92,26 @@ module opencoarrays
       integer(c_int), value, intent(in) :: coarray,dim_
       integer(c_int) :: num_images_
     end function
+#endif
 
     ! C function prototype from ../libcaf.h
     ! void PREFIX (error_stop) (int32_t) __attribute__ ((noreturn));
+#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
+    subroutine caf_error_stop(stop_code) bind(C,name="_caf_extensions_error_stop") 
+#else
     subroutine caf_error_stop(stop_code) bind(C,name="_gfortran_caf_error_stop") 
+#endif
       import :: c_int32_t
       integer(c_int32_t), value, intent(in) :: stop_code
     end subroutine 
 
     ! C function prototype from ../libcaf.h
     ! void PREFIX (sync_all) (int *, char *, int);
+#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
+    subroutine caf_sync_all(stat,errmsg,unused) bind(C,name="_caf_extensions_sync_all") 
+#else
     subroutine caf_sync_all(stat,errmsg,unused) bind(C,name="_gfortran_caf_sync_all") 
+#endif
       import :: c_int,c_char
       integer(c_int), intent(out) :: stat,unused
       character(c_char), intent(out) :: errmsg
@@ -186,6 +203,7 @@ contains
     
   end subroutine
 
+#ifndef COMPILER_SUPPORTS_CAF_INTRINSICS
   ! Return the image number (MPI rank + 1)
   function this_image()  result(image_num)
     integer(c_int) :: image_num,unused
@@ -197,6 +215,7 @@ contains
     integer(c_int) :: num_images_,unused_coarray,unused_scalar
     num_images_ = caf_num_images(unused_coarray,unused_scalar)
   end function
+#endif
 
   ! Halt the execution of all images
   subroutine error_stop(stop_code)
