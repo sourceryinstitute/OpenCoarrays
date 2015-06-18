@@ -452,8 +452,10 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
     goto error;
 
   /* Start GASNET if not already started.  */
-#ifndef COMPILER_SUPPORTS_CAF_INTRINSICS
   if (caf_num_images == 0)
+#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
+    _gfortran_caf_init (NULL, NULL);
+#else
     PREFIX (init) (NULL, NULL);
 #endif
 
