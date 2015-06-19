@@ -34,6 +34,7 @@ program register
 
   me = this_image()
   
+  sync all
   if(me == 1) then
     block 
       integer :: image2number
