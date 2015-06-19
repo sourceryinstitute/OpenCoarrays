@@ -36,7 +36,7 @@ endif()
 
 if (CMAKE_VERSION VERSION_GREATER 3.2.3) 
   # Detect Fortran compiler version directly
-  if(gfortran_compiler AND (CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 4.9.2))
+  if(gfortran_compiler AND (CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 5.0.0))
     set(opencoarrays_aware_compiler true)
     add_definitions(-DPREFIX_NAME=_gfortran_caf_)
   else()
@@ -45,12 +45,12 @@ if (CMAKE_VERSION VERSION_GREATER 3.2.3)
   endif()
 else()
   # Use the C compiler version as a proxy for the Fortran compiler version (won't work with NAG)
-  if(gfortran_compiler AND (CMAKE_C_COMPILER_VERSION VERSION_GREATER 4.9.2))
+  if(gfortran_compiler AND (CMAKE_C_COMPILER_VERSION VERSION_GREATER 5.0.0))
     set(opencoarrays_aware_compiler true)
     add_definitions(-DPREFIX_NAME=_gfortran_caf_)
   else()
     set(opencoarrays_aware_compiler false)
-    add_definitions(-DPREFIX_NAME=_gfortran_caf_)
+    add_definitions(-DPREFIX_NAME=_caf_extensions_)
   endif()
 endif()
 
@@ -106,8 +106,7 @@ endfunction(add_mpi_test)
 
 set(tests_root ${CMAKE_CURRENT_BINARY_DIR}/src/tests)
 
-
-if("${opencoarrays_aware_compiler}")
+if(opencoarrays_aware_compiler)
   # Unit tests targeting each libcaf_mpi function, argument, and branch of code
   add_mpi_test(initialize_mpi 2 ${tests_root}/unit/init_register/initialize_mpi)
   add_mpi_test(register 2 ${tests_root}/unit/init_register/register)
