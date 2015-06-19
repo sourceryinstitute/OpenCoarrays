@@ -61,9 +61,9 @@ module opencoarrays
     ! PREFIX (co_sum) (gfc_descriptor_t *a, int result_image, int *stat, char *errmsg,
     !                  int errmsg_len)
 #ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
-    subroutine caf_co_sum_integer(a,result_image, stat, errmsg, errmsg_len) bind(C,name="_caf_extensions_co_sum")
+    subroutine opencoarrays_co_sum_integer(a,result_image, stat, errmsg, errmsg_len) bind(C,name="_caf_extensions_co_sum")
 #else
-    subroutine caf_co_sum_integer(a,result_image, stat, errmsg, errmsg_len) bind(C,name="_gfortran_caf_co_sum")
+    subroutine opencoarrays_co_sum_integer(a,result_image, stat, errmsg, errmsg_len) bind(C,name="_gfortran_caf_co_sum")
 #endif
       import :: c_int,c_char,c_ptr
       type(c_ptr), intent(in), value :: a
@@ -75,7 +75,7 @@ module opencoarrays
 
     ! C function prototype from ../libcaf.h:
     ! int PREFIX (this_image) (int);
-    function caf_this_image(coarray) bind(C,name="_gfortran_caf_this_image") result(image_num)
+    function opencoarrays_this_image(coarray) bind(C,name="_gfortran_caf_this_image") result(image_num)
       import :: c_int
       integer(c_int), value, intent(in) :: coarray
       integer(c_int)  :: image_num
@@ -83,7 +83,7 @@ module opencoarrays
 
     ! C function prototype from ../libcaf.h:
     ! int PREFIX (num_images) (int, int);
-    function caf_num_images(coarray,dim_) bind(C,name="_gfortran_caf_num_images") result(num_images_)
+    function opencoarrays_num_images(coarray,dim_) bind(C,name="_gfortran_caf_num_images") result(num_images_)
       import :: c_int
       integer(c_int), value, intent(in) :: coarray,dim_
       integer(c_int) :: num_images_
@@ -92,9 +92,9 @@ module opencoarrays
     ! C function prototype from ../libcaf.h
     ! void PREFIX (error_stop) (int32_t) __attribute__ ((noreturn));
 #ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
-    subroutine caf_error_stop(stop_code) bind(C,name="_caf_extensions_error_stop") 
+    subroutine opencoarrays_error_stop(stop_code) bind(C,name="_caf_extensions_error_stop") 
 #else
-    subroutine caf_error_stop(stop_code) bind(C,name="_gfortran_caf_error_stop") 
+    subroutine opencoarrays_error_stop(stop_code) bind(C,name="_gfortran_caf_error_stop") 
 #endif
       import :: c_int32_t
       integer(c_int32_t), value, intent(in) :: stop_code
@@ -103,9 +103,9 @@ module opencoarrays
     ! C function prototype from ../libcaf.h
     ! void PREFIX (sync_all) (int *, char *, int);
 #ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
-    subroutine caf_sync_all(stat,errmsg,unused) bind(C,name="_caf_extensions_sync_all") 
+    subroutine opencoarrays_sync_all(stat,errmsg,unused) bind(C,name="_caf_extensions_sync_all") 
 #else
-    subroutine caf_sync_all(stat,errmsg,unused) bind(C,name="_gfortran_caf_sync_all") 
+    subroutine opencoarrays_sync_all(stat,errmsg,unused) bind(C,name="_gfortran_caf_sync_all") 
 #endif
       import :: c_int,c_char
       integer(c_int), intent(out) :: stat,unused
@@ -165,6 +165,8 @@ module opencoarrays
   end type
   ! --------------------
 
+  integer(c_int), save, volatile, bind(C,name="CAF_COMM_WORLD") :: CAF_COMM_WORLD
+
 contains
 
   ! Proposed Fortran 2015 parallel collective sum reduction for integers of interoperable kind c_int
@@ -193,21 +195,28 @@ contains
       end do
       ! Local replacement for the corresponding intent(in) dummy argument:
       result_image_ = merge(result_image,default_result_image,present(result_image)) 
-      call caf_co_sum_integer(c_loc(a_descriptor),result_image_, stat, errmsg, len(errmsg)) 
+      call opencoarrays_co_sum_integer(c_loc(a_descriptor),result_image_, stat, errmsg, len(errmsg)) 
     end block
     
   end subroutine
 
   ! Return the image number (MPI rank + 1)
   function this_image()  result(image_num)
-    integer(c_int) :: image_num,unused
-    image_num = caf_this_image(unused)
+    use mpi, only : MPI_Comm_rank
+    integer(c_int) :: image_num,unused,ierr
+   !image_num = opencoarrays_this_image(unused)
+    call MPI_Comm_rank(CAF_COMM_WORLD,image_num,ierr) 
+    if (ierr/=0) call error_stop
+    image_num = image_num + 1
   end function
 
   ! Return the total number of images
   function num_images()  result(num_images_)
-    integer(c_int) :: num_images_,unused_coarray,unused_scalar
-    num_images_ = caf_num_images(unused_coarray,unused_scalar)
+    use mpi, only : MPI_Comm_size
+    integer(c_int) :: num_images_,unused_coarray,unused_scalar,ierr
+   !num_images_ = opencoarrays_num_images(unused_coarray,unused_scalar)
+    call MPI_Comm_size(CAF_COMM_WORLD,num_images_,ierr) 
+    if (ierr/=0) call error_stop
   end function
 
   ! Halt the execution of all images
@@ -216,14 +225,14 @@ contains
     integer(c_int32_t), parameter :: default_code=-1_c_int32_t
     integer(c_int32_t) :: code
     code = merge(stop_code,default_code,present(stop_code))
-    call caf_error_stop(code)
+    call opencoarrays_error_stop(code)
   end subroutine 
 
   ! Impose a global execution barrier
   subroutine sync_all(stat,errmsg,unused)
     integer(c_int), intent(out), optional :: stat,unused
     character(c_char), intent(out), optional :: errmsg
-    call caf_sync_all(stat,errmsg,unused)
+    call opencoarrays_sync_all(stat,errmsg,unused)
   end subroutine 
 
 #ifdef COMPILER_SUPPORTS_ATOMICS
