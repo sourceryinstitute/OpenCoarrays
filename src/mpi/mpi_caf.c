@@ -1461,8 +1461,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
 	  tot_ext *= extent;
         }
 
-      //extent = (dest->dim[rank-1]._ubound - dest->dim[rank-1].lower_bound + 1);
-      array_offset_dst += (i / extent) * dest->dim[rank-1]._stride;
+      array_offset_dst += (i / tot_ext) * dest->dim[rank-1]._stride;
 
       ptrdiff_t array_offset_sr = 0;
       stride = 1;
@@ -1479,8 +1478,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
 	  tot_ext *= extent;
         }
 
-      //extent = (src->dim[rank-1]._ubound - src->dim[rank-1].lower_bound + 1);
-      array_offset_sr += (i / extent) * src->dim[rank-1]._stride;
+      array_offset_sr += (i / tot_ext) * src->dim[rank-1]._stride;
 
       size_t sr_off = offset + array_offset_sr*GFC_DESCRIPTOR_SIZE (src);
       void *dst = (void *) ((char *) dest->base_addr
