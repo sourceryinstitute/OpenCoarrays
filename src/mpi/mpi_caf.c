@@ -1008,7 +1008,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
 	      ptrdiff_t tot_ext = 1;
               for (j = 0; j < rank-1; j++)
                 {
-                  array_offset_dst += ((i / (extent*stride))
+                  array_offset_dst += ((i / tot_ext)
                                        % (dest->dim[j]._ubound
                                           - dest->dim[j].lower_bound + 1))
                     * dest->dim[j]._stride;
@@ -1017,7 +1017,6 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
 		  tot_ext *= extent;
                 }
 
-	      //extent = (dest->dim[rank-1]._ubound - dest->dim[rank-1].lower_bound + 1);
               array_offset_dst += (i / tot_ext) * dest->dim[rank-1]._stride;
               arr_dsp_d[i] = array_offset_dst;
 
@@ -1029,7 +1028,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
 		  tot_ext = 1;
                   for (j = 0; j < GFC_DESCRIPTOR_RANK (src)-1; j++)
                     {
-                      array_offset_sr += ((i / (extent*stride))
+                      array_offset_sr += ((i / tot_ext)
                                           % (src->dim[j]._ubound
                                              - src->dim[j].lower_bound + 1))
                         * src->dim[j]._stride;
@@ -1038,7 +1037,6 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
 		      tot_ext *= extent;
                     }
 
-		  //extent = (src->dim[rank-1]._ubound - src->dim[rank-1].lower_bound + 1);
                   array_offset_sr += (i / tot_ext) * src->dim[rank-1]._stride;
                   arr_dsp_s[i] = array_offset_sr;
                 }
@@ -1147,7 +1145,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
 	  ptrdiff_t tot_ext = 1;
           for (j = 0; j < rank-1; j++)
             {
-              array_offset_dst += ((i / (extent*stride))
+              array_offset_dst += ((i / tot_ext)
                                    % (dest->dim[j]._ubound
                                       - dest->dim[j].lower_bound + 1))
                 * dest->dim[j]._stride;
@@ -1168,7 +1166,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
 	      tot_ext = 1;
               for (j = 0; j < GFC_DESCRIPTOR_RANK (src)-1; j++)
                 {
-                  array_offset_sr += ((i / (extent*stride))
+                  array_offset_sr += ((i / tot_ext)
                                       % (src->dim[j]._ubound
                                          - src->dim[j].lower_bound + 1))
                     * src->dim[j]._stride;
@@ -1222,7 +1220,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
 		  ptrdiff_t tot_ext = 1;
                   for (j = 0; j < rank-1; j++)
                     {
-                      array_offset_dst += ((i / (extent*stride))
+                      array_offset_dst += ((i / tot_ext)
                                            % (dest->dim[j]._ubound
                                               - dest->dim[j].lower_bound + 1))
                         * dest->dim[j]._stride;
@@ -1452,7 +1450,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
       ptrdiff_t tot_ext = 1;
       for (j = 0; j < rank-1; j++)
         {
-          array_offset_dst += ((i / (extent*stride))
+          array_offset_dst += ((i / tot_ext)
                                % (dest->dim[j]._ubound
                                   - dest->dim[j].lower_bound + 1))
                               * dest->dim[j]._stride;
@@ -1469,7 +1467,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
       tot_ext = 1;
       for (j = 0; j < GFC_DESCRIPTOR_RANK (src)-1; j++)
         {
-          array_offset_sr += ((i / (extent*stride))
+          array_offset_sr += ((i / tot_ext)
                            % (src->dim[j]._ubound
                               - src->dim[j].lower_bound + 1))
                           * src->dim[j]._stride;
@@ -1520,7 +1518,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
 	      ptrdiff_t tot_ext = 1;
               for (j = 0; j < GFC_DESCRIPTOR_RANK (src)-1; j++)
                 {
-                  array_offset_sr += ((i / (extent*stride))
+                  array_offset_sr += ((i / tot_ext)
                                       % (src->dim[j]._ubound
                                          - src->dim[j].lower_bound + 1))
                     * src->dim[j]._stride;

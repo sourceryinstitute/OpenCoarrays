@@ -15,3 +15,6 @@ target_link_libraries(get_with_offset_1d OpenCoarrays)
 
 add_executable(whole_get_array whole_get_array.f90)
 target_link_libraries(whole_get_array OpenCoarrays)
+
+add_executable(strided_get strided_get.f90)
+target_link_libraries(strided_get OpenCoarrays)
