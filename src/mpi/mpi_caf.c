@@ -1369,7 +1369,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
 	  ptrdiff_t tot_ext = 1;
           for (j = 0; j < rank-1; j++)
             {
-              array_offset_dst += ((i / (extent*stride))
+              array_offset_dst += ((i / tot_ext)
                                    % (dest->dim[j]._ubound
                                       - dest->dim[j].lower_bound + 1))
                 * dest->dim[j]._stride;
@@ -1388,7 +1388,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
 	  tot_ext = 1;
           for (j = 0; j < GFC_DESCRIPTOR_RANK (src)-1; j++)
             {
-              array_offset_sr += ((i / (extent*stride))
+              array_offset_sr += ((i / tot_ext)
                                   % (src->dim[j]._ubound
                                      - src->dim[j].lower_bound + 1))
                 * src->dim[j]._stride;
