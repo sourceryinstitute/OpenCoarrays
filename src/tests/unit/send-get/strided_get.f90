@@ -3,20 +3,21 @@ program strided_get
 
   integer :: i,me,np
   integer,allocatable :: a(:,:,:,:)[:],b(:,:,:,:)
+  complex(kind=DPC),allocatable :: ac(:,:,:,:)[:],bc(:,:,:,:)
 
   me = this_image()
   np = num_images()
 
-  allocate(a(0:11,-10:-5,-1:0,-1:5)[*],b(6,6,2,7))
+  allocate(ac(0:11,-10:-5,-1:0,-1:5)[*],bc(6,6,2,7))
 
-  a = me
-  b = me
+  ac = me
+  bc = me
 
   sync all
 
   if(me == 2) then
-    b(1:2,:,:,:) = a(0:1,:,:,:)[me-1]
-    if(any(b(1:2,:,:,:) /= 1)) call abort()
+    bc(1:2,:,:,:) = ac(0:1,:,:,:)[me-1]
+    if(any(bc(1:2,:,:,:) /= 1)) call abort()
     write(*,*) 'Test passed.'
   endif
 
