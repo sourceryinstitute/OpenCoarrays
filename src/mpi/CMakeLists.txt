@@ -30,6 +30,7 @@ else()
     add_definitions(-DCOMPILER_SUPPORTS_CAF_INTRINSICS)
   endif()
   add_library(caf_mpi mpi_caf.c ../common/caf_auxiliary.c ../extensions/opencoarrays.F90)
+  INSTALL(PROGRAMS ../extensions/caf ../extensions/caf-awareness.sh DESTINATION bin)
 endif()
 
 target_include_directories(caf_mpi PRIVATE ${MPI_C_INCLUDE_PATH})
@@ -41,6 +42,13 @@ install(TARGETS caf_mpi EXPORT OpenCoarraysTargets
   ARCHIVE DESTINATION lib
 )
 install(DIRECTORY  ${CMAKE_BINARY_DIR}/mod DESTINATION .)
+
+if(opencoarrays_aware_compiler)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../extensions/caf-compiler.sh ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/caf-awareness.sh COPYONLY)
+else()
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../extensions/non-caf-compiler.sh ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/caf-awareness.sh COPYONLY)
+endif()
+set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${CMAKE_CURRENT_SOURCE_DIR}/../extensions/caf-awareness.sh")
 
 # This could be needed to produce shared libraries:
 #target_link_libraries(caf_mpi PRIVATE ${MPI_C_LIBRARIES})
