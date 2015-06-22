@@ -244,6 +244,8 @@ program cshear
 
     call solve_navier_stokes
 
+    if (this_image()==1) print *,"Test passed."
+
 end program cshear
 
 !  (***********************************************************************************************************
@@ -493,6 +495,9 @@ end  subroutine enforce_conjugate_symmetry
     real :: kk, ww, uw, uu, uv, duu, factor   &
           , ek(nshells), dk(nshells), hk(nshells), tk(nshells), sample(nshells) 
     real, save, codimension[*] ::  sum_ek, sum_dk, sum_hk, sum_tk
+    real, save ::  sum_ek_initial, sum_dk_initial, sum_hk_initial, sum_tk_initial
+    logical, save :: first_call=.true. 
+    real, parameter :: tolerance=0.01,negligible=0.001 
 
       total_time =  total_time + WALLTIME()     !-- stop the clock!  time/step does not include spectra time
 
@@ -559,6 +564,18 @@ end  subroutine enforce_conjugate_symmetry
 
         if (step == 0)   write(6,*) "step   time     energy    enstrophy   helicity   transfer"
         write(6,fmt="(i3, 5e11.3)")  step,  time,    sum_ek,   sum_dk,     sum_hk,    sum_tk
+        if (first_call) then
+          first_call = .false.
+          sum_ek_initial = sum_ek
+          sum_dk_initial = sum_dk
+          sum_hk_initial = sum_hk
+          sum_tk_initial = sum_tk
+        else
+          if (abs((sum_ek_initial-sum_ek)/sum_ek)>tolerance) error stop "Test failed"   
+          if (abs((sum_dk_initial-sum_dk)/sum_dk)>tolerance) error stop "Test failed"   
+          if (abs((sum_hk_initial-sum_hk)/sum_hk)>tolerance) error stop "Test failed"   
+          if (abs((sum_tk_initial-sum_tk)/sum_ek)>negligible) error stop "Test failed"   
+        end if
     end if
 
      total_time =  total_time - WALLTIME()     !-- restart the clock!
