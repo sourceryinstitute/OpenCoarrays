@@ -27,41 +27,18 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
  
-
 # This script invokes the chosen Fortran compiler with the received command-line
 # arguments.  Current assumptions:
-#    1. Fortran source-file name appears as the first argument and has the extension
-#       .f90, .F90, .f, or .F.
-#    2. The environment variable "FC" is either empty or points to a Fortran compiler 
-#       that is capable of compiling and linking the program.
+#    1. The only Fortran source-file name appears as the first argument with a
+#       .f90, .F90, .f, or .F extension.
+#    2. The environment variable "FC" is either empty or points to a Fortran compiler/linker. 
 #    3. If "FC" is empty, a default value of "mpif90" is used. 
-#    4. This script must be invoked in the directory where "caf-awareness.sh" is located. 
-#
-# TO DO: 
-#    1. Relax the above assumptions.
-#    2. Pre-process the Fortran source to translate CAF statements into OpenCoarrays 
-#       calls.
-# 
-
-source caf-awareness.sh
-
-# Default to "mpif90" Fortran compiler if environment variable FC has zero length:
-if [ -z "$FC" ]; then
-   FC=mpif90
-fi
-
-if [ "$caf_compiler" = "true" ]; then
-  # Pass execution permanently to the compiler along with all command-line arguments:
-  exec $FC "$@"
-else
-  echo "CAF: Pre-processing of CAF programs for non-CAF compilers not yet implemented."
-  echo "     Attempting to compile raw source."
-  # Verify that a file with the .f90, .F90, .f, or .F extension is the first argument:
-  src_extension=`echo "$1" | cut -f2 -d'.'`
-  if [[ $src_extension == 'f90' || $src_extension == 'F90' || $src_extension == 'f' || $src_extension == 'F' ]]; then
-    # Pass execution permanently to the compiler along with all command-line arguments:
-    exec $FC "$@"
-  else
-    echo "CAF: The first argument must contain a .f90, .F90, .f, or .F file extension."
-  fi
-fi
+#    4. Each scope containing CAF source includes one or more "use opencoarrays" statements.
+#    5. The only CAF statements or expressions are
+#       a. num_images() 
+#       b. this_image() with or without arguments
+#       c. "sync all" with or without arguments.
+#       d. "sync images" with or without arguments.
+#       e. "error stop" without arguments.
+#       f. co_sum, co_max, co_min, or co_reduce
+#    6. No files make explicit use of codimensions (square brackets)

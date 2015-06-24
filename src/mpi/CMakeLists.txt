@@ -30,7 +30,6 @@ else()
     add_definitions(-DCOMPILER_SUPPORTS_CAF_INTRINSICS)
   endif()
   add_library(caf_mpi mpi_caf.c ../common/caf_auxiliary.c ../extensions/opencoarrays.F90)
-  INSTALL(PROGRAMS ../extensions/caf ../extensions/caf-awareness.sh DESTINATION bin)
 endif()
 
 target_include_directories(caf_mpi PRIVATE ${MPI_C_INCLUDE_PATH})
@@ -43,12 +42,24 @@ install(TARGETS caf_mpi EXPORT OpenCoarraysTargets
 )
 install(DIRECTORY  ${CMAKE_BINARY_DIR}/mod DESTINATION .)
 
+set(compiler_wrapper ${CMAKE_BINARY_DIR}/bin/caf)
+install(
+    FILES "${compiler_wrapper}"
+    PERMISSIONS WORLD_EXECUTE WORLD_READ OWNER_EXECUTE OWNER_READ OWNER_WRITE GROUP_EXECUTE GROUP_READ
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/
+)
+
+file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/caf-head HEADER)
+file(WRITE  "${compiler_wrapper}" "${HEADER}\n")
+file(APPEND "${compiler_wrapper}"  "caf_mod_dir=${CMAKE_INSTALL_PREFIX}/mod\n")
+file(APPEND "${compiler_wrapper}"  "caf_lib_dir=${CMAKE_INSTALL_PREFIX}/lib\n")
 if(opencoarrays_aware_compiler)
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../extensions/caf-compiler.sh ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/caf-awareness.sh COPYONLY)
+  file(APPEND "${compiler_wrapper}"  "caf_compiler=true\n")
 else()
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../extensions/non-caf-compiler.sh ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/caf-awareness.sh COPYONLY)
+  file(APPEND "${compiler_wrapper}"  "caf_compiler=false\n")
 endif()
-set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${CMAKE_CURRENT_SOURCE_DIR}/../extensions/caf-awareness.sh")
+file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/caf-foot FOOTER)
+file(APPEND "${compiler_wrapper}" "${FOOTER}")
 
 # This could be needed to produce shared libraries:
 #target_link_libraries(caf_mpi PRIVATE ${MPI_C_LIBRARIES})

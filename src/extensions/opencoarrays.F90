@@ -50,7 +50,7 @@ module opencoarrays
 
   ! Generic interface to co_sum with implementations for various types, kinds, and ranks
   interface co_sum
-     module procedure co_sum_integer_scalar
+     module procedure co_sum_integer
   end interface 
 
   ! Bindings for OpenCoarrays C procedures
@@ -170,7 +170,7 @@ module opencoarrays
 contains
 
   ! Proposed Fortran 2015 parallel collective sum reduction for integers of interoperable kind c_int
-  subroutine co_sum_integer_scalar(a,result_image,stat,errmsg)
+  subroutine co_sum_integer(a,result_image,stat,errmsg)
     implicit none
     integer(c_int), intent(inout), volatile, target, contiguous :: a(..)
     integer(c_int), intent(in), optional :: result_image
@@ -183,7 +183,7 @@ contains
 
     my_rank=rank(a)
     a_descriptor%dtype = scalar_dtype + my_rank
-    a_descriptor%offset = scalar_offset + my_rank
+    a_descriptor%offset = scalar_offset 
     a_descriptor%base_addr = c_loc(a) ! data
     block
       integer(c_int) :: result_image_,i
