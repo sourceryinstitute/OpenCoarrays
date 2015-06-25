@@ -58,8 +58,23 @@ if(opencoarrays_aware_compiler)
 else()
   file(APPEND "${compiler_wrapper}"  "caf_compiler=false\n")
 endif()
+if ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
+  file(APPEND "${compiler_wrapper}"  "linux=true\n")
+endif()
 file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/caf-foot FOOTER)
 file(APPEND "${compiler_wrapper}" "${FOOTER}")
 
+# Now we write the script that launches executable files produced from CAF codes
+set(caf_launcher ${CMAKE_BINARY_DIR}/bin/cafrun)
+install(
+    FILES "${caf_launcher}"
+    PERMISSIONS WORLD_EXECUTE WORLD_READ OWNER_EXECUTE OWNER_READ OWNER_WRITE GROUP_EXECUTE GROUP_READ
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
+)
+file(WRITE  "${caf_launcher}" "#!/bin/bash\n")
+file(APPEND "${caf_launcher}" "# Move along, people.  There's nothing to see here:\n")
+file(APPEND "${caf_launcher}" "exec mpirun \"$@\"\n")
+
 # This could be needed to produce shared libraries:
 #target_link_libraries(caf_mpi PRIVATE ${MPI_C_LIBRARIES})
+
