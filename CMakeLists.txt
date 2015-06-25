@@ -129,5 +129,7 @@ if(opencoarrays_aware_compiler)
     set_property(TEST coarray_navier_stokes PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
   endif()
 else()
-  add_mpi_test(tally_image_numbers 4 ${tests_root}/integration/extensions/tally_image_numbers)
+ add_test(test-caf-tally ${tests_root}/integration/extensions/test-caf-tally.sh)
+ set_property(TEST test-caf-tally PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
 endif()
+

@@ -23,6 +23,26 @@ if("${gfortran_compiler}" AND (NOT "${opencoarrays_aware_compiler}"))
   add_definitions(-DCOMPILER_SUPPORTS_CAF_INTRINSICS)
 endif()
 
-add_executable(tally_image_numbers tally_image_numbers.f90)
-target_link_libraries(tally_image_numbers OpenCoarrays)
-include_directories(${CMAKE_BINARY_DIR}/mod)
+# tally_image_numbers.f90 is for testing the caf compiler wrapper so 
+# the corresponding exectuble will be built as part of the process of
+# running the test.  We therefore copy the uncompiled source to the 
+# build tree:
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/tally_image_numbers.f90 
+  ${CMAKE_CURRENT_BINARY_DIR}/tally_image_numbers.f90 
+  COPYONLY
+)
+
+# Now we write the script that compiles and runs the test
+set(test_harness ${CMAKE_BINARY_DIR}/bin/test-caf-tally.sh)
+install(
+    FILES "${test_harness}"
+    PERMISSIONS WORLD_EXECUTE WORLD_READ OWNER_EXECUTE OWNER_READ OWNER_WRITE GROUP_EXECUTE GROUP_READ
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+)
+file(WRITE  "${test_harness}" "#!/bin/bash\n")
+file(APPEND "${test_harness}" "cd ${CMAKE_CURRENT_BINARY_DIR}\n")
+file(APPEND "${test_harness}" "FC=mpif90 ${CMAKE_INSTALL_PREFIX}/bin/caf tally_image_numbers.f90 -o tally\n")
+set(num_images 4)
+file(APPEND "${test_harness}" "${CMAKE_INSTALL_PREFIX}/bin/cafrun -np ${num_images} ./tally\n")
+#file(APPEND "${test_harness}" "mpirun -np ${num_images} ./tally\n")
