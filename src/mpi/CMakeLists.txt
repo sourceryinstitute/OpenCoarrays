@@ -73,7 +73,7 @@ install(
 )
 file(WRITE  "${caf_launcher}" "#!/bin/bash\n")
 file(APPEND "${caf_launcher}" "# Move along, people.  There's nothing to see here:\n")
-file(APPEND "${caf_launcher}" "exec mpirun \"$@\"\n")
+file(APPEND "${caf_launcher}" "mpirun \"$@\"\n")
 
 # This could be needed to produce shared libraries:
 #target_link_libraries(caf_mpi PRIVATE ${MPI_C_LIBRARIES})
