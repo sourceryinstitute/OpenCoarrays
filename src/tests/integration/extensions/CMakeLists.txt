@@ -34,7 +34,7 @@ configure_file(
 )
 
 # Now we write the script that compiles and runs the test
-set(test_harness ${CMAKE_BINARY_DIR}/exe/test-caf-tally.sh)
+set(test_harness ${CMAKE_BINARY_DIR}/bin/test-caf-tally.sh)
 install(
     FILES "${test_harness}"
     PERMISSIONS WORLD_EXECUTE WORLD_READ OWNER_EXECUTE OWNER_READ OWNER_WRITE GROUP_EXECUTE GROUP_READ
