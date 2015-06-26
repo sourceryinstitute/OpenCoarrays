@@ -1,4 +1,5 @@
 program strided_get
+  use iso_c_binding, only : DPC=>c_double
   implicit none
 
   integer :: i,me,np
