@@ -303,7 +303,11 @@ stat_error:
    GASNet initialization happened before. */
 
 void
+#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
+_gfortran_caf_init (int *argc, char ***argv)
+#else
 PREFIX (init) (int *argc, char ***argv)
+#endif
 {
   if (caf_num_images == 0)
     {
@@ -373,7 +377,11 @@ PREFIX (init) (int *argc, char ***argv)
 /* Finalize coarray program.   */
 
 void
+#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
+_gfortran_caf_finalize (void)
+#else
 PREFIX (finalize) (void)
+#endif
 {
 
   MPI_Barrier(CAF_COMM_WORLD);
@@ -445,7 +453,11 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
 
   /* Start GASNET if not already started.  */
   if (caf_num_images == 0)
+#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
+    _gfortran_caf_init (NULL, NULL);
+#else
     PREFIX (init) (NULL, NULL);
+#endif
 
   /* Token contains only a list of pointers.  */
 
