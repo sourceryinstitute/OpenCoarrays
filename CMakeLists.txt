@@ -124,7 +124,6 @@ if(opencoarrays_aware_compiler)
   add_mpi_test(hello_multiverse 2 ${tests_root}/integration/coarrayHelloWorld/hello_multiverse)
   add_mpi_test(coarray_burgers_pde 2 ${tests_root}/integration/pde_solvers/coarrayBurgers/coarray_burgers_pde)
   add_mpi_test(co_heat 2 ${tests_root}/integration/pde_solvers/coarrayHeatSimplified/co_heat)
-  add_mpi_test(strided_get 2 ${tests_root}/unit/send-get/strided_get)
 
   if ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux" )
     add_mpi_test(coarray_navier_stokes 2 ${tests_root}/integration/pde_solvers/navier-stokes/coarray_navier_stokes)
