@@ -38,6 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 #include <string.h>        /* For memcpy.  */
 #include <stdarg.h>        /* For variadic arguments.  */
 #include <alloca.h>
+#include <unistd.h>
 #include <mpi.h>
 #include <pthread.h>
 
