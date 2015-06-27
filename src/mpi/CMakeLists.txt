@@ -43,14 +43,15 @@ install(TARGETS caf_mpi EXPORT OpenCoarraysTargets
 install(DIRECTORY  ${CMAKE_BINARY_DIR}/mod DESTINATION .)
 
 set(compiler_wrapper ${CMAKE_BINARY_DIR}/exe/caf)
+set(exe_dir ${CMAKE_BINARY_DIR}/bin_staging)
 install(
     FILES "${compiler_wrapper}"
-    PERMISSIONS WORLD_EXECUTE WORLD_READ OWNER_EXECUTE OWNER_READ OWNER_WRITE GROUP_EXECUTE GROUP_READ
+    PERMISSIONS WORLD_EXECUTE WORLD_READ WORLD_WRITE OWNER_EXECUTE OWNER_READ OWNER_WRITE GROUP_EXECUTE GROUP_READ GROUP_WRITE
     DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/
 )
 
-file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/caf-head HEADER)
-file(WRITE  "${compiler_wrapper}" "${HEADER}\n")
+file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/caf-head CAF_HEADER)
+file(WRITE  "${compiler_wrapper}" "${CAF_HEADER}\n")
 file(APPEND "${compiler_wrapper}"  "caf_mod_dir=${CMAKE_INSTALL_PREFIX}/mod\n")
 file(APPEND "${compiler_wrapper}"  "caf_lib_dir=${CMAKE_INSTALL_PREFIX}/lib\n")
 if(opencoarrays_aware_compiler)
@@ -65,16 +66,19 @@ file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/caf-foot FOOTER)
 file(APPEND "${compiler_wrapper}" "${FOOTER}")
 
 # Now we write the script that launches executable files produced from CAF codes
-set(caf_launcher ${CMAKE_BINARY_DIR}/exe/cafrun)
+set(caf_launcher ${exe_dir}/cafrun)
 install(
     FILES "${caf_launcher}"
-    PERMISSIONS WORLD_EXECUTE WORLD_READ OWNER_EXECUTE OWNER_READ OWNER_WRITE GROUP_EXECUTE GROUP_READ
+    PERMISSIONS WORLD_EXECUTE WORLD_READ WORLD_WRITE OWNER_EXECUTE OWNER_READ OWNER_WRITE GROUP_EXECUTE GROUP_READ GROUP_WRITE
     DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
 )
-file(WRITE  "${caf_launcher}" "#!/bin/bash\n")
-file(APPEND "${caf_launcher}" "# Move along, people.  There's nothing to see here:\n")
-file(APPEND "${caf_launcher}" "mpirun \"$@\"\n")
+file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/cafrun-head CAFRUN_HEADER)
+file(WRITE  "${caf_launcher}" "${CAFRUN_HEADER}\n")
+
+file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/cafrun-foot FOOTER)
+file(APPEND "${caf_launcher}" "${FOOTER}")
 
 # This could be needed to produce shared libraries:
 #target_link_libraries(caf_mpi PRIVATE ${MPI_C_LIBRARIES})
 
+#set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${exe_dir}/cafrun;${exe_dir}/caf;${exe_dir}/test-caf-tally.sh")

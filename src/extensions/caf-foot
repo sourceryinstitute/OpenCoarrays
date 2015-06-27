@@ -1,10 +1,39 @@
+usage()
+{
+    cmd=`basename $0`
+    echo ""
+    echo " $cmd - Fortran compiler wrapper for OpenCoarrays"
+    echo ""
+    echo " Usage: $cmd <fortran-source-file> [options] ..."
+    echo ""
+    echo " Options:"
+    echo "   --help, -h           Show this help message"
+    echo "   --version, -v, -V    Report version and copyright information"
+    echo "   --wrapping, -w,      Report the name of the wrapped compiler"
+    echo ""
+    echo " Example usage:"
+    echo ""
+    echo "   $cmd foo.f90 -o foo"
+    echo "   $cmd -v"
+    echo "   $cmd --help"
+    echo ""
+    echo " Notes:"
+    echo "   <fortran-source-file> must be a Fortran source file, must appear before all other arguments"
+    echo "   must be the only Fortran source file in the argument list, and must be of the form "
+    echo "   *.f90, *.F90, *.f, or *.F. The caf wrapper will append -L, -l, and -fcoarray arguments "
+    echo "   with values that get set during the OpenCoarrays build process."
+    echo ""
+    exit 1
+}
+
+# Print useage information if caf is invoked without arguments
+if [ $# == 0 ]; then
+  usage
+fi
+
 # Default to "mpif90" Fortran compiler if environment variable FC has zero length:
 if [ -z "$FC" ]; then
    FC=mpif90
-else
-   echo ""
-   echo "caf: FC=$FC" 
-   echo ""
 fi
 
 # TODO -- improve the syntax of the "set" command below to accepted an unlimited number of arguments
@@ -12,7 +41,7 @@ max_arguments=100
 link_args="-fcoarray=lib -lcaf_mpi"
 
 if [ "$caf_compiler" = "true" ]; then
-  # Nothing to do other than invoke the compiler witih with all the command-line arguments:
+  # Nothing to do other than invoke the compiler with all the command-line arguments:
   $FC "$@" -L $caf_lib_dir $link_args
 else
   # Verify that a file with the .f90, .F90, .f, or .F extension is the first argument:
@@ -35,7 +64,19 @@ else
     set -- "caf-$1" "${@:2:max_arguments}"
     # Invoke the compiler along with all command-line arguments:
     $FC "$@" -L $caf_lib_dir -I $caf_mod_dir $link_args
+  elif [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
+    echo "OpenCoarrays Coarray Fortran Compiler Wrapper (caf version 1.0)"
+    echo "Copyright (C) 2015 Sourcery, Inc."
+    echo ""
+    echo "OpenCoarrays comes with NO WARRANTY, to the extent permitted by law."
+    echo "You may redistribute copies of OpenCoarrays under the terms of the"
+    echo "BSD 3-Clause License.  For more information about these matters, see"
+    echo "the file named COPYRIGHT-BSD3."
+  elif [[ $1 == '-w' || $1 == '--wrapping' ]]; then
+    echo "caf wraps FC=$FC"
+  elif [[ $1 == '-h' || $1 == '--help' ]]; then
+    usage
   else
-    echo "CAF: The first argument must contain a .f90, .F90, .f, or .F file extension."
+    usage
   fi
 fi

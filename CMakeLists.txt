@@ -133,4 +133,3 @@ else()
  add_test(test-caf-tally ${tests_root}/integration/extensions/test-caf-tally.sh)
  set_property(TEST test-caf-tally PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
 endif()
-

@@ -1,0 +1,43 @@
+usage()
+{
+    cmd=`basename $0`
+    echo ""
+    echo " $cmd - Coarray Fortran executable launcher for OpenCoarrays"
+    echo ""
+    echo " Usage: $cmd [options] ..."
+    echo ""
+    echo " Options:"
+    echo "   --help, -h           Show this help message"
+    echo "   --version, -v, -V    Report version and copyright information"
+    echo "   --wraps, -w,         Report the name of the wrapped compiler"
+    echo ""
+    echo " Example usage:"
+    echo ""
+    echo "   $cmd foo"
+    echo "   $cmd -v"
+    echo "   $cmd --help"
+    echo ""
+    echo " Notes:"
+    echo "   [options] must be eithe rone of the above arguments or a CAF executable file."
+    echo ""
+    exit 1
+}
+
+# Print useage information if caf is invoked without arguments
+if [ $# == 0 ]; then
+  usage
+elif [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
+  echo "OpenCoarrays Coarray Fortran Executable Launcher (cafrun version 1.0)"
+  echo "Copyright (C) 2015 Sourcery, Inc."
+  echo ""
+  echo "OpenCoarrays comes with NO WARRANTY, to the extent permitted by law."
+  echo "You may redistribute copies of OpenCoarrays under the terms of the"
+  echo "BSD 3-Clause License.  For more information about these matters, see"
+  echo "the file named COPYRIGHT-BSD3."
+elif [[ $1 == '-w' || $1 == '--wraps' ]]; then
+  echo "cafrun wraps mpirun"
+elif [[ $1 == '-h' || $1 == '--help' ]]; then
+  usage
+else
+  mpirun "$@"
+fi
