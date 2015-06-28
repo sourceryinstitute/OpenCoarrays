@@ -42,6 +42,15 @@ install(
 )
 file(WRITE  "${test_harness}" "#!/bin/bash\n")
 file(APPEND "${test_harness}" "cd ${CMAKE_CURRENT_BINARY_DIR}\n")
-file(APPEND "${test_harness}" "FC=mpif90 ${CMAKE_INSTALL_PREFIX}/bin/caf tally_image_numbers.f90 -o tally\n")
+if (opencoarrays_aware_compiler) 
+  # Explicitly include the directory containing the .mod file because the caf script won't pass it 
+  # automatically when the script wraps an OpenCoarrays-aware compiler
+  file(APPEND 
+    "${test_harness}" 
+    "FC=mpif90 ${CMAKE_INSTALL_PREFIX}/bin/caf tally_image_numbers.f90 -o tally -I${CMAKE_BINARY_DIR}/mod\n"
+  )
+else()
+  file(APPEND "${test_harness}" "FC=mpif90 ${CMAKE_INSTALL_PREFIX}/bin/caf tally_image_numbers.f90 -o tally\n")
+endif()
 set(num_images 4)
 file(APPEND "${test_harness}" "${CMAKE_INSTALL_PREFIX}/bin/cafrun -np ${num_images} ./tally\n")
