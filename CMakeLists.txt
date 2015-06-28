@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 
 #Name project and specify source languages
-project(opencoarrays C Fortran)
+project(opencoarrays VERSION 1.0.0 LANGUAGES C Fortran)
 
 #Print an error message on an attempt to build inside the source directory tree:
 if ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
@@ -129,7 +129,11 @@ if(opencoarrays_aware_compiler)
     add_mpi_test(coarray_navier_stokes 2 ${tests_root}/integration/pde_solvers/navier-stokes/coarray_navier_stokes)
     set_property(TEST coarray_navier_stokes PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
   endif()
-else()
- add_test(test-caf-tally ${tests_root}/integration/extensions/test-caf-tally.sh)
- set_property(TEST test-caf-tally PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
 endif()
+
+# The reasons for building and testing the extensions even with an OpenCoarrays-aware compiler are twofold:
+# 1. It tests the "caf" and "cafrun" scripts, and
+# 2. A user who has written a program that uses the extensions might not want to rewrite that program just to
+#    compile it with a compiler that is OpenCoarrays-aware. 
+add_test(test-caf-tally ${tests_root}/integration/extensions/test-caf-tally.sh)
+set_property(TEST test-caf-tally PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")

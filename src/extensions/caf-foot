@@ -40,7 +40,17 @@ fi
 max_arguments=100
 link_args="-fcoarray=lib -lcaf_mpi"
 
-if [ "$caf_compiler" = "true" ]; then
+if [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
+    echo ""
+    echo "OpenCoarrays Coarray Fortran Compiler Wrapper (caf version $caf_version)"
+    echo "Copyright (C) 2015 Sourcery, Inc."
+    echo ""
+    echo "OpenCoarrays comes with NO WARRANTY, to the extent permitted by law."
+    echo "You may redistribute copies of OpenCoarrays under the terms of the"
+    echo "BSD 3-Clause License.  For more information about these matters, see"
+    echo "the file named COPYRIGHT-BSD3."
+    echo ""
+elif [ "$caf_compiler" = "true" ]; then
   # Nothing to do other than invoke the compiler with all the command-line arguments:
   $FC "$@" -L $caf_lib_dir $link_args
 else
@@ -64,14 +74,6 @@ else
     set -- "caf-$1" "${@:2:max_arguments}"
     # Invoke the compiler along with all command-line arguments:
     $FC "$@" -L $caf_lib_dir -I $caf_mod_dir $link_args
-  elif [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
-    echo "OpenCoarrays Coarray Fortran Compiler Wrapper (caf version 1.0)"
-    echo "Copyright (C) 2015 Sourcery, Inc."
-    echo ""
-    echo "OpenCoarrays comes with NO WARRANTY, to the extent permitted by law."
-    echo "You may redistribute copies of OpenCoarrays under the terms of the"
-    echo "BSD 3-Clause License.  For more information about these matters, see"
-    echo "the file named COPYRIGHT-BSD3."
   elif [[ $1 == '-w' || $1 == '--wrapping' ]]; then
     echo "caf wraps FC=$FC"
   elif [[ $1 == '-h' || $1 == '--help' ]]; then

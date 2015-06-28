@@ -13,12 +13,13 @@ usage()
     echo ""
     echo " Example usage:"
     echo ""
-    echo "   $cmd foo"
+    echo "   $cmd -np 2 foo"
     echo "   $cmd -v"
     echo "   $cmd --help"
     echo ""
     echo " Notes:"
-    echo "   [options] must be eithe rone of the above arguments or a CAF executable file."
+    echo "   [options] must a CAF executable file, one of the above arguments,"
+    echo "   or an argument to the program name returned by caf --wraps"
     echo ""
     exit 1
 }
@@ -27,15 +28,17 @@ usage()
 if [ $# == 0 ]; then
   usage
 elif [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
-  echo "OpenCoarrays Coarray Fortran Executable Launcher (cafrun version 1.0)"
+  echo ""
+  echo "OpenCoarrays Coarray Fortran Executable Launcher (caf version $caf_version)"
   echo "Copyright (C) 2015 Sourcery, Inc."
   echo ""
   echo "OpenCoarrays comes with NO WARRANTY, to the extent permitted by law."
   echo "You may redistribute copies of OpenCoarrays under the terms of the"
   echo "BSD 3-Clause License.  For more information about these matters, see"
   echo "the file named COPYRIGHT-BSD3."
+  echo ""
 elif [[ $1 == '-w' || $1 == '--wraps' ]]; then
-  echo "cafrun wraps mpirun"
+  mpirun -v
 elif [[ $1 == '-h' || $1 == '--help' ]]; then
   usage
 else
