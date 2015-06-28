@@ -12,7 +12,8 @@ ifeq ($(compiler),gnu)
 # lib=-lcaf_single
 # compile=gfortran -fcoarray=single
   lib=-lcaf_mpi
-  compile=mpif90 -fcoarray=lib
+  compile=caf -fcoarray=lib
+  compile=/Users/rouson/Code/builds/oc/bin/caf -fcoarray=lib
   ifeq ($(machine),virtual)
     opt=-L ../../../../mpi
   else
