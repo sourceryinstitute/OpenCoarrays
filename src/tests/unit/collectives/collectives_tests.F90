@@ -25,7 +25,7 @@
 
 ! Unit tests for co_broadcast and co_sum
 program main
-  use iso_fortran_env, only : error_unit ! 64-bit arithmetic
+  use iso_fortran_env, only : error_unit 
   use iso_c_binding, only : c_int,c_double
 #ifdef USE_EXTENSIONS
   use opencoarrays, only : this_image,num_images,co_sum,co_broadcast
@@ -33,18 +33,19 @@ program main
   implicit none               
   integer(c_int) :: me
 
-#ifdef USE_EXTENSIONS
-  print *,"Using extensions"
-#endif
-
   ! Store the executing image number
   me=this_image()
+
+#ifdef USE_EXTENSIONS
+  if (me==1) print *,"Using the extensions from the opencoarrays module."
+#endif
 
   ! Verify broadcasting of integer data from image 1
   c_int_co_broadcast: block 
     integer(c_int), save :: integer_received[*]
     integer(c_int), parameter :: integer_sent=12345_c_int ! Integer test message
     if (me==1) integer_received=integer_sent
+    sync all
     call co_broadcast(integer_received,source_image=1)
     if (integer_received/=integer_sent) then
       write(error_unit,*) "Incorrect co_broadcast(",integer_received,") on image",me
@@ -57,6 +58,7 @@ program main
     real(c_double), save :: real_received[*]
     real(c_double), parameter :: real_sent=2.7182818459045_c_double ! Real test message
     if (me==1) real_received=real_sent
+    sync all
     call co_broadcast(real_received,source_image=1)
     if (real_received/=real_sent) then
       write(error_unit,*) "Incorrect co_broadcast(",real_received,") on image",me
@@ -69,6 +71,7 @@ program main
     integer(c_int) :: i
     integer(c_int), save :: image_number_tally[*]
     image_number_tally=me
+    sync all
     call co_sum(image_number_tally)
     if (image_number_tally/=sum([(i,i=1,num_images())])) then
       write(error_unit,"(2(a,i2))") "Wrong result (",image_number_tally,") on image",image_number_tally
@@ -92,7 +95,6 @@ program main
     sync all
     ! Replace pi on each image with the sum of the pi contributions from all images
     call co_sum(pi)
-    sync all
     associate (pi_ref=>acos(-1._c_double),allowable_fractional_error=>0.000001_c_double)
       if (abs((pi-pi_ref)/pi_ref)>allowable_fractional_error) then
         write(error_unit,*) "Inaccurate pi (",pi,") result on image ",me

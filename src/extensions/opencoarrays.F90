@@ -51,13 +51,18 @@ module opencoarrays
 
   ! Generic interface to co_sum with implementations for various types, kinds, and ranks
   interface co_broadcast
-     module procedure co_broadcast_integer,co_broadcast_real
+     module procedure co_broadcast_c_int,co_broadcast_c_double
   end interface 
 
   ! Generic interface to co_sum with implementations for various types, kinds, and ranks
   interface co_sum
-     module procedure co_sum_integer,co_sum_real
+     module procedure co_sum_c_int,co_sum_c_double
   end interface 
+
+  ! __________ End Public Interface _____________
+
+
+  ! __________ Begin Private Implementation _____
 
   ! Bindings for OpenCoarrays C procedures
   interface 
@@ -190,129 +195,119 @@ module opencoarrays
 
   integer(c_int), save, volatile, bind(C,name="CAF_COMM_WORLD") :: CAF_COMM_WORLD
 
+  interface gfc_descriptor
+    module procedure gfc_descriptor_c_int,gfc_descriptor_c_double
+  end interface
+
 contains
 
-  ! Proposed Fortran 2015 parallel collective sum reduction for integers of interoperable kind c_int
-  subroutine co_broadcast_real(a,result_image,stat,errmsg)
+  ! __________ Descriptor constructors for for each supported type and kind ____________
+  ! ____________________________________________________________________________________
+
+  function gfc_descriptor_c_int(a) result(a_descriptor)
+    integer(c_int), intent(in), target, contiguous :: a(..)
+    type(gfc_descriptor_t) :: a_descriptor
+    integer(c_int), parameter :: unit_stride=1,scalar_dtype=264,scalar_offset=-1
+    integer(c_int) :: i
+
+    a_descriptor%dtype = scalar_dtype + rank(a)
+    a_descriptor%offset = scalar_offset 
+    a_descriptor%base_addr = c_loc(a) ! data
+    do concurrent(i=1:rank(a))
+      a_descriptor%dim_(i)%stride  = unit_stride
+      a_descriptor%dim_(i)%lower_bound = lbound(a,i)
+      a_descriptor%dim_(i)%ubound_ = ubound(a,i)
+    end do
+
+  end function
+
+  function gfc_descriptor_c_double(a) result(a_descriptor)
+    real(c_double), intent(in), target, contiguous :: a(..)
+    type(gfc_descriptor_t) :: a_descriptor
+    integer(c_int), parameter :: unit_stride=1,scalar_dtype=264,scalar_offset=-1
+    integer(c_int) :: i
+
+    a_descriptor%dtype = scalar_dtype + rank(a)
+    a_descriptor%offset = scalar_offset 
+    a_descriptor%base_addr = c_loc(a) ! data
+    do concurrent(i=1:rank(a))
+      a_descriptor%dim_(i)%stride  = unit_stride
+      a_descriptor%dim_(i)%lower_bound = lbound(a,i)
+      a_descriptor%dim_(i)%ubound_ = ubound(a,i)
+    end do
+
+  end function
+
+  ! ______ Assumed-rank co_broadcast wrappers for each supported type and kind _________
+  ! ____________________________________________________________________________________
+
+  subroutine co_broadcast_c_double(a,result_image,stat,errmsg)
     implicit none
     real(c_double), intent(inout), volatile, target, contiguous :: a(..)
     integer(c_int), intent(in), optional :: result_image
     integer(c_int), intent(out), optional:: stat
     character(kind=1,len=*), intent(out), optional :: errmsg
-    ! Local variables
-    integer :: my_rank
-    integer, parameter :: scalar_dtype=264,scalar_offset=-1
+    ! Local variables and constants
+    integer(c_int), parameter :: default_result_image=0
+    integer(c_int) :: result_image_ ! Local replacement for the corresponding intent(in) dummy argument
     type(gfc_descriptor_t), target :: a_descriptor
 
-    my_rank=rank(a)
-    a_descriptor%dtype = scalar_dtype + my_rank
-    a_descriptor%offset = scalar_offset 
-    a_descriptor%base_addr = c_loc(a) ! data
-    block
-      integer(c_int) :: result_image_,i
-      integer(c_int), parameter :: default_result_image=0,unit_stride=1
-      do concurrent(i=1:rank(a))
-        a_descriptor%dim_(i)%stride  = unit_stride
-        a_descriptor%dim_(i)%lower_bound = lbound(a,i)
-        a_descriptor%dim_(i)%ubound_ = ubound(a,i)
-      end do
-      ! Local replacement for the corresponding intent(in) dummy argument:
-      result_image_ = merge(result_image,default_result_image,present(result_image)) 
-      call opencoarrays_co_broadcast(c_loc(a_descriptor),result_image_, stat, errmsg, len(errmsg)) 
-    end block
-    
+    result_image_ = merge(result_image,default_result_image,present(result_image)) 
+    a_descriptor = gfc_descriptor(a)
+    call opencoarrays_co_broadcast(c_loc(a_descriptor),result_image_, stat, errmsg, len(errmsg)) 
+
   end subroutine
 
-  ! Proposed Fortran 2015 parallel collective sum reduction for integers of interoperable kind c_int
-  subroutine co_broadcast_integer(a,result_image,stat,errmsg)
+  subroutine co_broadcast_c_int(a,result_image,stat,errmsg)
     implicit none
     integer(c_int), intent(inout), volatile, target, contiguous :: a(..)
     integer(c_int), intent(in), optional :: result_image
     integer(c_int), intent(out), optional:: stat
     character(kind=1,len=*), intent(out), optional :: errmsg
-    ! Local variables
-    integer :: my_rank
-    integer, parameter :: scalar_dtype=264,scalar_offset=-1
+    ! Local variables and constants:
+    integer(c_int), parameter :: default_result_image=0
+    integer(c_int) :: result_image_ ! Local replacement for the corresponding intent(in) dummy argument
     type(gfc_descriptor_t), target :: a_descriptor
-
-    my_rank=rank(a)
-    a_descriptor%dtype = scalar_dtype + my_rank
-    a_descriptor%offset = scalar_offset 
-    a_descriptor%base_addr = c_loc(a) ! data
-    block
-      integer(c_int) :: result_image_,i
-      integer(c_int), parameter :: default_result_image=0,unit_stride=1
-      do concurrent(i=1:rank(a))
-        a_descriptor%dim_(i)%stride  = unit_stride
-        a_descriptor%dim_(i)%lower_bound = lbound(a,i)
-        a_descriptor%dim_(i)%ubound_ = ubound(a,i)
-      end do
-      ! Local replacement for the corresponding intent(in) dummy argument:
-      result_image_ = merge(result_image,default_result_image,present(result_image)) 
-      call opencoarrays_co_broadcast(c_loc(a_descriptor),result_image_, stat, errmsg, len(errmsg)) 
-    end block
     
+    result_image_ = merge(result_image,default_result_image,present(result_image)) 
+    a_descriptor = gfc_descriptor(a)
+    call opencoarrays_co_broadcast(c_loc(a_descriptor),result_image_, stat, errmsg, len(errmsg)) 
+
   end subroutine
 
-  ! Proposed Fortran 2015 parallel collective sum reduction for integers of interoperable kind c_int
-  subroutine co_sum_real(a,result_image,stat,errmsg)
-    implicit none
+  ! ________ Assumed-rank co_sum wrappers for each supported type and kind _____________
+  ! ____________________________________________________________________________________
+
+  subroutine co_sum_c_double(a,result_image,stat,errmsg)
     real(c_double), intent(inout), volatile, target, contiguous :: a(..)
     integer(c_int), intent(in), optional :: result_image
     integer(c_int), intent(out), optional:: stat
     character(kind=1,len=*), intent(out), optional :: errmsg
-    ! Local variables
-    integer :: my_rank
-    integer, parameter :: scalar_dtype=264,scalar_offset=-1
+    ! Local variables and constants:
     type(gfc_descriptor_t), target :: a_descriptor
+    integer(c_int), parameter :: default_result_image=0
+    integer(c_int) :: result_image_ ! Local replacement for the corresponding intent(in) dummy argument
 
-    my_rank=rank(a)
-    a_descriptor%dtype = scalar_dtype + my_rank
-    a_descriptor%offset = scalar_offset 
-    a_descriptor%base_addr = c_loc(a) ! data
-    block
-      integer(c_int) :: result_image_,i
-      integer(c_int), parameter :: default_result_image=0,unit_stride=1
-      do concurrent(i=1:rank(a))
-        a_descriptor%dim_(i)%stride  = unit_stride
-        a_descriptor%dim_(i)%lower_bound = lbound(a,i)
-        a_descriptor%dim_(i)%ubound_ = ubound(a,i)
-      end do
-      ! Local replacement for the corresponding intent(in) dummy argument:
-      result_image_ = merge(result_image,default_result_image,present(result_image)) 
-      call opencoarrays_co_sum(c_loc(a_descriptor),result_image_, stat, errmsg, len(errmsg)) 
-    end block
+    a_descriptor = gfc_descriptor(a)
+    result_image_ = merge(result_image,default_result_image,present(result_image)) 
+    call opencoarrays_co_sum(c_loc(a_descriptor),result_image_, stat, errmsg, len(errmsg)) 
     
   end subroutine
 
-  ! Proposed Fortran 2015 parallel collective sum reduction for integers of interoperable kind c_int
-  subroutine co_sum_integer(a,result_image,stat,errmsg)
+  subroutine co_sum_c_int(a,result_image,stat,errmsg)
     implicit none
     integer(c_int), intent(inout), volatile, target, contiguous :: a(..)
     integer(c_int), intent(in), optional :: result_image
     integer(c_int), intent(out), optional:: stat
     character(kind=1,len=*), intent(out), optional :: errmsg
-    ! Local variables
-    integer :: my_rank
-    integer, parameter :: scalar_dtype=264,scalar_offset=-1
+    ! Local variables and constants:
+    integer(c_int), parameter :: default_result_image=0
     type(gfc_descriptor_t), target :: a_descriptor
+    integer(c_int) :: result_image_ ! Local replacement for the corresponding intent(in) dummy argument
 
-    my_rank=rank(a)
-    a_descriptor%dtype = scalar_dtype + my_rank
-    a_descriptor%offset = scalar_offset 
-    a_descriptor%base_addr = c_loc(a) ! data
-    block
-      integer(c_int) :: result_image_,i
-      integer(c_int), parameter :: default_result_image=0,unit_stride=1
-      do concurrent(i=1:rank(a))
-        a_descriptor%dim_(i)%stride  = unit_stride
-        a_descriptor%dim_(i)%lower_bound = lbound(a,i)
-        a_descriptor%dim_(i)%ubound_ = ubound(a,i)
-      end do
-      ! Local replacement for the corresponding intent(in) dummy argument:
-      result_image_ = merge(result_image,default_result_image,present(result_image)) 
-      call opencoarrays_co_sum(c_loc(a_descriptor),result_image_, stat, errmsg, len(errmsg)) 
-    end block
+    a_descriptor = gfc_descriptor(a)
+    result_image_ = merge(result_image,default_result_image,present(result_image)) 
+    call opencoarrays_co_sum(c_loc(a_descriptor),result_image_, stat, errmsg, len(errmsg)) 
     
   end subroutine
 
