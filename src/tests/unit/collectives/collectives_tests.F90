@@ -27,8 +27,15 @@
 program main
   use iso_fortran_env, only : error_unit ! 64-bit arithmetic
   use iso_c_binding, only : c_int,c_double
+#ifdef USE_EXTENSIONS
+  use opencoarrays, only : this_image,num_images,co_sum,co_broadcast
+#endif
   implicit none               
-  integer(c_int) :: me[*]
+  integer(c_int) :: me
+
+#ifdef USE_EXTENSIONS
+  print *,"Using extensions"
+#endif
 
   ! Store the executing image number
   me=this_image()
@@ -67,7 +74,6 @@ program main
       write(error_unit,"(2(a,i2))") "Wrong result (",image_number_tally,") on image",image_number_tally
       error stop "Test failed." ! Halt all images
     end if
-    print *, "Test passed on image ",me
   end block c_int_co_sum
 
   ! Verify collective sum by calculuating pi
@@ -86,6 +92,7 @@ program main
     sync all
     ! Replace pi on each image with the sum of the pi contributions from all images
     call co_sum(pi)
+    sync all
     associate (pi_ref=>acos(-1._c_double),allowable_fractional_error=>0.000001_c_double)
       if (abs((pi-pi_ref)/pi_ref)>allowable_fractional_error) then
         write(error_unit,*) "Inaccurate pi (",pi,") result on image ",me
@@ -94,4 +101,5 @@ program main
     end associate
   end block c_double_co_sum
 
+  if (this_image()==1) print *, "Test passed."
 end program

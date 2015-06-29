@@ -29,10 +29,11 @@ module opencoarrays
 #ifdef COMPILER_SUPPORTS_ATOMICS
   use iso_fortran_env, only : atomic_int_kind
 #endif
-  use iso_c_binding, only : c_int,c_char,c_ptr,c_loc,c_long,c_int32_t
+  use iso_c_binding, only : c_int,c_char,c_ptr,c_loc,c_long,c_int32_t,c_double
   implicit none
 
   private
+  public :: co_broadcast
   public :: co_sum
   public :: this_image
   public :: num_images
@@ -49,8 +50,13 @@ module opencoarrays
 #endif
 
   ! Generic interface to co_sum with implementations for various types, kinds, and ranks
+  interface co_broadcast
+     module procedure co_broadcast_integer,co_broadcast_real
+  end interface 
+
+  ! Generic interface to co_sum with implementations for various types, kinds, and ranks
   interface co_sum
-     module procedure co_sum_integer
+     module procedure co_sum_integer,co_sum_real
   end interface 
 
   ! Bindings for OpenCoarrays C procedures
@@ -61,9 +67,26 @@ module opencoarrays
     ! PREFIX (co_sum) (gfc_descriptor_t *a, int result_image, int *stat, char *errmsg,
     !                  int errmsg_len)
 #ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
-    subroutine opencoarrays_co_sum_integer(a,result_image, stat, errmsg, errmsg_len) bind(C,name="_caf_extensions_co_sum")
+    subroutine opencoarrays_co_sum(a,result_image, stat, errmsg, errmsg_len) bind(C,name="_caf_extensions_co_sum")
 #else
-    subroutine opencoarrays_co_sum_integer(a,result_image, stat, errmsg, errmsg_len) bind(C,name="_gfortran_caf_co_sum")
+    subroutine opencoarrays_co_sum(a,result_image, stat, errmsg, errmsg_len) bind(C,name="_gfortran_caf_co_sum")
+#endif
+      import :: c_int,c_char,c_ptr
+      type(c_ptr), intent(in), value :: a
+      integer(c_int), intent(in),  value :: result_image
+      integer(c_int), intent(out), optional :: stat
+      character(len=1,kind=c_char), intent(out), optional :: errmsg
+      integer(c_int), intent(in), value :: errmsg_len
+    end subroutine
+
+    ! C function prototype from ../mpi_caf.c
+    ! void
+    ! PREFIX (co_broadcast) (gfc_descriptor_t *a, int source_image, int *stat, char *errmsg,
+    !                  int errmsg_len)
+#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
+    subroutine opencoarrays_co_broadcast(a,result_image, stat, errmsg, errmsg_len) bind(C,name="_caf_extensions_co_broadcast")
+#else
+    subroutine opencoarrays_co_broadcast(a,result_image, stat, errmsg, errmsg_len) bind(C,name="_gfortran_caf_co_broadcast")
 #endif
       import :: c_int,c_char,c_ptr
       type(c_ptr), intent(in), value :: a
@@ -170,6 +193,99 @@ module opencoarrays
 contains
 
   ! Proposed Fortran 2015 parallel collective sum reduction for integers of interoperable kind c_int
+  subroutine co_broadcast_real(a,result_image,stat,errmsg)
+    implicit none
+    real(c_double), intent(inout), volatile, target, contiguous :: a(..)
+    integer(c_int), intent(in), optional :: result_image
+    integer(c_int), intent(out), optional:: stat
+    character(kind=1,len=*), intent(out), optional :: errmsg
+    ! Local variables
+    integer :: my_rank
+    integer, parameter :: scalar_dtype=264,scalar_offset=-1
+    type(gfc_descriptor_t), target :: a_descriptor
+
+    my_rank=rank(a)
+    a_descriptor%dtype = scalar_dtype + my_rank
+    a_descriptor%offset = scalar_offset 
+    a_descriptor%base_addr = c_loc(a) ! data
+    block
+      integer(c_int) :: result_image_,i
+      integer(c_int), parameter :: default_result_image=0,unit_stride=1
+      do concurrent(i=1:rank(a))
+        a_descriptor%dim_(i)%stride  = unit_stride
+        a_descriptor%dim_(i)%lower_bound = lbound(a,i)
+        a_descriptor%dim_(i)%ubound_ = ubound(a,i)
+      end do
+      ! Local replacement for the corresponding intent(in) dummy argument:
+      result_image_ = merge(result_image,default_result_image,present(result_image)) 
+      call opencoarrays_co_broadcast(c_loc(a_descriptor),result_image_, stat, errmsg, len(errmsg)) 
+    end block
+    
+  end subroutine
+
+  ! Proposed Fortran 2015 parallel collective sum reduction for integers of interoperable kind c_int
+  subroutine co_broadcast_integer(a,result_image,stat,errmsg)
+    implicit none
+    integer(c_int), intent(inout), volatile, target, contiguous :: a(..)
+    integer(c_int), intent(in), optional :: result_image
+    integer(c_int), intent(out), optional:: stat
+    character(kind=1,len=*), intent(out), optional :: errmsg
+    ! Local variables
+    integer :: my_rank
+    integer, parameter :: scalar_dtype=264,scalar_offset=-1
+    type(gfc_descriptor_t), target :: a_descriptor
+
+    my_rank=rank(a)
+    a_descriptor%dtype = scalar_dtype + my_rank
+    a_descriptor%offset = scalar_offset 
+    a_descriptor%base_addr = c_loc(a) ! data
+    block
+      integer(c_int) :: result_image_,i
+      integer(c_int), parameter :: default_result_image=0,unit_stride=1
+      do concurrent(i=1:rank(a))
+        a_descriptor%dim_(i)%stride  = unit_stride
+        a_descriptor%dim_(i)%lower_bound = lbound(a,i)
+        a_descriptor%dim_(i)%ubound_ = ubound(a,i)
+      end do
+      ! Local replacement for the corresponding intent(in) dummy argument:
+      result_image_ = merge(result_image,default_result_image,present(result_image)) 
+      call opencoarrays_co_broadcast(c_loc(a_descriptor),result_image_, stat, errmsg, len(errmsg)) 
+    end block
+    
+  end subroutine
+
+  ! Proposed Fortran 2015 parallel collective sum reduction for integers of interoperable kind c_int
+  subroutine co_sum_real(a,result_image,stat,errmsg)
+    implicit none
+    real(c_double), intent(inout), volatile, target, contiguous :: a(..)
+    integer(c_int), intent(in), optional :: result_image
+    integer(c_int), intent(out), optional:: stat
+    character(kind=1,len=*), intent(out), optional :: errmsg
+    ! Local variables
+    integer :: my_rank
+    integer, parameter :: scalar_dtype=264,scalar_offset=-1
+    type(gfc_descriptor_t), target :: a_descriptor
+
+    my_rank=rank(a)
+    a_descriptor%dtype = scalar_dtype + my_rank
+    a_descriptor%offset = scalar_offset 
+    a_descriptor%base_addr = c_loc(a) ! data
+    block
+      integer(c_int) :: result_image_,i
+      integer(c_int), parameter :: default_result_image=0,unit_stride=1
+      do concurrent(i=1:rank(a))
+        a_descriptor%dim_(i)%stride  = unit_stride
+        a_descriptor%dim_(i)%lower_bound = lbound(a,i)
+        a_descriptor%dim_(i)%ubound_ = ubound(a,i)
+      end do
+      ! Local replacement for the corresponding intent(in) dummy argument:
+      result_image_ = merge(result_image,default_result_image,present(result_image)) 
+      call opencoarrays_co_sum(c_loc(a_descriptor),result_image_, stat, errmsg, len(errmsg)) 
+    end block
+    
+  end subroutine
+
+  ! Proposed Fortran 2015 parallel collective sum reduction for integers of interoperable kind c_int
   subroutine co_sum_integer(a,result_image,stat,errmsg)
     implicit none
     integer(c_int), intent(inout), volatile, target, contiguous :: a(..)
@@ -195,7 +311,7 @@ contains
       end do
       ! Local replacement for the corresponding intent(in) dummy argument:
       result_image_ = merge(result_image,default_result_image,present(result_image)) 
-      call opencoarrays_co_sum_integer(c_loc(a_descriptor),result_image_, stat, errmsg, len(errmsg)) 
+      call opencoarrays_co_sum(c_loc(a_descriptor),result_image_, stat, errmsg, len(errmsg)) 
     end block
     
   end subroutine

@@ -1,2 +1,2 @@
-add_executable(collectives collectives_tests.f90)
+add_executable(collectives collectives_tests.F90)
 target_link_libraries(collectives OpenCoarrays)

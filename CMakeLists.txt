@@ -138,3 +138,6 @@ endif()
 #    compile it with a compiler that is OpenCoarrays-aware. 
 add_test(test-caf-tally ${tests_root}/integration/extensions/test-caf-tally.sh)
 set_property(TEST test-caf-tally PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
+
+add_test(test-extensions ${tests_root}/unit/extensions/test-collectives-extensions.sh)
+set_property(TEST test-extensions PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
