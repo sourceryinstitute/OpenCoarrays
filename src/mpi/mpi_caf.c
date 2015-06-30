@@ -440,9 +440,15 @@ PREFIX (num_images)(int distance __attribute__ ((unused)),
 }
 
 
+#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
 void *
-PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
+  _gfortran_caf_register (size_t size, caf_register_t type, caf_token_t *token,
                   int *stat, char *errmsg, int errmsg_len)
+#else
+void *
+  PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
+                  int *stat, char *errmsg, int errmsg_len)
+#endif
 {
   /* int ierr; */
   void *mem;

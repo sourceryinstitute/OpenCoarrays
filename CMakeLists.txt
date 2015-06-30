@@ -130,14 +130,11 @@ if(opencoarrays_aware_compiler)
     add_mpi_test(coarray_navier_stokes 2 ${tests_root}/integration/pde_solvers/navier-stokes/coarray_navier_stokes)
     set_property(TEST coarray_navier_stokes PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
   endif()
+else()
+  add_test(co_sum_extension ${tests_root}/unit/extensions/test-co_sum-extension.sh)
+  set_property(TEST co_sum_extension PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
+
+  add_test(co_broadcast_extension ${tests_root}/unit/extensions/test-co_broadcast-extension.sh)
+  set_property(TEST co_broadcast_extension PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
 endif()
 
-# The reasons for building and testing the extensions even with an OpenCoarrays-aware compiler are twofold:
-# 1. It tests the "caf" and "cafrun" scripts, and
-# 2. A user who has written a program that uses the extensions might not want to rewrite that program just to
-#    compile it with a compiler that is OpenCoarrays-aware. 
-add_test(test-caf-tally ${tests_root}/integration/extensions/test-caf-tally.sh)
-set_property(TEST test-caf-tally PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
-
-add_test(test-extensions ${tests_root}/unit/extensions/test-collectives-extensions.sh)
-set_property(TEST test-extensions PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")

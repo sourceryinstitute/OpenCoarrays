@@ -89,13 +89,13 @@ module opencoarrays
     ! PREFIX (co_broadcast) (gfc_descriptor_t *a, int source_image, int *stat, char *errmsg,
     !                  int errmsg_len)
 #ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
-    subroutine opencoarrays_co_broadcast(a,result_image, stat, errmsg, errmsg_len) bind(C,name="_caf_extensions_co_broadcast")
+    subroutine opencoarrays_co_broadcast(a,source_image, stat, errmsg, errmsg_len) bind(C,name="_caf_extensions_co_broadcast")
 #else
-    subroutine opencoarrays_co_broadcast(a,result_image, stat, errmsg, errmsg_len) bind(C,name="_gfortran_caf_co_broadcast")
+    subroutine opencoarrays_co_broadcast(a,source_image, stat, errmsg, errmsg_len) bind(C,name="_gfortran_caf_co_broadcast")
 #endif
       import :: c_int,c_char,c_ptr
       type(c_ptr), intent(in), value :: a
-      integer(c_int), intent(in),  value :: result_image
+      integer(c_int), intent(in),  value :: source_image
       integer(c_int), intent(out), optional :: stat
       character(len=1,kind=c_char), intent(out), optional :: errmsg
       integer(c_int), intent(in), value :: errmsg_len
@@ -241,37 +241,37 @@ contains
   ! ______ Assumed-rank co_broadcast wrappers for each supported type and kind _________
   ! ____________________________________________________________________________________
 
-  subroutine co_broadcast_c_double(a,result_image,stat,errmsg)
+  subroutine co_broadcast_c_double(a,source_image,stat,errmsg)
     implicit none
     real(c_double), intent(inout), volatile, target, contiguous :: a(..)
-    integer(c_int), intent(in), optional :: result_image
+    integer(c_int), intent(in), optional :: source_image
     integer(c_int), intent(out), optional:: stat
     character(kind=1,len=*), intent(out), optional :: errmsg
     ! Local variables and constants
-    integer(c_int), parameter :: default_result_image=0
-    integer(c_int) :: result_image_ ! Local replacement for the corresponding intent(in) dummy argument
+    integer(c_int), parameter :: default_source_image=0
+    integer(c_int) :: source_image_ ! Local replacement for the corresponding intent(in) dummy argument
     type(gfc_descriptor_t), target :: a_descriptor
 
-    result_image_ = merge(result_image,default_result_image,present(result_image)) 
+    source_image_ = merge(source_image,default_source_image,present(source_image)) 
     a_descriptor = gfc_descriptor(a)
-    call opencoarrays_co_broadcast(c_loc(a_descriptor),result_image_, stat, errmsg, len(errmsg)) 
+    call opencoarrays_co_broadcast(c_loc(a_descriptor),source_image_, stat, errmsg, len(errmsg)) 
 
   end subroutine
 
-  subroutine co_broadcast_c_int(a,result_image,stat,errmsg)
+  subroutine co_broadcast_c_int(a,source_image,stat,errmsg)
     implicit none
     integer(c_int), intent(inout), volatile, target, contiguous :: a(..)
-    integer(c_int), intent(in), optional :: result_image
+    integer(c_int), intent(in), optional :: source_image
     integer(c_int), intent(out), optional:: stat
     character(kind=1,len=*), intent(out), optional :: errmsg
     ! Local variables and constants:
-    integer(c_int), parameter :: default_result_image=0
-    integer(c_int) :: result_image_ ! Local replacement for the corresponding intent(in) dummy argument
+    integer(c_int), parameter :: default_source_image=0
+    integer(c_int) :: source_image_ ! Local replacement for the corresponding intent(in) dummy argument
     type(gfc_descriptor_t), target :: a_descriptor
     
-    result_image_ = merge(result_image,default_result_image,present(result_image)) 
+    source_image_ = merge(source_image,default_source_image,present(source_image)) 
     a_descriptor = gfc_descriptor(a)
-    call opencoarrays_co_broadcast(c_loc(a_descriptor),result_image_, stat, errmsg, len(errmsg)) 
+    call opencoarrays_co_broadcast(c_loc(a_descriptor),source_image_, stat, errmsg, len(errmsg)) 
 
   end subroutine
 
