@@ -119,7 +119,8 @@ if(opencoarrays_aware_compiler)
   add_mpi_test(get_with_offset_1d 2 ${tests_root}/unit/send-get/get_with_offset_1d)
   add_mpi_test(whole_get_array 2 ${tests_root}/unit/send-get/whole_get_array)
   add_mpi_test(strided_get 2 ${tests_root}/unit/send-get/strided_get)
-  add_mpi_test(collectives 2 ${tests_root}/unit/collectives/collectives)
+  add_mpi_test(co_sum 2 ${tests_root}/unit/collectives/co_sum_test)
+  add_mpi_test(co_broadcast 2 ${tests_root}/unit/collectives/co_broadcast_test)
   
   # Integration tests verifying the use of libcaf_mpi in applications
   add_mpi_test(hello_multiverse 2 ${tests_root}/integration/coarrayHelloWorld/hello_multiverse)
