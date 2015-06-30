@@ -29,7 +29,7 @@ set(source collectives_extensions.F90)
 # running the test.  We therefore copy the uncompiled source to the 
 # build tree:
 configure_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/../collectives/collectives_tests.f90 
+  ${CMAKE_CURRENT_SOURCE_DIR}/../collectives/collectives_tests.F90 
   ${CMAKE_CURRENT_BINARY_DIR}/${source}
   COPYONLY
 )

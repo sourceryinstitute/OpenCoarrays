@@ -83,6 +83,11 @@ static win_sync *pending_puts = NULL;
 caf_static_t *caf_static_list = NULL;
 caf_static_t *caf_tot = NULL;
 
+/* Image status variable */
+
+static int *img_status = NULL;
+MPI_Win *stat_tok;
+
 /* Active messages variables */
 
 char **buff_am;
@@ -185,7 +190,7 @@ caf_runtime_error (const char *message, ...)
 
   /* FIXME: Shutdown the Fortran RTL to flush the buffer.  PR 43849.  */
   /* FIXME: Do some more effort than just to abort.  */
-  MPI_Finalize();
+  //  MPI_Finalize();
 
   /* Should be unreachable, but to make sure also call exit.  */
   exit (EXIT_FAILURE);
@@ -367,11 +372,23 @@ PREFIX (init) (int *argc, char ***argv)
 
       handlers = malloc(caf_num_images * sizeof(MPI_Request));
 
+      stat_tok = malloc (sizeof(MPI_Win));
+
 #if MPI_VERSION >= 3
       MPI_Info_create (&mpi_info_same_size);
       MPI_Info_set (mpi_info_same_size, "same_size", "true");
+      /* Setting img_status */
+      MPI_Win_allocate(sizeof(int), 1, mpi_info_same_size, CAF_COMM_WORLD, &img_status, stat_tok);
+# ifndef CAF_MPI_LOCK_UNLOCK
+      MPI_Win_lock_all(MPI_MODE_NOCHECK, *stat_tok);
+# endif // CAF_MPI_LOCK_UNLOCK
+#else
+      MPI_Alloc_mem(sizeof(int), MPI_INFO_NULL, &img_status, stat_tok);
+      MPI_Win_create(img_status, sizeof(int), 1, MPI_INFO_NULL, CAF_COMM_WORLD, stat_tok);
 #endif // MPI_VERSION
+      *img_status = 0;
     }
+  /* MPI_Barrier(CAF_COMM_WORLD); */
 }
 
 
@@ -384,7 +401,8 @@ _gfortran_caf_finalize (void)
 PREFIX (finalize) (void)
 #endif
 {
-
+  *img_status = STAT_STOPPED_IMAGE; /* GFC_STAT_STOPPED_IMAGE = 6000 */
+  MPI_Win_sync(*stat_tok);
   MPI_Barrier(CAF_COMM_WORLD);
 
   while (caf_static_list != NULL)
@@ -1567,9 +1585,30 @@ void
 PREFIX (sync_images) (int count, int images[], int *stat, char *errmsg,
                      int errmsg_len)
 {
-  int ierr = 0, i=0;
+  int ierr = 0, i=0, remote_stat = 0;
 
   MPI_Status s;
+
+  for(i=0;i<caf_num_images-1;i++)
+    {
+# ifdef CAF_MPI_LOCK_UNLOCK
+      MPI_Win_lock (MPI_LOCK_SHARED, i, 0, *stat_tok);
+# endif // CAF_MPI_LOCK_UNLOCK
+      ierr = MPI_Get (&remote_stat, 1, MPI_INT,
+		      i, 0, 1, MPI_INT, *stat_tok);
+# ifdef CAF_MPI_LOCK_UNLOCK
+      MPI_Win_unlock (i, *stat_tok);
+# else // CAF_MPI_LOCK_UNLOCK
+      MPI_Win_flush (i, *stat_tok);
+# endif // CAF_MPI_LOCK_UNLOCK
+      if(remote_stat != 0)
+	{
+	  ierr = STAT_STOPPED_IMAGE;
+	  if(stat != NULL)
+	    *stat = ierr;
+	  goto sync_images_err_chk;
+	}
+    }
 
   if (count == 0 || (count == 1 && images[0] == caf_this_image))
     {
@@ -1627,7 +1666,9 @@ PREFIX (sync_images) (int count, int images[], int *stat, char *errmsg,
   if (stat)
     *stat = ierr;
 
-  if (ierr)
+ sync_images_err_chk:
+
+  if (ierr && stat == NULL)
     {
       char *msg;
       if (caf_is_finalized)

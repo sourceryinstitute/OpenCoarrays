@@ -120,7 +120,10 @@ if(opencoarrays_aware_compiler)
   add_mpi_test(whole_get_array 2 ${tests_root}/unit/send-get/whole_get_array)
   add_mpi_test(strided_get 2 ${tests_root}/unit/send-get/strided_get)
   add_mpi_test(collectives 2 ${tests_root}/unit/collectives/collectives)
-  
+  add_mpi_test(syncall 4 ${tests_root}/unit/sync/syncall)
+  add_mpi_test(syncimages 4 ${tests_root}/unit/sync/syncimages)  
+  add_mpi_test(syncimages_status 4 ${tests_root}/unit/sync/syncimages_status)
+
   # Integration tests verifying the use of libcaf_mpi in applications
   add_mpi_test(hello_multiverse 2 ${tests_root}/integration/coarrayHelloWorld/hello_multiverse)
   add_mpi_test(coarray_burgers_pde 2 ${tests_root}/integration/pde_solvers/coarrayBurgers/coarray_burgers_pde)
