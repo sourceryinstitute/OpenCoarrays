@@ -2,6 +2,9 @@
 #
 # Coarray Fortran (CAF) Compiler Wrapper
 #
+# Invokes the chosen Fortran compiler with the received command-line
+# arguments. 
+#
 # Copyright (c) 2015, Sourcery, Inc.
 # All rights reserved.
 # 
@@ -26,19 +29,4 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
- 
-# This script invokes the chosen Fortran compiler with the received command-line
-# arguments.  Current assumptions:
-#    1. The only Fortran source-file name appears as the first argument with a
-#       .f90, .F90, .f, or .F extension.
-#    2. The environment variable "FC" is either empty or points to a Fortran compiler/linker. 
-#    3. If "FC" is empty, a default value of "mpif90" is used. 
-#    4. Each scope containing CAF source includes one or more "use opencoarrays" statements.
-#    5. The only CAF statements or expressions are
-#       a. num_images() 
-#       b. this_image() with or without arguments
-#       c. "sync all" with or without arguments.
-#       d. "sync images" with or without arguments.
-#       e. "error stop" without arguments.
-#       f. co_sum, co_max, co_min, or co_reduce
-#    6. No files make explicit use of codimensions (square brackets)
+#
