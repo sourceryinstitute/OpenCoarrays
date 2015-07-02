@@ -23,75 +23,51 @@
 ! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-! Unit tests for co_broadcast and co_sum
+! Unit tests for co_sum
 program main
   use iso_fortran_env, only : error_unit 
   use iso_c_binding, only : c_int,c_double
 #ifdef USE_EXTENSIONS
-  use opencoarrays, only : this_image,num_images,co_sum,co_broadcast
+  use opencoarrays
 #endif
   implicit none               
-  integer(c_int) :: me
-
-  ! Store the executing image number
-  me=this_image()
 
 #ifdef USE_EXTENSIONS
-  if (me==1) print *,"Using the extensions from the opencoarrays module."
+  if (this_image()==1) print *,"Using the extensions from the opencoarrays module."
 #endif
-
-  ! Verify broadcasting of integer data from image 1
-  c_int_co_broadcast: block 
-    integer(c_int), save :: integer_received[*]
-    integer(c_int), parameter :: integer_sent=12345_c_int ! Integer test message
-    if (me==1) integer_received=integer_sent
-    sync all
-    call co_broadcast(integer_received,source_image=1)
-    if (integer_received/=integer_sent) then
-      write(error_unit,*) "Incorrect co_broadcast(",integer_received,") on image",me
-      error stop "Test failed." ! Halt all images
-    end if
-  end block c_int_co_broadcast
-
-  ! Verify broadcasting of real data from image 1
-  c_double_co_broadcast: block 
-    real(c_double), save :: real_received[*]
-    real(c_double), parameter :: real_sent=2.7182818459045_c_double ! Real test message
-    if (me==1) real_received=real_sent
-    sync all
-    call co_broadcast(real_received,source_image=1)
-    if (real_received/=real_sent) then
-      write(error_unit,*) "Incorrect co_broadcast(",real_received,") on image",me
-      error stop "Test failed." ! Halt all images
-    end if
-  end block c_double_co_broadcast
 
   ! Verify collective sum of integer data by tallying image numbers
   c_int_co_sum: block 
-    integer(c_int) :: i
-    integer(c_int), save :: image_number_tally[*]
-    image_number_tally=me
+    integer(c_int) :: i,me
+    me=this_image()
     sync all
-    call co_sum(image_number_tally)
-    if (image_number_tally/=sum([(i,i=1,num_images())])) then
-      write(error_unit,"(2(a,i2))") "Wrong result (",image_number_tally,") on image",image_number_tally
-      error stop "Test failed." ! Halt all images
+    call co_sum(me)
+    if (me/=sum([(i,i=1,num_images())])) then
+      write(error_unit,"(2(a,i2))") "Wrong result (",me,") on image",this_image()
+      error stop 
     end if
+    ! Wait for all images to pass the test
+    sync all
+    if (me==1) print *,"Correct integer co_sum"
   end block c_int_co_sum
 
   ! Verify collective sum by calculuating pi
   c_double_co_sum: block 
     real(c_double), parameter :: four=4._c_double,one=1._c_double,half=0.5_c_double
-    real(c_double), save :: pi[*],pi_local
+    real(c_double), save :: pi
     integer(c_int) :: i,points_per_image
     integer(c_int), parameter :: resolution=1024_c_int ! Number of points used in pi calculation
+    integer(c_int) :: me
+    me=this_image()
     ! Partition the calculation evenly across all images
-    if (mod(resolution,num_images())/=0) error stop "number of images doesn't evenly divide into number of points"
+    if (mod(resolution,num_images())/=0) then
+      write(error_unit,"(a)") "number of images doesn't evenly divide into number of points"
+      error stop 
+    end if
     points_per_image=resolution/num_images()
     associate(n=>resolution,my_first=>points_per_image*(me-1)+1,my_last=>points_per_image*me)
-      pi_local = sum([ (four/(one+((i-half)/n)**2),i=my_first,my_last) ])/n
+      pi = sum([ (four/(one+((i-half)/n)**2),i=my_first,my_last) ])/n
     end associate
-    pi=pi_local
     sync all
     ! Replace pi on each image with the sum of the pi contributions from all images
     call co_sum(pi)
@@ -101,6 +77,9 @@ program main
         error stop
       end if
     end associate
+    ! Wait for all images to pass the test
+    sync all
+    if (me==1) print *,"Correct real co_sum"
   end block c_double_co_sum
 
   if (this_image()==1) print *, "Test passed."

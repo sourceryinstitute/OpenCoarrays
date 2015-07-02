@@ -1,2 +1,5 @@
-add_executable(collectives collectives_tests.F90)
-target_link_libraries(collectives OpenCoarrays)
+add_executable(co_sum_test co_sum.F90)
+target_link_libraries(co_sum_test OpenCoarrays)
+
+add_executable(co_broadcast_test co_broadcast.F90)
+target_link_libraries(co_broadcast_test OpenCoarrays)

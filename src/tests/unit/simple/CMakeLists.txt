@@ -8,9 +8,6 @@ target_link_libraries(is_there_a_better_name OpenCoarrays)
 add_executable(increment_my_neighbor test1Caf.f90)
 target_link_libraries(increment_my_neighbor OpenCoarrays)
 
-add_executable(co_broadcast cobcast.f90)
-target_link_libraries(co_broadcast OpenCoarrays)
-
 add_executable(atomics testAtomics.f90)
 target_link_libraries(atomics OpenCoarrays)
 
