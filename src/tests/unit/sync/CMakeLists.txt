@@ -4,8 +4,8 @@ target_link_libraries(syncall OpenCoarrays)
 add_executable(syncimages syncimages.f90)
 target_link_libraries(syncimages OpenCoarrays)
 
-add_executable(syncimages_status syncimages_status.f90)
-target_link_libraries(syncimages_status OpenCoarrays)
+#add_executable(syncimages_status syncimages_status.f90)
+#target_link_libraries(syncimages_status OpenCoarrays)
 
 #add_executable(send_array send_array_test.f90)
 #target_link_libraries(send_array OpenCoarrays)
