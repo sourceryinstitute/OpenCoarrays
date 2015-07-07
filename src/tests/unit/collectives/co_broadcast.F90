@@ -32,6 +32,7 @@ program main
 #endif
   implicit none               
   integer(c_int) :: me
+  logical :: co_broadcast_c_int_verified=.false.,co_broadcast_c_double_verified=.false.
 
   ! Store the executing image number
   me=this_image()
@@ -48,12 +49,10 @@ program main
     sync all
     call co_broadcast(integer_received,source_image=1)
     if (integer_received/=integer_sent) then
-      write(error_unit,*) "Incorrect co_broadcast(",integer_received,") on image",me
-      error stop 
+      write(error_unit,*) "co_broadcast fails with integer(c_int) argument",integer_received,") on image",me
+    else 
+      co_broadcast_c_int_verified=.true.
     end if
-    ! Wait for everyone to pass the test
-    sync all
-    if (me==1) print *,"Correct result for integer co_broadcast"
   end block c_int_co_broadcast
 
   ! Verify broadcasting of real data from image 1
@@ -64,13 +63,14 @@ program main
     sync all
     call co_broadcast(real_received,source_image=1)
     if (real_received/=real_sent) then
-      write(error_unit,*) "Incorrect co_broadcast(",real_received,") on image",me
-      error stop 
+      write(error_unit,*) "co_broadcast fails with real(c_double) argument",real_received,") on image",me
+    else
+      co_broadcast_c_double_verified=.true.
     end if
-    ! Wait for everyone to pass the test
-    sync all
-    if (me==1) print *,"Correct result for real co_broadcast"
   end block c_double_co_broadcast
 
+  if (.not. all([co_broadcast_c_int_verified,co_broadcast_c_double_verified])) error stop
+  ! Wait for everyone to pass the test
+  sync all
   if (this_image()==1) print *, "Test passed."
 end program

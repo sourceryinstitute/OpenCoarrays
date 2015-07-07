@@ -31,6 +31,7 @@ program main
   use opencoarrays
 #endif
   implicit none               
+  logical :: co_sum_c_int_verified=.false.,co_sum_c_double_verified=.false.
 
 #ifdef USE_EXTENSIONS
   if (this_image()==1) print *,"Using the extensions from the opencoarrays module."
@@ -42,13 +43,11 @@ program main
     me=this_image()
     sync all
     call co_sum(me)
-    if (me/=sum([(i,i=1,num_images())])) then
-      write(error_unit,"(2(a,i2))") "Wrong result (",me,") on image",this_image()
-      error stop 
+    if (me==sum([(i,i=1,num_images())])) then
+      co_sum_c_int_verified=.true.
+    else 
+      write(error_unit,"(2(a,i2))") "co_broadcast with integer(c_int) argument fails with result (",me,") on image",this_image()
     end if
-    ! Wait for all images to pass the test
-    sync all
-    if (me==1) print *,"Correct integer co_sum"
   end block c_int_co_sum
 
   ! Verify collective sum by calculuating pi
@@ -72,15 +71,16 @@ program main
     ! Replace pi on each image with the sum of the pi contributions from all images
     call co_sum(pi)
     associate (pi_ref=>acos(-1._c_double),allowable_fractional_error=>0.000001_c_double)
-      if (abs((pi-pi_ref)/pi_ref)>allowable_fractional_error) then
-        write(error_unit,*) "Inaccurate pi (",pi,") result on image ",me
-        error stop
+      if (abs((pi-pi_ref)/pi_ref)<=allowable_fractional_error) then
+        co_sum_c_double_verified=.true.
+      else
+        write(error_unit,*) "co_broadcast with real(c_double) argument fails with result (",pi,") result on image ",me
       end if
     end associate
-    ! Wait for all images to pass the test
-    sync all
-    if (me==1) print *,"Correct real co_sum"
   end block c_double_co_sum
-
+ 
+  if (.not. all([co_sum_c_int_verified,co_sum_c_double_verified])) error stop
+  ! Wait for every image to pass
+  sync all
   if (this_image()==1) print *, "Test passed."
 end program
