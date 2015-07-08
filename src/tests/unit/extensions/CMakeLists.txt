@@ -23,64 +23,38 @@ if("${gfortran_compiler}" AND (NOT "${opencoarrays_aware_compiler}"))
   add_definitions(-DCOMPILER_SUPPORTS_CAF_INTRINSICS)
 endif()
 
-# Test caf compiler wrapper: the co_sum executable will be built as part of the process
-# of running the test.  We therefore copy the uncompiled source to the build tree:
-set(source co_sum.F90)
-configure_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/../collectives/${source}
-  ${CMAKE_CURRENT_BINARY_DIR}/${source}
-  COPYONLY
-)
-# Now we write the script that compiles and runs the test
-set(co_sum_harness ${CMAKE_BINARY_DIR}/bin_staging/test-co_sum-extension.sh)
-install(
-    FILES "${co_sum_harness}"
-    PERMISSIONS WORLD_EXECUTE WORLD_READ WORLD_WRITE OWNER_EXECUTE OWNER_READ OWNER_WRITE GROUP_EXECUTE GROUP_READ GROUP_WRITE
-    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
-)
-file(WRITE  "${co_sum_harness}" "#!/bin/bash\n")
-file(APPEND "${co_sum_harness}" "cd ${CMAKE_CURRENT_BINARY_DIR}\n")
-set(executable co_sum_extension)
-if (opencoarrays_aware_compiler) 
-  # Explicitly include the directory containing the .mod file because the caf script won't pass it 
-  # automatically when the script wraps an OpenCoarrays-aware compiler
-  file(APPEND 
-    "${co_sum_harness}" 
-    "FC=mpif90 ${CMAKE_INSTALL_PREFIX}/bin/caf ${source} -o ${executable} -I${CMAKE_BINARY_DIR}/mod -DUSE_EXTENSIONS\n"
+function(generate_test_script base_name num_images)
+  set(source ${base_name}.F90)
+  configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/../collectives/${source}
+    ${CMAKE_CURRENT_BINARY_DIR}/${source}
+    COPYONLY
   )
-else()
-  file(APPEND "${co_sum_harness}" "FC=mpif90 ${CMAKE_INSTALL_PREFIX}/bin/caf ${source} -o ${executable} -DUSE_EXTENSIONS\n")
-endif()
-set(num_images 4)
-file(APPEND "${co_sum_harness}" "${CMAKE_INSTALL_PREFIX}/bin/cafrun -np ${num_images} ./${executable}\n")
+  # Now we write the script that compiles and runs the test
+  set(harness "${CMAKE_BINARY_DIR}/bin_staging/test-${base_name}-extension.sh")
+  install(
+      FILES "${harness}"
+      PERMISSIONS WORLD_EXECUTE WORLD_READ WORLD_WRITE OWNER_EXECUTE OWNER_READ OWNER_WRITE GROUP_EXECUTE GROUP_READ GROUP_WRITE
+      DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+  )
+  file(WRITE  "${harness}" "#!/bin/bash\n")
+  file(APPEND "${harness}" "cd ${CMAKE_CURRENT_BINARY_DIR}\n")
+  set(executable "${base_name}_extension")
+  if (opencoarrays_aware_compiler) 
+    # Explicitly include the directory containing the .mod file because the caf script won't pass it 
+    # automatically when the script wraps an OpenCoarrays-aware compiler
+    file(APPEND 
+      "${harness}" 
+      "FC=mpif90 ${CMAKE_INSTALL_PREFIX}/bin/caf ${source} -o ${executable} -I${CMAKE_BINARY_DIR}/mod -DUSE_EXTENSIONS\n"
+    )
+  else()
+    file(APPEND "${harness}" "FC=mpif90 ${CMAKE_INSTALL_PREFIX}/bin/caf ${source} -o ${executable} -DUSE_EXTENSIONS\n")
+  endif()
+  file(APPEND "${harness}" "${CMAKE_INSTALL_PREFIX}/bin/cafrun -np ${num_images} ./${executable}\n")
+endfunction(generate_test_script)
 
-# Test caf compiler wrapper: the co_broadcast executable will be built as part of the process
-# of running the test.  We therefore copy the uncompiled source to the build tree:
-set(source co_broadcast.F90)
-configure_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/../collectives/${source}
-  ${CMAKE_CURRENT_BINARY_DIR}/${source}
-  COPYONLY
-)
-# Now we write the script that compiles and runs the test
-set(co_broadcast_harness ${CMAKE_BINARY_DIR}/bin_staging/test-co_broadcast-extension.sh)
-install(
-    FILES "${co_broadcast_harness}"
-    PERMISSIONS WORLD_EXECUTE WORLD_READ WORLD_WRITE OWNER_EXECUTE OWNER_READ OWNER_WRITE GROUP_EXECUTE GROUP_READ GROUP_WRITE
-    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
-)
-file(WRITE  "${co_broadcast_harness}" "#!/bin/bash\n")
-file(APPEND "${co_broadcast_harness}" "cd ${CMAKE_CURRENT_BINARY_DIR}\n")
-set(executable co_broadcast_extension)
-if (opencoarrays_aware_compiler) 
-  # Explicitly include the directory containing the .mod file because the caf script won't pass it 
-  # automatically when the script wraps an OpenCoarrays-aware compiler
-  file(APPEND 
-    "${co_broadcast_harness}" 
-    "FC=mpif90 ${CMAKE_INSTALL_PREFIX}/bin/caf ${source} -o ${executable} -I${CMAKE_BINARY_DIR}/mod -DUSE_EXTENSIONS\n"
-  )
-else()
-  file(APPEND "${co_broadcast_harness}" "FC=mpif90 ${CMAKE_INSTALL_PREFIX}/bin/caf ${source} -o ${executable} -DUSE_EXTENSIONS\n")
-endif()
-set(num_images 4)
-file(APPEND "${co_broadcast_harness}" "${CMAKE_INSTALL_PREFIX}/bin/cafrun -np ${num_images} ./${executable}\n")
+generate_test_script(co_sum 4)
+generate_test_script(co_broadcast 4)
+generate_test_script(co_min 4)
+generate_test_script(co_max 4)
+generate_test_script(co_reduce 4)

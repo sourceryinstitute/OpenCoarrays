@@ -25,46 +25,47 @@
 ! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+module co_all_module
+  implicit none
+  private
+  public :: co_all
+contains
+  subroutine co_all(boolean)
+    logical, intent(inout) :: boolean
+    call co_reduce(boolean,both)
+  contains
+    pure function both(lhs,rhs) result(lhs_and_rhs)
+      logical, intent(in) :: lhs,rhs
+      logical :: lhs_and_rhs
+      lhs_and_rhs = lhs .and. rhs 
+    end function
+  end subroutine
+end module 
+
 program main
   use iso_fortran_env, only : error_unit 
   use iso_c_binding, only : c_int,c_double
+  use co_all_module, only : co_all
 #ifdef USE_EXTENSIONS
   use opencoarrays
 #endif
   implicit none               
-  logical :: co_min_c_int_verified=.false.,co_min_c_double_verified=.false.
 
 #ifdef USE_EXTENSIONS
   if (this_image()==1) print *,"Using the extensions from the opencoarrays module."
 #endif
 
-  ! Verify that 1 is the lowest image number 
-  c_int_co_min: block 
-    integer(c_int) :: me
-    me=this_image()
+  ! Verify that every image has a "true" variable with the value .true.
+  verify_co_reduce: block 
+    logical :: true=.true.
     sync all
-    call co_min(me)
-    if (me==1) then
-      co_min_c_int_verified=.true.
-    else 
+    call co_all(true)
+    if (.not.true) then
       write(error_unit,"(2(a,i2))") "co_min fails for integer(c_int) argument with result (",me,") on image",this_image()
+      error stop
     end if
-  end block c_int_co_min
+  end block verify_co_reduce
 
-  ! Verify that 1.0 is the minimum real conversion of an image number
-  c_double_co_min: block 
-    real(c_double) :: me
-    me=real(this_image(),c_double)
-    sync all
-    call co_min(me)
-    if (me==1._c_double) then
-      co_min_c_double_verified=.true.
-    else
-      write(error_unit,"(2(a,i2))") "co_min fails for integer(c_double) argument with result (",me,") on image",this_image()
-    end if
-  end block c_double_co_min
-  
-  if (.not. all([co_min_c_int_verified,co_min_c_double_verified])) error stop
   ! Wait for all images to pass the tests
   sync all
   if (this_image()==1) print *, "Test passed."

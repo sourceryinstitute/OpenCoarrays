@@ -125,6 +125,7 @@ if(opencoarrays_aware_compiler)
   add_mpi_test(co_max 4 ${tests_root}/unit/collectives/co_max_test)
   add_mpi_test(syncall 32 ${tests_root}/unit/sync/syncall)
   add_mpi_test(syncimages 32 ${tests_root}/unit/sync/syncimages)  
+#  add_mpi_test(co_reduce 4 ${tests_root}/unit/collectivese/co_reduce_test)  
 #  add_mpi_test(syncimages_status 32 ${tests_root}/unit/sync/syncimages_status)
 
   # Integration tests verifying the use of libcaf_mpi in applications
@@ -142,5 +143,13 @@ else()
 
   add_test(co_broadcast_extension ${tests_root}/unit/extensions/test-co_broadcast-extension.sh)
   set_property(TEST co_broadcast_extension PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
-endif()
 
+  add_test(co_min_extension ${tests_root}/unit/extensions/test-co_min-extension.sh)
+  set_property(TEST co_min_extension PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
+
+  add_test(co_max_extension ${tests_root}/unit/extensions/test-co_max-extension.sh)
+  set_property(TEST co_max_extension PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
+
+#  add_test(co_reduce_extension ${tests_root}/unit/extensions/test-co_reduce-extension.sh)
+#  set_property(TEST co_reduce_extension PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
+endif()

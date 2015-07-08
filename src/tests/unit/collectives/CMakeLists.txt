@@ -9,3 +9,6 @@ target_link_libraries(co_min_test OpenCoarrays)
 
 add_executable(co_max_test co_max.F90)
 target_link_libraries(co_max_test OpenCoarrays)
+
+#add_executable(co_reduce_test co_max.F90)
+#target_link_libraries(co_reduce_test OpenCoarrays)
