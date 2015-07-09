@@ -51,6 +51,7 @@ program main
     call co_broadcast(string_received,source_image=1)
     if (string_received/=string_sent) then
       write(error_unit,*) "Incorrect co_broadcast(",string_received,") on image",me
+    else
       c_char_test_passes=.true.
     end if
   end block c_char_co_broadcast
@@ -64,6 +65,7 @@ program main
     call co_broadcast(integer_received,source_image=1)
     if (integer_received/=integer_sent) then
       write(error_unit,*) "Incorrect co_broadcast(",integer_received,") on image",me
+    else
       c_int_test_passes=.true.
     end if
   end block c_int_co_broadcast
@@ -77,6 +79,7 @@ program main
     call co_broadcast(real_received,source_image=1)
     if (real_received/=real_sent) then
       write(error_unit,*) "Incorrect co_broadcast(",real_received,") on image",me
+    else
       c_double_test_passes=.true.
     end if
   end block c_double_co_broadcast
