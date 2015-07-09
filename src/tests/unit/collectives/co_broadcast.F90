@@ -26,13 +26,14 @@
 ! Unit tests for co_broadcast and co_sum
 program main
   use iso_fortran_env, only : error_unit 
-  use iso_c_binding, only : c_int,c_double
+  use iso_c_binding, only : c_int,c_double,c_char
 #ifdef USE_EXTENSIONS
   use opencoarrays
 #endif
   implicit none               
   integer(c_int) :: me
-  logical :: co_broadcast_c_int_verified=.false.,co_broadcast_c_double_verified=.false.
+  ! Set test failure as the default result
+  logical :: c_char_test_passes=.false.,c_int_test_passes=.false.,c_double_test_passes=.false.
 
   ! Store the executing image number
   me=this_image()
@@ -40,6 +41,19 @@ program main
 #ifdef USE_EXTENSIONS
   if (me==1) print *,"Using the extensions from the opencoarrays module."
 #endif
+
+  ! Verify broadcasting of character data from image 1
+  c_char_co_broadcast: block 
+    character(kind=c_char,len=14), save :: string_received[*]
+    character(kind=c_char,len=*), parameter :: string_sent=c_char_"Hello, world!"! Character test message
+    if (me==1) string_received=string_sent
+    sync all
+    call co_broadcast(string_received,source_image=1)
+    if (string_received/=string_sent) then
+      write(error_unit,*) "Incorrect co_broadcast(",string_received,") on image",me
+      c_char_test_passes=.true.
+    end if
+  end block c_char_co_broadcast
 
   ! Verify broadcasting of integer data from image 1
   c_int_co_broadcast: block 
@@ -49,9 +63,8 @@ program main
     sync all
     call co_broadcast(integer_received,source_image=1)
     if (integer_received/=integer_sent) then
-      write(error_unit,*) "co_broadcast fails with integer(c_int) argument",integer_received,") on image",me
-    else 
-      co_broadcast_c_int_verified=.true.
+      write(error_unit,*) "Incorrect co_broadcast(",integer_received,") on image",me
+      c_int_test_passes=.true.
     end if
   end block c_int_co_broadcast
 
@@ -63,14 +76,14 @@ program main
     sync all
     call co_broadcast(real_received,source_image=1)
     if (real_received/=real_sent) then
-      write(error_unit,*) "co_broadcast fails with real(c_double) argument",real_received,") on image",me
-    else
-      co_broadcast_c_double_verified=.true.
+      write(error_unit,*) "Incorrect co_broadcast(",real_received,") on image",me
+      c_double_test_passes=.true.
     end if
   end block c_double_co_broadcast
 
-  if (.not. all([co_broadcast_c_int_verified,co_broadcast_c_double_verified])) error stop
-  ! Wait for everyone to pass the test
+      
+  if (.not.all([c_char_test_passes,c_int_test_passes,c_double_test_passes])) error stop
+  ! Wait for everyone to pass the tests
   sync all
-  if (this_image()==1) print *, "Test passed."
+  if (me==1) print *, "Test passed."
 end program
