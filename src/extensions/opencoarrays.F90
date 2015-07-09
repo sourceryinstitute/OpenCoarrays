@@ -51,7 +51,7 @@ module opencoarrays
 
   ! Generic interface to co_sum with implementations for various types, kinds, and ranks
   interface co_broadcast
-     module procedure co_broadcast_c_int,co_broadcast_c_double
+     module procedure co_broadcast_c_int,co_broadcast_c_double,co_broadcast_c_char
   end interface 
 
   ! Generic interface to co_sum with implementations for various types, kinds, and ranks
@@ -196,7 +196,7 @@ module opencoarrays
   integer(c_int), save, volatile, bind(C,name="CAF_COMM_WORLD") :: CAF_COMM_WORLD
 
   interface gfc_descriptor
-    module procedure gfc_descriptor_c_int,gfc_descriptor_c_double
+    module procedure gfc_descriptor_c_int,gfc_descriptor_c_double,gfc_descriptor_c_char
   end interface
 
 contains
@@ -204,6 +204,7 @@ contains
   ! __________ Descriptor constructors for for each supported type and kind ____________
   ! ____________________________________________________________________________________
 
+  ! Construct descriptor for assumed-rank integer(c_int) argument
   function gfc_descriptor_c_int(a) result(a_descriptor)
     integer(c_int), intent(in), target, contiguous :: a(..)
     type(gfc_descriptor_t) :: a_descriptor
@@ -221,6 +222,7 @@ contains
 
   end function
 
+  ! Construct descriptor for assumed-rank real(c_double) argument
   function gfc_descriptor_c_double(a) result(a_descriptor)
     real(c_double), intent(in), target, contiguous :: a(..)
     type(gfc_descriptor_t) :: a_descriptor
@@ -238,11 +240,25 @@ contains
 
   end function
 
+  ! Construct descriptor for scalar character(c_char) argument
+  function gfc_descriptor_c_char(a) result(a_descriptor)
+    character(kind=c_char,len=*), intent(in), target:: a
+    type(gfc_descriptor_t) :: a_descriptor
+    integer(c_int), parameter :: scalar_dtype=264,scalar_offset=-1
+
+    a_descriptor%dtype = scalar_dtype 
+    a_descriptor%offset = scalar_offset 
+    a_descriptor%base_addr = c_loc(a) ! data
+    a_descriptor%dim_(i)%stride  = 0
+    a_descriptor%dim_(i)%lower_bound = 0
+    a_descriptor%dim_(i)%ubound_ = 0
+
+  end function
+
   ! ______ Assumed-rank co_broadcast wrappers for each supported type and kind _________
   ! ____________________________________________________________________________________
 
   subroutine co_broadcast_c_double(a,source_image,stat,errmsg)
-    implicit none
     real(c_double), intent(inout), volatile, target, contiguous :: a(..)
     integer(c_int), intent(in), optional :: source_image
     integer(c_int), intent(out), optional:: stat
@@ -259,7 +275,6 @@ contains
   end subroutine
 
   subroutine co_broadcast_c_int(a,source_image,stat,errmsg)
-    implicit none
     integer(c_int), intent(inout), volatile, target, contiguous :: a(..)
     integer(c_int), intent(in), optional :: source_image
     integer(c_int), intent(out), optional:: stat
@@ -273,6 +288,22 @@ contains
     a_descriptor = gfc_descriptor(a)
     call opencoarrays_co_broadcast(c_loc(a_descriptor),source_image_, stat, errmsg, len(errmsg)) 
 
+  end subroutine
+
+  subroutine co_broadcast_c_char(a,source_image,stat,errmsg)
+    character(kind=c_char,len=*), intent(inout), volatile, target :: a
+    integer(c_int), intent(in), optional :: source_image
+    integer(c_int), intent(out), optional:: stat
+    character(kind=1,len=*), intent(out), optional :: errmsg
+    ! Local variables and constants:
+    integer(c_int), allocatable :: a_cast_to_integer_array(:)
+
+    ! Convert "a" to an integer(c_int) array where each 32-bit integer element holds four 1-byte characters
+    a_cast_to_integer_array = transfer(a,[0_c_int])
+    ! Broadcast the integer(c_int) array
+    call co_broadcast_c_int(a_cast_to_integer_array,source_image, stat, errmsg) 
+    ! Recover the characters from the broadcasted integer(c_int) array
+    a = transfer(a_cast_to_integer_array,repeat(' ',len(a)))
   end subroutine
 
   ! ________ Assumed-rank co_sum wrappers for each supported type and kind _____________
@@ -295,7 +326,6 @@ contains
   end subroutine
 
   subroutine co_sum_c_int(a,result_image,stat,errmsg)
-    implicit none
     integer(c_int), intent(inout), volatile, target, contiguous :: a(..)
     integer(c_int), intent(in), optional :: result_image
     integer(c_int), intent(out), optional:: stat
