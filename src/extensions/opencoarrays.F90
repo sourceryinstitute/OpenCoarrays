@@ -29,7 +29,7 @@ module opencoarrays
 #ifdef COMPILER_SUPPORTS_ATOMICS
   use iso_fortran_env, only : atomic_int_kind
 #endif
-  use iso_c_binding, only : c_int,c_char,c_ptr,c_loc,c_long,c_int32_t,c_double
+  use iso_c_binding, only : c_int,c_char,c_ptr,c_loc,c_long,c_double,c_int32_t,c_ptrdiff_t,c_sizeof
   implicit none
 
   private
@@ -194,9 +194,10 @@ module opencoarrays
   ! --------------------
 
   integer(c_int), save, volatile, bind(C,name="CAF_COMM_WORLD") :: CAF_COMM_WORLD
+  integer(c_int32_t), parameter  :: bytes_per_word=4_c_int32_t
 
   interface gfc_descriptor
-    module procedure gfc_descriptor_c_int,gfc_descriptor_c_double,gfc_descriptor_c_char
+    module procedure gfc_descriptor_c_int,gfc_descriptor_c_double
   end interface
 
 contains
@@ -204,14 +205,31 @@ contains
   ! __________ Descriptor constructors for for each supported type and kind ____________
   ! ____________________________________________________________________________________
 
-  ! Construct descriptor for assumed-rank integer(c_int) argument
+  function my_dtype(type_,kind_,rank_) result(dtype_)
+    integer,parameter :: GFC_DTYPE_SIZE_SHIFT = 8, GFC_DTYPE_TYPE_SHIFT=3
+    integer(c_int32_t), intent(in) :: type_,kind_,rank_
+    integer(c_int32_t) :: dtype_
+ 
+    ! SIZE Type Rank
+    ! 0000  000  000
+    
+    ! Rank is represented in the 3 least significant bits
+    dtype_ = ior(0_c_int32_t,rank_)
+    ! The next three bits represent the type id as expressed in libcaf-gfortran-descriptor.h
+    dtype_ = ior(dtype_,ishft(type_,GFC_DTYPE_TYPE_SHIFT))
+    ! The most significant bits represent the size of a the type (single or double precision).
+    ! We can express the precision in terms of 32-bit words: 1 for single, 2 for double. 
+    dtype_ = ior(dtype_,ishft(kind_,GFC_DTYPE_SIZE_SHIFT))
+  
+  end function
+
   function gfc_descriptor_c_int(a) result(a_descriptor)
     integer(c_int), intent(in), target, contiguous :: a(..)
     type(gfc_descriptor_t) :: a_descriptor
-    integer(c_int), parameter :: unit_stride=1,scalar_dtype=264,scalar_offset=-1
+    integer(c_int), parameter :: unit_stride=1,scalar_offset=-1
     integer(c_int) :: i
 
-    a_descriptor%dtype = scalar_dtype + rank(a)
+    a_descriptor%dtype = my_dtype(type_=BT_INTEGER,kind_=int(c_sizeof(a)/bytes_per_word,c_int32_t),rank_=rank(a))
     a_descriptor%offset = scalar_offset 
     a_descriptor%base_addr = c_loc(a) ! data
     do concurrent(i=1:rank(a))
@@ -222,14 +240,13 @@ contains
 
   end function
 
-  ! Construct descriptor for assumed-rank real(c_double) argument
   function gfc_descriptor_c_double(a) result(a_descriptor)
     real(c_double), intent(in), target, contiguous :: a(..)
     type(gfc_descriptor_t) :: a_descriptor
-    integer(c_int), parameter :: unit_stride=1,scalar_dtype=264,scalar_offset=-1
+    integer(c_int), parameter :: unit_stride=1,scalar_offset=-1
     integer(c_int) :: i
 
-    a_descriptor%dtype = scalar_dtype + rank(a)
+    a_descriptor%dtype = my_dtype(type_=BT_REAL,kind_=int(c_sizeof(a)/bytes_per_word,c_int32_t),rank_=rank(a))
     a_descriptor%offset = scalar_offset 
     a_descriptor%base_addr = c_loc(a) ! data
     do concurrent(i=1:rank(a))
@@ -240,23 +257,51 @@ contains
 
   end function
 
-  ! Construct descriptor for scalar character(c_char) argument
-  function gfc_descriptor_c_char(a) result(a_descriptor)
-    character(kind=c_char,len=*), intent(in), target:: a
-    type(gfc_descriptor_t) :: a_descriptor
-    integer(c_int), parameter :: scalar_dtype=264,scalar_offset=-1
-
-    a_descriptor%dtype = scalar_dtype 
-    a_descriptor%offset = scalar_offset 
-    a_descriptor%base_addr = c_loc(a) ! data
-    a_descriptor%dim_(i)%stride  = 0
-    a_descriptor%dim_(i)%lower_bound = 0
-    a_descriptor%dim_(i)%ubound_ = 0
-
-  end function
+ ! This version should work for any rank but causes an ICE with gfortran 4.9.2
+ !
+ !function gfc_descriptor_c_char(a) result(a_descriptor)
+ !  character(c_char), intent(in), target, contiguous :: a(..)
+ !  type(gfc_descriptor_t) :: a_descriptor
+ !  integer(c_int), parameter :: unit_stride=1,scalar_offset=-1
+ !  integer(c_int) :: i
+  
+ !  a_descriptor%dtype = my_dtype(type_=BT_CHARACTER,kind_=int(c_sizeof(a)/bytes_per_word,c_int32_t),rank_=rank(a))
+ !  a_descriptor%offset = scalar_offset 
+ !  a_descriptor%base_addr = c_loc(a) ! data
+ !  do concurrent(i=1:rank(a))
+ !    a_descriptor%dim_(i)%stride  = unit_stride
+ !    a_descriptor%dim_(i)%lower_bound = lbound(a,i)
+ !    a_descriptor%dim_(i)%ubound_ = ubound(a,i)
+ !  end do
+  
+ !end function
 
   ! ______ Assumed-rank co_broadcast wrappers for each supported type and kind _________
   ! ____________________________________________________________________________________
+
+  ! This provisional implementation incurs some overhead by converting the character argument
+  ! to an integer(c_int) array, invoking co_broadcast_c_int and then convering the received
+  ! message back from the integer(c_int) array to a character variable.
+  !
+  ! Replace this implementation with one that avoids the conversions and the associated copies
+  ! once the compiler provides support for co_broadcast with scalar arguments.
+  !
+  subroutine co_broadcast_c_char(a,source_image,stat,errmsg)
+    character(kind=c_char,len=*), intent(inout), volatile, target :: a
+    integer(c_int), intent(in), optional :: source_image
+    integer(c_int), intent(out), optional:: stat
+    character(kind=1,len=*), intent(out), optional :: errmsg
+    ! Local variables and constants:
+    integer(c_int), allocatable :: a_cast_to_integer_array(:)
+
+    ! Convert "a" to an integer(c_int) array where each 32-bit integer element holds four 1-byte characters
+    a_cast_to_integer_array = transfer(a,[0_c_int])
+    ! Broadcast the integer(c_int) array
+    call co_broadcast_c_int(a_cast_to_integer_array,source_image, stat, errmsg) 
+    ! Recover the characters from the broadcasted integer(c_int) array
+    a = transfer(a_cast_to_integer_array,repeat(' ',len(a)))
+
+  end subroutine
 
   subroutine co_broadcast_c_double(a,source_image,stat,errmsg)
     real(c_double), intent(inout), volatile, target, contiguous :: a(..)
@@ -288,22 +333,6 @@ contains
     a_descriptor = gfc_descriptor(a)
     call opencoarrays_co_broadcast(c_loc(a_descriptor),source_image_, stat, errmsg, len(errmsg)) 
 
-  end subroutine
-
-  subroutine co_broadcast_c_char(a,source_image,stat,errmsg)
-    character(kind=c_char,len=*), intent(inout), volatile, target :: a
-    integer(c_int), intent(in), optional :: source_image
-    integer(c_int), intent(out), optional:: stat
-    character(kind=1,len=*), intent(out), optional :: errmsg
-    ! Local variables and constants:
-    integer(c_int), allocatable :: a_cast_to_integer_array(:)
-
-    ! Convert "a" to an integer(c_int) array where each 32-bit integer element holds four 1-byte characters
-    a_cast_to_integer_array = transfer(a,[0_c_int])
-    ! Broadcast the integer(c_int) array
-    call co_broadcast_c_int(a_cast_to_integer_array,source_image, stat, errmsg) 
-    ! Recover the characters from the broadcasted integer(c_int) array
-    a = transfer(a_cast_to_integer_array,repeat(' ',len(a)))
   end subroutine
 
   ! ________ Assumed-rank co_sum wrappers for each supported type and kind _____________
@@ -386,3 +415,4 @@ contains
 #endif 
 
 end module
+  
