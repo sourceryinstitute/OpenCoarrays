@@ -29,12 +29,14 @@ module opencoarrays
 #ifdef COMPILER_SUPPORTS_ATOMICS
   use iso_fortran_env, only : atomic_int_kind
 #endif
-  use iso_c_binding, only : c_int,c_char,c_ptr,c_loc,c_long,c_double,c_int32_t,c_ptrdiff_t,c_sizeof
+  use iso_c_binding, only : c_int,c_char,c_ptr,c_loc,c_double,c_int32_t,c_ptrdiff_t,c_sizeof
   implicit none
 
   private
   public :: co_broadcast
   public :: co_sum
+ !public :: co_min
+ !public :: co_max
   public :: this_image
   public :: num_images
   public :: error_stop
@@ -58,6 +60,16 @@ module opencoarrays
   interface co_sum
      module procedure co_sum_c_int,co_sum_c_double
   end interface 
+
+  ! Generic interface to co_sum with implementations for various types, kinds, and ranks
+ !interface co_min
+ !   module procedure co_min_c_int,co_min_c_double
+ !end interface 
+
+  ! Generic interface to co_sum with implementations for various types, kinds, and ranks
+ !interface co_max
+ !   module procedure co_max_c_int,co_max_c_double
+ !end interface 
 
   ! __________ End Public Interface _____________
 
@@ -165,13 +177,11 @@ module opencoarrays
   !}
   !descriptor_dimension;
 
-  integer, parameter :: ptrdiff_t=c_long
-
   ! Fortran derived type interoperable with like-named C type:
   type, bind(C) :: descriptor_dimension
-     integer(ptrdiff_t) :: stride 
-     integer(ptrdiff_t) :: lower_bound 
-     integer(ptrdiff_t) :: ubound_ 
+     integer(c_ptrdiff_t) :: stride 
+     integer(c_ptrdiff_t) :: lower_bound 
+     integer(c_ptrdiff_t) :: ubound_ 
   end type
 
   ! Type definition from ../libcaf-gfortran-descriptor.h:
@@ -187,8 +197,8 @@ module opencoarrays
   ! Fortran derived type interoperable with like-named C type:
   type, bind(C) :: gfc_descriptor_t  
     type(c_ptr) :: base_addr
-    integer(ptrdiff_t) :: offset
-    integer(ptrdiff_t) :: dtype
+    integer(c_ptrdiff_t) :: offset
+    integer(c_ptrdiff_t) :: dtype
     type(descriptor_dimension) :: dim_(max_dimensions)
   end type
   ! --------------------
