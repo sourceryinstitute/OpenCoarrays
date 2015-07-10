@@ -1809,8 +1809,10 @@ get_MPI_datatype (gfc_descriptor_t *desc)
       return MPI_COMPLEX;
     case GFC_DTYPE_COMPLEX_8:
       return MPI_DOUBLE_COMPLEX;
+    case GFC_DTYPE_CHARACTER:
+      return MPI_CHARACTER;
     }
-  caf_runtime_error ("Unsupported data type in collective\n");
+  caf_runtime_error ("Unsupported data type in collective\n"); 
   return 0;
 }
 
@@ -1927,7 +1929,20 @@ PREFIX (co_broadcast) (gfc_descriptor_t *a, int source_image, int *stat, char *e
 
   if (rank == 0)
     {
-      ierr = MPI_Bcast(a->base_addr, size, datatype, source_image-1, CAF_COMM_WORLD);
+      if (datatype != MPI_CHARACTER) 
+        ierr = MPI_Bcast(a->base_addr, size, datatype, source_image-1, CAF_COMM_WORLD);
+      else 
+      {
+        int a_length;
+        if (caf_this_image==source_image)
+          a_length=strlen(a->base_addr);
+        /* Broadcast the string lenth */
+        ierr = MPI_Bcast(&a_length, 1, MPI_INT, source_image-1, CAF_COMM_WORLD);
+        if (ierr)
+          goto error;
+        /* Broadcast the string itself */
+        ierr = MPI_Bcast(a->base_addr, a_length, datatype, source_image-1, CAF_COMM_WORLD);
+      }
 
       if (ierr)
         goto error;

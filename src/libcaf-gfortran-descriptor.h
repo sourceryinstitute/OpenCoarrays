@@ -128,4 +128,14 @@ typedef struct gfc_descriptor_t {
 #endif
 #endif
 
+/* FIXME: Hardwaring this value to what the mpi_caf.c procedure GFC_DTYPE_TYPE_SIZE
+    receives in the dtype component its gf_descriptor_t argument for character data
+*/
+#define GFC_DTYPE_CHARACTER 944 
+#if 0
+#define GFC_DTYPE_CHARACTER ((BT_CHARACTER << GFC_DTYPE_TYPE_SHIFT) \
+   | (sizeof(char) << GFC_DTYPE_SIZE_SHIFT))
+#endif
+
+
 #endif  /* LIBCAF_GFORTRAN_DESCRIPTOR_H.  */
