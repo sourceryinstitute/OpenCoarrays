@@ -969,13 +969,16 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
 #endif // CAF_MPI_LOCK_UNLOCK
           if (GFC_DESCRIPTOR_TYPE (dest) == GFC_DESCRIPTOR_TYPE (src)
               && dst_kind == src_kind)
-            ierr = MPI_Put (src->base_addr, dst_size*size, MPI_BYTE,
+            ierr = MPI_Put (src->base_addr, (dst_size > src_size ? src_size : dst_size)*size, MPI_BYTE,
                             image_index-1, offset,
                             (dst_size > src_size ? src_size : dst_size) * size,
                             MPI_BYTE, *p);
           if (pad_str)
-            ierr = MPI_Put (pad_str, dst_size-src_size, MPI_BYTE, image_index-1,
-                            offset, dst_size - src_size, MPI_BYTE, *p);
+	    {
+	      size_t newoff = offset + (dst_size > src_size ? src_size : dst_size) * size;
+	      ierr = MPI_Put (pad_str, dst_size-src_size, MPI_BYTE, image_index-1,
+			      newoff, dst_size - src_size, MPI_BYTE, *p);
+	    }
 #ifdef CAF_MPI_LOCK_UNLOCK
           MPI_Win_unlock (image_index-1, *p);
 #elif NONBLOCKING_PUT
