@@ -35,8 +35,8 @@ module opencoarrays
   private
   public :: co_broadcast
   public :: co_sum
- !public :: co_min
- !public :: co_max
+  public :: co_min
+  public :: co_max
   public :: this_image
   public :: num_images
   public :: error_stop
@@ -51,7 +51,7 @@ module opencoarrays
   end type
 #endif
 
-  ! Generic interface to co_sum with implementations for various types, kinds, and ranks
+  ! Generic interface to co_broadcast with implementations for various types, kinds, and ranks
   interface co_broadcast
      module procedure co_broadcast_c_int,co_broadcast_c_double,co_broadcast_c_char
   end interface 
@@ -62,14 +62,14 @@ module opencoarrays
   end interface 
 
   ! Generic interface to co_sum with implementations for various types, kinds, and ranks
- !interface co_min
- !   module procedure co_min_c_int,co_min_c_double
- !end interface 
+  interface co_min
+     module procedure co_min_c_int,co_min_c_double
+  end interface 
 
   ! Generic interface to co_sum with implementations for various types, kinds, and ranks
- !interface co_max
- !   module procedure co_max_c_int,co_max_c_double
- !end interface 
+  interface co_max
+     module procedure co_max_c_int,co_max_c_double
+  end interface 
 
   ! __________ End Public Interface _____________
 
@@ -79,24 +79,55 @@ module opencoarrays
   ! Bindings for OpenCoarrays C procedures
   interface 
 
-    ! C function prototype from ../libcaf.h:
+    ! C function signature from ../mpi/mpi_caf.c:
+    ! void
+    ! PREFIX (co_min) (gfc_descriptor_t *a, int result_image, int *stat, char *errmsg,
+    !                  int src_len, int errmsg_len)
+#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
+    subroutine opencoarrays_co_min(a,result_image, stat, errmsg, unused , errmsg_len) bind(C,name="_caf_extensions_co_min")
+#else
+    subroutine opencoarrays_co_min(a,result_image, stat, errmsg, unused, errmsg_len) bind(C,name="_gfortran_caf_co_min")
+#endif
+      import :: c_int,c_char,c_ptr
+      type(c_ptr), intent(in), value :: a
+      integer(c_int), intent(in),  value :: result_image,errmsg_len,unused
+      integer(c_int), intent(out), optional :: stat
+      character(len=1,kind=c_char), intent(out), optional :: errmsg
+    end subroutine
+
+    ! C function signature from ../mpi/mpi_caf.c:
+    ! void
+    ! PREFIX (co_max) (gfc_descriptor_t *a, int result_image, int *stat,
+    !                  char *errmsg, int src_len, int errmsg_len)
+#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
+    subroutine opencoarrays_co_max(a,result_image, stat, errmsg, unused, errmsg_len) bind(C,name="_caf_extensions_co_max")
+#else
+    subroutine opencoarrays_co_max(a,result_image, stat, errmsg, unused, errmsg_len) bind(C,name="_gfortran_caf_co_max")
+#endif
+      import :: c_int,c_char,c_ptr
+      type(c_ptr), intent(in), value :: a
+      integer(c_int), intent(in),  value :: result_image,errmsg_len,unused
+      integer(c_int), intent(out), optional :: stat
+      character(len=1,kind=c_char), intent(out), optional :: errmsg
+    end subroutine
+
+    ! C function signature from ../mpi/mpi_caf.c:
     ! void
     ! PREFIX (co_sum) (gfc_descriptor_t *a, int result_image, int *stat, char *errmsg,
     !                  int errmsg_len)
 #ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
-    subroutine opencoarrays_co_sum(a,result_image, stat, errmsg, errmsg_len) bind(C,name="_caf_extensions_co_sum")
+    subroutine opencoarrays_co_sum(a, result_image, stat, errmsg, errmsg_len) bind(C,name="_caf_extensions_co_sum")
 #else
-    subroutine opencoarrays_co_sum(a,result_image, stat, errmsg, errmsg_len) bind(C,name="_gfortran_caf_co_sum")
+    subroutine opencoarrays_co_sum(a, result_image, stat, errmsg, errmsg_len) bind(C,name="_gfortran_caf_co_sum")
 #endif
       import :: c_int,c_char,c_ptr
       type(c_ptr), intent(in), value :: a
-      integer(c_int), intent(in),  value :: result_image
+      integer(c_int), intent(in),  value :: result_image,errmsg_len
       integer(c_int), intent(out), optional :: stat
       character(len=1,kind=c_char), intent(out), optional :: errmsg
-      integer(c_int), intent(in), value :: errmsg_len
     end subroutine
 
-    ! C function prototype from ../mpi_caf.c
+    ! C function signature from ../mpi/mpi_caf.c
     ! void
     ! PREFIX (co_broadcast) (gfc_descriptor_t *a, int source_image, int *stat, char *errmsg,
     !                  int errmsg_len)
@@ -107,13 +138,12 @@ module opencoarrays
 #endif
       import :: c_int,c_char,c_ptr
       type(c_ptr), intent(in), value :: a
-      integer(c_int), intent(in),  value :: source_image
+      integer(c_int), intent(in),  value :: source_image,errmsg_len
       integer(c_int), intent(out), optional :: stat
       character(len=1,kind=c_char), intent(out), optional :: errmsg
-      integer(c_int), intent(in), value :: errmsg_len
     end subroutine
 
-    ! C function prototype from ../libcaf.h:
+    ! C function signature from ../mpi/mpi_caf.c:
     ! int PREFIX (this_image) (int);
     function opencoarrays_this_image(coarray) bind(C,name="_gfortran_caf_this_image") result(image_num)
       import :: c_int
@@ -121,7 +151,7 @@ module opencoarrays
       integer(c_int)  :: image_num
     end function
 
-    ! C function prototype from ../libcaf.h:
+    ! C function signature from ../mpi/mpi_caf.c:
     ! int PREFIX (num_images) (int, int);
     function opencoarrays_num_images(coarray,dim_) bind(C,name="_gfortran_caf_num_images") result(num_images_)
       import :: c_int
@@ -129,7 +159,7 @@ module opencoarrays
       integer(c_int) :: num_images_
     end function
 
-    ! C function prototype from ../libcaf.h
+    ! C function signature from ../mpi_caf.c
     ! void PREFIX (error_stop) (int32_t) __attribute__ ((noreturn));
 #ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
     subroutine opencoarrays_error_stop(stop_code) bind(C,name="_caf_extensions_error_stop") 
@@ -140,7 +170,7 @@ module opencoarrays
       integer(c_int32_t), value, intent(in) :: stop_code
     end subroutine 
 
-    ! C function prototype from ../libcaf.h
+    ! C function signature from ../mpi_caf.c
     ! void PREFIX (sync_all) (int *, char *, int);
 #ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
     subroutine opencoarrays_sync_all(stat,errmsg,unused) bind(C,name="_caf_extensions_sync_all") 
@@ -345,6 +375,77 @@ contains
 
   end subroutine
 
+  ! ________ Assumed-rank co_min wrappers for each supported type and kind _____________
+  ! ____________________________________________________________________________________
+
+  subroutine co_min_c_int(a,result_image,stat,errmsg)
+    integer(c_int), intent(inout), volatile, target, contiguous :: a(..)
+    integer(c_int), intent(in), optional :: result_image
+    integer(c_int), intent(out), optional:: stat
+    character(kind=1,len=*), intent(out), optional :: errmsg
+    ! Local variables and constants:
+    type(gfc_descriptor_t), target :: a_descriptor
+    integer(c_int), parameter :: default_result_image=0
+    integer(c_int) :: unused, result_image_ ! Local replacement for the corresponding intent(in) dummy argument
+
+    a_descriptor = gfc_descriptor(a)
+    result_image_ = merge(result_image,default_result_image,present(result_image)) 
+    call opencoarrays_co_min(c_loc(a_descriptor),result_image_, stat, errmsg, unused, len(errmsg)) 
+    
+  end subroutine
+
+  subroutine co_min_c_double(a,result_image,stat,errmsg)
+    real(c_double), intent(inout), volatile, target, contiguous :: a(..)
+    integer(c_int), intent(in), optional :: result_image
+    integer(c_int), intent(out), optional:: stat
+    character(kind=1,len=*), intent(out), optional :: errmsg
+    ! Local variables and constants:
+    type(gfc_descriptor_t), target :: a_descriptor
+    integer(c_int), parameter :: default_result_image=0
+    integer(c_int) :: unused, result_image_ ! Local replacement for the corresponding intent(in) dummy argument
+
+    a_descriptor = gfc_descriptor(a)
+    result_image_ = merge(result_image,default_result_image,present(result_image)) 
+    call opencoarrays_co_min(c_loc(a_descriptor),result_image_, stat, errmsg, unused, len(errmsg)) 
+    
+  end subroutine
+
+
+  ! ________ Assumed-rank co_max wrappers for each supported type and kind _____________
+  ! ____________________________________________________________________________________
+
+  subroutine co_max_c_int(a,result_image,stat,errmsg)
+    integer(c_int), intent(inout), volatile, target, contiguous :: a(..)
+    integer(c_int), intent(in), optional :: result_image
+    integer(c_int), intent(out), optional:: stat
+    character(kind=1,len=*), intent(out), optional :: errmsg
+    ! Local variables and constants:
+    type(gfc_descriptor_t), target :: a_descriptor
+    integer(c_int), parameter :: default_result_image=0
+    integer(c_int) :: unused, result_image_ ! Local replacement for the corresponding intent(in) dummy argument
+
+    a_descriptor = gfc_descriptor(a)
+    result_image_ = merge(result_image,default_result_image,present(result_image)) 
+    call opencoarrays_co_max(c_loc(a_descriptor),result_image_, stat, errmsg, unused, len(errmsg)) 
+    
+  end subroutine
+
+  subroutine co_max_c_double(a,result_image,stat,errmsg)
+    real(c_double), intent(inout), volatile, target, contiguous :: a(..)
+    integer(c_int), intent(in), optional :: result_image
+    integer(c_int), intent(out), optional:: stat
+    character(kind=1,len=*), intent(out), optional :: errmsg
+    ! Local variables and constants:
+    type(gfc_descriptor_t), target :: a_descriptor
+    integer(c_int), parameter :: default_result_image=0
+    integer(c_int) :: unused, result_image_ ! Local replacement for the corresponding intent(in) dummy argument
+
+    a_descriptor = gfc_descriptor(a)
+    result_image_ = merge(result_image,default_result_image,present(result_image)) 
+    call opencoarrays_co_max(c_loc(a_descriptor),result_image_, stat, errmsg, unused, len(errmsg)) 
+    
+  end subroutine
+
   ! ________ Assumed-rank co_sum wrappers for each supported type and kind _____________
   ! ____________________________________________________________________________________
 
@@ -383,7 +484,7 @@ contains
   ! Return the image number (MPI rank + 1)
   function this_image()  result(image_num)
     use mpi, only : MPI_Comm_rank
-    integer(c_int) :: image_num,unused,ierr
+    integer(c_int) :: image_num,ierr
    !image_num = opencoarrays_this_image(unused)
     call MPI_Comm_rank(CAF_COMM_WORLD,image_num,ierr) 
     if (ierr/=0) call error_stop
@@ -393,7 +494,7 @@ contains
   ! Return the total number of images
   function num_images()  result(num_images_)
     use mpi, only : MPI_Comm_size
-    integer(c_int) :: num_images_,unused_coarray,unused_scalar,ierr
+    integer(c_int) :: num_images_,ierr
    !num_images_ = opencoarrays_num_images(unused_coarray,unused_scalar)
     call MPI_Comm_size(CAF_COMM_WORLD,num_images_,ierr) 
     if (ierr/=0) call error_stop
