@@ -108,6 +108,9 @@ MPI_Comm CAF_COMM_WORLD;
    (and thus finalization) of MPI. */
 bool caf_owns_mpi = false;
 
+/* Foo function pointer for coreduce */
+void *(*foo)(void *, void *);
+
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 
 #if defined(NONBLOCKING_PUT) && !defined(CAF_MPI_LOCK_UNLOCK)
@@ -1709,6 +1712,21 @@ name (datatype *invec, datatype *inoutvec, int *len, \
     operator; \
 }
 
+#define GEN_COREDUCE(name, dt) \
+static void \
+name (void *invec, void *inoutvec, int *len, \
+      MPI_Datatype *datatype)		     \
+{ \
+  int i;	     \
+  for(i=0;i<*len;i++)				\
+   { \
+     *((dt*)inoutvec) = (dt) (foo((dt *)invec,(dt *)inoutvec));	\
+     invec+=sizeof(dt); inoutvec+=sizeof(dt);	\
+   } \
+}
+
+GEN_COREDUCE (redux_int32, int32_t)
+
 #ifndef MPI_INTEGER1
 GEN_REDUCTION (do_sum_int1, int8_t, inoutvec[i] += invec[i])
 GEN_REDUCTION (do_min_int1, int8_t,
@@ -1997,6 +2015,16 @@ error:
   memcpy (errmsg, err_buffer, errmsg_len > len ? len : errmsg_len);
   if (errmsg_len > len)
     memset (&errmsg[len], '\0', errmsg_len - len);
+}
+
+void
+PREFIX (co_reduce) (gfc_descriptor_t *a, void *(*opr) (void *, void *), int opr_flags, 
+		    int result_image, int *stat, char *errmsg, int a_len, int errmsg_len) 
+{
+  MPI_Op op;
+  foo = opr;
+  MPI_Op_create(redux_int32, 1, &op);
+  co_reduce_1 (op, a, result_image, stat, errmsg, 0, errmsg_len);
 }
 
 void
