@@ -1969,6 +1969,10 @@ PREFIX (co_broadcast) (gfc_descriptor_t *a, int source_image, int *stat, char *e
         goto error;
       return;
     }
+    else if (datatype == MPI_CHARACTER) /* rank !=0  */
+    { 
+        caf_runtime_error ("Co_broadcast of character arrays not yet supported\n"); 
+    }
 
   for (i = 0; i < size; i++)
     {
