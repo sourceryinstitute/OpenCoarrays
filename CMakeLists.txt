@@ -125,7 +125,7 @@ if(opencoarrays_aware_compiler)
   add_mpi_test(co_max 4 ${tests_root}/unit/collectives/co_max_test)
   add_mpi_test(syncall 32 ${tests_root}/unit/sync/syncall)
   add_mpi_test(syncimages 32 ${tests_root}/unit/sync/syncimages)  
-#  add_mpi_test(co_reduce 4 ${tests_root}/unit/collectivese/co_reduce_test)  
+  add_mpi_test(co_reduce 4 ${tests_root}/unit/collectives/co_reduce_test)  
 #  add_mpi_test(syncimages_status 32 ${tests_root}/unit/sync/syncimages_status)
 
   # Integration tests verifying the use of libcaf_mpi in applications
