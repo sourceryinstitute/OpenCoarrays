@@ -1816,6 +1816,9 @@ get_MPI_datatype (gfc_descriptor_t *desc)
       return MPI_INTEGER16;
 #endif
 
+    case GFC_DTYPE_LOGICAL_4:
+      return MPI_INT;
+
     case GFC_DTYPE_REAL_4:
 #ifdef MPI_REAL4
       return MPI_REAL4;
@@ -2049,6 +2052,11 @@ PREFIX (co_reduce) (gfc_descriptor_t *a, void *(*opr) (void *, void *), int opr_
   	  foo_double = opr;
   	  MPI_Op_create(redux_real64, 1, &op);
   	}
+    }
+  else if(GFC_DESCRIPTOR_TYPE(a) == BT_LOGICAL)
+    {
+      foo_int32_t = opr;
+      MPI_Op_create(redux_int32, 1, &op);  
     }
   else
     {
