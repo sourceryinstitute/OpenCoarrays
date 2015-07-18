@@ -2050,6 +2050,10 @@ PREFIX (co_reduce) (gfc_descriptor_t *a, void *(*opr) (void *, void *), int opr_
   	  MPI_Op_create(redux_real64, 1, &op);
   	}
     }
+  else
+    {
+      caf_runtime_error ("Data type not yet supported for co_reduce\n");
+    }
 
   co_reduce_1 (op, a, result_image, stat, errmsg, 0, errmsg_len);
 }
