@@ -56,8 +56,10 @@ program main
 #endif
 
   ! Verify that every image has a "true" variable with the value .true.
-  verify_co_reduce: block 
+  verify_co_reduce: block
+    integer(c_int) :: me
     logical :: true=.true.
+    me=this_image()
     sync all
     call co_all(true)
     if (.not.true) then
