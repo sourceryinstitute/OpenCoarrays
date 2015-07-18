@@ -108,8 +108,10 @@ MPI_Comm CAF_COMM_WORLD;
    (and thus finalization) of MPI. */
 bool caf_owns_mpi = false;
 
-/* Foo function pointer for coreduce */
-void *(*foo)(void *, void *);
+/* Foo function pointers for coreduce */
+int (*foo_int32_t)(void *, void *);
+float (*foo_float)(void *, void *);
+double (*foo_double)(void *, void *);
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 
@@ -1712,20 +1714,24 @@ name (datatype *invec, datatype *inoutvec, int *len, \
     operator; \
 }
 
-#define GEN_COREDUCE(name, dt) \
+#define FOOFUNC(TYPE) foo_ ## TYPE
+
+#define GEN_COREDUCE(name, dt)			\
 static void \
 name (void *invec, void *inoutvec, int *len, \
       MPI_Datatype *datatype)		     \
 { \
   int i;	     \
   for(i=0;i<*len;i++)				\
-   { \
-     *((dt*)inoutvec) = (dt) (foo((dt *)invec,(dt *)inoutvec));	\
+    {								\
+      *((dt*)inoutvec) = (dt)(FOOFUNC(dt)((dt *)invec,(dt *)inoutvec));	\
      invec+=sizeof(dt); inoutvec+=sizeof(dt);	\
    } \
 }
 
 GEN_COREDUCE (redux_int32, int32_t)
+GEN_COREDUCE (redux_real32, float)
+GEN_COREDUCE (redux_real64, double)
 
 #ifndef MPI_INTEGER1
 GEN_REDUCTION (do_sum_int1, int8_t, inoutvec[i] += invec[i])
@@ -2026,8 +2032,25 @@ PREFIX (co_reduce) (gfc_descriptor_t *a, void *(*opr) (void *, void *), int opr_
 		    int result_image, int *stat, char *errmsg, int a_len, int errmsg_len) 
 {
   MPI_Op op;
-  foo = opr;
-  MPI_Op_create(redux_int32, 1, &op);
+  if(GFC_DESCRIPTOR_TYPE(a) == BT_INTEGER)
+    {
+      foo_int32_t = opr;
+      MPI_Op_create(redux_int32, 1, &op);
+    }
+  else if(GFC_DESCRIPTOR_TYPE(a) == BT_REAL)
+    {
+      if(GFC_DESCRIPTOR_SIZE(a) == sizeof(float))
+  	{
+  	  foo_float = opr;
+  	  MPI_Op_create(redux_real32, 1, &op);
+  	}
+      else
+  	{
+  	  foo_double = opr;
+  	  MPI_Op_create(redux_real64, 1, &op);
+  	}
+    }
+
   co_reduce_1 (op, a, result_image, stat, errmsg, 0, errmsg_len);
 }
 
