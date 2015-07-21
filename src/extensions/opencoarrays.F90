@@ -29,10 +29,13 @@ module opencoarrays
 #ifdef COMPILER_SUPPORTS_ATOMICS
   use iso_fortran_env, only : atomic_int_kind
 #endif
-  use iso_c_binding, only : c_int,c_char,c_ptr,c_loc,c_double,c_int32_t,c_ptrdiff_t,c_sizeof
+  use iso_c_binding, only : c_int,c_char,c_ptr,c_loc,c_double,c_int32_t,c_ptrdiff_t,c_sizeof,c_bool,c_funloc
   implicit none
 
   private
+#ifndef USE_EXTENSIONS
+  public :: co_reduce
+#endif
   public :: co_broadcast
   public :: co_sum
   public :: co_min
@@ -50,6 +53,11 @@ module opencoarrays
     integer(atomic_int_kind), allocatable :: atom[:]
   end type
 #endif
+
+  ! Generic interface to co_broadcast with implementations for various types, kinds, and ranks
+  interface co_reduce
+     module procedure co_reduce_c_int,co_reduce_c_double,co_reduce_c_bool
+  end interface 
 
   ! Generic interface to co_broadcast with implementations for various types, kinds, and ranks
   interface co_broadcast
@@ -71,118 +79,28 @@ module opencoarrays
      module procedure co_max_c_int,co_max_c_double
   end interface 
 
+  abstract interface
+     pure function c_int_operator(lhs,rhs) result(lhs_op_rhs)
+       import c_int
+       integer(c_int), intent(in) :: lhs,rhs
+       integer(c_int) :: lhs_op_rhs
+     end function
+     pure function c_double_operator(lhs,rhs) result(lhs_op_rhs)
+       import c_double
+       real(c_double), intent(in) :: lhs,rhs
+       real(c_double) :: lhs_op_rhs
+     end function
+     pure function c_bool_operator(lhs,rhs) result(lhs_op_rhs)
+       import c_bool
+       logical(c_bool), intent(in) :: lhs,rhs
+       logical(c_bool) :: lhs_op_rhs
+     end function
+  end interface
+
   ! __________ End Public Interface _____________
 
 
   ! __________ Begin Private Implementation _____
-
-  ! Bindings for OpenCoarrays C procedures
-  interface 
-
-    ! C function signature from ../mpi/mpi_caf.c:
-    ! void
-    ! PREFIX (co_min) (gfc_descriptor_t *a, int result_image, int *stat, char *errmsg,
-    !                  int src_len, int errmsg_len)
-#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
-    subroutine opencoarrays_co_min(a,result_image, stat, errmsg, unused , errmsg_len) bind(C,name="_caf_extensions_co_min")
-#else
-    subroutine opencoarrays_co_min(a,result_image, stat, errmsg, unused, errmsg_len) bind(C,name="_gfortran_caf_co_min")
-#endif
-      import :: c_int,c_char,c_ptr
-      type(c_ptr), intent(in), value :: a
-      integer(c_int), intent(in),  value :: result_image,errmsg_len,unused
-      integer(c_int), intent(out), optional :: stat
-      character(len=1,kind=c_char), intent(out), optional :: errmsg
-    end subroutine
-
-    ! C function signature from ../mpi/mpi_caf.c:
-    ! void
-    ! PREFIX (co_max) (gfc_descriptor_t *a, int result_image, int *stat,
-    !                  char *errmsg, int src_len, int errmsg_len)
-#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
-    subroutine opencoarrays_co_max(a,result_image, stat, errmsg, unused, errmsg_len) bind(C,name="_caf_extensions_co_max")
-#else
-    subroutine opencoarrays_co_max(a,result_image, stat, errmsg, unused, errmsg_len) bind(C,name="_gfortran_caf_co_max")
-#endif
-      import :: c_int,c_char,c_ptr
-      type(c_ptr), intent(in), value :: a
-      integer(c_int), intent(in),  value :: result_image,errmsg_len,unused
-      integer(c_int), intent(out), optional :: stat
-      character(len=1,kind=c_char), intent(out), optional :: errmsg
-    end subroutine
-
-    ! C function signature from ../mpi/mpi_caf.c:
-    ! void
-    ! PREFIX (co_sum) (gfc_descriptor_t *a, int result_image, int *stat, char *errmsg,
-    !                  int errmsg_len)
-#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
-    subroutine opencoarrays_co_sum(a, result_image, stat, errmsg, errmsg_len) bind(C,name="_caf_extensions_co_sum")
-#else
-    subroutine opencoarrays_co_sum(a, result_image, stat, errmsg, errmsg_len) bind(C,name="_gfortran_caf_co_sum")
-#endif
-      import :: c_int,c_char,c_ptr
-      type(c_ptr), intent(in), value :: a
-      integer(c_int), intent(in),  value :: result_image,errmsg_len
-      integer(c_int), intent(out), optional :: stat
-      character(len=1,kind=c_char), intent(out), optional :: errmsg
-    end subroutine
-
-    ! C function signature from ../mpi/mpi_caf.c
-    ! void
-    ! PREFIX (co_broadcast) (gfc_descriptor_t *a, int source_image, int *stat, char *errmsg,
-    !                  int errmsg_len)
-#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
-    subroutine opencoarrays_co_broadcast(a,source_image, stat, errmsg, errmsg_len) bind(C,name="_caf_extensions_co_broadcast")
-#else
-    subroutine opencoarrays_co_broadcast(a,source_image, stat, errmsg, errmsg_len) bind(C,name="_gfortran_caf_co_broadcast")
-#endif
-      import :: c_int,c_char,c_ptr
-      type(c_ptr), intent(in), value :: a
-      integer(c_int), intent(in),  value :: source_image,errmsg_len
-      integer(c_int), intent(out), optional :: stat
-      character(len=1,kind=c_char), intent(out), optional :: errmsg
-    end subroutine
-
-    ! C function signature from ../mpi/mpi_caf.c:
-    ! int PREFIX (this_image) (int);
-    function opencoarrays_this_image(coarray) bind(C,name="_gfortran_caf_this_image") result(image_num)
-      import :: c_int
-      integer(c_int), value, intent(in) :: coarray
-      integer(c_int)  :: image_num
-    end function
-
-    ! C function signature from ../mpi/mpi_caf.c:
-    ! int PREFIX (num_images) (int, int);
-    function opencoarrays_num_images(coarray,dim_) bind(C,name="_gfortran_caf_num_images") result(num_images_)
-      import :: c_int
-      integer(c_int), value, intent(in) :: coarray,dim_
-      integer(c_int) :: num_images_
-    end function
-
-    ! C function signature from ../mpi_caf.c
-    ! void PREFIX (error_stop) (int32_t) __attribute__ ((noreturn));
-#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
-    subroutine opencoarrays_error_stop(stop_code) bind(C,name="_caf_extensions_error_stop") 
-#else
-    subroutine opencoarrays_error_stop(stop_code) bind(C,name="_gfortran_caf_error_stop") 
-#endif
-      import :: c_int32_t
-      integer(c_int32_t), value, intent(in) :: stop_code
-    end subroutine 
-
-    ! C function signature from ../mpi_caf.c
-    ! void PREFIX (sync_all) (int *, char *, int);
-#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
-    subroutine opencoarrays_sync_all(stat,errmsg,unused) bind(C,name="_caf_extensions_sync_all") 
-#else
-    subroutine opencoarrays_sync_all(stat,errmsg,unused) bind(C,name="_gfortran_caf_sync_all") 
-#endif
-      import :: c_int,c_char
-      integer(c_int), intent(out) :: stat,unused
-      character(c_char), intent(out) :: errmsg
-    end subroutine 
-
-  end interface
 
   ! Enumeration from ../libcaf-gfortran-descriptor.h:
   !  enum
@@ -231,14 +149,207 @@ module opencoarrays
     integer(c_ptrdiff_t) :: dtype
     type(descriptor_dimension) :: dim_(max_dimensions)
   end type
+
+  ! C comment and source from ../libcaf.h
+  ! /* When there is a vector subscript in this dimension, nvec == 0, otherwise,
+  ! lower_bound, upper_bound, stride contains the bounds relative to the declared
+  ! bounds; kind denotes the integer kind of the elements of vector[].  */
+  ! type, bind(C) :: caf_vector_t {
+  !   size_t nvec;
+  !   union {
+  !     struct {
+  !       void *vector;
+  !       int kind;
+  !     } v;
+  !     struct {
+  !       ptrdiff_t lower_bound, upper_bound, stride;
+  !     } triplet;
+  !   } u;
+  ! }
+  ! caf_vector_t;
+
+  type, bind(C) :: v_t
+    type(c_ptr) :: vector
+    integer(c_int) :: kind_
+  end type
+
+  type, bind(C) :: triplet_t 
+    integer(c_ptrdiff_t) :: lower_bound, upper_bound, stride
+  end type
+
+  type, bind(C) :: u_t
+     type(v_t) :: v
+     type(triplet_t) :: triplet
+  end type
+
+  type, bind(C) :: caf_vector_t 
+    integer(c_ptrdiff_t) :: nvec
+    type(u_t) :: u
+  end type
+
   ! --------------------
 
   integer(c_int), save, volatile, bind(C,name="CAF_COMM_WORLD") :: CAF_COMM_WORLD
   integer(c_int32_t), parameter  :: bytes_per_word=4_c_int32_t
 
   interface gfc_descriptor
-    module procedure gfc_descriptor_c_int,gfc_descriptor_c_double
+    module procedure gfc_descriptor_c_int,gfc_descriptor_c_double,gfc_descriptor_c_bool
   end interface
+
+  ! Bindings for OpenCoarrays C procedures
+  interface 
+
+    ! C function signature from ../mpi/mpi_caf.c:
+    ! void
+    ! PREFIX (co_min) (gfc_descriptor_t *a, int result_image, int *stat, char *errmsg,
+    !                  int src_len, int errmsg_len)
+#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
+    subroutine opencoarrays_co_min(a,result_image, stat, errmsg, unused , errmsg_len) bind(C,name="_caf_extensions_co_min")
+#else
+    subroutine opencoarrays_co_min(a,result_image, stat, errmsg, unused, errmsg_len) bind(C,name="_gfortran_caf_co_min")
+#endif
+      import :: c_int,c_char,c_ptr
+      type(c_ptr), intent(in), value :: a
+      integer(c_int), intent(in),  value :: result_image,errmsg_len,unused
+      integer(c_int), intent(out), optional, volatile :: stat
+      character(kind=c_char), intent(out), optional, volatile :: errmsg(*)
+    end subroutine
+
+    ! C function signature from ../mpi/mpi_caf.c
+    ! void
+    ! PREFIX (co_reduce) (gfc_descriptor_t *a, void *(*opr) (void *, void *), int opr_flags, 
+    !                     int result_image, int *stat, char *errmsg, int a_len, int errmsg_len) 
+    subroutine opencoarrays_co_reduce(a, opr, opr_flags, result_image, stat, errmsg, a_len, errmsg_len) &
+#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
+      bind(C,name="_caf_extensions_co_min")
+#else
+      bind(C,name="_caf_extensions_co_min")
+#endif
+      use iso_c_binding, only : c_ptr,c_funptr,c_int,c_char
+      type(c_ptr), intent(in), value :: a
+      type(c_funptr), intent(in), value :: opr
+      integer(c_int), intent(in), value :: opr_flags,result_image
+      integer(c_int), intent(out) :: stat
+      character(kind=c_char), intent(out), optional, volatile :: errmsg(*)
+      integer(c_int), intent(in), value :: a_len
+      integer(c_int), intent(out), optional, volatile :: errmsg_len
+    end subroutine
+
+    ! C function signature from ../mpi/mpi_caf.c:
+    ! void
+    ! PREFIX (get) (caf_token_t token, size_t offset,
+    !              int image_index,
+    !              gfc_descriptor_t *src ,
+    !              caf_vector_t *src_vector __attribute__ ((unused)),
+    !              gfc_descriptor_t *dest, int src_kind, int dst_kind,
+    !              bool mrt) 
+    subroutine opencoarrays_get(token, offset, image_index_, src, src_vector_unused, dest, src_kind, dst_kind, mrt) &
+#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
+      bind(C,name="_caf_extensions_get")
+#else
+      bind(C,name="_gfortran_caf_get")
+#endif
+      import c_ptrdiff_t,c_int,gfc_descriptor_t,c_bool,caf_vector_t,c_ptr
+      type(c_ptr), value :: token
+      integer(c_ptrdiff_t), value :: offset 
+      integer(c_int), value :: image_index_
+      type(gfc_descriptor_t) :: src  
+      type(caf_vector_t) :: src_vector_unused
+      type(gfc_descriptor_t) :: dest
+      integer(c_int), value :: src_kind
+      integer(c_int), value :: dst_kind 
+      logical(c_bool), value :: mrt
+    end subroutine
+
+    ! C function signature from ../mpi/mpi_caf.c:
+    ! void
+    ! PREFIX (co_max) (gfc_descriptor_t *a, int result_image, int *stat,
+    !                  char *errmsg, int src_len, int errmsg_len)
+#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
+    subroutine opencoarrays_co_max(a,result_image, stat, errmsg, unused, errmsg_len) bind(C,name="_caf_extensions_co_max")
+#else
+    subroutine opencoarrays_co_max(a,result_image, stat, errmsg, unused, errmsg_len) bind(C,name="_gfortran_caf_co_max")
+#endif
+      import :: c_int,c_char,c_ptr
+      type(c_ptr), intent(in), value :: a
+      integer(c_int), intent(in),  value :: result_image,errmsg_len,unused
+      integer(c_int), intent(out), optional :: stat
+      character(kind=c_char), intent(out), optional :: errmsg(*)
+    end subroutine
+
+    ! C function signature from ../mpi/mpi_caf.c:
+    ! void
+    ! PREFIX (co_sum) (gfc_descriptor_t *a, int result_image, int *stat, char *errmsg,
+    !                  int errmsg_len)
+#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
+    subroutine opencoarrays_co_sum(a, result_image, stat, errmsg, errmsg_len) bind(C,name="_caf_extensions_co_sum")
+#else
+    subroutine opencoarrays_co_sum(a, result_image, stat, errmsg, errmsg_len) bind(C,name="_gfortran_caf_co_sum")
+#endif
+      import :: c_int,c_char,c_ptr
+      type(c_ptr), intent(in), value :: a
+      integer(c_int), intent(in),  value :: result_image,errmsg_len
+      integer(c_int), intent(out), optional :: stat
+      character(kind=c_char), intent(out), optional :: errmsg(*)
+    end subroutine
+
+    ! C function signature from ../mpi/mpi_caf.c
+    ! void
+    ! PREFIX (co_broadcast) (gfc_descriptor_t *a, int source_image, int *stat, char *errmsg,
+    !                  int errmsg_len)
+#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
+    subroutine opencoarrays_co_broadcast(a,source_image, stat, errmsg, errmsg_len) bind(C,name="_caf_extensions_co_broadcast")
+#else
+    subroutine opencoarrays_co_broadcast(a,source_image, stat, errmsg, errmsg_len) bind(C,name="_gfortran_caf_co_broadcast")
+#endif
+      import :: c_int,c_char,c_ptr
+      type(c_ptr), intent(in), value :: a
+      integer(c_int), intent(in),  value :: source_image,errmsg_len
+      integer(c_int), intent(out), optional :: stat
+      character(kind=c_char), intent(out), optional :: errmsg(*)
+    end subroutine
+
+    ! C function signature from ../mpi/mpi_caf.c:
+    ! int PREFIX (this_image) (int);
+    function opencoarrays_this_image(coarray) bind(C,name="_gfortran_caf_this_image") result(image_num)
+      import :: c_int
+      integer(c_int), value, intent(in) :: coarray
+      integer(c_int)  :: image_num
+    end function
+
+    ! C function signature from ../mpi/mpi_caf.c:
+    ! int PREFIX (num_images) (int, int);
+    function opencoarrays_num_images(coarray,dim_) bind(C,name="_gfortran_caf_num_images") result(num_images_)
+      import :: c_int
+      integer(c_int), value, intent(in) :: coarray,dim_
+      integer(c_int) :: num_images_
+    end function
+
+    ! C function signature from ../mpi_caf.c
+    ! void PREFIX (error_stop) (int32_t) __attribute__ ((noreturn));
+#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
+    subroutine opencoarrays_error_stop(stop_code) bind(C,name="_caf_extensions_error_stop") 
+#else
+    subroutine opencoarrays_error_stop(stop_code) bind(C,name="_gfortran_caf_error_stop") 
+#endif
+      import :: c_int32_t
+      integer(c_int32_t), value, intent(in) :: stop_code
+    end subroutine 
+
+    ! C function signature from ../mpi_caf.c
+    ! void PREFIX (sync_all) (int *, char *, int);
+#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
+    subroutine opencoarrays_sync_all(stat,errmsg,unused) bind(C,name="_caf_extensions_sync_all") 
+#else
+    subroutine opencoarrays_sync_all(stat,errmsg,unused) bind(C,name="_gfortran_caf_sync_all") 
+#endif
+      import :: c_int,c_char
+      integer(c_int), intent(out) :: stat,unused
+      character(c_char), intent(out) :: errmsg(*)
+    end subroutine 
+
+  end interface
+
 
 contains
 
@@ -265,6 +376,23 @@ contains
 
   function gfc_descriptor_c_int(a) result(a_descriptor)
     integer(c_int), intent(in), target, contiguous :: a(..)
+    type(gfc_descriptor_t) :: a_descriptor
+    integer(c_int), parameter :: unit_stride=1,scalar_offset=-1
+    integer(c_int) :: i
+
+    a_descriptor%dtype = my_dtype(type_=BT_INTEGER,kind_=int(c_sizeof(a)/bytes_per_word,c_int32_t),rank_=rank(a))
+    a_descriptor%offset = scalar_offset 
+    a_descriptor%base_addr = c_loc(a) ! data
+    do concurrent(i=1:rank(a))
+      a_descriptor%dim_(i)%stride  = unit_stride
+      a_descriptor%dim_(i)%lower_bound = lbound(a,i)
+      a_descriptor%dim_(i)%ubound_ = ubound(a,i)
+    end do
+
+  end function
+
+  function gfc_descriptor_c_bool(a) result(a_descriptor)
+    logical(c_bool), intent(in), target, contiguous :: a(..)
     type(gfc_descriptor_t) :: a_descriptor
     integer(c_int), parameter :: unit_stride=1,scalar_offset=-1
     integer(c_int) :: i
@@ -315,6 +443,69 @@ contains
  !  end do
   
  !end function
+
+  ! ______ Assumed-rank co_reduce wrappers for each supported type and kind _________
+  ! _________________________________________________________________________________
+
+    subroutine co_reduce_c_int(a, opr, result_image, stat, errmsg) 
+      ! Dummy variables
+      integer(c_int), intent(inout), volatile, contiguous :: a(..)
+      procedure(c_int_operator) :: opr
+      integer(c_int), intent(in), optional :: result_image
+      integer(c_int), intent(out), optional, volatile :: stat
+      character(kind=c_char), intent(out), optional, volatile :: errmsg(*)
+      ! Local variables
+      integer(c_int), volatile :: opr_flags_unused,a_len_unused,errmsg_len
+      type(gfc_descriptor_t), target :: a_descriptor
+      integer(c_int), parameter :: default_result_image=0
+      integer(c_int) :: result_image_
+
+      result_image_ = merge(result_image,default_result_image,present(result_image)) 
+      a_descriptor = gfc_descriptor(a)
+      call opencoarrays_co_reduce( &
+        c_loc(a_descriptor), c_funloc(opr), opr_flags_unused, result_image, stat, errmsg, a_len_unused, errmsg_len &
+      ) 
+    end subroutine
+
+    subroutine co_reduce_c_bool(a, opr, result_image, stat, errmsg) 
+      ! Dummy variables
+      logical(c_bool), intent(inout), volatile, contiguous :: a(..)
+      procedure(c_bool_operator) :: opr
+      integer(c_int), intent(in), optional :: result_image
+      integer(c_int), intent(out),optional , volatile :: stat
+      character(kind=c_char), intent(out), optional, volatile :: errmsg(*)
+      ! Local variables
+      integer(c_int), volatile :: opr_flags_unused,a_len_unused,errmsg_len
+      type(gfc_descriptor_t), target :: a_descriptor
+      integer(c_int), parameter :: default_result_image=0
+      integer(c_int) :: result_image_
+
+      result_image_ = merge(result_image,default_result_image,present(result_image)) 
+      a_descriptor = gfc_descriptor(a)
+      call opencoarrays_co_reduce( &
+        c_loc(a_descriptor), c_funloc(opr), opr_flags_unused, result_image, stat, errmsg, a_len_unused, errmsg_len &
+      ) 
+    end subroutine
+
+    subroutine co_reduce_c_double(a, opr, result_image, stat, errmsg) 
+      ! Dummy variables
+      real(c_double), intent(inout), volatile, contiguous :: a(..)
+      procedure(c_double_operator) :: opr
+      integer(c_int), intent(in), optional :: result_image
+      integer(c_int), intent(out), optional, volatile :: stat
+      character(kind=c_char), intent(out), optional, volatile :: errmsg(*)
+      ! Local variables
+      integer(c_int), volatile :: opr_flags_unused,a_len_unused,errmsg_len
+      type(gfc_descriptor_t), target :: a_descriptor
+      integer(c_int), parameter :: default_result_image=0
+      integer(c_int) :: result_image_
+
+      result_image_ = merge(result_image,default_result_image,present(result_image)) 
+      a_descriptor = gfc_descriptor(a)
+      call opencoarrays_co_reduce( &
+        c_loc(a_descriptor), c_funloc(opr), opr_flags_unused, result_image, stat, errmsg, a_len_unused, errmsg_len &
+      ) 
+    end subroutine
 
   ! ______ Assumed-rank co_broadcast wrappers for each supported type and kind _________
   ! ____________________________________________________________________________________
@@ -373,6 +564,34 @@ contains
     a_descriptor = gfc_descriptor(a)
     call opencoarrays_co_broadcast(c_loc(a_descriptor),source_image_, stat, errmsg, len(errmsg)) 
 
+  end subroutine
+
+  ! ________ Assumed-rank get wrappers for each supported type and kind ________________
+  ! ________ (Incomplete, private and unsupported) _____________________________________
+  ! ____________________________________________________________________________________
+
+  subroutine get_c_int(src , dest, image_index_, offset, mrt) 
+    use iso_fortran_env, only : error_unit
+    ! Dummy arguments:
+    integer(c_int), intent(in), target, contiguous :: src(..)
+    integer(c_int), intent(out), target, contiguous, volatile :: dest(..)
+    integer(c_int), intent(in) :: image_index_
+    integer(c_ptrdiff_t), intent(in) :: offset 
+    logical(c_bool), intent(in) :: mrt
+    ! Local variables:
+    type(gfc_descriptor_t), target, volatile ::  dest_descriptor
+    type(gfc_descriptor_t), target :: src_descriptor
+    type(caf_vector_t) :: src_vector_unused
+    type(c_ptr) :: token
+
+    write(error_unit,*) "Remote access of coarrays not yet supported"
+    call error_stop
+
+    src_descriptor = gfc_descriptor(src)
+    dest_descriptor = gfc_descriptor(dest)
+    call opencoarrays_get( &
+     token, offset, image_index_, src_descriptor, src_vector_unused, dest_descriptor, kind(src), kind(dest), mrt &
+    )
   end subroutine
 
   ! ________ Assumed-rank co_min wrappers for each supported type and kind _____________
@@ -526,4 +745,3 @@ contains
 #endif 
 
 end module
-  
