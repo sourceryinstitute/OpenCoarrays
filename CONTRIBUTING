@@ -5,75 +5,17 @@ a contribution of code to OpenCoarrays to be approved.
 
 ----------------------------------------------------------------------
 
-Small patches
+Pull requests
 
-For a small and simple patch we accept a pull request
-on the GitHub repository.
+We accept pull requests on the GitHub repository.
 Please follow the procedure explained at
-https://confluence.atlassian.com/display/BITBUCKET/Work+with+pull+requests.
+https://help.github.com/articles/using-pull-requests/.
 
 Remember to use the following command
 
 git commit --signoff
 
-in order to accept the DCO.
-
-For a more complex and invasive patch please follow the Regular patches 
-procedure.
-
-----------------------------------------------------------------------
-
-Regular patches
-
-A patch can be structured in two parts: ChangeLog and actual patch.  The ChangeLog 
-should contain a description of the problem/bug, how the patch fixes the
-problem/bug, the date, the author name and email address, and the 
-signed-off-by line as detailed below.
-
-The patch can be automatically created using 
-
-git show > patch.diff
-
-after a local commit on the repository.
-
-Once a patch is created, the ChangeLog can be written on
-top of it in plain-text according to the following format:
-
-/--------------------------------------------------------------------\
-
-<yyyy-mm-dd> + two spaces + <First and Last Name> + two spaces + <email>
-
-optionally followed by <tab> + 4 spaces + Name/email of the second/third/... contributor
-
-Empty line.
-
-And then:
-<tab> + * <filename> (<section1>, <section2>): <what you did>.
-<tab> + (<section3>): <what else you did>.
-<tab> + * <filename2> (<section>): <ditto>.
-
-Signed-off-by: <First and Last Name>  <email> (for each author)
-
-/--------------------------------------------------------------------\
-
-The last line certifies the DCO agreement (see below).
-
-
-Patch submission
-
-In order to submit a patch, a contributor should send the .diff file 
-(complete with ChangeLog and source) to opencoarrays@googlegroups.com,
-after which the patch will be reviewed.  Once a common agreement has 
-been reached, the patch will be committed to the repository by one of 
-the OpenCoarrays developers.
-
-In order to contribute to the OpenCoarrays project, you must
-certify compliance with the Developer's Certificate of Origin (DCO),
-quoted below.
-
-If you are a company employee who contributes to OpenCoarrays on your 
-employer's behalf, please request a required form via the aforementioned
-mailing list. 
+in order to accept the Developer Certificate of Origin (below).
 
 --------------------------------------------------------------------
 
