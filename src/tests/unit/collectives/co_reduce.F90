@@ -36,7 +36,7 @@ module co_intrinsics_module
   public :: co_product
 
   interface co_all
-    module procedure co_all_c_bool
+    module procedure co_all_logical
   end interface
 
   interface co_product
@@ -45,14 +45,13 @@ module co_intrinsics_module
 
 contains
 
-  subroutine co_all_c_bool(a)
-    use iso_c_binding, only : c_bool
-    logical(c_bool), intent(inout) :: a
+  subroutine co_all_logical(a)
+    logical, intent(inout) :: a
     call co_reduce(a,and)
   contains
     pure function and(lhs,rhs) result(lhs_and_rhs) bind(C,name="and")
-      logical(c_bool), intent(in) :: lhs,rhs
-      logical(c_bool) :: lhs_and_rhs
+      logical, intent(in) :: lhs,rhs
+      logical :: lhs_and_rhs
       lhs_and_rhs = lhs .and. rhs 
     end function
   end subroutine
@@ -85,29 +84,29 @@ end module
 
 program main
   use iso_fortran_env, only : error_unit 
-  use iso_c_binding, only : c_int,c_double,c_bool
+  use iso_c_binding, only : c_int,c_double
   use co_intrinsics_module, only : co_all,co_product
 #ifdef USE_EXTENSIONS
   use opencoarrays
 #endif
   implicit none               
-  logical :: c_bool_passes=.false.,c_int_passes=.false.
+  logical :: logical_passes=.false.,c_int_passes=.false.
 
 #ifdef USE_EXTENSIONS
   if (this_image()==1) print *,"Using the extensions from the opencoarrays module."
 #endif
 
   ! Verify that every image has a "true" variable with the value .true.
-  verify_co_reduce_c_bool: block 
-    logical(c_bool) :: true=.true.
+  verify_co_reduce_logical: block 
+    logical :: true=.true.
     sync all
     call co_all(true)
     if (true) then
-      c_bool_passes=.true.
+      logical_passes=.true.
     else
-      write(error_unit,"(2(a,i2))") "co_reduce fails for logical(c_bool) argument with result (",true,") on image",this_image()
+      write(error_unit,"(2(a,i2))") "co_reduce fails for logical argument with result (",true,") on image",this_image()
     end if
-  end block verify_co_reduce_c_bool
+  end block verify_co_reduce_logical
 
   ! Verify the product of image number 
   verify_co_reduce_c_int: block 
@@ -123,7 +122,7 @@ program main
   end block verify_co_reduce_c_int
 
   ! Verify that this image's tests passed
-  if (.not.all([c_bool_passes,c_int_passes])) error stop
+  if (.not.all([logical_passes,c_int_passes])) error stop
 
   ! Wait for verification that all images to pass the tests
   sync all

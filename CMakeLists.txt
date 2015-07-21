@@ -150,6 +150,6 @@ else()
   add_test(co_max_extension ${tests_root}/unit/extensions/test-co_max-extension.sh)
   set_property(TEST co_max_extension PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
 
-#  add_test(co_reduce_extension ${tests_root}/unit/extensions/test-co_reduce-extension.sh)
-#  set_property(TEST co_reduce_extension PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
+  add_test(co_reduce_extension ${tests_root}/unit/extensions/test-co_reduce-extension.sh)
+  set_property(TEST co_reduce_extension PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
 endif()

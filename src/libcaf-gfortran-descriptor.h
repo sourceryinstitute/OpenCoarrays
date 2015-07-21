@@ -85,9 +85,10 @@ typedef struct gfc_descriptor_t {
    | (sizeof(__int128_t) << GFC_DTYPE_SIZE_SHIFT))
 #endif
 
-#if 0
 #define GFC_DTYPE_LOGICAL_4 ((BT_LOGICAL << GFC_DTYPE_TYPE_SHIFT) \
    | (sizeof(int) << GFC_DTYPE_SIZE_SHIFT))
+
+#if 0
 #define GFC_DTYPE_LOGICAL_1 ((BT_LOGICAL << GFC_DTYPE_TYPE_SHIFT) \
    | (sizeof(GFC_LOGICAL_1) << GFC_DTYPE_SIZE_SHIFT))
 #define GFC_DTYPE_LOGICAL_2 ((BT_LOGICAL << GFC_DTYPE_TYPE_SHIFT) \
@@ -133,8 +134,9 @@ typedef struct gfc_descriptor_t {
     and logical(kind=c_bool) data:
 */
 #define GFC_DTYPE_CHARACTER 944 
-#define GFC_DTYPE_LOGICAL_4 80
+
 #if 0
+#define GFC_DTYPE_LOGICAL_4 8
 #define GFC_DTYPE_CHARACTER ((BT_CHARACTER << GFC_DTYPE_TYPE_SHIFT) \
    | (sizeof(char) << GFC_DTYPE_SIZE_SHIFT))
 #endif
