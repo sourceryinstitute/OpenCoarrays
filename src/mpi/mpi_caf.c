@@ -1842,7 +1842,7 @@ get_MPI_datatype (gfc_descriptor_t *desc)
     case GFC_DTYPE_CHARACTER:
       return MPI_CHARACTER;
     }
-  caf_runtime_error ("Unsupported data type in collective\n"); 
+  caf_runtime_error ("Unsupported data type in collective: %ld\n",GFC_DTYPE_TYPE_SIZE (desc)); 
   return 0;
 }
 

@@ -33,9 +33,7 @@ module opencoarrays
   implicit none
 
   private
-#ifndef USE_EXTENSIONS
   public :: co_reduce
-#endif
   public :: co_broadcast
   public :: co_sum
   public :: co_min
@@ -56,7 +54,7 @@ module opencoarrays
 
   ! Generic interface to co_broadcast with implementations for various types, kinds, and ranks
   interface co_reduce
-     module procedure co_reduce_c_int,co_reduce_c_double,co_reduce_c_bool
+     module procedure co_reduce_c_int,co_reduce_c_double,co_reduce_logical
   end interface 
 
   ! Generic interface to co_broadcast with implementations for various types, kinds, and ranks
@@ -90,10 +88,9 @@ module opencoarrays
        real(c_double), intent(in) :: lhs,rhs
        real(c_double) :: lhs_op_rhs
      end function
-     pure function c_bool_operator(lhs,rhs) result(lhs_op_rhs)
-       import c_bool
-       logical(c_bool), intent(in) :: lhs,rhs
-       logical(c_bool) :: lhs_op_rhs
+     pure function logical_operator(lhs,rhs) result(lhs_op_rhs)
+       logical, intent(in) :: lhs,rhs
+       logical :: lhs_op_rhs
      end function
   end interface
 
@@ -193,7 +190,7 @@ module opencoarrays
   integer(c_int32_t), parameter  :: bytes_per_word=4_c_int32_t
 
   interface gfc_descriptor
-    module procedure gfc_descriptor_c_int,gfc_descriptor_c_double,gfc_descriptor_c_bool
+    module procedure gfc_descriptor_c_int,gfc_descriptor_c_double,gfc_descriptor_logical
   end interface
 
   ! Bindings for OpenCoarrays C procedures
@@ -221,9 +218,9 @@ module opencoarrays
     !                     int result_image, int *stat, char *errmsg, int a_len, int errmsg_len) 
     subroutine opencoarrays_co_reduce(a, opr, opr_flags, result_image, stat, errmsg, a_len, errmsg_len) &
 #ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
-      bind(C,name="_caf_extensions_co_min")
+      bind(C,name="_caf_extensions_co_reduce")
 #else
-      bind(C,name="_caf_extensions_co_min")
+      bind(C,name="_gfortran_extensions_co_reduce")
 #endif
       use iso_c_binding, only : c_ptr,c_funptr,c_int,c_char
       type(c_ptr), intent(in), value :: a
@@ -232,7 +229,7 @@ module opencoarrays
       integer(c_int), intent(out) :: stat
       character(kind=c_char), intent(out), optional, volatile :: errmsg(*)
       integer(c_int), intent(in), value :: a_len
-      integer(c_int), intent(out), optional, volatile :: errmsg_len
+      integer(c_int), intent(in), value :: errmsg_len
     end subroutine
 
     ! C function signature from ../mpi/mpi_caf.c:
@@ -391,13 +388,13 @@ contains
 
   end function
 
-  function gfc_descriptor_c_bool(a) result(a_descriptor)
-    logical(c_bool), intent(in), target, contiguous :: a(..)
+  function gfc_descriptor_logical(a) result(a_descriptor)
+    logical, intent(in), target, contiguous :: a(..)
     type(gfc_descriptor_t) :: a_descriptor
-    integer(c_int), parameter :: unit_stride=1,scalar_offset=-1
+    integer(c_int), parameter :: unit_stride=1,scalar_offset=-1,words=1
     integer(c_int) :: i
 
-    a_descriptor%dtype = my_dtype(type_=BT_INTEGER,kind_=int(c_sizeof(a)/bytes_per_word,c_int32_t),rank_=rank(a))
+    a_descriptor%dtype = my_dtype(type_=BT_LOGICAL,kind_=words,rank_=rank(a))
     a_descriptor%offset = scalar_offset 
     a_descriptor%base_addr = c_loc(a) ! data
     do concurrent(i=1:rank(a))
@@ -463,14 +460,14 @@ contains
       result_image_ = merge(result_image,default_result_image,present(result_image)) 
       a_descriptor = gfc_descriptor(a)
       call opencoarrays_co_reduce( &
-        c_loc(a_descriptor), c_funloc(opr), opr_flags_unused, result_image, stat, errmsg, a_len_unused, errmsg_len &
+        c_loc(a_descriptor), c_funloc(opr), opr_flags_unused, result_image_, stat, errmsg, a_len_unused, errmsg_len &
       ) 
     end subroutine
 
-    subroutine co_reduce_c_bool(a, opr, result_image, stat, errmsg) 
+    subroutine co_reduce_logical(a, opr, result_image, stat, errmsg) 
       ! Dummy variables
-      logical(c_bool), intent(inout), volatile, contiguous :: a(..)
-      procedure(c_bool_operator) :: opr
+      logical, intent(inout), volatile, contiguous :: a(..)
+      procedure(logical_operator) :: opr
       integer(c_int), intent(in), optional :: result_image
       integer(c_int), intent(out),optional , volatile :: stat
       character(kind=c_char), intent(out), optional, volatile :: errmsg(*)
@@ -483,7 +480,7 @@ contains
       result_image_ = merge(result_image,default_result_image,present(result_image)) 
       a_descriptor = gfc_descriptor(a)
       call opencoarrays_co_reduce( &
-        c_loc(a_descriptor), c_funloc(opr), opr_flags_unused, result_image, stat, errmsg, a_len_unused, errmsg_len &
+        c_loc(a_descriptor), c_funloc(opr), opr_flags_unused, result_image_, stat, errmsg, a_len_unused, errmsg_len &
       ) 
     end subroutine
 
@@ -503,7 +500,7 @@ contains
       result_image_ = merge(result_image,default_result_image,present(result_image)) 
       a_descriptor = gfc_descriptor(a)
       call opencoarrays_co_reduce( &
-        c_loc(a_descriptor), c_funloc(opr), opr_flags_unused, result_image, stat, errmsg, a_len_unused, errmsg_len &
+        c_loc(a_descriptor), c_funloc(opr), opr_flags_unused, result_image_, stat, errmsg, a_len_unused, errmsg_len &
       ) 
     end subroutine
 
