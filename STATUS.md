@@ -40,7 +40,9 @@ Known Issues
   cover the applications communicaiton needs or applications or
   applications for which another communication library provides any 
   communication needs not covered by the proposed collectives
-  
+* Efficient strided array transfer support is available only for intrinsic types.
+* Efficient strided array transfer support is not available for remote-to-remote transfers.
+* Overwriting a coarray with itself is not managed efficiently for strided transfers.
    
 Basic Communication Support
 ---------------------------
@@ -50,8 +52,6 @@ Basic Communication Support
 * For character assignments, some issues with padding and
   character kind conversions exist.
 * For array assignments, some issues with numeric type conversion exist.
-* Efficient strided array transfer support is available only for intrinsic types.
-* Overwriting a coarray with itself is not managed efficiently for strided transfers.
 
 Compiler-side (GCC) issues
 --------------------------
@@ -87,7 +87,6 @@ Collectives
   integer(c_int), real(c_double), character(kind=c_kind), logical, 
   and complex(c_double).  Users are invited to submit pull requests with
   support for additional kinds.
-* As of OpenCoarrays 1.0.0, support for non-scalars is untested.
   
 To-Do List
 ----------
