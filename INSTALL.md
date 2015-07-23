@@ -1,178 +1,197 @@
-INSTALLATION
+# INSTALLATION and USE#
 
-See also the implementation status in the file STATUS
+I. [End-User Installation](#enduser)
+  A. [OS X](#osx)
+  B. [Windows](#windows)
+  C. [Linux](#linux)
+II. Building from Source
+  A. [Prerequisites](#prerequisites)
+  B. [CMake](#cmake)
+  C. [Make](#make)
+III.[Compiling and Executing a CAF Program](#compilingcaf)
+  A. [The "caf" compiler wrapper and "cafrun" program launcher](#wrapperlauncher)
+  B. [Sample basic workflow](#basicworkflow)
+  C. [Sample advanced workflows](#advancedworkflow)
+    1. [Compiling with an OpenCoarrays-aware compiler](#aware) (e.g., GCC 5.1.0)
+    2. [Compiling with a non-CAF compiler](#noncaf)
+    3. [Compiling with a non-gfortran CAF compiler](#nongfortran)
+IV. [Obtaining GCC](#obtaingcc)
 
-Introduction
-------------
+## <a name="enduser">End-User Installation</a> ##
+Most end users will find it simplest to obtain OpenCoarrays via package
+management software or virtualization.  
 
-This file targets system administrators and developers who require access to
-the entire OpenCoarrays distribution, including experimental libraries that
-are intended only for advanced users.  Most end users will find it simpler 
-to install the subset of the OpenCoarrays distribution that is included in  
-the tar ball on http://www.opencoarrays.org.  Users can either access that
-tar ball directly and build using CMake or Make or install the contents of
-the tar ball using package management software such as Macports for OS X,
-apt-get for Linux, or Cygwin for Windows.
+### <a name="osx">OS X</a> ###
+We have developed a  Portfile that we will submit for inclusion into the
+[MacPorts](http://www.macports.org) package management software  
+after posting the OpenCoarrays 1.0.0 tar ball online.  Once the OpenCoarrays 
+Portfile has been incorporated into MacPorts, users can install OpenCoarrays
+on OS X by installing MacPorts and then typing the following:
 
-The following documentation provides instructions on how to set up the coarray
-support on GNU Fortran, using the OpenCoarrays library, and how to compile and
-run a simple coarray program.
+sudo port selfupdate
+sudo port upgrade outdated
+sudo port install opencoarrays
 
-As prerequisite for using OpenCoarrays, gfortran from GCC 5 is required; see
-below for how to obtain it.  The OpenCoarrays libraries can also build with
-other compilers than GCC 5.
+Administrator privileges are required for issuing the above "sudo" commands.  
+Also, the first two steps above are required only if your MacPorts ports 
+were last updated prior to the incorporation of the OpenCoarrays Portfile
+into MacPorts. 
 
+### <a name="windows">Windows</a> ###
+Windows users will find it easiest to download the Lubuntu Linux virtual 
+machine from the [Sourcery Store](http://www.sourceryinstitute.org/store).  The virtual machine boots inside
+the open-source [VirtualBox](http://www.virtualbox.org) virtualization package.
+In addition to containing GCC 4.9, 5.2, and 6.0, MPICH, OpenMPI, and OpenCoarrays, 
+the virtual machine contains dozens of other open-source software packages that 
+support software development in modern Fortran.  See the [download and installation instructions](http://www.sourceryinstitute.org/uploads/4/9/9/6/49967347/overview.pdf) for a partial list of the included
+packages.  
 
-OpenCoarrays Installation
--------------------------
+### <a name="linux">Linux</a> ###
+Linux users might also access OpenCoarrays via the the Lubuntu Linux virtual 
+machine from the [Sourcery Store](http://www.sourceryinstitute.org/store) after installing the version of [VirtualBox](http://www.virtualbox.org) that is suitable for your Linux distribution.  Alternatively,
+if it is desired to install using Linux package management software such as [yum](http://yum.baseurl.org) or [apt-get](https://en.wikipedia.org/wiki/Advanced_Packaging_Tool),
+please submit a feature request via our [Issues](https://github.com/sourceryinstitute/opencoarrays/issues)
+page.
 
-OpenCoarrays contains four libraries; if in doubt, use the MPI version:
+### <a name="buildingfromsource">Building from source</a> ###
 
-* single
-  Provides a stub library with a single image. To be used for testing or
-  to turn a parallel program into a single-image program to avoid dependencies
-  on other libraries.
-  Requires only a C compiler.
+#### <a name="prerequisits">Prerequisites</a>: ####
+For broad coverage of CAF features, ease of installation, and ease of use, first install the following:
+* GCC 5.1 (or later) Fortran and C compilers (for co_reduce support, use the pre-release GCC 5.3 branch or later)
+* MPI, preferably [MPICH](http://www.mpich.org) or [MVAPICH](http://mvapich.cse.ohio-state.edu). 
 
-* mpi - recommended version
-  Communication library base on the Message Passing Interface (MPI); requires
-  an MPI 3 implementation. (MPI 2 works with some restrictions.)
-  MPICH, Open MPI, MVAPICH are common free implementations; vendor MPI
-  implementations are typically based on either of them.  As MPI 3 is new and
-  several MPI implementations have recently improved the one-sided
-  communication (RMA, remote-memory access), consider using the newest release.
-  We recommend to use MPICH or MVAPICH.
-
-* gasnet
-  Communication library based on GASNet (Global Address Space Network,
-  http://gasnet.lbl.gov/). More difficult to setup and use but has typically a
-  higher performance than MPI. Requires that the same compiler is used for both
-  the compilation of GASNet itself and for the library.
-
-* armci - unsupported/not working
-  Communication library based on ARMCI (Aggregate Remote Memory Copy Interface,
-  http://hpc.pnl.gov/armci/).  The libcaf_armci library is currently not
-  supported in OpenCoarrays and uses an older ABI.
-  Only included in OpenCoarrays to make it simpler for interested parties to
-  implement a working libcaf_armci without starting from scratch.
-
-Note:
-* It is sufficient to compile only the library you are interested in.
-* Any C compiler can be used. In particular, older GCC or different compilers
-  work as well.	 However, for MPI ABI compatibility, using a recent GCC for
-  compilation is preferred
-
-
-Prerequisites
--------------
-
-- Single: (none except for a C compiler)
-- MPI: Installed MPI implementation with the "mpicc" wrapper either in the
-  path
-- GASNet: Installed GASNet; same C compiler as used for compiling GASNet;
-  knowledge where GASNet has been installed.
+For limited CAF coverage via the "caf" compiler wrapper and the ["opencoarrays"](src/extensions/opencoarrays.F90) module, install the following:
+* Any Fortran compiler that supports the C-interoperability features of Fortran 2003
+* Any C compiler that supports the C99 standard.
+* Any MPI implementation that supports the MPI 3.0 standard (preferably [MPICH](http://www.mpich.org) or [MVAPICH](http://mvapich.cse.ohio-state.edu) for robustness and performance)
 
 
-Build the libraries with CMake (preferred)
+<a name="cmake">CMake</a> 
 ------------------------------------------
-Although CMake (http://www.cmake.org) is the preferred build system, we also 
-provide a static Makefile inside the src source directory.  CMake is 
-cross-platform and more automated than Make and therefore less work to maintain.
-Our CMake scripts require build in a directory outside the source tree.  As an 
-example, one might set the requisite environment variables and generate the
-Makefiles inside a neighboring directory in the bash shell as follows:
+[CMake](http://www.cmake.org) is the preferred build system.   CMake is 
+a cross-platform Makefile generator that includes with the testing tool CTest.
+to avoid cluttering or clobbering the source tree, our CMake setup requires that 
+your build directory be any directory other than the top-level OpenCoarrays source
+directory.  In a bash shell, the following steps should build and install OpenCoarrays,
+build and run our test suite, and report the test results.
 
-mkdir Build
-cd Build
-CC=mpicc FC=mpif90 cmake ../opencoarrays/ -DCMAKE_INSTALL_PREFIX=${PWD}
-
-whereupon the following commands respectively build the OpenCoarrays static
-libraries libcaf_mpi.a and libcaf_single.a, install them in the present 
-working inside a subdirectory named "lib", and run all tests:
-
-make
+tar xvzf opencoarrays.tar.gz
+cd opencoarrays
+mkdir build
+CC=mpicc FC=mpif90 cmake .. -DCMAKE_INSTALL_PREFIX=${PWD}
+make 
 make install
 ctest
 
-We recommend running the tests to ensure a correct installation.  The tests 
-directory includes unit tests, integration tests (small applications), and 
-performance tests.  Please report any test failures to opencoarrays@googlegroups.com.  
+where the the first part of the cmake line sets the CC and FC environment variables
+and the final part of the sameline defines the present working directory ("build") 
+as the installation path.  Please report any test failures to via the OpenCoarrays
+[Issues](https://github.com/sourceryinstitute/opencoarrays/issues) page.  
 
-In order to work around compiler-specific bugs or missing language features, the
-CMake set-up creates include files named "compiler_capabilities.txt"  into the source 
-tree. Typing "make clean" inside the top level of your build directory will remove these.  
+A complete installation should result in the creation of the following directories
+inside the installation path (.e.g, inside "build" in the above example):
 
-Advanced options (these affect only three tests and most users should not use them): 
+* bin: contains the "caf" compiler wrapper and the "cafrun" launcher bash scripts
+* mod: contains the "opencoarrays.mod" module file for use with non-OpenCoarrays-aware compilers
+* lib: contains the "libcaf_mpi.a" static library to which codes link for CAF support
+
+Advanced options (most users should not use these): 
   -DLEGACY_ARCHITECTURE=OFF enables the use of FFT libraries that employ AVX instructions
   -DHIGH_RESOLUTION_TIMER=ON enables timers that tick once per clock cycle
+  -DCOMPILER_SUPPORTS_ATOMICS enables support for the proposed Fortran 2015 events feature
+The first two flags above are not portable and the third enables code that is incomplete as 
+of release 1.0.0.
 
-How to build OpenCoarrays with Make
------------------------------------
-To build with Make, use steps such as the following: 
+#### <a name="make">Make</a> ####
+Unlike the Makefiles that CMake generates automatically for the chosen platform, static 
+Makefiles require a great deal more maintenance and are less portable.  Also, the static
+Makefiles provided with OpenCoarrays lack several important capabilities.  In particular,
+they will not build the tests;  they will not build any of the infrastructure for compiling
+CAF soruce with non-OpenCoarrays-aware compilers (that infrastructure includes the 
+["opencoarrays" module](src/extensions/opencoarrays.F90), the "caf" compiler wrapper, 
+and the "cafrun" program launcher); nor do they provide a "make install" option so you will 
+need to manually move the desired library from its directory (e.g., src/mpi/libcaf_mpi.a) 
+to your intended installation location.
+
+If CMake is unavailable, build and install with Make using steps such as the following: 
 
 cd src
-make single mpi
+make
+mv src mpi/libcaf_mpi.a <installation-path>
 
-which builds libcaf_single.a and libcaf_mpi.a.  Or drop the "single mpi" above
-to build the default library (libcaf_mpi.a).
+For the above steps to succeeed, you might need to edit the "make.inc" file to match your 
+system settings, e.g., you might need to remove the "-Werror" option from the compiler flags 
+or name a different compiler.  In order to activate efficient strided-array transfer support, 
+uncomment the -DSTRIDED flag inside the "make.inc" file.
 
-You might need to edit the "make.inc" file for your system settings, e.g.
-you migt need to remove the "-Werror" option from the compile flags, set
-a different compiler or similar.
+## <a name="compilingcaf">Compiling and Executing a CAF Program</a> ##
+### <a name="wrapperlauncher">The "caf" compiler wrapper and "cafrun" program launcher</a> ###
+The preferred method for compiling and executing a CAF program is by invoking the "caf" and 
+"cafun" bash scripts that the compiler installs in the "bin" subdirectory of the installation
+installation path. These are new, experimental scripts with limited capabilities but very
+useful capabilities that will grow over time.  Please submit bug reports and feature requests 
+via our [Issues](https://github.com/sourceryinstitute/opencoarrays/issues) page.
 
-For GASNet, set GASNET_MAK to point to your GASNet installation
-with the conduit which should be used.
+The "caf" and "cafrun" scripts librarate your source code and workflow from explicit
+dependence on the underlying compiler and communication library in the following ways: 
 
-In order to activate efficient strided-array transfer support, uncomment
-the -DSTRIDED flag inside the "make.inc" file.
+1. "caf" automatically embeds the relevant library path (e.g., libcaf_mpi.a) in the compile command.
+2. With a non-CAF compiler (including gfortran 4.9), "caf" supports a subset of CAF by replacing 
+   by replacing CAF statements with calls to procedures in the ["opencoarrays" module](src/extensions/opencoarrays.F90).  
+3. With non-CAF compilers and non-gfortran CAF compilers, "caf" embeds an argument in the compile
+   statement to support accessing OpenCoarrays capabilities via use association (i.e.,
+   "use opencoarrays"). To avoid inadvertent procedure procedure name overloading with non-gfortran
+   CAF compilers, we recommend adding an "only" clause as in "use opencoarrays, only : co_reduce". 
+4. With a non-gfortran CAF compiler (e.g., Cray and Intel), "caf" extends the compiler's capabilities 
+   by providing features that are proposed for Fortran 2015 in the draft 
+   [Technical Specification TS18508 Additional Parallel Features in Fortran](http://isotc.iso.org/livelink/livelink?func=ll&objId=17181227&objAction=Open).
 
+The latter use case provides an opportunity to mix a compiler's CAF support with that of OpenCoarrays.  
+For example, a non-gfortran CAF compiler might support all of a program's coarray square-bracket syntax, 
+while OpenCoarrays supports the same program's calls to collective subrouine such as co_sum and co_reduce.
 
-Compiling with Make on CRAY:
+### <a name="basicworkflow">A sample basic workflow</a> ###
+Inserting the "bin" directory of the chosen installation path into the user's PATH enables the following
+CAF program compilation and execution workflow:
 
-* Rename "make.inc.Cray-XE" to "make.inc"
-* Run: module swap PrgEnv-cray PrgEnv-gnu
-* You may need to update the GASNet path and the used compiler for GASNet
-  or change other settings
-* Run "make" with the library which should be created
+  $ cat sum_image_numbers.f90
+  program main
+    use iso_c_binding, only : c_int
+    use iso_fortran_env, only : error_unit
+    implicit none
+    integer(c_int) :: tally
+    tally = this_image() ! this image's contribution 
+    call co_sum(tally)
+    verify: block
+      integer(c_int) :: image
+      if (tally/=[(image,image=1,num_images())]) then
+         write(error_unit,'(a,i5)') "Incorrect tally on image ",this_image()
+         erro stop
+      end if
+    end block verify
+    ! Wait for all images to pass the test
+    sync all
+    if (this_image()==1) print *,"Test passed"
+  end program
+  
+  $ caf sum_image_numbers.f90
+  $ cafrun -np 4 ./sum_image_numbers
+  Test passed.
 
-We currently don't have a "make install" option.  If you build with Make,
-then install the libraries in the directly of your choice by simply copying
-from where Make puts them in their respective source-tree subdirectory 
-(src/single/libcaf_single.a, src/mpi/libcaf_mpi.a, etc.) to the location
-of your choice.
+where "4" is the number of images you want to use.
 
-Many of the tests have static Makefiles in their respective subdirectories
-(e.g., src/tests/integration/coarrayHelloWorld/Makefile).  Please run several
-tests to ensure verify correct installation and execution of the library.
+### <a name="advancedworkflow">Sample advanced workflows</a> ###
 
-How to compile and run a coarray program
-----------------------------------------
+1. <a name="aware">Use with an OpenCoarrays-aware compiler</a> (e.g., GCC 5.1.0):
+A hello.f90 program can compiled in a single step using the following string:
 
-The following explanation assumes the reader will use the OpenCoarrays MPI transport layer and
-has installed it to the path /opt/opencarrays/, in which case there will be one subdirectory
-/opt/opencoarrays/lib containing libcaf_mpi.a and another subdirectory /opt/opencoarrays/mod
-containing a compiler generated module file.  Otherwise, substitute the appropriate path
-for paths that appear below.
-
-We originally OpenCoarrays for use with compilers that are capable of generating calls directly
-to an OpenCoarrays transport layer (e.g., libcaf_mpi.a) automatically.  In response to a user
-request, however, we now offer limited support for use with other compilers.  Both use cases
-are described below.
-
-1. Use with an OpenCoarrays-enabled compiler (e.g., GCC 5.0.1 or later):  
-A hello.f90 program can compiled in a single step using the following
-string:
-
-  mpif90 -fcoarray=lib -L/opt/opencoarrays/ hello.f90 \
-         -lcaf_mpi -o hello
+mpif90 -fcoarray=lib -L/opt/opencoarrays/ hello.f90 \ -lcaf_mpi -o hello
 
 For running the program:
 
-  mpirun -np m ./hello
+mpirun -np m ./hello
 
-where m is the number of images you want to use.
-
-2. Use with an non-OpenCoarrays-enabled compiler:  
+2. <a name="noncaf">Use with an non-OpenCoarrays-aware compiler</a> (e.g., gfortran 4.9):  
 If a user's compiler provides limited or no coarray support, the user can directly reference a
 subset of the OpenCoarrays procedures and types through a Fortran module named "opencoararys"
 in the "mod" subdirectory of the user's chosen OpenCoarrays installation path.  The module
@@ -187,12 +206,16 @@ compile that program:
   mpif90 -L /opt/opencoarrays/lib/ -I /opt/opencoarrays/mod/ -fcoarray=lib tally_image_numbers.f90 -lcaf_mpi -o tally
   mpirun -np 8 ./tally
 
-GNU Fortran Configuration
--------------------------
+3. <a name="nonaware">Use with an non-OpenCoarrays-aware compiler</a> (e.g., Intel or Cray):
 
-The coarray support on GFortran is available since version GCC 5.
 
-GCC 5 can either be build as outlined below; however, there are also unofficial
+## <a name="obtaingcc">Obtaining GCC</a> ##
+
+The Lubuntu Linux virtual machine available for download in the [Sourcery Store](http://www.sourceryinstitute.org/store) includes a very simple buildgcc script that works . 
+
+The coarray support on GFortran is available since release GCC 5.1.
+
+GCC 5 can either be built as outlined below; however, there are also unofficial
 binary builds https://gcc.gnu.org/wiki/GFortranBinaries ; some Linux
 distributions already offer GCC 5 as preview.
 
