@@ -2,33 +2,33 @@
 
 I. [End-User Installation](#enduser)
 
-  A. [OS X](#osx)
+    A. [OS X](#osx)
   
-  B. [Windows](#windows)
+    B. [Windows](#windows)
   
-  C. [Linux](#linux)
+    C. [Linux](#linux)
   
 II. Building from Source
 
-  A. [Prerequisites](#prerequisites)
+    A. [Prerequisites](#prerequisites)
   
-  B. [CMake](#cmake)
-  
-  C. [Make](#make)
+    B. [CMake](#cmake)
+
+    C. [Make](#make)
   
 III.[Compiling and Executing a CAF Program](#compilingcaf)
 
-  A. [The "caf" compiler wrapper and "cafrun" program launcher](#wrapperlauncher)
+    A. [The "caf" compiler wrapper and "cafrun" program launcher](#wrapperlauncher)
   
-  B. [Sample basic workflow](#basicworkflow)
+    B. [Sample basic workflow](#basicworkflow)
   
-  C. [Sample advanced workflows](#advancedworkflow)
+    C. [Sample advanced workflows](#advancedworkflow)
   
-    1. [Compiling with an OpenCoarrays-aware compiler](#aware) (e.g., GCC 5.1.0)
-    
-    2. [Compiling with a non-CAF compiler](#noncaf)
-    
-    3. [Compiling with a non-gfortran CAF compiler](#nongfortran)
+      1. [Compiling with an OpenCoarrays-aware compiler](#aware) (e.g., GCC 5.1.0)
+
+      2. [Compiling with a non-CAF compiler](#noncaf)
+      
+      3. [Compiling with a non-gfortran CAF compiler](#nongfortran)
     
 IV. [Obtaining GCC](#obtaingcc)
 
@@ -44,7 +44,9 @@ Portfile has been incorporated into MacPorts, users can install OpenCoarrays
 on OS X by installing MacPorts and then typing the following:
 
 sudo port selfupdate
+
 sudo port upgrade outdated
+
 sudo port install opencoarrays
 
 Administrator privileges are required for issuing the above "sudo" commands.  
