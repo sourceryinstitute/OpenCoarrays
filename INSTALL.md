@@ -265,10 +265,11 @@ steps employed in the buildgcc script:
     make -j 2 bootstrap
     make install
 
-where the "2" in the final line launches a multi-threaded build with 2 threads.    
+where the "2" in the penultimate line launches a multi-threaded build with 2 threads.  Use more
+threads for additional speedup, depending on your platform.
 
-See also [https://gcc.gnu.org/wiki/GFortranBinaries#FromSource] for additional details and
-[https://gcc.gnu.org/install/] for an exhaustive description of the build process and options.
+See the [GFortran Binaries] web page for additional details and the [Installing GCC] page
+for an exhaustive description of the build process and options.
 
 [End-User Installation]: #end-user-installation
 [OS X]: #os-x
@@ -292,4 +293,6 @@ See also [https://gcc.gnu.org/wiki/GFortranBinaries#FromSource] for additional d
 [Macports]: http://www.macports.org
 [GCC]: http://gcc.gnu.org
 [TS18508 Additional Parallel Features in Fortran]: http://isotc.iso.org/livelink/livelink?func=ll&objId=17181227&objAction=Open
+[GFortran Binaries]:  https://gcc.gnu.org/wiki/GFortranBinaries#FromSource
+[Installing GCC]: https://gcc.gnu.org/install/
 
