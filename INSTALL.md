@@ -1,30 +1,28 @@
 # [Installing OpenCoarrays](#installing-opencoarrays)
 
  *  [End-User Installation]
-     * [OS X](#os-x)
-     * [Windows](#windows)
-     * [Linux](#linux)
- *  [Building from Source](#building-from-source)
-     *  [Prerequisites](#prerequisites)
-     *  [CMake](#cmake)
-     *  [Make](#make)
- *  [Obtaining GCC](#obtaining-gcc)
+     * [OS X]
+     * [Windows]
+     * [Linux]
+ *  [Building from Source]
+     *  [Prerequisites]
+     *  [CMake]
+     *  [Make]
+ *  [Obtaining GCC]
 
 ## <a name="end-user-installation">End-User Installation</a>
 Most end users will find it simplest to obtain OpenCoarrays via package management software or virtualization.  
 
-### <a name="osx">OS X</a> ###
+### <a name="os-x">OS X</a> ###
 We have developed a  Portfile that we will submit for inclusion into the
 [MacPorts](http://www.macports.org) package management software  
 after posting the OpenCoarrays 1.0.0 tar ball online.  Once the OpenCoarrays 
 Portfile has been incorporated into MacPorts, users can install OpenCoarrays
 on OS X by installing MacPorts and then typing the following:
 
-sudo port selfupdate
-
-sudo port upgrade outdated
-
-sudo port install opencoarrays
+    sudo port selfupdate  
+    sudo port upgrade outdated  
+    sudo port install opencoarrays
 
 Administrator privileges are required for issuing the above "sudo" commands.  
 Also, the first two steps above are required only if your MacPorts ports 
@@ -246,3 +244,11 @@ official and complete instructions at https://gcc.gnu.org/install/.
    make install
 
 [End-User Installation]: #end-user-installation
+[OS X]: #os-x
+[Windows]: #windows
+[Linux]: #linux
+[Building from Source]: #building-from-source
+[Prerequisites]: #prerequisites
+[CMake]: #cmake
+[Make]: #make
+[Obtaining GCC]: #obtaining-gcc
