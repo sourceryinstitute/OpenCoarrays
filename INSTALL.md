@@ -247,46 +247,28 @@ compile that program:
 
 ## <a name="obtaingcc">Obtaining GCC</a> ##
 
-The Lubuntu Linux virtual machine available for download in the [Sourcery Store] includes 
-a very simple buildgcc script that works . 
+[GCC] 5 binary builds are available at [https://gcc.gnu.org/wiki/GFortranBinaries].  Also,
+the Lubuntu Linux virtual machine available for download in the [Sourcery Store] includes 
+builds of GCC 4.9, 5.2, and 6.0 as well as a rudimentary script (/opt/sourcery/bin/buildgcc)
+that builds [GCC] from source on Linux and OS X. 
 
-The coarray support on GFortran is available since release GCC 5.1.
+To build the most up-to-date version of GCC from source manually, you might first try the 
+steps employed in the buildgcc script:
 
-GCC 5 can either be built as outlined below; however, there are also unofficial
-binary builds https://gcc.gnu.org/wiki/GFortranBinaries ; some Linux
-distributions already offer GCC 5 as preview.
+    svn co svn://gcc.gnu.org/svn/gcc/trunk
+    cd trunk
+    ./contrib/download_prerequisites
+    cd ..
+    mkdir -p trunk-build
+    cd trunk-build
+    ../trunk/configure --prefix=${PWD} --enable-languages=c,c++,fortran,lto --disable-multilib --disable-werror
+    make -j 2 bootstrap
+    make install
 
-For building GCC from source, first download GCC 5 - either as snapshot from
-the mirror or using the latest version by using the SVN trunk/GIT master.
-We provide quick instructions on how to build a minimal GCC version.
-See also https://gcc.gnu.org/wiki/GFortranBinaries#FromSource and the
-official and complete instructions at https://gcc.gnu.org/install/.
+where the "2" in the final line launches a multi-threaded build with 2 threads.    
 
-1) From the main directory create a build directory using:
-
-   mkdir build
-
-2) GCC requires various tools and packages like GMP, MPFR, MPC. These and others
-   can be automatically downloaded typing the following command inside the main
-   directory:
-
-   ./contrib/download_prerequisites
-
-3) Inside the build directory type the following configure string customizing
-   the installation path:
-
-   ../configure --prefix=/your/path --enable-languages=c,c++,fortran \
-                --disable-multilib
-
-4) Type
-
-   make -jN
-
-   where N is the number of cores on your machine + 1. (This may take a while).
-
-5) Type:
-
-   make install
+See also [https://gcc.gnu.org/wiki/GFortranBinaries#FromSource] for additional details and
+[https://gcc.gnu.org/install/] for an exhaustive description of the build process and options.
 
 [End-User Installation]: #end-user-installation
 [OS X]: #os-x
