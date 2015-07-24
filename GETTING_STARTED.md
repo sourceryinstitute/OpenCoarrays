@@ -1,4 +1,4 @@
-# [Getting Stared](#getting-started)
+# [Getting Started](#getting-started) #
 
  *  [Compiling a CAF Program]
      * [The caf compiler wrapper]
@@ -39,7 +39,7 @@ The latter use case provides an opportunity to mix a compiler's CAF support with
 For example, a non-gfortran CAF compiler might support all of a program's coarray square-bracket syntax, 
 while OpenCoarrays supports the same program's calls to collective subrouine such as co_sum and co_reduce.
 
-<a name="basicworkflow">
+<a name="a-sample-basic-workflow">
 ### A sample basic workflow ###
 </a>
 
@@ -100,32 +100,9 @@ compile that program:
 
 3. <a name="nonaware">Use with an non-OpenCoarrays-aware compiler</a> (e.g., Intel or Cray):
 
-
-## <a name="obtaingcc">Executing a CAF Program</a> ##
-
-[GCC] 5 binary builds are available at [https://gcc.gnu.org/wiki/GFortranBinaries].  Also,
-the Lubuntu Linux virtual machine available for download in the [Sourcery Store] includes 
-builds of GCC 4.9, 5.2, and 6.0 as well as a rudimentary script (/opt/sourcery/bin/buildgcc)
-that builds [GCC] from source on Linux and OS X. 
-
-To build the most up-to-date version of GCC from source manually, you might first try the 
-steps employed in the buildgcc script:
-
-    svn co svn://gcc.gnu.org/svn/gcc/trunk
-    cd trunk
-    ./contrib/download_prerequisites
-    cd ..
-    mkdir -p trunk-build
-    cd trunk-build
-    ../trunk/configure --prefix=${PWD} --enable-languages=c,c++,fortran,lto --disable-multilib --disable-werror
-    make -j 2 bootstrap
-    make install
-
-where the "2" in the penultimate line launches a multi-threaded build with 2 threads.  Use more
-threads for additional speedup, depending on your platform.
-
-See the [GFortran Binaries] web page for additional details and the [Installing GCC] page
-for an exhaustive description of the build process and options.
+<a name="executing-a-caf-program">
+## Executing a CAF Program ##
+</a>
 
 [Sourcery Store]: http://www.sourceryinstitute.org/store
 [Virtualbox]: http://www.virtualbox.org
@@ -137,5 +114,5 @@ for an exhaustive description of the build process and options.
 [The cafrun program launcher]: the-cafrun-program-launcher
 [Compiling a CAF Program]: compiling-a-caf-program
 [A sample basic workflow]: a-sample-basic-workflow
-[Advanced workflows]: advanced-workflows
+[Sample advanced workflows]: sample-advanced-workflows
 [Executing a CAF program]: executing-a-caf-program
