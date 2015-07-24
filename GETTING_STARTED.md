@@ -110,9 +110,9 @@ compile that program:
 [opencoarrays]: ./src/extensions/opencoarrays.F90
 [GCC]: http://gcc.gnu.org
 [TS18508 Additional Parallel Features in Fortran]: http://isotc.iso.org/livelink/livelink?func=ll&objId=17181227&objAction=Open
-[The caf compiler wrapper]: the-caf-compiler-wrapper
-[The cafrun program launcher]: the-cafrun-program-launcher
-[Compiling a CAF Program]: compiling-a-caf-program
-[A sample basic workflow]: a-sample-basic-workflow
-[Sample advanced workflows]: sample-advanced-workflows
-[Executing a CAF program]: executing-a-caf-program
+[The caf compiler wrapper]: #the-caf-compiler-wrapper
+[The cafrun program launcher]: #the-cafrun-program-launcher
+[Compiling a CAF Program]: #compiling-a-caf-program
+[A sample basic workflow]: #a-sample-basic-workflow
+[Sample advanced workflows]: #sample-advanced-workflows
+[Executing a CAF program]: #executing-a-caf-program
