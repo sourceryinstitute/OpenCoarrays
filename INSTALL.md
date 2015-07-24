@@ -72,20 +72,21 @@ such as [yum] or [apt-get], please submit a feature request via our [Issues] pag
 For broad coverage of CAF features, ease of installation, and ease of use, first 
 install the following:
 
-* An OpenCoarrays-aware Fortran compiler: [GCC Fortran] 5.1 or later,
+* An OpenCoarrays-aware Fortran compiler: currently [GCC] 5.1 or later,
 * The Fortran compiler's companion C compiler that supports the C99 standard, and
-* An MPI implementation that supports the MPI 3.0 standard and was built by the Fortran 
-  compiler's companion C compiler (preferably [MPICH] or [MVAPICH] for robustness and performance)
+* An MPI implementation that supports MPI 3.0 and is built by the aforementioned  
+  Fortran and C compilers (preferably the [MPICH] or [MVAPICH] implementations for 
+  robustness and high performance)
 
 If installing the above prerequisites is infeasible, then a limited coverage of CAF 
-features is available via the "caf" compiler wrapper and the [opencoarrays] module,  
-for which the installation prerequisites are the following:
+features is available via the OpenCoarrays "caf" compiler wrapper and the 
+[opencoarrays] module, for which the installation prerequisites are the following:
 
-* A Fortran compiler that supports the C-interoperability features of Fortran 2003
-* The Fortran compiler's companion C compiler that supports the C99 standard.
-* An MPI implementation that supports the MPI 3.0 standard and was built by the Fortran 
-  compiler's companion C compiler (preferably [MPICH] or [MVAPICH] for robustness and performance)
-
+* A Fortran compiler that supports the C-interoperability features of Fortran 2003,
+* The Fortran compiler's companion C compiler that supports the C99 standard, and
+* An MPI implementation that supports MPI 3.0 and is built by the aforementioned  
+  Fortran and C compilers (preferably the [MPICH] or [MVAPICH] implementations for 
+  robustness and high performance)
 
 <a name="cmake">
 ### CMake ###
@@ -165,21 +166,21 @@ The preferred method for compiling and executing a CAF program is by invoking th
 "cafun" bash scripts that the compiler installs in the "bin" subdirectory of the installation
 installation path. These are new, experimental scripts with limited capabilities but very
 useful capabilities that will grow over time.  Please submit bug reports and feature requests 
-via our [Issues](https://github.com/sourceryinstitute/opencoarrays/issues) page.
+via our [Issues] page.
 
 The "caf" and "cafrun" scripts librarate your source code and workflow from explicit
 dependence on the underlying compiler and communication library in the following ways: 
 
 1. "caf" automatically embeds the relevant library path (e.g., libcaf_mpi.a) in the compile command.
 2. With a non-CAF compiler (including gfortran 4.9), "caf" supports a subset of CAF by replacing 
-   by replacing CAF statements with calls to procedures in the ["opencoarrays" module](src/extensions/opencoarrays.F90).  
+   by replacing CAF statements with calls to procedures in the [opencoarrays] module.  
 3. With non-CAF compilers and non-gfortran CAF compilers, "caf" embeds an argument in the compile
    statement to support accessing OpenCoarrays capabilities via use association (i.e.,
    "use opencoarrays"). To avoid inadvertent procedure procedure name overloading with non-gfortran
    CAF compilers, we recommend adding an "only" clause as in "use opencoarrays, only : co_reduce". 
 4. With a non-gfortran CAF compiler (e.g., Cray and Intel), "caf" extends the compiler's capabilities 
    by providing features that are proposed for Fortran 2015 in the draft 
-   [Technical Specification TS18508 Additional Parallel Features in Fortran](http://isotc.iso.org/livelink/livelink?func=ll&objId=17181227&objAction=Open).
+   Technical Specification [TS18508 Additional Parallel Features in Fortran].
 
 The latter use case provides an opportunity to mix a compiler's CAF support with that of OpenCoarrays.  
 For example, a non-gfortran CAF compiler might support all of a program's coarray square-bracket syntax, 
@@ -237,16 +238,17 @@ link to this document, which gets updated periodically).  An example of the use 
 Fortran module is in the tally_images_numbers.F90 file in the test suite.  The following commands
 compile that program:
 
-  cd src/tests/integration/extensions/
-  mpif90 -L /opt/opencoarrays/lib/ -I /opt/opencoarrays/mod/ -fcoarray=lib tally_image_numbers.f90 -lcaf_mpi -o tally
-  mpirun -np 8 ./tally
+    cd src/tests/integration/extensions/
+    mpif90 -L /opt/opencoarrays/lib/ -I /opt/opencoarrays/mod/ -fcoarray=lib tally_image_numbers.f90 -lcaf_mpi -o tally
+    mpirun -np 8 ./tally
 
 3. <a name="nonaware">Use with an non-OpenCoarrays-aware compiler</a> (e.g., Intel or Cray):
 
 
 ## <a name="obtaingcc">Obtaining GCC</a> ##
 
-The Lubuntu Linux virtual machine available for download in the [Sourcery Store](http://www.sourceryinstitute.org/store) includes a very simple buildgcc script that works . 
+The Lubuntu Linux virtual machine available for download in the [Sourcery Store] includes 
+a very simple buildgcc script that works . 
 
 The coarray support on GFortran is available since release GCC 5.1.
 
@@ -306,4 +308,6 @@ official and complete instructions at https://gcc.gnu.org/install/.
 [MPICH]: http://www.mpich.org
 [MVAPICH]:http://mvapich.cse.ohio-state.edu
 [Macports]: http://www.macports.org
+[GCC]: http://gcc.gnu.org
+[TS18508 Additional Parallel Features in Fortran]: http://isotc.iso.org/livelink/livelink?func=ll&objId=17181227&objAction=Open
 
