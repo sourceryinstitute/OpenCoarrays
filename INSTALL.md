@@ -1,6 +1,6 @@
 # [Installing OpenCoarrays](#installing-opencoarrays)
 
- *  [End-User Installation](#end-user-installation)
+ *  [End-User Installation]
      * [OS X](#os-x)
      * [Windows](#windows)
      * [Linux](#linux)
@@ -10,7 +10,7 @@
      *  [Make](#make)
  *  [Obtaining GCC](#obtaining-gcc)
 
-## <a name="enduser">End-User Installation</a>
+## <a name="end-user-installation">End-User Installation</a>
 Most end users will find it simplest to obtain OpenCoarrays via package management software or virtualization.  
 
 ### <a name="osx">OS X</a> ###
@@ -244,3 +244,5 @@ official and complete instructions at https://gcc.gnu.org/install/.
 5) Type:
 
    make install
+
+[End-User Installation]: #end-user-installation
