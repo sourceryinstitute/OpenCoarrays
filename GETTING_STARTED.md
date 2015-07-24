@@ -1,44 +1,48 @@
 # [Getting Stared](#getting-started)
 
  *  [Compiling a CAF Program]
-     * [The "caf" compiler wrapper]
+     * [The caf compiler wrapper]
      * [A sample basic workflow]
      * [Sample advanced workflows]
  *  [Executing a CAF Program]
-     * [The "cafrun" program launcher]
+     * [The cafrun program launcher]
 
-<a name="compiling-caf">
-## Compiling and Executing a CAF Program ##
+<a name="compiling-a-caf-program">
+## Compiling a CAF Program ##
 </a>
 
-<a name="wrapper-launcher">
-### The "caf" compiler wrapper and "cafrun" program launcher ###
+<a name="the-caf-compiler-wrapper">
+### The caf compiler wrapper ###
 </a> 
-The preferred method for compiling and executing a CAF program is by invoking the "caf" and 
-"cafun" bash scripts that the compiler installs in the "bin" subdirectory of the installation
-installation path. These are new, experimental scripts with limited capabilities but very
-useful capabilities that will grow over time.  Please submit bug reports and feature requests 
-via our [Issues] page.
 
-The "caf" and "cafrun" scripts librarate your source code and workflow from explicit
-dependence on the underlying compiler and communication library in the following ways: 
+The preferred method for compiling a CAF program is by invoking the "caf" bash script 
+that the OpenCoarrays CMake scripts install in the "bin" subdirectory of the installation
+path. This is an experimental script with limited but useful capabilities that will 
+grow over time.  Please submit bug reports and feature requests via our [Issues] page.
+
+The "caf" script liberates the source code and workflow from explicit dependence on the
+underlying compiler and communication library in the following ways: 
 
 1. "caf" automatically embeds the relevant library path (e.g., libcaf_mpi.a) in the compile command.
-2. With a non-CAF compiler (including gfortran 4.9), "caf" supports a subset of CAF by replacing 
-   by replacing CAF statements with calls to procedures in the [opencoarrays] module.  
-3. With non-CAF compilers and non-gfortran CAF compilers, "caf" embeds an argument in the compile
-   statement to support accessing OpenCoarrays capabilities via use association (i.e.,
-   "use opencoarrays"). To avoid inadvertent procedure procedure name overloading with non-gfortran
-   CAF compilers, we recommend adding an "only" clause as in "use opencoarrays, only : co_reduce". 
-4. With a non-gfortran CAF compiler (e.g., Cray and Intel), "caf" extends the compiler's capabilities 
-   by providing features that are proposed for Fortran 2015 in the draft 
-   Technical Specification [TS18508 Additional Parallel Features in Fortran].
+2.  With a non-CAF compiler (including gfortran 4.9), "caf" supports a subset of CAF by replacing 
+    CAF statements with calls to procedures in the [opencoarrays] module.  
+3.  With non-CAF compilers and non-gfortran CAF compilers, "caf" includes in the compile statement
+    the .mod file that the CMake scripts install in the "mod" suddierctory of the installation path.  
+    This enables uers to access OpenCoarrays capabilities via use association (i.e.  "use opencoarrays"). 
+    To avoid inadvertent procedure name overloading with non-gfortra CAF compilers, we recommend using 
+    statements of the form "use opencoarrays, only : co_reduce" to reduce the number name classes.
+4.  With a non-gfortran CAF compiler (e.g., Cray and Intel), "caf" extends the compiler's capabilities 
+    by providing features that are proposed for Fortran 2015 in the draft Technical Specification 
+    [TS18508 Additional Parallel Features in Fortran].
 
 The latter use case provides an opportunity to mix a compiler's CAF support with that of OpenCoarrays.  
 For example, a non-gfortran CAF compiler might support all of a program's coarray square-bracket syntax, 
 while OpenCoarrays supports the same program's calls to collective subrouine such as co_sum and co_reduce.
 
-### <a name="basicworkflow">A sample basic workflow</a> ###
+<a name="basicworkflow">
+### A sample basic workflow ###
+</a>
+
 Inserting the "bin" directory of the chosen installation path into the user's PATH enables the following
 CAF program compilation and execution workflow:
 
@@ -66,7 +70,7 @@ CAF program compilation and execution workflow:
   $ cafrun -np 4 ./sum_image_numbers
   Test passed.
 
-where "4" is the number of images you want to use.
+where "4" is the number of images to be launched at program star-up.
 
 ### <a name="advancedworkflow">Sample advanced workflows</a> ###
 
@@ -129,5 +133,9 @@ for an exhaustive description of the build process and options.
 [opencoarrays]: ./src/extensions/opencoarrays.F90
 [GCC]: http://gcc.gnu.org
 [TS18508 Additional Parallel Features in Fortran]: http://isotc.iso.org/livelink/livelink?func=ll&objId=17181227&objAction=Open
-[The "caf" compiler wrapper]: compiling-caf
-[The "cafrun" program launcher]: launching-caf
+[The caf compiler wrapper]: the-caf-compiler-wrapper
+[The cafrun program launcher]: the-cafrun-program-launcher
+[Compiling a CAF Program]: compiling-a-caf-program
+[A sample basic workflow]: a-sample-basic-workflow
+[Advanced workflows]: advanced-workflows
+[Executing a CAF program]: executing-a-caf-program
