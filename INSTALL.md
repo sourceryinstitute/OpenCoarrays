@@ -1,40 +1,17 @@
-# INSTALLATION and USE#
+# [Installing OpenCoarrays](#installing-opencoarrays)
 
-I. [End-User Installation](#enduser)
+ *  [End-User Installation](#end-user-installation)
+     * [OS X](#os-x)
+     * [Windows](#windows)
+     * [Linux](#linux)
+ *  [Building from Source](#building-from-source)
+     *  [Prerequisites](#prerequisites)
+     *  [CMake](#cmake)
+     *  [Make](#make)
+ *  [Obtaining GCC](#obtaining-gcc)
 
-    A. [OS X](#osx)
-  
-    B. [Windows](#windows)
-  
-    C. [Linux](#linux)
-  
-II. Building from Source
-
-    A. [Prerequisites](#prerequisites)
-  
-    B. [CMake](#cmake)
-
-    C. [Make](#make)
-  
-III.[Compiling and Executing a CAF Program](#compilingcaf)
-
-    A. [The "caf" compiler wrapper and "cafrun" program launcher](#wrapperlauncher)
-  
-    B. [Sample basic workflow](#basicworkflow)
-  
-    C. [Sample advanced workflows](#advancedworkflow)
-  
-      1. [Compiling with an OpenCoarrays-aware compiler](#aware) (e.g., GCC 5.1.0)
-
-      2. [Compiling with a non-CAF compiler](#noncaf)
-      
-      3. [Compiling with a non-gfortran CAF compiler](#nongfortran)
-    
-IV. [Obtaining GCC](#obtaingcc)
-
-## <a name="enduser">End-User Installation</a> ##
-Most end users will find it simplest to obtain OpenCoarrays via package
-management software or virtualization.  
+## <a name="enduser">End-User Installation</a>
+Most end users will find it simplest to obtain OpenCoarrays via package management software or virtualization.  
 
 ### <a name="osx">OS X</a> ###
 We have developed a  Portfile that we will submit for inclusion into the
