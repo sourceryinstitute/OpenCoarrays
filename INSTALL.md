@@ -14,17 +14,19 @@
 ## End-User Installation ##
 </a>
 
-This section explains the options most end users will find simplest to obtain OpenCoarrays on OS X, Windows, or Linux without building OpenCoarrays from its source code.
+This section explains the options most end users will find simplest to obtain 
+OpenCoarrays on OS X, Windows, or Linux without building OpenCoarrays from its 
+source code.
 
 <a name="os-x">
 ### OS X###
 </a> 
 
 We have developed a  Portfile that we will submit for inclusion into the
-[MacPorts](http://www.macports.org) package management software  
-after posting the OpenCoarrays 1.0.0 tar ball online.  Once the OpenCoarrays 
-Portfile has been incorporated into MacPorts, users can install OpenCoarrays
-on OS X by installing MacPorts and then typing the following:
+[MacPorts] package management software after posting the OpenCoarrays 1.0.0 
+tar ball online.  Once the OpenCoarrays Portfile has been incorporated into 
+MacPorts, users can install OpenCoarrays on OS X by installing MacPorts and 
+then typing the following:
 
     sudo port selfupdate  
     sudo port upgrade outdated  
@@ -70,29 +72,30 @@ such as [yum] or [apt-get], please submit a feature request via our [Issues] pag
 For broad coverage of CAF features, ease of installation, and ease of use, first 
 install the following:
 
-* An OpenCoarrays-aware Fortran compiler (currently GCC gfortran 5.1; for co_reduce support, use the gfortran 5.3 or later),
-* A C compiler that supports the C99 standard, and
-* An MPI implementation that supports MPI 3.0 one-sided communication (preferably [MPICH](http://www.mpich.org) or [MVAPICH](http://mvapich.cse.ohio-state.edu) for robustness and performance). 
+* An OpenCoarrays-aware Fortran compiler: [GCC Fortran] 5.1 or later,
+* The Fortran compiler's companion C compiler that supports the C99 standard, and
+* An MPI implementation that supports the MPI 3.0 standard and was built by the Fortran 
+  compiler's companion C compiler (preferably [MPICH] or [MVAPICH] for robustness and performance)
 
 If installing the above prerequisites is infeasible, then a limited coverage of CAF 
 features is available via the "caf" compiler wrapper and the [opencoarrays] module,  
 for which the installation prerequisites are the following:
 
 * A Fortran compiler that supports the C-interoperability features of Fortran 2003
-* A C compiler that supports the C99 standard.
-* An MPI implementation that supports the MPI 3.0 standard (preferably [MPICH](http://www.mpich.org) or [MVAPICH](http://mvapich.cse.ohio-state.edu) for robustness and performance)
+* The Fortran compiler's companion C compiler that supports the C99 standard.
+* An MPI implementation that supports the MPI 3.0 standard and was built by the Fortran 
+  compiler's companion C compiler (preferably [MPICH] or [MVAPICH] for robustness and performance)
 
 
 <a name="cmake">
 ### CMake ###
 </a> 
 ------------------------------------------
-[CMake](http://www.cmake.org) is the preferred build system.   CMake is 
-a cross-platform Makefile generator that includes with the testing tool CTest.
-To avoid cluttering or clobbering the source tree, our CMake setup requires that 
-your build directory be any directory other than the top-level OpenCoarrays source
-directory.  In a bash shell, the following steps should build OpenCoarrays, install 
-OpenCoarrays, build the tests, run the tests, and report the test results:
+[CMake] is the preferred build system.   CMake is a cross-platform Makefile generator that 
+includes with the testing tool CTest.  To avoid cluttering or clobbering the source tree, 
+our CMake setup requires that your build directory be any directory other than the top-level 
+OpenCoarrays source directory.  In a bash shell, the following steps should build 
+OpenCoarrays, install OpenCoarrays, build the tests, run the tests, and report the test results:
 
     tar xvzf opencoarrays.tar.gz
     cd opencoarrays
@@ -109,6 +112,7 @@ working directory ("build").  Please report any test failures to via the OpenCoa
 
 A complete installation should result in the creation of the following directories
 inside the installation path (.e.g, inside "build" in the above example):
+
 * bin: contains the "caf" compiler wrapper and the "cafrun" launcher bash scripts
 * mod: contains the "opencoarrays.mod" module file for use with non-OpenCoarrays-aware compilers
 * lib: contains the "libcaf_mpi.a" static library to which codes link for CAF support
@@ -118,11 +122,11 @@ Advanced options (most users should not use these):
   -DLEGACY_ARCHITECTURE=OFF enables the use of FFT libraries that employ AVX instructions
   -DHIGH_RESOLUTION_TIMER=ON enables timers that tick once per clock cycle
   -DCOMPILER_SUPPORTS_ATOMICS enables support for the proposed Fortran 2015 events feature
-  -DUSE_EXTENSIONS is set automatically in the CMake scripts based on the compiler identity 
-   and version
+  -DUSE_EXTENSIONS builds the [opencoarrys] module for use with non-OpenCoarrays-aware compilers
 
 The first two flags above are not portable and the third enables code that is incomplete as 
-of release 1.0.0.
+of release 1.0.0.  The fourth is set automatically by the CMake scripts based on the compiler
+identity and version.
 
 <a name="make">
 ### Make ###
@@ -133,23 +137,24 @@ Makefiles require a great deal more maintenance and are less portable.  Also, th
 Makefiles provided with OpenCoarrays lack several important capabilities.  In particular,
 they will not build the tests;  they will not build any of the infrastructure for compiling
 CAF source with non-OpenCoarrays-aware compilers (that infrastructure includes the 
-[opencoarrays] module, the "caf" compiler wrapper, 
-and the "cafrun" program launcher); nor do the static Makefiles provide a "make install" 
-option so you will need to manually move the desired library from the corresponding source 
-directory (e.g., src/mpi/libcaf_mpi.a) to your intended installation location.
+[opencoarrays] module, the "caf" compiler wrapper, and the "cafrun" program launcher); 
+nor do the static Makefiles provide a "make install" option so you will need to manually 
+move the desired library from the corresponding source directory to your intended installation 
+location as shown below.
 
 If CMake is unavailable, build and install with Make using steps such as the following: 
 
-    cd src
+    tar xvzf opencoarrays.tar.gz
+    cd opencoarray/src
     make
-    mv src mpi/libcaf_mpi.a <installation-path>
+    mv mpi/libcaf_mpi.a <installation-path>
 
 For the above steps to succeeed, you might need to edit the [make.inc] file to match your 
-system settings, e.g., you might need to remove the "-Werror" option from the compiler flags 
-or name a different compiler.  In order to activate efficient strided-array transfer support, 
-uncomment the -DSTRIDED flag inside the [make.inc] file.
+system settings.  For example, you might need to remove the "-Werror" option from the 
+compiler flags or name a different compiler.  In order to activate efficient strided-array 
+transfer support, uncomment the -DSTRIDED flag inside the [make.inc] file.
 
- <a name="compilingcaf">
+<a name="compilingcaf">
 ## Compiling and Executing a CAF Program ##
 </a>
 
@@ -298,4 +303,7 @@ official and complete instructions at https://gcc.gnu.org/install/.
 [Issues]: https://github.com/sourceryinstitute/opencoarrays/issues
 [make.inc]: ./src/make.inc
 [opencoarrays]: ./src/extensions/opencoarrays.F90
+[MPICH]: http://www.mpich.org
+[MVAPICH]:http://mvapich.cse.ohio-state.edu
+[Macports]: http://www.macports.org
 
