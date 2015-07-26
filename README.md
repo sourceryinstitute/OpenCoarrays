@@ -37,7 +37,7 @@ To start using OpenCoarrays, please see the [GETTING_STARTED.md] file.
 <a name="contributing">
 ## Contributing</a> ##
 
-Please see the [CONTRIBUTING.md] file.
+Please see the [CONTRIBUTING] file.
 
 <a name="status">
 ## Status</a> ##
