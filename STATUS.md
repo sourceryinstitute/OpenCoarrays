@@ -41,7 +41,7 @@
    set of intrinsic types and kinds.  Adding additional types and kinds is 
    straightforward.  Please submit a request via the [Issues] page or consider 
    adding the requisite code by forking the OpenCoarrays repository and submitting 
-   [pull request via GitHub]. Also see [CONTRIBUTING] for more information. 
+   [pull request via GitHub]. Also see [CONTRIBUTING.md] for more information. 
 
 <a name="compiler-status">
 ## Compiler Status</a> ##
