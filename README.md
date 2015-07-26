@@ -90,7 +90,7 @@ We gratefully acknowledge support from the following institutions:
 [menu of services]: http://opencoarrays.org/services
 [CONTRIBUTING.md]: ./CONTRIBUTING.md
 [STATUS.md]: ./STATUS.md
-[GETTING STARTED.md]: ./GETTING_STARTED.md
+[GETTING_STARTED.md]: ./GETTING_STARTED.md
 [Google Groups]: https://groups.google.com
 [subscribing]: https://groups.google.com/forum/#!forum/opencoarrays/join
 [opencoarrays@googlegroups.com]: mailto:opencoarrays@googlegroups.com
