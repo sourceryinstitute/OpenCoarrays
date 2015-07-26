@@ -4,19 +4,12 @@
 
 # [Getting Started](#getting-started) #
 
- *  [Compiling a CAF Program]
-     * [The caf compiler wrapper]
-     * [A sample basic workflow]
-     * [Sample advanced workflows]
- *  [Executing a CAF Program]
-     * [The cafrun program launcher]
-
-<a name="compiling-a-caf-program">
-## Compiling a CAF Program ##
-</a>
+* [The caf compiler wrapper]
+* [A sample basic workflow]
+* [An advanced workflow]
 
 <a name="the-caf-compiler-wrapper">
-### The caf compiler wrapper ###
+## The caf compiler wrapper ##
 </a> 
 
 The preferred method for compiling a CAF program is by invoking the "caf" bash script 
@@ -51,14 +44,14 @@ For example, a non-OCA CAF compiler, such as the Cray or Intel compilers, might 
 program's coarray square-bracket syntax, while OpenCoarrays supports the same program's calls to 
 collective subroutine such as `co_sum` and `co_reduce`.
 
-<a name="a-sample-basic-workflow">
-### A sample basic workflow ###
+<a name="workflow-with-oca-aware-compiler">
+## A sample basic workflow ##
 </a>
 
-## Compiling and Running with an OpenCoarrays-aware (OCA) CAF Compiler</a> ##
-
-Inserting the "bin" directory of the chosen installation path into the user's PATH enables the following
-CAF program compilation and execution workflow:
+The following program listing, compilation, and execution workflow exemplify 
+the use of an OCA compiler (e.g., gfortran 5.1.0 or later) in a Linux bash shell 
+with the "bin" directory of the chosen installation path in the user's PATH 
+environment variable:
 
       $ cat tally.f90 
       program main
@@ -86,19 +79,19 @@ CAF program compilation and execution workflow:
 where "4" is the number of images to be launched at program start-up.
 
 <a name="extending-a-non-oca-CAF-compiler"
-## Extending a Non-OCA CAF Compiler</a> ##
+## An advanced workflows </a> ##
 
-To extend the capabilities of a non-OCA CAF compiler (e.g., the Intel or Cray compilers) 
-or a non-CAF compiler (e.g., GCC 4.9), access the types and procedures of the 
-[opencoarrays module] by use assocication.  For example, insert the following at line 2
-in the above example:
+To extend the capabilities of a non-OCA CAF compiler (e.g., the Intel or Cray compilers),
+access the types and procedures of the [opencoarrays module] by use assocication.  We 
+recommend using a `use` statement with an `only` clause to reduce the likelihood of a
+name clash with the compiler's native CAf support.  For eample, innsert the following
+at line 2 of `tally.f90` above:
 
      use opencoarrays, only : co_sum
 
-Then compile with the "caf" compiler wrapper and launch with "cafrun" program launcher.
-
-<a name="sample-advanced-workflow">
-### A sample advanced workflows</a> ###
+To extend the capabilities of a non-CAF compiler (e.g., GCC 4.9), use an unqualified
+`use` statement with no `only` clause.  The latter practrice reduces the likelihood of
+name clashes with the compiler's or programs existing capabilities.
 
 If the "caf" compiler wrapper cannot process the source code in question, invoke
 the underlying communication library directly:
@@ -119,6 +112,7 @@ and also run the program with the lower-level commnication library:
 [The caf compiler wrapper]: #the-caf-compiler-wrapper
 [The cafrun program launcher]: #the-cafrun-program-launcher
 [Compiling a CAF Program]: #compiling-a-caf-program
-[A sample basic workflow]: #a-sample-basic-workflow
+[workflow-with-oca-aware-compiler]: #workflow-with-oca-aware-compiler
 [Sample advanced workflows]: #sample-advanced-workflows
-[Executing a CAF program]: #executing-a-caf-program
+[or a non-CAF compiler (e.g., GCC 4.9)Executing a CAF program]: #executing-a-caf-program
+
