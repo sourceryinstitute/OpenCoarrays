@@ -78,7 +78,7 @@ environment variable:
 
 where "4" is the number of images to be launched at program start-up.
 
-<a name="sample-advanced-workflow"
+<a name="sample-advanced-workflow">
 ## An advanced workflow </a> ##
 
 To extend the capabilities of a non-OCA CAF compiler (e.g., the Intel or Cray compilers),
