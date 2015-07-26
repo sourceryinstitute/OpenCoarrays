@@ -102,7 +102,7 @@ and also run the program with the lower-level commnication library:
 
     mpirun -np <number-of-images> ./tally
 
-[Hyperlinks:]#
+[Hyperlinks]:#
 
 [The caf compiler wrapper]: #the-caf-compiler-wrapper
 [A sample basic workflow]: #a-sample-basic-workflow
@@ -112,10 +112,6 @@ and also run the program with the lower-level commnication library:
 [Issues]: https://github.com/sourceryinstitute/opencoarrays/issues
 [opencoarrays module]: ./src/extensions/opencoarrays.F90
 [GCC]: http://gcc.gnu.org
-[TS 18508] Additional Parallel Features in Fortran: http://isotc.iso.org/livelink/livelink?func=ll&objId=17181227&objAction=Open
+[TS 18508]: http://isotc.iso.org/livelink/livelink?func=ll&objId=17181227&objAction=Open
 [The caf compiler wrapper]: #the-caf-compiler-wrapper
 [The cafrun program launcher]: #the-cafrun-program-launcher
-
-
-[Hyperlinks:]#
-
