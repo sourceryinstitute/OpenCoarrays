@@ -50,63 +50,62 @@ while OpenCoarrays supports the same program's calls to collective subrouine suc
 Inserting the "bin" directory of the chosen installation path into the user's PATH enables the following
 CAF program compilation and execution workflow:
 
-  $ cat sum_image_numbers.f90
-  program main
-    use iso_c_binding, only : c_int
-    use iso_fortran_env, only : error_unit
-    implicit none
-    integer(c_int) :: tally
-    tally = this_image() ! this image's contribution 
-    call co_sum(tally)
-    verify: block
-      integer(c_int) :: image
-      if (tally/=[(image,image=1,num_images())]) then
-         write(error_unit,'(a,i5)') "Incorrect tally on image ",this_image()
-         erro stop
-      end if
-    end block verify
-    ! Wait for all images to pass the test
-    sync all
-    if (this_image()==1) print *,"Test passed"
-  end program
-  
-  $ caf sum_image_numbers.f90
-  $ cafrun -np 4 ./sum_image_numbers
-  Test passed.
+    $ cat sum_image_numbers.f90
+    program main
+      use iso_c_binding, only : c_int
+      use iso_fortran_env, only : error_unit
+      implicit none
+      integer(c_int) :: tally
+      tally = this_image() ! this image's contribution 
+      call co_sum(tally)
+      verify: block
+        integer(c_int) :: image
+        if (tally/=[(image,image=1,num_images())]) then
+           write(error_unit,'(a,i5)') "Incorrect tally on image ",this_image()
+           error stop
+        end if
+      end block verify
+      ! Wait for all images to pass the test
+      sync all
+      if (this_image()==1) print *,"Test passed"
+    end program
+    
+ ```   
+    $ caf sum_image_numbers.f90
+    $ caf sum_image_numbers.f90
+    $ cafrun -np 4 ./sum_image_numbers
+      Test passed.
+```      
+where "4" is the number of images to be launched at program start-up.
 
-where "4" is the number of images to be launched at program star-up.
+<a name="sample-advanced-workflow">
+### Sample advanced workflows</a> ###
 
-### <a name="advancedworkflow">Sample advanced workflows</a> ###
+<a name="Extending a non-OCA CAF COmpiler
+## Extending a Non-OCA CAF Compiler</a> ##
 
-1. <a name="aware">Use with an OpenCoarrays-aware compiler</a> (e.g., GCC 5.1.0):
-A hello.f90 program can compiled in a single step using the following string:
+To extend the capabilities of a non-OCA CAF compiler (e.g., the Intel or Cray compilers) 
+or a non-CAF compiler (e.g., GCC 4.9), access the types and procedures of the 
+[opencoarrays module] by use assocication.  For example, insert the following at line 2
+in the above example:
 
-mpif90 -fcoarray=lib -L/opt/opencoarrays/ hello.f90 \ -lcaf_mpi -o hello
+     use opencoarrays, only : co_sum
 
-For running the program:
+Then compile with the "caf" compiler wrapper and launch with "cafrun" program launcher.
 
-mpirun -np m ./hello
+<a name="compiling-without-caf">
+## Sample Advanced Workflow</a> ##
 
-2. <a name="noncaf">Use with an non-OpenCoarrays-aware compiler</a> (e.g., gfortran 4.9):  
-If a user's compiler provides limited or no coarray support, the user can directly reference a
-subset of the OpenCoarrays procedures and types through a Fortran module named "opencoararys"
-in the "mod" subdirectory of the user's chosen OpenCoarrays installation path.  The module
-provides wrappers for some basic Fortran 2008 parallel programming capabilities along with some 
-more advanced features that have been proposed for Fortran 2015 in the draft Technical 
-Specification TS18508 Additional Parallel Features in Fortran (visit www.opencoarrays.org for a
-link to this document, which gets updated periodically).  An example of the use of the opencoarrays
-Fortran module is in the tally_images_numbers.F90 file in the test suite.  The following commands
-compile that program:
+If the "caf" compiler wrapper cannot process the source code in question, invoke
+the underlying communication library directly:
 
-    cd src/tests/integration/extensions/
-    mpif90 -L /opt/opencoarrays/lib/ -I /opt/opencoarrays/mod/ -fcoarray=lib tally_image_numbers.f90 -lcaf_mpi -o tally
-    mpirun -np 8 ./tally
+    mpif90 -fcoarray=lib -L/opt/opencoarrays/ hello.f90 \ -lcaf_mpi -o hello -I<OpenCoarrays-install-path>/mod
 
-3. <a name="nonaware">Use with an non-OpenCoarrays-aware compiler</a> (e.g., Intel or Cray):
+and also run the program with the lower-level commnication library:
 
-<a name="executing-a-caf-program">
-## Executing a CAF Program ##
-</a>
+    mpirun -np <number-of-images> ./hello
+
+
 
 [Sourcery Store]: http://www.sourceryinstitute.org/store
 [Virtualbox]: http://www.virtualbox.org
