@@ -106,7 +106,7 @@ and also run the program with the lower-level commnication library:
 
 [The caf compiler wrapper]: #the-caf-compiler-wrapper
 [A sample basic workflow]: #a-sample-basic-workflow
-[An advanced workflow]: #  #an-advanced-workflow
+[An advanced workflow]:  #an-advanced-workflow
 
 [Sourcery Store]: http://www.sourceryinstitute.org/store
 [Issues]: https://github.com/sourceryinstitute/opencoarrays/issues
