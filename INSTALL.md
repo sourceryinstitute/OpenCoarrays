@@ -1,3 +1,7 @@
+[This document is formatted with GitHub-Flavored Markdown.               ]:#
+[For better viewing, including hyperlinks, read it online at             ]:#
+[https://github.com/sourceryinstitute/opencoarrays/blob/master/INSTALL.md]:#
+
 # [Installing OpenCoarrays](#installing-opencoarrays)
 
  *  [End-User Installation]
