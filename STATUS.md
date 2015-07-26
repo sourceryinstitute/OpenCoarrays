@@ -1,6 +1,6 @@
 [This document is formatted with GitHub-Flavored Markdown.              ]:#
 [For better viewing, including hyperlinks, read it online at            ]:#
-[https://github.com/sourceryinstitute/opencoarrays/blob/master/README.md]:#
+[https://github.com/sourceryinstitute/opencoarrays/blob/master/STATUS.md]:#
 
 # [OpenCoarrays Status](#coarray-fortran-support-status) #
  *  [Feature Coverage]
