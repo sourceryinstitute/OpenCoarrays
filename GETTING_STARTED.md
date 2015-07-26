@@ -1,3 +1,7 @@
+[This document is formatted with GitHub-Flavored Markdown.                       ]:# 
+[For better viewing, including hyperlinks, read it online at                     ]:# 
+[https://github.com/sourceryinstitute/opencoarrays/blob/master/GETTING_STARTED.md]:#
+
 # [Getting Started](#getting-started) #
 
  *  [Compiling a CAF Program]

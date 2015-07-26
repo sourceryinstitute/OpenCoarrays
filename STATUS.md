@@ -1,3 +1,7 @@
+[This document is formatted with GitHub-Flavored Markdown.              ]:#
+[For better viewing, including hyperlinks, read it online at            ]:#
+[https://github.com/sourceryinstitute/opencoarrays/blob/master/README.md]:#
+
 # [OpenCoarrays Status](#coarray-fortran-support-status) #
  *  [Feature Coverage]
  *  [Compiler Status]
@@ -155,6 +159,8 @@ The OpenCoarrays team offers contract development and support for making compile
   in particular, the "dg-do run" tests in coarray*f90 and coarray/).
 
 
+[Hyperlinks]:#
+
 [Compiler Status]: #compiler-status
    [OpenCoarrays-Aware (OCA) Coarray Fortran (CAF) Compilers]: #oca-caf-compilers
    [Non-OCA CAF Compilers]: #non-oca-caf-compilers
@@ -177,18 +183,11 @@ The OpenCoarrays team offers contract development and support for making compile
 [Feature Coverage]: #feature-coverage
 [To-Do List]: #to-do-list
 
-
-
-      
-   
 [TS 18508]: http://isotc.iso.org/livelink/livelink?func=ll&objId=17181227&objAction=Open
-[opencoarrays module]: ./src/extensions/opencoarrays
+[opencoarrays module]: ./src/extensions/opencoarrays.F90
 [ABI]: https://gcc.gnu.org/onlinedocs/gfortran/Function-ABI-Documentation.html#Function-ABI-Documentation
 [pull requests via GitHub]: https://github.com/sourceryinstitute/opencoarrays.git
 [pull request via GitHub]: https://github.com/sourceryinstitute/opencoarrays.git
-
-
-[foMPI]: http://spcl.inf.ethz.ch/Research/Parallel_Programming/foMPI/
 [OpenCoarrays Google Group]: https://groups.google.com/forum/#!forum/opencoarrays
 [Sourcery Store]: http://www.sourceryinstitute.org/store
 [Issues]: https://github.com/sourceryinstitute/opencoarrays/issues 
