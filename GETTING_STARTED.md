@@ -44,7 +44,7 @@ For example, a non-OCA CAF compiler, such as the Cray or Intel compilers, might 
 program's coarray square-bracket syntax, while OpenCoarrays supports the same program's calls to 
 collective subroutine such as `co_sum` and `co_reduce`.
 
-<a name="workflow-with-oca-aware-compiler">
+<a name="a-sample-basic-workflow">
 ## A sample basic workflow ##
 </a>
 
@@ -78,8 +78,8 @@ environment variable:
 
 where "4" is the number of images to be launched at program start-up.
 
-<a name="extending-a-non-oca-CAF-compiler"
-## An advanced workflows </a> ##
+<a name="sample-advanced-workflow"
+## An advanced workflow </a> ##
 
 To extend the capabilities of a non-OCA CAF compiler (e.g., the Intel or Cray compilers),
 access the types and procedures of the [opencoarrays module] by use assocication.  We 
@@ -102,17 +102,12 @@ and also run the program with the lower-level commnication library:
 
     mpirun -np <number-of-images> ./tally
 
-
 [Sourcery Store]: http://www.sourceryinstitute.org/store
-[Virtualbox]: http://www.virtualbox.org
 [Issues]: https://github.com/sourceryinstitute/opencoarrays/issues
 [opencoarrays module]: ./src/extensions/opencoarrays.F90
 [GCC]: http://gcc.gnu.org
-[TS18508 Additional Parallel Features in Fortran]: http://isotc.iso.org/livelink/livelink?func=ll&objId=17181227&objAction=Open
+[TS18508] Additional Parallel Features in Fortran: http://isotc.iso.org/livelink/livelink?func=ll&objId=17181227&objAction=Open
 [The caf compiler wrapper]: #the-caf-compiler-wrapper
 [The cafrun program launcher]: #the-cafrun-program-launcher
-[Compiling a CAF Program]: #compiling-a-caf-program
-[workflow-with-oca-aware-compiler]: #workflow-with-oca-aware-compiler
-[Sample advanced workflows]: #sample-advanced-workflows
-[or a non-CAF compiler (e.g., GCC 4.9)Executing a CAF program]: #executing-a-caf-program
-
+[A Sample Basic  Workflow]: #a-sample-basic-workflow
+[A Sample Advanced Workflow]: #sample-advanced-workflow
