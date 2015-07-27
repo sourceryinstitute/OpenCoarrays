@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 
 #Name project and specify source languages
-project(opencoarrays VERSION 1.0.0 LANGUAGES C Fortran)
+project(opencoarrays VERSION 2.0.0 LANGUAGES C Fortran)
 
 #Print an error message on an attempt to build inside the source directory tree:
 if ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
