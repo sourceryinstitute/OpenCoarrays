@@ -1839,9 +1839,13 @@ get_MPI_datatype (gfc_descriptor_t *desc)
       return MPI_COMPLEX;
     case GFC_DTYPE_COMPLEX_8:
       return MPI_DOUBLE_COMPLEX;
-    case GFC_DTYPE_CHARACTER:
-      return MPI_CHARACTER;
     }
+/* gfortran passes character string arguments with a 
+   GFC_DTYPE_TYPE_SIZE == GFC_TYPE_CHARACTER + 64*strlen
+*/
+  if ( (GFC_DTYPE_TYPE_SIZE(desc)-GFC_DTYPE_CHARACTER)%64==0 )
+      return MPI_CHARACTER;
+
   caf_runtime_error ("Unsupported data type in collective: %ld\n",GFC_DTYPE_TYPE_SIZE (desc)); 
   return 0;
 }
