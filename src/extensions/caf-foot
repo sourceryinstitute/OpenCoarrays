@@ -1,15 +1,16 @@
+cmd=`basename $0`
+
 usage()
 {
-    cmd=`basename $0`
     echo ""
     echo " $cmd - Fortran compiler wrapper for OpenCoarrays"
     echo ""
     echo " Usage: $cmd <fortran-source-file> [options] ..."
     echo ""
     echo " Options:"
-    echo "   --help, -h           Show this help message"
-    echo "   --version, -v, -V    Report version and copyright information"
-    echo "   --wrapping, -w,      Report the name of the wrapped compiler"
+    echo "   --help, -h               Show this help message"
+    echo "   --version, -v, -V        Report version and copyright information"
+    echo "   --wrapping, -w, --wraps  Report the name of the wrapped compiler"
     echo ""
     echo " Example usage:"
     echo ""
@@ -17,30 +18,37 @@ usage()
     echo "   $cmd -v"
     echo "   $cmd --help"
     echo ""
-    echo " Version $caf_version Restrictions:"
-    echo "   1. If any of the options listed above apear, any remaining arguments are ignored."
-    echo "   2. If present, <fortran-source-file>,"
-    echo "      a. must be a Fortran source file," 
-    echo "      b. must appear before all other arguments,"
-    echo "      c. must be the only Fortran source file in the argument list,"
-    echo "      d. must have a name of the form *.f90, *.F90, *.f, or *.F. "
-    echo "   3. The environment variable 'FC' must be empty or point to a Fortran compiler/linker. "
-    echo "   4. If 'FC' is empty, a default value of 'mpif90' is used. "
-    echo "   5. Each scope containing CAF source must include one or more 'use opencoarrays' statements."
-    echo "   6. The only CAF statements or expressions are"
-    echo "      a. 'num_images()' "
-    echo "      b. 'this_image()' with or without arguments"
-    echo "      c. 'sync all' with or without arguments."
-    echo "      d. 'sync images' with or without arguments."
-    echo "      e. 'error stop' without arguments."
-    echo "      f. 'co_sum', 'co_max', 'co_min', or 'co_reduce'"
-    echo "      f. 'put' or 'get'"
-    echo "   7. Coarray codimensions must either be"
-    echo "      a. replaced by an invocation of 'get' in expressions."
-    echo "      b. replaced by an invocation of 'put' on the left-hand side of assignments."
+    echo "OpenCoarrays $caf_version $cmd supports three categories of compilers"
+    echo "with the following restrictions for each use case:"
     echo ""
-    echo " The caf wrapper will append -L, -l, and -fcoarray arguments "
-    echo " with values that get set during the OpenCoarrays build process."
+    echo " 1. With an OpenCoarrays-Aware (OCA) compiler (GNU 5.1.0 or later),"
+    echo "   a. If any of the options listed above appear, any remaining arguments are ignored."
+    echo "   b. If present, <fortran-source-file> must"
+    echo "      * be a Fortran source file," 
+    echo "      * appear before all other arguments,"
+    echo "      * be the only Fortran source file in the argument list,"
+    echo "      * have a name of the form *.f90, *.F90, *.f, or *.F. "
+    echo "   c. The environment variable 'FC' must be empty or point to a Fortran compiler/linker. "
+    echo "   d. If 'FC' is empty, a default value of 'mpif90' is used. "
+    echo ""
+    echo " 2. With non-OCA CAF compilers (Intel or Cray),"
+    echo "   a. Observe restrictions 1a-d above."
+    echo "   b. Access OpenCoarrays collective subroutines via use association with an only clause,"
+    echo "      e.g., 'use opencoarrays, only : co_sum,co_broadcast' "
+    echo ""
+    echo " 3. With non-CAF compilers (all compilers not named above),"
+    echo "   a. Observe restrictions 1a-d above."
+    echo "   b. Access OpenCoarrays capabilities via use association ('use opencoarrays')."
+    echo "   c. The only CAF statements or expressions allowed are the following:"
+    echo "      * 'num_images()' "
+    echo "      * 'this_image()' with or without arguments"
+    echo "      * 'sync all' with or without arguments."
+    echo "      * 'sync images' with or without arguments."
+    echo "      * 'error stop' without arguments."
+    echo "      * 'co_sum', 'co_broadcast', 'co_max', 'co_min', or 'co_reduce'"
+    echo ""
+    echo " The caf wrapper will append -L, -l, and other required arguments as necessary"
+    echo " using values that get set during the OpenCoarrays build and installation."
     echo ""
 
     exit 1
@@ -48,7 +56,8 @@ usage()
 
 # Print useage information if caf is invoked without arguments
 if [ $# == 0 ]; then
-  usage
+  usage | less
+  exit 1
 fi
 
 # Default to "mpif90" Fortran compiler if environment variable FC has zero length:
@@ -70,6 +79,12 @@ if [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
     echo "BSD 3-Clause License.  For more information about these matters, see"
     echo "the file named COPYRIGHT-BSD3."
     echo ""
+elif [[ $1 == '-w' || $1 == '--wrapping' || $1 == '--wraps' ]]; then
+  echo "caf wraps FC=$FC"
+elif [[ $1 == '-h' || $1 == '--help' ]]; then
+  # Print usage information
+  usage | less
+  exit 1
 elif [ "$caf_compiler" = "true" ]; then
   # Nothing to do other than invoke the compiler with all the command-line arguments:
   $FC "$@" -L $caf_lib_dir $link_args
@@ -94,11 +109,9 @@ else
     set -- "caf-$1" "${@:2:max_arguments}"
     # Invoke the compiler along with all command-line arguments:
     $FC "$@" -L $caf_lib_dir -I $caf_mod_dir $link_args
-  elif [[ $1 == '-w' || $1 == '--wrapping' ]]; then
-    echo "caf wraps FC=$FC"
-  elif [[ $1 == '-h' || $1 == '--help' ]]; then
-    usage
   else
-    usage
+    # Print usage information upon encountering an unknowon CAF source file extension
+    usage | less
+    exit 1
   fi
 fi
