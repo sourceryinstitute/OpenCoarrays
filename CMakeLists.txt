@@ -26,11 +26,17 @@ endif()
 #Report untested Fortran compiler unless explicitly directed to build all examples.
 if ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "GNU" )
   set(gfortran_compiler true)
-# add_definitions(-DPREFIX_NAME=_gfortran_caf_)
+elseif ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "Cray" )
+  set(cray_compiler true)
+  message(WARNING
+   "Support for the detected compiler (${CMAKE_Fortran_COMPILER_ID}) is experimental. "
+   "Please report any failures to opencoarrays@googlegroups.com"
+  )
+  option(COMPILER_LACKS_C_PTRDIFF_T "iso_c_binding bug filed against CCE 8.4 beta" TRUE)
 else()
   message(WARNING 
-    "*** Attempting to build with untested Fortran compiler: ${CMAKE_Fortran_COMPILER_ID}."
-    "*** Please report any failures to opencoarrays@googlegroups.com"
+    "Attempting to build with untested Fortran compiler: ${CMAKE_Fortran_COMPILER_ID}. "
+    "Please report any failures to opencoarrays@googlegroups.com\n\n"
   )
 endif()
 

@@ -29,7 +29,15 @@ module opencoarrays
 #ifdef COMPILER_SUPPORTS_ATOMICS
   use iso_fortran_env, only : atomic_int_kind
 #endif
-  use iso_c_binding, only : c_int,c_char,c_ptr,c_loc,c_double,c_int32_t,c_ptrdiff_t,c_sizeof,c_bool,c_funloc
+#if defined(COMPILER_LACKS_C_PTRDIFF_T) || defined(COMPILER_LACKS_C_SIZEOF_ASSUMED_RANK)
+  use iso_c_binding, only : c_int,c_char,c_ptr,c_loc,c_double,c_int32_t,c_bool,c_funloc,c_long
+#elif defined(COMPILER_LACKS_C_PTRDIFF_T) 
+  use iso_c_binding, only : c_int,c_char,c_ptr,c_loc,c_double,c_int32_t,c_bool,c_funloc,c_long     ,c_sizeof
+#elif defined(COMPILER_LACKS_C_SIZEOF_ASSUMED_RANK)
+  use iso_c_binding, only : c_int,c_char,c_ptr,c_loc,c_double,c_int32_t,c_bool,c_funloc,c_ptrdiff_t
+#else
+  use iso_c_binding, only : c_int,c_char,c_ptr,c_loc,c_double,c_int32_t,c_bool,c_funloc,c_ptrdiff_t,c_sizeof
+#endif
   implicit none
 
   private
@@ -50,6 +58,10 @@ module opencoarrays
     private
     integer(atomic_int_kind), allocatable :: atom[:]
   end type
+#endif
+
+#ifdef COMPILER_LACKS_C_PTRDIFF_T
+  integer(c_int), parameter :: c_ptrdiff_t=c_long
 #endif
 
   ! Generic interface to co_broadcast with implementations for various types, kinds, and ranks
@@ -376,7 +388,6 @@ contains
     type(gfc_descriptor_t) :: a_descriptor
     integer(c_int), parameter :: unit_stride=1,scalar_offset=-1
     integer(c_int) :: i
-
     a_descriptor%dtype = my_dtype(type_=BT_INTEGER,kind_=int(c_sizeof(a)/bytes_per_word,c_int32_t),rank_=rank(a))
     a_descriptor%offset = scalar_offset 
     a_descriptor%base_addr = c_loc(a) ! data
@@ -385,7 +396,14 @@ contains
       a_descriptor%dim_(i)%lower_bound = lbound(a,i)
       a_descriptor%dim_(i)%ubound_ = ubound(a,i)
     end do
-
+#if defined(COMPILER_LACKS_C_SIZEOF_ASSUMED_RANK)
+  contains
+    function c_sizeof(mold) result(c_size_of_mold)
+      integer(c_int), intent(in), target :: mold(..)
+      integer(c_int) :: c_size_of_mold
+      c_size_of_mold=4
+    end function
+#endif
   end function
 
   function gfc_descriptor_logical(a) result(a_descriptor)
@@ -419,6 +437,15 @@ contains
       a_descriptor%dim_(i)%lower_bound = lbound(a,i)
       a_descriptor%dim_(i)%ubound_ = ubound(a,i)
     end do
+
+#if defined(COMPILER_LACKS_C_SIZEOF_ASSUMED_RANK)
+  contains
+    function c_sizeof(mold) result(c_size_of_mold)
+      real(c_double), intent(in), target :: mold(..)
+      integer(c_int) :: c_size_of_mold
+      c_size_of_mold=4
+    end function
+#endif
 
   end function
 
