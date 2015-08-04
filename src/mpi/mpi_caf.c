@@ -531,6 +531,7 @@ void *
       MPI_Win_flush(caf_this_image-1, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
       free(init_array);
+      PREFIX(sync_all) (NULL,NULL,0);
     }
 
   caf_static_t *tmp = malloc (sizeof (caf_static_t));
