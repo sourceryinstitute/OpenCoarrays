@@ -46,7 +46,7 @@ module co_intrinsics_module
 contains
 
   subroutine co_all_logical(a)
-    logical, intent(inout) :: a
+    logical, intent(inout) :: a(:)
     call co_reduce(a,and)
   contains
     pure function and(lhs,rhs) result(lhs_and_rhs) bind(C,name="and")
@@ -98,10 +98,10 @@ program main
 
   ! Verify that every image has a "true" variable with the value .true.
   verify_co_reduce_logical: block 
-    logical :: true=.true.
+    logical,dimension(10) :: true=.true.
     sync all
     call co_all(true)
-    if (true) then
+    if (all(true .eqv. .true.)) then
       logical_passes=.true.
     else
       write(error_unit,"(2(a,i2))") "co_reduce fails for logical argument with result (",true,") on image",this_image()

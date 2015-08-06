@@ -2042,26 +2042,26 @@ PREFIX (co_reduce) (gfc_descriptor_t *a, void *(*opr) (void *, void *), int opr_
   MPI_Op op;
   if(GFC_DESCRIPTOR_TYPE(a) == BT_INTEGER)
     {
-      foo_int32_t = opr;
+      foo_int32_t = (typeof(foo_int32_t))opr;
       MPI_Op_create(redux_int32, 1, &op);
     }
   else if(GFC_DESCRIPTOR_TYPE(a) == BT_REAL)
     {
       if(GFC_DESCRIPTOR_SIZE(a) == sizeof(float))
   	{
-  	  foo_float = opr;
+  	  foo_float = (typeof(foo_float))opr;
   	  MPI_Op_create(redux_real32, 1, &op);
   	}
       else
   	{
-  	  foo_double = opr;
+  	  foo_double = (typeof(foo_double))opr;
   	  MPI_Op_create(redux_real64, 1, &op);
   	}
     }
   else if(GFC_DESCRIPTOR_TYPE(a) == BT_LOGICAL)
     {
-      foo_int32_t = opr;
-      MPI_Op_create(redux_int32, 1, &op);  
+      foo_int32_t = (typeof(foo_int32_t))opr;
+      MPI_Op_create(redux_int32, 1, &op);
     }
   else
     {
