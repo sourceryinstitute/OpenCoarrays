@@ -3,13 +3,6 @@ cmake_minimum_required(VERSION 3.0)
 #Name project and specify source languages
 project(opencoarrays VERSION 2.0.0 LANGUAGES C Fortran)
 
-# Temporary fix
-if (CMAKE_VERSION VERSION_EQUAL 3.3.0)
-  set(CMAKE_Fortran_COMPILER_VERSION ${CMAKE_Fortran_COMPILER_VERSION}
-    CACHE STRING "")
-  mark_as_advanced(FORCE CMAKE_Fortran_COMPILER_VERSION)
-endif()
-
 #Print an error message on an attempt to build inside the source directory tree:
 if ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
   message(FATAL_ERROR "ERROR! "
@@ -47,7 +40,7 @@ else()
   )
 endif()
 
-if (NOT CMAKE_VERSION VERSION_LESS 3.3) 
+if (NOT CMAKE_VERSION VERSION_LESS 3.3.1) 
   # Detect Fortran compiler version directly
   if(gfortran_compiler AND (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 5))
     set(opencoarrays_aware_compiler true)

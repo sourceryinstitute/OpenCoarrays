@@ -8,7 +8,7 @@ elseif("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Cray")
   set(cray_compiler true)
 endif()
 
-if (NOT CMAKE_VERSION VERSION_LESS 3.3) 
+if (NOT CMAKE_VERSION VERSION_LESS 3.3.1) 
   # Detect Fortran compiler version directly
   if(gfortran_compiler AND (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 5))
     set(opencoarrays_aware_compiler true)
