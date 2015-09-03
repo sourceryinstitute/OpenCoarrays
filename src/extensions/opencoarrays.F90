@@ -198,7 +198,11 @@ module opencoarrays
 
   ! --------------------
 
+#ifndef PORTLAND_GROUP_COMPILER
   integer(c_int), save, volatile, bind(C,name="CAF_COMM_WORLD") :: CAF_COMM_WORLD
+#else
+  integer(c_int), volatile, bind(C,name="CAF_COMM_WORLD") :: CAF_COMM_WORLD
+#endif
   integer(c_int32_t), parameter  :: bytes_per_word=4_c_int32_t
 
   interface gfc_descriptor
