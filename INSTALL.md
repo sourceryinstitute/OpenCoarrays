@@ -105,6 +105,7 @@ OpenCoarrays, install OpenCoarrays, build the tests, run the tests, and report t
     tar xvzf opencoarrays.tar.gz
     cd opencoarrays
     mkdir build
+    cd build
     CC=mpicc FC=mpif90 cmake .. -DCMAKE_INSTALL_PREFIX=${PWD}
     make 
     make install
