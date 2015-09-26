@@ -1,0 +1,125 @@
+#!/bin/bash
+# OpenCoarrays is distributed under the OSI-approved BSD 3-clause License:
+# Copyright (c) 2015, Sourcery, Inc.
+# Copyright (c) 2015, Sourcery Institute
+# All rights reserved.
+#
+# This script downloads and installs the MPICH library (http://www.mpich.org).
+#
+# All rights reserved.
+# Redistribution and use in source and binary forms, with or without modification, 
+# are permitted provided that the following conditions are met:
+# 
+# 1. Redistributions of source code must retain the above copyright notice, this 
+#    list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright notice, this 
+#    list of conditions and the following disclaimer in the documentation and/or 
+#    other materials provided with the distribution.
+# 3. Neither the names of the copyright holders nor the names of their contributors 
+#    may be used to endorse or promote products derived from this software without 
+#    specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+# IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+# NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
+# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+# POSSIBILITY OF SUCH DAMAGE.
+
+cmd=`basename $0` 
+usage()
+{
+    echo ""
+    echo " $cmd - Bash script for building GCC from source"
+    echo ""
+    echo " Usage: $cmd <branch-name> <install-path> <number-of-threads> [options] ..."
+    echo ""
+    echo " Options:"
+    echo "   --help, -h           Show this help message"
+    echo "   --version, -v, -V    Report version and copyright information"
+    echo ""
+    echo " Example usage:"
+    echo ""
+    echo "   $cmd default /opt/mpich/3.1.4 4"
+    echo "   $cmd 3.1.4 /opt/mpich/3.1.4 4"
+    echo "   $cmd -v" 
+    echo "   $cmd --help"
+    echo ""
+    echo " Note: use svn ls svn://gcc.gnu.org/svn/gcc/branches"
+    echo " to list all available branches."
+    echo ""
+    exit 1
+}
+
+# Default to compiling with the GNU compilers
+if [ -z "$CC" ]; then
+  CC=gcc
+fi
+if [ -z "$FC" ]; then
+  FC=gfortran
+fi
+if [ -z "$CXX" ]; then
+  CXX=g++
+fi
+
+build()
+{
+    mkdir -p $src\-build &&
+    cd $src\-build &&
+   CC=$CC FC=$FC CXX=$CXX ../$src/configure --prefix=$2 && 
+   make -j $num_threads 
+}
+
+# Default to 2 threads if no specified thread count:
+if [ -z $3 ]; then
+  num_threads=2
+else
+  num_threads=$3
+fi
+
+if [ $# == 0 ]; then
+  # Print usage information if script is invoked without arguments
+  usage | less
+elif [[ $1 == '--help' || $1 == '-h' ]]; then
+  # Print usage information if script is invoked with --help or -h argument
+  usage | less
+elif [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
+  # Print script copyright if invoked with -v, -V, or --version argument
+  echo ""
+  echo "GCC Build Script"
+  echo "Copyright (C) 2015 Sourcery, Inc."
+  echo "Copyright (C) 2015 Sourcery Institute"
+  echo ""
+  echo "$cmd comes with NO WARRANTY, to the extent permitted by law."
+  echo "You may redistribute copies of $cmd under the terms of the"
+  echo "BSD 3-Clause License.  For more information about these matters, see"
+  echo "http://www.sourceryinstitute.org/license.html"
+  echo ""
+else
+  if [[ $1 == 'default' ]]; then
+    version=3.1.4
+  else
+    version=$1 
+  fi
+  src=mpich-$version
+  # Build mpich
+  time \
+  {
+    if ! type wget > /dev/null; then
+      echo 
+      echo "$cmd requires 'wget'.  Please install it.  Aborting." 
+      exit 1;
+    else
+      wget http://www.mpich.org/static/downloads/$version/$src.tar.gz &&
+      tar xvzf $src.tar.gz &&
+      build $version $2 $num_threads
+    fi
+  } >&1 | tee build.log
+  echo "Check build.log for results.  If the build was successful,"
+  echo "type 'make install' (or 'sudo make install') to complete"
+  echo "the installation."
+fi

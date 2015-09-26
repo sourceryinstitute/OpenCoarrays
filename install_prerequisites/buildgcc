@@ -1,0 +1,116 @@
+#!/bin/bash
+# OpenCoarrays is distributed under the OSI-approved BSD 3-clause License:
+# Copyright (c) 2015, Sourcery, Inc.
+# Copyright (c) 2015, Sourcery Institute
+# All rights reserved.
+#
+# This script downloads and installs the GNU Compiler Collection (GCC), including
+# the GCC C, C++, and Fortran compilers (http://gcc.gnu.org).
+#
+# All rights reserved.
+# Redistribution and use in source and binary forms, with or without modification, 
+# are permitted provided that the following conditions are met:
+# 
+# 1. Redistributions of source code must retain the above copyright notice, this 
+#    list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright notice, this 
+#    list of conditions and the following disclaimer in the documentation and/or 
+#    other materials provided with the distribution.
+# 3. Neither the names of the copyright holders nor the names of their contributors 
+#    may be used to endorse or promote products derived from this software without 
+#    specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+# IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+# NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
+# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+# POSSIBILITY OF SUCH DAMAGE.
+
+cmd=`basename $0` 
+usage()
+{
+    echo ""
+    echo " $cmd - Bash script for building GCC from source"
+    echo ""
+    echo " Usage: $cmd <branch-name> <install-path> <number-of-threads> [options] ..."
+    echo ""
+    echo " Options:"
+    echo "   --help, -h           Show this help message"
+    echo "   --version, -v, -V    Report version and copyright information"
+    echo ""
+    echo " Example usage:"
+    echo ""
+    echo "   $cmd trunk /opt/gnu/6.0 4"
+    echo "   $cmd gcc-5-branch /opt/gnu/5.2 4"
+    echo "   $cmd -v" 
+    echo "   $cmd --help"
+    echo ""
+    echo " Note: use svn ls svn://gcc.gnu.org/svn/gcc/branches"
+    echo " to list all available branches."
+    echo ""
+    exit 1
+}
+
+build()
+{
+    cd $1 && 
+    ./contrib/download_prerequisites &&
+    cd .. &&
+    mkdir -p $1-build &&
+    cd $1\-build &&
+    ../$1/configure --prefix=$2 --enable-languages=c,c++,fortran,lto --disable-multilib --disable-werror && 
+    make -j $num_threads bootstrap 
+}
+
+
+# Default to 2 threads if no specified thread count:
+if [ -z $3 ]; then
+  num_threads=2
+else
+  num_threads=$3
+fi
+
+if [ $# == 0 ]; then
+  # Print usage information if script is invoked without arguments
+  usage | less
+elif [[ $1 == '--help' || $1 == '-h' ]]; then
+  # Print usage information if script is invoked with --help or -h argument
+  usage | less
+elif [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
+  # Print script copyright if invoked with -v, -V, or --version argument
+  echo ""
+  echo "GCC Build Script"
+  echo "Copyright (C) 2015 Sourcery, Inc."
+  echo ""
+  echo "$cmd comes with NO WARRANTY, to the extent permitted by law."
+  echo "You may redistribute copies of $cmd under the terms of the"
+  echo "BSD 3-Clause License.  For more information about these matters, see"
+  echo "http://www.sourceryinstitute.org/license.html"
+  echo ""
+else
+  if [[ $1 == 'trunk' ]]; then
+    url_tail=$1 
+  else
+    url_tail=/branches/$1 
+  fi
+  # Build gcc
+  time \
+  {
+    if ! type svn > /dev/null; then
+      echo 
+      echo "$cmd requires 'svn'.  Please install it.  Aborting." 
+      exit 1;
+    else
+      svn co svn://gcc.gnu.org/svn/gcc/$url_tail &&
+      build $1 $2 $3
+    fi
+  } >&1 | tee build.log
+  echo "Check build.log for results.  If the build was successful,"
+  echo "type 'make install' (or 'sudo make install') to complete"
+  echo "the installation."
+fi
