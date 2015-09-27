@@ -1,10 +1,13 @@
 #!/bin/bash
+#
+# buildmpich
+#
+# -- This script ownloads and installs the MPICH library (http://www.mpich.org).
+#
 # OpenCoarrays is distributed under the OSI-approved BSD 3-clause License:
 # Copyright (c) 2015, Sourcery, Inc.
 # Copyright (c) 2015, Sourcery Institute
 # All rights reserved.
-#
-# This script downloads and installs the MPICH library (http://www.mpich.org).
 #
 # All rights reserved.
 # Redistribution and use in source and binary forms, with or without modification, 
@@ -34,9 +37,11 @@ cmd=`basename $0`
 usage()
 {
     echo ""
-    echo " $cmd - Bash script for building GCC from source"
+    echo " $cmd - Bash script for building MPICH from source"
     echo ""
-    echo " Usage: $cmd <branch-name> <install-path> <number-of-threads> [options] ..."
+    echo " Usage (optional arguments in square brackets): "
+    echo "      $cmd <version-number> <install-path> <number-of-threads>"
+    echo " or   $cmd [options] "
     echo ""
     echo " Options:"
     echo "   --help, -h           Show this help message"
@@ -49,13 +54,14 @@ usage()
     echo "   $cmd -v" 
     echo "   $cmd --help"
     echo ""
-    echo " Note: use svn ls svn://gcc.gnu.org/svn/gcc/branches"
-    echo " to list all available branches."
+    echo " Note: For a list of available MPICH versions, visit"
+    echo " http://www.mpich.org/static/downloads/"
     echo ""
     exit 1
 }
 
-# Default to compiling with the GNU compilers
+# Default to compiling with the GNU compilers if the environment 
+# variables CC, FC, and CXX, are empty:
 if [ -z "$CC" ]; then
   CC=gcc
 fi
@@ -66,20 +72,39 @@ if [ -z "$CXX" ]; then
   CXX=g++
 fi
 
-build()
-{
-    mkdir -p $src\-build &&
-    cd $src\-build &&
-   CC=$CC FC=$FC CXX=$CXX ../$src/configure --prefix=$2 && 
-   make -j $num_threads 
-}
+# Default to installing MPICH 3.1.4 if no version specified in the first
+# command-line argument
+if [[ $1 == 'default' ]]; then
+  version=3.1.4
+else
+  version=$1 
+fi
+# Default to installing in the current directory if no path is provided
+# in the second command-line argument
+if [ -z $2 ]; then
+  install_path=${PWD}
+else
+  install_path=$2
+fi
 
-# Default to 2 threads if no specified thread count:
+# Default to building with 2 threads if no thread count is specified
+# in the third command-line argument
 if [ -z $3 ]; then
   num_threads=2
 else
   num_threads=$3
 fi
+
+src=mpich-$version
+
+# Make the build directory, configure, and build
+build()
+{
+   mkdir -p $src\-build &&
+   cd $src\-build &&
+   CC=$CC FC=$FC CXX=$CXX ../$src/configure --prefix=$install_path && 
+   make -j $num_threads 
+}
 
 if [ $# == 0 ]; then
   # Print usage information if script is invoked without arguments
@@ -90,7 +115,7 @@ elif [[ $1 == '--help' || $1 == '-h' ]]; then
 elif [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
   # Print script copyright if invoked with -v, -V, or --version argument
   echo ""
-  echo "GCC Build Script"
+  echo "MPICH Build Script"
   echo "Copyright (C) 2015 Sourcery, Inc."
   echo "Copyright (C) 2015 Sourcery Institute"
   echo ""
@@ -100,13 +125,7 @@ elif [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
   echo "http://www.sourceryinstitute.org/license.html"
   echo ""
 else
-  if [[ $1 == 'default' ]]; then
-    version=3.1.4
-  else
-    version=$1 
-  fi
-  src=mpich-$version
-  # Build mpich
+  # Download and build mpich
   time \
   {
     if ! type wget > /dev/null; then
@@ -114,9 +133,12 @@ else
       echo "$cmd requires 'wget'.  Please install it.  Aborting." 
       exit 1;
     else
+      # Download MPICH
       wget http://www.mpich.org/static/downloads/$version/$src.tar.gz &&
+      # Unpack the downloaded tape archive
       tar xvzf $src.tar.gz &&
-      build $version $2 $num_threads
+      # Compile MPICH source
+      build $version $install_path $num_threads
     fi
   } >&1 | tee build.log
   echo "Check build.log for results.  If the build was successful,"
