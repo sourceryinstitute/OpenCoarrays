@@ -51,8 +51,8 @@ install(TARGETS caf_mpi EXPORT OpenCoarraysTargets
 )
 install(DIRECTORY  ${CMAKE_BINARY_DIR}/mod DESTINATION .)
 
-set(compiler_wrapper ${CMAKE_BINARY_DIR}/exe/caf)
 set(exe_dir ${CMAKE_BINARY_DIR}/bin_staging)
+set(compiler_wrapper ${exe_dir}/caf)
 install(
     FILES "${compiler_wrapper}"
     PERMISSIONS WORLD_EXECUTE WORLD_READ WORLD_WRITE OWNER_EXECUTE OWNER_READ OWNER_WRITE GROUP_EXECUTE GROUP_READ GROUP_WRITE
