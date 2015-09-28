@@ -26,28 +26,30 @@ source code.
 ### OS X###
 </a> 
 
-We have developed a  Portfile that we will submit for inclusion into the
-[MacPorts] package management software after posting the OpenCoarrays 1.0.0 
-tar ball online.  Once the OpenCoarrays Portfile has been incorporated into 
-MacPorts, users can install OpenCoarrays on OS X by installing MacPorts and 
-then typing the following:
+For now, OS X users will find it easiest to use OpenCoarrays inside the 
+Lubuntu virtual machine available in the [Sourcery Institute Store].
+
+In hopes of offering a straightforward, native OS X installation option, we 
+have submitted a Portfile  to the [MacPorts] package management software
+developers.  Please add yourself to the "cc" list on the corresponding [ticket]
+for updates.  Once Macports incorporates the OpenCoarrays Portfile, users will be
+to install OpenCoarrays by typing the following:
 
     sudo port selfupdate  
     sudo port upgrade outdated  
     sudo port install opencoarrays
 
-Administrator privileges are required for issuing the above "sudo" commands.  
-Also, the first two steps above are required only if your MacPorts ports 
-were last updated prior to the incorporation of the OpenCoarrays Portfile
-into MacPorts.  The above process can be repeated to obtain updates in the
-form of future OpenCoarrays releases.
+where the "sudo" command requires Administrator privileges and where the first 
+two steps above are required only if the MacPorts ports were last updated prior 
+to the incorporation of the OpenCoarrays Portfile into MacPorts.  Repeating the
+above steps will also install future OpenCoarrays updates.
 
 <a name="windows">
 ### Windows ###
 </a> 
 Windows users will find it easiest to download the Lubuntu Linux virtual 
-machine from the [Sourcery Store].  The virtual machine boots inside the 
-open-source [VirtualBox] virtualization package.  In addition to containing 
+machine from the [Sourcery Institute Store].  The virtual machine boots inside 
+the open-source [VirtualBox] virtualization package.  In addition to containing 
 GCC 4.9, 5.2, and 6.0, MPICH, OpenMPI, and OpenCoarrays, the virtual machine 
 contains dozens of other open-source software packages that support software 
 development in modern Fortran.  See the [download and installation instructions]
@@ -58,7 +60,7 @@ for a partial list of the included packages.
 </a>
 
 Linux users who prefer not to build OpenCoarrays from source might access 
-OpenCoarrays via the the Lubuntu Linux virtual machine from the [Sourcery Store]
+OpenCoarrays via the the Lubuntu Linux virtual machine from the [Sourcery Institute Store]
 after installing the version of [VirtualBox] that is suitable for the relevant 
 Linux distribution.  
 
@@ -81,6 +83,19 @@ install the following:
 * An MPI implementation that supports MPI 3.0 and is built by the aforementioned  
   Fortran and C compilers (preferably the [MPICH] or [MVAPICH] implementations for 
   robustness and high performance)
+
+The [install_prerequisites] directory contains experimental [buildgcc] and [buildmpich]
+bash shell scripts that can download and build any one of several versions of the [GCC] 
+C, C++, and Fortran compilers, and [MPICH].  (Because newer parts of the GNU Fortran compiler 
+(gfortran) are written in C++, installing the GNU Fortran compiler from source requires 
+also installing the GNU C++ compiler (g++).)  The CMAke scripts that build OpenCoarrays
+also copy [buildgcc] and [buildmpich] into the "bin" directory of the OpenCoarrays
+installation for later use.
+
+We have the buildgcc and buildmpich scripts tested on OS X and Linux. Please submit 
+suggestions for improving the scripts to our [Issues] page or preferably suggested edits by 
+forking a copy of the [OpenCoarrays] repository, making the suggested edits, and submitting 
+a pull request.
 
 If installing the above prerequisites is infeasible, then a limited coverage of CAF 
 features is available via the OpenCoarrays "caf" compiler wrapper and the 
@@ -188,6 +203,7 @@ for an exhaustive description of the build process and options.
 
 [End-User Installation]: #end-user-installation
 [OS X]: #os-x
+[ticket]: https://trac.macports.org/ticket/47806
 [Windows]: #windows
 [Linux]: #linux
 [Building from Source]: #building-from-source
@@ -196,6 +212,7 @@ for an exhaustive description of the build process and options.
 [Make]: #make
 [Obtaining GCC]: #obtaining-gcc
 [Sourcery Store]: http://www.sourceryinstitute.org/store
+[Sourcery Institute Store]: http://www.sourceryinstitute.org/store
 [Virtualbox]: http://www.virtualbox.org
 [download and installation instructions]: http://www.sourceryinstitute.org/uploads/4/9/9/6/49967347/overview.pdf
 [yum]: http://yum.baseurl.org
@@ -203,6 +220,9 @@ for an exhaustive description of the build process and options.
 [Issues]: https://github.com/sourceryinstitute/opencoarrays/issues
 [make.inc]: ./src/make.inc
 [opencoarrays]: ./src/extensions/opencoarrays.F90
+[install_prerequisites]: ./install_prerequisites
+[buildgcc]: ./install_prerequisites/buildgcc
+[buildmpich]: ./install_prerequisites/buildmpich
 [MPICH]: http://www.mpich.org
 [MVAPICH]:http://mvapich.cse.ohio-state.edu
 [Macports]: http://www.macports.org
