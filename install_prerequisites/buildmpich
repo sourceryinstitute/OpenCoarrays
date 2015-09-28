@@ -142,7 +142,7 @@ else
       build $version $install_path $num_threads
     fi
   } >&1 | tee build.log
-  echo "Check build.log for results.  If the build was successful,"
-  echo "type 'make install' (or 'sudo make install') to complete"
-  echo "the installation."
+  echo "Check build.log for results.  If the build was successful, type"
+  echo "'cd $src-build && make install' (or 'cd $src-build && sudo make install') "
+  echo "to complete the installation."
 fi
