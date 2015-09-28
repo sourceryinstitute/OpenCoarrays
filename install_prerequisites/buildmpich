@@ -3,6 +3,7 @@
 # buildmpich
 #
 # -- This script ownloads and installs the MPICH library (http://www.mpich.org).
+#    Execute this script with no arguments to obtain usage information.
 #
 # OpenCoarrays is distributed under the OSI-approved BSD 3-clause License:
 # Copyright (c) 2015, Sourcery, Inc.
