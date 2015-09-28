@@ -50,7 +50,7 @@ usage()
     echo ""
     echo " Example usage:"
     echo ""
-    echo "   $cmd default /opt/mpich/3.1.4 4"
+    echo "   $cmd default"
     echo "   $cmd 3.1.4 /opt/mpich/3.1.4 4"
     echo "   $cmd -v" 
     echo "   $cmd --help"
