@@ -4,6 +4,7 @@
 #
 # -- This script downloads and installs the GNU Compiler Collection (GCC), 
 #    including the C, C++, and Fortran compilers (http://gcc.gnu.org).
+#    Execute the script with no arguments to obtain usage information.
 #
 # OpenCoarrays is distributed under the OSI-approved BSD 3-clause License:
 # Copyright (c) 2015, Sourcery, Inc.
