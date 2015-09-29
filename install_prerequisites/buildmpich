@@ -3,7 +3,6 @@
 # buildmpich
 #
 # -- This script ownloads and installs the MPICH library (http://www.mpich.org).
-#    Execute this script with no arguments to obtain usage information.
 #
 # OpenCoarrays is distributed under the OSI-approved BSD 3-clause License:
 # Copyright (c) 2015, Sourcery, Inc.
@@ -83,7 +82,7 @@ fi
 # Default to installing in the current directory if no path is provided
 # in the second command-line argument
 if [ -z $2 ]; then
-  install_path=${PWD}
+  install_path=${PWD}mpich-$version-installation
 else
   install_path=$2
 fi
@@ -104,7 +103,7 @@ build()
    mkdir -p $src\-build &&
    cd $src\-build &&
    CC=$CC FC=$FC CXX=$CXX ../$src/configure --prefix=$install_path && 
-   make -j $num_threads 
+   CC=$CC FC=$FC CXX=$CXX make -j $num_threads 
 }
 
 if [ $# == 0 ]; then
