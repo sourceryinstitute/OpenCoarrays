@@ -84,18 +84,17 @@ install the following:
   Fortran and C compilers (preferably the [MPICH] or [MVAPICH] implementations for 
   robustness and high performance)
 
-The [install_prerequisites] directory contains experimental [buildgcc] and [buildmpich]
-bash shell scripts that can download and build any one of several versions of the [GCC] 
-C, C++, and Fortran compilers, and [MPICH].  (Because newer parts of the GNU Fortran compiler 
-(gfortran) are written in C++, installing the GNU Fortran compiler from source requires 
-also installing the GNU C++ compiler (g++).)  The CMAke scripts that build OpenCoarrays
-also copy [buildgcc] and [buildmpich] into the "bin" directory of the OpenCoarrays
-installation for later use.
+The [install_prerequisites] directory contains experimental [buildgcc], [buildmpich], and 
+[buildcmake] bash shell scripts that can download and build any one of several versions of the 
+[GCC]  C, C++, and Fortran compilers; the [CMake] build sytem; and the [MPICH] communication 
+library.  (Because newer parts of the GNU Fortran compiler gfortran are written in C++, 
+installing the GNU Fortran compiler from source requires also installing the GNU C++ compiler 
+g++.)  The CMake scripts that build OpenCoarrays also copy [buildgcc], [buildmpich], and
+[buildcmake] into the "bin" directory of the OpenCoarrays installation for later use.
 
-We have the buildgcc and buildmpich scripts tested on OS X and Linux. Please submit 
-suggestions for improving the scripts to our [Issues] page or preferably suggested edits by 
-forking a copy of the [OpenCoarrays] repository, making the suggested edits, and submitting 
-a pull request.
+We have tested the build scripts  on OS X and Linux. Please submit suggestions for improving 
+the scripts to our [Issues] page or preferably suggeste edits by forking a copy of the 
+[OpenCoarrays] repository, making the suggested edits, and submitting a pull request.
 
 If installing the above prerequisites is infeasible, then a limited coverage of CAF 
 features is available via the OpenCoarrays "caf" compiler wrapper and the 
@@ -175,31 +174,23 @@ system settings.  For example, you might need to remove the "-Werror" option fro
 compiler flags or name a different compiler.  In order to activate efficient strided-array 
 transfer support, uncomment the -DSTRIDED flag inside the [make.inc] file.
 
-## <a name="obtaingcc">Obtaining GCC</a> ##
+## <a name="obtaingcc">Obtaining GCC, MPICH, and CMake</a> ##
 
-[GCC] 5 binary builds are available at [https://gcc.gnu.org/wiki/GFortranBinaries].  Also,
+[GFortran Binaries] 5 binary builds are available at [https://gcc.gnu.org/wiki/GFortranBinaries].  Also,
 the Lubuntu Linux virtual machine available for download in the [Sourcery Store] includes 
-builds of GCC 4.9, 5.2, and 6.0 as well as a rudimentary script (/opt/sourcery/bin/buildgcc)
-that builds [GCC] from source on Linux and OS X. 
+builds of GCC 4.9, 5.2, and 6.0. 
 
-To build the most up-to-date version of GCC from source manually, you might first try the 
-steps employed in the buildgcc script:
+To build all prerequisites from source, including the current development branch of GCC,
+you might first try the running the provided scripts in a manner similar to the following:
 
-    svn co svn://gcc.gnu.org/svn/gcc/trunk
-    cd trunk
-    ./contrib/download_prerequisites
-    cd ..
-    mkdir -p trunk-build
+    cd install_prerequisites
+    ./buildgcc trunk
     cd trunk-build
-    ../trunk/configure --prefix=${PWD} --enable-languages=c,c++,fortran,lto --disable-multilib --disable-werror
-    make -j 2 bootstrap
     make install
+    CC=gcc FC=gfortran CXX=g++ ./buildmpich default
+    make install
+    ./buildcmake default
 
-where the "2" in the penultimate line launches a multi-threaded build with 2 threads.  Use more
-threads for additional speedup, depending on your platform.
-
-See the [GFortran Binaries] web page for additional details and the [Installing GCC] page
-for an exhaustive description of the build process and options.
 
 [End-User Installation]: #end-user-installation
 [OS X]: #os-x
@@ -223,6 +214,7 @@ for an exhaustive description of the build process and options.
 [install_prerequisites]: ./install_prerequisites
 [buildgcc]: ./install_prerequisites/buildgcc
 [buildmpich]: ./install_prerequisites/buildmpich
+[buildcmake]: ./install_prerequisites/buildcmake
 [MPICH]: http://www.mpich.org
 [MVAPICH]:http://mvapich.cse.ohio-state.edu
 [Macports]: http://www.macports.org
