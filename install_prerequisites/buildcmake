@@ -1,8 +1,9 @@
 #!/bin/bash
 #
-# buildmpich
+# buildcmake
 #
-# -- This script downloads and installs the MPICH library (http://www.mpich.org).
+# -- This script downloads and installs the CMake cross-platform Makefile generator
+#    (http://www.cmake.org).
 #
 # OpenCoarrays is distributed under the OSI-approved BSD 3-clause License:
 # Copyright (c) 2015, Sourcery, Inc.
@@ -37,10 +38,10 @@ cmd=`basename $0`
 usage()
 {
     echo ""
-    echo " $cmd - Bash script for building MPICH from source"
+    echo " $cmd - Bash script for building CMake from source"
     echo ""
     echo " Usage (optional arguments in square brackets): "
-    echo "      $cmd <version-number> <install-path> <number-of-threads>"
+    echo "      $cmd <version-number>"
     echo " or   $cmd [options] "
     echo ""
     echo " Options:"
@@ -50,12 +51,12 @@ usage()
     echo " Example usage:"
     echo ""
     echo "   $cmd default"
-    echo "   $cmd 3.1.4 /opt/mpich/3.1.4 4"
+    echo "   $cmd 3.3"
     echo "   $cmd -v" 
     echo "   $cmd --help"
     echo ""
-    echo " Note: For a list of available MPICH versions, visit"
-    echo " http://www.mpich.org/static/downloads/"
+    echo " Note: For a list of available CMake versions, visit"
+    echo " http://www.cmake.org/files/"
     echo ""
     exit 1
 }
@@ -72,38 +73,18 @@ if [ -z "$CXX" ]; then
   CXX=g++
 fi
 
-# Default to installing MPICH 3.1.4 if no version specified in the first
+# Default to installing CMake 3.3 if no version specified in the first
 # command-line argument
 if [[ $1 == 'default' ]]; then
-  version=3.1.4
+  version=3.3
 else
   version=$1 
 fi
-# Default to installing in the current directory if no path is provided
-# in the second command-line argument
-if [ -z $2 ]; then
-  install_path=${PWD}mpich-$version-installation
-else
-  install_path=$2
-fi
-
-# Default to building with 2 threads if no thread count is specified
-# in the third command-line argument
-if [ -z $3 ]; then
-  num_threads=2
-else
-  num_threads=$3
-fi
-
-src=mpich-$version
 
 # Make the build directory, configure, and build
 build()
 {
-   mkdir -p $src\-build &&
-   cd $src\-build &&
-   CC=$CC FC=$FC CXX=$CXX ../$src/configure --prefix=$install_path && 
-   CC=$CC FC=$FC CXX=$CXX make -j $num_threads 
+  ./cmake-$version.0-1.sh all
 }
 
 if [ $# == 0 ]; then
@@ -115,7 +96,7 @@ elif [[ $1 == '--help' || $1 == '-h' ]]; then
 elif [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
   # Print script copyright if invoked with -v, -V, or --version argument
   echo ""
-  echo "MPICH Build Script"
+  echo "CMake Build Script"
   echo "Copyright (C) 2015 Sourcery, Inc."
   echo "Copyright (C) 2015 Sourcery Institute"
   echo ""
@@ -125,7 +106,7 @@ elif [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
   echo "http://www.sourceryinstitute.org/license.html"
   echo ""
 else
-  # Download and build mpich
+  # Download and build CMake
   time \
   {
     if ! type wget > /dev/null; then
@@ -133,15 +114,15 @@ else
       echo "$cmd requires 'wget'.  Please install it.  Aborting." 
       exit 1;
     else
-      # Download MPICH
-      wget http://www.mpich.org/static/downloads/$version/$src.tar.gz &&
+      # Download CMake
+      wget http://www.cmake.org/files/v$version/cmake-$version.0-1-src.tar.bz2 &&
       # Unpack the downloaded tape archive
-      tar xvzf $src.tar.gz &&
-      # Compile MPICH source
-      build $version $install_path $num_threads
+      tar xvjf cmake-$version.0-1-src.tar.bz2 &&
+      # Compile Cmake source
+      build $version 
     fi
   } >&1 | tee build.log
-  echo "Check build.log for results.  If the build was successful, type"
-  echo "'cd $src-build && make install' (or 'cd $src-build && sudo make install') "
-  echo "to complete the installation."
+  echo ""
+  echo "Check build.log for results."
+  echo ""
 fi
