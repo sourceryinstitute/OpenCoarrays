@@ -10,7 +10,6 @@
 # Copyright (c) 2015, Sourcery Institute
 # All rights reserved.
 #
-# All rights reserved.
 # Redistribution and use in source and binary forms, with or without modification, 
 # are permitted provided that the following conditions are met:
 # 
@@ -41,7 +40,7 @@ usage()
     echo " $cmd - Bash script for building CMake from source"
     echo ""
     echo " Usage (optional arguments in square brackets): "
-    echo "      $cmd <version-number>"
+    echo "      $cmd <version-number> [<installation-path> <number-of-threads>]"
     echo " or   $cmd [options] "
     echo ""
     echo " Options:"
@@ -52,6 +51,7 @@ usage()
     echo ""
     echo "   $cmd default"
     echo "   $cmd 3.3"
+    echo "   $cmd 3.3 /opt/cmake/3.3 4"
     echo "   $cmd -v" 
     echo "   $cmd --help"
     echo ""
@@ -61,18 +61,6 @@ usage()
     exit 1
 }
 
-# Default to compiling with the GNU compilers if the environment 
-# variables CC, FC, and CXX, are empty:
-if [ -z "$CC" ]; then
-  CC=gcc
-fi
-if [ -z "$FC" ]; then
-  FC=gfortran
-fi
-if [ -z "$CXX" ]; then
-  CXX=g++
-fi
-
 # Default to installing CMake 3.3 if no version specified in the first
 # command-line argument
 if [[ $1 == 'default' ]]; then
@@ -81,10 +69,26 @@ else
   version=$1 
 fi
 
+# Default to installing in the present working directory if no install path is specified:
+if [ -z $2 ]; then
+  install_path=${PWD}
+else
+  install_path=$2
+fi
+
+# Default to 2 threads if no specified thread count:
+if [ -z $3 ]; then
+  num_threads=2
+else
+  num_threads=$3
+fi
+
 # Make the build directory, configure, and build
 build()
 {
-  ./cmake-$version.0-1.sh all
+  cd cmake-$version.0 &&
+  ./bootstrap --prefix=$install_path &&
+  make -j $num_threads
 }
 
 if [ $# == 0 ]; then
@@ -118,11 +122,14 @@ else
       wget http://www.cmake.org/files/v$version/cmake-$version.0-1-src.tar.bz2 &&
       # Unpack the downloaded tape archive
       tar xvjf cmake-$version.0-1-src.tar.bz2 &&
+      tar xvjf cmake-$version.0.tar.bz2 &&
       # Compile Cmake source
-      build $version 
+      build $version $install_path $num_threads
     fi
   } >&1 | tee build.log
   echo ""
-  echo "Check build.log for results."
+  echo "Check build.log for results.  If the build was successful, type"
+  echo "'cd cmake-$version.0 && make install' (or 'cd cmake-$version.0 && sudo make install')"
+  echo "to complete the installation."
   echo ""
 fi
