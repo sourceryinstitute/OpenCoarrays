@@ -63,7 +63,7 @@ usage()
     exit 1
 }
 
-# Default to 2 threads if no specified thread count:
+# Default to installing in the present working directory if no install path is specified:
 if [ -z $2 ]; then
   install_path=${PWD}
 else
