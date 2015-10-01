@@ -26,39 +26,39 @@ source code.
 ### OS X###
 </a> 
 
-We have developed a  Portfile that we will submit for inclusion into the
-[MacPorts] package management software after posting the OpenCoarrays 1.0.0 
-tar ball online.  Once the OpenCoarrays Portfile has been incorporated into 
-MacPorts, users can install OpenCoarrays on OS X by installing MacPorts and 
-then typing the following:
+OS X users might find it easiest to install OpenCoarrays using the [MacPorts]
+package management system.  After installing MacPorts, type the following:
 
     sudo port selfupdate  
     sudo port upgrade outdated  
     sudo port install opencoarrays
 
-Administrator privileges are required for issuing the above "sudo" commands.  
-Also, the first two steps above are required only if your MacPorts ports 
-were last updated prior to the incorporation of the OpenCoarrays Portfile
-into MacPorts.  The above process can be repeated to obtain updates in the
-form of future OpenCoarrays releases.
+where the "sudo" command requires Administrator privileges and where the first 
+two steps above are required only if the MacPorts ports were last updated prior 
+to 30 September 2015, when the OpenCoarrays port was incorporated into MacPorts.  
+Repeating the first two steps above will also update OpenCoarrays to the latest
+release.
 
 <a name="windows">
 ### Windows ###
 </a> 
 Windows users will find it easiest to download the Lubuntu Linux virtual 
-machine from the [Sourcery Store].  The virtual machine boots inside the 
-open-source [VirtualBox] virtualization package.  In addition to containing 
+machine from the [Sourcery Institute Store].  The virtual machine boots inside 
+the open-source [VirtualBox] virtualization package.  In addition to containing 
 GCC 4.9, 5.2, and 6.0, MPICH, OpenMPI, and OpenCoarrays, the virtual machine 
 contains dozens of other open-source software packages that support software 
 development in modern Fortran.  See the [download and installation instructions]
 for a partial list of the included packages.  
+
+Alternatively, if you desire to use OpenCoarrays under Cygwin, please submit a 
+feature request via our [Issues] page.
 
 <a name="linux">
 ### Linux ###
 </a>
 
 Linux users who prefer not to build OpenCoarrays from source might access 
-OpenCoarrays via the the Lubuntu Linux virtual machine from the [Sourcery Store]
+OpenCoarrays via the the Lubuntu Linux virtual machine from the [Sourcery Institute Store]
 after installing the version of [VirtualBox] that is suitable for the relevant 
 Linux distribution.  
 
@@ -81,6 +81,18 @@ install the following:
 * An MPI implementation that supports MPI 3.0 and is built by the aforementioned  
   Fortran and C compilers (preferably the [MPICH] or [MVAPICH] implementations for 
   robustness and high performance)
+
+The [install_prerequisites] directory contains experimental [buildgcc], [buildmpich], and 
+[buildcmake] bash shell scripts that can download and build any one of several versions of the 
+[GCC]  C, C++, and Fortran compilers; the [CMake] build sytem; and the [MPICH] communication 
+library.  (Because newer parts of the GNU Fortran compiler gfortran are written in C++, 
+installing the GNU Fortran compiler from source requires also installing the GNU C++ compiler 
+g++.)  The CMake scripts that build OpenCoarrays also copy [buildgcc], [buildmpich], and
+[buildcmake] into the "bin" directory of the OpenCoarrays installation for later use.
+
+We have tested the build scripts  on OS X and Linux. Please submit suggestions for improving 
+the scripts to our [Issues] page or preferably suggeste edits by forking a copy of the 
+[OpenCoarrays] repository, making the suggested edits, and submitting a pull request.
 
 If installing the above prerequisites is infeasible, then a limited coverage of CAF 
 features is available via the OpenCoarrays "caf" compiler wrapper and the 
@@ -128,7 +140,7 @@ Advanced options (most users should not use these):
   -DLEGACY_ARCHITECTURE=OFF enables the use of FFT libraries that employ AVX instructions
   -DHIGH_RESOLUTION_TIMER=ON enables timers that tick once per clock cycle
   -DCOMPILER_SUPPORTS_ATOMICS enables support for the proposed Fortran 2015 events feature
-  -DUSE_EXTENSIONS builds the [opencoarrys] module for use with non-OpenCoarrays-aware compilers
+  -DUSE_EXTENSIONS builds the [opencoarrays] module for use with non-OpenCoarrays-aware compilers
 
 The first two flags above are not portable and the third enables code that is incomplete as 
 of release 1.0.0.  The fourth is set automatically by the CMake scripts based on the compiler
@@ -160,34 +172,27 @@ system settings.  For example, you might need to remove the "-Werror" option fro
 compiler flags or name a different compiler.  In order to activate efficient strided-array 
 transfer support, uncomment the -DSTRIDED flag inside the [make.inc] file.
 
-## <a name="obtaingcc">Obtaining GCC</a> ##
+## <a name="obtaingcc">Obtaining GCC, MPICH, and CMake</a> ##
 
-[GCC] 5 binary builds are available at [https://gcc.gnu.org/wiki/GFortranBinaries].  Also,
+[GFortran Binaries] 5 binary builds are available at [https://gcc.gnu.org/wiki/GFortranBinaries].  Also,
 the Lubuntu Linux virtual machine available for download in the [Sourcery Store] includes 
-builds of GCC 4.9, 5.2, and 6.0 as well as a rudimentary script (/opt/sourcery/bin/buildgcc)
-that builds [GCC] from source on Linux and OS X. 
+builds of GCC 4.9, 5.2, and 6.0. 
 
-To build the most up-to-date version of GCC from source manually, you might first try the 
-steps employed in the buildgcc script:
+To build all prerequisites from source, including the current development branch of GCC,
+you might first try the running the provided scripts in a manner similar to the following:
 
-    svn co svn://gcc.gnu.org/svn/gcc/trunk
-    cd trunk
-    ./contrib/download_prerequisites
-    cd ..
-    mkdir -p trunk-build
+    cd install_prerequisites
+    ./buildgcc trunk
     cd trunk-build
-    ../trunk/configure --prefix=${PWD} --enable-languages=c,c++,fortran,lto --disable-multilib --disable-werror
-    make -j 2 bootstrap
     make install
+    CC=gcc FC=gfortran CXX=g++ ./buildmpich default
+    make install
+    ./buildcmake default
 
-where the "2" in the penultimate line launches a multi-threaded build with 2 threads.  Use more
-threads for additional speedup, depending on your platform.
-
-See the [GFortran Binaries] web page for additional details and the [Installing GCC] page
-for an exhaustive description of the build process and options.
 
 [End-User Installation]: #end-user-installation
 [OS X]: #os-x
+[ticket]: https://trac.macports.org/ticket/47806
 [Windows]: #windows
 [Linux]: #linux
 [Building from Source]: #building-from-source
@@ -196,6 +201,7 @@ for an exhaustive description of the build process and options.
 [Make]: #make
 [Obtaining GCC]: #obtaining-gcc
 [Sourcery Store]: http://www.sourceryinstitute.org/store
+[Sourcery Institute Store]: http://www.sourceryinstitute.org/store
 [Virtualbox]: http://www.virtualbox.org
 [download and installation instructions]: http://www.sourceryinstitute.org/uploads/4/9/9/6/49967347/overview.pdf
 [yum]: http://yum.baseurl.org
@@ -203,6 +209,10 @@ for an exhaustive description of the build process and options.
 [Issues]: https://github.com/sourceryinstitute/opencoarrays/issues
 [make.inc]: ./src/make.inc
 [opencoarrays]: ./src/extensions/opencoarrays.F90
+[install_prerequisites]: ./install_prerequisites
+[buildgcc]: ./install_prerequisites/buildgcc
+[buildmpich]: ./install_prerequisites/buildmpich
+[buildcmake]: ./install_prerequisites/buildcmake
 [MPICH]: http://www.mpich.org
 [MVAPICH]:http://mvapich.cse.ohio-state.edu
 [Macports]: http://www.macports.org
