@@ -85,14 +85,42 @@ fi
 
 check_prerequisites()
 {
+  unamestr=`uname`
+  if [[ "$unamestr" == 'Darwin' ]]; then
+    if [ -f /usr/bin/gcc ]; then
+      CC=/usr/bin/gcc
+    else
+      echo "Missing /usr/bin/gcc, which must exist and be an Apple LLVM version."
+      exit 1
+    fi
+    if [ -f /usr/bin/g++ ]; then
+      CXX=/usr/bin/g++
+    else
+      echo "Missing /usr/bin/g++, which must exist and be an Apple LLVM version."
+      exit 1
+    fi
+  else
+    # If this is not OS X, default to the user-specified compiler.
+    # If there is no user-specified compiler, use whatever the 
+    # GNU compilers are in the path.
+    if [ -z $CC ]; then
+      CC=gcc
+    fi
+    if [ -z $CXX ]; then
+      CXX=g++
+    fi
+  fi
+
+  # Verify that 'wget' is is in the path.
   if ! type wget > /dev/null; then
     echo 
-    echo "$cmd requires 'wget'.  Please install it.  Aborting." 
-    exit 1;
-  elif ! type make > /dev/null; then
+    echo "$cmd requires 'wget'.  Please ensure that it is installed and in your path.  Aborting." 
+    exit 1
+  fi
+  if ! type make > /dev/null; then
     echo 
-    echo "$cmd requires 'make'.  Please install it.  Aborting." 
-    exit 1;
+    echo "$cmd requires 'make'.  Please ensure that it is installed and in your path.  Aborting." 
+    exit 1
   fi
 }
 
@@ -118,7 +146,7 @@ unpack()
 build()
 {
   cd cmake-$version &&
-  ./bootstrap --prefix=$install_path &&
+  CC=$CC CXX=$CXX ./bootstrap --prefix=$install_path &&
   make -j $num_threads
 }
 
@@ -147,7 +175,7 @@ else
     check_prerequisites &&
     download &&
     unpack  &&
-    build $version $install_path $num_threads
+    CC=$CC CXX=$CXX build $version $install_path $num_threads
   } >&1 | tee build.log
   echo ""
   echo "Check build.log for results.  If the build was successful, type"
