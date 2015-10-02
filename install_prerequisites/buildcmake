@@ -50,8 +50,8 @@ usage()
     echo " Example usage:"
     echo ""
     echo "   $cmd default"
-    echo "   $cmd 3.3"
-    echo "   $cmd 3.3 /opt/cmake/3.3 4"
+    echo "   $cmd 3.3.2"
+    echo "   $cmd 3.3.2 /opt/cmake/3.3.2 4"
     echo "   $cmd -v" 
     echo "   $cmd --help"
     echo ""
@@ -64,7 +64,7 @@ usage()
 # Default to installing CMake 3.3 if no version specified in the first
 # command-line argument
 if [[ $1 == 'default' ]]; then
-  version=3.3
+  version=3.3.2
 else
   version=$1 
 fi
@@ -83,10 +83,41 @@ else
   num_threads=$3
 fi
 
+check_prerequisites()
+{
+  if ! type wget > /dev/null; then
+    echo 
+    echo "$cmd requires 'wget'.  Please install it.  Aborting." 
+    exit 1;
+  elif ! type make > /dev/null; then
+    echo 
+    echo "$cmd requires 'make'.  Please install it.  Aborting." 
+    exit 1;
+  fi
+}
+
+# Download CMake if the tar ball is not already in the present working directory
+download()
+{
+  if [ ! -f "cmake-$version.tar.gz" ]; then
+    echo "Downloading cmake-$version.tar.gz"
+    major_minor="${version%.*}"
+    wget http://www.cmake.org/files/v$major_minor/cmake-$version.tar.gz 
+  fi
+}
+
+# Unpack CMake if the unpacked tar ball is not in the present working directory
+unpack()
+{
+  if [ ! -d "cmake-$version" ]; then
+    tar xvzf cmake-$version.tar.gz 
+  fi
+}
+
 # Make the build directory, configure, and build
 build()
 {
-  cd cmake-$version.0 &&
+  cd cmake-$version &&
   ./bootstrap --prefix=$install_path &&
   make -j $num_threads
 }
@@ -110,26 +141,17 @@ elif [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
   echo "http://www.sourceryinstitute.org/license.html"
   echo ""
 else
-  # Download and build CMake
+  # Download, unpack, and build CMake
   time \
   {
-    if ! type wget > /dev/null; then
-      echo 
-      echo "$cmd requires 'wget'.  Please install it.  Aborting." 
-      exit 1;
-    else
-      # Download CMake
-      wget http://www.cmake.org/files/v$version/cmake-$version.0-1-src.tar.bz2 &&
-      # Unpack the downloaded tape archive
-      tar xvjf cmake-$version.0-1-src.tar.bz2 &&
-      tar xvjf cmake-$version.0.tar.bz2 &&
-      # Compile Cmake source
-      build $version $install_path $num_threads
-    fi
+    check_prerequisites &&
+    download &&
+    unpack  &&
+    build $version $install_path $num_threads
   } >&1 | tee build.log
   echo ""
   echo "Check build.log for results.  If the build was successful, type"
-  echo "'cd cmake-$version.0 && make install' (or 'cd cmake-$version.0 && sudo make install')"
+  echo "'cd cmake-$version && make install' (or 'cd cmake-$version && sudo make install')"
   echo "to complete the installation."
   echo ""
 fi
