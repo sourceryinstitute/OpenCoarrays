@@ -39,6 +39,14 @@ to 30 September 2015, when the OpenCoarrays port was incorporated into MacPorts.
 Repeating the first two steps above will also update OpenCoarrays to the latest
 release.
 
+Please also install the mpstats port as follows:
+
+    sudo port install mpstats
+
+which supports future OpenCoarrays development by providing download data the
+OpenCoarrays team can use in proposals for research grants and development 
+contracts.
+
 <a name="windows">
 ### Windows ###
 </a> 
