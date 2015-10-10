@@ -26,14 +26,8 @@ source code.
 ### OS X###
 </a> 
 
-For now, OS X users will find it easiest to use OpenCoarrays inside the 
-Lubuntu virtual machine available in the [Sourcery Institute Store].
-
-In hopes of offering a straightforward, native OS X installation option, we 
-have submitted a Portfile  to the [MacPorts] package management software
-developers.  Please add yourself to the "cc" list on the corresponding [ticket]
-for updates.  Once Macports incorporates the OpenCoarrays Portfile, users will be
-to install OpenCoarrays by typing the following:
+OS X users might find it easiest to install OpenCoarrays using the [MacPorts]
+package management system.  After installing MacPorts, type the following:
 
     sudo port selfupdate  
     sudo port upgrade outdated  
@@ -41,8 +35,17 @@ to install OpenCoarrays by typing the following:
 
 where the "sudo" command requires Administrator privileges and where the first 
 two steps above are required only if the MacPorts ports were last updated prior 
-to the incorporation of the OpenCoarrays Portfile into MacPorts.  Repeating the
-above steps will also install future OpenCoarrays updates.
+to 30 September 2015, when the OpenCoarrays port was incorporated into MacPorts.  
+Repeating the first two steps above will also update OpenCoarrays to the latest
+release.
+
+Please also install the mpstats port as follows:
+
+    sudo port install mpstats
+
+which supports future OpenCoarrays development by providing download data the
+OpenCoarrays team can use in proposals for research grants and development 
+contracts.
 
 <a name="windows">
 ### Windows ###
@@ -54,6 +57,9 @@ GCC 4.9, 5.2, and 6.0, MPICH, OpenMPI, and OpenCoarrays, the virtual machine
 contains dozens of other open-source software packages that support software 
 development in modern Fortran.  See the [download and installation instructions]
 for a partial list of the included packages.  
+
+Alternatively, if you desire to use OpenCoarrays under Cygwin, please submit a 
+feature request via our [Issues] page.
 
 <a name="linux">
 ### Linux ###
