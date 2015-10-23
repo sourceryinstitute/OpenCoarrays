@@ -50,6 +50,8 @@ module opencoarrays
   public :: num_images
   public :: error_stop
   public :: sync_all
+  public :: caf_init
+  public :: caf_finalize
 #ifdef COMPILER_SUPPORTS_ATOMICS
   public :: event_type
   public :: event_post
@@ -198,10 +200,10 @@ module opencoarrays
 
   ! --------------------
 
-#ifndef PORTLAND_GROUP_COMPILER
-  integer(c_int), save, volatile, bind(C,name="CAF_COMM_WORLD") :: CAF_COMM_WORLD
-#else
+#ifdef COMPILER_LACKS_SAVE_BIND_C
   integer(c_int), volatile, bind(C,name="CAF_COMM_WORLD") :: CAF_COMM_WORLD
+#else
+  integer(c_int), save, volatile, bind(C,name="CAF_COMM_WORLD") :: CAF_COMM_WORLD
 #endif
   integer(c_int32_t), parameter  :: bytes_per_word=4_c_int32_t
 
@@ -209,8 +211,27 @@ module opencoarrays
     module procedure gfc_descriptor_c_int,gfc_descriptor_c_double,gfc_descriptor_logical
   end interface
 
+  interface
+  end interface
+
   ! Bindings for OpenCoarrays C procedures
   interface 
+    ! C function signature from ../mpi/mpi_caf.c
+    ! void _gfortran_caf_init (int *argc, char ***argv);
+
+    subroutine caf_init(argc,argv) bind(C,name="_gfortran_caf_init" )
+      import :: c_int,c_ptr
+      integer(c_int), value ::  argc 
+      type(c_ptr), value ::  argv
+    end subroutine
+
+    ! C function signature from ../mpi/mpi_caf.c
+    ! void _gfortran_caf_finalize (int *argc, char ***argv);
+    subroutine caf_finalize(argc, argv) bind(C,name="_gfortran_caf_finalize")
+      import :: c_int,c_ptr
+      integer(c_int), value ::  argc
+      type(c_ptr), value ::  argv
+    end subroutine
 
     ! C function signature from ../mpi/mpi_caf.c:
     ! void
@@ -332,7 +353,8 @@ module opencoarrays
 
     ! C function signature from ../mpi/mpi_caf.c:
     ! int PREFIX (num_images) (int, int);
-    function opencoarrays_num_images(coarray,dim_) bind(C,name="_gfortran_caf_num_images") result(num_images_)
+!   function opencoarrays_num_images(coarray,dim_) bind(C,name="_gfortran_caf_num_images") result(num_images_)
+    function opencoarrays_num_images(coarray,dim_) bind(C,name="_caf_extensions_num_images") result(num_images_)
       import :: c_int
       integer(c_int), value, intent(in) :: coarray,dim_
       integer(c_int) :: num_images_
@@ -363,8 +385,37 @@ module opencoarrays
 
   end interface
 
+#ifdef COMPILER_LACKS_ASSUMED_RANK
+  ! __________ This generic name is a substitute for the Fortran 2015 RANK intrinsic ____________
+  interface rank
+     module procedure vector_c_int,vector_c_double,vector_logical
+  end interface
+#endif
 
 contains
+
+#ifdef COMPILER_LACKS_ASSUMED_RANK
+  ! __________ Specific procedures supporting the substitute "rank" generic interface ____________
+  ! ______________________________________________________________________________________________
+  pure function vector_c_int(a) result(rank_a)
+    integer(c_int), intent(in) :: a(:)
+    integer :: rank_a
+    rank_a = 0 
+  end function
+
+  pure function vector_c_double(a) result(rank_a)
+    real(c_double), intent(in) :: a(:)
+    integer :: rank_a
+    rank_a = 0 
+  end function
+
+  pure function vector_logical(a) result(rank_a)
+    logical, intent(in) :: a(:)
+    integer :: rank_a
+    rank_a = 0 
+  end function
+
+#endif
 
   ! __________ Descriptor constructors for for each supported type and kind ____________
   ! ____________________________________________________________________________________
@@ -388,14 +439,22 @@ contains
   end function
 
   function gfc_descriptor_c_int(a) result(a_descriptor)
+#ifdef COMPILER_LACKS_ASSUMED_RANK
+    integer(c_int), intent(in), target, contiguous :: a(:)
+#else
     integer(c_int), intent(in), target, contiguous :: a(..)
+#endif
     type(gfc_descriptor_t) :: a_descriptor
     integer(c_int), parameter :: unit_stride=1,scalar_offset=-1
     integer(c_int) :: i
     a_descriptor%dtype = my_dtype(type_=BT_INTEGER,kind_=int(c_sizeof(a)/bytes_per_word,c_int32_t),rank_=rank(a))
     a_descriptor%offset = scalar_offset 
     a_descriptor%base_addr = c_loc(a) ! data
+#ifdef COMPILER_LACKS_DO_CONCURRENT
+    do i=1,rank(a)
+#else
     do concurrent(i=1:rank(a))
+#endif
       a_descriptor%dim_(i)%stride  = unit_stride
       a_descriptor%dim_(i)%lower_bound = lbound(a,i)
       a_descriptor%dim_(i)%ubound_ = ubound(a,i)
@@ -403,7 +462,11 @@ contains
 #if defined(COMPILER_LACKS_C_SIZEOF_ASSUMED_RANK)
   contains
     function c_sizeof(mold) result(c_size_of_mold)
+#ifdef COMPILER_LACKS_ASSUMED_RANK
+      integer(c_int), intent(in), target :: mold(:)
+#else
       integer(c_int), intent(in), target :: mold(..)
+#endif
       integer(c_int) :: c_size_of_mold
       c_size_of_mold=4
     end function
@@ -411,7 +474,11 @@ contains
   end function
 
   function gfc_descriptor_logical(a) result(a_descriptor)
+#ifdef COMPILER_LACKS_ASSUMED_RANK
+    logical, intent(in), target, contiguous :: a(:)
+#else
     logical, intent(in), target, contiguous :: a(..)
+#endif
     type(gfc_descriptor_t) :: a_descriptor
     integer(c_int), parameter :: unit_stride=1,scalar_offset=-1,words=1
     integer(c_int) :: i
@@ -419,7 +486,11 @@ contains
     a_descriptor%dtype = my_dtype(type_=BT_LOGICAL,kind_=words,rank_=rank(a))
     a_descriptor%offset = scalar_offset 
     a_descriptor%base_addr = c_loc(a) ! data
+#ifdef COMPILER_LACKS_DO_CONCURRENT
+    do i=1,rank(a)
+#else
     do concurrent(i=1:rank(a))
+#endif
       a_descriptor%dim_(i)%stride  = unit_stride
       a_descriptor%dim_(i)%lower_bound = lbound(a,i)
       a_descriptor%dim_(i)%ubound_ = ubound(a,i)
@@ -428,7 +499,11 @@ contains
   end function
 
   function gfc_descriptor_c_double(a) result(a_descriptor)
+#ifdef COMPILER_LACKS_ASSUMED_RANK
+    real(c_double), intent(in), target, contiguous :: a(:)
+#else
     real(c_double), intent(in), target, contiguous :: a(..)
+#endif
     type(gfc_descriptor_t) :: a_descriptor
     integer(c_int), parameter :: unit_stride=1,scalar_offset=-1
     integer(c_int) :: i
@@ -436,7 +511,11 @@ contains
     a_descriptor%dtype = my_dtype(type_=BT_REAL,kind_=int(c_sizeof(a)/bytes_per_word,c_int32_t),rank_=rank(a))
     a_descriptor%offset = scalar_offset 
     a_descriptor%base_addr = c_loc(a) ! data
+#ifdef COMPILER_LACKS_DO_CONCURRENT
+    do i=1,rank(a)
+#else
     do concurrent(i=1:rank(a))
+#endif
       a_descriptor%dim_(i)%stride  = unit_stride
       a_descriptor%dim_(i)%lower_bound = lbound(a,i)
       a_descriptor%dim_(i)%ubound_ = ubound(a,i)
@@ -445,7 +524,11 @@ contains
 #if defined(COMPILER_LACKS_C_SIZEOF_ASSUMED_RANK)
   contains
     function c_sizeof(mold) result(c_size_of_mold)
+#ifdef COMPILER_LACKS_ASSUMED_RANK
+      real(c_double), intent(in), target :: mold(:)
+#else
       real(c_double), intent(in), target :: mold(..)
+#endif
       integer(c_int) :: c_size_of_mold
       c_size_of_mold=4
     end function
@@ -477,7 +560,11 @@ contains
 
     subroutine co_reduce_c_int(a, opr, result_image, stat, errmsg) 
       ! Dummy variables
+#ifdef COMPILER_LACKS_ASSUMED_RANK
+      integer(c_int), intent(inout), volatile, contiguous :: a(:)
+#else
       integer(c_int), intent(inout), volatile, contiguous :: a(..)
+#endif
       procedure(c_int_operator) :: opr
       integer(c_int), intent(in), optional :: result_image
       integer(c_int), intent(out), optional, volatile :: stat
@@ -497,7 +584,11 @@ contains
 
     subroutine co_reduce_logical(a, opr, result_image, stat, errmsg) 
       ! Dummy variables
+#ifdef COMPILER_LACKS_ASSUMED_RANK
+      logical, intent(inout), volatile, contiguous :: a(:)
+#else
       logical, intent(inout), volatile, contiguous :: a(..)
+#endif
       procedure(logical_operator) :: opr
       integer(c_int), intent(in), optional :: result_image
       integer(c_int), intent(out),optional , volatile :: stat
@@ -517,7 +608,11 @@ contains
 
     subroutine co_reduce_c_double(a, opr, result_image, stat, errmsg) 
       ! Dummy variables
+#ifdef COMPILER_LACKS_ASSUMED_RANK
+      real(c_double), intent(inout), volatile, contiguous :: a(:)
+#else
       real(c_double), intent(inout), volatile, contiguous :: a(..)
+#endif
       procedure(c_double_operator) :: opr
       integer(c_int), intent(in), optional :: result_image
       integer(c_int), intent(out), optional, volatile :: stat
@@ -563,7 +658,11 @@ contains
   end subroutine
 
   subroutine co_broadcast_c_double(a,source_image,stat,errmsg)
+#ifdef COMPILER_LACKS_ASSUMED_RANK
+    real(c_double), intent(inout), volatile, target, contiguous :: a(:)
+#else
     real(c_double), intent(inout), volatile, target, contiguous :: a(..)
+#endif
     integer(c_int), intent(in), optional :: source_image
     integer(c_int), intent(out), optional:: stat
     character(kind=1,len=*), intent(out), optional :: errmsg
@@ -579,7 +678,11 @@ contains
   end subroutine
 
   subroutine co_broadcast_c_int(a,source_image,stat,errmsg)
+#ifdef COMPILER_LACKS_ASSUMED_RANK
+    integer(c_int), intent(inout), volatile, target, contiguous :: a(:)
+#else
     integer(c_int), intent(inout), volatile, target, contiguous :: a(..)
+#endif
     integer(c_int), intent(in), optional :: source_image
     integer(c_int), intent(out), optional:: stat
     character(kind=1,len=*), intent(out), optional :: errmsg
@@ -601,8 +704,13 @@ contains
   subroutine get_c_int(src , dest, image_index_, offset, mrt) 
     use iso_fortran_env, only : error_unit
     ! Dummy arguments:
+#ifdef COMPILER_LACKS_ASSUMED_RANK
+    integer(c_int), intent(in), target, contiguous :: src(:)
+    integer(c_int), intent(out), target, contiguous, volatile :: dest(:)
+#else
     integer(c_int), intent(in), target, contiguous :: src(..)
     integer(c_int), intent(out), target, contiguous, volatile :: dest(..)
+#endif
     integer(c_int), intent(in) :: image_index_
     integer(c_ptrdiff_t), intent(in) :: offset 
     logical(c_bool), intent(in) :: mrt
@@ -626,7 +734,11 @@ contains
   ! ____________________________________________________________________________________
 
   subroutine co_min_c_int(a,result_image,stat,errmsg)
+#ifdef COMPILER_LACKS_ASSUMED_RANK
+    integer(c_int), intent(inout), volatile, target, contiguous :: a(:)
+#else
     integer(c_int), intent(inout), volatile, target, contiguous :: a(..)
+#endif
     integer(c_int), intent(in), optional :: result_image
     integer(c_int), intent(out), optional:: stat
     character(kind=1,len=*), intent(out), optional :: errmsg
@@ -642,7 +754,11 @@ contains
   end subroutine
 
   subroutine co_min_c_double(a,result_image,stat,errmsg)
+#ifdef COMPILER_LACKS_ASSUMED_RANK
+    real(c_double), intent(inout), volatile, target, contiguous :: a(:)
+#else
     real(c_double), intent(inout), volatile, target, contiguous :: a(..)
+#endif
     integer(c_int), intent(in), optional :: result_image
     integer(c_int), intent(out), optional:: stat
     character(kind=1,len=*), intent(out), optional :: errmsg
@@ -662,7 +778,11 @@ contains
   ! ____________________________________________________________________________________
 
   subroutine co_max_c_int(a,result_image,stat,errmsg)
+#ifdef COMPILER_LACKS_ASSUMED_RANK
+    integer(c_int), intent(inout), volatile, target, contiguous :: a(:)
+#else
     integer(c_int), intent(inout), volatile, target, contiguous :: a(..)
+#endif
     integer(c_int), intent(in), optional :: result_image
     integer(c_int), intent(out), optional:: stat
     character(kind=1,len=*), intent(out), optional :: errmsg
@@ -678,7 +798,11 @@ contains
   end subroutine
 
   subroutine co_max_c_double(a,result_image,stat,errmsg)
+#ifdef COMPILER_LACKS_ASSUMED_RANK
+    real(c_double), intent(inout), volatile, target, contiguous :: a(:)
+#else
     real(c_double), intent(inout), volatile, target, contiguous :: a(..)
+#endif
     integer(c_int), intent(in), optional :: result_image
     integer(c_int), intent(out), optional:: stat
     character(kind=1,len=*), intent(out), optional :: errmsg
@@ -697,7 +821,11 @@ contains
   ! ____________________________________________________________________________________
 
   subroutine co_sum_c_double(a,result_image,stat,errmsg)
+#ifdef COMPILER_LACKS_ASSUMED_RANK
+    real(c_double), intent(inout), volatile, target, contiguous :: a(:)
+#else
     real(c_double), intent(inout), volatile, target, contiguous :: a(..)
+#endif
     integer(c_int), intent(in), optional :: result_image
     integer(c_int), intent(out), optional:: stat
     character(kind=1,len=*), intent(out), optional :: errmsg
@@ -713,7 +841,11 @@ contains
   end subroutine
 
   subroutine co_sum_c_int(a,result_image,stat,errmsg)
+#ifdef COMPILER_LACKS_ASSUMED_RANK
+    integer(c_int), intent(inout), volatile, target, contiguous :: a(:)
+#else
     integer(c_int), intent(inout), volatile, target, contiguous :: a(..)
+#endif
     integer(c_int), intent(in), optional :: result_image
     integer(c_int), intent(out), optional:: stat
     character(kind=1,len=*), intent(out), optional :: errmsg

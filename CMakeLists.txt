@@ -9,15 +9,14 @@ if ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
     "CMAKE_CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
     " == CMAKE_CURRENT_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}"
     "\nThis archive does not support in-source builds:\n"
-    "You must now delete the CMakeCache.txt file and the CMakeFiles/ directory under"
+    "Please delete the CMakeCache.txt file and the CMakeFiles/ directory under"
     "the 'src' source directory or you will not be able to configure correctly!"
     "\nYou must now run something like:\n"
     "  $ rm -r CMakeCache.txt CMakeFiles/"
     "\n"
-    "Please create a directory outside the opencoarrays source tree and build under that outside directory "
-    "in a manner such as\n"
-    "  $ mkdir build-opencarrays\n"
-    "  $ cd build-opencoarrays\n"
+    "Please build in a new directory other than top-level opencoarrays source directory such as\n"
+    "  $ mkdir build\n"
+    "  $ cd build\n"
     "  $ CC=mpicc FC=mpif90 cmake <path-to-opencoarrays-source-directory> -DCMAKE_INSTALL_PREFIX=<path-to-install-directory>\n"
     "\nsubstituting the appropriate syntax for your shell (the above line assumes the bash shell)."
     )
@@ -29,12 +28,30 @@ if ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "GNU" )
 elseif ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "Cray" )
   set(cray_compiler true)
   message(WARNING
+   "\n"
+   "Support for the detected compiler (${CMAKE_Fortran_COMPILER_ID}) is experimental."
+   "Please report any failures to opencoarrays@googlegroups.com"
+  )
+  # This applies to CCE 8.4 beta or earlier
+  add_definitions(-DCOMPILER_LACKS_C_PTRDIFF_T)
+  add_definitions(-DCOMPILER_LACKS_C_SIZEOF_ASSUMED_RANK)
+elseif ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "PGI" )
+  set(portland_group_compiler true)
+  message(WARNING
+   "\n"
    "Support for the detected compiler (${CMAKE_Fortran_COMPILER_ID}) is experimental. "
    "Please report any failures to opencoarrays@googlegroups.com"
   )
-  option(COMPILER_LACKS_C_PTRDIFF_T "iso_c_binding bug filed against CCE 8.4 beta" TRUE)
+  add_definitions(-DCOMPILER_LACKS_C_PTRDIFF_T)
+  add_definitions(-DCOMPILER_LACKS_SAVE_BIND_C)
+  add_definitions(-DCOMPILER_LACKS_ASSUMED_RANK) 
+  add_definitions(-DCOMPILER_LACKS_DO_CONCURRENT) 
+  add_definitions(-DCOMPILER_LACKS_C_SIZEOF_ASSUMED_RANK)
+  add_definitions(-DCMAKE_VERBOSE_MAKEFILE)
+  add_definitions(-DCOMPILER_SUPPORTS_CAF_INTRINSICS)
 else()
   message(WARNING 
+   "\n"
     "Attempting to build with untested Fortran compiler: ${CMAKE_Fortran_COMPILER_ID}. "
     "Please report any failures to opencoarrays@googlegroups.com\n\n"
   )
@@ -70,7 +87,18 @@ CHECK_Fortran_SOURCE_COMPILES("
   end program
 " Check_Simple_Coarray_Fortran_Source_Compiles)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
+#if (gfortran_compiler)
+  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src )
+#elseif(portland_group_compiler)
+#  if ( DEFINED ENV{PGI_MPI} )
+#   include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src ENV{PGI_MPI}/include")
+#  else()
+#    message(FATAL_ERROR
+#      "To build with the ${CMAKE_Fortran_COMPILER_ID}, please set the PGI_MPI environment"
+#      "variable to the path of the top-level Portland Group MPI installation directory."
+#    )
+#  endif()
+#endif()
 
 add_subdirectory(src)
 add_subdirectory(install_prerequisites)
@@ -98,7 +126,9 @@ install(
 )
 
 add_library(OpenCoarrays INTERFACE)
-target_compile_options(OpenCoarrays INTERFACE -fcoarray=lib)
+if(gfortran_compiler)
+  target_compile_options(OpenCoarrays INTERFACE -fcoarray=lib)
+endif()
 target_link_libraries(OpenCoarrays INTERFACE caf_mpi)
 
 install(DIRECTORY  ${CMAKE_BINARY_DIR}/mod DESTINATION .)
