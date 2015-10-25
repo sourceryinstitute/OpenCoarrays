@@ -47,6 +47,7 @@ usage()
     echo " Options:"
     echo "   --help, -h           Show this help message"
     echo "   --version, -v, -V    Report version and copyright information"
+    echo "   --avail, -a,         List the available branches"
     echo ""
     echo " Example usage:"
     echo ""
@@ -55,9 +56,6 @@ usage()
     echo "   $cmd gcc-5-branch /opt/gnu/5.2 4"
     echo "   $cmd -v" 
     echo "   $cmd --help"
-    echo ""
-    echo " Note: use svn ls svn://gcc.gnu.org/svn/gcc/branches"
-    echo " to list all available branches."
     echo ""
     exit 1
 }
@@ -71,7 +69,7 @@ fi
 
 # Default to 2 threads if no specified thread count:
 if [ -z $3 ]; then
-  num_threads=2
+  num_threads=1
 else
   num_threads=$3
 fi
@@ -87,6 +85,19 @@ build()
     make -j $num_threads bootstrap 
 }
 
+# Exit if subversion is not installed
+if ! type svn > /dev/null; then
+  echo 
+  echo "$cmd requires 'svn'.  Please install it.  Aborting." 
+  exit 1;
+fi
+
+# Exit if flex is not installed
+if ! type flex > /dev/null; then
+  echo 
+  echo "$cmd requires 'flex'.  Please install it.  Aborting." 
+  exit 1;
+fi
 
 if [ $# == 0 ]; then
   # Print usage information if script is invoked without arguments
@@ -94,6 +105,8 @@ if [ $# == 0 ]; then
 elif [[ $1 == '--help' || $1 == '-h' ]]; then
   # Print usage information if script is invoked with --help or -h argument
   usage | less
+elif [[ $1 == '--avail' || $1 == '-a' ]]; then
+  svn ls svn://gcc.gnu.org/svn/gcc/branches | less
 elif [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
   # Print script copyright if invoked with -v, -V, or --version argument
   echo ""
@@ -114,14 +127,8 @@ else
   # Build gcc
   time \
   {
-    if ! type svn > /dev/null; then
-      echo 
-      echo "$cmd requires 'svn'.  Please install it.  Aborting." 
-      exit 1;
-    else
-      svn co svn://gcc.gnu.org/svn/gcc/$url_tail &&
-      build $1 $install_path $num_threads
-    fi
+    svn co svn://gcc.gnu.org/svn/gcc/$url_tail &&
+    build $1 $install_path $num_threads
   } >&1 | tee build.log
   echo "Check build.log for results.  If the build was successful, type"
   echo "'cd $1-build && make install' (or 'cd $1-build && sudo make install')"
