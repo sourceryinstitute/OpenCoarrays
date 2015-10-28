@@ -5,20 +5,11 @@ module accelerated_module
   private
   public :: co_dot_accelerated
   public :: co_dot_unaccelerated
-  public :: co_dot_mapped_manually_accelerated
   public :: CUDA,OpenACC,OpenMP
   public :: walltime
 
   ! Explicit interfaces for procedures that wrap accelerated kernels
   interface  
-
-     subroutine manual_mapped_cudaDot(a,b,partial_dot,n,img) bind(C, name="manual_mapped_cudaDot")
-       use iso_c_binding, only : c_float,c_int
-       real(c_float) :: a(*),b(*)
-       real(c_float) :: partial_dot
-       integer(c_int),value :: n
-       integer(c_int),value :: img
-     end subroutine
 
      ! This wrapper exploits the OpenCoarrays acceleration support and is therefore simpler
      subroutine cudaDot(a,b,partial_dot,n) bind(C, name="cudaDot")
@@ -48,13 +39,6 @@ contains
      x_dot_y = dot_product(x,y) ! Call Fortran intrinsic dot product on the local data
      call co_sum(x_dot_y) ! Call Fortarn 2015 collective sum
   end subroutine 
-
-  subroutine co_dot_mapped_manually_accelerated(x,y,x_dot_y)
-     real(c_float), intent(in) :: x(:),y(:)
-     real(c_float), intent(out) :: x_dot_y
-     call manual_mapped_cudaDot(x,y,x_dot_y,size(x),this_image()-1)
-     call co_sum(x_dot_y) ! Call Fortarn 2015 collective sum
-  end subroutine
 
   ! Exploit the OpenCoarrays support for a accelerated dot products 
   ! using any one of several acceleration APIs: OpenACC, CUDA, OpenMP 4.0, etc.
@@ -109,7 +93,7 @@ program cu_dot_test
   sync all
 
   block 
-!    use accelerated_module, only : co_dot_accelerated,co_dot_unaccelerated,CUDA,walltime,co_dot_mapped_manually_accelerated
+!    use accelerated_module, only : co_dot_accelerated,co_dot_unaccelerated,CUDA,walltime
     use accelerated_module
 
     !Parallel execution
@@ -128,10 +112,6 @@ program cu_dot_test
 
     sync all
 
-    t_start = walltime()
-    call co_dot_mapped_manually_accelerated(a_man,b_man,dot)
-    t_end = walltime()
-    if(me==1) print *, 'Manually mapped',dot,'time:',t_end-t_start
   end block
 
 contains
