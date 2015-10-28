@@ -111,7 +111,7 @@ check_prerequisites()
     fi
   fi
 
-  # Verify that 'wget' is is in the path.
+  # Verify that 'wget' is in the path.
   if ! type wget > /dev/null; then
     echo 
     echo "$cmd requires 'wget'.  Please ensure that it is installed and in your path.  Aborting." 
