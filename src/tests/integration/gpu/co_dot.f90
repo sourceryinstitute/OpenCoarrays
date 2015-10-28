@@ -47,8 +47,16 @@ contains
   subroutine co_dot_accelerated(x,y,x_dot_y,API)
      real, intent(in) :: x(:),y(:) 
      real, intent(out) :: x_dot_y     
-     integer(c_int), intent(in) :: API
-     select case(API)
+     integer(c_int), intent(in), optional :: API
+     integer(c_int) :: chosen_API
+
+     if (present(API)) 
+       chosen_API = API
+     else
+       chosen_API = CUDA
+     end if
+
+     select case(chosen_API)
        case(CUDA)
          call cudaDot(x,y,x_dot_y,size(x)) ! Accelerated reduction on local data
        case(OpenMP)
@@ -68,17 +76,13 @@ program cu_dot_test
   implicit none
 
   ! Unaccelerated variables 
-  real(c_float), allocatable :: a(:),b(:)
+  real(c_float), allocatable :: a_unacc(:),b_unacc(:)
   real(c_float) :: dot
   real(c_double) :: t_start, t_end
 
   ! Library-accelerated variables
   real(c_float), allocatable :: a_acc(:)[:], b_acc(:)[:]
   real(c_float) :: dot_acc[*]
-
-  ! Manually accelerated variables
-  real(c_float), allocatable :: a_man(:)[:], b_man(:)[:]
-  real(c_float) :: dot_man[*]
 
   integer(c_int),parameter :: n = 99900000
   integer(c_int) :: n_local,np,me
@@ -98,7 +102,7 @@ program cu_dot_test
 
     !Parallel execution
     t_start = walltime()
-    call co_dot_accelerated(a_acc,b_acc,dot_acc,CUDA)
+    call co_dot_accelerated(a_acc(1:n_local),b_acc(1:n_local),dot_acc,CUDA)
     t_end = walltime()
     if(me==1) print *, 'Accelerated dot_prod',dot_acc,'time:',t_end-t_start
   
@@ -106,7 +110,7 @@ program cu_dot_test
 
     !Serial execution
     t_start = walltime()
-    call co_dot_unaccelerated(a_man,b_man,dot)  
+    call co_dot_unaccelerated(a_unacc(1:n_local),b_unacc(1:n_local),dot)  
     t_end = walltime()
     if(me==1) print *, 'Serial result',dot,'time:',t_end-t_start
 
@@ -118,8 +122,10 @@ contains
 
   subroutine initialize_all_variables()
     integer(c_int) :: i
-    call accelerated_allocate(a_acc(n_local)[*],b_acc(n_local)[*])
-    call accelerated_allocate(a_man(n_local)[*],b_man(n_local)[*])
+    ! The allocation arguments must be coarrays to support the scatter operation below
+    call accelerated_allocate(a_acc,n_local)
+    call accelerated_allocate(b_acc,n_local)
+    allocate(a_unacc(n_local)[*],b_unacc(n_local)[*])
  
     if(me == 1) then
       ! Initialize the local unaccelerated data on every image 
@@ -129,10 +135,11 @@ contains
       ! Scatter a and b to a_cc and b_cc
       do i=1,np
         a_acc(1:n_local)[i] = a(n_local*(i-1)+1:n_local*i)
-        a_man(1:n_local)[i] = a(n_local*(i-1)+1:n_local*i)
         b_acc(1:n_local)[i] = b(n_local*(i-1)+1:n_local*i)
-        b_man(1:n_local)[i] = b(n_local*(i-1)+1:n_local*i)
-      enddo
+      end do
+      sync all
+      a_unacc=a_acc
+      b_unacc=b_acc
     endif
   end subroutine
 
