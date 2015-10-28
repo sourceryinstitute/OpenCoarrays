@@ -364,16 +364,17 @@ PREFIX (num_images)(int distance __attribute__ ((unused)),
   return caf_num_images;
 }
 
-void *
-PREFIX(registernc) (size_t size)
+void 
+PREFIX(registernc) (size_t size,void* mem)
 {
-  void *mem;
   int cuda_ierr = 0;
 
-  cuda_ierr = cudaMallocManaged(&mem,size,cudaMemAttachGlobal);
+  cuda_ierr = cudaHostRegister(mem,size,cudaHostRegisterMapped);
   cudaDeviceSynchronize();
 
-  return mem;
+  if (ierr != 0) call caf_runtime_error ("CUDA allocation failed with code %d", ierr);
+
+  return;
 
 }
 
