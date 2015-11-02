@@ -67,7 +67,7 @@ else
   install_path=$2
 fi
 
-# Default to 2 threads if no specified thread count:
+# Default to 1 threads if no specified thread count:
 if [ -z $3 ]; then
   num_threads=1
 else
