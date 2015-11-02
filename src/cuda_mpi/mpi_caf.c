@@ -364,19 +364,32 @@ PREFIX (num_images)(int distance __attribute__ ((unused)),
   return caf_num_images;
 }
 
+/* Register user-allocated memory for management by CUDA (works for coarrays and non-coarrays):
+   This procedure is exposed in the OpenCoarrays Fortran application programming interface (API)
+   contained in ../extensions/opencoarrays.f90 to expose it to Fortran programmers who want
+   to explicitly allocate memory related to manycore devices: currently via CUDA for NVIDIA
+   GPUs and possibly in the future via another mechanism for Intel MIC architecture processors.
+*/
+
 void 
-PREFIX(registernc) (size_t size,void* mem)
+PREFIX(registernc) (void* mem,size_t mem_size)
 {
   int cuda_ierr = 0;
 
-  cuda_ierr = cudaHostRegister(mem,size,cudaHostRegisterMapped);
+  cuda_ierr = cudaHostRegister(mem,mem_size,cudaHostRegisterMapped);
   cudaDeviceSynchronize();
 
-  if (ierr != 0) call caf_runtime_error ("CUDA allocation failed with code %d", ierr);
+  if (ierr != 0) 
+    call caf_runtime_error ("CUDA allocation failed with code %d", ierr);
 
   return;
 
 }
+
+/* Allocate coarray variables:
+   This procedure is part of the OpenCoarrays Fortran application binary interface (ABI)
+   that is used by the compiler only and is therefore not exposed to Fortran programs directly.
+*/
 
 void *
 PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,

@@ -52,6 +52,7 @@ module opencoarrays
   public :: sync_all
   public :: caf_init
   public :: caf_finalize
+  public :: accelerate
 #ifdef COMPILER_SUPPORTS_ATOMICS
   public :: event_type
   public :: event_post
@@ -216,6 +217,7 @@ module opencoarrays
 
   ! Bindings for OpenCoarrays C procedures
   interface 
+
     ! C function signature from ../mpi/mpi_caf.c
     ! void _gfortran_caf_init (int *argc, char ***argv);
 
@@ -231,6 +233,15 @@ module opencoarrays
       import :: c_int,c_ptr
       integer(c_int), value ::  argc
       type(c_ptr), value ::  argv
+    end subroutine
+
+    ! C function signature from ../cuda_mpi/mpi_caf.c:
+    ! void 
+    ! PREFIX(registernc) (void* mem,size_t mem_size)
+
+    subroutine opencoarrays_registernc(mem,mem_size)  bind(C,name="_gfortran_caf_registernc")
+      type(c_ptr), intent(in), value :: mem
+      integer(c_ptrdiff_t), intent(in) :: mem_size
     end subroutine
 
     ! C function signature from ../mpi/mpi_caf.c:
@@ -557,6 +568,11 @@ contains
 
   ! ______ Assumed-rank co_reduce wrappers for each supported type and kind _________
   ! _________________________________________________________________________________
+
+    subroutine accelerate(a)
+      real(c_double), intent(in), contiguous :: a(..)
+      call opencoarrays_registernc(c_loc(a),size(a)*c_sizeof(a))  
+    end subroutine
 
     subroutine co_reduce_c_int(a, opr, result_image, stat, errmsg) 
       ! Dummy variables

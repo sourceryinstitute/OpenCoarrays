@@ -11,7 +11,7 @@ module accelerated_module
   ! Explicit interfaces for procedures that wrap accelerated kernels
   interface  
 
-     ! This wrapper exploits the OpenCoarrays acceleration support and is therefore simpler
+     ! This wrapper exploits the OpenCoarrays acceleration support
      subroutine cudaDot(a,b,partial_dot,n) bind(C, name="cudaDot")
        use iso_c_binding, only : c_float,c_int
        real(c_float) :: a(*),b(*)
@@ -80,7 +80,7 @@ program cu_dot_test
   real(c_float) :: dot
   real(c_double) :: t_start, t_end
 
-  ! Library-accelerated variables
+  ! Library-accelerated variables (these are corarrays to facilitate a scatter operation)
   real(c_float), allocatable :: a_acc(:)[:], b_acc(:)[:]
   real(c_float) :: dot_acc[*]
 
@@ -122,10 +122,14 @@ contains
 
   subroutine initialize_all_variables()
     integer(c_int) :: i
-    ! The allocation arguments must be coarrays to support the scatter operation below
-    call accelerated_allocate(a_acc,n_local)
-    call accelerated_allocate(b_acc,n_local)
+    ! These allocation arguments must be coarrays to support the scatter operation below
     allocate(a_unacc(n_local)[*],b_unacc(n_local)[*])
+    ! These allocation arguments will be defined locally and therefore need not be coarrays
+    allocate(a_acc(n_local),b_acc(n_local))
+
+    ! Register the desired variables for acceleration
+    call accelerate(a_acc)
+    call accelerate(b_acc)
  
     if(me == 1) then
       ! Initialize the local unaccelerated data on every image 
