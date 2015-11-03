@@ -41,7 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 #include <unistd.h>
 #include <mpi.h>
 #include <pthread.h>
-
+#include "cuda_runtime_api.h"
 #include "libcaf.h"
 
 /* Define GFC_CAF_CHECK to enable run-time checking.  */
@@ -477,8 +477,8 @@ PREFIX(registernc) (void* mem,size_t mem_size)
   cuda_ierr = cudaHostRegister(mem,mem_size,cudaHostRegisterMapped);
   cudaDeviceSynchronize();
 
-  if (ierr != 0) 
-    call caf_runtime_error ("CUDA allocation failed with code %d", ierr);
+  if (cuda_ierr != 0) 
+    caf_runtime_error ("CUDA allocation failed with code %d", cuda_ierr);
 
   return;
 
