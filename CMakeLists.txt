@@ -35,6 +35,7 @@ elseif ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "Cray" )
   # This applies to CCE 8.4 beta or earlier
   add_definitions(-DCOMPILER_LACKS_C_PTRDIFF_T)
   add_definitions(-DCOMPILER_LACKS_C_SIZEOF_ASSUMED_RANK)
+  add_definitions(-DCOMPILER_PROVIDES_MPI)
 elseif ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "PGI" )
   set(portland_group_compiler true)
   message(WARNING
