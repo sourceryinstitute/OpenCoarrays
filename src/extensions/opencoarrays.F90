@@ -36,7 +36,7 @@ module opencoarrays
 #elif defined(COMPILER_LACKS_C_SIZEOF_ASSUMED_RANK)
   use iso_c_binding, only : c_int,c_char,c_ptr,c_loc,c_double,c_int32_t,c_bool,c_funloc,c_ptrdiff_t
 #else
-  use iso_c_binding, only : c_int,c_char,c_ptr,c_loc,c_double,c_int32_t,c_bool,c_funloc,c_ptrdiff_t,c_sizeof
+  use iso_c_binding, only : c_int,c_char,c_ptr,c_loc,c_float,c_double,c_int32_t,c_bool,c_funloc,c_ptrdiff_t,c_sizeof
 #endif
   implicit none
 
@@ -240,8 +240,9 @@ module opencoarrays
     ! PREFIX(registernc) (void* mem,size_t mem_size)
 
     subroutine opencoarrays_registernc(mem,mem_size)  bind(C,name="_gfortran_caf_registernc")
+      import :: c_ptr,c_ptrdiff_t,c_int
       type(c_ptr), intent(in), value :: mem
-      integer(c_ptrdiff_t), intent(in) :: mem_size
+      integer(c_ptrdiff_t), value, intent(in) :: mem_size
     end subroutine
 
     ! C function signature from ../mpi/mpi_caf.c:
@@ -268,7 +269,7 @@ module opencoarrays
 #ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
       bind(C,name="_caf_extensions_co_reduce")
 #else
-      bind(C,name="_gfortran_extensions_co_reduce")
+      bind(C,name="_gfortran_caf_co_reduce")
 #endif
       use iso_c_binding, only : c_ptr,c_funptr,c_int,c_char
       type(c_ptr), intent(in), value :: a
@@ -364,8 +365,7 @@ module opencoarrays
 
     ! C function signature from ../mpi/mpi_caf.c:
     ! int PREFIX (num_images) (int, int);
-!   function opencoarrays_num_images(coarray,dim_) bind(C,name="_gfortran_caf_num_images") result(num_images_)
-    function opencoarrays_num_images(coarray,dim_) bind(C,name="_caf_extensions_num_images") result(num_images_)
+    function opencoarrays_num_images(coarray,dim_) bind(C,name="_gfortran_caf_num_images") result(num_images_)
       import :: c_int
       integer(c_int), value, intent(in) :: coarray,dim_
       integer(c_int) :: num_images_
@@ -570,8 +570,8 @@ contains
   ! _________________________________________________________________________________
 
     subroutine accelerate(a)
-      real(c_double), intent(in), contiguous :: a(..)
-      call opencoarrays_registernc(c_loc(a),size(a)*c_sizeof(a))  
+      real(c_float), intent(in), contiguous, target :: a(..)
+      call opencoarrays_registernc(c_loc(a),c_sizeof(a))  
     end subroutine
 
     subroutine co_reduce_c_int(a, opr, result_image, stat, errmsg) 
@@ -877,23 +877,27 @@ contains
   end subroutine
 
   ! Return the image number (MPI rank + 1)
-  function this_image()  result(image_num)
-    use mpi, only : MPI_Comm_rank
-    integer(c_int) :: image_num,ierr
-   !image_num = opencoarrays_this_image(unused)
-    call MPI_Comm_rank(CAF_COMM_WORLD,image_num,ierr) 
-    if (ierr/=0) call error_stop
-    image_num = image_num + 1
-  end function
+   function this_image()  result(image_num)
+#ifndef COMPILER_PROVIDES_MPI
+     use mpi, only : MPI_Comm_rank
+#endif
+     integer(c_int) :: image_num,ierr
+    !image_num = opencoarrays_this_image(unused)
+     call MPI_Comm_rank(CAF_COMM_WORLD,image_num,ierr) 
+     if (ierr/=0) call error_stop
+     image_num = image_num + 1
+   end function
 
   ! Return the total number of images
-  function num_images()  result(num_images_)
-    use mpi, only : MPI_Comm_size
-    integer(c_int) :: num_images_,ierr
-   !num_images_ = opencoarrays_num_images(unused_coarray,unused_scalar)
-    call MPI_Comm_size(CAF_COMM_WORLD,num_images_,ierr) 
-    if (ierr/=0) call error_stop
-  end function
+   function num_images()  result(num_images_)
+#ifndef COMPILER_PROVIDES_MPI
+     use mpi, only : MPI_Comm_size
+#endif
+     integer(c_int) :: num_images_,ierr
+    !num_images_ = opencoarrays_num_images(unused_coarray,unused_scalar)
+     call MPI_Comm_size(CAF_COMM_WORLD,num_images_,ierr) 
+     if (ierr/=0) call error_stop
+   end function
 
   ! Halt the execution of all images
   subroutine error_stop(stop_code)

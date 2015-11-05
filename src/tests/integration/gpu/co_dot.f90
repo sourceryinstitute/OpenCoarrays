@@ -50,7 +50,7 @@ contains
      integer(c_int), intent(in), optional :: API
      integer(c_int) :: chosen_API
 
-     if (present(API)) 
+     if (present(API)) then
        chosen_API = API
      else
        chosen_API = CUDA
@@ -76,6 +76,7 @@ program cu_dot_test
   implicit none
 
   ! Unaccelerated variables 
+  real(c_float), allocatable :: a(:),b(:)
   real(c_float), allocatable :: a_unacc(:),b_unacc(:)
   real(c_float) :: dot
   real(c_double) :: t_start, t_end
@@ -84,7 +85,7 @@ program cu_dot_test
   real(c_float), allocatable :: a_acc(:)[:], b_acc(:)[:]
   real(c_float) :: dot_acc[*]
 
-  integer(c_int),parameter :: n = 99900000
+  integer(c_int) :: n = 99999904
   integer(c_int) :: n_local,np,me
 
   np = num_images()
@@ -121,11 +122,12 @@ program cu_dot_test
 contains
 
   subroutine initialize_all_variables()
+    use opencoarrays,  only : accelerate
     integer(c_int) :: i
     ! These allocation arguments must be coarrays to support the scatter operation below
-    allocate(a_unacc(n_local)[*],b_unacc(n_local)[*])
+    allocate(a_unacc(n_local),b_unacc(n_local))
     ! These allocation arguments will be defined locally and therefore need not be coarrays
-    allocate(a_acc(n_local),b_acc(n_local))
+    allocate(a_acc(n_local)[*],b_acc(n_local)[*])
 
     ! Register the desired variables for acceleration
     call accelerate(a_acc)
@@ -141,10 +143,10 @@ contains
         a_acc(1:n_local)[i] = a(n_local*(i-1)+1:n_local*i)
         b_acc(1:n_local)[i] = b(n_local*(i-1)+1:n_local*i)
       end do
-      sync all
-      a_unacc=a_acc
-      b_unacc=b_acc
     endif
+    sync all
+    a_unacc=a_acc
+    b_unacc=b_acc
   end subroutine
 
 end program

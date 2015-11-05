@@ -1,12 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cuda.h>
+#include "cublas_v2.h"
 
 extern "C" void cudaPrint(int *data, int n, int me, char *name);
 extern "C" void cudaAdd(int* data_in1, int* data_in2, int *data_out, int n);
 extern "C" void cudaDot(float* in1, float* in2, float* out, int n);
 
-#define MAX_BLOCK_SZ 512
+#define MAX_BLOCK_SZ 1024
 
 __global__ void printOnCuda(int *data, int n)
 {
@@ -27,11 +28,11 @@ __global__ void assignOnCuda(int *data, int n)
 //      printf("From CUDA data[%d] = %d\n",i,data[i]);
 }
 
-__global__ void Dev_dot(float x[], float y[], float z[], int n) {
+__global__ void Dev_dot(float x[], float y[], float z[], long n) {
    /* Use tmp to store products of vector components in each block */
    /* Can't use variable dimension here                            */
    __shared__ float tmp[MAX_BLOCK_SZ];
-   int t = blockDim.x * blockIdx.x + threadIdx.x;
+   long t = blockDim.x * blockIdx.x + threadIdx.x;
    int loc_t = threadIdx.x;
    
    if (t < n) tmp[loc_t] = x[t]*y[t];
@@ -70,18 +71,28 @@ extern "C"
 void cudaDot(float *in1, float *in2, float *out, int n)
 {
   float *partial_dot;
-  int nThreads = 64, i=0;
+  int nThreads = 1024, i=0;
   int nBlocks = ((n-1)/nThreads)+1;
+  float *d_in1,*d_in2;
+//  cublasHandle_t handle;
 
   cudaMallocManaged(&partial_dot, nBlocks * sizeof(float));
+  cudaDeviceSynchronize();
 
   *out = 0.0;
+  
+  cudaHostGetDevicePointer((void **) &d_in1, (void *) in1, 0);
+  cudaHostGetDevicePointer((void **) &d_in2, (void *) in2, 0);
 
-  Dev_dot<<<nBlocks,nThreads>>>(in1,in2,partial_dot,n);
+  Dev_dot<<<nBlocks,nThreads>>>(d_in1,d_in2,partial_dot,n);
+//  cublasCreate (&handle);
+//  cublasSdot(handle,n,d_in1,1,d_in2,1,out);
   cudaDeviceSynchronize();
 
   for(i=0;i<nBlocks;i++)
-    *out += partial_dot[i];
+    {
+      *out += partial_dot[i];
+    }
 
   cudaFree(partial_dot);
 
