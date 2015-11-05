@@ -145,10 +145,11 @@ inside the installation path (.e.g, inside "build" in the above example):
 
 Advanced options (most users should not use these):
 
-  -DLEGACY_ARCHITECTURE=OFF enables the use of FFT libraries that employ AVX instructions
-  -DHIGH_RESOLUTION_TIMER=ON enables timers that tick once per clock cycle
-  -DCOMPILER_SUPPORTS_ATOMICS enables support for the proposed Fortran 2015 events feature
-  -DUSE_EXTENSIONS builds the [opencoarrays] module for use with non-OpenCoarrays-aware compilers
+    -DLEGACY_ARCHITECTURE=OFF enables the use of FFT libraries that employ AVX instructions
+    -DHIGH_RESOLUTION_TIMER=ON enables timers that tick once per clock cycle
+    -DCOMPILER_SUPPORTS_ATOMICS enables support for the proposed Fortran 2015 events feature
+    -DUSE_EXTENSIONS builds the [opencoarrays] module for use with non-OpenCoarrays-aware compilers
+    -DCOMPILER_PROVIDES_MPI is set automatically when building with the Cray Compiler Environment
 
 The first two flags above are not portable and the third enables code that is incomplete as 
 of release 1.0.0.  The fourth is set automatically by the CMake scripts based on the compiler
