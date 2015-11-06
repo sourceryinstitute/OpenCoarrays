@@ -125,9 +125,9 @@ contains
     use opencoarrays,  only : accelerate
     integer(c_int) :: i
     ! These allocation arguments must be coarrays to support the scatter operation below
-    allocate(a_unacc(n_local),b_unacc(n_local))
-    ! These allocation arguments will be defined locally and therefore need not be coarrays
     allocate(a_acc(n_local)[*],b_acc(n_local)[*])
+    ! These allocation arguments will be defined locally and therefore need not be coarrays
+    allocate(a_unacc(n_local),b_unacc(n_local))
 
     ! Register the desired variables for acceleration
     call accelerate(a_acc)
