@@ -178,8 +178,9 @@ else
     mkdir -p opencoarrays-build &&
     cd opencoarrays-build       &&
     CC=$MPICC FC=$MPIFC cmake .. -DCMAKE_INSTALL_PREFIX=$install_path &&
-    make &&
-    make install 
+    make         &&
+    make install &&
+    make clean
   } >&1 | tee $installation_record
 
   # Report installation success or failure
