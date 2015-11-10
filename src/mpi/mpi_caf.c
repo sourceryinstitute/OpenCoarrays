@@ -531,6 +531,7 @@ void *
       MPI_Win_flush(caf_this_image-1, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
       free(init_array);
+      PREFIX(sync_all) (NULL,NULL,0);
     }
 
   caf_static_t *tmp = malloc (sizeof (caf_static_t));
@@ -2060,7 +2061,7 @@ PREFIX (co_reduce) (gfc_descriptor_t *a, void *(*opr) (void *, void *), int opr_
   else if(GFC_DESCRIPTOR_TYPE(a) == BT_LOGICAL)
     {
       foo_int32_t = (typeof(foo_int32_t))opr;
-      MPI_Op_create(redux_int32, 1, &op);  
+      MPI_Op_create(redux_int32, 1, &op);
     }
   else
     {

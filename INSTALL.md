@@ -124,8 +124,13 @@ OpenCoarrays, install OpenCoarrays, build the tests, run the tests, and report t
 
     tar xvzf opencoarrays.tar.gz
     cd opencoarrays
+<<<<<<< HEAD
     mkdir build
     cd build
+=======
+    mkdir opencoarrays-build
+    cd opencoarrays-build
+>>>>>>> a0474e8
     CC=mpicc FC=mpif90 cmake .. -DCMAKE_INSTALL_PREFIX=${PWD}
     make 
     make install
@@ -133,22 +138,26 @@ OpenCoarrays, install OpenCoarrays, build the tests, run the tests, and report t
 
 where the the first part of the cmake line sets the CC and FC environment variables
 and the final part of the same line defines the installation path as the present 
-working directory ("build").  Please report any test failures to via the OpenCoarrays
-[Issues] page.  
+working directory ("opencoarrays-build").  Please report any test failures via the
+OpenCoarrays [Issues] page.  
 
 A complete installation should result in the creation of the following directories
 inside the installation path (.e.g, inside "build" in the above example):
 
-* bin: contains the "caf" compiler wrapper and the "cafrun" launcher bash scripts
+* bin: contains the compiler wrapper (caf), program launcher (cafun), and prerequisites builder (build) 
 * mod: contains the "opencoarrays.mod" module file for use with non-OpenCoarrays-aware compilers
 * lib: contains the "libcaf_mpi.a" static library to which codes link for CAF support
 
 Advanced options (most users should not use these):
 
-  -DLEGACY_ARCHITECTURE=OFF enables the use of FFT libraries that employ AVX instructions
-  -DHIGH_RESOLUTION_TIMER=ON enables timers that tick once per clock cycle
-  -DCOMPILER_SUPPORTS_ATOMICS enables support for the proposed Fortran 2015 events feature
-  -DUSE_EXTENSIONS builds the [opencoarrays] module for use with non-OpenCoarrays-aware compilers
+    -DLEGACY_ARCHITECTURE=OFF enables the use of FFT libraries that employ AVX instructions
+    -DHIGH_RESOLUTION_TIMER=ON enables timers that tick once per clock cycle
+    -DCOMPILER_SUPPORTS_ATOMICS enables support for the proposed Fortran 2015 events feature
+    -DUSE_EXTENSIONS builds the [opencoarrays] module for use with non-OpenCoarrays-aware compilers
+<<<<<<< HEAD
+    -DCOMPILER_PROVIDES_MPI is set automatically when building with the Cray Compiler Environment
+=======
+>>>>>>> a0474e8
 
 The first two flags above are not portable and the third enables code that is incomplete as 
 of release 1.0.0.  The fourth is set automatically by the CMake scripts based on the compiler
