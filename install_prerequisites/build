@@ -273,6 +273,8 @@ download_if_necessary()
   else 
     if [[ "$fetch" == "svn" || "$fetch" == "cvs" ]]; then
       args=checkout
+    elif [[ "$fetch" == "wget" ]]; then
+      args=--no-check-certificate
     elif [[ "$fetch" == "ftp" ]]; then
       args=-n
     elif [[ "$fetch" == "git" ]]; then
