@@ -45,6 +45,8 @@ install(TARGETS caf_mpi EXPORT OpenCoarraysTargets
 )
 install(DIRECTORY  ${CMAKE_BINARY_DIR}/mod DESTINATION .)
 
+# Now we write the script that passes CAF source to the compiler with the necessary arguments 
+# and, if necessary, performs some code transformations prior to invoking the compiler.
 set(exe_dir ${CMAKE_BINARY_DIR}/bin_staging)
 set(compiler_wrapper ${exe_dir}/caf)
 install(
@@ -52,14 +54,13 @@ install(
     PERMISSIONS WORLD_EXECUTE WORLD_READ WORLD_WRITE OWNER_EXECUTE OWNER_READ OWNER_WRITE GROUP_EXECUTE GROUP_READ GROUP_WRITE
     DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/
 )
-
 file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/caf-head CAF_HEADER)
 file(WRITE  "${compiler_wrapper}" "${CAF_HEADER}\n")
 file(APPEND "${compiler_wrapper}"  "caf_mod_dir=${CMAKE_INSTALL_PREFIX}/mod\n")
 file(APPEND "${compiler_wrapper}"  "caf_lib_dir=${CMAKE_INSTALL_PREFIX}/lib\n")
 file(APPEND "${compiler_wrapper}"  "caf_version=${PROJECT_VERSION}\n")
 if(gfortran_compiler)
-  file(APPEND "${compiler_wrapper}"  "link_args=-fcoarray=lib -lcaf_mpi\n")
+  file(APPEND "${compiler_wrapper}"  "link_args='-fcoarray=lib -lcaf_mpi'\n")
 elseif(portland_group_compiler)
   file(APPEND "${compiler_wrapper}"  "link_args=-lcaf_mpi\n")
 endif()
