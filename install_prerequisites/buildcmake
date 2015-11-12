@@ -130,7 +130,7 @@ download()
   if [ ! -f "cmake-$version.tar.gz" ]; then
     echo "Downloading cmake-$version.tar.gz"
     major_minor="${version%.*}"
-    wget http://www.cmake.org/files/v$major_minor/cmake-$version.tar.gz 
+    wget --no-check-certificate http://www.cmake.org/files/v$major_minor/cmake-$version.tar.gz 
   fi
 }
 
