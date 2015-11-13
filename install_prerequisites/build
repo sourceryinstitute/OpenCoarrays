@@ -1,0 +1,351 @@
+#!/bin/bash
+#
+# build
+#
+# -- This script downloads and installs the OpenCoarrays prerequisites
+#
+# OpenCoarrays is distributed under the OSI-approved BSD 3-clause License:
+# Copyright (c) 2015, Sourcery, Inc.
+# Copyright (c) 2015, Sourcery Institute
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without modification, 
+# are permitted provided that the following conditions are met:
+# 
+# 1. Redistributions of source code must retain the above copyright notice, this 
+#    list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright notice, this 
+#    list of conditions and the following disclaimer in the documentation and/or 
+#    other materials provided with the distribution.
+# 3. Neither the names of the copyright holders nor the names of their contributors 
+#    may be used to endorse or promote products derived from this software without 
+#    specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+# IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+# NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
+# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+# POSSIBILITY OF SUCH DAMAGE.
+
+this_script=`basename $0` 
+
+usage()
+{
+    echo ""
+    echo " $this_script - Bash script for building OpenCoarrays prerequisites from source"
+    echo ""
+    echo " Usage (optional arguments in square brackets): "
+    echo "      $this_script [<options>] or [<package-name> <version-number> <installation-path> <number-of-threads>]"
+    echo ""
+    echo " Options:"
+    echo "   --help, -h           Show this help message"
+    echo "   --list , -l          List the packages this script can build"
+    echo ""
+    echo " Examples:"
+    echo ""
+    echo "   $this_script gcc "
+    echo "   $this_script gcc trunk"
+    echo "   $this_script gcc 5.2.0 4"
+    echo "   $this_script wget"
+    echo "   $this_script --help"
+    echo "   $this_script -l"
+    echo ""
+    exit 1
+}
+
+# If this script is invoked without arguements, print usage information 
+# and terminate execution of the script.
+if [ $# == 0 ]; then
+  usage | less
+  exit 1
+fi
+ 
+# Interpret the first argument as the name of the package to build 
+package_to_build=$1 
+
+# If the package name is recognized, then set the default version.
+# Otherwise, list the allowable package names and default versions and then exit.
+set_default_version()
+{
+  if [[ $package_to_build == "--list" || $package_to_build == "-l" ]]; then
+       printf "\n"
+       printf "The '$this_script' script can build the following packages:\n" 
+  fi
+  # This is a bash 3 hack standing in for a bash 4 hash (bash 3 is the lowest common
+  # denominator because, for licensing reasons, OS X only has bash 3 by default.)
+  # See http://stackoverflow.com/questions/1494178/how-to-define-hash-tables-in-bash
+  package_version=( 
+    "cmake:3.3.2"
+    "gcc:trunk"
+    "mpich:3.1.4"
+    "wget:1.16.3"
+    "flex:2.5.39"
+    "pkg-config:0.28"
+    "make:4.1"
+    "_unknown:0" 
+  )
+  for package in "${package_version[@]}" ; do
+     KEY="${package%%:*}"
+     VALUE="${package##*:}"
+     if [[ "$package_to_build" == "--list" || $package_to_build == "-l" ]]; then
+       # If we are not at the end of the list, print the current element of the name:version list.
+       if [[ !("$KEY" ==  "_unknown") ]]; then
+         printf "%s (default version %s)\n" "$KEY" "$VALUE"
+       fi
+     elif [[ "$KEY" == "_unknown" ]]; then
+       # No recognizeable argument passed so print usage information and exit:
+       printf "$this_script: Package name not recognized.  Execute '$this_script --list' to list the allowable package names.\n"
+       exit 1
+     elif [[ $package_to_build == "$KEY" ]]; then
+       # We recognize the package name so we set the default version:
+       verbosity=$1
+       if [[ $verbosity != "quietly" ]]; then
+         printf "Using default version $VALUE\n"
+       fi
+       default_version=$VALUE
+       break
+     fi
+  done
+  if [[ $package_to_build == "--list" || $package_to_build == "-l" ]]; then
+    echo ""
+    exit 1
+  fi
+}
+
+# Interpret the second command-line argument, if present, as the package version.
+# Otherwise, set the default package version.
+if [[ -z $2 ]]; then
+  set_default_version 
+  version_to_build=$default_version
+elif [[ $2 == "--default" ]]; then
+  set_default_version "quietly"
+  version_to_build=$default_version
+else
+  version_to_build=$2
+fi
+
+# Interpret the third command-line argument, if present, as the installation path.
+# Otherwise, install in a subdirectory of the present working directory.
+default_install_path=${PWD}/$package_to_build-$version_to_build-installation
+if [[ -z $3 || $3 == "--query" ]]; then
+  install_path=$default_install_path
+else
+  install_path=$2
+fi
+
+build_path=${PWD}/$package_to_build-$version_to_build-build
+
+# Interpret the fourth command-line argument, if present, as the number of threads for 'make'.
+# Otherwise, default to single-threaded 'make'.
+if [ -z $4 ]; then
+  num_threads=1
+else
+  num_threads=$3
+fi
+
+
+check_prerequisites()
+{
+  # This is a bash 3 hack standing in for a bash 4 hash (bash 3 is the lowest common
+  # denominator because, for licensing reasons, OS X only has bash 3 by default.)
+  # See http://stackoverflow.com/questions/1494178/how-to-define-hash-tables-in-bash
+  package_download_mechanism=( 
+    "gcc:svn"
+    "wget:ftp"
+    "cmake:wget"
+    "mpich:wget"
+    "flex:wget"
+    "pkg-config:wget"
+    "make:ftp"
+    "_unknown:0" 
+  )
+  for package in "${package_download_mechanism[@]}" ; do
+     KEY="${package%%:*}"
+     VALUE="${package##*:}"
+     if [[ "$KEY" == "_unknown" ]]; then
+       printf "$this_script: No specified dowload mechanism.\n"
+       printf "Please add a 'KEY:VALUE' pair to the 'package_download_mechanism' list in the '$this_script' script.\n"
+       exit 1
+     elif [[ "$package_to_build" == "$KEY" ]]; then
+       # Set the download mechanism corresponding to the recognized package:
+       fetch=$VALUE
+       break
+     fi
+  done
+  # Default to gcc/g++ if there are no user-specified compilers in the path
+  if [ -z $CC ]; then
+    CC=gcc
+  fi  
+  if [ -z $CXX ]; then
+    CXX=g++
+  fi 
+  if ! type make > /dev/null; then
+    printf "$this_script: 'make' is required for compiling packages from source. \n"
+    printf " Please ensure that 'make' is installed and in your path.  Aborting.\n" 
+    exit 1
+  fi
+  # Verify that the download mechanism is in the path.
+  if ! type $fetch > /dev/null; then
+    printf "$this_script: the default download mechanism for $KEY is $fetch.\n"
+    printf "Please ensure that $fetch is installed and in your path.  Aborting.\n" 
+    exit 1
+  fi
+}
+
+
+# Download pkg-config if the tar ball is not already in the present working directory
+download_if_necessary()
+{
+  if [[ $package_to_build == 'cmake' ]]; then
+    major_minor="${version_to_build%.*}"
+  fi
+  package_url_head=( 
+    "gcc;svn://gcc.gnu.org/svn/gcc/"
+    "wget;ftp.gnu.org:/gnu/wget/"
+    "pkg-config;http://pkgconfig.freedesktop.org/releases/"
+    "mpich;http://www.mpich.org/static/downloads/$version_to_build/"
+    "flex;http://sourceforge.net/projects/flex/files/"
+    "make;ftp://ftp.gnu.org/gnu/make/"
+    "cmake;http://www.cmake.org/files/v$major_minor/"
+    "_unknown;0" 
+  )
+  for package in "${package_url_head[@]}" ; do
+     KEY="${package%%;*}"
+     VALUE="${package##*;}"
+     if [[ "$KEY" == "_unknown" ]]; then
+       # No recognizeable argument passed so print usage information and exit:
+       printf "$this_script: Package name not recognized.  Execute '$this_script --list' to list the allowable package names.\n"
+       exit 1
+     elif [[ $package_to_build == "$KEY" ]]; then
+       # We recognize the package name so we set the URL head:
+       url_head=$VALUE
+       break
+     fi
+  done
+
+  # Set differing tails for GCC trunk versus branches
+  if [[ $package_to_build == 'gcc' ]]; then
+    if [[ $version_to_build == 'trunk' ]]; then
+      gcc_tail='trunk'
+    else
+    gcc_tail=/branches/$version_to_build
+    fi
+  fi  
+  package_url_tail=( 
+    "gcc;$gcc_tail"
+    "wget;wget-$version_to_build.tar.xz"
+    "pkg-config;pkg-config-$version_to_build.tar.gz"
+    "mpich;mpich-$version_to_build.tar.gz"
+    "flex;flex-$version_to_build.tar.xz"
+    "make;make-$version_to_build.tar.bz2"
+    "cmake;cmake-$version_to_build.tar.gz "
+    "_unknown;0" 
+  )
+  for package in "${package_url_tail[@]}" ; do
+     KEY="${package%%;*}"
+     VALUE="${package##*;}"
+     if [[ "$KEY" == "_unknown" ]]; then
+       # No recognizeable argument passed so print usage information and exit:
+       printf "$this_script: Package name not recognized.  Execute '$this_script --list' to list the allowable package names.\n"
+       exit 1
+     elif [[ $package_to_build == "$KEY" ]]; then
+       # We recognize the package name so we set the URL tail:
+       url_tail=$VALUE
+       break
+     fi
+  done
+  url="$url_head""$url_tail"
+
+  if [ -f "$url_tail" ]; then
+    echo "Found $url_tail in the current directory.  Skipping download"
+  elif [ -d "$url_tail" ]; then
+    #  This happens with directories downloaded via version control solftware.  
+    #  Cowardly refusing to tackle the complexities of version control in a script.
+    #  Braver solutions might involve "svn cleanup $url_tail && svn update $url_tail"
+    #  or "git pull --rebase".
+    echo "Found $url_tail subdirectory in the present working directory."
+    echo "Please rename or remove it and restart the '$this_script' script."
+  else 
+    if [[ "$fetch" == "svn" || "$fetch" == "cvs" ]]; then
+      args=checkout
+    elif [[ "$fetch" == "wget" ]]; then
+      args=--no-check-certificate
+    elif [[ "$fetch" == "ftp" ]]; then
+      args=-n
+    elif [[ "$fetch" == "git" ]]; then
+      args=clone
+    fi
+    printf "Downloading $package_to_build $version_to_build.\n"
+    printf "Download command: $fetch $args $url\n"
+    $fetch $args $url 
+  fi
+}
+
+# Unpack pkg-config if the unpacked tar ball is not in the present working directory
+unpack_if_necessary()
+{ 
+  if [[ $fetch == "svn" || $fetch == "git" || $fetch == "cvs" ]]; then
+    package_source_directory=$url_tail
+  else 
+    printf "Unpacking $url_tail. \n" 
+    printf "Unpack command: tar xf $url_tail \n" 
+    tar xf $url_tail 
+    package_source_directory=$package_to_build-$version_to_build 
+  fi
+}
+
+# Make the build directory, configure, and build
+build_and_install()
+{
+  printf "Building $package_to_build $version_to_build.\n" &&
+  mkdir -p $build_path &&
+  cd $build_path &&
+  ../$package_source_directory/configure --prefix=$install_path &&
+  CC=$CC CXX=$CXX make -j $num_threads &&
+  printf "Installing $package_to_build in $install_path.\n" &&
+  make install
+}
+
+if [ $# == 0 ]; then
+  # Print usage information if script is invoked without arguments
+  usage | less
+elif [[ $1 == '--help' || $1 == '-h' ]]; then
+  # Print usage information if script is invoked with --help or -h argument
+  usage | less
+elif [[ $2 == '--default' && $3 == '--query' ]]; then
+  # Print the installation path and exit
+  printf "$install_path\n"
+  exit 0
+elif [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
+  # Print script copyright if invoked with -v, -V, or --version argument
+  echo ""
+  echo "OpenCoarrays prerequisites Build Script"
+  echo "Copyright (C) 2015 Sourcery, Inc."
+  echo "Copyright (C) 2015 Sourcery Institute"
+  echo ""
+  echo "$this_script comes with NO WARRANTY, to the extent permitted by law."
+  echo "You may redistribute copies of $this_script under the terms of the"
+  echo "BSD 3-Clause License.  For more information about these matters, see"
+  echo "http://www.sourceryinstitute.org/license.html"
+  echo ""
+else
+  # Download, unpack, and build CMake
+  time \
+  {
+    check_prerequisites &&
+    download_if_necessary &&
+    unpack_if_necessary &&
+    CC=$CC CXX=$CXX build_and_install $package_to_build $version_to_build $install_path $num_threads 
+  } >&1 | tee build-$package_to_build.log
+  printf "\n"
+  printf "$this_script: Done. Check for $package_to_build in the installation path $install_path\n"
+  printf "\n"
+fi
+
+#printf "'cd $package_to_build-build && make install' (or 'cd $package_to_build-build && sudo make install')\n"
+#printf "to complete the installation, after which $package_to_build will be in the 'bin' subdirectory of $install_path \n"  
