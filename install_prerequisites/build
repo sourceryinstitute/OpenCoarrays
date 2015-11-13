@@ -340,7 +340,7 @@ else
     check_prerequisites &&
     download_if_necessary &&
     unpack_if_necessary &&
-    CC=$CC CXX=$CXX build_and_install package $version_to_build $install_path $num_threads 
+    CC=$CC CXX=$CXX build_and_install $package_to_build $version_to_build $install_path $num_threads 
   } >&1 | tee build-$package_to_build.log
   printf "\n"
   printf "$this_script: Done. Check for $package_to_build in the installation path $install_path\n"
