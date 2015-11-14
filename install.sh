@@ -32,7 +32,36 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
 # POSSIBILITY OF SUCH DAMAGE.
 
+# This file is organized into three sections:
+# 1. Command-line argument processor.
+# 2. Function definitions.
+# 3. Main body. 
+# The script depends on several external programs, including a second script that
+# builds prerequisite software.  Building prerequisites requires network access
+# unless tar balls of the prerequisites are present.  
+
+# ___________________ Process command-line arguments ___________________
+
 this_script=`basename $0` 
+
+# Interpret the first command-line argument, if present, as the OpenCoarrays installation path.
+# Otherwise, install in a subdirectory of the present working directory.
+if [[ -z $1 ]]; then
+  install_path=${PWD}/opencoarrays-installation
+else
+  install_path=$1
+fi
+
+
+#Interpret the second command-line argument, if present, as the number of threads for 'make'.
+#Otherwise, default to single-threaded 'make'.
+if [[ -z $2 ]]; then
+  num_threads=1
+else
+  num_threads=$2
+fi
+
+# ___________________ Define functions for use in the main body ___________________
 
 usage()
 {
@@ -54,25 +83,6 @@ usage()
     echo ""
     exit 1
 }
-
-# Interpret the first command-line argument, if present, as the installation path.
-# Otherwise, install in a subdirectory of the present working directory.
-default_install_path=${PWD}/opencoarrays-installation
-if [[ -z $1 ]]; then
-  install_path=$default_install_path
-else
-  install_path=$1
-fi
-
-build_path=${PWD}/opencorrays-build
-
-#Interpret the second command-line argument, if present, as the number of threads for 'make'.
-#Otherwise, default to single-threaded 'make'.
-if [[ -z $2 ]]; then
-  num_threads=1
-else
-  num_threads=$2
-fi
 
 find_or_install()
 {
@@ -153,7 +163,12 @@ find_or_install()
   if [[ $proceed == "y" ]]; then
     printf "Downloading, building, and installing $package \n"
     cd install_prerequisites &&
-    FC=gfortran CC=gcc CXX=g++ ./build $package &&
+    if [[ $package == "gcc" ]]; then
+      FC=gfortran CC=gcc CXX=g++ ./build flex --default $num_threads 
+      flex_install_path=`./build flex --default --query` &&
+      PATH=$flex_install_path/bin:$PATH
+    fi
+    FC=gfortran CC=gcc CXX=g++ ./build $package --default $num_threads &&
     package_install_path=`./build $package --default --query` &&
     if [[ -f $package_install_path/bin/$executable ]]; then
       printf "Installation successful."
@@ -165,9 +180,8 @@ find_or_install()
       elif [[ $package == "mpich" ]]; then
         MPICC=$package_install_path/bin/mpicc
         MPIFC=$package_install_path/bin/mpif90
-      else
-        PATH=$package_install_path/bin:$PATH
       fi
+      PATH=$package_install_path/bin:$PATH
       return
     else
       printf "Installation unsuccessful."
@@ -182,7 +196,7 @@ find_or_install()
   exit 1
 }
 
-######  Main Body ########## 
+# ___________________ Define functions for use in the main body ___________________
 
 if [[ $1 == '--help' || $1 == '-h' ]]; then
   # Print usage information if script is invoked with --help or -h argument
@@ -201,23 +215,25 @@ elif [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
   echo ""
 else
 
+
   # Find or install prerequisites and install OpenCoarrays
+  build_path=${PWD}/opencoarrays-build
   installation_record=install-opencoarrays.log
   time \
   {
-    # Find or install GCC first to ensure we build MPICH with an acceptable version of GCC
-    find_or_install gcc         &&
-    find_or_install mpich       &&
-    find_or_install cmake       &&
-    mkdir -p opencoarrays-build &&
-    cd opencoarrays-build       &&
+    # Building OpenCoarrays with CMake requires MPICH and GCC; MPICH requires GCC. 
+    find_or_install gcc   &&
+    find_or_install mpich &&
+    find_or_install cmake &&
+    mkdir -p $build_path  &&
+    cd $build_path        &&
     if [[ -z $MPICC || -z $MPIFC ]]; then
       echo "Empty MPICC=$MPICC or MPIFC=$MPIFC" 
       exit 1
     else
       CC=$MPICC FC=$MPIFC cmake .. -DCMAKE_INSTALL_PREFIX=$install_path &&
-      make         &&
-      make install &&
+      make -j$num_threads &&
+      make install        &&
       make clean
     fi
   } >&1 | tee $installation_record
