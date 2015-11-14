@@ -5,6 +5,7 @@
 # [Installing OpenCoarrays](#installing-opencoarrays)
 
  *  [End-User Installation]
+     * [Installation Script] 
      * [OS X]
      * [Windows]
      * [Linux]
@@ -18,9 +19,35 @@
 ## End-User Installation ##
 </a>
 
-This section explains the options most end users will find simplest to obtain 
-OpenCoarrays on OS X, Windows, or Linux without building OpenCoarrays from its 
-source code.
+<a name="installation-script">
+### Installation Script###
+</a> 
+
+As of release 1.2.0, users might consider installing by downloading and uncompressing
+an [OpenCoarrays release file] and running the installation script in the top-level 
+source directory:
+
+    tar xvzf opencoarrays-x.y.z.tar.gz
+    cd opencoarrays
+    ./install.sh
+
+Before installing OpenCoarrays, the above bash script will attempt to detect the presence 
+of the default prequisite packages: [GCC], [MPICH] , and [CMake] packges.  If any of the 
+aforementioned packages appears to be absent from the user's PATH environment variable, 
+the [install.sh] script will attempt to download, build, and install any missing packages 
+after asking permission to do.  The script has been tested on Linux and OS X.  Please 
+submit any related problems or questions to our [Issues] page.
+
+A complete installation should result in the creation of the following directories
+inside the installation path (.e.g, inside "build" in the above example):
+
+* bin: contains the compiler wrapper (caf), program launcher (cafun), and prerequisites builder (build) 
+* mod: contains the "opencoarrays.mod" module file for use with non-OpenCoarrays-aware compilers
+* lib: contains the "libcaf_mpi.a" static library to which codes link for CAF support
+
+The remainder of this document explains other options that many end users will find 
+simplest to obtain OpenCoarrays on OS X, Windows, or Linux without building OpenCoarrays 
+from its source code.
 
 <a name="os-x">
 ### OS X###
@@ -65,13 +92,13 @@ feature request via our [Issues] page.
 ### Linux ###
 </a>
 
-Linux users who prefer not to build OpenCoarrays from source might access 
-OpenCoarrays via the the Lubuntu Linux virtual machine from the [Sourcery Institute Store]
-after installing the version of [VirtualBox] that is suitable for the relevant 
-Linux distribution.  
-
-Alternatively, if you desire to install using Linux package management software 
-such as [yum] or [apt-get], please submit a feature request via our [Issues] page.
+The [Arch Linux] distribution provides an [aur package] for installing OpenCoarrays. 
+Users of other Linux distributions who prefer not to build OpenCoarrays from source might 
+access OpenCoarrays via the the Lubuntu Linux virtual machine from the 
+[Sourcery Institute Store] after installing the version of [VirtualBox] that is suitable 
+for the relevant Linux distribution.  Alternatively, if you desire to install using other 
+Linux package management software such as [yum] or [apt-get], please submit a feature 
+request via our [Issues] page.
 
 <a name="buildingfromsource">
 ## Building from source ##
@@ -124,13 +151,8 @@ OpenCoarrays, install OpenCoarrays, build the tests, run the tests, and report t
 
     tar xvzf opencoarrays.tar.gz
     cd opencoarrays
-<<<<<<< HEAD
-    mkdir build
-    cd build
-=======
     mkdir opencoarrays-build
     cd opencoarrays-build
->>>>>>> a0474e8
     CC=mpicc FC=mpif90 cmake .. -DCMAKE_INSTALL_PREFIX=${PWD}
     make 
     make install
@@ -141,23 +163,13 @@ and the final part of the same line defines the installation path as the present
 working directory ("opencoarrays-build").  Please report any test failures via the
 OpenCoarrays [Issues] page.  
 
-A complete installation should result in the creation of the following directories
-inside the installation path (.e.g, inside "build" in the above example):
-
-* bin: contains the compiler wrapper (caf), program launcher (cafun), and prerequisites builder (build) 
-* mod: contains the "opencoarrays.mod" module file for use with non-OpenCoarrays-aware compilers
-* lib: contains the "libcaf_mpi.a" static library to which codes link for CAF support
-
 Advanced options (most users should not use these):
 
     -DLEGACY_ARCHITECTURE=OFF enables the use of FFT libraries that employ AVX instructions
     -DHIGH_RESOLUTION_TIMER=ON enables timers that tick once per clock cycle
     -DCOMPILER_SUPPORTS_ATOMICS enables support for the proposed Fortran 2015 events feature
     -DUSE_EXTENSIONS builds the [opencoarrays] module for use with non-OpenCoarrays-aware compilers
-<<<<<<< HEAD
     -DCOMPILER_PROVIDES_MPI is set automatically when building with the Cray Compiler Environment
-=======
->>>>>>> a0474e8
 
 The first two flags above are not portable and the third enables code that is incomplete as 
 of release 1.0.0.  The fourth is set automatically by the CMake scripts based on the compiler
@@ -196,18 +208,23 @@ the Lubuntu Linux virtual machine available for download in the [Sourcery Store]
 builds of GCC 4.9, 5.2, and 6.0. 
 
 To build all prerequisites from source, including the current development branch of GCC,
-you might first try the running the provided scripts in a manner similar to the following:
+you might first try the running the provided [install.sh] script as described above in 
+the [Installation Script] section.  Or try building each prerequisite from source as 
+follows:
 
     cd install_prerequisites
-    ./buildgcc trunk
-    cd trunk-build
-    make install
-    CC=gcc FC=gfortran CXX=g++ ./buildmpich default
+    CC=gcc FC=gfortran CXX=g++ ./build flex
+    ./build gcc 
+    CC=gcc FC=gfortran CXX=g++ ./build mpich
+    ./build cmake 
     make install
     ./buildcmake default
 
+where the second line builds the flex package that is required for building gcc from source.
 
 [End-User Installation]: #end-user-installation
+[Installation Script]: #installation-script
+[install.sh]: ./install.sh
 [OS X]: #os-x
 [ticket]: https://trac.macports.org/ticket/47806
 [Windows]: #windows
@@ -237,4 +254,6 @@ you might first try the running the provided scripts in a manner similar to the 
 [TS18508 Additional Parallel Features in Fortran]: http://isotc.iso.org/livelink/livelink?func=ll&objId=17181227&objAction=Open
 [GFortran Binaries]:  https://gcc.gnu.org/wiki/GFortranBinaries#FromSource
 [Installing GCC]: https://gcc.gnu.org/install/
+[Arch Linux]: https://www.archlinux.org
+[aur package]: https://aur.archlinux.org/packages/opencoarrays/
 
