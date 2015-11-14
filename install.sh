@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# build
+# install.sh
 #
 # -- This script installs OpenCoarrays and its prerequisites.
 #
