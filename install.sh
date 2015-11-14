@@ -159,14 +159,34 @@ find_or_install()
   fi 
 
   # Now we know the $executable is not in the PATH or is not an acceptable version
-  printf "Ok to downloand, build, and install $package from source?\n"
+  printf "Ok to downloand, build, and install $package from source? (y/n) "
+  read proceed
   if [[ $proceed == "y" ]]; then
     printf "Downloading, building, and installing $package \n"
     cd install_prerequisites &&
     if [[ $package == "gcc" ]]; then
-      FC=gfortran CC=gcc CXX=g++ ./build flex --default $num_threads 
-      flex_install_path=`./build flex --default --query` &&
-      PATH=$flex_install_path/bin:$PATH
+      # Building GCC from source requires flex
+      printf "Building requires the 'flex' package.\n"
+      printf "Checking flex is in the PATH... "
+      if type flex > /dev/null; then
+        printf "yes\n"
+      else
+        printf "no\n"
+        printf "Ok to downloand, build, and install flex from source? (y/n) "
+        read build_flex
+        if [[ $build_flex == "y" ]]; then
+          FC=gfortran CC=gcc CXX=g++ ./build flex 
+          flex_install_path=`./build flex --default --query` &&
+          if [[ -f $flex_install_path/bin/flex ]]; then
+            printf "Installation successful."
+            printf "$package is in $flex_install_path/bin \n"
+          fi
+          PATH=$flex_install_path/bin:$PATH
+        else
+          printf "Aborting. Building GCC requires flex.\n"
+          exit 1
+        fi
+      fi
     fi
     FC=gfortran CC=gcc CXX=g++ ./build $package --default $num_threads &&
     package_install_path=`./build $package --default --query` &&
@@ -189,7 +209,7 @@ find_or_install()
       exit 1
     fi
   else
-    printf "Aborting. OpenCoarrays installation requires $package"
+    printf "Aborting. OpenCoarrays installation requires $package \n"
     exit 1
   fi
   printf "$this_script: the dependency installation logic is missing a return or exit.\n"
