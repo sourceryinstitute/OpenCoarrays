@@ -217,8 +217,6 @@ follows:
     ./build gcc 
     CC=gcc FC=gfortran CXX=g++ ./build mpich
     ./build cmake 
-    make install
-    ./buildcmake default
 
 where the second line builds the flex package that is required for building gcc from source.
 
