@@ -24,7 +24,7 @@
 </a> 
 
 As of release 1.2.0, users might consider installing by downloading and uncompressing
-an [OpenCoarrays release file] and running the installation script in the top-level 
+a file from our [Releases] page and running the installation script in the top-level 
 source directory:
 
     tar xvzf opencoarrays-x.y.z.tar.gz
@@ -35,7 +35,7 @@ Before installing OpenCoarrays, the above bash script will attempt to detect the
 of the default prequisite packages: [GCC], [MPICH] , and [CMake] packges.  If any of the 
 aforementioned packages appears to be absent from the user's PATH environment variable, 
 the [install.sh] script will attempt to download, build, and install any missing packages 
-after asking permission to do.  The script has been tested on Linux and OS X.  Please 
+after asking permission to do so.  The script has been tested on Linux and OS X.  Please 
 submit any related problems or questions to our [Issues] page.
 
 A complete installation should result in the creation of the following directories
@@ -256,4 +256,6 @@ where the second line builds the flex package that is required for building gcc 
 [Installing GCC]: https://gcc.gnu.org/install/
 [Arch Linux]: https://www.archlinux.org
 [aur package]: https://aur.archlinux.org/packages/opencoarrays/
+[Releases]: https://github.com/sourceryinstitute/opencoarrays/releases
+
 
