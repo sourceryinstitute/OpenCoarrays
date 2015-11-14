@@ -5,6 +5,7 @@
 # OpenCoarrays #
 
 * [Overview]
+* [Downloads]
 * [Compatibility]
 * [Prerequisites]
 * [Installation]
@@ -19,6 +20,10 @@ OpenCoarrays provides a compiler wrapper (named "caf"), a runtime library (named
 OpenCoarrays defines an application binary interface ([ABI]) that translates high-level communication and synchronization requests into low-level calls to a user-specified communication library.  This design decision liberates compiler teams from hardwiring communication-library choice into their compilers and it frees Fortran programmers to express parallel algorithms once and reuse identical CAF source with whichever communication library is most efficient for a given hardware platform.  The communication substrate for OpenCoarrays built with the preferred build system, CMake, is the Message Passing Interface ([MPI]).
 
 OpenCoarrays enables CAF application developers to express parallel algorithms without hardwiring a particular version of a particular communication library or library version into their codes.  Such abstraction makes application code less sensitive to the evolution of the underlying communication libraries and hardware platforms.
+
+<a name="downloads">
+## Downloads</a> ##
+Please see our [Releases] page.
 
 ## <a name="compatibility">Compatibility</a> ##
 The GNU Compiler Collection ([GCC]) Fortran front end ([gfortran]) is OpenCoarrays-aware for release versions 5.1.0 and higher.  Users of other compilers, including earlier versions of gfortran, can access a limited subset of CAF features via the provided [opencoarrays module].  After installation, please execute the "caf" script (which is installed in the "bin" directory of the installation path) with no arguments to see a list of the corresponding limitations.  Please also notify the corresponding compiler vendor and the OpenCoarrays team that you would like for a future version of the compiler to be OpenCoarrays-aware.
@@ -66,6 +71,7 @@ We gratefully acknowledge support from the following institutions:
 [Hyperlinks]:#
 
 [Overview]: #overview
+[Downloads]: #downloads
 [Compatibility]: #compatibility
 [Prerequisites]: #prerequisites
 [Installation]: #installation
@@ -101,3 +107,4 @@ We gratefully acknowledge support from the following institutions:
 [Google Summer of Code]: https://www.google-melange.com
 [OpenCoarrays Google Group]: https://groups.google.com/forum/#!forum/opencoarrays) 
 [Issues]: https://github.com/sourceryinstitute/opencoarrays/issue
+[Releases]: https://github.com/sourceryinstitute/opencoarrays/releases
