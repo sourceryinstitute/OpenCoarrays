@@ -990,6 +990,14 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
         for (i = 0; i < (dst_size-src_size)/4; i++)
               ((int32_t*) pad_str)[i] = (int32_t) ' ';
     }
+  if(global_ranks[image_index-1] != -1)
+    {
+      /* Images on same node. Let's use the shared memory window */
+      int flag = 0;
+      MPI_Win_get_attr(*p,shared_win,&p,&flag);
+      image_index = global_ranks[image_index-1];
+      image_index++;
+    }
   if (rank == 0
       || (GFC_DESCRIPTOR_TYPE (dest) == GFC_DESCRIPTOR_TYPE (src)
           && dst_kind == src_kind && GFC_DESCRIPTOR_RANK (src) != 0
