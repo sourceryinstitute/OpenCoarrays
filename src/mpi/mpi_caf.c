@@ -105,11 +105,12 @@ char err_buffer[MPI_MAX_ERROR_STRING];
 MPI_Comm CAF_COMM_WORLD;
 
 /* Shared memory variables */
+#ifdef SHARED
 MPI_Comm SHARED_COMM;
 int *local_ranks, *global_ranks, local_size;
 MPI_Group local_group, global_group;
 static int shared_win = MPI_KEYVAL_INVALID;
-
+#endif
 /* For MPI interoperability, allow external initialization
    (and thus finalization) of MPI. */
 bool caf_owns_mpi = false;
@@ -365,7 +366,7 @@ PREFIX (init) (int *argc, char ***argv)
 
       MPI_Comm_size(CAF_COMM_WORLD, &caf_num_images);
       MPI_Comm_rank(CAF_COMM_WORLD, &caf_this_image);
-
+#ifdef SHARED
       MPI_Comm_split_type(CAF_COMM_WORLD,MPI_COMM_TYPE_SHARED,0,MPI_INFO_NULL, &SHARED_COMM);
       MPI_Comm_group(SHARED_COMM, &local_group);
       MPI_Comm_group(MPI_COMM_WORLD, &global_group);
@@ -387,7 +388,7 @@ PREFIX (init) (int *argc, char ***argv)
 	MPI_Win_create_keyval(MPI_WIN_NULL_COPY_FN,
 			      MPI_WIN_NULL_DELETE_FN,
 			      &shared_win, (void *)0);
-      
+#endif
       caf_this_image++;
       caf_is_finalized = 0;
 
@@ -535,12 +536,15 @@ void *
     actual_size = size;
 
 #if MPI_VERSION >= 3
+#ifdef SHARED
   MPI_Win_allocate_shared(actual_size, 1, mpi_info_same_size, SHARED_COMM, &mem, token[1]);
   MPI_Win_create(mem, actual_size, 1, MPI_INFO_NULL, CAF_COMM_WORLD, token[0]);
-  /* MPI_Win_allocate(actual_size, 1, mpi_info_same_size, CAF_COMM_WORLD, &mem, *token); */
+  MPI_Win_lock_all(MPI_MODE_NOCHECK, *p_local);
+#else
+  MPI_Win_allocate(actual_size, 1, mpi_info_same_size, CAF_COMM_WORLD, &mem, *token);
+#endif
 # ifndef CAF_MPI_LOCK_UNLOCK
   MPI_Win_lock_all(MPI_MODE_NOCHECK, *p);
-  MPI_Win_lock_all(MPI_MODE_NOCHECK, *p_local);
 # endif // CAF_MPI_LOCK_UNLOCK
 #else // MPI_VERSION
   MPI_Alloc_mem(actual_size, MPI_INFO_NULL, &mem);
@@ -550,8 +554,10 @@ void *
   p = token[0];
   p_local = token[1];
 
+#ifdef SHARED
   /* shared window attached to remote window as attribute */
   MPI_Win_set_attr(*p, shared_win, (void*)p_local);
+#endif
 
   if(l_var)
     {
@@ -990,6 +996,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
         for (i = 0; i < (dst_size-src_size)/4; i++)
               ((int32_t*) pad_str)[i] = (int32_t) ' ';
     }
+#ifdef SHARED
   if(global_ranks[image_index-1] != -1)
     {
       /* Images on same node. Let's use the shared memory window */
@@ -998,6 +1005,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
       image_index = global_ranks[image_index-1];
       image_index++;
     }
+#endif
   if (rank == 0
       || (GFC_DESCRIPTOR_TYPE (dest) == GFC_DESCRIPTOR_TYPE (src)
           && dst_kind == src_kind && GFC_DESCRIPTOR_RANK (src) != 0
@@ -1381,7 +1389,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
         for (i = 0; i < (dst_size-src_size)/4; i++)
               ((int32_t*) pad_str)[i] = (int32_t) ' ';
     }
-
+#ifdef SHARED
   if(global_ranks[image_index-1] != -1)
     {
       /* Images on same node. Let's use the shared memory window */
@@ -1390,7 +1398,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
       image_index = global_ranks[image_index-1];
       image_index++;
     }
-  
+#endif  
   if (rank == 0
       || (GFC_DESCRIPTOR_TYPE (dest) == GFC_DESCRIPTOR_TYPE (src)
           && dst_kind == src_kind
