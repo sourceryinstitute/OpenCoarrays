@@ -104,6 +104,12 @@ char err_buffer[MPI_MAX_ERROR_STRING];
    MPI_COMM_WORLD for interoperability purposes. */
 MPI_Comm CAF_COMM_WORLD;
 
+/* Shared memory variables */
+MPI_Comm SHARED_COMM;
+int *local_ranks, *global_ranks, local_size;
+MPI_Group local_group, global_group;
+static int shared_win = MPI_KEYVAL_INVALID;
+
 /* For MPI interoperability, allow external initialization
    (and thus finalization) of MPI. */
 bool caf_owns_mpi = false;
@@ -360,6 +366,28 @@ PREFIX (init) (int *argc, char ***argv)
       MPI_Comm_size(CAF_COMM_WORLD, &caf_num_images);
       MPI_Comm_rank(CAF_COMM_WORLD, &caf_this_image);
 
+      MPI_Comm_split_type(CAF_COMM_WORLD,MPI_COMM_TYPE_SHARED,0,MPI_INFO_NULL, &SHARED_COMM);
+      MPI_Comm_group(SHARED_COMM, &local_group);
+      MPI_Comm_group(MPI_COMM_WORLD, &global_group);
+      MPI_Group_size(local_group, &local_size);
+
+      local_ranks = (int *) malloc(local_size * sizeof(int));
+      global_ranks = (int *) malloc(caf_num_images * sizeof(int));
+
+      for (i = 0; i < local_size; i++)
+	local_ranks[i] = i;
+      
+      MPI_Group_translate_ranks(local_group, local_size, local_ranks, global_group, global_ranks);
+
+      for(i = 1; i < caf_num_images; i++)
+      	if(global_ranks[i] == 0)
+      	  global_ranks[i] = -1;
+
+      if(shared_win == MPI_KEYVAL_INVALID)
+	MPI_Win_create_keyval(MPI_WIN_NULL_COPY_FN,
+			      MPI_WIN_NULL_DELETE_FN,
+			      &shared_win, (void *)0);
+      
       caf_this_image++;
       caf_is_finalized = 0;
 
@@ -491,9 +519,10 @@ void *
 
   /* Token contains only a list of pointers.  */
 
-  *token = malloc (sizeof(MPI_Win));
+  *token = malloc (sizeof(MPI_Win)*2);
 
-  MPI_Win *p = *token;
+  MPI_Win *p = token[0];
+  MPI_Win *p_local = token[1];
 
   if(type == CAF_REGTYPE_LOCK_STATIC || type == CAF_REGTYPE_LOCK_ALLOC ||
      type == CAF_REGTYPE_CRITICAL || type == CAF_REGTYPE_EVENT_STATIC ||
@@ -506,16 +535,23 @@ void *
     actual_size = size;
 
 #if MPI_VERSION >= 3
-  MPI_Win_allocate(actual_size, 1, mpi_info_same_size, CAF_COMM_WORLD, &mem, *token);
+  MPI_Win_allocate_shared(actual_size, 1, mpi_info_same_size, SHARED_COMM, &mem, token[1]);
+  MPI_Win_create(mem, actual_size, 1, MPI_INFO_NULL, CAF_COMM_WORLD, token[0]);
+  /* MPI_Win_allocate(actual_size, 1, mpi_info_same_size, CAF_COMM_WORLD, &mem, *token); */
 # ifndef CAF_MPI_LOCK_UNLOCK
   MPI_Win_lock_all(MPI_MODE_NOCHECK, *p);
+  MPI_Win_lock_all(MPI_MODE_NOCHECK, *p_local);
 # endif // CAF_MPI_LOCK_UNLOCK
 #else // MPI_VERSION
   MPI_Alloc_mem(actual_size, MPI_INFO_NULL, &mem);
   MPI_Win_create(mem, actual_size, 1, MPI_INFO_NULL, CAF_COMM_WORLD, *token);
 #endif // MPI_VERSION
 
-  p = *token;
+  p = token[0];
+  p_local = token[1];
+
+  /* shared window attached to remote window as attribute */
+  MPI_Win_set_attr(*p, shared_win, (void*)p_local);
 
   if(l_var)
     {
@@ -1338,6 +1374,15 @@ PREFIX (get) (caf_token_t token, size_t offset,
               ((int32_t*) pad_str)[i] = (int32_t) ' ';
     }
 
+  if(global_ranks[image_index-1] != -1)
+    {
+      /* Images on same node. Let's use the shared memory window */
+      int flag = 0;
+      MPI_Win_get_attr(*p,shared_win,&p,&flag);
+      image_index = global_ranks[image_index-1];
+      image_index++;
+    }
+  
   if (rank == 0
       || (GFC_DESCRIPTOR_TYPE (dest) == GFC_DESCRIPTOR_TYPE (src)
           && dst_kind == src_kind
