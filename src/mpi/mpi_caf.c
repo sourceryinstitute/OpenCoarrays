@@ -520,10 +520,12 @@ void *
 
   /* Token contains only a list of pointers.  */
 
-  *token = malloc (sizeof(MPI_Win)*2);
-
+  *token = malloc (sizeof(MPI_Win));
   MPI_Win *p = token[0];
-  MPI_Win *p_local = token[1];
+
+#ifdef SHARED
+  MPI_Win *p_local = malloc(sizeof(MPI_Win));
+#endif
 
   if(type == CAF_REGTYPE_LOCK_STATIC || type == CAF_REGTYPE_LOCK_ALLOC ||
      type == CAF_REGTYPE_CRITICAL || type == CAF_REGTYPE_EVENT_STATIC ||
@@ -537,8 +539,8 @@ void *
 
 #if MPI_VERSION >= 3
 #ifdef SHARED
-  MPI_Win_allocate_shared(actual_size, 1, mpi_info_same_size, SHARED_COMM, &mem, token[1]);
-  MPI_Win_create(mem, actual_size, 1, MPI_INFO_NULL, CAF_COMM_WORLD, token[0]);
+  MPI_Win_allocate_shared(actual_size, 1, MPI_INFO_NULL, SHARED_COMM, &mem, p_local);
+  MPI_Win_create(mem, actual_size, 1, mpi_info_same_size, CAF_COMM_WORLD, token[0]);
   MPI_Win_lock_all(MPI_MODE_NOCHECK, *p_local);
 #else
   MPI_Win_allocate(actual_size, 1, mpi_info_same_size, CAF_COMM_WORLD, &mem, *token);
@@ -552,8 +554,6 @@ void *
 #endif // MPI_VERSION
 
   p = token[0];
-  p_local = token[1];
-
 #ifdef SHARED
   /* shared window attached to remote window as attribute */
   MPI_Win_set_attr(*p, shared_win, (void*)p_local);
@@ -1398,7 +1398,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
       image_index = global_ranks[image_index-1];
       image_index++;
     }
-#endif  
+#endif
   if (rank == 0
       || (GFC_DESCRIPTOR_TYPE (dest) == GFC_DESCRIPTOR_TYPE (src)
           && dst_kind == src_kind
