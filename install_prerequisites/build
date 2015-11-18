@@ -1,4 +1,4 @@
-#!/bin/bash
+#!bin/bash
 #
 # build
 #
@@ -84,7 +84,7 @@ set_default_version()
     "gcc:trunk"
     "mpich:3.1.4"
     "wget:1.16.3"
-    "flex:2.6.0rc1"
+    "flex:2.6.0"
     "pkg-config:0.28"
     "make:4.1"
     "_unknown:0" 
