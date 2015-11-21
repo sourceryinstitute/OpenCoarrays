@@ -51,6 +51,7 @@ if [[ -z $1 ]]; then
 else
   install_path=$1
 fi
+build_path=${PWD}/opencoarrays-build
 
 
 #Interpret the second command-line argument, if present, as the number of threads for 'make'.
@@ -77,7 +78,6 @@ usage()
     echo " Examples:"
     echo ""
     echo "   $this_script"
-    echo "   $this_script ${PWD}"
     echo "   $this_script /opt/opencoarrays 4"
     echo "   $this_script --help"
     echo ""
@@ -118,78 +118,97 @@ find_or_install()
       MPIFC=mpif90
     fi
 
+    # Start an infinite loop to demarcate a block of code that can be exited via the 'break' 
+    # command.  Alternate exit points/mechanisms include 'return' from this fuction and 'exit'
+    # from this script.
     never=false
     until [ $never == true ]; do
-    # To avoid an infinite loop every branch must end with return, exit, or break
+
+      # To avoid an infinite loop every branch must end with return, exit, or break
 
       if [[ $package != "gcc" ]]; then
 
-        return # return
-
+        # Accept any version and return from this function
+        return 
+        
       else #package is gcc
 
         printf "Checking whether gfortran is version 5.1.0 or later..."
-        gfortran -o acceptable_compiler ./install_prerequisites/acceptable_compiler.f90
-        gfortran -o print_true ./install_prerequisites/print_true.f90
+        gfortran -o acceptable_compiler acceptable_compiler.f90
+        gfortran -o print_true print_true.f90
         is_true=`./print_true`
         acceptable=`./acceptable_compiler`
         rm acceptable_compiler print_true
   
         if [[ $acceptable == $is_true ]]; then
 
+          # Acceptable gfortran in PATH
           printf "yes\n"
           FC=gfortran
           CC=gcc
           CXX=g++
 
-          return # found an acceptable gfortran in PATH
+          return # acceptable gfortran
 
         else
           printf "no\n"
-
           break # need to install gfortran below
         fi 
-        printf "$this_script: an infinite until loop is missing a break, return, or exit.\n"
+        printf "$this_script: an infinite 'until' loop is missing a break, return, or exit (see inner conditional).\n"
         exit 1 # This should never be reached
-      fi 
-      printf "$this_script: an infinite until loop is missing a break, return, or exit.\n"
+      fi && 
+      printf "$this_script: an infinite until loop is missing a break, return, or exit (see outer conditional).\n" &&
       exit 1 # This should never be reached
     done
     # The $executable is not an acceptable version
-  fi 
+  fi && # Ending if type $executable > /dev/null; 
 
-  # Now we know the $executable is not in the PATH or is not an acceptable version
   printf "Ok to downloand, build, and install $package from source? (y/n) "
-  read proceed
-  if [[ $proceed == "y" ]]; then
+  read proceed_with_build
+  if [[ $proceed_with_build != "y" ]]; then
+    printf "\nOpenCoarrays installation requires $package. Aborting.\n"
+    exit 1
+  else # permission granted to build
+
     printf "Downloading, building, and installing $package \n"
-    cd install_prerequisites &&
+
     if [[ $package == "gcc" ]]; then
+
       # Building GCC from source requires flex
-      printf "Building requires the 'flex' package.\n"
-      printf "Checking flex is in the PATH... "
+      printf "Building gfortran requires the 'flex' package.\n"
+      printf "Checking whether flex is in the PATH... "
       if type flex > /dev/null; then
         printf "yes\n"
-      else
+
+      else # flex not in path
+     
         printf "no\n"
         printf "Ok to downloand, build, and install flex from source? (y/n) "
         read build_flex
+
         if [[ $build_flex == "y" ]]; then
-          FC=gfortran CC=gcc CXX=g++ ./build flex 
+          # Recurse:
+          find_or_install flex 
           flex_install_path=`./build flex --default --query` &&
-          if [[ -f $flex_install_path/bin/flex ]]; then
-            printf "Installation successful."
-            printf "$package is in $flex_install_path/bin \n"
-          fi
           PATH=$flex_install_path/bin:$PATH
+          if type flex > /dev/null; then
+            printf "" # nothing to do.
+          else
+            echo "$this_script: an attempt to install GCC prerequeisite flex failed."
+            exit 1
+          fi
         else
           printf "Aborting. Building GCC requires flex.\n"
           exit 1
-        fi
-      fi
-    fi
-    FC=gfortran CC=gcc CXX=g++ ./build $package --default $num_threads &&
-    package_install_path=`./build $package --default --query` &&
+        fi # Ending 'if [[ $build_flex == "y" ]];'
+
+      fi # Ending 'if type flex > /dev/null;'
+    
+    fi # Ending 'if [[ $package == "gcc" ]];'
+
+    FC=gfortran CC=gcc CXX=g++ ./build $package --default $num_threads
+    package_install_path=`./build $package --default --query` 
+
     if [[ -f $package_install_path/bin/$executable ]]; then
       printf "Installation successful."
       printf "$package is in $package_install_path/bin \n"
@@ -204,24 +223,48 @@ find_or_install()
       PATH=$package_install_path/bin:$PATH
       return
     else
-      printf "Installation unsuccessful."
-      printf "$package is not in the expected path: $package_install_path/bin \n"
+      printf "Installation unsuccessful. "
+      printf "$package is not in the following expected path:\n"
+      printf "$package_install_path/bin \n"
       exit 1
-    fi
-  else
-    printf "Aborting. OpenCoarrays installation requires $package \n"
-    exit 1
-  fi
+    fi # End 'if [[ -f $package_install_path/bin/$executable ]]' 
+
+  fi # End 'if [[ $proceed_with_build == "y" ]]; then'
+   
+  # Each branch above should end with a 'return' or 'exit' so we should never reach here.
   printf "$this_script: the dependency installation logic is missing a return or exit.\n"
   exit 1
 }
 
-# ___________________ Define functions for use in the main body ___________________
+build_opencoarrays()
+{
+  # A default OpenCoarrays build requires CMake and MPICH. MPICH requires GCC.
+  find_or_install gcc   &&
+  find_or_install mpich &&
+  find_or_install cmake &&
+  mkdir -p $build_path  &&
+  cd $build_path        &&
+  if [[ -z $MPICC || -z $MPIFC ]]; then
+    echo "Empty MPICC=$MPICC or MPIFC=$MPIFC" 
+    exit 1
+  else
+    CC=$MPICC FC=$MPIFC cmake .. -DCMAKE_INSTALL_PREFIX=$install_path &&
+    make -j$num_threads &&
+    make install        &&
+    make clean
+  fi
+}
+# ___________________ End of function definitions for use in the main body __________________
+
+# __________________________________ Start of Main Body _____________________________________
 
 if [[ $1 == '--help' || $1 == '-h' ]]; then
+
   # Print usage information if script is invoked with --help or -h argument
   usage | less
+
 elif [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
+
   # Print script copyright if invoked with -v, -V, or --version argument
   echo ""
   echo "OpenCoarrays installer"
@@ -233,44 +276,33 @@ elif [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
   echo "BSD 3-Clause License.  For more information about these matters, see"
   echo "http://www.sourceryinstitute.org/license.html"
   echo ""
-else
 
-
-  # Find or install prerequisites and install OpenCoarrays
-  build_path=${PWD}/opencoarrays-build
-  installation_record=install-opencoarrays.log
-  time \
-  {
-    # Building OpenCoarrays with CMake requires MPICH and GCC; MPICH requires GCC. 
-    find_or_install gcc   &&
-    find_or_install mpich &&
-    find_or_install cmake &&
-    mkdir -p $build_path  &&
-    cd $build_path        &&
-    if [[ -z $MPICC || -z $MPIFC ]]; then
-      echo "Empty MPICC=$MPICC or MPIFC=$MPIFC" 
-      exit 1
-    else
-      CC=$MPICC FC=$MPIFC cmake .. -DCMAKE_INSTALL_PREFIX=$install_path &&
-      make -j$num_threads &&
-      make install        &&
-      make clean
-    fi
-  } >&1 | tee $installation_record
-
-  # Report installation success or failure
+else # Find or install prerequisites and install OpenCoarrays
+  
+  cd install_prerequisites &&
+  installation_record=install-opencoarrays.log &&
+  build_opencoarrays >&1 | tee ../$installation_record
   printf "\n"
+
+  # Report installation success or failure:
   if [[ -f $install_path/bin/caf && -f $install_path/bin/cafrun  && -f $install_path/bin/build ]]; then
+
+    # Installation succeeded
     printf "$this_script: Done.\n\n"
     printf "The OpenCoarrays compiler wrapper (caf), program launcher (cafrun), and\n"
     printf "prerequisite package installer (build) are in the following directory:\n"
     printf "$install_path/bin.\n\n"
-  else
+
+  else # Installation failed
+    
     printf "$this_script: Done. \n\n"
     printf "Something went wrong. The OpenCoarrays compiler wrapper (caf),\n" 
     printf "program launcher (cafrun), and prerequisite package installer (build) \n"
-    printf "are not in the expected location:\n"
+    printf "are not in the following expected location:\n"
     printf "$install_path/bin.\n"
-    printf "Please review the '$installation_record' file for more information.\n\n"
-  fi
-fi
+    printf "Please review the following file for more information:\n"
+    printf "$install_path/$installation_record \n\n\n"
+
+  fi # Ending check for caf, cafrun, build not in expected path
+fi # Ending argument checks
+# ____________________________________ End of Main Body ____________________________________________
