@@ -287,10 +287,20 @@ download_if_necessary()
     elif [[ "$fetch" == "git" ]]; then
       args=clone
     fi
-    printf "Downloading $package_to_build $version_to_build.\n"
+    download_path=${PWD}
+    printf "Downloading $package_to_build $version_to_build to the following path:\n"
+    printf "$download_path \n"
     printf "Download command: $fetch $args $url\n"
-    $fetch $args $url 
+    $fetch $args $url
     if [[ $version_to_build == '--avail' || $version_to_build == '-a' ]]; then
+      # We have what we came for.  Let's move on.
+      exit 1
+    fi 
+    if [ -f "$url_tail" ]; then
+      echo "" 
+    else
+      echo "Download failed: $url_tail is not in the following, expected location:"
+      echo "$download_path"
       exit 1
     fi
   fi
