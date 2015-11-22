@@ -138,8 +138,6 @@ else
   install_path=$2
 fi
 
-build_path=${PWD}/$package_to_build-$version_to_build-build
-
 # Interpret the fourth command-line argument, if present, as the number of threads for 'make'.
 # Otherwise, default to single-threaded 'make'.
 if [ -z $4 ]; then
@@ -263,16 +261,19 @@ download_if_necessary()
   done
   url="$url_head""$url_tail"
 
-  if [ -f "$url_tail" ]; then
-    echo "Found $url_tail in the current directory.  Skipping download"
-  elif [ -d "$url_tail" ]; then
-    #  This happens with directories downloaded via version control solftware.  
-    #  I'm cowardly refusing to tackle the complexities of version control in a script.
-    #  Braver solutions might involve "svn cleanup $url_tail && svn update $url_tail"
-    #  or "git pull --rebase".
-    echo "Found '$url_tail' subdirectory in ${PWD}."
-    echo "Please rename or remove it and restart the installation script."
-    exit 1
+
+  if [ -f $url_tail ] || [ -d $url_tail ]; then
+    echo "Found '$url_tail' in ${PWD}."
+    echo "If it resulted from an incomplete download, building $package_to_build could fail."
+    printf "Would you like to proceed anyway? (y/n)"
+    read proceed
+    if [[ $proceed == "y"  ]]; then
+      printf "y\n"
+    else
+      printf "n\n"
+      printf "Please remove $url_tail and restart the installation to to ensure a fresh download."
+      exit 1
+    fi
   else 
     if [[ "$fetch" == "svn" ]]; then
       if [[ $version_to_build == '--avail' || $version_to_build == '-a' ]]; then
@@ -287,19 +288,24 @@ download_if_necessary()
     elif [[ "$fetch" == "git" ]]; then
       args=clone
     fi
-    download_path=${PWD}
-    printf "Downloading $package_to_build $version_to_build to the following path:\n"
-    printf "$download_path \n"
+    if [[ $fetch == "svn" || $fetch == "git" ]]; then
+      package_source_directory=$url_tail
+    else 
+      package_source_directory=$package_to_build-$version_to_build 
+    fi
+    printf "Downloading $package_to_build $version_to_build to the following location:\n"
+    printf "$download_path/$package_source_directory \n"
     printf "Download command: $fetch $args $url\n"
     $fetch $args $url
     if [[ $version_to_build == '--avail' || $version_to_build == '-a' ]]; then
-      # We have what we came for.  Let's move on.
+      # In this case, args="ls" and the list of available versions has been printed so we can move on.
       exit 1
     fi 
-    if [ -f "$url_tail" ]; then
-      echo "" 
+    search_name="$download_path/$package_source_directory"
+    if [ -f $search_name ] || [ -d $search_name ] && { [ "$fetch" = "svn" ] || [ "$fetch" = "git" ]; } then
+        echo "Download succeeded. $package_source_directory is in the following location:"
     else
-      echo "Download failed: $url_tail is not in the following, expected location:"
+      echo "Download failed: $package_source_directory is not in the following, expected location:"
       echo "$download_path"
       exit 1
     fi
@@ -322,13 +328,26 @@ unpack_if_necessary()
 # Make the build directory, configure, and build
 build_and_install()
 {
+ #echo "Configuring with the following command: "
+ #echo "$download_path/$package_source_directory/configure  --prefix=$install_path"
+
+  build_path=${PWD}/$package_to_build-$version_to_build-build &&
   printf "Building $package_to_build $version_to_build.\n" &&
   mkdir -p $build_path &&
   cd $build_path &&
-  ../$package_source_directory/configure --prefix=$install_path &&
-  CC=$CC CXX=$CXX make -j $num_threads &&
-  printf "Installing $package_to_build in $install_path.\n" &&
-  make install
+  if [[ $package_to_build == "gcc" ]]; then
+    pushd $download_path/$package_source_directory &&  
+    ${PWD}/contrib/download_prerequisites &&
+    popd &&
+    $download_path/$package_source_directory/configure --prefix=$install_path --enable-languages=c,c++,fortran,lto --disable-multilib --disable-werror &&  
+    make -j $num_threads bootstrap &&
+    make install
+  else
+    $download_path/$package_source_directory/configure --prefix=$install_path &&
+    CC=$CC CXX=$CXX make -j $num_threads &&
+    printf "Installing $package_to_build in $install_path.\n" &&
+    make install
+  fi
 }
 
 if [ $# == 0 ]; then
@@ -355,10 +374,11 @@ elif [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
   echo ""
 else
   # Download, unpack, and build CMake
+  download_path=${PWD}
   check_prerequisites &&
   download_if_necessary &&
   unpack_if_necessary &&
-  CC=$CC CXX=$CXX build_and_install $package_to_build $version_to_build $install_path $num_threads \
+  CC=$CC CXX=$CXX build_and_install $package_to_build $version_to_build $install_path $num_threads $download_path \
   >&1 | tee build-$package_to_build.log &&
   printf "\n" &&
   printf "$this_script: Done. Check for $package_to_build in the installation path $install_path\n" &&

@@ -206,7 +206,8 @@ find_or_install()
     
     fi # Ending 'if [[ $package == "gcc" ]];'
 
-    FC=gfortran CC=gcc CXX=g++ ./build $package --default $num_threads
+#    FC=gfortran CC=gcc CXX=g++ ./build $package --default $num_threads
+    FC=gfortran CC=gcc CXX=g++ ./build $package 
     package_install_path=`./build $package --default --query` 
 
     if [[ -f $package_install_path/bin/$executable ]]; then
