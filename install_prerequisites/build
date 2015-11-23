@@ -135,7 +135,7 @@ default_install_path=${PWD}/$package_to_build-$version_to_build-installation
 if [[ -z $3 || $3 == "--query" ]]; then
   install_path=$default_install_path
 else
-  install_path=$2
+  install_path=$3
 fi
 
 # Interpret the fourth command-line argument, if present, as the number of threads for 'make'.
@@ -143,7 +143,7 @@ fi
 if [ -z $4 ]; then
   num_threads=1
 else
-  num_threads=$3
+  num_threads=$4
 fi
 
 
@@ -328,8 +328,6 @@ unpack_if_necessary()
 # Make the build directory, configure, and build
 build_and_install()
 {
- #echo "Configuring with the following command: "
- #echo "$download_path/$package_source_directory/configure  --prefix=$install_path"
 
   build_path=${PWD}/$package_to_build-$version_to_build-build &&
   printf "Building $package_to_build $version_to_build.\n" &&
@@ -339,6 +337,8 @@ build_and_install()
     pushd $download_path/$package_source_directory &&  
     ${PWD}/contrib/download_prerequisites &&
     popd &&
+    echo "Configuring with the following command: " &&
+    echo "$download_path/$package_source_directory/configure  --prefix=$install_path --enable-languages=c,c++,fortran,lto --disable-multilib --disable-werror " &&
     $download_path/$package_source_directory/configure --prefix=$install_path --enable-languages=c,c++,fortran,lto --disable-multilib --disable-werror &&  
     make -j $num_threads bootstrap &&
     make install
