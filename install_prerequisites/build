@@ -85,6 +85,7 @@ set_default_version()
     "mpich:3.1.4"
     "wget:1.16.3"
     "flex:2.6.0"
+    "bison:3.0.4"
     "pkg-config:0.28"
     "make:4.1"
     "_unknown:0" 
@@ -158,6 +159,7 @@ check_prerequisites()
     "cmake:wget"
     "mpich:wget"
     "flex:wget"
+    "bison:wget"
     "pkg-config:wget"
     "make:ftp"
     "_unknown:0" 
@@ -209,6 +211,7 @@ download_if_necessary()
     "mpich;http://www.mpich.org/static/downloads/$version_to_build/"
     "flex;http://sourceforge.net/projects/flex/files/"
     "make;ftp://ftp.gnu.org/gnu/make/"
+    "bison;ftp://prep.ai.mit.edu/pub/gnu/bison/"
     "cmake;http://www.cmake.org/files/v$major_minor/"
     "_unknown;0" 
   )
@@ -242,6 +245,7 @@ download_if_necessary()
     "pkg-config;pkg-config-$version_to_build.tar.gz"
     "mpich;mpich-$version_to_build.tar.gz"
     "flex;flex-$version_to_build.tar.xz"
+    "bison;bison-$version_to_build.tar.xz"
     "make;make-$version_to_build.tar.bz2"
     "cmake;cmake-$version_to_build.tar.gz "
     "_unknown;0" 
@@ -301,9 +305,15 @@ download_if_necessary()
       # In this case, args="ls" and the list of available versions has been printed so we can move on.
       exit 1
     fi 
-    search_name="$download_path/$package_source_directory"
-    if [ -f $search_name ] || [ -d $search_name ] && { [ "$fetch" = "svn" ] || [ "$fetch" = "git" ]; } then
-        echo "Download succeeded. $package_source_directory is in the following location:"
+   #search_name="$download_path/$package_source_directory"
+   #if [ -f $search_name ] || [ -d $search_name ] && { [ "$fetch" = "svn" ] || [ "$fetch" = "git" ]; } then
+   #    echo "Download succeeded. $package_source_directory is in the following location:"
+    if [ -f "$download_path/$url_tail" ]; then 
+      echo "Download succeeded. $url_tail is in the following location:"
+      echo "$download_path"
+    elif [ -d "$download_path/$url_tail" ]; then 
+      echo "Download succeeded. $url_tail is in the following location:"
+      echo "$download_path"
     else
       echo "Download failed: $package_source_directory is not in the following, expected location:"
       echo "$download_path"
