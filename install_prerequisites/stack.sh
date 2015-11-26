@@ -190,3 +190,4 @@ function stack_exists
         return 0
     fi
 }
+

@@ -305,9 +305,6 @@ download_if_necessary()
       # In this case, args="ls" and the list of available versions has been printed so we can move on.
       exit 1
     fi 
-   #search_name="$download_path/$package_source_directory"
-   #if [ -f $search_name ] || [ -d $search_name ] && { [ "$fetch" = "svn" ] || [ "$fetch" = "git" ]; } then
-   #    echo "Download succeeded. $package_source_directory is in the following location:"
     if [ -f "$download_path/$url_tail" ]; then 
       echo "Download succeeded. $url_tail is in the following location:"
       echo "$download_path"
@@ -315,7 +312,7 @@ download_if_necessary()
       echo "Download succeeded. $url_tail is in the following location:"
       echo "$download_path"
     else
-      echo "Download failed: $package_source_directory is not in the following, expected location:"
+      echo "Download failed: $url_tail is not in the following, expected location:"
       echo "$download_path"
       exit 1
     fi
@@ -342,7 +339,7 @@ build_and_install()
   build_path=${PWD}/$package_to_build-$version_to_build-build &&
   printf "Building $package_to_build $version_to_build.\n" &&
   mkdir -p $build_path &&
-  cd $build_path &&
+  pushd $build_path &&
   if [[ $package_to_build == "gcc" ]]; then
     pushd $download_path/$package_source_directory &&  
     ${PWD}/contrib/download_prerequisites &&
@@ -357,7 +354,8 @@ build_and_install()
     CC=$CC CXX=$CXX make -j $num_threads &&
     printf "Installing $package_to_build in $install_path.\n" &&
     make install
-  fi
+  fi &&
+  popd
 }
 
 if [ $# == 0 ]; then
@@ -394,6 +392,3 @@ else
   printf "$this_script: Done. Check for $package_to_build in the installation path $install_path\n" &&
   printf "\n"
 fi
-
-#printf "'cd $package_to_build-build && make install' (or 'cd $package_to_build-build && sudo make install')\n"
-#printf "to complete the installation, after which $package_to_build will be in the 'bin' subdirectory of $install_path \n"  
