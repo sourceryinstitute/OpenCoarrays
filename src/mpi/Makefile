@@ -2,12 +2,12 @@ include ../make.inc
 
 MPICC ?= mpicc
 
-libcaf_mpi.a: mpi_caf.o ../common/caf_auxiliary.o
-	ar rcv $@ mpi_caf.o ../common/caf_auxiliary.o
+libcaf_mpi.a: mpi_caf.o helper.o ../common/caf_auxiliary.o
+	ar rcv $@ mpi_caf.o helper.o ../common/caf_auxiliary.o
 	ranlib $@
 
 .c.o:
-	$(MPICC) $(CFLAGS) $(MPI_CFLAGS) -I.. -c $< -o $@
+	$(MPICC) $(CFLAGS) $(MPI_CFLAGS) -I.. -c -lpthread $< -o $@
 
 mpi_caf.o: mpi_caf.c ../libcaf.h ../libcaf-gfortran-descriptor.h
 
@@ -16,6 +16,7 @@ mpi_caf.o: mpi_caf.c ../libcaf.h ../libcaf-gfortran-descriptor.h
 
 clean:
 	rm -f mpi_caf.o
+	rm -f helper.o
 
 distclean: clean
 	rm -f libcaf_mpi.a
