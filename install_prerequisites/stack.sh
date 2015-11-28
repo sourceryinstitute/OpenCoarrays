@@ -191,3 +191,19 @@ function stack_exists
     fi
 }
 
+#### Functions added by Damian Rouson
+
+# Get the top element from the stack and return the stack
+# to its state before invocation of the function.
+#
+# Usage: stack_peek name var
+#
+# Example:
+#    stack_peek mystack top
+#    echo "Got $top"
+function stack_peek
+{
+  stack_pop $1 $2
+  eval argument_name=\$$2
+  stack_push $1 $argument_name
+}
