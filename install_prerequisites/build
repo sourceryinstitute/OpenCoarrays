@@ -80,7 +80,7 @@ set_default_version()
   # denominator because, for licensing reasons, OS X only has bash 3 by default.)
   # See http://stackoverflow.com/questions/1494178/how-to-define-hash-tables-in-bash
   package_version=( 
-    "cmake:3.3.2"
+    "cmake:3.4.0"
     "gcc:trunk"
     "mpich:3.1.4"
     "wget:1.16.3"
@@ -133,7 +133,7 @@ fi
 # Interpret the third command-line argument, if present, as the installation path.
 # Otherwise, install in a subdirectory of the present working directory.
 default_install_path=${PWD}/$package_to_build-$version_to_build-installation
-if [[ -z $3 || $3 == "--query" ]]; then
+if [[ -z $3 || $3 == "--query-path" ]]; then
   install_path=$default_install_path
 else
   install_path=$3
@@ -265,7 +265,6 @@ download_if_necessary()
   done
   url="$url_head""$url_tail"
 
-
   if [ -f $url_tail ] || [ -d $url_tail ]; then
     echo "Found '$url_tail' in ${PWD}."
     echo "If it resulted from an incomplete download, building $package_to_build could fail."
@@ -305,10 +304,7 @@ download_if_necessary()
       # In this case, args="ls" and the list of available versions has been printed so we can move on.
       exit 1
     fi 
-    if [ -f "$download_path/$url_tail" ]; then 
-      echo "Download succeeded. $url_tail is in the following location:"
-      echo "$download_path"
-    elif [ -d "$download_path/$url_tail" ]; then 
+    if [ -f $download_path/$url_tail ] || [ -d $download_path/$url_tail ]; then
       echo "Download succeeded. $url_tail is in the following location:"
       echo "$download_path"
     else
@@ -364,9 +360,12 @@ if [ $# == 0 ]; then
 elif [[ $1 == '--help' || $1 == '-h' ]]; then
   # Print usage information if script is invoked with --help or -h argument
   usage | less
-elif [[ $2 == '--default' && $3 == '--query' ]]; then
+elif [[ $2 == '--default' && $3 == '--query-path' ]]; then
   # Print the installation path and exit
   printf "$install_path\n"
+  exit 0
+elif [[ $2 == '--default' && $3 == '--query-version' ]]; then
+  printf "$default_version\n"
   exit 0
 elif [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
   # Print script copyright if invoked with -v, -V, or --version argument
