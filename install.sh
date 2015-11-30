@@ -216,7 +216,7 @@ find_or_install()
       else 
         printf "no.\n"
         printf "$this_script: Using the $executable found in the PATH.\n"
-        export CMAKE=$executbale
+        export CMAKE=$executable
         stack_push acceptable_in_path $package $executable
         # Prevent recursion
         stack_push dependency_pkg "none"
