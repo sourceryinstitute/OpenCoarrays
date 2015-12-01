@@ -681,10 +681,12 @@ report_results()
     echo ""
     echo "$install_path/bin."
     echo ""
+    rm $install_path/setup.sh
     # Prepend the OpenCoarrays license to the setup.sh script:
     while IFS='' read -r line || [[ -n "$line" ]]; do
         echo "# $line" >> $install_path/setup.sh
     done < "$opencoarrays_src_dir/COPYRIGHT-BSD3"
+    echo "#                                                                      " >> $install_path/setup.sh
     echo "# Execute this script via the folowing commands:                       " >> $install_path/setup.sh
     echo "# cd $install_path                                                     " >> $install_path/setup.sh
     echo "# source setup.sh                                                      " >> $install_path/setup.sh
@@ -712,6 +714,30 @@ report_results()
       echo "  export PATH=\"$mpich_install_path/bin\":\$PATH                     " >> $install_path/setup.sh
       echo "fi                                                                   " >> $install_path/setup.sh
     fi
+    cmake_install_path=`./build cmake --default --query-path`
+    if [[ -x "$cmake_install_path/bin/cmake" ]]; then 
+      echo "if [[ -z \"\$PATH\" ]]; then                                         " >> $install_path/setup.sh
+      echo "  export PATH=\"$cmake_install_path/bin\"                            " >> $install_path/setup.sh
+      echo "else                                                                 " >> $install_path/setup.sh
+      echo "  export PATH=\"$cmake_install_path/bin\":\$PATH                     " >> $install_path/setup.sh
+      echo "fi                                                                   " >> $install_path/setup.sh
+    fi  
+    flex_install_path=`./build flex --default --query-path`
+    if [[ -x "$flex_install_path/bin/flex" ]]; then 
+      echo "if [[ -z \"\$PATH\" ]]; then                                         " >> $install_path/setup.sh
+      echo "  export PATH=\"$flex_install_path/bin\"                             " >> $install_path/setup.sh
+      echo "else                                                                 " >> $install_path/setup.sh
+      echo "  export PATH=\"$flex_install_path/bin\":\$PATH                      " >> $install_path/setup.sh
+      echo "fi                                                                   " >> $install_path/setup.sh
+    fi  
+    bison_install_path=`./build bison --default --query-path`
+    if [[ -x "$bison_install_path/bin/yacc" ]]; then 
+      echo "if [[ -z \"\$PATH\" ]]; then                                         " >> $install_path/setup.sh
+      echo "  export PATH=\"$bison_install_path/bin\"                            " >> $install_path/setup.sh
+      echo "else                                                                 " >> $install_path/setup.sh
+      echo "  export PATH=\"$bison_install_path/bin\":\$PATH                     " >> $install_path/setup.sh
+      echo "fi                                                                   " >> $install_path/setup.sh
+    fi 
     echo "*** Before using caf, cafrun, or build, please execute the following command ***"
     echo "*** or add it to your login script and launch a new shell (or the equivalent ***"
     echo "*** for your shell if you are not using a bash shell):                       ***"
