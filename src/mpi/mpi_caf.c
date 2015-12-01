@@ -394,6 +394,9 @@ PREFIX (init) (int *argc, char ***argv)
 			      &shared_win, (void *)0);
 #endif
 
+      caf_this_image++;
+      caf_is_finalized = 0;
+
 #ifdef ASYNC_PROGRESS
       setup_send_sock();
       neigh_list_1st();
@@ -402,8 +405,6 @@ PREFIX (init) (int *argc, char ***argv)
       check_helper_init();
       MPI_Barrier(CAF_COMM_WORLD);
 #endif
-      caf_this_image++;
-      caf_is_finalized = 0;
 
       images_full = (int *) calloc (caf_num_images-1, sizeof (int));
 

@@ -32,8 +32,6 @@ extern int caf_num_images;
 
 void * comm_thread_routine(void *arg)
 {
-  pthread_mutex_lock (&comm_mutex);
-  char *str;
   struct sockaddr_in si_me, si_other;
   int i, slen=sizeof(si_me),new_port,it,flag;
   char buffer[BUFLEN] = "";
@@ -50,8 +48,6 @@ void * comm_thread_routine(void *arg)
     error("bind");
 
   prog_init = 1;
-
-  pthread_mutex_unlock (&comm_mutex);
 
   while(1)
     {
