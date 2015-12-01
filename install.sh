@@ -459,6 +459,18 @@ find_or_install()
         printf "$this_script: Using the $package executable $executable found in the PATH.\n"
         YACC=yacc
         stack_push acceptable_in_path $package $executable
+        # Remove bison from the dependency stack 
+        stack_pop dependency_pkg package_done 
+        stack_pop dependency_exe executable_done 
+        stack_pop dependency_path package_done_path 
+        # Put $package onto the script_installed log 
+        stack_push script_installed package_done 
+        stack_push script_installed executable_done 
+        stack_push script_installed package_done_path 
+        # Halt the recursion and signal that there are no prerequisites to build
+        stack_push dependency_pkg "none"
+        stack_push dependency_exe "none"
+        stack_push dependency_path "none"
       fi
 
     else # $package not in PATH and not yet installed by this script
@@ -479,7 +491,7 @@ find_or_install()
     fi
   fi 
 
-  echo "$this_script: Starting dependency stack (top to bottom = left to right):"
+  echo "$this_script: Updated dependency stack (top to bottom = left to right):"
   stack_print dependency_pkg  
 
   stack_size dependency_pkg num_stacked
@@ -677,10 +689,12 @@ report_results()
     echo ""
     echo "$install_path/bin."
     echo ""
+    rm $install_path/setup.sh
     # Prepend the OpenCoarrays license to the setup.sh script:
     while IFS='' read -r line || [[ -n "$line" ]]; do
         echo "# $line" >> $install_path/setup.sh
     done < "$opencoarrays_src_dir/COPYRIGHT-BSD3"
+    echo "#                                                                      " >> $install_path/setup.sh
     echo "# Execute this script via the folowing commands:                       " >> $install_path/setup.sh
     echo "# cd $install_path                                                     " >> $install_path/setup.sh
     echo "# source setup.sh                                                      " >> $install_path/setup.sh
@@ -732,7 +746,6 @@ report_results()
       echo "  export PATH=\"$bison_install_path/bin\":\$PATH                     " >> $install_path/setup.sh
       echo "fi                                                                   " >> $install_path/setup.sh
     fi
-    echo "*** Before using caf, cafrun, or build, please execute the following command ***"
     echo "*** Before using caf, cafrun, or build, please execute the following command ***"
     echo "*** or add it to your login script and launch a new shell (or the equivalent ***"
     echo "*** for your shell if you are not using a bash shell):                       ***"
