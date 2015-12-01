@@ -74,13 +74,13 @@ fi
 
 # Verify that the top-level OpenCoarrays source diretory is either present working directory 
 # or is specified by a valid in the OPENCOARRAYS_SRC_DIR environment variable 
-if [[ -d $OPENCOARRAYS_SRC_DIR ]]; then
+if [[ -d "$OPENCOARRAYS_SRC_DIR" ]]; then
   opencoarrays_src_dir=$OPENCOARRAYS_SRC_DIR 
 else
   opencoarrays_src_dir=${PWD}
 fi
-cd $opencoarrays_src_dir || directory_exists=false
-if [[ $directory_exists == "false" ]]; then
+cd "$opencoarrays_src_dir" || $directory_exists==false
+if [[ "$directory_exists" == "false" ]]; then
   echo "The OPENCOARRAYS_SRC_DIR environment variable specifies a non-existent directory [exit 10]:"
   echo "$OPENCOARRAYS_SRC_DIR"
   exit 10
@@ -88,7 +88,7 @@ fi
 
 build_path=$opencoarrays_src_dir/opencoarrays-build
 build_script=$opencoarrays_src_dir/install_prerequisites/build
-if [[ ! -x $build_script ]]; then
+if [[ ! -x "$build_script" ]]; then
   echo "$this_script: $build_script script does not exist or the user lacks executable permission for it."
   echo "$this_script: Please run this_script in the top-level OpenCoarrays source directory or set the"
   echo "$this_script: OPENCOARRAYS_SRC_DIR environment variable to the top-level OpenCoarrays source path."
@@ -174,7 +174,7 @@ find_or_install()
 
   printf "$this_script: Checking whether $executable is in the directory in which $this_script\n"
   printf "            installs it by default and whether the user has executable permission for it..."
-  if [[ -x $package_install_path/bin/$executable ]]; then 
+  if [[ -x "$package_install_path/bin/$executable" ]]; then 
     printf "yes.\n"
     script_installed_package=true
     stack_push script_installed $package $executable
@@ -193,6 +193,9 @@ find_or_install()
     # after all dependencies have been found or installed), cmake must add itself to 
     # the dependency stack if no acceptable cmake is found.
 
+    # Every branch that discovers an acceptable pre-existing installation must set the 
+    # CMAKE environment variable. Every branch must also manage the dependency stack.
+
     if [[ "$script_installed_package" == true ]]; then
       printf "$this_script: Using the $package installed by $this_script\n"
       export CMAKE=$package_install_path/bin/$executable
@@ -205,9 +208,6 @@ find_or_install()
 
       if [[ "$package_version_in_path" < "$executable version $minimum_version" ]]; then
         printf "yes.\n"
-        # This following file doesn't yet exist but this seems to be the right place to set 
-        # because it consolidates all of the CMAKE definitions into one block of code and
-        export CMAKE=$package_install_path/bin/$executable
         # Here we place $package on the dependency stack to trigger the build of the above file:
         stack_push dependency_pkg $package "none" 
         stack_push dependency_exe $package "none" 
@@ -225,7 +225,6 @@ find_or_install()
       fi
 
     else # Build package ($package has no prerequisites)
-      export CMAKE=$package_install_path/bin/$executable
       stack_push dependency_pkg $package "none"
       stack_push dependency_exe $package "none"
       stack_push dependency_path `./build $package --default --query-path` "none" 
@@ -239,8 +238,9 @@ find_or_install()
     # after all dependencies have been found or installed), mpich must add itself to 
     # the dependency stack if no acceptable mpich is found.
 
-    # Every branch below must set the MPIFC, MPICC, and MPICXX environment variables 
-    # and manage the dependency stacks.
+    # Every branch that discovers an acceptable pre-existing installation must set the 
+    # MPIFC, MPICC, and MPICXX environment variables. Every branch must also manage the 
+    # dependency stack.
 
     if [[ "$script_installed_package" == true ]]; then
       printf "$this_script: Using the $package installed by $this_script\n"
@@ -272,43 +272,17 @@ find_or_install()
         stack_push dependency_path "none"
       else
         printf "no.\n"
-        export MPIFC=$package_install_path/bin/mpif90
-        export MPICC=$package_install_path/bin/mpicc
-        export MPICXX=$package_install_path/bin/mpicxx
-        acceptable_gcc_in_path=`stack_print acceptable_in_path | grep gcc`
-        script_installed_gcc=`stack_print script_installed | grep gcc`
-        if [[ -z $acceptable_gcc_in_path && -z $script_installed_gcc ]]; then
-          # Build $package and prerequisites
-          stack_push dependency_pkg $package "gcc"
-          stack_push dependency_exe $package "gfortran"
-          stack_push dependency_path $package `./build gcc --default --query-path` 
-        else 
-          # Build $package with existing prerequisites
-          stack_push dependency_pkg $package "none"
-          stack_push dependency_exe $executable "none"
-          stack_push dependency_path `./build mpich --default --query-path` "none"
-        fi
-        if [[ ! -z $script_installed_gcc ]]; then
-          gcc_install_path=`./build gcc --default --query-path`
-          export CC=$gcc_install_path/bin/gcc
-          export CXX=$gcc_install_path/bin/g++
-          export FC=$gcc_install_path/bin/gfortran
-        fi
+        # Trigger 'find_or_install gcc' and subsequent build of $package
+        stack_push dependency_pkg "none" $package "gcc"
+        stack_push dependency_exe "none" $executable "gfortran"
+        stack_push dependency_path "none" `./build $package --default --query-path` `./build gcc --default --query-path` 
       fi
 
     else # $package not in PATH and not yet installed by this script
-      export MPIFC=$package_install_path/bin/mpif90
-      export MPICC=$package_install_path/bin/mpicc
-      export MPICXX=$package_install_path/bin/mpicxx
-      # This conditional prevents an infinite loop by ensuring gcc only pushes
-      # flex onto the stack if flex has not already been found or installed.
-      acceptable_gcc_in_path=`stack_print acceptable_in_path | grep gcc`
-      script_installed_gcc=`stack_print script_installed | grep gcc`
-      if [[ -z $acceptable_gcc_in_path && -z $script_installed_gcc ]]; then
-        stack_push dependency_pkg  "mpich" "gcc" 
-        stack_push dependency_exe  "mpich" "gfortran" 
-        stack_push dependency_path `./build mpich --default --query-path`  `./build gcc --default --query-path`
-      fi
+      # Trigger 'find_or_install gcc' and subsequent build of $package
+      stack_push dependency_pkg  "none" $package "gcc" 
+      stack_push dependency_exe  "none" $executable "gfortran" 
+      stack_push dependency_path "none" `./build $package --default --query-path` `./build gcc --default --query-path`
     fi
 
   elif [[ $package == "gcc" ]]; then
@@ -316,8 +290,8 @@ find_or_install()
     # We arrive when the 'elif [[ $package == "mpich" ]]' block pushes "gcc" onto the
     # the dependency_pkg stack, resulting in the recursive call 'find_or_install gcc'
 
-    # Every branch below must set the FC, CC, and CXX environment variables 
-    # and manage the dependency stacks.
+    # Every branch that discovers an acceptable pre-existing installation must set the 
+    # FC, CC, and CXX environment variables. Every branch must also manage the dependency stack.
 
     if [[ "$script_installed_package" == true ]]; then
       printf "$this_script: Using the $package executable $executable installed by $this_script\n"
@@ -325,11 +299,12 @@ find_or_install()
       export CC=$package_install_path/bin/gcc
       export CXX=$package_install_path/bin/g++
       if [[ -z "$LD_LIBRARY_PATH" ]]; then 
-        export LD_LIBRARY_PATH=$package_install_path/lib/
+        echo "$this_script: export LD_LIBRARY_PATH=$package_install_path/lib/"
+                            export LD_LIBRARY_PATH=$package_install_path/lib/
       else
-        export LD_LIBRARY_PATH=$package_install_path/lib/:$LD_LIBRARY_PATH
+        echo "$this_script: export LD_LIBRARY_PATH=$package_install_path/lib/:$LD_LIBRARY_PATH"
+                            export LD_LIBRARY_PATH=$package_install_path/lib/:$LD_LIBRARY_PATH
       fi
-      echo "Exporting LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
       # Remove $package from the dependency stack 
       stack_pop dependency_pkg package_done
       stack_pop dependency_exe executable_done
@@ -371,34 +346,14 @@ find_or_install()
         stack_push dependency_path "none"
       else
         printf "no.\n"
-        export FC=$package_install_path/bin/gfortran
-        export CC=$package_install_path/bin/gcc
-        export CXX=$package_install_path/bin/g++
-        if [[ -z "$LD_LIBRARY_PATH" ]]; then 
-          export LD_LIBRARY_PATH=$package_install_path/lib/
-        else
-          export LD_LIBRARY_PATH=$package_install_path/lib/:$LD_LIBRARY_PATH
-        fi
-        # This conditional prevents an infinite loop by ensuring gcc only pushes
-        # flex onto the stack if flex has not already been found or installed.
-        acceptable_flex_in_path=`stack_print acceptable_in_path | grep flex`
-        script_installed_flex=`stack_print script_installed | grep flex`
-        if [[ -z $acceptable_flex_in_path && -z $script_installed_flex ]]; then
-          stack_push dependency_pkg "flex" 
-          stack_push dependency_exe "flex" 
-          stack_push dependency_path `./build flex --default --query-path` 
-        fi
+        # Trigger 'find_or_install flex' and subsequent build of $package
+        stack_push dependency_pkg "flex" 
+        stack_push dependency_exe "flex" 
+        stack_push dependency_path `./build flex --default --query-path` 
       fi
 
-    else # $package not in PATH and not yet installed by this script
-      export FC=$package_install_path/bin/gfortran
-      export CC=$package_install_path/bin/gcc
-      export CXX=$package_install_path/bin/g++
-      if [[ -z "$LD_LIBRARY_PATH" ]]; then 
-        export LD_LIBRARY_PATH=$package_install_path/lib/
-      else
-        export LD_LIBRARY_PATH=$package_install_path/lib/:$LD_LIBRARY_PATH
-      fi
+    else # $package is not in PATH and not yet installed by this script
+      # Trigger 'find_or_install flex' and subsequent build of $package
       stack_push dependency_pkg "flex"
       stack_push dependency_exe "flex"
       stack_push dependency_path `./build flex --default --query-path`
@@ -409,6 +364,9 @@ find_or_install()
     # We arrive here only if the 'elif [[ $package == "gcc" ]]' block has pushed "flex" 
     # onto the dependency_pkg stack, resulting in the recursive call 'find_or_install flex'.
     # flex therefore does not need to add itself to the stack.
+
+    # Every branch that discovers an acceptable pre-existing installation must set the 
+    # FLEX environment variable. Every branch must also manage the dependency stack.
 
     if [[ "$script_installed_package" == true ]]; then
       printf "$this_script: Using the $executable installed by $this_script\n"
@@ -432,17 +390,11 @@ find_or_install()
       if [[ "$package_version_in_path" < "$executable $minimum_version" ]]; then
         printf "yes\n"
 
-        export FLEX=$package_install_path/bin/$executable
-        # Add the flex prequisite "bison" to the dependency stack if the flex version in PATH is insufficient
-        # and the flex prerequisite is not already in the stack. (The 'if' prevents an infinite loop flex 
-        # wherein flex repeateldy adds 'bison' after 'bison' removes itself from the stack.)
-        acceptable_bison_in_path=`stack_print acceptable_in_path | grep bison`
-        script_installed_bison=`stack_print script_installed | grep bison`
-        if [[ -z $acceptable_bison_in_path && -z $script_installed_bison ]]; then
-          stack_push dependency_pkg "bison"
-          stack_push dependency_exe "yacc"
-          stack_push dependency_path `./build bison --default --query-path` 
-        fi
+        export FLEX="$package_install_path/bin/$executable"
+        # Trigger 'find_or_install bison' and subsequent build of $package
+        stack_push dependency_pkg "bison"
+        stack_push dependency_exe "yacc"
+        stack_push dependency_path `./build bison --default --query-path` 
 
       else
         printf "no.\n"
@@ -456,24 +408,20 @@ find_or_install()
         stack_push dependency_path "none"
       fi
 
-    else 
-      # Add the flex prequisite "bison" to the dependency stack if flex is not in the PATH 
-      # and not yet installed by $this_script and the flex prerequisite is not already in 
-      # the stack. (The 'if' prevents an infinite loop wherein flex repeateldy adds 'bison' 
-      # after 'bison' removes itself from the stack.)
-      acceptable_bison_in_path=`stack_print acceptable_in_path | grep bison`
-      script_installed_bison=`stack_print script_installed | grep bison`
-      if [[ -z $acceptable_bison_in_path && -z $script_installed_bison ]]; then
-        stack_push dependency_pkg "bison"
-        stack_push dependency_exe "yacc"
-        stack_push dependency_path `./build bison --default --query-path` 
-      fi
+    else  # $package is not in the PATH and not yet installed by $this_script
+      # Trigger 'find_or_install bison' and subsequent build of $package
+      stack_push dependency_pkg "bison"
+      stack_push dependency_exe "yacc"
+      stack_push dependency_path `./build bison --default --query-path` 
     fi
 
   elif [[ $package == "bison" ]]; then
 
     # We arrive when the 'elif [[ $package == "flex" ]]' block pushes "bison" onto the
     # the dependency_pkg stack, resulting in the recursive call 'find_or_install bison'
+
+    # Every branch that discovers an acceptable pre-existing installation must set the 
+    # YACC environment variable. Every branch must also manage the dependency stack.
 
     if [[ "$script_installed_package" == true ]]; then
       printf "$this_script: Using the $package executable $executable installed by $this_script\n"
@@ -486,7 +434,7 @@ find_or_install()
       stack_push script_installed package_done 
       stack_push script_installed executable_done 
       stack_push script_installed package_done_path 
-      # Halt the recursion and signal that no prerequisites need to be built
+      # Halt the recursion and signal that there are no prerequisites to build
       stack_push dependency_pkg "none"
       stack_push dependency_exe "none"
       stack_push dependency_path "none"
@@ -495,7 +443,7 @@ find_or_install()
       printf "$this_script: Checking whether $package executable $executable in PATH is version < $minimum_version... "
       if [[ "$package_version_in_path" < "$package (GNU Bison) $minimum_version" ]]; then
         printf "yes.\n"
-        export YACC=$package_install_path/bin/yacc
+        export YACC="$package_install_path/bin/yacc"
       else
         printf "no.\n"
         printf "$this_script: Using the $package executable $executable found in the PATH.\n"
@@ -504,26 +452,25 @@ find_or_install()
       fi
 
     else # $package not in PATH and not yet installed by this script
-      export YACC=$package_install_path/bin/yacc
+      # Halt the recursion and signal that there are no prerequisites to build
+      export YACC="$package_install_path/bin/yacc"
       stack_push dependency_pkg  "none"
       stack_push dependency_exe  "none"
       stack_push dependency_path "none"
     fi
 
   else 
-    printf "$this_script: unknown package name ($package) passed to find_or_install function. [exit 50]\n"
-    exit 50 
+    if [[ -z "$package" ]]; then 
+      printf "$this_script: empty package name passed to find_or_install function. [exit 50]\n"
+      exit 50 
+    else
+      printf "$this_script: unknown package name ($package) passed to find_or_install function. [exit 55]\n"
+      exit 55 
+    fi
   fi 
 
-  if [[ -z $CC ]]; then
-    CC=gcc
-  fi
-  if [[ -z $CXX ]]; then
-    CXX=g++
-  fi
-  if [[ -z $FC ]]; then
-    FC=gfortran
-  fi
+  echo "$this_script: Starting dependency stack (top to bottom = left to right):"
+  stack_print dependency_pkg  
 
   stack_size dependency_pkg num_stacked
   let num_dependencies=num_stacked-1
@@ -569,35 +516,89 @@ find_or_install()
 
     else # permission granted to build
 
-      script_installed_gcc=`stack_print script_installed | grep gcc`
-      if [[ ! -z $script_installed_gcc ]]; then
-        gcc_install_path=`./build gcc --default --query-path`
-        CC=$gcc_install_path/bin/gcc
-        CXX=$gcc_install_path/bin/g++
-        FC=$gcc_install_path/bin/gfortran
-      fi
+     #script_installed_gcc=`stack_print script_installed | grep gcc`
+     #if [[ ! -z $script_installed_gcc ]]; then
+     #  gcc_install_path=`./build gcc --default --query-path`
+     #  CC=$gcc_install_path/bin/gcc
+     #  CXX=$gcc_install_path/bin/g++
+     #  FC=$gcc_install_path/bin/gfortran
+     #fi
   
+      if [[ -z "$CC" ]]; then
+        CC=gcc
+      fi
+      if [[ -z "$CXX" ]]; then
+        CXX=g++
+      fi
+      if [[ -z "$FC" ]]; then
+        FC=gfortran
+      fi
+
       printf "$this_script: Downloading, building, and installing $package \n"
       echo "$this_script: Build command: FC=$FC CC=$CC CXX=$CXX ./build $package --default $package_install_path $num_threads"
-      FC=$FC CC=$CC CXX=$CXX ./build $package --default $package_install_path $num_threads
+      FC="$FC" CC="$CC" CXX="$CXX" ./build "$package" --default "$package_install_path" "$num_threads"
     
-      if [ -f $package_install_path/bin/$executable ]; then
+      if [[ -x "$package_install_path/bin/$executable" ]]; then
         printf "$this_script: Installation successful.\n"
         if [[ "$package" == "$executable" ]]; then
           printf "$this_script: $executable is in $package_install_path/bin \n"
         else
-          printf "$this_script: $packge executable $executable is in $package_install_path/bin \n"
+          printf "$this_script: $package executable $executable is in $package_install_path/bin \n"
         fi
-        export PATH=$package_install_path/bin:$PATH
+       # TODO Merge all applicable branches under one 'if [[ $package == $executable ]]; then'
+        if [[ $package == "cmake" ]]; then
+          echo "$this_script: export CMAKE=$package_install_path/bin/$executable"
+                              export CMAKE="$package_install_path/bin/$executable"
+        elif [[ $package == "bison" ]]; then
+          echo "$this_script: export YACC=$package_install_path/bin/$executable"
+                              export YACC="$package_install_path/bin/$executable"
+        elif [[ $package == "flex" ]]; then
+          echo "$this_script: export FLEX=$package_install_path/bin/$executable"
+                              export FLEX="$package_install_path/bin/$executable"
+        elif [[ $package == "gcc" ]]; then
+          echo "$this_script: export FC=$package_install_path/bin/gfortran"
+                              export FC="$package_install_path/bin/gfortran"
+          echo "$this_script: export CC=$package_install_path/bin/gcc"
+                              export CC="$package_install_path/bin/gcc"
+          echo "$this_script: export CXX=$package_install_path/bin/g++"
+                              export CXX="$package_install_path/bin/g++"
+          if [[ -z "$LD_LIBRARY_PATH" ]]; then 
+            export LD_LIBRARY_PATH="$package_install_path/lib/"
+          else
+            export LD_LIBRARY_PATH="$package_install_path/lib/:$LD_LIBRARY_PATH"
+          fi
+        elif [[ $package == "mpich" ]]; then
+          echo "$this_script: export MPIFC=$package_install_path/bin/mpif90"
+                              export MPIFC="$package_install_path/bin/mpif90"
+          echo "$this_script: export MPICC= $package_install_path/bin/mpicc"
+                              export MPICC="$package_install_path/bin/mpicc"
+          echo "$this_script: export MPICXX=$package_install_path/bin/mpicxx"
+                              export MPICXX="$package_install_path/bin/mpicxx"
+         #if [[ -z "$LD_LIBRARY_PATH" ]]; then 
+         #  export LD_LIBRARY_PATH="$package_install_path/lib/"
+         #else
+         #  export LD_LIBRARY_PATH="$package_install_path/lib/:$LD_LIBRARY_PATH"
+         #fi
+        else
+          printf "$this_script: WARNING: $package executable $executable installed correctly but the \n"
+          printf "$this_script:          corresponding environment variable(s) have not been set. This \n"
+          printf "$this_script:          could prevent a complete build of OpenCoarrays. Please report this\n"
+          printf "$this_script:          issue at https://github.com/sourceryinstitute/opencoarrays/issues\n"
+        fi
+        if [[ -z "$PATH" ]]; then 
+          export PATH="$package_install_path/bin"
+        else
+          export PATH="$package_install_path/bin:$PATH"
+        fi
       else
         printf "$this_script: Installation unsuccessful. "
-        printf "$package is not in the following expected path:\n"
+        printf "$executable is not in the following expected path or the user lacks executable permission for it:\n"
         printf "$package_install_path/bin \n"
         printf "Aborting. [exit 80]"
         exit 80
-      fi # End 'if [ -f $package_install_path/bin/$executable ]' 
+      fi # End 'if [[ -x "$package_install_path/bin/$executable" ]]' 
 
-    fi # End 'if [[ $proceed_with_build == "y" ]]; then'
+    fi # End 'if [[ "$proceed_with_build" == "y" ]]; then'
      
   fi # End 'if [[ "$package" != "none" ]]; then'
 }
@@ -623,7 +624,7 @@ build_opencoarrays()
 report_results()
 {
   # Report installation success or failure:
-  if [[ -x $install_path/bin/caf && -x $install_path/bin/cafrun  && -x $install_path/bin/build ]]; then
+  if [[ -x "$install_path/bin/caf" && -x "$install_path/bin/cafrun"  && -x "$install_path/bin/build" ]]; then
 
     # Installation succeeded
     echo "$this_script: Done."
@@ -637,32 +638,32 @@ report_results()
     while IFS='' read -r line || [[ -n "$line" ]]; do
         echo "# $line" >> $install_path/setup.sh
     done < "$opencoarrays_src_dir/COPYRIGHT-BSD3"
-    echo "# Execute this script via the folowing commands:                     " >> $install_path/setup.sh
-    echo "# cd $install_path                                                   " >> $install_path/setup.sh
-    echo "# source setup.sh                                                    " >> $install_path/setup.sh
-    echo "                                                                     " >> $install_path/setup.sh
-    echo "if [[ -z \$PATH ]]; then                                             " >> $install_path/setup.sh
-    echo "  export PATH=$install_path/bin                                      " >> $install_path/setup.sh
-    echo "else                                                                 " >> $install_path/setup.sh
-    echo "  export PATH=$install_path/bin:\$PATH                               " >> $install_path/setup.sh
-    echo "fi                                                                   " >> $install_path/setup.sh
-    echo "                                                                     " >> $install_path/setup.sh
+    echo "# Execute this script via the folowing commands:                       " >> $install_path/setup.sh
+    echo "# cd $install_path                                                     " >> $install_path/setup.sh
+    echo "# source setup.sh                                                      " >> $install_path/setup.sh
+    echo "                                                                       " >> $install_path/setup.sh
+    echo "if [[ -z \"\$PATH\" ]]; then                                           " >> $install_path/setup.sh
+    echo "  export PATH=\"$install_path/bin\"                                    " >> $install_path/setup.sh
+    echo "else                                                                   " >> $install_path/setup.sh
+    echo "  export PATH=\"$install_path/bin\":\$PATH                             " >> $install_path/setup.sh
+    echo "fi                                                                     " >> $install_path/setup.sh
+    echo "                                                                       " >> $install_path/setup.sh
     gcc_install_path=`./build gcc --default --query-path`
-    if [[ -d $gcc_install_path/lib ]]; then 
-      echo "if [[ -z \$LD_LIBRARY_PATH ]]; then                                " >> $install_path/setup.sh
-      echo "  export LD_LIBRARY_PATH=$gcc_install_path/lib                     " >> $install_path/setup.sh
-      echo "else                                                               " >> $install_path/setup.sh
-      echo "  export LD_LIBRARY_PATH=$gcc_install_path/lib:\$LD_LIBRARY_PATH   " >> $install_path/setup.sh
-      echo "fi                                                                 " >> $install_path/setup.sh
+    if [[ -d "$gcc_install_path/lib" ]]; then 
+      echo "if [[ -z \"\$LD_LIBRARY_PATH\" ]]; then                              " >> $install_path/setup.sh
+      echo "  export LD_LIBRARY_PATH=\"$gcc_install_path/lib\"                   " >> $install_path/setup.sh
+      echo "else                                                                 " >> $install_path/setup.sh
+      echo "  export LD_LIBRARY_PATH=\"$gcc_install_path/lib\":\$LD_LIBRARY_PATH " >> $install_path/setup.sh
+      echo "fi                                                                   " >> $install_path/setup.sh
     fi
-    echo "                                                                     " >> $install_path/setup.sh
+    echo "                                                                       " >> $install_path/setup.sh
     mpich_install_path=`./build mpich --default --query-path`
-    if [[ -x $mpich_install_path/bin/mpif90 ]]; then 
-      echo "if [[ -z \$PATH ]]; then                                           " >> $install_path/setup.sh
-      echo "  export PATH=$mpich_install_path/bin                              " >> $install_path/setup.sh
-      echo "else                                                               " >> $install_path/setup.sh
-      echo "  export PATH=$mpich_install_path/bin:\$PATH                       " >> $install_path/setup.sh
-      echo "fi                                                                 " >> $install_path/setup.sh
+    if [[ -x "$mpich_install_path/bin/mpif90" ]]; then 
+      echo "if [[ -z \"\$PATH\" ]]; then                                         " >> $install_path/setup.sh
+      echo "  export PATH=\"$mpich_install_path/bin\"                            " >> $install_path/setup.sh
+      echo "else                                                                 " >> $install_path/setup.sh
+      echo "  export PATH=\"$mpich_install_path/bin\":\$PATH                     " >> $install_path/setup.sh
+      echo "fi                                                                   " >> $install_path/setup.sh
     fi
     echo "*** Before using caf, cafrun, or build, please execute the following command ***"
     echo "*** or add it to your login script and launch a new shell (or the equivalent ***"
