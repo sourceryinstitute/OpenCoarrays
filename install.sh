@@ -72,7 +72,7 @@ else
   num_threads=$2
 fi
 
-# Verify that the top-level OpenCoarrays source diretory is either present working directory 
+# Verify that the top-level OpenCoarrays source directory is either present working directory 
 # or is specified by a valid in the OPENCOARRAYS_SRC_DIR environment variable 
 if [[ -d "$OPENCOARRAYS_SRC_DIR" ]]; then
   opencoarrays_src_dir=$OPENCOARRAYS_SRC_DIR 
@@ -92,7 +92,7 @@ if [[ ! -x "$build_script" ]]; then
   echo "$this_script: $build_script script does not exist or the user lacks executable permission for it."
   echo "$this_script: Please run this_script in the top-level OpenCoarrays source directory or set the"
   echo "$this_script: OPENCOARRAYS_SRC_DIR environment variable to the top-level OpenCoarrays source path."
-  echo "$this_script: If you have specified an installation director that requires aminstrative privileges,"
+  echo "$this_script: If you have specified an installation director that requires administrative privileges,"
   echo "$this_script: please prepend 'sudo -E' to your invocation of the script [exit 20]."
   exit 20
 fi
@@ -341,7 +341,7 @@ find_or_install()
         export FC=gfortran
         export CC=gcc
         export CXX=g++
-        stack_push acceptable_in_path $package $exectuable
+        stack_push acceptable_in_path $package $executable
         # Remove $package from the dependency stack 
         stack_pop dependency_pkg package_done 
         stack_pop dependency_exe executable_done 
@@ -528,24 +528,17 @@ find_or_install()
       echo "$this_script: Ready to build $package executable $executable in $package_install_path"
     fi
 
-    printf "$this_script: Ok to downloand, build, and install $package from source? (y/n) "
+    printf "$this_script: Ok to download, build, and install $package from source? (y/n) "
     read proceed_with_build
 
     if [[ $proceed_with_build != "y" ]]; then
-
-      printf "\n$this_script: OpenCoarrays installation requires $package. Aborting. [exit 70]\n"
+      printf "y\n"
+      printf "$this_script: OpenCoarrays installation requires $package. Aborting. [exit 70]\n"
       exit 70
 
     else # permission granted to build
+      printf "n\n"
 
-     #script_installed_gcc=`stack_print script_installed | grep gcc`
-     #if [[ ! -z $script_installed_gcc ]]; then
-     #  gcc_install_path=`./build gcc --default --query-path`
-     #  CC=$gcc_install_path/bin/gcc
-     #  CXX=$gcc_install_path/bin/g++
-     #  FC=$gcc_install_path/bin/gfortran
-     #fi
-  
       if [[ -z "$CC" ]]; then
         CC=gcc
       fi
@@ -641,7 +634,7 @@ print_header()
   echo ""
   tree $opencoarrays_src_dir/doc/dependency_tree | tail -n+2 
   echo ""
-  echo "*** All prequisites will be downloaded to, built in, and installed in ***"
+  echo "*** All prerequisites will be downloaded to, built in, and installed in ***"
   echo "$opencoarrays_src_dir/install_prerequisites"
   printf "*** OpenCoarrays will be installed "
   if [[ "$install_path" == "$opencoarrays_src_dir/opencoarrays-installation" ]]; then 
@@ -652,9 +645,10 @@ print_header()
   fi 
   printf "Ready to proceed? (y/n)"
   read install_now
+  printf "\n"
 
   if [[ "$install_now" != "y" ]]; then
-    printf "\n$this_script: Aborting. [exit 85]\n"
+    printf "$this_script: Aborting. [exit 85]\n"
     exit 85
   fi
 }
@@ -695,7 +689,7 @@ report_results()
         echo "# $line" >> $install_path/setup.sh
     done < "$opencoarrays_src_dir/COPYRIGHT-BSD3"
     echo "#                                                                      " >> $install_path/setup.sh
-    echo "# Execute this script via the folowing commands:                       " >> $install_path/setup.sh
+    echo "# Execute this script via the following commands:                       " >> $install_path/setup.sh
     echo "# cd $install_path                                                     " >> $install_path/setup.sh
     echo "# source setup.sh                                                      " >> $install_path/setup.sh
     echo "                                                                       " >> $install_path/setup.sh
