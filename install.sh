@@ -449,6 +449,18 @@ find_or_install()
         printf "$this_script: Using the $package executable $executable found in the PATH.\n"
         YACC=yacc
         stack_push acceptable_in_path $package $executable
+        # Remove bison from the dependency stack 
+        stack_pop dependency_pkg package_done 
+        stack_pop dependency_exe executable_done 
+        stack_pop dependency_path package_done_path 
+        # Put $package onto the script_installed log 
+        stack_push script_installed package_done 
+        stack_push script_installed executable_done 
+        stack_push script_installed package_done_path 
+        # Halt the recursion and signal that there are no prerequisites to build
+        stack_push dependency_pkg "none"
+        stack_push dependency_exe "none"
+        stack_push dependency_path "none"
       fi
 
     else # $package not in PATH and not yet installed by this script
@@ -469,7 +481,7 @@ find_or_install()
     fi
   fi 
 
-  echo "$this_script: Starting dependency stack (top to bottom = left to right):"
+  echo "$this_script: Updated dependency stack (top to bottom = left to right):"
   stack_print dependency_pkg  
 
   stack_size dependency_pkg num_stacked
