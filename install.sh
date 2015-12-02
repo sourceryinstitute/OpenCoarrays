@@ -253,7 +253,7 @@ find_or_install()
       stack_push dependency_path "none"
 
     elif [[ "$package_in_path" == "true" ]]; then
-      printf "$this_script: Checking whether $executable in PATH wraps gfortran version 5.1.0 or later... "
+      printf "$this_script: Checking whether $executable in PATH wraps gfortran... "
       mpif90__version_header=`mpif90 --version | head -1`
       first_three_characters=`echo $mpif90__version_header | cut -c1-3`
       if [[ "$first_three_characters" != "GNU" ]]; then
@@ -263,18 +263,14 @@ find_or_install()
         stack_push dependency_exe "none" $executable "gfortran"
         stack_push dependency_path "none" `./build $package --default --query-path` `./build gcc --default --query-path` 
       else
-        $executable -o acceptable_compiler acceptable_compiler.f90
-        $executable -o print_true print_true.f90
-        is_true=`./print_true`
+        printf "yes.\n"
+        printf "$this_script: Checking whether $executable in PATH wraps gfortran version 5.1.0 or later... "
+        $executable acceptable_compiler.f90 -o acceptable_compiler
+        $executable print_true.f90 -o print_true 
         acceptable=`./acceptable_compiler`
+        is_true=`./print_true`
         rm acceptable_compiler print_true
-        if [[ "$acceptable" == "$is_true" ]]; then
-          printf "no.\n"
-          # Trigger 'find_or_install gcc' and subsequent build of $package
-          stack_push dependency_pkg "none" $package "gcc"
-          stack_push dependency_exe "none" $executable "gfortran"
-          stack_push dependency_path "none" `./build $package --default --query-path` `./build gcc --default --query-path` 
-        else
+        if [[ "$acceptable" == "$is_true"  ]]; then
           printf "yes.\n"
           printf "$this_script: Using the $executable found in the PATH.\n"
           export MPIFC=mpif90
@@ -285,6 +281,12 @@ find_or_install()
           stack_push dependency_pkg "none"
           stack_push dependency_exe "none"
           stack_push dependency_path "none"
+        else
+          printf "no\n"
+          # Trigger 'find_or_install gcc' and subsequent build of $package
+          stack_push dependency_pkg "none" $package "gcc"
+          stack_push dependency_exe "none" $executable "gfortran"
+          stack_push dependency_path "none" `./build $package --default --query-path` `./build gcc --default --query-path` 
         fi
       fi
 
@@ -454,6 +456,10 @@ find_or_install()
       if [[ "$package_version_in_path" < "$package (GNU Bison) $minimum_version" ]]; then
         printf "yes.\n"
         export YACC="$package_install_path/bin/yacc"
+        # Halt the recursion and signal that there are no prerequisites to build
+        stack_push dependency_pkg "none"
+        stack_push dependency_exe "none"
+        stack_push dependency_path "none"
       else
         printf "no.\n"
         printf "$this_script: Using the $package executable $executable found in the PATH.\n"
