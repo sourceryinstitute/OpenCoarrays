@@ -88,6 +88,7 @@ set_default_version()
     "bison:3.0.4"
     "pkg-config:0.28"
     "make:4.1"
+    "m4:1.4.17"
     "_unknown:0" 
   )
   for package in "${package_version[@]}" ; do
@@ -162,6 +163,7 @@ check_prerequisites()
     "bison:wget"
     "pkg-config:wget"
     "make:ftp"
+    "m4:ftp"
     "_unknown:0" 
   )
   for package in "${package_download_mechanism[@]}" ; do
@@ -207,6 +209,7 @@ download_if_necessary()
   package_url_head=( 
     "gcc;svn://gcc.gnu.org/svn/gcc/"
     "wget;ftp.gnu.org:/gnu/wget/"
+    "m4;ftp.gnu.org:/gnu/m4/"
     "pkg-config;http://pkgconfig.freedesktop.org/releases/"
     "mpich;http://www.mpich.org/static/downloads/$version_to_build/"
     "flex;http://sourceforge.net/projects/flex/files/"
@@ -242,6 +245,7 @@ download_if_necessary()
   package_url_tail=( 
     "gcc;$gcc_tail"
     "wget;wget-$version_to_build.tar.xz"
+    "m4;m4-$version_to_build.tar.xz"
     "pkg-config;pkg-config-$version_to_build.tar.gz"
     "mpich;mpich-$version_to_build.tar.gz"
     "flex;flex-$version_to_build.tar.xz"
