@@ -92,8 +92,8 @@ if [[ ! -x "$build_script" ]]; then
   echo "$this_script: $build_script script does not exist or the user lacks executable permission for it."
   echo "$this_script: Please run this_script in the top-level OpenCoarrays source directory or set the"
   echo "$this_script: OPENCOARRAYS_SRC_DIR environment variable to the top-level OpenCoarrays source path."
-  echo "$this_script: If you have specified an installation director that requires administrative privileges,"
-  echo "$this_script: please prepend 'sudo -E' to your invocation of the script [exit 20]."
+  echo "$this_script: If you have specified an installation directory that requires administrative privileges,"
+  echo "$this_script: please prepend 'sudo' or 'sudo -E' to your invocation of the script [exit 20]."
   exit 20
 fi
 
@@ -519,7 +519,7 @@ find_or_install()
     fi
   fi
 
-  echo "$this_script: Remaining dependency stack (top to bottom = left to right):"
+  echo "$this_script: Remaining $package dependency stack (top to bottom = left to right):"
   stack_print dependency_pkg  
 
   stack_pop dependency_pkg package
@@ -660,7 +660,7 @@ print_header()
   fi 
   printf "Ready to proceed? (y/n)"
   read install_now
-  printf "\n"
+  printf " $install_now\n"
 
   if [[ "$install_now" != "y" ]]; then
     printf "$this_script: Aborting. [exit 85]\n"
