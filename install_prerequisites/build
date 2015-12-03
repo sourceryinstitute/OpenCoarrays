@@ -89,6 +89,7 @@ set_default_version()
     "pkg-config:0.28"
     "make:4.1"
     "m4:1.4.17"
+    "subversion:1.9.2"
     "_unknown:0" 
   )
   for package in "${package_version[@]}" ; do
@@ -164,6 +165,7 @@ check_prerequisites()
     "pkg-config:wget"
     "make:ftp"
     "m4:ftp"
+    "subversion:wget"
     "_unknown:0" 
   )
   for package in "${package_download_mechanism[@]}" ; do
@@ -216,6 +218,7 @@ download_if_necessary()
     "make;ftp://ftp.gnu.org/gnu/make/"
     "bison;http://ftp.gnu.org/gnu/bison/"
     "cmake;http://www.cmake.org/files/v$major_minor/"
+    "subversion;http://www.eu.apache.org/dist/subversion/"
     "_unknown;0" 
   )
   for package in "${package_url_head[@]}" ; do
@@ -252,6 +255,7 @@ download_if_necessary()
     "bison;bison-$version_to_build.tar.xz"
     "make;make-$version_to_build.tar.bz2"
     "cmake;cmake-$version_to_build.tar.gz "
+    "subversion;subversion-$version_to_build.tar.gz"
     "_unknown;0" 
   )
   for package in "${package_url_tail[@]}" ; do
