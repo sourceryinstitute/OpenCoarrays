@@ -638,7 +638,16 @@ print_header()
   echo "*** and ask permission to download, build, and install any missing    ***"
   echo "*** prerequisites:                                                    ***"
   echo ""
-  tree $opencoarrays_src_dir/doc/dependency_tree | tail -n+2 
+  # Move to a directory tree whose structure mirrors the dependency tree
+  pushd $opencoarrays_src_dir/doc/dependency_tree/ > /dev/null
+  if type tree &> /dev/null; then
+    # dynamically compute and print the tree, suppressing the final line
+    tree opencoarrays  | sed '$d'
+  else
+    # print the most recently saved static depiction of the tree
+    cat opencoarrays-tree.txt
+  fi
+  popd > /dev/null
   echo ""
   echo "*** All prerequisites will be downloaded to, built in, and installed in ***"
   echo "$opencoarrays_src_dir/install_prerequisites"
@@ -689,7 +698,9 @@ report_results()
     echo ""
     echo "$install_path/bin."
     echo ""
-    rm $install_path/setup.sh
+    if [[ -f $install_path/setup.sh ]]; then
+      rm $install_path/setup.sh
+    fi
     # Prepend the OpenCoarrays license to the setup.sh script:
     while IFS='' read -r line || [[ -n "$line" ]]; do
         echo "# $line" >> $install_path/setup.sh
