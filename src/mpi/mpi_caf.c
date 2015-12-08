@@ -1601,29 +1601,7 @@ PREFIX (sync_images) (int count, int images[], int *stat, char *errmsg,
                      int errmsg_len)
 {
   int ierr = 0, i=0, remote_stat = 0;
-
   MPI_Status s;
-
-  for(i=0;i<caf_num_images-1;i++)
-    {
-# ifdef CAF_MPI_LOCK_UNLOCK
-      MPI_Win_lock (MPI_LOCK_SHARED, i, 0, *stat_tok);
-# endif // CAF_MPI_LOCK_UNLOCK
-      ierr = MPI_Get (&remote_stat, 1, MPI_INT,
-		      i, 0, 1, MPI_INT, *stat_tok);
-# ifdef CAF_MPI_LOCK_UNLOCK
-      MPI_Win_unlock (i, *stat_tok);
-# else // CAF_MPI_LOCK_UNLOCK
-      MPI_Win_flush (i, *stat_tok);
-# endif // CAF_MPI_LOCK_UNLOCK
-      if(remote_stat != 0)
-	{
-	  ierr = STAT_STOPPED_IMAGE;
-	  if(stat != NULL)
-	    *stat = ierr;
-	  goto sync_images_err_chk;
-	}
-    }
 
   if (count == 0 || (count == 1 && images[0] == caf_this_image))
     {
@@ -1668,6 +1646,27 @@ PREFIX (sync_images) (int count, int images[], int *stat, char *errmsg,
        for(i = 0; i < count; i++)
            ierr = MPI_Irecv(&arrived[images[i]-1], 1, MPI_INT, images[i]-1, 0, CAF_COMM_WORLD, &handlers[images[i]-1]);
 
+       for(i=0;i<count;i++)
+	 {
+# ifdef CAF_MPI_LOCK_UNLOCK
+	   MPI_Win_lock (MPI_LOCK_SHARED, images[i]-1, 0, *stat_tok);
+# endif // CAF_MPI_LOCK_UNLOCK
+	   ierr = MPI_Get (&remote_stat, 1, MPI_INT,
+			   images[i]-1, 0, 1, MPI_INT, *stat_tok);
+# ifdef CAF_MPI_LOCK_UNLOCK
+	   MPI_Win_unlock (images[i]-1, *stat_tok);
+# else // CAF_MPI_LOCK_UNLOCK
+	   MPI_Win_flush (images[i]-1, *stat_tok);
+# endif // CAF_MPI_LOCK_UNLOCK
+	   if(remote_stat != 0)
+	     {
+	       ierr = STAT_STOPPED_IMAGE;
+	       if(stat != NULL)
+		 *stat = ierr;
+	       goto sync_images_err_chk;
+	     }
+	 }
+       
        for(i=0; i < count; i++)
          ierr = MPI_Send(&caf_this_image, 1, MPI_INT, images[i]-1, 0, CAF_COMM_WORLD);
 
