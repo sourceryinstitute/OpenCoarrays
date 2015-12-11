@@ -1,5 +1,5 @@
-[This document is formatted with GitHub-Flavored Markdown.              ]:# 
-[For better viewing, including hyperlinks, read it online at            ]:# 
+[This document is formatted with GitHub-Flavored Markdown.              ]:#
+[For better viewing, including hyperlinks, read it online at            ]:#
 [https://github.com/sourceryinstitute/opencoarrays/blob/master/README.md]:#
 
 # OpenCoarrays #
@@ -15,7 +15,7 @@
 ## <a name="overview">Overview</a> ##
 [OpenCoarrays] is an open-source software project that supports the coarray Fortran (CAF) parallel programming features of the Fortran 2008 standard and several features proposed for Fortran 2015 in the draft Technical Specification [TS 18508] _Additional Parallel Features in Fortran_.
 
-OpenCoarrays provides a compiler wrapper (named "caf"), a runtime library (named "libcaf_mpi.a" by default), and an executable file launcher (named "cafrun").  With OpenCoarrays-aware compilers, the compiler wrapper passes the provided source code to the chosen compiler ("mpif90" by default).  For non-OpenCoarrays-aware compilers, the wrapper transforms CAF syntax into OpenCoarrys procedure calls before invoking the chosen compiler on the transformed code.  The runtime library supports compiler communication and synchronization requests by invoking a lower-level communication library -- the Message Passing Interface ([MPI]) by default.  The launcher passes execution to the chosen communication library's parallel program launcher ("mpirun" by default). 
+OpenCoarrays provides a compiler wrapper (named "caf"), a runtime library (named "libcaf_mpi.a" by default), and an executable file launcher (named "cafrun").  With OpenCoarrays-aware compilers, the compiler wrapper passes the provided source code to the chosen compiler ("mpif90" by default).  For non-OpenCoarrays-aware compilers, the wrapper transforms CAF syntax into OpenCoarrys procedure calls before invoking the chosen compiler on the transformed code.  The runtime library supports compiler communication and synchronization requests by invoking a lower-level communication library -- the Message Passing Interface ([MPI]) by default.  The launcher passes execution to the chosen communication library's parallel program launcher ("mpirun" by default).
 
 OpenCoarrays defines an application binary interface ([ABI]) that translates high-level communication and synchronization requests into low-level calls to a user-specified communication library.  This design decision liberates compiler teams from hardwiring communication-library choice into their compilers and it frees Fortran programmers to express parallel algorithms once and reuse identical CAF source with whichever communication library is most efficient for a given hardware platform.  The communication substrate for OpenCoarrays built with the preferred build system, CMake, is the Message Passing Interface ([MPI]).
 
@@ -46,7 +46,7 @@ To start using OpenCoarrays, please see the [GETTING_STARTED.md] file.
 <a name="contributing">
 ## Contributing</a> ##
 
-Please see the [CONTRIBUTING] file.
+Please see the [CONTRIBUTING.md] file.
 
 <a name="status">
 ## Status</a> ##
@@ -95,7 +95,7 @@ We gratefully acknowledge support from the following institutions:
 [CINECA]: http://www.cineca.it/en
 [NERSC]: http://www.nersc.gov
 [NCAR]: http://ncar.ucar.edu
-[INSTALL.md]: ./INSTALL.md 
+[INSTALL.md]: ./INSTALL.md
 [GASNet]: http://gasnet.lbl.gov
 [menu of services]: http://opencoarrays.org/services
 [CONTRIBUTING.md]: ./CONTRIBUTING.md
@@ -105,6 +105,6 @@ We gratefully acknowledge support from the following institutions:
 [subscribing]: https://groups.google.com/forum/#!forum/opencoarrays/join
 [opencoarrays@googlegroups.com]: mailto:opencoarrays@googlegroups.com
 [Google Summer of Code]: https://www.google-melange.com
-[OpenCoarrays Google Group]: https://groups.google.com/forum/#!forum/opencoarrays) 
+[OpenCoarrays Google Group]: https://groups.google.com/forum/#!forum/opencoarrays)
 [Issues]: https://github.com/sourceryinstitute/opencoarrays/issue
 [Releases]: https://github.com/sourceryinstitute/opencoarrays/releases
