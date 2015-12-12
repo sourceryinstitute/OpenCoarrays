@@ -1,0 +1,92 @@
+language: generic
+
+env:
+  global:
+    - CACHE="$HOME/.local"
+    - MPICH_VER="3.1.4"
+    - MPICH_URL_HEAD="http://www.mpich.org/static/downloads/$MPICH_VER"
+    - MPICH_URL_TAIL="mpich-${MPICH_VER}.tar.gz"
+    - MPICH_DIR="$HOME/.local/usr/mpich"
+    - OSX_PACKAGES="gcc cmake mpich"
+    # homebrew bug requires MPI to be built from source, for now
+
+matrix:
+  include:
+    - os: osx
+    - os: linux
+      sudo: false
+      cache:
+        directories:
+          "$CACHE"
+      addons:
+        apt:
+          sources:
+            - george-edison55-precise-backports
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-5
+            - gfortran-5
+            - cmake-data
+            - cmake
+
+before_install:
+  - |
+    if [[ $TRAVIS ]] && [[ "X$TRAVIS_OS_NAME" = "Xosx" ]]; then
+      brew update 2>brewupdate.err | tee brewupdate.log | head -n 1
+    else
+      [[ -d "$CACHE/bin" ]] || mkdir -p "$CACHE/bin"
+      [[ -d "$MPICH_DIR" ]] || mkdir -p "$MPICH_DIR"
+      export PATH="$CACHE/bin:$PATH"
+      export FC=gfortran-5
+      export CC=gcc-5
+      $FC --version
+      $CC --version
+      cmake --version
+    fi
+
+install:
+  - |
+    if [[ $TRAVIS ]] && [[ "X$TRAVIS_OS_NAME" = "Xosx" ]]; then
+      for pkg in $OSX_PACKAGES; do
+        [[ "$(brew ls --versions $pkg)" ]] || brew install $pkg
+        brew outdated $pkg || brew upgrade $pkg
+      done
+    else
+      if ! ( [[ -x "$HOME/.local/bin/mpif90" ]] && [[ -x "$HOME/.local/bin/mpicc" ]] ); then
+        # mpich install not cached
+        if ( [[ $TRAVIS ]] && [[ "X$TRAVIS_BRANCH" == Xbranch-1.* ]] ); then
+          install_prerequisites/build mpich "$MPICH_VER" "$MPICH_DIR" 4
+        else
+          # install_prerequisites/build is broken as of 2015.12.09 / 9d2edbb0 on master
+          # argument parsing bug fixes haven't made it back into master yet...
+          wget "${MPICH_URL_HEAD}/${MPICH_URL_TAIL}"
+          mv "$MPICH_URL_TAIL" "$MPICH_DIR/.."
+          pushd "$MPICH_DIR/.."
+          tar -xzvf "$MPICH_URL_TAIL"
+          cd "${MPICH_URL_TAIL%.tar.gz}"
+          ./configure --prefix="$MPICH_DIR"
+          make -j 4
+          make install
+          popd
+          fi
+          for f in "$MPICH_DIR/bin/"*; do
+            if [[ -x "$f" ]]; then
+              ln -fs "$f" "$HOME/.local/bin/${f##*/}" && "${f##*/}" --version
+            fi
+          done
+        fi
+      fi
+
+before_script:
+  - mpif90 --version
+  - export FC=mpif90
+  - mpicc --version
+  - export CC=mpicc
+  - cmake --version
+
+script:
+  - mkdir cmake-build
+  - cd cmake-build
+  - cmake ..
+  - make -j 4
+  - ctest --verbose
