@@ -33,14 +33,26 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 # This file is organized into three sections:
-# 1. Command-line argument processor.
+# 1. Command-line argument and environment variable processing.
 # 2. Function definitions.
 # 3. Main body. 
 # The script depends on several external programs, including a second script that
 # builds prerequisite software.  Building prerequisites requires network access
 # unless tar balls of the prerequisites are present.  
 
-# ___________________ Process command-line arguments ___________________
+# TODO:
+# 1. Use getopts for more traditional Unix-style command-line argument processing.
+# 2. Collapse the body of the main conditional branches in the find_or_install function 
+#    into one new function.
+# 3. Verify that script-installed packages meet the minimum version number.
+# 4. Add a script_transfer function to collapse the stack_pop x; stack_push z y 
+#    pattern into one statement
+# 5. Consider adding mpich and cmake to the dependency stack before passing them to 
+#    find_or_install to make the blocks inside find_or_install more uniform.  
+#    Alternatively, check the dependency stacks for the package before entering the
+#    main conditional blocks in find_or_install. 
+#
+# __________ Process command-line arguments and environment variables _____________
 
 this_script=`basename $0` 
 
@@ -52,7 +64,6 @@ else
   install_path=$1
 fi
 
-
 #Interpret the second command-line argument, if present, as the number of threads for 'make'.
 #Otherwise, default to single-threaded 'make'.
 if [[ -z $2 ]]; then
@@ -61,7 +72,32 @@ else
   num_threads=$2
 fi
 
-# ___________________ Define functions for use in the main body ___________________
+# Verify that the top-level OpenCoarrays source directory is either present working directory 
+# or is specified by a valid in the OPENCOARRAYS_SRC_DIR environment variable 
+if [[ -d "$OPENCOARRAYS_SRC_DIR" ]]; then
+  opencoarrays_src_dir=$OPENCOARRAYS_SRC_DIR 
+else
+  opencoarrays_src_dir=${PWD}
+fi
+cd "$opencoarrays_src_dir" || $directory_exists==false
+if [[ "$directory_exists" == "false" ]]; then
+  echo "The OPENCOARRAYS_SRC_DIR environment variable specifies a non-existent directory [exit 10]:"
+  echo "$OPENCOARRAYS_SRC_DIR"
+  exit 10
+fi
+
+build_path=$opencoarrays_src_dir/opencoarrays-build
+build_script=$opencoarrays_src_dir/install_prerequisites/build
+if [[ ! -x "$build_script" ]]; then
+  echo "$this_script: $build_script script does not exist or the user lacks executable permission for it."
+  echo "$this_script: Please run this_script in the top-level OpenCoarrays source directory or set the"
+  echo "$this_script: OPENCOARRAYS_SRC_DIR environment variable to the top-level OpenCoarrays source path."
+  echo "$this_script: If you have specified an installation directory that requires administrative privileges,"
+  echo "$this_script: please prepend 'sudo' or 'sudo -E' to your invocation of the script [exit 20]."
+  exit 20
+fi
+
+# ___________________ Define functions for use in the Main Body ___________________
 
 usage()
 {
@@ -72,17 +108,26 @@ usage()
     echo "      $this_script [<options>] or [<installation-path> <number-of-threads>]"
     echo ""
     echo " Options:"
-    echo "   --help, -h           Show this help message"
+    echo "   -h, --help         Show this help message"
+    echo "   -v, -V, --version  Show version information"
     echo ""
     echo " Examples:"
     echo ""
     echo "   $this_script"
-    echo "   $this_script ${PWD}"
     echo "   $this_script /opt/opencoarrays 4"
     echo "   $this_script --help"
     echo ""
-    exit 1
+    echo "[exit 30]"
+    exit 30
 }
+
+# Include stack management functions
+. ./install_prerequisites/stack.sh
+stack_new dependency_pkg
+stack_new dependency_exe
+stack_new dependency_path
+stack_new acceptable_in_path
+stack_new script_installed
 
 find_or_install()
 {
@@ -94,6 +139,8 @@ find_or_install()
     "gcc:gfortran"
     "cmake:cmake"
     "mpich:mpif90"
+    "flex:flex"
+    "bison:yacc"
     "_unknown:0" 
   )
   for element in "${package_executable_array[@]}" ; do
@@ -101,176 +148,670 @@ find_or_install()
      VALUE="${element##*:}"
      if [[ "$KEY" == "_unknown" ]]; then
        # No recognizeable argument passed so print usage information and exit:
-       printf "$this_script: Package name not recognized in function find_or_install.\n"
-       exit 1
+       printf "$this_script: Package name ($package) not recognized in find_or_install function [exit 40].\n"
+       exit 40
      elif [[ $package == "$KEY" ]]; then
        executable=$VALUE
        break
      fi  
   done
-  printf "Checking whether $executable is in the PATH... "
-  if type $executable > /dev/null; then
-    printf "yes.\n"
 
-    if [[ $package == "mpich" ]]; then
-      echo "Using the pre-installed mpicc and mpif90"
-      MPICC=mpicc
-      MPIFC=mpif90
+  if [[ "$package" == "$executable" ]]; then
+    printf "$this_script: Checking whether $executable is in the PATH..."
+  else
+    printf "$this_script: Checking whether $package executable $executable is in the PATH..."
+  fi
+  if type $executable > /dev/null; then 
+    printf "yes.\n"
+    package_in_path=true
+    package_version_in_path=`$executable --version|head -1`
+  else 
+    printf "no.\n"
+    package_in_path=false
+  fi
+  
+  package_install_path=`./build $package --default --query-path` 
+
+  printf "$this_script: Checking whether $executable is in the directory in which $this_script\n"
+  printf "            installs it by default and whether the user has executable permission for it..."
+  if [[ -x "$package_install_path/bin/$executable" ]]; then 
+    printf "yes.\n"
+    script_installed_package=true
+    stack_push script_installed $package $executable
+  else 
+    script_installed_package=false
+    printf "no.\n"
+  fi
+
+  minimum_version=`./build $package --default --query-version`
+
+  if [[ "$package" == "cmake" ]]; then
+
+    # We arrive here only by the explicit, direct call 'find_or_install cmake' inside 
+    # the build_opencoarrays function. Because there is no possibility of arriving here 
+    # by recursion (no packages depend on cmake except OpenCoarrays, which gets built
+    # after all dependencies have been found or installed), cmake must add itself to 
+    # the dependency stack if no acceptable cmake is found.
+
+    # Every branch that discovers an acceptable pre-existing installation must set the 
+    # CMAKE environment variable. Every branch must also manage the dependency stack.
+
+    if [[ "$script_installed_package" == true ]]; then
+      printf "$this_script: Using the $package installed by $this_script\n"
+      export CMAKE=$package_install_path/bin/$executable
+      stack_push dependency_pkg "none"
+      stack_push dependency_exe "none"
+      stack_push dependency_path "none"
+
+    elif [[ "$package_in_path" == "true" ]]; then
+      printf "$this_script: Checking whether $package in PATH is version < $minimum_version... "
+
+      if [[ "$package_version_in_path" < "$executable version $minimum_version" ]]; then
+        printf "yes.\n"
+        # Here we place $package on the dependency stack to trigger the build of the above file:
+        stack_push dependency_pkg $package "none" 
+        stack_push dependency_exe $package "none" 
+        stack_push dependency_path `./build cmake --default --query-path` "none" 
+
+      else 
+        printf "no.\n"
+        printf "$this_script: Using the $executable found in the PATH.\n"
+        export CMAKE=$executable
+        stack_push acceptable_in_path $package $executable
+        # Prevent recursion
+        stack_push dependency_pkg "none"
+        stack_push dependency_exe "none"
+        stack_push dependency_path "none"
+      fi
+
+    else # Build package ($package has no prerequisites)
+      stack_push dependency_pkg $package "none"
+      stack_push dependency_exe $package "none"
+      stack_push dependency_path `./build $package --default --query-path` "none" 
     fi
 
-    never=false
-    until [ $never == true ]; do
-    # To avoid an infinite loop every branch must end with return, exit, or break
+  elif [[ $package == "mpich" ]]; then
 
-      if [[ $package != "gcc" ]]; then
+    # We arrive here only by the explicit, direct call 'find_or_install mpich' inside 
+    # the build_opencoarrays function. Because there is no possibility of arriving here 
+    # by recursion (no packages depend on mpich except OpenCoarrays, which gets built
+    # after all dependencies have been found or installed), mpich must add itself to 
+    # the dependency stack if no acceptable mpich is found.
 
-        return # return
+    # Every branch that discovers an acceptable pre-existing installation must set the 
+    # MPIFC, MPICC, and MPICXX environment variables. Every branch must also manage the 
+    # dependency stack.
 
-      else #package is gcc
+    if [[ "$script_installed_package" == true ]]; then
+      printf "$this_script: Using the $package installed by $this_script\n"
+      export MPIFC=$package_install_path/bin/mpif90
+      export MPICC=$package_install_path/bin/mpicc
+      export MPICXX=$package_install_path/bin/mpicxx
+      # Halt the recursion 
+      stack_push dependency_pkg "none"
+      stack_push dependency_exe "none"
+      stack_push dependency_path "none"
 
-        printf "Checking whether gfortran is version 5.1.0 or later..."
-        gfortran -o acceptable_compiler ./install_prerequisites/acceptable_compiler.f90
-        gfortran -o print_true ./install_prerequisites/print_true.f90
-        is_true=`./print_true`
+    elif [[ "$package_in_path" == "true" ]]; then
+      printf "$this_script: Checking whether $executable in PATH wraps gfortran... "
+      mpif90__version_header=`mpif90 --version | head -1`
+      first_three_characters=`echo $mpif90__version_header | cut -c1-3`
+      if [[ "$first_three_characters" != "GNU" ]]; then
+        printf "no.\n"
+        # Trigger 'find_or_install gcc' and subsequent build of $package
+        stack_push dependency_pkg "none" $package "gcc"
+        stack_push dependency_exe "none" $executable "gfortran"
+        stack_push dependency_path "none" `./build $package --default --query-path` `./build gcc --default --query-path` 
+      else
+        printf "yes.\n"
+        printf "$this_script: Checking whether $executable in PATH wraps gfortran version 5.1.0 or later... "
+        $executable acceptable_compiler.f90 -o acceptable_compiler
+        $executable print_true.f90 -o print_true 
         acceptable=`./acceptable_compiler`
+        is_true=`./print_true`
         rm acceptable_compiler print_true
-  
-        if [[ $acceptable == $is_true ]]; then
-
-          printf "yes\n"
-          FC=gfortran
-          CC=gcc
-          CXX=g++
-
-          return # found an acceptable gfortran in PATH
-
+        if [[ "$acceptable" == "$is_true"  ]]; then
+          printf "yes.\n"
+          printf "$this_script: Using the $executable found in the PATH.\n"
+          export MPIFC=mpif90
+          export MPICC=mpicc
+          export MPICXX=mpicxx
+          stack_push acceptable_in_path $package $executable
+          # Halt the recursion
+          stack_push dependency_pkg "none"
+          stack_push dependency_exe "none"
+          stack_push dependency_path "none"
         else
           printf "no\n"
-
-          break # need to install gfortran below
-        fi 
-        printf "$this_script: an infinite until loop is missing a break, return, or exit.\n"
-        exit 1 # This should never be reached
-      fi 
-      printf "$this_script: an infinite until loop is missing a break, return, or exit.\n"
-      exit 1 # This should never be reached
-    done
-    # The $executable is not an acceptable version
-  fi 
-
-  # Now we know the $executable is not in the PATH or is not an acceptable version
-  printf "Ok to downloand, build, and install $package from source? (y/n) "
-  read proceed
-  if [[ $proceed == "y" ]]; then
-    printf "Downloading, building, and installing $package \n"
-    cd install_prerequisites &&
-    if [[ $package == "gcc" ]]; then
-      # Building GCC from source requires flex
-      printf "Building requires the 'flex' package.\n"
-      printf "Checking flex is in the PATH... "
-      if type flex > /dev/null; then
-        printf "yes\n"
-      else
-        printf "no\n"
-        printf "Ok to downloand, build, and install flex from source? (y/n) "
-        read build_flex
-        if [[ $build_flex == "y" ]]; then
-          FC=gfortran CC=gcc CXX=g++ ./build flex 
-          flex_install_path=`./build flex --default --query` &&
-          if [[ -f $flex_install_path/bin/flex ]]; then
-            printf "Installation successful."
-            printf "$package is in $flex_install_path/bin \n"
-          fi
-          PATH=$flex_install_path/bin:$PATH
-        else
-          printf "Aborting. Building GCC requires flex.\n"
-          exit 1
+          # Trigger 'find_or_install gcc' and subsequent build of $package
+          stack_push dependency_pkg "none" $package "gcc"
+          stack_push dependency_exe "none" $executable "gfortran"
+          stack_push dependency_path "none" `./build $package --default --query-path` `./build gcc --default --query-path` 
         fi
       fi
+
+    else # $package not in PATH and not yet installed by this script
+      # Trigger 'find_or_install gcc' and subsequent build of $package
+      stack_push dependency_pkg  "none" $package "gcc" 
+      stack_push dependency_exe  "none" $executable "gfortran" 
+      stack_push dependency_path "none" `./build $package --default --query-path` `./build gcc --default --query-path`
     fi
-    FC=gfortran CC=gcc CXX=g++ ./build $package --default $num_threads &&
-    package_install_path=`./build $package --default --query` &&
-    if [[ -f $package_install_path/bin/$executable ]]; then
-      printf "Installation successful."
-      printf "$package is in $package_install_path/bin \n"
-      if [[ $package == "gcc" ]]; then
-        FC=$package_install_path/bin/gfortran
-        CC=$package_install_path/bin/gcc
-        CXX=$package_install_path/bin/g++
-      elif [[ $package == "mpich" ]]; then
-        MPICC=$package_install_path/bin/mpicc
-        MPIFC=$package_install_path/bin/mpif90
+
+  elif [[ $package == "gcc" ]]; then
+
+    # We arrive when the 'elif [[ $package == "mpich" ]]' block pushes "gcc" onto the
+    # the dependency_pkg stack, resulting in the recursive call 'find_or_install gcc'
+
+    # Every branch that discovers an acceptable pre-existing installation must set the 
+    # FC, CC, and CXX environment variables. Every branch must also manage the dependency stack.
+
+    if [[ "$script_installed_package" == true ]]; then
+      printf "$this_script: Using the $package executable $executable installed by $this_script\n"
+      export FC=$package_install_path/bin/gfortran
+      export CC=$package_install_path/bin/gcc
+      export CXX=$package_install_path/bin/g++
+      if [[ -z "$LD_LIBRARY_PATH" ]]; then 
+        echo "$this_script: export LD_LIBRARY_PATH=$package_install_path/lib/"
+                            export LD_LIBRARY_PATH=$package_install_path/lib/
+      else
+        echo "$this_script: export LD_LIBRARY_PATH=$package_install_path/lib/:$LD_LIBRARY_PATH"
+                            export LD_LIBRARY_PATH=$package_install_path/lib/:$LD_LIBRARY_PATH
       fi
-      PATH=$package_install_path/bin:$PATH
-      return
-    else
-      printf "Installation unsuccessful."
-      printf "$package is not in the expected path: $package_install_path/bin \n"
-      exit 1
+      # Remove $package from the dependency stack 
+      stack_pop dependency_pkg package_done
+      stack_pop dependency_exe executable_done
+      stack_pop dependency_path package_done_path
+      # Put $package onto the script_installed log 
+      stack_push script_installed package_done 
+      stack_push script_installed executable_done 
+      stack_push script_installed package_done_path 
+      # Halt the recursion and signal that none of $package's prerequisites need to be built
+      stack_push dependency_pkg "none"
+      stack_push dependency_exe "none"
+      stack_push dependency_path "none"
+
+    elif [[ "$package_in_path" == "true" ]]; then
+      printf "$this_script: Checking whether $executable in PATH is version 5.1.0 or later..."
+      $executable -o acceptable_compiler acceptable_compiler.f90
+      $executable -o print_true print_true.f90
+      is_true=`./print_true`
+      acceptable=`./acceptable_compiler`
+      rm acceptable_compiler print_true
+      if [[ "$acceptable" == "$is_true" ]]; then
+        printf "yes.\n"
+        printf "$this_script: Using the $executable found in the PATH.\n"
+        export FC=gfortran
+        export CC=gcc
+        export CXX=g++
+        stack_push acceptable_in_path $package $executable
+        # Remove $package from the dependency stack 
+        stack_pop dependency_pkg package_done 
+        stack_pop dependency_exe executable_done 
+        stack_pop dependency_path package_done_path 
+        # Put $package onto the script_installed log 
+        stack_push script_installed package_done 
+        stack_push script_installed executable_done 
+        stack_push script_installed package_done_path 
+        # Halt the recursion and signal that none of $package's prerequisites need to be built
+        stack_push dependency_pkg "none"
+        stack_push dependency_exe "none"
+        stack_push dependency_path "none"
+      else
+        printf "no.\n"
+        # Trigger 'find_or_install flex' and subsequent build of $package
+        stack_push dependency_pkg "flex" 
+        stack_push dependency_exe "flex" 
+        stack_push dependency_path `./build flex --default --query-path` 
+      fi
+
+    else # $package is not in PATH and not yet installed by this script
+      # Trigger 'find_or_install flex' and subsequent build of $package
+      stack_push dependency_pkg "flex"
+      stack_push dependency_exe "flex"
+      stack_push dependency_path `./build flex --default --query-path`
     fi
-  else
-    printf "Aborting. OpenCoarrays installation requires $package \n"
-    exit 1
+
+  elif [[ $package == "flex" ]]; then
+
+    # We arrive here only if the 'elif [[ $package == "gcc" ]]' block has pushed "flex" 
+    # onto the dependency_pkg stack, resulting in the recursive call 'find_or_install flex'.
+    # flex therefore does not need to add itself to the stack.
+
+    # Every branch that discovers an acceptable pre-existing installation must set the 
+    # FLEX environment variable. Every branch must also manage the dependency stack.
+
+    if [[ "$script_installed_package" == true ]]; then
+      printf "$this_script: Using the $executable installed by $this_script\n"
+      export FLEX=$package_install_path/bin/$executable
+      # Remove flex from the dependency stack 
+      stack_pop dependency_pkg package_done 
+      stack_pop dependency_exe executable_done 
+      stack_pop dependency_path package_done_path 
+      # Put $package onto the script_installed log 
+      stack_push script_installed package_done 
+      stack_push script_installed executable_done 
+      stack_push script_installed package_done_path 
+      # Halt the recursion and signal that no prerequisites need to be built
+      stack_push dependency_pkg "none"
+      stack_push dependency_exe "none"
+      stack_push dependency_path "none"
+
+    elif [[ "$package_in_path" == "true" ]]; then
+
+      printf "$this_script: Checking whether $package in PATH is version < $minimum_version... "
+      if [[ "$package_version_in_path" < "$executable $minimum_version" ]]; then
+        printf "yes\n"
+
+        export FLEX="$package_install_path/bin/$executable"
+        # Trigger 'find_or_install bison' and subsequent build of $package
+        stack_push dependency_pkg "bison"
+        stack_push dependency_exe "yacc"
+        stack_push dependency_path `./build bison --default --query-path` 
+
+      else
+        printf "no.\n"
+        printf "$this_script: Using the $executable found in the PATH.\n"
+        export FLEX=$executable
+        stack_push acceptable_in_path $package $executable
+        # Halt the recursion by removing flex from the dependency stack and indicating 
+        # that none of the prerequisites required to build flex are needed.
+        stack_push dependency_pkg "none"
+        stack_push dependency_exe "none"
+        stack_push dependency_path "none"
+      fi
+
+    else  # $package is not in the PATH and not yet installed by $this_script
+      # Trigger 'find_or_install bison' and subsequent build of $package
+      stack_push dependency_pkg "bison"
+      stack_push dependency_exe "yacc"
+      stack_push dependency_path `./build bison --default --query-path` 
+    fi
+
+  elif [[ $package == "bison" ]]; then
+
+    # We arrive when the 'elif [[ $package == "flex" ]]' block pushes "bison" onto the
+    # the dependency_pkg stack, resulting in the recursive call 'find_or_install bison'
+
+    # Every branch that discovers an acceptable pre-existing installation must set the 
+    # YACC environment variable. Every branch must also manage the dependency stack.
+
+    if [[ "$script_installed_package" == true ]]; then
+      printf "$this_script: Using the $package executable $executable installed by $this_script\n"
+      export YACC=$package_install_path/bin/yacc
+      # Remove bison from the dependency stack 
+      stack_pop dependency_pkg package_done 
+      stack_pop dependency_exe executable_done 
+      stack_pop dependency_path package_done_path 
+      # Put $package onto the script_installed log 
+      stack_push script_installed package_done 
+      stack_push script_installed executable_done 
+      stack_push script_installed package_done_path 
+      # Halt the recursion and signal that there are no prerequisites to build
+      stack_push dependency_pkg "none"
+      stack_push dependency_exe "none"
+      stack_push dependency_path "none"
+
+    elif [[ "$package_in_path" == "true" ]]; then
+      printf "$this_script: Checking whether $package executable $executable in PATH is version < $minimum_version... "
+      if [[ "$package_version_in_path" < "$package (GNU Bison) $minimum_version" ]]; then
+        printf "yes.\n"
+        export YACC="$package_install_path/bin/yacc"
+        # Halt the recursion and signal that there are no prerequisites to build
+        stack_push dependency_pkg "none"
+        stack_push dependency_exe "none"
+        stack_push dependency_path "none"
+      else
+        printf "no.\n"
+        printf "$this_script: Using the $package executable $executable found in the PATH.\n"
+        YACC=yacc
+        stack_push acceptable_in_path $package $executable
+        # Remove bison from the dependency stack 
+        stack_pop dependency_pkg package_done 
+        stack_pop dependency_exe executable_done 
+        stack_pop dependency_path package_done_path 
+        # Put $package onto the script_installed log 
+        stack_push script_installed package_done 
+        stack_push script_installed executable_done 
+        stack_push script_installed package_done_path 
+        # Halt the recursion and signal that there are no prerequisites to build
+        stack_push dependency_pkg "none"
+        stack_push dependency_exe "none"
+        stack_push dependency_path "none"
+      fi
+
+    else # $package not in PATH and not yet installed by this script
+      # Halt the recursion and signal that there are no prerequisites to build
+      export YACC="$package_install_path/bin/yacc"
+      stack_push dependency_pkg  "none"
+      stack_push dependency_exe  "none"
+      stack_push dependency_path "none"
+    fi
+
+  else 
+    if [[ -z "$package" ]]; then 
+      printf "$this_script: empty package name passed to find_or_install function. [exit 50]\n"
+      exit 50 
+    else
+      printf "$this_script: unknown package name ($package) passed to find_or_install function. [exit 55]\n"
+      exit 55 
+    fi
+  fi 
+
+  echo "$this_script: Updated dependency stack (top to bottom = left to right):"
+  stack_print dependency_pkg  
+
+  stack_size dependency_pkg num_stacked
+  let num_dependencies=num_stacked-1
+  if [[ $num_dependencies < 0 ]]; then
+    printf "The procedure named in the external call to find_or_install is not on the dependency stack. [exit 60]\n"
+    exit 60
+  elif [[ $num_dependencies > 0 ]]; then
+    stack_pop  dependency_pkg  prerequisite_pkg
+    stack_pop  dependency_exe  prerequisite_exe
+    stack_pop  dependency_path prerequisite_path
+
+    if [[ $prerequisite_pkg != "none" ]]; then
+      stack_push dependency_pkg  $prerequisite_pkg
+      stack_push dependency_exe  $prerequisite_exe
+      stack_push dependency_path $prerequisite_path
+      printf "$this_script: Building $package from source requires $prerequisite_pkg.\n"
+      find_or_install $prerequisite_pkg
+    fi
   fi
-  printf "$this_script: the dependency installation logic is missing a return or exit.\n"
-  exit 1
+
+  echo "$this_script: Remaining $package dependency stack (top to bottom = left to right):"
+  stack_print dependency_pkg  
+
+  stack_pop dependency_pkg package
+  stack_pop dependency_exe executable
+  stack_pop dependency_path package_install_path
+
+  if [[ $package != "none" ]]; then
+
+    if [[ "$package" == "$executable" ]]; then
+      echo "$this_script: Ready to build $executable in $package_install_path"
+    else
+      echo "$this_script: Ready to build $package executable $executable in $package_install_path"
+    fi
+
+    printf "$this_script: Ok to download, build, and install $package from source? (y/n) "
+    read proceed_with_build
+
+    if [[ $proceed_with_build != "y" ]]; then
+      printf "y\n"
+      printf "$this_script: OpenCoarrays installation requires $package. Aborting. [exit 70]\n"
+      exit 70
+
+    else # permission granted to build
+      printf "n\n"
+
+      if [[ -z "$CC" ]]; then
+        CC=gcc
+      fi
+      if [[ -z "$CXX" ]]; then
+        CXX=g++
+      fi
+      if [[ -z "$FC" ]]; then
+        FC=gfortran
+      fi
+
+      printf "$this_script: Downloading, building, and installing $package \n"
+      echo "$this_script: Build command: FC=$FC CC=$CC CXX=$CXX ./build $package --default $package_install_path $num_threads"
+      FC="$FC" CC="$CC" CXX="$CXX" ./build "$package" --default "$package_install_path" "$num_threads"
+    
+      if [[ -x "$package_install_path/bin/$executable" ]]; then
+        printf "$this_script: Installation successful.\n"
+        if [[ "$package" == "$executable" ]]; then
+          printf "$this_script: $executable is in $package_install_path/bin \n"
+        else
+          printf "$this_script: $package executable $executable is in $package_install_path/bin \n"
+        fi
+       # TODO Merge all applicable branches under one 'if [[ $package == $executable ]]; then'
+        if [[ $package == "cmake" ]]; then
+          echo "$this_script: export CMAKE=$package_install_path/bin/$executable"
+                              export CMAKE="$package_install_path/bin/$executable"
+        elif [[ $package == "bison" ]]; then
+          echo "$this_script: export YACC=$package_install_path/bin/$executable"
+                              export YACC="$package_install_path/bin/$executable"
+        elif [[ $package == "flex" ]]; then
+          echo "$this_script: export FLEX=$package_install_path/bin/$executable"
+                              export FLEX="$package_install_path/bin/$executable"
+        elif [[ $package == "gcc" ]]; then
+          echo "$this_script: export FC=$package_install_path/bin/gfortran"
+                              export FC="$package_install_path/bin/gfortran"
+          echo "$this_script: export CC=$package_install_path/bin/gcc"
+                              export CC="$package_install_path/bin/gcc"
+          echo "$this_script: export CXX=$package_install_path/bin/g++"
+                              export CXX="$package_install_path/bin/g++"
+          if [[ -z "$LD_LIBRARY_PATH" ]]; then 
+            export LD_LIBRARY_PATH="$package_install_path/lib/"
+          else
+            export LD_LIBRARY_PATH="$package_install_path/lib/:$LD_LIBRARY_PATH"
+          fi
+        elif [[ $package == "mpich" ]]; then
+          echo "$this_script: export MPIFC=$package_install_path/bin/mpif90"
+                              export MPIFC="$package_install_path/bin/mpif90"
+          echo "$this_script: export MPICC= $package_install_path/bin/mpicc"
+                              export MPICC="$package_install_path/bin/mpicc"
+          echo "$this_script: export MPICXX=$package_install_path/bin/mpicxx"
+                              export MPICXX="$package_install_path/bin/mpicxx"
+         #if [[ -z "$LD_LIBRARY_PATH" ]]; then 
+         #  export LD_LIBRARY_PATH="$package_install_path/lib/"
+         #else
+         #  export LD_LIBRARY_PATH="$package_install_path/lib/:$LD_LIBRARY_PATH"
+         #fi
+        else
+          printf "$this_script: WARNING: $package executable $executable installed correctly but the \n"
+          printf "$this_script:          corresponding environment variable(s) have not been set. This \n"
+          printf "$this_script:          could prevent a complete build of OpenCoarrays. Please report this\n"
+          printf "$this_script:          issue at https://github.com/sourceryinstitute/opencoarrays/issues\n"
+        fi
+        if [[ -z "$PATH" ]]; then 
+          export PATH="$package_install_path/bin"
+        else
+          export PATH="$package_install_path/bin:$PATH"
+        fi
+      else
+        printf "$this_script: Installation unsuccessful. "
+        printf "$executable is not in the following expected path or the user lacks executable permission for it:\n"
+        printf "$package_install_path/bin \n"
+        printf "Aborting. [exit 80]"
+        exit 80
+      fi # End 'if [[ -x "$package_install_path/bin/$executable" ]]' 
+
+    fi # End 'if [[ "$proceed_with_build" == "y" ]]; then'
+     
+  fi # End 'if [[ "$package" != "none" ]]; then'
 }
 
-# ___________________ Define functions for use in the main body ___________________
+print_header()
+{
+  clear
+  echo ""
+  echo "*** A default build of OpenCoarrays requires CMake 3.4.0 or later     ***"
+  echo "*** and MPICH 3.1.4 wrapping GCC Fortran (gfortran) 5.1.0 or later.   ***"
+  echo "*** Additionally, CMake, MPICH, and GCC have their own prerequisites. ***"
+  echo "*** This script will check for most known requirements in your PATH   ***"
+  echo "*** environment variable and in the default installation directory    ***"
+  echo "*** to which this script installs each missing prerequisite.  The     ***" 
+  echo "*** script will recursively traverse the following dependency tree    ***"
+  echo "*** and ask permission to download, build, and install any missing    ***"
+  echo "*** prerequisites:                                                    ***"
+  echo ""
+  # Move to a directory tree whose structure mirrors the dependency tree
+  pushd $opencoarrays_src_dir/doc/dependency_tree/ > /dev/null
+  if type tree &> /dev/null; then
+    # dynamically compute and print the tree, suppressing the final line
+    tree opencoarrays  | sed '$d'
+  else
+    # print the most recently saved static depiction of the tree
+    cat opencoarrays-tree.txt
+  fi
+  popd > /dev/null
+  echo ""
+  echo "*** All prerequisites will be downloaded to, built in, and installed in ***"
+  echo "$opencoarrays_src_dir/install_prerequisites"
+  printf "*** OpenCoarrays will be installed "
+  if [[ "$install_path" == "$opencoarrays_src_dir/opencoarrays-installation" ]]; then 
+    printf "in the above location also.        ***\n"
+  else
+    printf "in                                 ***\n"
+    echo "$install_path"
+  fi 
+  printf "Ready to proceed? (y/n)"
+  read install_now
+  printf " $install_now\n"
+
+  if [[ "$install_now" != "y" ]]; then
+    printf "$this_script: Aborting. [exit 85]\n"
+    exit 85
+  fi
+}
+
+build_opencoarrays()
+{
+  print_header
+  find_or_install mpich    &&
+  find_or_install cmake    &&
+  mkdir -p $build_path     &&
+  cd $build_path           &&
+  if [[ -z "$MPICC" || -z "$MPIFC" || -z "$CMAKE" ]]; then
+    echo "Empty MPICC=$MPICC or MPIFC=$MPIFC or CMAKE=$CMAKE [exit 90]" 
+    exit 90
+  else
+    CC=$MPICC FC=$MPIFC $CMAKE .. -DCMAKE_INSTALL_PREFIX=$install_path &&
+    make -j$num_threads &&
+    make install        
+  fi
+}
+
+report_results()
+{
+  # Report installation success or failure:
+  if [[ -x "$install_path/bin/caf" && -x "$install_path/bin/cafrun"  && -x "$install_path/bin/build" ]]; then
+
+    # Installation succeeded
+    echo "$this_script: Done."
+    echo ""
+    echo "*** The OpenCoarrays compiler wrapper (caf), program launcher (cafrun), and  ***"
+    echo "*** prerequisite package installer (build) are in the following directory:   ***"
+    echo ""
+    echo "$install_path/bin."
+    echo ""
+    if [[ -f $install_path/setup.sh ]]; then
+      rm $install_path/setup.sh
+    fi
+    # Prepend the OpenCoarrays license to the setup.sh script:
+    while IFS='' read -r line || [[ -n "$line" ]]; do
+        echo "# $line" >> $install_path/setup.sh
+    done < "$opencoarrays_src_dir/COPYRIGHT-BSD3"
+    echo "#                                                                      " >> $install_path/setup.sh
+    echo "# Execute this script via the following commands:                       " >> $install_path/setup.sh
+    echo "# cd $install_path                                                     " >> $install_path/setup.sh
+    echo "# source setup.sh                                                      " >> $install_path/setup.sh
+    echo "                                                                       " >> $install_path/setup.sh
+    echo "if [[ -z \"\$PATH\" ]]; then                                           " >> $install_path/setup.sh
+    echo "  export PATH=\"$install_path/bin\"                                    " >> $install_path/setup.sh
+    echo "else                                                                   " >> $install_path/setup.sh
+    echo "  export PATH=\"$install_path/bin\":\$PATH                             " >> $install_path/setup.sh
+    echo "fi                                                                     " >> $install_path/setup.sh
+    echo "                                                                       " >> $install_path/setup.sh
+    gcc_install_path=`./build gcc --default --query-path`
+    if [[ -d "$gcc_install_path/lib" ]]; then 
+      echo "if [[ -z \"\$LD_LIBRARY_PATH\" ]]; then                              " >> $install_path/setup.sh
+      echo "  export LD_LIBRARY_PATH=\"$gcc_install_path/lib\"                   " >> $install_path/setup.sh
+      echo "else                                                                 " >> $install_path/setup.sh
+      echo "  export LD_LIBRARY_PATH=\"$gcc_install_path/lib\":\$LD_LIBRARY_PATH " >> $install_path/setup.sh
+      echo "fi                                                                   " >> $install_path/setup.sh
+    fi
+    echo "                                                                       " >> $install_path/setup.sh
+    mpich_install_path=`./build mpich --default --query-path`
+    if [[ -x "$mpich_install_path/bin/mpif90" ]]; then 
+      echo "if [[ -z \"\$PATH\" ]]; then                                         " >> $install_path/setup.sh
+      echo "  export PATH=\"$mpich_install_path/bin\"                            " >> $install_path/setup.sh
+      echo "else                                                                 " >> $install_path/setup.sh
+      echo "  export PATH=\"$mpich_install_path/bin\":\$PATH                     " >> $install_path/setup.sh
+      echo "fi                                                                   " >> $install_path/setup.sh
+    fi
+    cmake_install_path=`./build cmake --default --query-path`
+    if [[ -x "$cmake_install_path/bin/cmake" ]]; then 
+      echo "if [[ -z \"\$PATH\" ]]; then                                         " >> $install_path/setup.sh
+      echo "  export PATH=\"$cmake_install_path/bin\"                            " >> $install_path/setup.sh
+      echo "else                                                                 " >> $install_path/setup.sh
+      echo "  export PATH=\"$cmake_install_path/bin\":\$PATH                     " >> $install_path/setup.sh
+      echo "fi                                                                   " >> $install_path/setup.sh
+    fi
+    flex_install_path=`./build flex --default --query-path`
+    if [[ -x "$flex_install_path/bin/flex" ]]; then 
+      echo "if [[ -z \"\$PATH\" ]]; then                                         " >> $install_path/setup.sh
+      echo "  export PATH=\"$flex_install_path/bin\"                             " >> $install_path/setup.sh
+      echo "else                                                                 " >> $install_path/setup.sh
+      echo "  export PATH=\"$flex_install_path/bin\":\$PATH                      " >> $install_path/setup.sh
+      echo "fi                                                                   " >> $install_path/setup.sh
+    fi
+    bison_install_path=`./build bison --default --query-path`
+    if [[ -x "$bison_install_path/bin/yacc" ]]; then 
+      echo "if [[ -z \"\$PATH\" ]]; then                                         " >> $install_path/setup.sh
+      echo "  export PATH=\"$bison_install_path/bin\"                            " >> $install_path/setup.sh
+      echo "else                                                                 " >> $install_path/setup.sh
+      echo "  export PATH=\"$bison_install_path/bin\":\$PATH                     " >> $install_path/setup.sh
+      echo "fi                                                                   " >> $install_path/setup.sh
+    fi
+    echo "*** Before using caf, cafrun, or build, please execute the following command ***"
+    echo "*** or add it to your login script and launch a new shell (or the equivalent ***"
+    echo "*** for your shell if you are not using a bash shell):                       ***"
+    echo ""
+    echo " source $install_path/setup.sh"
+
+  else # Installation failed
+    
+    echo "Something went wrong. Either the user lacks executable permissions for the"
+    echo "OpenCoarrays compiler wrapper (caf), program launcher (cafrun), or prerequisite"
+    echo "package installer (build), or these programs are not in the following, expected"
+    echo "location:"
+    echo "$install_path/bin."
+    echo "Please review the following file for more information:"
+    echo "$install_path/$installation_record"
+    echo "and submit an bug report at https://github.com/sourceryinstitute/opencoarrays/issues"
+    echo "[exit 100]"
+    exit 100
+
+  fi # Ending check for caf, cafrun, build not in expected path
+}
+# ___________________ End of function definitions for use in the Main Body __________________
+
+# ________________________________ Start of the Main Body ___________________________________
+
 
 if [[ $1 == '--help' || $1 == '-h' ]]; then
+
   # Print usage information if script is invoked with --help or -h argument
   usage | less
+
 elif [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
+
   # Print script copyright if invoked with -v, -V, or --version argument
+  cmake_project_line=`grep project CMakeLists.txt | grep VERSION`
+  text_after_version_keyword="${cmake_project_line##*VERSION}"
+  text_before_language_keyword="${text_after_version_keyword%%LANGUAGES*}"
+  opencoarrays_version=$text_before_language_keyword
+  echo "opencoarrays $opencoarrays_version"
   echo ""
   echo "OpenCoarrays installer"
   echo "Copyright (C) 2015 Sourcery, Inc."
   echo "Copyright (C) 2015 Sourcery Institute"
   echo ""
-  echo "$this_script comes with NO WARRANTY, to the extent permitted by law."
+  echo "OpenCoarrays comes with NO WARRANTY, to the extent permitted by law."
   echo "You may redistribute copies of $this_script under the terms of the"
   echo "BSD 3-Clause License.  For more information about these matters, see"
   echo "http://www.sourceryinstitute.org/license.html"
   echo ""
-else
+else # Find or install prerequisites and install OpenCoarrays
+  
+  cd install_prerequisites &&
+  installation_record=install-opencoarrays.log &&
+  CMAKE=$CMAKE build_opencoarrays 2>&1 | tee ../$installation_record
+  report_results 2>&1 | tee -a ../$installation_record
 
-
-  # Find or install prerequisites and install OpenCoarrays
-  build_path=${PWD}/opencoarrays-build
-  installation_record=install-opencoarrays.log
-  time \
-  {
-    # Building OpenCoarrays with CMake requires MPICH and GCC; MPICH requires GCC. 
-    find_or_install gcc   &&
-    find_or_install mpich &&
-    find_or_install cmake &&
-    mkdir -p $build_path  &&
-    cd $build_path        &&
-    if [[ -z $MPICC || -z $MPIFC ]]; then
-      echo "Empty MPICC=$MPICC or MPIFC=$MPIFC" 
-      exit 1
-    else
-      CC=$MPICC FC=$MPIFC cmake .. -DCMAKE_INSTALL_PREFIX=$install_path &&
-      make -j$num_threads &&
-      make install        &&
-      make clean
-    fi
-  } >&1 | tee $installation_record
-
-  # Report installation success or failure
-  printf "\n"
-  if [[ -f $install_path/bin/caf && -f $install_path/bin/cafrun  && -f $install_path/bin/build ]]; then
-    printf "$this_script: Done.\n\n"
-    printf "The OpenCoarrays compiler wrapper (caf), program launcher (cafrun), and\n"
-    printf "prerequisite package installer (build) are in the following directory:\n"
-    printf "$install_path/bin.\n\n"
-  else
-    printf "$this_script: Done. \n\n"
-    printf "Something went wrong. The OpenCoarrays compiler wrapper (caf),\n" 
-    printf "program launcher (cafrun), and prerequisite package installer (build) \n"
-    printf "are not in the expected location:\n"
-    printf "$install_path/bin.\n"
-    printf "Please review the '$installation_record' file for more information.\n\n"
-  fi
-fi
+fi 
+# ____________________________________ End of Main Body ____________________________________________
