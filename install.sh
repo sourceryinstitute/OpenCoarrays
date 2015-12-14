@@ -644,8 +644,8 @@ print_header()
     # dynamically compute and print the tree, suppressing the final line
     tree opencoarrays  | sed '$d'
   else
-    # print the most recently saved static depiction of the tree
-    cat opencoarrays-tree.txt
+    # print the most recently saved output of the above 'tree' command 
+    cat opencoarrays-tree.txt | sed '$d'
   fi
   popd > /dev/null
   echo ""
