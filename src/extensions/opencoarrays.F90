@@ -36,7 +36,7 @@ module opencoarrays
 #elif defined(COMPILER_LACKS_C_SIZEOF_ASSUMED_RANK)
   use iso_c_binding, only : c_int,c_char,c_ptr,c_loc,c_double,c_int32_t,c_bool,c_funloc,c_ptrdiff_t
 #else
-  use iso_c_binding, only : c_int,c_char,c_ptr,c_loc,c_float,c_double,c_int32_t,c_bool,c_funloc,c_ptrdiff_t,c_sizeof
+  use iso_c_binding, only : c_int,c_char,c_ptr,c_loc,c_double,c_int32_t,c_ptrdiff_t,c_sizeof,c_bool,c_funloc,c_float
 #endif
   implicit none
 
@@ -877,27 +877,27 @@ contains
   end subroutine
 
   ! Return the image number (MPI rank + 1)
-   function this_image()  result(image_num)
+  function this_image()  result(image_num)
 #ifndef COMPILER_PROVIDES_MPI
-     use mpi, only : MPI_Comm_rank
+    use mpi, only : MPI_Comm_rank
 #endif
-     integer(c_int) :: image_num,ierr
-    !image_num = opencoarrays_this_image(unused)
-     call MPI_Comm_rank(CAF_COMM_WORLD,image_num,ierr) 
-     if (ierr/=0) call error_stop
-     image_num = image_num + 1
-   end function
+    integer(c_int) :: image_num,ierr
+   !image_num = opencoarrays_this_image(unused)
+    call MPI_Comm_rank(CAF_COMM_WORLD,image_num,ierr)
+    if (ierr/=0) call error_stop
+    image_num = image_num + 1
+  end function
 
   ! Return the total number of images
-   function num_images()  result(num_images_)
+  function num_images()  result(num_images_)
 #ifndef COMPILER_PROVIDES_MPI
-     use mpi, only : MPI_Comm_size
+    use mpi, only : MPI_Comm_size
 #endif
-     integer(c_int) :: num_images_,ierr
-    !num_images_ = opencoarrays_num_images(unused_coarray,unused_scalar)
-     call MPI_Comm_size(CAF_COMM_WORLD,num_images_,ierr) 
-     if (ierr/=0) call error_stop
-   end function
+    integer(c_int) :: num_images_,ierr
+   !num_images_ = opencoarrays_num_images(unused_coarray,unused_scalar)
+    call MPI_Comm_size(CAF_COMM_WORLD,num_images_,ierr)
+    if (ierr/=0) call error_stop
+  end function
 
   ! Halt the execution of all images
   subroutine error_stop(stop_code)
