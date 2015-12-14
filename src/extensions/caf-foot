@@ -67,6 +67,7 @@ fi
 
 # TODO -- improve the syntax of the "set" command below to accepted an unlimited number of arguments
 max_arguments=100
+link_args="-fcoarray=lib -lcaf_mpi"
 
 if [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
     echo ""
