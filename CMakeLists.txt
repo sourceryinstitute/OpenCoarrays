@@ -29,8 +29,9 @@ if ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "GNU" )
 # add_definitions(-DPREFIX_NAME=_gfortran_caf_)
 else()
   message(WARNING 
-    "*** Attempting to build with untested Fortran compiler: ${CMAKE_Fortran_COMPILER_ID}."
-    "*** Please report any failures to opencoarrays@googlegroups.com"
+    "\n"
+    "Attempting to build with untested Fortran compiler: ${CMAKE_Fortran_COMPILER_ID}. "
+    "Please report any failures to opencoarrays@googlegroups.com\n\n"
   )
 endif()
 
