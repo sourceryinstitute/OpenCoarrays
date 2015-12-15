@@ -2,7 +2,7 @@
 !
 ! Copyright (c) 2012-2014, Sourcery, Inc.
 ! All rights reserved.
-! 
+!
 ! Redistribution and use in source and binary forms, with or without
 ! modification, are permitted provided that the following conditions are met:
 !     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
 !     * Neither the name of the Sourcery, Inc., nor the
 !       names of its contributors may be used to endorse or promote products
 !       derived from this software without specific prior written permission.
-! 
+!
 ! THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ! ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 ! WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -23,18 +23,18 @@
 ! LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ! ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 ! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ! Robodoc header:
 !****e* tests/coarrayHelloWorld/hello_multiverse.F90
-! NAME 
+! NAME
 !   hello_multiverse
 ! SYNOPSIS
 !   Demonstrate coarray communication via a scalar character coarray.
 ! INPUTS
-!   None. 
+!   None.
 ! OUTPUTS
-!   Test pass or failure. 
+!   Test pass or failure.
 !******
 
 program hello_multiverse
@@ -44,11 +44,11 @@ program hello_multiverse
   integer image
   write(greeting,"(2(a,i2))") "Greetings from image ",this_image()," of ",num_images()
   sync all ! Barrier
-  if (this_image()==1) then 
+  if (this_image()==1) then
     do concurrent (image=1:num_images())
       print *,greeting[image]
     end do
-    block 
+    block
       integer, parameter :: expected_location=23,max_single_digit=9
       do image=2,min(num_images(),max_single_digit)
         ! Verify that the greetings of images 1-9 have their image number at the expected location:

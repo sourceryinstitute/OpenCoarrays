@@ -2,7 +2,7 @@
 !
 ! Copyright (c) 2012-2014, Sourcery, Inc.
 ! All rights reserved.
-! 
+!
 ! Redistribution and use in source and binary forms, with or without
 ! modification, are permitted provided that the following conditions are met:
 !     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
 !     * Neither the name of the Sourcery, Inc., nor the
 !       names of its contributors may be used to endorse or promote products
 !       derived from this software without specific prior written permission.
-! 
+!
 ! THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ! ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 ! WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -91,7 +91,7 @@ end module run_size
 !****e* dist_transpose/coarray_distributed_transpose
 ! NAME
 !   coarray_distributed_transpose
-! SYNOPSIS 
+! SYNOPSIS
 !   This program tests the transpose routines used in Fourier-spectral simulations of homogeneous turbulence.
 !   The data is presented to the physics routines as groups of y-z or x-z planes distributed among the images.
 !   The (out-of-place) transpose routines do the x <--> y transposes required and consist of transposes within
@@ -100,7 +100,7 @@ end module run_size
 !   Two methods are tested here:
 !   RECEIVE: receive block from other image and transpose it
 !   SEND:    transpose block and send it to other image
-!   
+!
 !   This code is the coarray analog of mpi_distributed_transpose.
 !******
 
@@ -208,7 +208,7 @@ program coarray_distributed_transpose
 
 !=========================   end of main executable  =============================
 
-contains 
+contains
 
 !-------------   out-of-place transpose data_s --> data_r  ----------------------------
 

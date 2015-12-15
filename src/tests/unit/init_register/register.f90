@@ -33,10 +33,10 @@ program register
   if (num_images()<2) error stop "This test requires at least 2 images."
 
   me = this_image()
-  
+
   sync all
   if(me == 1) then
-    block 
+    block
       integer :: image2number
       image2number = me[2]
       if (image2number/= 2) error stop "Test failed."
@@ -44,4 +44,4 @@ program register
     end block
   end if
 
-end program 
+end program

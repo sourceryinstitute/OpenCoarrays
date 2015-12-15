@@ -15,7 +15,7 @@
 ! THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ! ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 ! WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-! DISCLAIMED. IN NO EVENT SHALL SOURCERY, INC., BE LIABLE 
+! DISCLAIMED. IN NO EVENT SHALL SOURCERY, INC., BE LIABLE
 ! FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 ! (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 ! LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
@@ -25,12 +25,12 @@
 
 ! Unit tests for co_sum
 program main
-  use iso_fortran_env, only : error_unit 
+  use iso_fortran_env, only : error_unit
   use iso_c_binding, only : c_int,c_double
 #ifdef USE_EXTENSIONS
   use opencoarrays
 #endif
-  implicit none               
+  implicit none
   logical :: co_sum_c_int_verified=.false.,co_sum_c_double_verified=.false.
 
 #ifdef USE_EXTENSIONS
@@ -38,20 +38,20 @@ program main
 #endif
 
   ! Verify collective sum of integer data by tallying image numbers
-  c_int_co_sum: block 
+  c_int_co_sum: block
     integer(c_int) :: i,me
     me=this_image()
     sync all
     call co_sum(me)
     if (me==sum([(i,i=1,num_images())])) then
       co_sum_c_int_verified=.true.
-    else 
+    else
       write(error_unit,"(2(a,i2))") "co_broadcast with integer(c_int) argument fails with result (",me,") on image",this_image()
     end if
   end block c_int_co_sum
 
   ! Verify collective sum by calculuating pi
-  c_double_co_sum: block 
+  c_double_co_sum: block
     real(c_double), parameter :: four=4._c_double,one=1._c_double,half=0.5_c_double
     real(c_double), save :: pi
     integer(c_int) :: i,points_per_image
@@ -61,7 +61,7 @@ program main
     ! Partition the calculation evenly across all images
     if (mod(resolution,num_images())/=0) then
       write(error_unit,"(a)") "number of images doesn't evenly divide into number of points"
-      error stop 
+      error stop
     end if
     points_per_image=resolution/num_images()
     associate(n=>resolution,my_first=>points_per_image*(me-1)+1,my_last=>points_per_image*me)
@@ -78,7 +78,7 @@ program main
       end if
     end associate
   end block c_double_co_sum
- 
+
   if (.not. all([co_sum_c_int_verified,co_sum_c_double_verified])) error stop
   ! Wait for every image to pass
   sync all

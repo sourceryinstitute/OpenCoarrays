@@ -22,7 +22,7 @@ if(me == 1) then
     write(*,*) 'res',res
     call abort()
   endif
-  write(*,*) 'OK'  
+  write(*,*) 'OK'
 endif
 
 end program

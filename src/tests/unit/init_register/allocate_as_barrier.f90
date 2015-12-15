@@ -9,7 +9,7 @@ program alloc_as_barrier
   me = this_image()
 
   if(me == 1) call sleep(1)
-  
+
   allocate(a(10)[*])
 
   if(me > 1) then

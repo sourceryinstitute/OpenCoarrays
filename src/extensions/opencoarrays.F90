@@ -1,8 +1,8 @@
 ! Fortran 2015 feature support for Fortran 2008 compilers
-! 
+!
 ! Copyright (c) 2015, Sourcery, Inc.
 ! All rights reserved.
-! 
+!
 ! Redistribution and use in source and binary forms, with or without
 ! modification, are permitted provided that the following conditions are met:
 !     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
 !     * Neither the name of the Sourcery, Inc., nor the
 !       names of its contributors may be used to endorse or promote products
 !       derived from this software without specific prior written permission.
-! 
+!
 ! THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ! ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 ! WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -23,7 +23,7 @@
 ! LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ! ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 ! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 !
 module opencoarrays
 #ifdef COMPILER_SUPPORTS_ATOMICS
@@ -45,7 +45,7 @@ module opencoarrays
 #ifdef COMPILER_SUPPORTS_ATOMICS
   public :: event_type
   public :: event_post
-  
+
   type event_type
     private
     integer(atomic_int_kind), allocatable :: atom[:]
@@ -55,27 +55,27 @@ module opencoarrays
   ! Generic interface to co_broadcast with implementations for various types, kinds, and ranks
   interface co_reduce
      module procedure co_reduce_c_int,co_reduce_c_double,co_reduce_logical
-  end interface 
+  end interface
 
   ! Generic interface to co_broadcast with implementations for various types, kinds, and ranks
   interface co_broadcast
      module procedure co_broadcast_c_int,co_broadcast_c_double,co_broadcast_c_char
-  end interface 
+  end interface
 
   ! Generic interface to co_sum with implementations for various types, kinds, and ranks
   interface co_sum
      module procedure co_sum_c_int,co_sum_c_double
-  end interface 
+  end interface
 
   ! Generic interface to co_sum with implementations for various types, kinds, and ranks
   interface co_min
      module procedure co_min_c_int,co_min_c_double
-  end interface 
+  end interface
 
   ! Generic interface to co_sum with implementations for various types, kinds, and ranks
   interface co_max
      module procedure co_max_c_int,co_max_c_double
-  end interface 
+  end interface
 
   abstract interface
      pure function c_int_operator(lhs,rhs) result(lhs_op_rhs)
@@ -106,7 +106,7 @@ module opencoarrays
   !  BT_ASSUMED
   !};
 
-  enum ,bind(C) 
+  enum ,bind(C)
     enumerator :: &
      BT_UNKNOWN = 0, BT_INTEGER, BT_LOGICAL, BT_REAL, BT_COMPLEX, &
      BT_DERIVED, BT_CHARACTER, BT_CLASS, BT_PROCEDURE, BT_HOLLERITH, BT_VOID, &
@@ -124,9 +124,9 @@ module opencoarrays
 
   ! Fortran derived type interoperable with like-named C type:
   type, bind(C) :: descriptor_dimension
-     integer(c_ptrdiff_t) :: stride 
-     integer(c_ptrdiff_t) :: lower_bound 
-     integer(c_ptrdiff_t) :: ubound_ 
+     integer(c_ptrdiff_t) :: stride
+     integer(c_ptrdiff_t) :: lower_bound
+     integer(c_ptrdiff_t) :: ubound_
   end type
 
   ! Type definition from ../libcaf-gfortran-descriptor.h:
@@ -140,7 +140,7 @@ module opencoarrays
   integer, parameter :: max_dimensions=15
 
   ! Fortran derived type interoperable with like-named C type:
-  type, bind(C) :: gfc_descriptor_t  
+  type, bind(C) :: gfc_descriptor_t
     type(c_ptr) :: base_addr
     integer(c_ptrdiff_t) :: offset
     integer(c_ptrdiff_t) :: dtype
@@ -170,7 +170,7 @@ module opencoarrays
     integer(c_int) :: kind_
   end type
 
-  type, bind(C) :: triplet_t 
+  type, bind(C) :: triplet_t
     integer(c_ptrdiff_t) :: lower_bound, upper_bound, stride
   end type
 
@@ -179,7 +179,7 @@ module opencoarrays
      type(triplet_t) :: triplet
   end type
 
-  type, bind(C) :: caf_vector_t 
+  type, bind(C) :: caf_vector_t
     integer(c_ptrdiff_t) :: nvec
     type(u_t) :: u
   end type
@@ -194,7 +194,7 @@ module opencoarrays
   end interface
 
   ! Bindings for OpenCoarrays C procedures
-  interface 
+  interface
 
     ! C function signature from ../mpi/mpi_caf.c:
     ! void
@@ -214,8 +214,8 @@ module opencoarrays
 
     ! C function signature from ../mpi/mpi_caf.c
     ! void
-    ! PREFIX (co_reduce) (gfc_descriptor_t *a, void *(*opr) (void *, void *), int opr_flags, 
-    !                     int result_image, int *stat, char *errmsg, int a_len, int errmsg_len) 
+    ! PREFIX (co_reduce) (gfc_descriptor_t *a, void *(*opr) (void *, void *), int opr_flags,
+    !                     int result_image, int *stat, char *errmsg, int a_len, int errmsg_len)
     subroutine opencoarrays_co_reduce(a, opr, opr_flags, result_image, stat, errmsg, a_len, errmsg_len) &
 #ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
       bind(C,name="_caf_extensions_co_reduce")
@@ -239,7 +239,7 @@ module opencoarrays
     !              gfc_descriptor_t *src ,
     !              caf_vector_t *src_vector __attribute__ ((unused)),
     !              gfc_descriptor_t *dest, int src_kind, int dst_kind,
-    !              bool mrt) 
+    !              bool mrt)
     subroutine opencoarrays_get(token, offset, image_index_, src, src_vector_unused, dest, src_kind, dst_kind, mrt) &
 #ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
       bind(C,name="_caf_extensions_get")
@@ -248,13 +248,13 @@ module opencoarrays
 #endif
       import c_ptrdiff_t,c_int,gfc_descriptor_t,c_bool,caf_vector_t,c_ptr
       type(c_ptr), value :: token
-      integer(c_ptrdiff_t), value :: offset 
+      integer(c_ptrdiff_t), value :: offset
       integer(c_int), value :: image_index_
-      type(gfc_descriptor_t) :: src  
+      type(gfc_descriptor_t) :: src
       type(caf_vector_t) :: src_vector_unused
       type(gfc_descriptor_t) :: dest
       integer(c_int), value :: src_kind
-      integer(c_int), value :: dst_kind 
+      integer(c_int), value :: dst_kind
       logical(c_bool), value :: mrt
     end subroutine
 
@@ -325,25 +325,25 @@ module opencoarrays
     ! C function signature from ../mpi_caf.c
     ! void PREFIX (error_stop) (int32_t) __attribute__ ((noreturn));
 #ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
-    subroutine opencoarrays_error_stop(stop_code) bind(C,name="_caf_extensions_error_stop") 
+    subroutine opencoarrays_error_stop(stop_code) bind(C,name="_caf_extensions_error_stop")
 #else
-    subroutine opencoarrays_error_stop(stop_code) bind(C,name="_gfortran_caf_error_stop") 
+    subroutine opencoarrays_error_stop(stop_code) bind(C,name="_gfortran_caf_error_stop")
 #endif
       import :: c_int32_t
       integer(c_int32_t), value, intent(in) :: stop_code
-    end subroutine 
+    end subroutine
 
     ! C function signature from ../mpi_caf.c
     ! void PREFIX (sync_all) (int *, char *, int);
 #ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
-    subroutine opencoarrays_sync_all(stat,errmsg,unused) bind(C,name="_caf_extensions_sync_all") 
+    subroutine opencoarrays_sync_all(stat,errmsg,unused) bind(C,name="_caf_extensions_sync_all")
 #else
-    subroutine opencoarrays_sync_all(stat,errmsg,unused) bind(C,name="_gfortran_caf_sync_all") 
+    subroutine opencoarrays_sync_all(stat,errmsg,unused) bind(C,name="_gfortran_caf_sync_all")
 #endif
       import :: c_int,c_char
       integer(c_int), intent(out) :: stat,unused
       character(c_char), intent(out) :: errmsg(*)
-    end subroutine 
+    end subroutine
 
   end interface
 
@@ -357,18 +357,18 @@ contains
     integer,parameter :: GFC_DTYPE_SIZE_SHIFT = 8, GFC_DTYPE_TYPE_SHIFT=3
     integer(c_int32_t), intent(in) :: type_,kind_,rank_
     integer(c_int32_t) :: dtype_
- 
+
     ! SIZE Type Rank
     ! 0000  000  000
-    
+
     ! Rank is represented in the 3 least significant bits
     dtype_ = ior(0_c_int32_t,rank_)
     ! The next three bits represent the type id as expressed in libcaf-gfortran-descriptor.h
     dtype_ = ior(dtype_,ishft(type_,GFC_DTYPE_TYPE_SHIFT))
     ! The most significant bits represent the size of a the type (single or double precision).
-    ! We can express the precision in terms of 32-bit words: 1 for single, 2 for double. 
+    ! We can express the precision in terms of 32-bit words: 1 for single, 2 for double.
     dtype_ = ior(dtype_,ishft(kind_,GFC_DTYPE_SIZE_SHIFT))
-  
+
   end function
 
   function gfc_descriptor_c_int(a) result(a_descriptor)
@@ -378,7 +378,7 @@ contains
     integer(c_int) :: i
 
     a_descriptor%dtype = my_dtype(type_=BT_INTEGER,kind_=int(c_sizeof(a)/bytes_per_word,c_int32_t),rank_=rank(a))
-    a_descriptor%offset = scalar_offset 
+    a_descriptor%offset = scalar_offset
     a_descriptor%base_addr = c_loc(a) ! data
     do concurrent(i=1:rank(a))
       a_descriptor%dim_(i)%stride  = unit_stride
@@ -395,7 +395,7 @@ contains
     integer(c_int) :: i
 
     a_descriptor%dtype = my_dtype(type_=BT_LOGICAL,kind_=words,rank_=rank(a))
-    a_descriptor%offset = scalar_offset 
+    a_descriptor%offset = scalar_offset
     a_descriptor%base_addr = c_loc(a) ! data
     do concurrent(i=1:rank(a))
       a_descriptor%dim_(i)%stride  = unit_stride
@@ -412,7 +412,7 @@ contains
     integer(c_int) :: i
 
     a_descriptor%dtype = my_dtype(type_=BT_REAL,kind_=int(c_sizeof(a)/bytes_per_word,c_int32_t),rank_=rank(a))
-    a_descriptor%offset = scalar_offset 
+    a_descriptor%offset = scalar_offset
     a_descriptor%base_addr = c_loc(a) ! data
     do concurrent(i=1:rank(a))
       a_descriptor%dim_(i)%stride  = unit_stride
@@ -429,22 +429,22 @@ contains
  !  type(gfc_descriptor_t) :: a_descriptor
  !  integer(c_int), parameter :: unit_stride=1,scalar_offset=-1
  !  integer(c_int) :: i
-  
+
  !  a_descriptor%dtype = my_dtype(type_=BT_CHARACTER,kind_=int(c_sizeof(a)/bytes_per_word,c_int32_t),rank_=rank(a))
- !  a_descriptor%offset = scalar_offset 
+ !  a_descriptor%offset = scalar_offset
  !  a_descriptor%base_addr = c_loc(a) ! data
  !  do concurrent(i=1:rank(a))
  !    a_descriptor%dim_(i)%stride  = unit_stride
  !    a_descriptor%dim_(i)%lower_bound = lbound(a,i)
  !    a_descriptor%dim_(i)%ubound_ = ubound(a,i)
  !  end do
-  
+
  !end function
 
   ! ______ Assumed-rank co_reduce wrappers for each supported type and kind _________
   ! _________________________________________________________________________________
 
-    subroutine co_reduce_c_int(a, opr, result_image, stat, errmsg) 
+    subroutine co_reduce_c_int(a, opr, result_image, stat, errmsg)
       ! Dummy variables
       integer(c_int), intent(inout), volatile, contiguous :: a(..)
       procedure(c_int_operator) :: opr
@@ -457,14 +457,14 @@ contains
       integer(c_int), parameter :: default_result_image=0
       integer(c_int) :: result_image_
 
-      result_image_ = merge(result_image,default_result_image,present(result_image)) 
+      result_image_ = merge(result_image,default_result_image,present(result_image))
       a_descriptor = gfc_descriptor(a)
       call opencoarrays_co_reduce( &
         c_loc(a_descriptor), c_funloc(opr), opr_flags_unused, result_image_, stat, errmsg, a_len_unused, errmsg_len &
-      ) 
+      )
     end subroutine
 
-    subroutine co_reduce_logical(a, opr, result_image, stat, errmsg) 
+    subroutine co_reduce_logical(a, opr, result_image, stat, errmsg)
       ! Dummy variables
       logical, intent(inout), volatile, contiguous :: a(..)
       procedure(logical_operator) :: opr
@@ -477,14 +477,14 @@ contains
       integer(c_int), parameter :: default_result_image=0
       integer(c_int) :: result_image_
 
-      result_image_ = merge(result_image,default_result_image,present(result_image)) 
+      result_image_ = merge(result_image,default_result_image,present(result_image))
       a_descriptor = gfc_descriptor(a)
       call opencoarrays_co_reduce( &
         c_loc(a_descriptor), c_funloc(opr), opr_flags_unused, result_image_, stat, errmsg, a_len_unused, errmsg_len &
-      ) 
+      )
     end subroutine
 
-    subroutine co_reduce_c_double(a, opr, result_image, stat, errmsg) 
+    subroutine co_reduce_c_double(a, opr, result_image, stat, errmsg)
       ! Dummy variables
       real(c_double), intent(inout), volatile, contiguous :: a(..)
       procedure(c_double_operator) :: opr
@@ -497,11 +497,11 @@ contains
       integer(c_int), parameter :: default_result_image=0
       integer(c_int) :: result_image_
 
-      result_image_ = merge(result_image,default_result_image,present(result_image)) 
+      result_image_ = merge(result_image,default_result_image,present(result_image))
       a_descriptor = gfc_descriptor(a)
       call opencoarrays_co_reduce( &
         c_loc(a_descriptor), c_funloc(opr), opr_flags_unused, result_image_, stat, errmsg, a_len_unused, errmsg_len &
-      ) 
+      )
     end subroutine
 
   ! ______ Assumed-rank co_broadcast wrappers for each supported type and kind _________
@@ -525,7 +525,7 @@ contains
     ! Convert "a" to an integer(c_int) array where each 32-bit integer element holds four 1-byte characters
     a_cast_to_integer_array = transfer(a,[0_c_int])
     ! Broadcast the integer(c_int) array
-    call co_broadcast_c_int(a_cast_to_integer_array,source_image, stat, errmsg) 
+    call co_broadcast_c_int(a_cast_to_integer_array,source_image, stat, errmsg)
     ! Recover the characters from the broadcasted integer(c_int) array
     a = transfer(a_cast_to_integer_array,repeat(' ',len(a)))
 
@@ -541,9 +541,9 @@ contains
     integer(c_int) :: source_image_ ! Local replacement for the corresponding intent(in) dummy argument
     type(gfc_descriptor_t), target :: a_descriptor
 
-    source_image_ = merge(source_image,default_source_image,present(source_image)) 
+    source_image_ = merge(source_image,default_source_image,present(source_image))
     a_descriptor = gfc_descriptor(a)
-    call opencoarrays_co_broadcast(c_loc(a_descriptor),source_image_, stat, errmsg, len(errmsg)) 
+    call opencoarrays_co_broadcast(c_loc(a_descriptor),source_image_, stat, errmsg, len(errmsg))
 
   end subroutine
 
@@ -556,10 +556,10 @@ contains
     integer(c_int), parameter :: default_source_image=0
     integer(c_int) :: source_image_ ! Local replacement for the corresponding intent(in) dummy argument
     type(gfc_descriptor_t), target :: a_descriptor
-    
-    source_image_ = merge(source_image,default_source_image,present(source_image)) 
+
+    source_image_ = merge(source_image,default_source_image,present(source_image))
     a_descriptor = gfc_descriptor(a)
-    call opencoarrays_co_broadcast(c_loc(a_descriptor),source_image_, stat, errmsg, len(errmsg)) 
+    call opencoarrays_co_broadcast(c_loc(a_descriptor),source_image_, stat, errmsg, len(errmsg))
 
   end subroutine
 
@@ -567,13 +567,13 @@ contains
   ! ________ (Incomplete, private and unsupported) _____________________________________
   ! ____________________________________________________________________________________
 
-  subroutine get_c_int(src , dest, image_index_, offset, mrt) 
+  subroutine get_c_int(src , dest, image_index_, offset, mrt)
     use iso_fortran_env, only : error_unit
     ! Dummy arguments:
     integer(c_int), intent(in), target, contiguous :: src(..)
     integer(c_int), intent(out), target, contiguous, volatile :: dest(..)
     integer(c_int), intent(in) :: image_index_
-    integer(c_ptrdiff_t), intent(in) :: offset 
+    integer(c_ptrdiff_t), intent(in) :: offset
     logical(c_bool), intent(in) :: mrt
     ! Local variables:
     type(gfc_descriptor_t), target, volatile ::  dest_descriptor
@@ -605,9 +605,9 @@ contains
     integer(c_int) :: unused, result_image_ ! Local replacement for the corresponding intent(in) dummy argument
 
     a_descriptor = gfc_descriptor(a)
-    result_image_ = merge(result_image,default_result_image,present(result_image)) 
-    call opencoarrays_co_min(c_loc(a_descriptor),result_image_, stat, errmsg, unused, len(errmsg)) 
-    
+    result_image_ = merge(result_image,default_result_image,present(result_image))
+    call opencoarrays_co_min(c_loc(a_descriptor),result_image_, stat, errmsg, unused, len(errmsg))
+
   end subroutine
 
   subroutine co_min_c_double(a,result_image,stat,errmsg)
@@ -621,9 +621,9 @@ contains
     integer(c_int) :: unused, result_image_ ! Local replacement for the corresponding intent(in) dummy argument
 
     a_descriptor = gfc_descriptor(a)
-    result_image_ = merge(result_image,default_result_image,present(result_image)) 
-    call opencoarrays_co_min(c_loc(a_descriptor),result_image_, stat, errmsg, unused, len(errmsg)) 
-    
+    result_image_ = merge(result_image,default_result_image,present(result_image))
+    call opencoarrays_co_min(c_loc(a_descriptor),result_image_, stat, errmsg, unused, len(errmsg))
+
   end subroutine
 
 
@@ -641,9 +641,9 @@ contains
     integer(c_int) :: unused, result_image_ ! Local replacement for the corresponding intent(in) dummy argument
 
     a_descriptor = gfc_descriptor(a)
-    result_image_ = merge(result_image,default_result_image,present(result_image)) 
-    call opencoarrays_co_max(c_loc(a_descriptor),result_image_, stat, errmsg, unused, len(errmsg)) 
-    
+    result_image_ = merge(result_image,default_result_image,present(result_image))
+    call opencoarrays_co_max(c_loc(a_descriptor),result_image_, stat, errmsg, unused, len(errmsg))
+
   end subroutine
 
   subroutine co_max_c_double(a,result_image,stat,errmsg)
@@ -657,9 +657,9 @@ contains
     integer(c_int) :: unused, result_image_ ! Local replacement for the corresponding intent(in) dummy argument
 
     a_descriptor = gfc_descriptor(a)
-    result_image_ = merge(result_image,default_result_image,present(result_image)) 
-    call opencoarrays_co_max(c_loc(a_descriptor),result_image_, stat, errmsg, unused, len(errmsg)) 
-    
+    result_image_ = merge(result_image,default_result_image,present(result_image))
+    call opencoarrays_co_max(c_loc(a_descriptor),result_image_, stat, errmsg, unused, len(errmsg))
+
   end subroutine
 
   ! ________ Assumed-rank co_sum wrappers for each supported type and kind _____________
@@ -676,9 +676,9 @@ contains
     integer(c_int) :: result_image_ ! Local replacement for the corresponding intent(in) dummy argument
 
     a_descriptor = gfc_descriptor(a)
-    result_image_ = merge(result_image,default_result_image,present(result_image)) 
-    call opencoarrays_co_sum(c_loc(a_descriptor),result_image_, stat, errmsg, len(errmsg)) 
-    
+    result_image_ = merge(result_image,default_result_image,present(result_image))
+    call opencoarrays_co_sum(c_loc(a_descriptor),result_image_, stat, errmsg, len(errmsg))
+
   end subroutine
 
   subroutine co_sum_c_int(a,result_image,stat,errmsg)
@@ -692,9 +692,9 @@ contains
     integer(c_int) :: result_image_ ! Local replacement for the corresponding intent(in) dummy argument
 
     a_descriptor = gfc_descriptor(a)
-    result_image_ = merge(result_image,default_result_image,present(result_image)) 
-    call opencoarrays_co_sum(c_loc(a_descriptor),result_image_, stat, errmsg, len(errmsg)) 
-    
+    result_image_ = merge(result_image,default_result_image,present(result_image))
+    call opencoarrays_co_sum(c_loc(a_descriptor),result_image_, stat, errmsg, len(errmsg))
+
   end subroutine
 
   ! Return the image number (MPI rank + 1)
@@ -702,7 +702,7 @@ contains
     use mpi, only : MPI_Comm_rank
     integer(c_int) :: image_num,ierr
    !image_num = opencoarrays_this_image(unused)
-    call MPI_Comm_rank(CAF_COMM_WORLD,image_num,ierr) 
+    call MPI_Comm_rank(CAF_COMM_WORLD,image_num,ierr)
     if (ierr/=0) call error_stop
     image_num = image_num + 1
   end function
@@ -712,7 +712,7 @@ contains
     use mpi, only : MPI_Comm_size
     integer(c_int) :: num_images_,ierr
    !num_images_ = opencoarrays_num_images(unused_coarray,unused_scalar)
-    call MPI_Comm_size(CAF_COMM_WORLD,num_images_,ierr) 
+    call MPI_Comm_size(CAF_COMM_WORLD,num_images_,ierr)
     if (ierr/=0) call error_stop
   end function
 
@@ -723,14 +723,14 @@ contains
     integer(c_int32_t) :: code
     code = merge(stop_code,default_code,present(stop_code))
     call opencoarrays_error_stop(code)
-  end subroutine 
+  end subroutine
 
   ! Impose a global execution barrier
   subroutine sync_all(stat,errmsg,unused)
     integer(c_int), intent(out), optional :: stat,unused
     character(c_char), intent(out), optional :: errmsg
     call opencoarrays_sync_all(stat,errmsg,unused)
-  end subroutine 
+  end subroutine
 
 #ifdef COMPILER_SUPPORTS_ATOMICS
    ! Proposed Fortran 2015 event_post procedure
@@ -739,6 +739,6 @@ contains
      if (.not.allocated(this%atom)) this%atom=0
      call atomic_define ( this%atom, this%atom + 1_atomic_int_kind )
    end subroutine
-#endif 
+#endif
 
 end module

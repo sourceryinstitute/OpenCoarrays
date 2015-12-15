@@ -18,13 +18,13 @@ cray=ftn -ew -h caf
 gnu=mpif90 -fcoarray=lib -ffree-form -ffree-line-length-none
 
 #Intel compiler command
-intel= tau_f90.sh -DTAU=1 -Bdynamic -standard-semantics -O3 -g -optCompInst  
+intel= tau_f90.sh -DTAU=1 -Bdynamic -standard-semantics -O3 -g -optCompInst
 intel= mpiifort -Bdynamic -standard-semantics -O3 -L/usr/lib64 #-lpmi
 
 #TAU compiler command
-tau=tauf90 -tau:serial,icpc,pdt -DTAU=1 -Bdynamic -standard-semantics -O3 -g -optCompInst  
+tau=tauf90 -tau:serial,icpc,pdt -DTAU=1 -Bdynamic -standard-semantics -O3 -g -optCompInst
 #TAU compiler command cray
-tau_cray=tau_f90.sh -optCompInst -ew 
+tau_cray=tau_f90.sh -optCompInst -ew
 
 compile=$(gnu)
 #compile=$(intel)
@@ -32,8 +32,8 @@ compile=$(gnu)
 #compile=$(tau_cray)
 # PLEASE UNCOMMENT THE # TO USE TAU
 
-OPTS= 
-objects = periodic_2nd_order.o mpi_module.o shared.o mpi_share.o kind_parameters.o object_interface.o ForTrilinos_assertion_utility.o ForTrilinos_error.o input_file.o 
+OPTS=
+objects = periodic_2nd_order.o mpi_module.o shared.o mpi_share.o kind_parameters.o object_interface.o ForTrilinos_assertion_utility.o ForTrilinos_error.o input_file.o
 CFLAGS = -c  $(CMDFLAGS)
 
 $(executable): main.o $(objects) Makefile
@@ -46,13 +46,13 @@ periodic_2nd_order.o: periodic_2nd_order.F90 preprocessor_definitions object_int
 	$(compile) $(OPTS)$(CFLAGS) periodic_2nd_order.F90
 
 mpi_share.o: mpi_share.F90 Makefile mpi_module.o
-	$(compile) $(OPTS) $(CFLAGS) mpi_share.F90 
+	$(compile) $(OPTS) $(CFLAGS) mpi_share.F90
 
 mpi_module.o: mpi_module.F90 kind_parameters.o object_interface.o shared.o ForTrilinos_assertion_utility.o ForTrilinos_error.o Makefile
 	$(compile) $(OPTS) $(CFLAGS) mpi_module.F90
 
 shared.o: shared.F90 Makefile kind_parameters.o
-	$(compile) $(OPTS) $(CFLAGS) shared.F90 
+	$(compile) $(OPTS) $(CFLAGS) shared.F90
 
 
 kind_parameters.o: kind_parameters.F90 Makefile
@@ -75,7 +75,7 @@ ForTrilinos_error.o: $(library_root)/ForTrilinos_error.F90 Makefile
 clean :
 	-rm -f  *.o *.mod $(executable) core fort.* compiler_capabilities.txt profile* MULT* *.trc *.edf $(library_root)/compiler_capabilities.txt
 
-preprocessor_definitions: 
+preprocessor_definitions:
 ifeq ($(compile),$(gnu))
 	cp $(mofo_root)/include-files/gfortran_capabilities.txt compiler_capabilities.txt
 	cp $(mofo_root)/include-files/gfortran_capabilities.txt $(library_root)/compiler_capabilities.txt

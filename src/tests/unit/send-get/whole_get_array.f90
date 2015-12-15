@@ -9,7 +9,7 @@ program whole_array_get
 
   me = this_image()
   np = num_images()
-  
+
   allocate(x1(n)[*],y1(n))
 
   x1 = me
@@ -83,7 +83,7 @@ program whole_array_get
         call abort()
      end if
   endif
-  
+
   if(me == 1) write(*,*) 'Test passed.'
 
 end program whole_array_get

@@ -2,7 +2,7 @@
 !
 ! Copyright (c) 2012-2014, Sourcery, Inc.
 ! All rights reserved.
-! 
+!
 ! Redistribution and use in source and binary forms, with or without
 ! modification, are permitted provided that the following conditions are met:
 !     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
 !     * Neither the name of the Sourcery, Inc., nor the
 !       names of its contributors may be used to endorse or promote products
 !       derived from this software without specific prior written permission.
-! 
+!
 ! THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ! ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 ! WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -23,7 +23,7 @@
 ! LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ! ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 ! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- 
+
 !  Fortran translation of
 
 !/*
@@ -96,7 +96,7 @@ integer( int64), codimension[ *], save :: barrier = 0
 
 !character( kind= c_char, len= 1024), codimension[ *] :: hostname
 
-interface 
+interface
   subroutine start_timer() bind(C, name="start_timer")
     use iso_c_binding
   end subroutine
@@ -573,7 +573,7 @@ continue
       counter = int( real( counter, real64) * real( usecs, real64) / real( min_time_usecs, real64), int64)
 
       !write(*,*) 'Counter after assignment',counter
-      
+
       difference = abs( min_time_usecs - usecs)
 
       if( difference <= tolerance .or. total_time >= calibrate_useconds ) exit trials

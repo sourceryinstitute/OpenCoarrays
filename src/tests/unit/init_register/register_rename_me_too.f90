@@ -41,9 +41,9 @@ program register3
     endif
 
     deallocate(array)
-  
+
     if(allocated(array)) error stop "Test failed."
     if(this_image() == 1) print *,"Test passed."
   end block
-  
-end program 
+
+end program

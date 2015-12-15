@@ -52,7 +52,7 @@ module ForTrilinos_error
 #ifdef ForTrilinos_DISABLE_DEFERRED_LENGTH_CHARACTERS
     character(len=max_string_length) message ! gfortran 4.7.0 workaround
 #else
-    character(:) ,allocatable :: message 
+    character(:) ,allocatable :: message
 #endif /* ForTrilinos_DISABLE_DEFERRED_LENGTH_CHARACTERS */
   contains
     procedure :: error_code
@@ -62,25 +62,25 @@ module ForTrilinos_error
 
 contains
 
-  subroutine define_error(this,new_code,new_message,new_data) 
+  subroutine define_error(this,new_code,new_message,new_data)
     class(error), intent(out) :: this
     integer ,intent(in) :: new_code
     character(len=*) ,intent(in) :: new_message
     class(*) ,intent(in), optional :: new_data(:)
-    this%code = new_code 
+    this%code = new_code
     this%message = new_message
     if (present(new_data)) allocate(this%data_(lbound(new_data,1):ubound(new_data,1)),source=new_data)
-  end subroutine 
+  end subroutine
 
   integer function error_code(this)
     class(error) ,intent(in) :: this
     error_code = this%code
   end function
 
-  function error_message(this) 
+  function error_message(this)
     class(error) ,intent(in) :: this
     character(:), allocatable :: error_message
     error_message = this%message
   end function
 
-end module ForTrilinos_error 
+end module ForTrilinos_error
