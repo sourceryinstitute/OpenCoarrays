@@ -50,10 +50,10 @@ usage()
     echo ""
     echo "   $this_script gcc "
     echo "   $this_script gcc trunk"
-    echo "   $this_script gcc 5.2.0 4"
+    echo "   $this_script gcc 5.2.0 /opt/gnu/5.2.0 4"
     echo "   $this_script wget"
     echo "   $this_script --help"
-    echo "   $this_script -l"
+    echo "   $this_script --list"
     echo ""
     exit 1
 }
