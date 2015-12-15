@@ -1,22 +1,22 @@
 set(include_directory ${CMAKE_CURRENT_SOURCE_DIR}/../../integration/pde_solvers/include-files)
 set(library_directory ${CMAKE_CURRENT_SOURCE_DIR}/../../integration/pde_solvers/library)
+set(config_directory  ${CMAKE_CURRENT_BINARY_DIR}/../../integration/pde_solvers/library)
 
 if ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "Cray")
-  configure_file(${include_directory}/cray_capabilities.txt ${library_directory}/compiler_capabilities.txt COPYONLY)
+  configure_file(${include_directory}/cray_capabilities.txt ${config_directory}/compiler_capabilities.txt COPYONLY)
 elseif ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "Intel")
-  configure_file(${include_directory}/intel_capabilities.txt ${library_directory}/compiler_capabilities.txt COPYONLY)
+  configure_file(${include_directory}/intel_capabilities.txt ${config_directory}/compiler_capabilities.txt COPYONLY)
 elseif ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "GNU")
-  configure_file(${include_directory}/gfortran_capabilities.txt ${library_directory}/compiler_capabilities.txt COPYONLY)
+  configure_file(${include_directory}/gfortran_capabilities.txt ${config_directory}/compiler_capabilities.txt COPYONLY)
 elseif ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "VisualAge|XL")
-  configure_file(${include_directory}/ibm_capabilities.txt ${library_directory}/compiler_capabilities.txt COPYONLY)
+  configure_file(${include_directory}/ibm_capabilities.txt ${config_directory}/compiler_capabilities.txt COPYONLY)
 elseif ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "PGI")
-  configure_file(${include_directory}/portlandgroup_capabilities.txt ${library_directory}/compiler_capabilities.txt COPYONLY)
+  configure_file(${include_directory}/portlandgroup_capabilities.txt ${config_directory}/compiler_capabilities.txt COPYONLY)
 elseif ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "NAG")
-  configure_file(${include_directory}/nag_capabilities.txt ${library_directory}/compiler_capabilities.txt COPYONLY)
+  configure_file(${include_directory}/nag_capabilities.txt ${config_directory}/compiler_capabilities.txt COPYONLY)
 else()
   message ("Unknown Fortran compiler: ${CMAKE_Fortran_COMPILER_ID}")
 endif()
-set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${library_directory}/compiler_capabilities.txt")
 
 add_executable( mpi_burgers_pde
   main.F90
@@ -30,3 +30,4 @@ add_executable( mpi_burgers_pde
   input_file.F90
   periodic_2nd_order.F90
 )
+target_include_directories(mpi_burgers_pde PRIVATE ${config_directory})
