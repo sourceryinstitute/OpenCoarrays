@@ -2,7 +2,7 @@
 opencoarrays=/opt/opencoarrays
 executable=hello_multiverse
 opt=-L $(opencoarrays)/lib
-compile=mpif90 -fcoarray=lib 
+compile=mpif90 -fcoarray=lib
 lib=-lcaf_mpi
 
 $(executable): hello_multiverse.o  Makefile
@@ -14,4 +14,3 @@ hello_multiverse.o: hello_multiverse.F90  Makefile
 .PHONY : clean
 clean :
 	-rm -f  *.o *.mod $(executable)
-

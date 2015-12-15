@@ -24,9 +24,9 @@ add_executable( mpi_burgers_pde
   ${library_directory}/ForTrilinos_assertion_utility.F90
   ${library_directory}/ForTrilinos_error.F90
   kind_parameters.F90
-  shared.F90 
+  shared.F90
   mpi_module.F90
-  mpi_share.F90 
+  mpi_share.F90
   input_file.F90
   periodic_2nd_order.F90
 )

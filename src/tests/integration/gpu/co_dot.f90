@@ -1,7 +1,7 @@
 module accelerated_module
   use iso_c_binding, only : c_double,c_float,c_int
   implicit none
-  
+
   private
   public :: co_dot_accelerated
   public :: co_dot_unaccelerated
@@ -9,7 +9,7 @@ module accelerated_module
   public :: walltime
 
   ! Explicit interfaces for procedures that wrap accelerated kernels
-  interface  
+  interface
 
      ! This wrapper exploits the OpenCoarrays acceleration support
      subroutine cudaDot(a,b,partial_dot,n) bind(C, name="cudaDot")
@@ -26,7 +26,7 @@ module accelerated_module
 
   end interface
 
-  enum, bind(C) 
+  enum, bind(C)
     enumerator CUDA,OpenACC,OpenMP
   end enum
 
@@ -38,15 +38,15 @@ contains
      real(c_float), intent(out) :: x_dot_y
      x_dot_y = dot_product(x,y) ! Call Fortran intrinsic dot product on the local data
      call co_sum(x_dot_y) ! Call Fortarn 2015 collective sum
-  end subroutine 
+  end subroutine
 
-  ! Exploit the OpenCoarrays support for a accelerated dot products 
+  ! Exploit the OpenCoarrays support for a accelerated dot products
   ! using any one of several acceleration APIs: OpenACC, CUDA, OpenMP 4.0, etc.
-  ! On heterogeneous platforms, the API choice can vary in space (e.g., from one image/node to the 
+  ! On heterogeneous platforms, the API choice can vary in space (e.g., from one image/node to the
   ! next) or in time (e.g., based on dynamic detection of the hardware or network behavior).
   subroutine co_dot_accelerated(x,y,x_dot_y,API)
-     real, intent(in) :: x(:),y(:) 
-     real, intent(out) :: x_dot_y     
+     real, intent(in) :: x(:),y(:)
+     real, intent(out) :: x_dot_y
      integer(c_int), intent(in), optional :: API
      integer(c_int) :: chosen_API
 
@@ -67,7 +67,7 @@ contains
          error stop "Invalid acceleration API choice."
      end select
      call co_sum(x_dot_y) ! Fortran 2015 coarray collective
-  end subroutine 
+  end subroutine
 
 end module
 
@@ -75,7 +75,7 @@ program cu_dot_test
   use iso_c_binding, only : c_double,c_float,c_int
   implicit none
 
-  ! Unaccelerated variables 
+  ! Unaccelerated variables
   real(c_float), allocatable :: a(:),b(:)
   real(c_float), allocatable :: a_unacc(:),b_unacc(:)
   real(c_float) :: dot
@@ -97,7 +97,7 @@ program cu_dot_test
   call initialize_all_variables
   sync all
 
-  block 
+  block
 !    use accelerated_module, only : co_dot_accelerated,co_dot_unaccelerated,CUDA,walltime
     use accelerated_module
 
@@ -106,12 +106,12 @@ program cu_dot_test
     call co_dot_accelerated(a_acc(1:n_local),b_acc(1:n_local),dot_acc,CUDA)
     t_end = walltime()
     if(me==1) print *, 'Accelerated dot_prod',dot_acc,'time:',t_end-t_start
-  
+
     sync all
 
     !Serial execution
     t_start = walltime()
-    call co_dot_unaccelerated(a_unacc(1:n_local),b_unacc(1:n_local),dot)  
+    call co_dot_unaccelerated(a_unacc(1:n_local),b_unacc(1:n_local),dot)
     t_end = walltime()
     if(me==1) print *, 'Serial result',dot,'time:',t_end-t_start
 
@@ -132,12 +132,12 @@ contains
     ! Register the desired variables for acceleration
     call accelerate(a_acc)
     call accelerate(b_acc)
- 
+
     if(me == 1) then
-      ! Initialize the local unaccelerated data on every image 
+      ! Initialize the local unaccelerated data on every image
       b = [(1.,i=1,n)]
       ! For even n, a is orthogonal to b
-      a = [((-1.)**i,i=1,n)] 
+      a = [((-1.)**i,i=1,n)]
       ! Scatter a and b to a_cc and b_cc
       do i=1,np
         a_acc(1:n_local)[i] = a(n_local*(i-1)+1:n_local*i)

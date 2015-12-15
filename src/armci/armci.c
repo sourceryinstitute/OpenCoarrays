@@ -29,10 +29,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
  * NAME
  *   armci_caf
  * SYNOPSIS
- *   This program implements the LIBCAF_ARMCI transport layer.  This 
+ *   This program implements the LIBCAF_ARMCI transport layer.  This
  *   library is incomplete and unsupported. It exists to serve as a
  *   starting point for potential future development.
-******  
+******
 */
 
 
@@ -122,9 +122,9 @@ PREFIX (init) (int *argc, char ***argv)
   orders = calloc (caf_num_images, sizeof (int));
 
   arrived = malloc(sizeof (int *) * caf_num_images);
-  
+
   ierr = ARMCI_Malloc ((void **) arrived, sizeof (int) * caf_num_images);
-  
+
   for (i = 0; i < caf_num_images; i++)
     arrived[caf_this_image-1][i] = 0;
 }
@@ -807,7 +807,7 @@ co_reduce_2 (char *op, int result_image, gfc_descriptor_t *source,
       default:
 	goto error;
       }
-  else 
+  else
     switch (GFC_DESCRIPTOR_TYPE (source))
       {
       BT_INTEGER:

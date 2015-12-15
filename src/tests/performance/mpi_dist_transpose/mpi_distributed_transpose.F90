@@ -2,7 +2,7 @@
 !
 ! Copyright (c) 2012-2014, Sourcery, Inc.
 ! All rights reserved.
-! 
+!
 ! Redistribution and use in source and binary forms, with or without
 ! modification, are permitted provided that the following conditions are met:
 !     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
 !     * Neither the name of the Sourcery, Inc., nor the
 !       names of its contributors may be used to endorse or promote products
 !       derived from this software without specific prior written permission.
-! 
+!
 ! THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ! ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 ! WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -23,7 +23,7 @@
 ! LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ! ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 ! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ! Robodoc header:
 !****m* dist_transpose/mpi_run_size
@@ -31,7 +31,7 @@
 !   mpi_run_size
 ! SYNOPSIS
 !   Encapsulate the problem state, wall-clock timer interface, integer broadcasts, and a data copy
-!   for a distributed tranpsose kernel extracted from a program for the Fourier-spectral simulation 
+!   for a distributed tranpsose kernel extracted from a program for the Fourier-spectral simulation
 !   of statistically homogeneous.
 !******
 !==================  test transposes with integer x,y,z values  ===============================
@@ -81,9 +81,9 @@ end module mpi_run_size
 !****e* dist_transose/mpi_distributed_transpose
 ! NAME
 !   mpi_distributed_transpose
-! SYNOPSIS 
-!   This program is the MPI analogue of coarray_distributed_transpose. It tests the transpose routines used 
-!   in Fourier-spectral simulations of homogeneous turbulence.  
+! SYNOPSIS
+!   This program is the MPI analogue of coarray_distributed_transpose. It tests the transpose routines used
+!   in Fourier-spectral simulations of homogeneous turbulence.
 !******
 
 program mpi_distributed_transpose
@@ -93,7 +93,7 @@ program mpi_distributed_transpose
       use mpi_run_size
       implicit none
       include 'mpif.h'
-      
+
       complex, allocatable ::  u(:,:,:,:)    ! u(nz,4,first_x:last_x,ny)    !(*-- ny = my * num_nodes --*)
       complex, allocatable ::  ur(:,:,:,:)   !ur(nz,4,first_y:last_y,nx/2)  !(*-- nx/2 = mx * num_nodes --*)
       complex, allocatable :: bufr(:)
@@ -197,7 +197,7 @@ call MPI_BARRIER(MPI_COMM_WORLD, ierror)
 
 !=========================   end of main executable  =============================
 
-contains 
+contains
 
 !-------------   out-of-place transpose data_s --> data_r  ----------------------------
 

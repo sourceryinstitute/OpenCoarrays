@@ -40,7 +40,7 @@ void * comm_thread_routine(void *arg)
   char buffer[BUFLEN] = "";
   int sock,received=0, tmp;
   MPI_Status s;
-  
+
   if ((sock=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))==-1)
     error("socket");
   memset((char *) &si_me, 0, sizeof(si_me));
@@ -141,7 +141,7 @@ void neigh_list_2nd()
 }
 
 void setup_send_sock()
-{ 
+{
   if ((send_sock=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))==-1)
     error("socket");
 }

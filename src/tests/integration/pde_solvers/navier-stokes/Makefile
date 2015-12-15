@@ -4,9 +4,9 @@ fft=libfft_sse.a
 opencoarrays_dir=/opt/opencoarrays/lib
 
 ifeq ($(compiler),gnu)
-  opt=-L $(opencoarrays_dir) -fcoarray=lib -Ofast 
+  opt=-L $(opencoarrays_dir) -fcoarray=lib -Ofast
   libcaf_dir = $(opencoarrays_dir)
-  compile=mpif90 
+  compile=mpif90
   lib=-lcaf_mpi
 else
   ifeq ($(compiler),intel)
@@ -18,7 +18,7 @@ else
   endif
 endif
 
-objects = walltime.o 
+objects = walltime.o
 
 all: coarray-shear-collective mpi-shear
 
@@ -29,7 +29,7 @@ mpi-shear: mpi-shear.o $(objects) Makefile
 	$(compile)  mpi-shear.o $(objects) -o mpi-shear $(fft)
 
 coarray-shear_coll.o: coarray-shear_coll.F90 $(objects) Makefile
-	$(compile) $(opt)  -c coarray-shear_coll.F90 
+	$(compile) $(opt)  -c coarray-shear_coll.F90
 
 mpi-shear.o: mpi-shear.f90 $(objects) Makefile
 	$(compile)  -c mpi-shear.f90

@@ -33,7 +33,7 @@ contains
   pure function subtract(lhs,rhs) result(difference)
     class(local_field), intent(in) :: lhs,rhs
     type(local_field) :: difference
-    !Requires 
+    !Requires
     if (lhs%user_defined() .and. rhs%user_defined()) then
       difference%values = lhs%values - rhs%values
       ! Ensures

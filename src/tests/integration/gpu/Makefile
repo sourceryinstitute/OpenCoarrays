@@ -7,7 +7,7 @@ link=ftn
 API_PATH=$(OPENCOARRAYS_SRC_DIR)/src/extensions/
 TIMER_PATH=$(OPENCOARRAYS_SRC_DIR)/src/tests/integration/pde_solvers/navier-stokes
 
-OPTS=-L$(OPENCOARRAYS_SRC_DIR)/src/cuda_mpi 
+OPTS=-L$(OPENCOARRAYS_SRC_DIR)/src/cuda_mpi
 objects = opencoarrays.o co_dot.o kernelCaller.o $(TIMER_PATH)/walltime.o
 
 $(executable): $(objects) Makefile

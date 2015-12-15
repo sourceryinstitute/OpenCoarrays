@@ -34,10 +34,10 @@ program register2
   arr1 = this_image()
 
   sync all
-  
+
   if(this_image() == 1) then
      if(size(arr1) /= array_size) error stop 'Test failed.'
      print *,'Test passed.'
   endif
-  
-end program 
+
+end program

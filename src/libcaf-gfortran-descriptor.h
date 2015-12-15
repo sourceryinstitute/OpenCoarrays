@@ -130,7 +130,7 @@ typedef struct gfc_descriptor_t {
 #endif
 
 /* FIXME: Hardwiring these values to what the mpi_caf.c macro GFC_DTYPE_TYPE_SIZE(desc)
-    receives in the dtype component its gf_descriptor_t argument for character(kind=c_char) 
+    receives in the dtype component its gf_descriptor_t argument for character(kind=c_char)
     and logical(kind=c_bool) data:
 */
 #define GFC_DTYPE_CHARACTER 48

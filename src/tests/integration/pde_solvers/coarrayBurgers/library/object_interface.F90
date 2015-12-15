@@ -1,4 +1,4 @@
-module object_interface 
+module object_interface
 #include "compiler_capabilities.txt"
   implicit none
   private
@@ -15,7 +15,7 @@ module object_interface
     procedure :: user_defined
     procedure(output_interface), deferred :: output
 #ifndef COMPILER_LACKS_DERIVED_TYPE_IO
-    generic :: write(formatted) => output  ! Derived-type I/O 
+    generic :: write(formatted) => output  ! Derived-type I/O
 #endif /* COMPILER_LACKS_DERIVED_TYPE_IO */
   end type
 
@@ -37,13 +37,13 @@ module object_interface
 contains
 
   ! Mark the object as user-defined
-  pure subroutine mark_as_defined(this) 
+  pure subroutine mark_as_defined(this)
     class(object), intent(inout) :: this
     this%defined=.true.
   end subroutine
 
   ! Return a boolean result indicating whether this object has been initialized since its declaration
-  logical pure function user_defined(this) 
+  logical pure function user_defined(this)
     class(object), intent(in) :: this
     user_defined = this%defined
   end function
