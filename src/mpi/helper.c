@@ -29,13 +29,16 @@ static MPI_Request node_req;
 extern MPI_Comm CAF_COMM_WORLD;
 extern int caf_this_image;
 extern int caf_num_images;
+extern MPI_Win win_ids[100];
+extern MPI_Group group;
 
 void * comm_thread_routine(void *arg)
 {
   struct sockaddr_in si_me, si_other;
   int i, slen=sizeof(si_me),new_port,it,flag;
   char buffer[BUFLEN] = "";
-  int sock;
+  int sock,received=0, tmp;
+  MPI_Status s;
   
   if ((sock=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))==-1)
     error("socket");
@@ -51,18 +54,18 @@ void * comm_thread_routine(void *arg)
 
   while(1)
     {
-      if (recvfrom(sock, &buffer, BUFLEN, 0, (struct sockaddr *)&si_me, &slen)==-1)
+      if ((received = recvfrom(sock, &buffer, BUFLEN, 0, (struct sockaddr *)&si_me, &slen))==-1)
 	error("recvfrom()");
-      sscanf(buffer,"%d",&it);
-      it = (int)(it*0.1);
-      if(it < 10) it = 10;
 #if defined(ASYNC_PROGRESS) && defined(NO_MULTIPLE)
-      pthread_mutex_lock (&comm_mutex);
+	  pthread_mutex_lock (&comm_mutex);
 #endif
-      for(i=0;i<it;i++)
-	MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, CAF_COMM_WORLD, &flag, MPI_STATUS_IGNORE);
+      for(i=0;i<(int)(received/sizeof(int));i++)
+	{
+	  sscanf(buffer+i*sizeof(int),"%d",&tmp);
+	  MPI_Recv(&flag,1,MPI_INT,tmp,10,CAF_COMM_WORLD,&s);
+	}
 #if defined(ASYNC_PROGRESS) && defined(NO_MULTIPLE)
-      pthread_mutex_unlock (&comm_mutex);
+	  pthread_mutex_unlock (&comm_mutex);
 #endif
     }
 }
@@ -139,7 +142,7 @@ void setup_send_sock()
 }
 
 /* Dest is already in MPI format */
-void send_sig(int dest, int n)
+void send_sig(int dest, int img)
 {
   struct sockaddr_in si_other;
   int i, slen=sizeof(si_other),new_port,it,flag;
@@ -155,8 +158,8 @@ void send_sig(int dest, int n)
   // Retrieve IP Address
   if (inet_aton(all_str[dest], &si_other.sin_addr)==0)
     error("inet_aton:");
-  sprintf(buffer,"%d",n);
-  if (sendto(send_sock, buffer, BUFLEN, 0, (struct sockaddr *)&si_other, slen)==-1)
+  sprintf(buffer,"%d",img);
+  if (sendto(send_sock, buffer, sizeof(int), 0, (struct sockaddr *)&si_other, slen)==-1)
     error("sendto()");
 
   return;
