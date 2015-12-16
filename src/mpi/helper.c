@@ -18,7 +18,9 @@
 
 #define BUFLEN 512
 
-int prog_init = 0;
+static int prog_init = 0;
+/* It is 0 if all processes are on the same node */
+static int multiple_nodes = 0;
 static const int port = 9930;
 pthread_mutex_t comm_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -30,8 +32,6 @@ static MPI_Request node_req;
 extern MPI_Comm CAF_COMM_WORLD;
 extern int caf_this_image;
 extern int caf_num_images;
-extern MPI_Win win_ids[100];
-extern MPI_Group group;
 
 void * comm_thread_routine(void *arg)
 {
@@ -53,7 +53,7 @@ void * comm_thread_routine(void *arg)
 
   prog_init = 1;
 
-  while(1)
+  while(multiple_nodes)
     {
       if ((received = recvfrom(sock, &buffer, BUFLEN, 0, (struct sockaddr *)&si_me, &slen))==-1)
 	error("recvfrom()");
@@ -99,7 +99,7 @@ static int host_to_ip(char *hostname , char *ip)
 
 void check_helper_init()
 {
-  while(prog_init == 0) {;}
+  while(prog_init == 0 && multiple_nodes) {;}
 }
 
 void neigh_list_1st()
@@ -132,6 +132,7 @@ void neigh_list_2nd()
 	  strcpy(tmp,all_str[i]);
 	  memset(all_str[i],0,255);
 	  host_to_ip(tmp, all_str[i]);
+	  multiple_nodes = 1;
 	}
     }
 }
@@ -149,7 +150,7 @@ void send_sig(int dest, int img)
   int i, slen=sizeof(si_other),new_port,it,flag;
   char buffer[BUFLEN] = "";
 
-  if(neigh[dest]==1)
+  if(neigh[dest]==1 || !multiple_nodes)
     return;
 
   memset((char *) &si_other, 0, sizeof(si_other));
@@ -165,4 +166,12 @@ void send_sig(int dest, int img)
 
   return;
 }
+
+void ack_sig(int img)
+{
+  /* We just need to send a generic interger */
+  if(multiple_nodes)
+    MPI_Send(&caf_this_image,1,MPI_INT,img,10,CAF_COMM_WORLD);
+}
+
 #endif

@@ -19,7 +19,7 @@ ARMCI_LDFLAGS += -L$(ARMCI_DIR)/lib -L$(ARMCI_DIR)/lib64 -larmci
 ARMCI_CC = mpicc
 ARMCI_RUN = mpirun -np 2
 
-MPI_EXTRA_FLAGS = -Wall -Wextra -Wno-error=cpp -Wno-error=unused-parameter -DSTRIDED #-DASYNC_PROGRESS #-DNO_MULTIPLE -DSHARED -DNONBLOCKING_PUT -DCAF_MPI_LOCK_UNLOCK
+MPI_EXTRA_FLAGS = -Wall -Wextra -Wno-error=cpp -Wno-error=unused-parameter -DSTRIDED -DASYNC_PROGRESS -DNO_MULTIPLE #-DSHARED -DNONBLOCKING_PUT -DCAF_MPI_LOCK_UNLOCK
 MPI_CFLAGS += $(MPI_EXTRA_FLAGS)
 #MPICC =
 MPI_RUN = mpirun -np 2
