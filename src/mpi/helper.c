@@ -36,7 +36,7 @@ extern int caf_num_images;
 void * comm_thread_routine(void *arg)
 {
   struct sockaddr_in si_me, si_other;
-  int i, slen=sizeof(si_me),new_port,it,flag;
+  int i, slen=sizeof(si_me),new_port,flag;
   char buffer[BUFLEN] = "";
   int sock,received=0, tmp;
   MPI_Status s;
@@ -69,6 +69,7 @@ void * comm_thread_routine(void *arg)
 	  pthread_mutex_unlock (&comm_mutex);
 #endif
     }
+  return 0;
 }
 
 static int host_to_ip(char *hostname , char *ip)
@@ -147,7 +148,7 @@ void setup_send_sock()
 void send_sig(int dest, int img)
 {
   struct sockaddr_in si_other;
-  int i, slen=sizeof(si_other),new_port,it,flag;
+  int slen=sizeof(si_other),new_port;
   char buffer[BUFLEN] = "";
 
   if(neigh[dest]==1 || !multiple_nodes)
