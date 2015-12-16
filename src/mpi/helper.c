@@ -1,3 +1,4 @@
+#ifdef ASYNC_PROGRESS
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
@@ -56,7 +57,7 @@ void * comm_thread_routine(void *arg)
     {
       if ((received = recvfrom(sock, &buffer, BUFLEN, 0, (struct sockaddr *)&si_me, &slen))==-1)
 	error("recvfrom()");
-#if defined(ASYNC_PROGRESS) && defined(NO_MULTIPLE)
+#if defined(NO_MULTIPLE)
 	  pthread_mutex_lock (&comm_mutex);
 #endif
       for(i=0;i<(int)(received/sizeof(int));i++)
@@ -64,7 +65,7 @@ void * comm_thread_routine(void *arg)
 	  sscanf(buffer+i*sizeof(int),"%d",&tmp);
 	  MPI_Recv(&flag,1,MPI_INT,tmp,10,CAF_COMM_WORLD,&s);
 	}
-#if defined(ASYNC_PROGRESS) && defined(NO_MULTIPLE)
+#if defined(NO_MULTIPLE)
 	  pthread_mutex_unlock (&comm_mutex);
 #endif
     }
@@ -164,3 +165,4 @@ void send_sig(int dest, int img)
 
   return;
 }
+#endif
