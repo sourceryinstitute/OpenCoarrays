@@ -98,7 +98,7 @@ the underlying communication library directly:
 
     mpif90 -fcoarray=lib -L/opt/opencoarrays/ tally.f90 \ -lcaf_mpi -o htally-I<OpenCoarrays-install-path>/mod
 
-and also run the program with the lower-level commnication library:
+and also run the program with the lower-level communication library:
 
     mpirun -np <number-of-images> ./tally
 

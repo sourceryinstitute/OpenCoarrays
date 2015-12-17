@@ -2,16 +2,16 @@ if("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
   set(gfortran_compiler true)
 endif()
 
-if (CMAKE_VERSION VERSION_GREATER 3.2.3) 
+if (NOT CMAKE_VERSION VERSION_LESS 3.3.1)
   # Detect Fortran compiler version directly
-  if(gfortran_compiler AND (CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 4.9.2))
+  if(gfortran_compiler AND (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 5.2))
     set(opencoarrays_aware_compiler true)
   else()
     set(opencoarrays_aware_compiler false)
   endif()
 else()
   # Use the C compiler version as a proxy for the Fortran compiler version (won't work with NAG)
-  if(gfortran_compiler AND (CMAKE_C_COMPILER_VERSION VERSION_GREATER 4.9.2))
+  if(gfortran_compiler AND (NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 5.2))
     set(opencoarrays_aware_compiler true)
   else()
     set(opencoarrays_aware_compiler false)
@@ -40,11 +40,11 @@ function(generate_test_script base_name num_images)
   file(WRITE  "${harness}" "#!/bin/bash\n")
   file(APPEND "${harness}" "cd ${CMAKE_CURRENT_BINARY_DIR}\n")
   set(executable "${base_name}_extension")
-  if (opencoarrays_aware_compiler) 
-    # Explicitly include the directory containing the .mod file because the caf script won't pass it 
+  if (opencoarrays_aware_compiler)
+    # Explicitly include the directory containing the .mod file because the caf script won't pass it
     # automatically when the script wraps an OpenCoarrays-aware compiler
-    file(APPEND 
-      "${harness}" 
+    file(APPEND
+      "${harness}"
       "FC=mpif90 ${CMAKE_INSTALL_PREFIX}/bin/caf ${source} -o ${executable} -I${CMAKE_BINARY_DIR}/mod -DUSE_EXTENSIONS\n"
     )
   else()

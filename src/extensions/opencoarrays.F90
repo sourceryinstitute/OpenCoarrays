@@ -220,7 +220,7 @@ module opencoarrays
 #ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
       bind(C,name="_caf_extensions_co_reduce")
 #else
-      bind(C,name="_gfortran_extensions_co_reduce")
+      bind(C,name="_gfortran_caf_co_reduce")
 #endif
       use iso_c_binding, only : c_ptr,c_funptr,c_int,c_char
       type(c_ptr), intent(in), value :: a
