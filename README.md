@@ -94,7 +94,7 @@ We gratefully acknowledge support from the following institutions:
 [Google]: http://google.com
 [CINECA]: http://www.cineca.it/en
 [NERSC]: http://www.nersc.gov
-[NCAR]: http://ncar.ucar.edu
+[National Center for Atmospheric Research]: http://ncar.ucar.edu
 [INSTALL.md]: ./INSTALL.md
 [GASNet]: http://gasnet.lbl.gov
 [menu of services]: http://opencoarrays.org/services
@@ -102,7 +102,7 @@ We gratefully acknowledge support from the following institutions:
 [STATUS.md]: ./STATUS.md
 [GETTING_STARTED.md]: ./GETTING_STARTED.md
 [Google Groups]: https://groups.google.com
-[subscribing]: https://groups.google.com/forum/#!forum/opencoarrays/join
+[Google Group]: https://groups.google.com/forum/#!forum/opencoarrays/join
 [opencoarrays@googlegroups.com]: mailto:opencoarrays@googlegroups.com
 [Google Summer of Code]: https://www.google-melange.com
 [OpenCoarrays Google Group]: https://groups.google.com/forum/#!forum/opencoarrays)

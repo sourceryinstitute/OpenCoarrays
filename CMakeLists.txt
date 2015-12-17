@@ -60,7 +60,7 @@ else()
   )
 endif()
 
-if (NOT CMAKE_VERSION VERSION_LESS 3.3.1)
+if (NOT (CMAKE_VERSION VERSION_LESS 3.3.1))
   # Detect Fortran compiler version directly
   if(gfortran_compiler AND (CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 5.0.0))
     set(opencoarrays_aware_compiler true)
@@ -68,6 +68,17 @@ if (NOT CMAKE_VERSION VERSION_LESS 3.3.1)
   else()
     set(opencoarrays_aware_compiler false)
     add_definitions(-DPREFIX_NAME=_caf_extensions_)
+  endif()
+  if(gfortran_compiler AND (CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 5.4))
+    # GCC patch to fix issue accepted for 5.4 release
+    # See https://github.com/sourceryinstitute/opencoarrays/issues/28 and
+    # https://groups.google.com/forum/#!msg/opencoarrays/RZOwwYTqG80/46S9eL696dgJ
+    message( STATUS "Disabling optimization flags due to GCC < 5.4 bug")
+    set(CMAKE_Fortran_FLAGS_RELEASE -O0
+      CACHE STRING "Flags used by the compiler during release builds." FORCE)
+    set(CMAKE_Fortran_FLAGS_RELWITHDEBINFO "-g -DNDEBUG -O0"
+      CACHE STRING "Flags used by the compiler during release builds with debug info" FORCE)
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O0")
   endif()
 else()
   # Use the C compiler version as a proxy for the Fortran compiler version (won't work with NAG)
@@ -77,6 +88,17 @@ else()
   else()
     set(opencoarrays_aware_compiler false)
     add_definitions(-DPREFIX_NAME=_caf_extensions_)
+  endif()
+  if(gfortran_compiler AND (CMAKE_C_COMPILER_VERSION VERSION_LESS 5.4))
+    # GCC patch to fix issue accepted for the 5.4 release
+    # See https://github.com/sourceryinstitute/opencoarrays/issues/28 and
+    # https://groups.google.com/forum/#!msg/opencoarrays/RZOwwYTqG80/46S9eL696dgJ
+    message( STATUS "Disabling optimization flags due to GCC < 5.4 bug")
+    set(CMAKE_Fortran_FLAGS_RELEASE -O0
+      CACHE STRING "Flags used by the compiler during release builds." FORCE)
+    set(CMAKE_Fortran_FLAGS_RELWITHDEBINFO "-g -DNDEBUG -O0"
+      CACHE STRING "Flags used by the compiler during release builds with debug info" FORCE)
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O0")
   endif()
 endif()
 

@@ -131,6 +131,9 @@ The OpenCoarrays team offers contract development and support for making compile
      * `co_reduce` only supports arguments of intrinsic type.
      * No support for type finalization or allocatable components of derived-type coarrays
        passed to the collective subroutines (e.g., `co_sum`, `co_reduce`, etc.).
+	 * Optimization levels other than -O0 introduce correctness errors
+	   in the compiled binaries. A patch has been submitted by @afanfa
+	   to the GFortran team. See #28 for some more context.
 <a name="compiler-issues-intel">
 * **Intel** (ifort)</a>
      * Supported via the [opencoarrays module]  only.
