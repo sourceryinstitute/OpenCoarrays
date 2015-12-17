@@ -1,4 +1,4 @@
-module co_object_interface 
+module co_object_interface
   implicit none
   private
   public :: co_object
@@ -33,13 +33,13 @@ module co_object_interface
 contains
 
   ! Mark the co_object as user-defined
-  pure subroutine mark_as_defined(this) 
+  pure subroutine mark_as_defined(this)
     class(co_object), intent(inout) :: this
     this%defined=.true.
   end subroutine
 
   ! Return a boolean result indicating whether this co_object has been initialized since its declaration
-  logical pure function user_defined(this) 
+  logical pure function user_defined(this)
     class(co_object), intent(in) :: this
     user_defined = this%defined
   end function

@@ -15,7 +15,7 @@
 ! THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ! ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 ! WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-! DISCLAIMED. IN NO EVENT SHALL SOURCERY, INC., BE LIABLE 
+! DISCLAIMED. IN NO EVENT SHALL SOURCERY, INC., BE LIABLE
 ! FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 ! (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 ! LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
@@ -25,12 +25,12 @@
 
 ! Unit tests for co_broadcast and co_sum
 program main
-  use iso_fortran_env, only : error_unit 
+  use iso_fortran_env, only : error_unit
   use iso_c_binding, only : c_int,c_double,c_char
 #ifdef USE_EXTENSIONS
   use opencoarrays
 #endif
-  implicit none               
+  implicit none
   integer(c_int) :: me
   ! Set test failure as the default result
   logical :: c_char_test_passes=.false.,c_int_test_passes=.false.,c_double_test_passes=.false.
@@ -43,7 +43,7 @@ program main
 #endif
 
   ! Verify broadcasting of character data from image 1
-  c_char_co_broadcast: block 
+  c_char_co_broadcast: block
     character(kind=c_char,len=14), save :: string_received[*]
     character(kind=c_char,len=*), parameter :: string_sent=c_char_"Hello, world!"! Character test message
     if (me==1) string_received=string_sent
@@ -57,7 +57,7 @@ program main
   end block c_char_co_broadcast
 
   ! Verify broadcasting of integer data from image 1
-  c_int_co_broadcast: block 
+  c_int_co_broadcast: block
     integer(c_int), save :: integer_received[*]
     integer(c_int), parameter :: integer_sent=12345_c_int ! Integer test message
     if (me==1) integer_received=integer_sent
@@ -71,7 +71,7 @@ program main
   end block c_int_co_broadcast
 
   ! Verify broadcasting of real data from image 1
-  c_double_co_broadcast: block 
+  c_double_co_broadcast: block
     real(c_double), save :: real_received[*]
     real(c_double), parameter :: real_sent=2.7182818459045_c_double ! Real test message
     if (me==1) real_received=real_sent
@@ -84,7 +84,7 @@ program main
     end if
   end block c_double_co_broadcast
 
-      
+
   if (.not.all([c_char_test_passes,c_int_test_passes,c_double_test_passes])) error stop
   ! Wait for everyone to pass the tests
   sync all

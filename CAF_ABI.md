@@ -1,5 +1,5 @@
-[This document is formatted with GitHub-Flavored Markdown.              ]:# 
-[For better viewing, including hyperlinks, read it online at            ]:# 
+[This document is formatted with GitHub-Flavored Markdown.              ]:#
+[For better viewing, including hyperlinks, read it online at            ]:#
 [https://github.com/sourceryinstitute/opencoarrays/blob/master/CAF_API.md]:#
 
 # OpenCoarrays Application Binary Interface (ABI) #
@@ -9,13 +9,13 @@
 * [Definitions and types]
 * [Provided functions]
 
-This document describes the OpenCoarrays application binary interface (ABI) through 
-which a compiler accesses coarray functionality.  As such, the target audience for 
+This document describes the OpenCoarrays application binary interface (ABI) through
+which a compiler accesses coarray functionality.  As such, the target audience for
 this document is compiler developers.  Most application developers need only write
 standard-conforming Fortran 2008 or 2015 and compile their code with the OpenCoarrays
-'caf' compiler wrapper without knowledge of the ABI.  
+'caf' compiler wrapper without knowledge of the ABI.
 
-The actual function names in this document have a PREFIX in the source code to avoid 
+The actual function names in this document have a PREFIX in the source code to avoid
 name clashes.  The prefix can be vendor-specific.
 
 ## <a name="to-do">To Do</a> ##

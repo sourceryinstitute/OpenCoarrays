@@ -47,20 +47,20 @@ elseif ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "PGI" )
   )
   add_definitions(-DCOMPILER_LACKS_C_PTRDIFF_T)
   add_definitions(-DCOMPILER_LACKS_SAVE_BIND_C)
-  add_definitions(-DCOMPILER_LACKS_ASSUMED_RANK) 
-  add_definitions(-DCOMPILER_LACKS_DO_CONCURRENT) 
+  add_definitions(-DCOMPILER_LACKS_ASSUMED_RANK)
+  add_definitions(-DCOMPILER_LACKS_DO_CONCURRENT)
   add_definitions(-DCOMPILER_LACKS_C_SIZEOF_ASSUMED_RANK)
   add_definitions(-DCMAKE_VERBOSE_MAKEFILE)
   add_definitions(-DCOMPILER_SUPPORTS_CAF_INTRINSICS)
 else()
-  message(WARNING 
+  message(WARNING
     "\n"
     "Attempting to build with untested Fortran compiler: ${CMAKE_Fortran_COMPILER_ID}. "
     "Please report any failures to opencoarrays@googlegroups.com\n\n"
   )
 endif()
 
-if (NOT CMAKE_VERSION VERSION_LESS 3.3.1) 
+if (NOT CMAKE_VERSION VERSION_LESS 3.3.1)
   # Detect Fortran compiler version directly
   if(gfortran_compiler AND (CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 5.0.0))
     set(opencoarrays_aware_compiler true)
@@ -106,7 +106,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 add_subdirectory(src)
 add_subdirectory(install_prerequisites)
 
-install(EXPORT OpenCoarraysTargets 
+install(EXPORT OpenCoarraysTargets
   NAMESPACE
     OpenCoarrays::
   DESTINATION
@@ -164,8 +164,8 @@ if(opencoarrays_aware_compiler)
   add_mpi_test(co_min 4 ${tests_root}/unit/collectives/co_min_test)
   add_mpi_test(co_max 4 ${tests_root}/unit/collectives/co_max_test)
   add_mpi_test(syncall 32 ${tests_root}/unit/sync/syncall)
-  add_mpi_test(syncimages 32 ${tests_root}/unit/sync/syncimages)  
-  add_mpi_test(co_reduce 4 ${tests_root}/unit/collectives/co_reduce_test)  
+  add_mpi_test(syncimages 32 ${tests_root}/unit/sync/syncimages)
+  add_mpi_test(co_reduce 4 ${tests_root}/unit/collectives/co_reduce_test)
 #  add_mpi_test(syncimages_status 32 ${tests_root}/unit/sync/syncimages_status)
 
   # Integration tests verifying the use of libcaf_mpi in applications

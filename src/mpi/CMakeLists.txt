@@ -10,7 +10,7 @@ elseif("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "PGI")
   set(portland_group_compiler true)
 endif()
 
-if (NOT CMAKE_VERSION VERSION_LESS 3.3.1) 
+if (NOT CMAKE_VERSION VERSION_LESS 3.3.1)
   # Detect Fortran compiler version directly
   if(gfortran_compiler AND (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 5))
     set(opencoarrays_aware_compiler true)
@@ -30,7 +30,7 @@ if(gfortran_compiler AND (NOT opencoarrays_aware_compiler))
   # This applied to gfortran 4.9 and some earlier versions (FIX ME: find out which)
   add_definitions(-DCOMPILER_SUPPORTS_CAF_INTRINSICS)
 endif()
-     
+
 add_library(caf_mpi mpi_caf.c ../common/caf_auxiliary.c ../extensions/opencoarrays.F90)
 
 target_include_directories(caf_mpi PRIVATE ${MPI_C_INCLUDE_PATH})
@@ -45,7 +45,7 @@ install(TARGETS caf_mpi EXPORT OpenCoarraysTargets
 )
 install(DIRECTORY  ${CMAKE_BINARY_DIR}/mod DESTINATION .)
 
-# Now we write the script that passes CAF source to the compiler with the necessary arguments 
+# Now we write the script that passes CAF source to the compiler with the necessary arguments
 # and, if necessary, performs some code transformations prior to invoking the compiler.
 set(exe_dir ${CMAKE_BINARY_DIR}/bin_staging)
 set(compiler_wrapper ${exe_dir}/caf)

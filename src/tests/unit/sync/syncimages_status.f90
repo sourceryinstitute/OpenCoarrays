@@ -20,4 +20,3 @@ program sync_images_stat
   end if
 
 end program sync_images_stat
-

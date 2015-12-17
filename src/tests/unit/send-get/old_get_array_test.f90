@@ -206,8 +206,8 @@ print *, 'HELLO!!!!!!!!!!!!!!!!!'
                     endif
                     sync all
                     if (this_image() == 1) then
-!                       b(i:i_e:i_s*i_sgn1, j:j_e:j_s*i_sgn2) & 
-!                            =caf(i:i_e:i_s*i_sgn1, j:j_e:j_s*i_sgn2)[num_images()] 
+!                       b(i:i_e:i_s*i_sgn1, j:j_e:j_s*i_sgn2) &
+!                            =caf(i:i_e:i_s*i_sgn1, j:j_e:j_s*i_sgn2)[num_images()]
                     end if
                     sync all
 

@@ -2,7 +2,7 @@
 !
 ! Copyright (c) 2012-2014, Sourcery, Inc.
 ! All rights reserved.
-! 
+!
 ! Redistribution and use in source and binary forms, with or without
 ! modification, are permitted provided that the following conditions are met:
 !     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
 !     * Neither the name of Sourcery, Inc., nor the
 !       names of its contributors may be used to endorse or promote products
 !       derived from this software without specific prior written permission.
-! 
+!
 ! THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ! ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 ! WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -23,7 +23,7 @@
 ! LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ! ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 ! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
+! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 !
 
 !(*----------------------------------------------------------------------------------------------------------------------
@@ -31,7 +31,7 @@
 !------------------------------------------------------------------------------------------------------------------------*)
 
 ! Define universal constants:
-! In the case of exactly representable numbers, the definitions are useful 
+! In the case of exactly representable numbers, the definitions are useful
 ! to ensure subprogram argument type/kind/rank matching without having to
 ! repeat kind specifiers everywhere.
 module constants_module
@@ -43,7 +43,7 @@ module constants_module
 end module
 
 ! Initialize the random seed with a varying seed to ensure a different
-! random number sequence for each invocation of subroutine, e.g. for 
+! random number sequence for each invocation of subroutine, e.g. for
 ! invocations on different images of a coarray parallel program.
 ! Setting any seed values to zero is deprecated because it can result
 ! in low-quality random number sequences.
@@ -59,7 +59,7 @@ contains
             integer, allocatable :: seed(:)
             integer :: i, n, un, istat, dt(8), pid
             integer(int64) :: t
-          
+
             call random_seed(size = n)
             allocate(seed(n))
             ! First try if the OS provides a random number generator
@@ -184,7 +184,7 @@ end subroutine copy3
 end module run_size
 
 program cshear
-  
+
   !(***********************************************************************************************************
   !                   m a i n   p r o g r a m
   !***********************************************************************************************************)
@@ -236,7 +236,7 @@ nsteps=10;output_step=1
  	    mx = nx/2 / num_nodes;  first_x = (my_node-1)*mx + 1;   last_x  = (my_node-1)*mx + mx
         my = ny / num_nodes;    first_y = (my_node-1)*my + 1;   last_y  = (my_node-1)*my + my
 
-      if(my_node == 1 ) write(6,fmt="(A, f6.2)") "message size (MB) = ", real(nz*4*mx*my*8)/real(1024*1024) 
+      if(my_node == 1 ) write(6,fmt="(A, f6.2)") "message size (MB) = ", real(nz*4*mx*my*8)/real(1024*1024)
 
     call solve_navier_stokes
 
@@ -245,13 +245,13 @@ end program cshear
 !  (***********************************************************************************************************
 !             n a v i e r - s t o k e s   s o l v e r
 !  ************************************************************************************************************)
-  
+
   subroutine solve_navier_stokes
       use run_size
       implicit none
 
   !(*****************************   declarations     ****************************************)
-  
+
        integer(int64) ::  stop, rflag, oflag, step, rkstep, nshells
        real ::  k1(nx/2), k2(ny), k3(nz), mk1(nx/2), mk2(ny), mk3(nz) &
               , kx(nx/2), ky_(nx/2,ny), ky(nx/2,ny), kz(nz)
@@ -318,12 +318,12 @@ end interface
                         call define_field
                         call enforce_conjugate_symmetry
 						call copy_n_s
-                        call define_shifts 
+                        call define_shifts
 
        total_time =  -WALLTIME()      !-- start the clock
 
        tran_time = 0;       cpu_time = -WALLTIME()
-  
+
   !(*********************************   begin execution loop   *****************************************)
 
        do while (stop == 0)
@@ -368,10 +368,10 @@ end interface
                             , "total_time ", min_total_time/step, max_total_time/step &
                             , "cpu_time ", min_cpu_time/step, max_cpu_time/step &
                             , "tran_time ", min_tran_time/step, max_tran_time/step
-  
+
 
        write(6,fmt="(A,i4,3f7.2)")  "image ", my_node, total_time/step, cpu_time/step, tran_time/step
-  
+
 
 contains
 
@@ -476,7 +476,7 @@ end  subroutine enforce_conjugate_symmetry
  !(***********************************************************************************************************
  !                spectra :  accumulate spectra and other statistics over flow field
  !***********************************************************************************************************)
- 
+
  subroutine  spectra
 
       use run_size
@@ -484,16 +484,16 @@ end  subroutine enforce_conjugate_symmetry
 
     integer(int64) :: k, x, y, z
     real :: kk, ww, uw, uu, uv, duu, factor   &
-          , ek(nshells), dk(nshells), hk(nshells), tk(nshells), sample(nshells) 
+          , ek(nshells), dk(nshells), hk(nshells), tk(nshells), sample(nshells)
     real, save, codimension[*] ::  sum_ek, sum_dk, sum_hk, sum_tk
 
       total_time =  total_time + WALLTIME()     !-- stop the clock!  time/step does not include spectra time
 
 	  oflag = 0
       ek = 0;       dk = 0;       hk = 0;     tk = 0;   sample = 0
- 
+
  !(*---------------------   three dimensional spectra  -----------------------*)
- 
+
       do x = first_x, last_x;   do y = 1, ny;      do  z = 1, nz
 
             if( mk1(x)+mk2(y)+mk3(z) > 2./9. ) &
@@ -526,9 +526,9 @@ end  subroutine enforce_conjugate_symmetry
               tk(k) = tk(k) + duu                   !(*-- transfer sum --*)
 
       end do;   end do;  end do
- 
+
  !(************************     finished accumulation :  compute final statistics     *************************)
- 
+
     sum_ek = 0;     sum_dk = 0;     sum_hk = 0;     sum_tk = 0
     do k = nshells, 1, -1
         sum_ek  = sum_ek + ek(k)
@@ -556,7 +556,7 @@ end  subroutine enforce_conjugate_symmetry
   !(************************************************************************************************************
   !        define_field  :   define initial flow field from scratch
   !************************************************************************************************************)
-  
+
  subroutine define_field
 
     use constants_module, only : zero
@@ -580,7 +580,7 @@ end  subroutine enforce_conjugate_symmetry
                  call random_number(phi    )
                  k   = sqrt( kx(x)**2 + ky(x,y)**2 + kz(z)**2 )
                  k12 = sqrt( kx(x)**2 + ky(x,y)**2 )
-                 
+
                  if ( k == 0  .or.  mk1(x)+mk2(y)+mk3(z)>2./9.  .or.  k < klo  .or.  k > khi ) &
                      then;   f = 0
                      else;   f = sqrt( 1./(2*pi) ) / k
@@ -588,10 +588,10 @@ end  subroutine enforce_conjugate_symmetry
 
                  alpha = f * exp( (0,2) * pi * theta1 ) * cos( 2*pi * phi )
                  beta  = f * exp( (0,2) * pi * theta2 ) * sin( 2*pi * phi )
-  
+
                  if (k12 == 0) &
-                 then; un(z,1,x,y) = alpha 
-                       un(z,2,x,y) = beta 
+                 then; un(z,1,x,y) = alpha
+                       un(z,2,x,y) = beta
                        un(z,3,x,y) = 0
 
                  else; un(z,1,x,y) = ( beta * kz(z) * kx(x)   + alpha * k * ky(x,y) ) / ( k * k12 )
@@ -601,11 +601,11 @@ end  subroutine enforce_conjugate_symmetry
 
    end do;  end do; end do
  end  subroutine define_field
-             
+
  !(***********************************************************************************************************
  !          define_shifts  :    define coordinate shifts for control of 1-d alias errors
  ! ***********************************************************************************************************)
-  
+
     subroutine  define_shifts
     use constants_module, only : zero
     use run_size
@@ -646,7 +646,7 @@ end  subroutine enforce_conjugate_symmetry
   !(***********************************************************************************************************
   !       define_step  :   update time, metric, shifts for the next step
   !**********************************************************************************************************)
-  
+
   subroutine  define_step
       use run_size
       implicit none
@@ -664,7 +664,7 @@ cpu_time = cpu_time - WALLTIME()
         .and.  .01*b11*shear*dt < b12   &
         .and.  b12 <= b11*shear*dt )    then
             dt = b12 / ( b11 * shear )          !(* limit dt, hit the orthognal mesh *)
-            oflag = 1                         
+            oflag = 1
     else if ( mod (step,output_step) == 0 ) then
             oflag = 1
     end if
@@ -675,21 +675,21 @@ cpu_time = cpu_time - WALLTIME()
     if ( step == nsteps )   stop = 1                                    !(* last step? *)
 
  end   subroutine    define_step
-  
+
    !(***********************************************************************************************************
    !      define_kspace  :   define physical wavespace from computational wavespace and metric
    !**********************************************************************************************************)
-  
+
   subroutine    define_kspace
     use run_size
     implicit none
 
      integer(int64) ::  x, y, z
 
-       do  x = 1, nx/2   ;   k1(x) = x - 1;     end do  
+       do  x = 1, nx/2   ;   k1(x) = x - 1;     end do
        do  y = 1, ny/2+1 ;   k2(y) = y - 1;     end do
        do  z = 1, nz/2+1 ;   k3(z) = z - 1;     end do
- 
+
        do  y = ny/2+2, ny;   k2(y) = y - 1 - ny;    end do
        do  z = nz/2+2, nz;   k3(z) = z - 1 - nz;    end do
 
@@ -701,10 +701,10 @@ cpu_time = cpu_time - WALLTIME()
 end   subroutine    define_kspace
 
   !(***********************************************************************************************************
-  !   phase 1 :  on entry, data-plane contains velocity in wave space.  interpolate database, shifted mesh, 
+  !   phase 1 :  on entry, data-plane contains velocity in wave space.  interpolate database, shifted mesh,
   !              and proceed to physical y space .
   !************************************************************************************************************)
-  
+
   subroutine  phase1
 
       use run_size
@@ -729,12 +729,12 @@ end   subroutine    define_kspace
 	end do
 
  end   subroutine  phase1
- 
+
  !(**********************************************************************************************************
- !     phase 2 :  on entry, data-plane contains velocity in physical y space, and wave x,z space on shifted 
+ !     phase 2 :  on entry, data-plane contains velocity in physical y space, and wave x,z space on shifted
  !                mesh.  Proceed to physical x,z space,  form nonlinear terms, and return to wave x,z space.
  !***********************************************************************************************************)
- 
+
  subroutine  phase2
 
      use run_size
@@ -779,7 +779,7 @@ end   subroutine    define_kspace
            ur(z,3,y,x) = cmplx(u3r, u3i)
            ur(z,4,y,x) = cmplx(u4r, u4i)
       end do;   end do
- 
+
 !(*----------------------------  LEAVING PHYSICAL SPACE  --------------------------*)
 
       do  i = 1,  4
@@ -791,7 +791,7 @@ end   subroutine    define_kspace
       call rfft ( nx, nz, s2, nz, one, trigx, -one )
       do  z = 1, nz ;   s2(z,1) = cmplx(real(s2(z,1)),0);    end do
       call cfft ( nz, nx/2, s2, one, nz, trigz, -one )
- 
+
       do  x = 1, nx/2;  do  z = 1, nz
           ur(z,1,y,x) = kx(x) * ur(z,1,y,x) + kz(z) * s2(z,x)   - (0,1) * 2*nx*nz*shear * vs(z,x)
           ur(z,3,y,x) = kx(x) * s2(z,x)     + kz(z) * ur(z,3,y,x)
@@ -799,13 +799,13 @@ end   subroutine    define_kspace
   end do
 
  end  subroutine  phase2
- 
+
   !(***********************************************************************************************************
-  !     phase 3 :  on entry, the data-plane contains the four stresses on a shifted mesh in physical y space, 
+  !     phase 3 :  on entry, the data-plane contains the four stresses on a shifted mesh in physical y space,
   !                wave x,z space.   Return to y  wave space on unshifted mesh and complete time derivative of
   !                velocity ( not divergence free yet )
   !***********************************************************************************************************)
-  
+
   subroutine  phase3
 
       use run_size
@@ -819,7 +819,7 @@ end   subroutine    define_kspace
        do i = 1, 4
            call cfft ( ny, nz, u(1,i,x,1), nz*4*mx, one, trigy, -one )
        end do
-  
+
 !(*---------------------------   WELCOME TO FOURIER WAVE SPACE  --------------------------*)
 
        do  y = 1, ny ;   do  z = 1, nz
@@ -835,7 +835,7 @@ end   subroutine    define_kspace
   !(***********************************************************************************************************
   !   pressure :  add the gradient of a scalar, enforce continuity ( zero divergence )
   !***********************************************************************************************************)
-  
+
   subroutine  pressure
 
       use run_size
@@ -843,7 +843,7 @@ end   subroutine    define_kspace
 
      complex :: psi
      integer(int64) :: x, y, z
-  
+
       do x = first_x, last_x ;     do  y = 1, ny
 
             if ( x /= 1 )  then
@@ -889,7 +889,7 @@ subroutine   remesh
 
         do  y = 1, nx+ny ;   shift(y) =  exp( (0,-2) * pi / (nx+ny) * k1(x) * (y - 1) ) / (nx+ny);    end do
 
-        do  i = 1,  3 
+        do  i = 1,  3
             do  z = 1, nz
                 do  y = 1, ny/2           ;   u2(y,z) = u(z,i,x,y);     end do
                 do  y = ny/2+1, nx+ny/2+1 ;   u2(y,z) = 0;              end do
@@ -907,7 +907,7 @@ subroutine   remesh
                     if (mk1(x)+mk2(y)+mk3(z) > 2./9.) &
                         then;  u(z,i,x,y) = 0
                         else;  u(z,i,x,y) = u2(y,z)
-                    end if 
+                    end if
                 end do
                 do  y = ny/2+1, ny
                     if (mk1(x)+mk2(y)+mk3(z) > 2./9.) &
@@ -963,15 +963,15 @@ subroutine   remesh
  !(***********************************************************************************************************
  !                         advance :     second-order runge-kutta time step algorithm
  !***********************************************************************************************************)
- 
+
  subroutine  advance
 
      use run_size
      implicit none
 
     integer(int64) ::  x, y, z
-    real :: factor, xyfac, zfac(nz)	  !(* viscous integrating factors *) 
- 
+    real :: factor, xyfac, zfac(nz)	  !(* viscous integrating factors *)
+
     if (rkstep == 1) then
         do z = 1, nz;     zfac(z) = exp( - viscos * dt * kz(z)**2 ); end do
 

@@ -1,8 +1,8 @@
 /* syncimages2 test program
- 
+
   Copyright (c) 2012-2014, Sourcery, Inc.
   All rights reserved.
-  
+
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are met:
       * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
       * Neither the name of the Sourcery, Inc., nor the
         names of its contributors may be used to endorse or promote products
         derived from this software without specific prior written permission.
-  
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
   ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -72,9 +72,9 @@ int main(int argc, char **argv)
   /*     printf("Please insert message size\n"); */
   /*     return 1; */
   /*   } */
-  
+
   /* sscanf(argv[1],"%d",&n); */
-  
+
   /* n = (int)n/sizeof(double); */
 
   /* size = n*sizeof(double); */
@@ -85,7 +85,7 @@ int main(int argc, char **argv)
   np = _gfortran_caf_num_images (1, 1);
 
   a_d = _gfortran_caf_register(size,CAF_REGTYPE_COARRAY_STATIC,&token,&info,errmsg,255);
-  
+
   /* start_timer(); */
   images = calloc(np,sizeof(int));
 
