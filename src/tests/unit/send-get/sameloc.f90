@@ -12,7 +12,7 @@ program sameloc
   integer,dimension(9,10),codimension[*] :: m
   integer,dimension(10) :: t
   integer :: i,j
-  
+
   a = 10
   b(1:5) = 1
   b(6:10) = -1
@@ -35,11 +35,11 @@ program sameloc
 
   if(this_image() == 1) then
     c = m(1,:)[1]
-    if(any(c(:) /= t(:))) then 
+    if(any(c(:) /= t(:))) then
       call abort()
     else
       write(*,*) 'ok get row'
-    endif    
+    endif
   endif
 
   sync all
@@ -107,7 +107,7 @@ program sameloc
 
   sync all
 
-  if(this_image() == 1) then 
+  if(this_image() == 1) then
     c(10:1:-1)[1] = c(:)
     if(any(t(:) /= c(:))) then
       write(*,*) 'Error in put reversed'

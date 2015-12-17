@@ -37,10 +37,10 @@ program initialize_mpi
 
   ! Get number of ranks (np)
   call MPI_COMM_SIZE(MPI_COMM_WORLD,np,ierr)
-  
+
   ! Everybody verifies that they have a valid image number and rank
   if(me < 1 .or. np < 1) error stop "Test failed."
 
   ! Image 1 reports test success
   if(me==1) print *,"Test passed."
-end program 
+end program

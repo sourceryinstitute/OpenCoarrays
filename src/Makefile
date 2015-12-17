@@ -10,7 +10,7 @@ export
 mpi: common
 	$(MAKE) -C $@
 
-all: common single gasnet mpi # armci 
+all: common single gasnet mpi # armci
 
 common:
 	$(MAKE) -C $@
@@ -24,7 +24,7 @@ single: common
 gasnet: common
 	$(MAKE) -C $@
 
-test: single gasnet mpi #armci 
+test: single gasnet mpi #armci
 	$(MAKE) -C tests test
 test-mpi: mpi
 	$(MAKE) -C tests test-mpi

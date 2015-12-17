@@ -2,7 +2,7 @@
 !
 ! Copyright (c) 2012-2014, Sourcery, Inc.
 ! All rights reserved.
-! 
+!
 ! Redistribution and use in source and binary forms, with or without
 ! modification, are permitted provided that the following conditions are met:
 !     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
 !     * Neither the name of the Sourcery, Inc., nor the
 !       names of its contributors may be used to endorse or promote products
 !       derived from this software without specific prior written permission.
-! 
+!
 ! THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ! ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 ! WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -23,8 +23,8 @@
 ! LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ! ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 ! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- 
-module object_interface 
+
+module object_interface
 #include "compiler_capabilities.txt"
   implicit none
   private
@@ -41,7 +41,7 @@ module object_interface
     procedure :: user_defined
     procedure(output_interface), deferred :: output
 #ifndef COMPILER_LACKS_DERIVED_TYPE_IO
-    generic :: write(formatted) => output  ! Derived-type I/O 
+    generic :: write(formatted) => output  ! Derived-type I/O
 #endif /* COMPILER_LACKS_DERIVED_TYPE_IO */
   end type
 
@@ -63,13 +63,13 @@ module object_interface
 contains
 
   ! Mark the object as user-defined
-  pure subroutine mark_as_defined(this) 
+  pure subroutine mark_as_defined(this)
     class(object), intent(inout) :: this
     this%defined=.true.
   end subroutine
 
   ! Return a boolean result indicating whether this object has been initialized since its declaration
-  logical pure function user_defined(this) 
+  logical pure function user_defined(this)
     class(object), intent(in) :: this
     user_defined = this%defined
   end function

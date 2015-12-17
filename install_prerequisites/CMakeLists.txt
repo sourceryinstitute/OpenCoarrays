@@ -1,4 +1,4 @@
-# Write the script that downloads, builds, and installs OpenCoarrays prerequisites from source 
+# Write the script that downloads, builds, and installs OpenCoarrays prerequisites from source
 set(exe_dir ${CMAKE_BINARY_DIR}/bin_staging)
 set(build_script ${exe_dir}/build)
 install(

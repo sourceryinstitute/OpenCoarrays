@@ -17,7 +17,7 @@ else
   endif
 endif
 
-objects = local_field.o global_field.o 
+objects = local_field.o global_field.o
 
 $(executable): main.o $(objects) Makefile
 	$(compile) $(opt) main.o $(objects) -o $(executable) $(lib)
@@ -33,4 +33,4 @@ local_field.o: local_field.f90 Makefile
 
 .PHONY : clean
 clean :
-	-rm -f  *.o *.mod $(executable) core fort.* 
+	-rm -f  *.o *.mod $(executable) core fort.*

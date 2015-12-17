@@ -22,7 +22,7 @@ gasnet: $(EXES:.exe=.gasnet)
 
 
 .o.mpi:
-	$(MPFC) -o $@ $< -lcaf_mpi -L$(TOP)/mpi 
+	$(MPFC) -o $@ $< -lcaf_mpi -L$(TOP)/mpi
 .o.armci:
 	$(MPFC)  -o $@ $< -lcaf_armci -L$(TOP)/armci $(ARMCI_LDFLAGS)
 .o.gasnet:

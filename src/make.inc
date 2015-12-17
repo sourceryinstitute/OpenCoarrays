@@ -28,4 +28,3 @@ GASNET_CFLAGS += #-DSTRIDED
 GASNET_MAK = /home/rouson/Downloads/GASNet-1.22.4/smp-conduit/smp-par.mak
 GASNET_LDFLAGS +=$(GASNET_LIBS)
 GASNET_RUN = mpirun -np 2
-

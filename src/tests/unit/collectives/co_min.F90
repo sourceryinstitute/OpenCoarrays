@@ -17,7 +17,7 @@
 ! THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ! ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 ! WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-! DISCLAIMED. IN NO EVENT SHALL SOURCERY, INC., BE LIABLE 
+! DISCLAIMED. IN NO EVENT SHALL SOURCERY, INC., BE LIABLE
 ! FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 ! (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 ! LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
@@ -26,33 +26,33 @@
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 program main
-  use iso_fortran_env, only : error_unit 
+  use iso_fortran_env, only : error_unit
   use iso_c_binding, only : c_int,c_double
 #ifdef USE_EXTENSIONS
   use opencoarrays
 #endif
-  implicit none               
+  implicit none
   logical :: co_min_c_int_verified=.false.,co_min_c_double_verified=.false.
 
 #ifdef USE_EXTENSIONS
   if (this_image()==1) print *,"Using the extensions from the opencoarrays module."
 #endif
 
-  ! Verify that 1 is the lowest image number 
-  c_int_co_min: block 
+  ! Verify that 1 is the lowest image number
+  c_int_co_min: block
     integer(c_int) :: me
     me=this_image()
     sync all
     call co_min(me)
     if (me==1) then
       co_min_c_int_verified=.true.
-    else 
+    else
       write(error_unit,"(2(a,i2))") "co_min fails for integer(c_int) argument with result (",me,") on image",this_image()
     end if
   end block c_int_co_min
 
   ! Verify that 1.0 is the minimum real conversion of an image number
-  c_double_co_min: block 
+  c_double_co_min: block
     real(c_double) :: me
     me=real(this_image(),c_double)
     sync all
@@ -63,7 +63,7 @@ program main
       write(error_unit,"(2(a,i2))") "co_min fails for integer(c_double) argument with result (",me,") on image",this_image()
     end if
   end block c_double_co_min
-  
+
   if (.not. all([co_min_c_int_verified,co_min_c_double_verified])) error stop
   ! Wait for all images to pass the tests
   sync all

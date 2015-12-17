@@ -29,8 +29,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
  * NAME
  *   gasnet_caf
  * SYNOPSIS
- *   This program implements the LIBCAF_GASNET transport layer. 
-******  
+ *   This program implements the LIBCAF_GASNET transport layer.
+******
 */
 
 
@@ -243,30 +243,30 @@ PREFIX (init) (int *argc, char ***argv)
 	  gasnet_handlerentry_t htable[] = {
 	    { send_notify1_handler,  req_notify1_handler },
 	  };
-	  
+
 	  if (gasnet_attach (htable, sizeof (htable)/sizeof (gasnet_handlerentry_t),
 			     remoteMemorySize, GASNET_PAGESIZE))
 	    goto error;
-	  
+
 	  r_pointer = 0;
-	  
+
 	  remote_memory = malloc (sizeof (gasnet_seginfo_t) * caf_num_images);
-	  
+
 	  if (remote_memory == NULL)
 	    goto error;
-	  
+
 	  /* gasnet_seginfo_t *tt = (gasnet_seginfo_t*)*token;  */
-	  
+
 	  ierr = gasnet_getSegmentInfo (TOKEN (remote_memory), caf_num_images);
-	  
+
 	  if (unlikely (ierr))
 	    {
 	      free (remote_memory);
 	      goto error;
 	    }
-	  
+
 	}
-      
+
     }
 
   return;
@@ -572,12 +572,12 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
     {
 #ifdef STRIDED
       gasnet_memvec_t * arr_dsp_s, *arr_dsp_d;
-      
+
       void *sr = src->base_addr;
-      
+
       arr_dsp_s = malloc (size * sizeof (gasnet_memvec_t));
       arr_dsp_d = malloc (size * sizeof (gasnet_memvec_t));
-      
+
       for (i = 0; i < size; i++)
 	{
 	  ptrdiff_t array_offset_dst = 0;
@@ -592,16 +592,16 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
 	      extent = (dest->dim[j]._ubound - dest->dim[j].lower_bound + 1);
 	      stride = dest->dim[j]._stride;
 	    }
-	  
+
 	  array_offset_dst += (i / extent) * dest->dim[rank-1]._stride;
-	  
+
 	  //arr_dsp_d[i] = calloc(1,sizeof(struct gasnet_memvec_t));
-	  
+
 	  arr_dsp_d[i].addr = tm[image_index-1]+(offset+array_offset_dst)*GFC_DESCRIPTOR_SIZE (dest);
 	  arr_dsp_d[i].len = GFC_DESCRIPTOR_SIZE (dest);
-	  
+
 	  //arr_dsp_s[i] = calloc(1,sizeof(struct gasnet_memvec_t));
-	  
+
 	  if (GFC_DESCRIPTOR_RANK (src) != 0)
 	    {
 	      ptrdiff_t array_offset_sr = 0;
@@ -616,11 +616,11 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
 		  extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1);
 		  stride = src->dim[j]._stride;
 		}
-	      
+
 	      array_offset_sr += (i / extent) * src->dim[rank-1]._stride;
-	      
+
 	      /* arr_dsp_s[i] = array_offset_sr; */
-	      
+
 	      arr_dsp_s[i].addr = sr+array_offset_sr*GFC_DESCRIPTOR_SIZE (src);
 	      arr_dsp_s[i].len = GFC_DESCRIPTOR_SIZE (src);
 	    }
@@ -632,15 +632,15 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
 	  //dst_offset = offset + array_offset_dst*GFC_DESCRIPTOR_SIZE (dest);
 	  /* void *sr = (void *)((char *) src->base_addr */
 	  /* 			  + array_offset_sr*GFC_DESCRIPTOR_SIZE (src)); */
-	  
+
 	}
-      
+
       /* gasnet_puts_bulk(image_index-1, tm[image_index-1]+offset, arr_dsp_d, */
       /* 		 sr, arr_dsp_s, arr_count, size); */
       gasnet_putv_bulk(image_index-1,size,arr_dsp_d,size,arr_dsp_s);
-      
+
       free(arr_dsp_s);
-      free(arr_dsp_d);      
+      free(arr_dsp_d);
 #else
       for (i = 0; i < size; i++)
 	{
@@ -658,7 +658,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
 	    }
 	  array_offset_dst += (i / extent) * dest->dim[rank-1]._stride;
 	  dst_offset = offset + array_offset_dst*GFC_DESCRIPTOR_SIZE (dest);
-	  
+
 	  void *sr;
 	  if (GFC_DESCRIPTOR_RANK (src) != 0)
 	    {
@@ -680,7 +680,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
 	    }
 	  else
 	    sr = src->base_addr;
-	  
+
 	  gasnet_put_bulk (image_index-1, tm[image_index-1]+dst_offset, sr, dst_size);
 
 	  /* ierr = MPI_Put (sr, GFC_DESCRIPTOR_SIZE (dest), MPI_BYTE, image_index-1, */
@@ -893,7 +893,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
 	for (i = 0; i < (dst_size-src_size)/4; i++)
 	      ((int32_t*) pad_str)[i] = (int32_t) ' ';
     }
-  
+
   if (rank == 0
       || (GFC_DESCRIPTOR_TYPE (dest) == GFC_DESCRIPTOR_TYPE (src)
 	  && dst_kind == src_kind
@@ -901,21 +901,21 @@ PREFIX (get) (caf_token_t token, size_t offset,
 	  && PREFIX (is_contiguous) (dest) && PREFIX (is_contiguous) (src)))
     {
       gasnet_get_bulk (dest->base_addr, image_index-1, tm[image_index-1]+offset, size*dst_size);
-      
+
       if (pad_str)
 	memcpy ((char *) dest->base_addr + src_size, pad_str,
-		dst_size-src_size);      
+		dst_size-src_size);
     }
   else
     {
 #ifdef STRIDED
       gasnet_memvec_t * arr_dsp_s, *arr_dsp_d;
-      
+
       void *dst = dest->base_addr;
-      
+
       arr_dsp_s = malloc (size * sizeof (gasnet_memvec_t));
       arr_dsp_d = malloc (size * sizeof (gasnet_memvec_t));
-      
+
       for (i = 0; i < size; i++)
 	{
 	  ptrdiff_t array_offset_dst = 0;
@@ -931,10 +931,10 @@ PREFIX (get) (caf_token_t token, size_t offset,
 	      stride = dest->dim[j]._stride;
 	    }
 	  array_offset_dst += (i / extent) * dest->dim[rank-1]._stride;
-	  
+
 	  arr_dsp_d[i].addr = dst+array_offset_dst*GFC_DESCRIPTOR_SIZE (dest);
 	  arr_dsp_d[i].len = dst_size;
-	  
+
 	  ptrdiff_t array_offset_sr = 0;
 	  stride = 1;
 	  extent = 1;
@@ -947,16 +947,16 @@ PREFIX (get) (caf_token_t token, size_t offset,
 	      extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1);
 	      stride = src->dim[j]._stride;
 	    }
-	  
+
 	  array_offset_sr += (i / extent) * src->dim[rank-1]._stride;
-	  
+
 	  arr_dsp_s[i].addr = tm[image_index-1]+(array_offset_sr+offset)*GFC_DESCRIPTOR_SIZE (src);
 	  arr_dsp_s[i].len = src_size;
-	  
+
 	}
-      
+
       gasnet_getv_bulk(size,arr_dsp_d,image_index-1,size,arr_dsp_s);
-      
+
       free(arr_dsp_s);
       free(arr_dsp_d);
 #else
@@ -975,7 +975,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
 	      stride = dest->dim[j]._stride;
 	    }
 	  array_offset_dst += (i / extent) * dest->dim[rank-1]._stride;
-	  
+
 	  ptrdiff_t array_offset_sr = 0;
 	  stride = 1;
 	  extent = 1;
@@ -988,9 +988,9 @@ PREFIX (get) (caf_token_t token, size_t offset,
 	      extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1);
 	      stride = src->dim[j]._stride;
 	    }
-	  
+
 	  array_offset_sr += (i / extent) * src->dim[rank-1]._stride;
-	  
+
 	  size_t sr_off = offset + array_offset_sr*GFC_DESCRIPTOR_SIZE (src);
 	  void *dst = (void *) ((char *) dest->base_addr
 				+ array_offset_dst*GFC_DESCRIPTOR_SIZE (dest));
@@ -1002,13 +1002,13 @@ PREFIX (get) (caf_token_t token, size_t offset,
 	  /* 		    GFC_DESCRIPTOR_SIZE (src), MPI_BYTE, *p); */
 	  if (pad_str)
 	    memcpy ((char *) dst + src_size, pad_str, dst_size-src_size);
-	  
+
 	  if (ierr != 0)
 	    error_stop (ierr);
 	}
 #endif
     }
-  
+
   /* if (async == false) */
     /* gasnet_get_bulk (data, image_index-1, tm[image_index-1]+offset, size); */
   /* else */

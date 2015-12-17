@@ -9,30 +9,30 @@
 # Copyright (c) 2015, Sourcery Institute
 # All rights reserved.
 #
-# Redistribution and use in source and binary forms, with or without modification, 
+# Redistribution and use in source and binary forms, with or without modification,
 # are permitted provided that the following conditions are met:
-# 
-# 1. Redistributions of source code must retain the above copyright notice, this 
+#
+# 1. Redistributions of source code must retain the above copyright notice, this
 #    list of conditions and the following disclaimer.
-# 2. Redistributions in binary form must reproduce the above copyright notice, this 
-#    list of conditions and the following disclaimer in the documentation and/or 
+# 2. Redistributions in binary form must reproduce the above copyright notice, this
+#    list of conditions and the following disclaimer in the documentation and/or
 #    other materials provided with the distribution.
-# 3. Neither the names of the copyright holders nor the names of their contributors 
-#    may be used to endorse or promote products derived from this software without 
+# 3. Neither the names of the copyright holders nor the names of their contributors
+#    may be used to endorse or promote products derived from this software without
 #    specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
-# IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
-# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
-# NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
-# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+# IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+# NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-this_script=`basename $0` 
+this_script=`basename $0`
 
 usage()
 {
@@ -58,15 +58,15 @@ usage()
     exit 1
 }
 
-# If this script is invoked without arguements, print usage information 
+# If this script is invoked without arguements, print usage information
 # and terminate execution of the script.
 if [ $# == 0 ]; then
   usage | less
   exit 1
 fi
- 
-# Interpret the first argument as the name of the package to build 
-package_to_build=$1 
+
+# Interpret the first argument as the name of the package to build
+package_to_build=$1
 
 # If the package name is recognized, then set the default version.
 # Otherwise, list the allowable package names and default versions and then exit.
@@ -74,12 +74,12 @@ set_default_version()
 {
   if [[ $package_to_build == "--list" || $package_to_build == "-l" ]]; then
        printf "\n"
-       printf "The '$this_script' script can build the following packages:\n" 
+       printf "The '$this_script' script can build the following packages:\n"
   fi
   # This is a bash 3 hack standing in for a bash 4 hash (bash 3 is the lowest common
   # denominator because, for licensing reasons, OS X only has bash 3 by default.)
   # See http://stackoverflow.com/questions/1494178/how-to-define-hash-tables-in-bash
-  package_version=( 
+  package_version=(
     "cmake:3.4.0"
     "gcc:trunk"
     "mpich:3.1.4"
@@ -90,7 +90,7 @@ set_default_version()
     "make:4.1"
     "m4:1.4.17"
     "subversion:1.9.2"
-    "_unknown:0" 
+    "_unknown:0"
   )
   for package in "${package_version[@]}" ; do
      KEY="${package%%:*}"
@@ -123,7 +123,7 @@ set_default_version()
 # Interpret the second command-line argument, if present, as the package version.
 # Otherwise, set the default package version.
 if [[ -z $2 ]]; then
-  set_default_version 
+  set_default_version
   version_to_build=$default_version
 elif [[ $2 == "--default" ]]; then
   set_default_version "quietly"
@@ -155,7 +155,7 @@ check_prerequisites()
   # This is a bash 3 hack standing in for a bash 4 hash (bash 3 is the lowest common
   # denominator because, for licensing reasons, OS X only has bash 3 by default.)
   # See http://stackoverflow.com/questions/1494178/how-to-define-hash-tables-in-bash
-  package_download_mechanism=( 
+  package_download_mechanism=(
     "gcc:svn"
     "wget:ftp"
     "cmake:wget"
@@ -166,7 +166,7 @@ check_prerequisites()
     "make:ftp"
     "m4:ftp"
     "subversion:wget"
-    "_unknown:0" 
+    "_unknown:0"
   )
   for package in "${package_download_mechanism[@]}" ; do
      KEY="${package%%:*}"
@@ -184,19 +184,19 @@ check_prerequisites()
   # Default to gcc/g++ if there are no user-specified compilers in the path
   if [ -z $CC ]; then
     CC=gcc
-  fi  
+  fi
   if [ -z $CXX ]; then
     CXX=g++
-  fi 
+  fi
   if ! type make > /dev/null; then
     printf "$this_script: 'make' is required for compiling packages from source. \n"
-    printf " Please ensure that 'make' is installed and in your path.  Aborting.\n" 
+    printf " Please ensure that 'make' is installed and in your path.  Aborting.\n"
     exit 1
   fi
   # Verify that the download mechanism is in the path.
   if ! type $fetch > /dev/null; then
     printf "$this_script: the default download mechanism for $KEY is $fetch.\n"
-    printf "Please ensure that $fetch is installed and in your path.  Aborting.\n" 
+    printf "Please ensure that $fetch is installed and in your path.  Aborting.\n"
     exit 1
   fi
 }
@@ -208,7 +208,7 @@ download_if_necessary()
   if [[ $package_to_build == 'cmake' ]]; then
     major_minor="${version_to_build%.*}"
   fi
-  package_url_head=( 
+  package_url_head=(
     "gcc;svn://gcc.gnu.org/svn/gcc/"
     "wget;ftp.gnu.org:/gnu/wget/"
     "m4;ftp.gnu.org:/gnu/m4/"
@@ -219,7 +219,7 @@ download_if_necessary()
     "bison;http://ftp.gnu.org/gnu/bison/"
     "cmake;http://www.cmake.org/files/v$major_minor/"
     "subversion;http://www.eu.apache.org/dist/subversion/"
-    "_unknown;0" 
+    "_unknown;0"
   )
   for package in "${package_url_head[@]}" ; do
      KEY="${package%%;*}"
@@ -244,8 +244,8 @@ download_if_necessary()
     else
       gcc_tail=/branches/$version_to_build
     fi
-  fi  
-  package_url_tail=( 
+  fi
+  package_url_tail=(
     "gcc;$gcc_tail"
     "wget;wget-$version_to_build.tar.xz"
     "m4;m4-$version_to_build.tar.xz"
@@ -256,7 +256,7 @@ download_if_necessary()
     "make;make-$version_to_build.tar.bz2"
     "cmake;cmake-$version_to_build.tar.gz "
     "subversion;subversion-$version_to_build.tar.gz"
-    "_unknown;0" 
+    "_unknown;0"
   )
   for package in "${package_url_tail[@]}" ; do
      KEY="${package%%;*}"
@@ -285,7 +285,7 @@ download_if_necessary()
       printf "Please remove $url_tail and restart the installation to to ensure a fresh download."
       exit 1
     fi
-  else 
+  else
     if [[ "$fetch" == "svn" ]]; then
       if [[ $version_to_build == '--avail' || $version_to_build == '-a' ]]; then
         args=ls
@@ -301,8 +301,8 @@ download_if_necessary()
     fi
     if [[ $fetch == "svn" || $fetch == "git" ]]; then
       package_source_directory=$url_tail
-    else 
-      package_source_directory=$package_to_build-$version_to_build 
+    else
+      package_source_directory=$package_to_build-$version_to_build
     fi
     printf "Downloading $package_to_build $version_to_build to the following location:\n"
     printf "$download_path/$package_source_directory \n"
@@ -311,7 +311,7 @@ download_if_necessary()
     if [[ $version_to_build == '--avail' || $version_to_build == '-a' ]]; then
       # In this case, args="ls" and the list of available versions has been printed so we can move on.
       exit 1
-    fi 
+    fi
     if [ -f $download_path/$url_tail ] || [ -d $download_path/$url_tail ]; then
       echo "Download succeeded. $url_tail is in the following location:"
       echo "$download_path"
@@ -325,14 +325,14 @@ download_if_necessary()
 
 # Unpack pkg-config if the unpacked tar ball is not in the present working directory
 unpack_if_necessary()
-{ 
+{
   if [[ $fetch == "svn" || $fetch == "git" ]]; then
     package_source_directory=$url_tail
-  else 
-    printf "Unpacking $url_tail. \n" 
-    printf "Unpack command: tar xf $url_tail \n" 
-    tar xf $url_tail 
-    package_source_directory=$package_to_build-$version_to_build 
+  else
+    printf "Unpacking $url_tail. \n"
+    printf "Unpack command: tar xf $url_tail \n"
+    tar xf $url_tail
+    package_source_directory=$package_to_build-$version_to_build
   fi
 }
 
@@ -345,12 +345,12 @@ build_and_install()
   mkdir -p $build_path &&
   pushd $build_path &&
   if [[ $package_to_build == "gcc" ]]; then
-    pushd $download_path/$package_source_directory &&  
+    pushd $download_path/$package_source_directory &&
     ${PWD}/contrib/download_prerequisites &&
     popd &&
     echo "Configuring with the following command: " &&
     echo "$download_path/$package_source_directory/configure  --prefix=$install_path --enable-languages=c,c++,fortran,lto --disable-multilib --disable-werror " &&
-    $download_path/$package_source_directory/configure --prefix=$install_path --enable-languages=c,c++,fortran,lto --disable-multilib --disable-werror &&  
+    $download_path/$package_source_directory/configure --prefix=$install_path --enable-languages=c,c++,fortran,lto --disable-multilib --disable-werror &&
     make -j $num_threads bootstrap &&
     make install
   else

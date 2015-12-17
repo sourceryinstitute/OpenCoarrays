@@ -17,7 +17,7 @@
 ! THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ! ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 ! WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-! DISCLAIMED. IN NO EVENT SHALL SOURCERY, INC., BE LIABLE 
+! DISCLAIMED. IN NO EVENT SHALL SOURCERY, INC., BE LIABLE
 ! FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 ! (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 ! LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
@@ -52,11 +52,11 @@ contains
     pure function and(lhs,rhs) result(lhs_and_rhs) bind(C,name="and")
       logical, intent(in) :: lhs,rhs
       logical :: lhs_and_rhs
-      lhs_and_rhs = lhs .and. rhs 
+      lhs_and_rhs = lhs .and. rhs
     end function
   end subroutine
 
-  subroutine co_product_c_int(a)  
+  subroutine co_product_c_int(a)
     use iso_c_binding, only : c_int
     integer(c_int), intent(inout) :: a
     call co_reduce(a,product_)
@@ -64,11 +64,11 @@ contains
     pure function product_(lhs,rhs) result(lhs_x_rhs) bind(C,name="product_")
       integer(c_int), intent(in) :: lhs,rhs
       integer(c_int) :: lhs_x_rhs
-      lhs_x_rhs = lhs * rhs 
+      lhs_x_rhs = lhs * rhs
     end function
   end subroutine
 
-  subroutine co_product_c_double(a)  
+  subroutine co_product_c_double(a)
     use iso_c_binding, only : c_double
     real(c_double), intent(inout) :: a
     call co_reduce(a,product_)
@@ -76,20 +76,20 @@ contains
     pure function product_(lhs,rhs) result(lhs_x_rhs)
       real(c_double), intent(in) :: lhs,rhs
       real(c_double) :: lhs_x_rhs
-      lhs_x_rhs = lhs * rhs 
+      lhs_x_rhs = lhs * rhs
     end function
   end subroutine
 
-end module 
+end module
 
 program main
-  use iso_fortran_env, only : error_unit 
+  use iso_fortran_env, only : error_unit
   use iso_c_binding, only : c_int,c_double
   use co_intrinsics_module, only : co_all,co_product
 #ifdef USE_EXTENSIONS
   use opencoarrays
 #endif
-  implicit none               
+  implicit none
   logical :: logical_passes=.false.,c_int_passes=.false.
 
 #ifdef USE_EXTENSIONS
@@ -97,7 +97,7 @@ program main
 #endif
 
   ! Verify that every image has a "true" variable with the value .true.
-  verify_co_reduce_logical: block 
+  verify_co_reduce_logical: block
     logical,dimension(10) :: true=.true.
     sync all
     call co_all(true)
@@ -108,8 +108,8 @@ program main
     end if
   end block verify_co_reduce_logical
 
-  ! Verify the product of image number 
-  verify_co_reduce_c_int: block 
+  ! Verify the product of image number
+  verify_co_reduce_c_int: block
     integer(c_int) :: me,i
     me=this_image()
     sync all

@@ -2,10 +2,10 @@
 ! NAME
 !   sendrcv
 ! SYNOPSIS
-!   In this simple coarray Fortran program, image 1 puts its 
-!   local elements of an array coarray into the corresponding 
-!   elements of image 2.  The corresponding C program that an 
-!   OpenCoarrays-compatible compiler might generate from this 
+!   In this simple coarray Fortran program, image 1 puts its
+!   local elements of an array coarray into the corresponding
+!   elements of image 2.  The corresponding C program that an
+!   OpenCoarrays-compatible compiler might generate from this
 !   code is in doc/sample-compiler-output.c.
 ! SOURCE
 program sendrecv
@@ -17,7 +17,7 @@ program sendrecv
   real(kind=real64), allocatable :: d(:)[:]
 
   allocate(d(n)[*])
-  
+
   np = num_images()
   me = this_image()
 

@@ -17,5 +17,3 @@ echo "Running the pprof command:"
 pprof
 echo "Running the TAU paraprof analyzer command:"
 paraprof &
-
-

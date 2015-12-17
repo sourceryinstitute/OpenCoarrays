@@ -62,7 +62,7 @@ contains
           call abort()
        end if
     endif
-    
+
     ! Scalar assignment
     a = -42
     caf = -42
@@ -144,7 +144,7 @@ contains
                                a(i:i_e:i_s*i_sgn1, j:j_e:j_s*i_sgn2) = caf(i:i_e:i_s*i_sgn1, j:j_e:j_s*i_sgn2)[num_images()]
                             end if
                             sync all
-                            
+
                             if (this_image() == 1) then
                                if (any (a /= c)) then
                                   print '(*(g0))', "bounds: ", lb1,":",n+lb1-1,", ", &
@@ -167,7 +167,7 @@ contains
        end do
     end do
   end subroutine one
-  
+
   subroutine two()
     integer, parameter :: lb1 = -5, lb2 = 1
 

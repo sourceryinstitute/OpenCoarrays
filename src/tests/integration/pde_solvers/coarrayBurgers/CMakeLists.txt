@@ -19,11 +19,11 @@ endif()
 set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${CMAKE_CURRENT_SOURCE_DIR}/compiler_capabilities.txt;${library_directory}/compiler_capabilities.txt")
 
 add_executable(coarray_burgers_pde
-  main.F90 
-  global_field.F90 
-  local_field.F90 
-  ${library_directory}/ForTrilinos_assertion_utility.F90 
-  ${library_directory}/object_interface.F90 
+  main.F90
+  global_field.F90
+  local_field.F90
+  ${library_directory}/ForTrilinos_assertion_utility.F90
+  ${library_directory}/object_interface.F90
   ${library_directory}/co_object_interface.F90
 )
 target_link_libraries(coarray_burgers_pde OpenCoarrays)

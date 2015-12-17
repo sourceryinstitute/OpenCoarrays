@@ -2,7 +2,7 @@ if("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
   set(gfortran_compiler true)
 endif()
 
-if (NOT CMAKE_VERSION VERSION_LESS 3.3.1)
+if (CMAKE_VERSION VERSION_GREATER 3.2.3)
   # Detect Fortran compiler version directly
   if(gfortran_compiler AND (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 5.2))
     set(opencoarrays_aware_compiler true)

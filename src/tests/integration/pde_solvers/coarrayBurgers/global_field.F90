@@ -18,7 +18,7 @@ module global_field_module
     procedure, nopass :: grid_spacing
     procedure, private :: assign_local_field
     procedure, private :: add_local_field
-    procedure, private :: multiply 
+    procedure, private :: multiply
     generic :: operator(*) => multiply
     generic :: operator(+) => add_local_field
     generic :: assignment(=) => assign_local_field
@@ -50,7 +50,7 @@ contains
     class(global_field), intent(in) :: this
     real(real64), allocatable :: local_values(:)
     ! Requires
-    if (this%user_defined()) then 
+    if (this%user_defined()) then
       local_values = this%values
     end if
   end function
@@ -62,7 +62,7 @@ contains
           sync images(me+1)
         else if (me==num_images()) then
           sync images(me-1)
-        else 
+        else
           sync images([me-1,me+1])
         end if
       end associate

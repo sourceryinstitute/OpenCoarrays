@@ -1,5 +1,5 @@
 if ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
-  execute_process (COMMAND uname -m 
+  execute_process (COMMAND uname -m
                    OUTPUT_VARIABLE MACHINE_TYPE)
   # checking whether the machine is of type 64-bit before proceeding further
   if ("${MACHINE_TYPE}" MATCHES "x86_64")
