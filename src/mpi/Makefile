@@ -7,7 +7,7 @@ libcaf_mpi.a: mpi_caf.o helper.o ../common/caf_auxiliary.o
 	ranlib $@
 
 .c.o:
-	$(MPICC) $(CFLAGS) $(MPI_CFLAGS) -I.. -c -lpthread $< -o $@
+	$(MPICC) $(CFLAGS) $(MPI_CFLAGS) -I.. -c -pthread $< -o $@
 
 mpi_caf.o: mpi_caf.c ../libcaf.h ../libcaf-gfortran-descriptor.h
 
