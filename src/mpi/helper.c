@@ -53,7 +53,7 @@ void * comm_thread_routine(void *arg)
 
   prog_init = 1;
 
-  while(multiple_nodes)
+  while(multiple_nodes || prog_init == 1)
     {
       if ((received = recvfrom(sock, &buffer, BUFLEN, 0, (struct sockaddr *)&si_me, &slen))==-1)
 	error("recvfrom()");
@@ -101,6 +101,8 @@ static int host_to_ip(char *hostname , char *ip)
 void check_helper_init()
 {
   while(prog_init == 0 && multiple_nodes) {;}
+  /* Ack for helper routine */
+  prog_init = 0;
 }
 
 void neigh_list_1st()
