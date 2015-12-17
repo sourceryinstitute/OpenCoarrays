@@ -9,14 +9,15 @@ if ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
     "CMAKE_CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
     " == CMAKE_CURRENT_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}"
     "\nThis archive does not support in-source builds:\n"
-    "Please delete the CMakeCache.txt file and the CMakeFiles/ directory under"
+    "You must now delete the CMakeCache.txt file and the CMakeFiles/ directory under"
     "the 'src' source directory or you will not be able to configure correctly!"
     "\nYou must now run something like:\n"
     "  $ rm -r CMakeCache.txt CMakeFiles/"
     "\n"
-    "Please build in a new directory other than top-level opencoarrays source directory such as\n"
-    "  $ mkdir build\n"
-    "  $ cd build\n"
+    "Please create a directory outside the opencoarrays source tree and build under that outside directory "
+    "in a manner such as\n"
+    "  $ mkdir build-opencarrays\n"
+    "  $ cd build-opencoarrays\n"
     "  $ CC=mpicc FC=mpif90 cmake <path-to-opencoarrays-source-directory> -DCMAKE_INSTALL_PREFIX=<path-to-install-directory>\n"
     "\nsubstituting the appropriate syntax for your shell (the above line assumes the bash shell)."
     )
@@ -25,6 +26,7 @@ endif()
 #Report untested Fortran compiler unless explicitly directed to build all examples.
 if ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "GNU" )
   set(gfortran_compiler true)
+# add_definitions(-DPREFIX_NAME=_gfortran_caf_)
 elseif ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "Cray" )
   set(cray_compiler true)
   message(WARNING
@@ -52,7 +54,7 @@ elseif ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "PGI" )
   add_definitions(-DCOMPILER_SUPPORTS_CAF_INTRINSICS)
 else()
   message(WARNING 
-   "\n"
+    "\n"
     "Attempting to build with untested Fortran compiler: ${CMAKE_Fortran_COMPILER_ID}. "
     "Please report any failures to opencoarrays@googlegroups.com\n\n"
   )
@@ -60,7 +62,7 @@ endif()
 
 if (NOT CMAKE_VERSION VERSION_LESS 3.3.1) 
   # Detect Fortran compiler version directly
-  if(gfortran_compiler AND (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 5))
+  if(gfortran_compiler AND (CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 5.0.0))
     set(opencoarrays_aware_compiler true)
     add_definitions(-DPREFIX_NAME=_gfortran_caf_)
   else()
@@ -69,7 +71,7 @@ if (NOT CMAKE_VERSION VERSION_LESS 3.3.1)
   endif()
 else()
   # Use the C compiler version as a proxy for the Fortran compiler version (won't work with NAG)
-  if(gfortran_compiler AND (NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 5))
+  if(gfortran_compiler AND (CMAKE_C_COMPILER_VERSION VERSION_GREATER 5.0.0))
     set(opencoarrays_aware_compiler true)
     add_definitions(-DPREFIX_NAME=_gfortran_caf_)
   else()
@@ -89,7 +91,7 @@ CHECK_Fortran_SOURCE_COMPILES("
 " Check_Simple_Coarray_Fortran_Source_Compiles)
 
 #if (gfortran_compiler)
-  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src )
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 #elseif(portland_group_compiler)
 #  if ( DEFINED ENV{PGI_MPI} )
 #   include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src ENV{PGI_MPI}/include")
@@ -171,7 +173,7 @@ if(opencoarrays_aware_compiler)
   add_mpi_test(coarray_burgers_pde 2 ${tests_root}/integration/pde_solvers/coarrayBurgers/coarray_burgers_pde)
   add_mpi_test(co_heat 2 ${tests_root}/integration/pde_solvers/coarrayHeatSimplified/co_heat)
 
-  execute_process (COMMAND uname -m 
+  execute_process (COMMAND uname -m
                    OUTPUT_VARIABLE MACHINE_TYPE)
   if ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux" )
     if ("${MACHINE_TYPE}" MATCHES "x86_64")

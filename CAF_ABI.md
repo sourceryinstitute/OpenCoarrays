@@ -1,83 +1,74 @@
-DRAFT DOCUMENT FOR A COARRAY API DEFINTION
+[This document is formatted with GitHub-Flavored Markdown.              ]:# 
+[For better viewing, including hyperlinks, read it online at            ]:# 
+[https://github.com/sourceryinstitute/opencoarrays/blob/master/CAF_API.md]:#
 
-NOTE: The actual function names will have some PREFIX to avoid name clashes.
-This prefix can be vendor specific.
+# OpenCoarrays Application Binary Interface (ABI) #
 
+* [To Do]
+* [Implementation status]
+* [Definitions and types]
+* [Provided functions]
 
-Content
-0  TODO
-1  Implementation status
-2  Description of defines and types used in the API
-3  Description of the functions provided by the API
+This document describes the OpenCoarrays application binary interface (ABI) through 
+which a compiler accesses coarray functionality.  As such, the target audience for 
+this document is compiler developers.  Most application developers need only write
+standard-conforming Fortran 2008 or 2015 and compile their code with the OpenCoarrays
+'caf' compiler wrapper without knowledge of the ABI.  
 
+The actual function names in this document have a PREFIX in the source code to avoid 
+name clashes.  The prefix can be vendor-specific.
 
-0  TODO
+## <a name="to-do">To Do</a> ##
 
-- Discuss the current draft
-- Add missing functions of the current gfortran implementation
-- Address the TODO items
-- Extend the functions to match a sensible set
-- Update the implementation status, especially for the ARMCI library
+* Discuss the current draft
+* Add missing functions of the current gfortran implementation
+* Address the TODO items
+* Extend the functions to match a sensible set
+* Update the implementation status, especially for the ARMCI library
 
+## <a name="implementation-status">Implementation status</a> ##
 
-
-1  Implementation status
-
-The library implementation in this directory should be API compatible
+The library implementation in this directory should be ABI-compatible
 with the wording below, except for some "int errmsg_len" vs. size_t
-changes which have not yet been done.
+changes that have not yet been implemented.
 
-gfortran development is done in GCC's fortran-caf branch and should
-also match - with the same exception - the API described here.
+## <a name="definitions-and-types">Definitions and types</a> ##
 
-In both cases, the implementations might be stubs and not fully
-working or not fully adhering  and should
-also match - with the same exception - the API described here.
-
-In both cases, the implementations might be stubs and not fully
-working or not fully adhering to the specification. See also individual
-notes below.
-
-
-
-2  Description of defines and types used in the API
-
-
-2.1  caf_token_t
+### 2.1  caf_token_t ###
 
 Typedef of type "void *" on the compiler side. Can be any data
 type on the library side.
 
-
-2.2  caf_register_t
+### 2.2  caf_register_t ###
 
 Type indicating which kind of coarray variable should be registered.
 
-typedef enum caf_register_t {
-  CAF_REGTYPE_COARRAY_STATIC,
-  CAF_REGTYPE_COARRAY_ALLOC,
-  CAF_REGTYPE_LOCK_STATIC,
-  CAF_REGTYPE_LOCK_ALLOC
-  CAF_REGTYPE_CRTITICAL
-}
-caf_register_t;
+    typedef enum caf_register_t {
+      CAF_REGTYPE_COARRAY_STATIC,
+      CAF_REGTYPE_COARRAY_ALLOC,
+      CAF_REGTYPE_LOCK_STATIC,
+      CAF_REGTYPE_LOCK_ALLOC,
+      CAF_REGTYPE_CRITICAL,
+      CAF_REGTYPE_EVENT_STATIC,
+      CAF_REGTYPE_EVENT_ALLOC
+    }
+    caf_register_t;
 
 TODO:
   Check whether this set is complete and makes sense
 
 
-2.3  caf_token_t
+### 2.3  caf_token_t ###
 
-In terms of the processor, some opaque pointer, which is used to identify a
-coarray.  The exact content is implementation defined by the library.
+In terms of the processor, an opaque pointer, which is used to identify a
+coarray.  The exact content is implementation-defined by the library.
 
+### 2.4  Stat values ###
 
-2.4  Stat values
-
-#define STAT_UNLOCKED           0
-#define STAT_LOCKED             1
-#define STAT_LOCKED_OTHER_IMAGE 2
-#define STAT_STOPPED_IMAGE      6000
+    #define STAT_UNLOCKED           0
+    #define STAT_LOCKED             1
+    #define STAT_LOCKED_OTHER_IMAGE 2
+    #define STAT_STOPPED_IMAGE      6000
 
 TODO:
   Define more, allow room for lib-specific values, update for TS18508.
@@ -86,13 +77,11 @@ TODO:
   values.
 
 
+## <a name="provided-functions">Provided functions</a> ##
 
-3. Description of the API functions
+### 3.1  Initialization function ###
 
-
-3.1  Initialization function
-
-     void caf_init (int *argc, char ***argv)
+    void caf_init (int *argc, char ***argv)
 
 This function shall be called at startup of the program before the Fortran main
 program.  It takes as arguments the command-line arguments of the program. It is
@@ -100,14 +89,14 @@ permitted to pass to NULL pointers as argument; if non-NULL, the library is
 permitted to modify the arguments.
 
 Arguments:
-  argc  intent(inout) An integer pointer with the number of arguments
-        passed to the program or NULL.
-  argv  intent(inout) A pointer to an array of strings with the
-        command-line arguments or NULL.
+    argc  intent(inout) An integer pointer with the number of arguments
+          passed to the program or NULL.
+    argv  intent(inout) A pointer to an array of strings with the
+          command-line arguments or NULL.
 
 NOTE:
-  The function is modelled after the initialization function of the MPI
-  (Message Passing Interface) specification.  Due to the way coarray
+  The function is modelled after the initialization function of the
+  Message Passing Interface (MPI) specification.  Due to the way coarray
   registration (3.5) works, it might not be the first call to the libaray. If
   the main program is not written in Fortran and only a library uses coarrays,
   it can happen that this function is never called.  Therefore, it is
@@ -121,7 +110,7 @@ GCC:
   when the command-line intrinsics are invoked.
 
 
-3.2  Finalization function
+### 3.2  Finalization function ###
 
      void caf_finish (void)
 
@@ -142,7 +131,7 @@ GCC:
   compiled with the -fcoarray=lib option.
 
 
-3.3 Querying the image number
+### 3.3 Querying the image number ###
 
     int caf_this_image (int distance)
 
@@ -161,7 +150,7 @@ GCC:
 
 
 
-3.4 Querying the maximal number of images
+### 3.4 Querying the maximal number of images ###
 
     int caf_num_images (int distance, int failed)
 
@@ -184,7 +173,7 @@ GCC:
 
 
 
-3.5 Registering coarrays
+### 3.5 Registering coarrays ###
 
     void *caf_register (size_t size, caf_register_t type, caf_token_t *token,
                         int *stat, char *errmsg, int errmsg_len)
@@ -249,7 +238,7 @@ TODO:
 
 
 
-3.6  Deregistering coarrays
+### 3.6  Deregistering coarrays ###
 
     void caf_deregister (const caf_token_t *token, int *stat, char *errmsg,
                          size_t errmsg_len)
@@ -279,8 +268,7 @@ TODO:
    Change errmsg_len to size_t
 
 
-
-3.7  Sending data from a local image to a remote image
+### 3.7  Sending data from a local image to a remote image ###
 
    void caf_send (caf_token_t token, size_t offset, int image_index,
                   gfc_descriptor_t *dest, caf_vector_t *dst_vector,
@@ -334,7 +322,7 @@ OTHER TODOs:
 
 
 
-3.8  Getting data from a remote image
+### 3.8  Getting data from a remote image ###
 
    void caf_get_desc (caf_token_t token, size_t offset,
                       int image_index, gfc_descriptor_t *src,
@@ -374,7 +362,7 @@ GCC:
   real/complex kinds 10 and 16, which have the same byte size.
 
 
-3.9  Sending data between remote images
+### 3.9  Sending data between remote images ###
 
    void caf_sendget (caf_token_t dst_token, size_t dst_offset,
                      int dst_image_index, gfc_descriptor_t *dest,
@@ -426,9 +414,9 @@ GCC:
 
 
 
-3.10  Barriers
+### 3.10  Barriers ###
 
-3.10.1  All-Image Barrier
+### 3.10.1  All-Image Barrier ###
 
    void caf_sync_all (int *stat, char *errmsg, size_t errmsg_len)
 
@@ -452,7 +440,7 @@ GCC:
 
 
 
-3.10.2  Barrier for Selected Images
+### 3.10.2  Barrier for Selected Images ###
 
    void sync_images (int count, int images[], int *stat,
                      char *errmsg, size_t errmsg_len)
@@ -479,9 +467,7 @@ GCC:
   Implemented in GCC 4.x using an int argument for the error-string length.
   Currently, size_t is not implemented.
 
-
-
-3.11  Error abort
+### 3.11  Error abort ###
 
    void error_stop_str (const char *string, int32_t str_len)
    void error_stop (int32_t exit_error_code)
@@ -495,9 +481,9 @@ TODO
     for ERROR STOP does not.
 
 
-3.11  Locking and unlocking
+### 3.11  Locking and unlocking ###
 
-3.11.1  Locking a lock variable
+#### 3.11.1  Locking a lock variable ####
 
    void caf_lock (caf_token_t token, size_t index, int image_index,
                   int *aquired_lock, int *stat, char *errmsg,
@@ -536,7 +522,7 @@ TODO:
    Change errmsg_len to size_t
 
 
-3.11.2  Unlocking a lock variable
+#### 3.11.2  Unlocking a lock variable ####
 
    void caf_unlock (caf_token_t token, size_t index, int image_index,
                     int *stat, char *errmsg, int errmsg_len)
@@ -567,3 +553,10 @@ GCC:
 
 TODO:
    Change errmsg_len to size_t
+
+[Hyperlinks]:#
+
+[To Do]: #to-do
+[Implementation status]: #implementation-status
+[Definitions and types]: #definitions-and-types
+[Provided functions]: #provided-functions
