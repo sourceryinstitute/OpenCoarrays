@@ -7,8 +7,9 @@ env:
     - MPICH_URL_HEAD="http://www.mpich.org/static/downloads/$MPICH_VER"
     - MPICH_URL_TAIL="mpich-${MPICH_VER}.tar.gz"
     - MPICH_DIR="$HOME/.local/usr/mpich"
-    - OSX_PACKAGES="gcc cmake mpich"
-    # homebrew bug requires MPI to be built from source, for now
+    - MPICH_BOT_URL_HEAD="https://github.com/sourceryinstitute/opencoarrays/files/64308/"
+    - MPICH_BOT_URL_TAIL="mpich-3.2.yosemite.bottle.1.tar.gz"
+    - OSX_PACKAGES="gcc cmake"
 
 matrix:
   include:
@@ -17,7 +18,8 @@ matrix:
       sudo: false
       cache:
         directories:
-          "$CACHE"
+          - "$CACHE"
+          - "$HOME/.cache/pip"
       addons:
         apt:
           sources:
@@ -26,13 +28,14 @@ matrix:
           packages:
             - gcc-5
             - gfortran-5
+            - binutils
             - cmake-data
             - cmake
 
 before_install:
   - |
     if [[ $TRAVIS ]] && [[ "X$TRAVIS_OS_NAME" = "Xosx" ]]; then
-      brew update 2>brewupdate.err | tee brewupdate.log | head -n 1
+      export PATH="$PATH:$HOME/Library/Python/2.7/bin"
     else
       [[ -d "$CACHE/bin" ]] || mkdir -p "$CACHE/bin"
       [[ -d "$MPICH_DIR" ]] || mkdir -p "$MPICH_DIR"
@@ -47,10 +50,21 @@ before_install:
 install:
   - |
     if [[ $TRAVIS ]] && [[ "X$TRAVIS_OS_NAME" = "Xosx" ]]; then
+    brew update > /dev/null
+
       for pkg in $OSX_PACKAGES; do
-        [[ "$(brew ls --versions $pkg)" ]] || brew install $pkg
-        brew outdated $pkg || brew upgrade $pkg
+        [[ "$(brew ls --versions $pkg)" ]] || brew install --force-bottle $pkg
+        brew outdated $pkg || brew upgrade --force-bottle $pkg
       done
+      export FC=gfortran-5
+      export CC=gcc-5
+      if ! [[ "$(brew ls --versions mpich)" ]]; then
+        wget ${MPICH_BOT_URL_HEAD}${MPICH_BOT_URL_TAIL}
+        brew install --force-bottle ${MPICH_BOT_URL_TAIL}
+        if ! [[ "$(brew ls --versions mpich)" ]]; then
+          brew install --force-bottle mpich
+        fi
+      fi
     else
       if ! ( [[ -x "$HOME/.local/bin/mpif90" ]] && [[ -x "$HOME/.local/bin/mpicc" ]] ); then
         # mpich install not cached
@@ -87,6 +101,22 @@ before_script:
 script:
   - mkdir cmake-build
   - cd cmake-build
-  - cmake ..
+  - cmake -DCMAKE_INSTALL_PREFIX:PATH="$HOME/OpenCoarrays" -DCMAKE_Fortran_FLAGS='-ftest-coverage -fprofile-arcs -O0' -DCMAKE_C_FLAGS='-fprofile-arcs -ftest-coverage -O0' ..
   - make -j 4
   - ctest --verbose
+  - make install
+  - cd ..
+
+after_success:
+  - find . -name '*.gcno' -print
+  - find . -name '*.gcda' -print
+  - gcov-5 --version
+  - bash <(curl -s https://codecov.io/bash) -x $(which gcov-5)
+
+notifications:
+  webhooks:
+    urls:
+      - $GITTERHOOK_URL
+    on_success: change  # options: [always|never|change]
+    on_failure: always
+    on_start: always

@@ -1,5 +1,7 @@
 if (opencoarrays_aware_compiler)
   add_subdirectory(coarrayHelloWorld)
-  add_subdirectory(dist_transpose )
+  if (NOT (DEFINED ENV{TRAVIS}))
+    add_subdirectory(dist_transpose )
+  endif()
   add_subdirectory(pde_solvers)
 endif()
