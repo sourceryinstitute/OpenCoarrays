@@ -9,7 +9,7 @@ description=\
 use_case=\
 "Use case:
 
-    Force git to track otherwise empty directories such as doc/dependency_tree/opencoarrays, 
+    Force git to track otherwise empty directories such as doc/dependency_tree/opencoarrays,
     which exists solely for purposes of displaying the OpenCoarrays dependency tree via the
     command 'tree opencoarrays'."
 #
@@ -59,7 +59,7 @@ usage()
     exit 1
 }
 
-# If this script is invoked without arguements, print usage information 
+# If this script is invoked without arguements, print usage information
 # and terminate execution of the script.
 if [[ $# == 0 || "$1" == "-h" || "$1" == "--help" ]]; then
   usage | less
@@ -69,5 +69,5 @@ fi
 # Interpret the first argument as the name of the directory tree to fill
 export path_to_modify=$1
 
-# Create an empty ".gitkeep" file in all empty subdirectories 
+# Create an empty ".gitkeep" file in all empty subdirectories
 find $path_to_modify -type d -empty -exec touch {}/.gitkeep \;

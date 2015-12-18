@@ -10,7 +10,7 @@ export TAU_CALLPATH=1
 export TAU_CALLPATH_DEPTH=100
 #export TAU_SAMPLING=1
 
-for i in 1 2 4 
+for i in 1 2 4
 do
   echo "Running the code:"
   mpirun -np ${i} ./burgers

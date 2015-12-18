@@ -54,7 +54,7 @@
 #
 # __________ Process command-line arguments and environment variables _____________
 
-this_script=`basename $0` 
+this_script=`basename $0`
 
 # Interpret the first command-line argument, if present, as the OpenCoarrays installation path.
 # Otherwise, install in a subdirectory of the present working directory.
@@ -72,7 +72,7 @@ else
   num_threads=$2
 fi
 
-# Verify that the top-level OpenCoarrays source directory is either present working directory 
+# Verify that the top-level OpenCoarrays source directory is either present working directory
 # or is specified by a valid in the OPENCOARRAYS_SRC_DIR environment variable
 if [[ -d "$OPENCOARRAYS_SRC_DIR" ]]; then
   opencoarrays_src_dir=$OPENCOARRAYS_SRC_DIR
@@ -170,7 +170,7 @@ find_or_install()
     package_in_path=false
   fi
 
-  package_install_path=`./build $package --default --query-path` 
+  package_install_path=`./build $package --default --query-path`
 
   printf "$this_script: Checking whether $executable is in the directory in which $this_script\n"
   printf "            installs it by default and whether the user has executable permission for it..."
@@ -187,13 +187,13 @@ find_or_install()
 
   if [[ "$package" == "cmake" ]]; then
 
-    # We arrive here only by the explicit, direct call 'find_or_install cmake' inside 
+    # We arrive here only by the explicit, direct call 'find_or_install cmake' inside
     # the build_opencoarrays function. Because there is no possibility of arriving here
     # by recursion (no packages depend on cmake except OpenCoarrays, which gets built
     # after all dependencies have been found or installed), cmake must add itself to
     # the dependency stack if no acceptable cmake is found.
 
-    # Every branch that discovers an acceptable pre-existing installation must set the 
+    # Every branch that discovers an acceptable pre-existing installation must set the
     # CMAKE environment variable. Every branch must also manage the dependency stack.
 
     if [[ "$script_installed_package" == true ]]; then
@@ -213,7 +213,7 @@ find_or_install()
         stack_push dependency_exe $package "none"
         stack_push dependency_path `./build cmake --default --query-path` "none"
 
-      else 
+      else
         printf "no.\n"
         printf "$this_script: Using the $executable found in the PATH.\n"
         export CMAKE=$executable
@@ -232,13 +232,13 @@ find_or_install()
 
   elif [[ $package == "mpich" ]]; then
 
-    # We arrive here only by the explicit, direct call 'find_or_install mpich' inside 
+    # We arrive here only by the explicit, direct call 'find_or_install mpich' inside
     # the build_opencoarrays function. Because there is no possibility of arriving here
     # by recursion (no packages depend on mpich except OpenCoarrays, which gets built
     # after all dependencies have been found or installed), mpich must add itself to
     # the dependency stack if no acceptable mpich is found.
 
-    # Every branch that discovers an acceptable pre-existing installation must set the 
+    # Every branch that discovers an acceptable pre-existing installation must set the
     # MPIFC, MPICC, and MPICXX environment variables. Every branch must also manage the
     # dependency stack.
 
@@ -302,7 +302,7 @@ find_or_install()
     # We arrive when the 'elif [[ $package == "mpich" ]]' block pushes "gcc" onto the
     # the dependency_pkg stack, resulting in the recursive call 'find_or_install gcc'
 
-    # Every branch that discovers an acceptable pre-existing installation must set the 
+    # Every branch that discovers an acceptable pre-existing installation must set the
     # FC, CC, and CXX environment variables. Every branch must also manage the dependency stack.
 
     if [[ "$script_installed_package" == true ]]; then
@@ -373,11 +373,11 @@ find_or_install()
 
   elif [[ $package == "flex" ]]; then
 
-    # We arrive here only if the 'elif [[ $package == "gcc" ]]' block has pushed "flex" 
+    # We arrive here only if the 'elif [[ $package == "gcc" ]]' block has pushed "flex"
     # onto the dependency_pkg stack, resulting in the recursive call 'find_or_install flex'.
     # flex therefore does not need to add itself to the stack.
 
-    # Every branch that discovers an acceptable pre-existing installation must set the 
+    # Every branch that discovers an acceptable pre-existing installation must set the
     # FLEX environment variable. Every branch must also manage the dependency stack.
 
     if [[ "$script_installed_package" == true ]]; then
@@ -432,7 +432,7 @@ find_or_install()
     # We arrive when the 'elif [[ $package == "flex" ]]' block pushes "bison" onto the
     # the dependency_pkg stack, resulting in the recursive call 'find_or_install bison'
 
-    # Every branch that discovers an acceptable pre-existing installation must set the 
+    # Every branch that discovers an acceptable pre-existing installation must set the
     # YACC environment variable. Every branch must also manage the dependency stack.
 
     if [[ "$script_installed_package" == true ]]; then
@@ -487,7 +487,7 @@ find_or_install()
       stack_push dependency_path "none"
     fi
 
-  else 
+  else
     if [[ -z "$package" ]]; then
       printf "$this_script: empty package name passed to find_or_install function. [exit 50]\n"
       exit 50
@@ -813,5 +813,5 @@ else # Find or install prerequisites and install OpenCoarrays
   CMAKE=$CMAKE build_opencoarrays 2>&1 | tee ../$installation_record
   report_results 2>&1 | tee -a ../$installation_record
 
-fi 
+fi
 # ____________________________________ End of Main Body ____________________________________________
