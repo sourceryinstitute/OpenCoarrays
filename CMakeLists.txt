@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 
 #Name project and specify source languages
-project(opencoarrays VERSION 1.2.2 LANGUAGES C Fortran)
+project(opencoarrays VERSION 2.0.0 LANGUAGES C Fortran)
 
 #Print an error message on an attempt to build inside the source directory tree:
 if ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
@@ -27,6 +27,31 @@ endif()
 if ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "GNU" )
   set(gfortran_compiler true)
 # add_definitions(-DPREFIX_NAME=_gfortran_caf_)
+elseif ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "Cray" )
+  set(cray_compiler true)
+  message(WARNING
+   "\n"
+   "Support for the detected compiler (${CMAKE_Fortran_COMPILER_ID}) is experimental."
+   "Please report any failures to opencoarrays@googlegroups.com"
+  )
+  # This applies to CCE 8.4 beta or earlier
+  add_definitions(-DCOMPILER_LACKS_C_PTRDIFF_T)
+  add_definitions(-DCOMPILER_LACKS_C_SIZEOF_ASSUMED_RANK)
+  add_definitions(-DCOMPILER_PROVIDES_MPI)
+elseif ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "PGI" )
+  set(portland_group_compiler true)
+  message(WARNING
+   "\n"
+   "Support for the detected compiler (${CMAKE_Fortran_COMPILER_ID}) is experimental. "
+   "Please report any failures to opencoarrays@googlegroups.com"
+  )
+  add_definitions(-DCOMPILER_LACKS_C_PTRDIFF_T)
+  add_definitions(-DCOMPILER_LACKS_SAVE_BIND_C)
+  add_definitions(-DCOMPILER_LACKS_ASSUMED_RANK)
+  add_definitions(-DCOMPILER_LACKS_DO_CONCURRENT)
+  add_definitions(-DCOMPILER_LACKS_C_SIZEOF_ASSUMED_RANK)
+  add_definitions(-DCMAKE_VERBOSE_MAKEFILE)
+  add_definitions(-DCOMPILER_SUPPORTS_CAF_INTRINSICS)
 else()
   message(WARNING
     "\n"
@@ -87,7 +112,18 @@ CHECK_Fortran_SOURCE_COMPILES("
   end program
 " Check_Simple_Coarray_Fortran_Source_Compiles)
 
+#if (gfortran_compiler)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
+#elseif(portland_group_compiler)
+#  if ( DEFINED ENV{PGI_MPI} )
+#   include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src ENV{PGI_MPI}/include")
+#  else()
+#    message(FATAL_ERROR
+#      "To build with the ${CMAKE_Fortran_COMPILER_ID}, please set the PGI_MPI environment"
+#      "variable to the path of the top-level Portland Group MPI installation directory."
+#    )
+#  endif()
+#endif()
 
 add_subdirectory(src)
 add_subdirectory(install_prerequisites)
@@ -115,7 +151,9 @@ install(
 )
 
 add_library(OpenCoarrays INTERFACE)
-target_compile_options(OpenCoarrays INTERFACE -fcoarray=lib)
+if(gfortran_compiler)
+  target_compile_options(OpenCoarrays INTERFACE -fcoarray=lib)
+endif()
 target_link_libraries(OpenCoarrays INTERFACE caf_mpi)
 
 install(DIRECTORY  ${CMAKE_BINARY_DIR}/mod DESTINATION .)
