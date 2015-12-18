@@ -35,8 +35,7 @@ else()
   )
 endif()
 
-
-if (CMAKE_VERSION VERSION_GREATER 3.2.3)
+if (NOT (CMAKE_VERSION VERSION_LESS 3.3.1))
   # Detect Fortran compiler version directly
   if(gfortran_compiler AND (CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 5.0.0))
     set(opencoarrays_aware_compiler true)
