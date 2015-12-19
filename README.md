@@ -4,6 +4,11 @@
 
 # OpenCoarrays #
 
+[![CI Build Status][build img]](https://travis-ci.org/sourceryinstitute/opencoarrays)
+[![GitHub release][release img]](https://github.com/sourceryinstitute/opencoarrays/releases/latest)
+[![GitHub license][license img]](COPYRIGHT-BSD3)
+<!-- [![Release Downloads][download img]](https://github.com/sourceryinstitute/opencoarrays/releases) -->
+
 * [Overview]
 * [Downloads]
 * [Compatibility]
@@ -80,10 +85,9 @@ We gratefully acknowledge support from the following institutions:
 
 
 [OpenCoarrays]: http://www.opencoarrays.org
-[ABI]: https://gcc.gnu.org/onlinedocs/gfortran/Function-ABI-Documentation.html#Function-ABI-Documentation
+[ABI]: https://gcc.gnu.org/onlinedocs/gfortran/Coarray-Programming.html#Coarray-Programming
 [TS 18508]: http://isotc.iso.org/livelink/livelink?func=ll&objId=16769292&objAction=Open
 [MPI]: http://www.mpi-forum.org
-[ABI]: https://gcc.gnu.org/onlinedocs/gfortran/Function-ABI-Documentation.html#Function-ABI-Documentation
 [GCC]: http://gcc.gnu.org
 [gfortran]: https://gcc.gnu.org/wiki/GFortran
 [opencoarrays module]: ./src/extensions/opencoarrays.F90
@@ -102,9 +106,16 @@ We gratefully acknowledge support from the following institutions:
 [STATUS.md]: ./STATUS.md
 [GETTING_STARTED.md]: ./GETTING_STARTED.md
 [Google Groups]: https://groups.google.com
-[Google Group]: https://groups.google.com/forum/#!forum/opencoarrays/join
+[Google Group]: https://groups.google.com/forum/#!forum/opencoarrays
+[subscribing]: https://groups.google.com/forum/#!forum/opencoarrays/join
 [opencoarrays@googlegroups.com]: mailto:opencoarrays@googlegroups.com
 [Google Summer of Code]: https://www.google-melange.com
 [OpenCoarrays Google Group]: https://groups.google.com/forum/#!forum/opencoarrays)
 [Issues]: https://github.com/sourceryinstitute/opencoarrays/issue
 [Releases]: https://github.com/sourceryinstitute/opencoarrays/releases
+
+[build img]: https://img.shields.io/travis-ci/sourceryinstitute/opencoarrays/master.svg?style=flat-square "Travis-CI badge image source"
+[CI Master Branch]: https://travis-ci.org/sourceryinstitute/opencoarrays?branch=master "Travis-CI builds"
+[download img]: https://img.shields.io/github/downloads/sourceryinstitute/opencoarrays/total.svg?style=flat-square "Download count image source"
+[license img]: https://img.shields.io/github/license/sourceryinstitute/opencoarrays.svg?style=flat-square "BSD-3 License badge"
+[release img]: https://img.shields.io/github/release/sourceryinstitute/opencoarrays.svg?style=flat-square "Latest release badge"
