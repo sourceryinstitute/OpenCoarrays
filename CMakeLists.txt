@@ -1,5 +1,11 @@
 cmake_minimum_required(VERSION 3.0)
 
+# Set the type/configuration of build to perform
+set ( CMAKE_CONFIGURATION_TYPES "Debug" "Release" "MinSizeRel" "RelWithDebInfo" "CodeCoverage" )
+set ( CMAKE_BUILD_TYPE "Release"
+  CACHE STRING "Select which configuration to build." )
+set_property ( CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${CMAKE_CONFIGURATION_TYPES} )
+
 #Name project and specify source languages
 project(opencoarrays VERSION 1.2.2 LANGUAGES C Fortran)
 
@@ -26,7 +32,11 @@ endif()
 #Report untested Fortran compiler unless explicitly directed to build all examples.
 if ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "GNU" )
   set(gfortran_compiler true)
-# add_definitions(-DPREFIX_NAME=_gfortran_caf_)
+  # add_definitions(-DPREFIX_NAME=_gfortran_caf_)
+  set ( CMAKE_C_FLAGS_CODECOVERAGE "-fprofile-arcs -ftest-coverage -O0"
+    CACHE STRING "Code coverage C compiler flags")
+  set ( CMAKE_Fortran_FLAGS_CODECOVERAGE "-fprofile-arcs -ftest-coverage -O0"
+    CACHE STRING "Code coverage C compiler flags")
 else()
   message(WARNING
     "\n"
@@ -137,7 +147,9 @@ if(opencoarrays_aware_compiler)
   add_mpi_test(register_rename_me 2 ${tests_root}/unit/init_register/register_rename_me)
   add_mpi_test(register_rename_me_too 2 ${tests_root}/unit/init_register/register_rename_me_too)
   add_mpi_test(allocate_as_barrier 2 ${tests_root}/unit/init_register/allocate_as_barrier)
-  add_mpi_test(allocate_as_barrier_proc 2 ${tests_root}/unit/init_register/allocate_as_barrier_proc)
+  if (NOT ( APPLE AND ( DEFINED ENV{TRAVIS} ) ) )
+    add_mpi_test(allocate_as_barrier_proc 2 ${tests_root}/unit/init_register/allocate_as_barrier_proc)
+  endif ()
   add_mpi_test(get_array 2 ${tests_root}/unit/send-get/get_array)
   add_mpi_test(send_array 2 ${tests_root}/unit/send-get/send_array)
   add_mpi_test(get_with_offset_1d 2 ${tests_root}/unit/send-get/get_with_offset_1d)

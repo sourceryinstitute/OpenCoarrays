@@ -10,6 +10,7 @@ env:
     - MPICH_BOT_URL_HEAD="https://github.com/sourceryinstitute/opencoarrays/files/64308/"
     - MPICH_BOT_URL_TAIL="mpich-3.2.yosemite.bottle.1.tar.gz"
     - OSX_PACKAGES="gcc cmake"
+    - BUILD_TYPE="CodeCoverage"
 
 matrix:
   include:
@@ -101,7 +102,7 @@ before_script:
 script:
   - mkdir cmake-build
   - cd cmake-build
-  - cmake -DCMAKE_INSTALL_PREFIX:PATH="$HOME/OpenCoarrays" -DCMAKE_Fortran_FLAGS='-ftest-coverage -fprofile-arcs -O0' -DCMAKE_C_FLAGS='-fprofile-arcs -ftest-coverage -O0' ..
+  - cmake -DCMAKE_INSTALL_PREFIX:PATH="$HOME/OpenCoarrays" -DCMAKE_BUILD_TYPE="$BUILD_TYPE" ..
   - make -j 4
   - ctest --verbose
   - make install
@@ -109,14 +110,13 @@ script:
 
 after_success:
   - find . -name '*.gcno' -print
-  - find . -name '*.gcda' -print
   - gcov-5 --version
   - bash <(curl -s https://codecov.io/bash) -x $(which gcov-5)
 
 notifications:
   webhooks:
     urls:
-      - $GITTERHOOK_URL
+      - https://webhooks.gitter.im/e/93dbafbdf76c1732a623
     on_success: change  # options: [always|never|change]
     on_failure: always
     on_start: always
