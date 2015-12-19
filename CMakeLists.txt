@@ -1,5 +1,11 @@
 cmake_minimum_required(VERSION 3.0)
 
+# Set the type/configuration of build to perform
+set ( CMAKE_CONFIGURATION_TYPES "Debug" "Release" "MinSizeRel" "RelWithDebInfo" "CodeCoverage" )
+set ( CMAKE_BUILD_TYPE "Release"
+  CACHE STRING "Select which configuration to build." )
+set_property ( CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${CMAKE_CONFIGURATION_TYPES} )
+
 #Name project and specify source languages
 project(opencoarrays VERSION 2.0.0 LANGUAGES C Fortran)
 
@@ -26,6 +32,10 @@ endif()
 #Report untested Fortran compiler unless explicitly directed to build all examples.
 if ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "GNU" )
   set(gfortran_compiler true)
+  set ( CMAKE_C_FLAGS_CODECOVERAGE "-fprofile-arcs -ftest-coverage -O0"
+    CACHE STRING "Code coverage C compiler flags")
+  set ( CMAKE_Fortran_FLAGS_CODECOVERAGE "-fprofile-arcs -ftest-coverage -O0"
+    CACHE STRING "Code coverage C compiler flags")
 # add_definitions(-DPREFIX_NAME=_gfortran_caf_)
 elseif ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "Cray" )
   set(cray_compiler true)
