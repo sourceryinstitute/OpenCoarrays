@@ -668,6 +668,9 @@ print_header()
   fi
 }
 
+. install_prerequisites/set_SUDO.sh
+set_SUDO_if_necessary 
+
 build_opencoarrays()
 {
   print_header
@@ -681,7 +684,10 @@ build_opencoarrays()
   else
     CC=$MPICC FC=$MPIFC $CMAKE .. -DCMAKE_INSTALL_PREFIX=$install_path &&
     make -j$num_threads &&
-    make install
+    if [[ ! -z $SUDO ]]; then
+      printf "\nThe chosen installation path requires sudo privileges. Please enter password if prompted.\n"
+    fi &&
+    $SUDO make install
   fi
 }
 
@@ -698,70 +704,74 @@ report_results()
     echo ""
     echo "$install_path/bin."
     echo ""
-    if [[ -f $install_path/setup.sh ]]; then
-      rm $install_path/setup.sh
+    if [[ -f setup.sh ]]; then
+      $SUDO rm setup.sh
     fi
     # Prepend the OpenCoarrays license to the setup.sh script:
     while IFS='' read -r line || [[ -n "$line" ]]; do
-        echo "# $line" >> $install_path/setup.sh
+        echo "# $line" >> setup.sh
     done < "$opencoarrays_src_dir/COPYRIGHT-BSD3"
-    echo "#                                                                      " >> $install_path/setup.sh
-    echo "# Execute this script via the following commands:                       " >> $install_path/setup.sh
-    echo "# cd $install_path                                                     " >> $install_path/setup.sh
-    echo "# source setup.sh                                                      " >> $install_path/setup.sh
-    echo "                                                                       " >> $install_path/setup.sh
-    echo "if [[ -z \"\$PATH\" ]]; then                                           " >> $install_path/setup.sh
-    echo "  export PATH=\"$install_path/bin\"                                    " >> $install_path/setup.sh
-    echo "else                                                                   " >> $install_path/setup.sh
-    echo "  export PATH=\"$install_path/bin\":\$PATH                             " >> $install_path/setup.sh
-    echo "fi                                                                     " >> $install_path/setup.sh
-    echo "                                                                       " >> $install_path/setup.sh
+    echo "#                                                                      " >> setup.sh
+    echo "# Execute this script via the following commands:                      " >> setup.sh
+    echo "# cd $install_path                                                     " >> setup.sh
+    echo "# source setup.sh                                                      " >> setup.sh
+    echo "                                                                       " >> setup.sh
+    echo "if [[ -z \"\$PATH\" ]]; then                                           " >> setup.sh
+    echo "  export PATH=\"bin\"                                                  " >> setup.sh
+    echo "else                                                                   " >> setup.sh
+    echo "  export PATH=\"bin\":\$PATH                                           " >> setup.sh
+    echo "fi                                                                     " >> setup.sh
+    echo "                                                                       " >> setup.sh
     gcc_install_path=`./build gcc --default --query-path`
     if [[ -d "$gcc_install_path/lib" ]]; then
-      echo "if [[ -z \"\$LD_LIBRARY_PATH\" ]]; then                              " >> $install_path/setup.sh
-      echo "  export LD_LIBRARY_PATH=\"$gcc_install_path/lib\"                   " >> $install_path/setup.sh
-      echo "else                                                                 " >> $install_path/setup.sh
-      echo "  export LD_LIBRARY_PATH=\"$gcc_install_path/lib\":\$LD_LIBRARY_PATH " >> $install_path/setup.sh
-      echo "fi                                                                   " >> $install_path/setup.sh
+      echo "if [[ -z \"\$LD_LIBRARY_PATH\" ]]; then                              " >> setup.sh
+      echo "  export LD_LIBRARY_PATH=\"$gcc_install_path/lib\"                   " >> setup.sh
+      echo "else                                                                 " >> setup.sh
+      echo "  export LD_LIBRARY_PATH=\"$gcc_install_path/lib\":\$LD_LIBRARY_PATH " >> setup.sh
+      echo "fi                                                                   " >> setup.sh
     fi
-    echo "                                                                       " >> $install_path/setup.sh
+    echo "                                                                       " >> setup.sh
     mpich_install_path=`./build mpich --default --query-path`
     if [[ -x "$mpich_install_path/bin/mpif90" ]]; then
-      echo "if [[ -z \"\$PATH\" ]]; then                                         " >> $install_path/setup.sh
-      echo "  export PATH=\"$mpich_install_path/bin\"                            " >> $install_path/setup.sh
-      echo "else                                                                 " >> $install_path/setup.sh
-      echo "  export PATH=\"$mpich_install_path/bin\":\$PATH                     " >> $install_path/setup.sh
-      echo "fi                                                                   " >> $install_path/setup.sh
+      echo "if [[ -z \"\$PATH\" ]]; then                                         " >> setup.sh
+      echo "  export PATH=\"$mpich_install_path/bin\"                            " >> setup.sh
+      echo "else                                                                 " >> setup.sh
+      echo "  export PATH=\"$mpich_install_path/bin\":\$PATH                     " >> setup.sh
+      echo "fi                                                                   " >> setup.sh
     fi
     cmake_install_path=`./build cmake --default --query-path`
     if [[ -x "$cmake_install_path/bin/cmake" ]]; then
-      echo "if [[ -z \"\$PATH\" ]]; then                                         " >> $install_path/setup.sh
-      echo "  export PATH=\"$cmake_install_path/bin\"                            " >> $install_path/setup.sh
-      echo "else                                                                 " >> $install_path/setup.sh
-      echo "  export PATH=\"$cmake_install_path/bin\":\$PATH                     " >> $install_path/setup.sh
-      echo "fi                                                                   " >> $install_path/setup.sh
+      echo "if [[ -z \"\$PATH\" ]]; then                                         " >> setup.sh
+      echo "  export PATH=\"$cmake_install_path/bin\"                            " >> setup.sh
+      echo "else                                                                 " >> setup.sh
+      echo "  export PATH=\"$cmake_install_path/bin\":\$PATH                     " >> setup.sh
+      echo "fi                                                                   " >> setup.sh
     fi
     flex_install_path=`./build flex --default --query-path`
     if [[ -x "$flex_install_path/bin/flex" ]]; then
-      echo "if [[ -z \"\$PATH\" ]]; then                                         " >> $install_path/setup.sh
-      echo "  export PATH=\"$flex_install_path/bin\"                             " >> $install_path/setup.sh
-      echo "else                                                                 " >> $install_path/setup.sh
-      echo "  export PATH=\"$flex_install_path/bin\":\$PATH                      " >> $install_path/setup.sh
-      echo "fi                                                                   " >> $install_path/setup.sh
+      echo "if [[ -z \"\$PATH\" ]]; then                                         " >> setup.sh
+      echo "  export PATH=\"$flex_install_path/bin\"                             " >> setup.sh
+      echo "else                                                                 " >> setup.sh
+      echo "  export PATH=\"$flex_install_path/bin\":\$PATH                      " >> setup.sh
+      echo "fi                                                                   " >> setup.sh
     fi
     bison_install_path=`./build bison --default --query-path`
     if [[ -x "$bison_install_path/bin/yacc" ]]; then
-      echo "if [[ -z \"\$PATH\" ]]; then                                         " >> $install_path/setup.sh
-      echo "  export PATH=\"$bison_install_path/bin\"                            " >> $install_path/setup.sh
-      echo "else                                                                 " >> $install_path/setup.sh
-      echo "  export PATH=\"$bison_install_path/bin\":\$PATH                     " >> $install_path/setup.sh
-      echo "fi                                                                   " >> $install_path/setup.sh
+      echo "if [[ -z \"\$PATH\" ]]; then                                         " >> setup.sh
+      echo "  export PATH=\"$bison_install_path/bin\"                            " >> setup.sh
+      echo "else                                                                 " >> setup.sh
+      echo "  export PATH=\"$bison_install_path/bin\":\$PATH                     " >> setup.sh
+      echo "fi                                                                   " >> setup.sh
     fi
+    setup_sh_location=$install_path
+    $SUDO mv setup.sh $install_path || setup_sh_location=${PWD}
     echo "*** Before using caf, cafrun, or build, please execute the following command ***"
     echo "*** or add it to your login script and launch a new shell (or the equivalent ***"
     echo "*** for your shell if you are not using a bash shell):                       ***"
     echo ""
-    echo " source $install_path/setup.sh"
+    echo " source $setup_sh_location/setup.sh"
+    echo ""
+    echo "*** Installation complete.                                                   ***"
 
   else # Installation failed
 
