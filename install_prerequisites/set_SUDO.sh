@@ -12,7 +12,7 @@ set_SUDO_if_necessary()
     else
       printf "no\n"
       SUDO=$SUDO_COMMAND
-    fi  
+    fi
   else
     printf "no\n"
     printf "Checking whether I can create the installation path... "
