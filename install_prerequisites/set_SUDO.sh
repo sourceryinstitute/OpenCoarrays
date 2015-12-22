@@ -21,6 +21,6 @@ set_SUDO_if_necessary()
     else
       printf "no.\n"
       SUDO=$SUDO_COMMAND
-    fi  
-  fi  
+    fi
+  fi
 }
