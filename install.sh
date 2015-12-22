@@ -545,12 +545,35 @@ find_or_install()
     else # permission granted to build
       printf "n\n"
 
-      if [[ -z "$CC" ]]; then
+      # On OS X, CMake must be built with Apple LLVM gcc, which XCode command-line tools puts in /usr/bin
+      if [[ `uname` == "Darwin" && $package == "cmake"  ]]; then
+        if [[ -x "/usr/bin/gcc" ]]; then
+          CC=/usr/bin/gcc
+        else
+          printf "$this_script: OS X detected.  Please install XCode command-line tools and \n"
+          printf "$this_script: ensure that /usr/bin/gcc exists and is executable. Aborting. [exit 75]\n"
+          exit 75
+        fi
+      # Otherwise, if no CC has been defined yet, use the gcc in the user's PATH
+      elif [[ -z "$CC" ]]; then
         CC=gcc
       fi
-      if [[ -z "$CXX" ]]; then
+
+      # On OS X, CMake must be built with Apple LLVM g++, which XCode command-line tools puts in /usr/bin
+      if [[ `uname` == "Darwin" && $package == "cmake"  ]]; then
+        if [[ -x "/usr/bin/gcc" ]]; then
+          CXX=/usr/bin/g++
+        else
+          printf "$this_script: OS X detected.  Please install XCode command-line tools \n"
+          printf "$this_script: and ensure that /usr/bin/g++ exists and is executable. Aborting. [exit 76]\n"
+          exit 76
+        fi
+      # Otherwise, if no CXX has been defined yet, use the g++ in the user's PATH
+      elif [[ -z "$CC" ]]; then
         CXX=g++
       fi
+
+      # If no FC has been defined yet, use the gfortran in the user's PATH
       if [[ -z "$FC" ]]; then
         FC=gfortran
       fi
