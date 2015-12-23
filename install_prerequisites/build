@@ -149,7 +149,6 @@ else
   num_threads=$4
 fi
 
-
 check_prerequisites()
 {
   # This is a bash 3 hack standing in for a bash 4 hash (bash 3 is the lowest common
@@ -336,6 +335,8 @@ unpack_if_necessary()
   fi
 }
 
+. ./set_SUDO.sh
+
 # Make the build directory, configure, and build
 build_and_install()
 {
@@ -344,6 +345,7 @@ build_and_install()
   printf "Building $package_to_build $version_to_build.\n" &&
   mkdir -p $build_path &&
   pushd $build_path &&
+  set_SUDO_if_necessary &&
   if [[ $package_to_build == "gcc" ]]; then
     pushd $download_path/$package_source_directory &&
     ${PWD}/contrib/download_prerequisites &&
@@ -351,13 +353,26 @@ build_and_install()
     echo "Configuring with the following command: " &&
     echo "$download_path/$package_source_directory/configure  --prefix=$install_path --enable-languages=c,c++,fortran,lto --disable-multilib --disable-werror " &&
     $download_path/$package_source_directory/configure --prefix=$install_path --enable-languages=c,c++,fortran,lto --disable-multilib --disable-werror &&
+    echo "Building with the commmand 'make -j $num_threads bootstrap'" &&
     make -j $num_threads bootstrap &&
-    make install
+    if [[ ! -z $SUDO ]]; then
+      echo "You do not have write permissions to the installation path $install_path"
+      echo "If you have administrative privileges, enter your password to install $package_to_build."
+    fi &&
+    echo "Installing with the command '$SUDO make install'" &&
+    $SUDO make install
   else
     $download_path/$package_source_directory/configure --prefix=$install_path &&
+    echo "Building with the following command:" &&
+    echo "CC=$CC CXX=$CXX make -j $num_threads" &&
     CC=$CC CXX=$CXX make -j $num_threads &&
     printf "Installing $package_to_build in $install_path.\n" &&
-    make install
+    if [[ ! -z $SUDO ]]; then
+      echo "You do not have write permissions to the installation path $install_path"
+      echo "If you have administrative privileges, enter your password to install $package_to_build."
+    fi &&
+    echo "Installing with the command '$SUDO make install'" &&
+    $SUDO make install
   fi &&
   popd
 }
