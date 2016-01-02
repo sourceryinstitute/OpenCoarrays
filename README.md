@@ -4,7 +4,7 @@
 
 # OpenCoarrays #
 
-[![CI Build Status][build img]](https://travis-ci.org/sourceryinstitute/opencoarrays)
+[![CI Build Status][build img]](https://travis-ci.org/sourceryinstitute/opencoarrays?branch=devel)
 [![GitHub release][release img]](https://github.com/sourceryinstitute/opencoarrays/releases/latest)
 [![GitHub license][license img]](COPYRIGHT-BSD3)
 <!-- [![Release Downloads][download img]](https://github.com/sourceryinstitute/opencoarrays/releases) -->
@@ -114,8 +114,8 @@ We gratefully acknowledge support from the following institutions:
 [Issues]: https://github.com/sourceryinstitute/opencoarrays/issue
 [Releases]: https://github.com/sourceryinstitute/opencoarrays/releases
 
-[build img]: https://img.shields.io/travis-ci/sourceryinstitute/opencoarrays/master.svg?style=flat-square "Travis-CI badge image source"
-[CI Master Branch]: https://travis-ci.org/sourceryinstitute/opencoarrays?branch=master "Travis-CI builds"
+[build img]: https://img.shields.io/travis-ci/sourceryinstitute/opencoarrays/devel.svg?style=flat-square "Travis-CI badge image source"
+[CI Devel Branch]: https://travis-ci.org/sourceryinstitute/opencoarrays?branch=devel "Travis-CI builds"
 [download img]: https://img.shields.io/github/downloads/sourceryinstitute/opencoarrays/total.svg?style=flat-square "Download count image source"
 [license img]: https://img.shields.io/github/license/sourceryinstitute/opencoarrays.svg?style=flat-square "BSD-3 License badge"
 [release img]: https://img.shields.io/github/release/sourceryinstitute/opencoarrays.svg?style=flat-square "Latest release badge"
