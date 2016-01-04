@@ -52,13 +52,9 @@ typedef MPI_Win *mpi_caf_token_t;
 
 static void error_stop (int error) __attribute__ ((noreturn));
 
-extern void * comm_thread_routine(void * arg);
-extern pthread_mutex_t comm_mutex;
-pthread_t comm_thread;
-
 /* Global variables.  */
-int caf_this_image;
-int caf_num_images;
+static int caf_this_image;
+static int caf_num_images;
 static int caf_is_finalized;
 
 #if MPI_VERSION >= 3
@@ -108,13 +104,6 @@ char err_buffer[MPI_MAX_ERROR_STRING];
    MPI_COMM_WORLD for interoperability purposes. */
 MPI_Comm CAF_COMM_WORLD;
 
-/* Shared memory variables */
-#ifdef SHARED
-MPI_Comm SHARED_COMM;
-int *local_ranks, *global_ranks, local_size;
-MPI_Group local_group, global_group;
-static int shared_win = MPI_KEYVAL_INVALID;
-#endif
 /* For MPI interoperability, allow external initialization
    (and thus finalization) of MPI. */
 bool caf_owns_mpi = false;
@@ -216,7 +205,7 @@ caf_runtime_error (const char *message, ...)
 /*        being used, we could add something of the form "#ifdef _CMAKE" to remove the */
 /*        keyword only when building with CMake */
 /* inline */ void locking_atomic_op(MPI_Win win, int *value, int newval,
-                              int compare, int image_index, int index)
+			      int compare, int image_index, int index)
 {
 # ifdef CAF_MPI_LOCK_UNLOCK
       MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, win);
@@ -231,7 +220,7 @@ caf_runtime_error (const char *message, ...)
 }
 
 void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
-                int *acquired_lock, char *errmsg, int errmsg_len)
+		int *acquired_lock, char *errmsg, int errmsg_len)
 {
   const char msg[] = "Already locked";
 #if MPI_VERSION >= 3
@@ -250,7 +239,7 @@ void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
       if(value == 0)
         *acquired_lock = 1;
       else
-        *acquired_lock = 0;
+	*acquired_lock = 0;
       return;
     }
 
@@ -280,7 +269,7 @@ stat_error:
 }
 
 void mutex_unlock(MPI_Win win, int image_index, int index, int *stat,
-                  char* errmsg, int errmsg_len)
+		  char* errmsg, int errmsg_len)
 {
   const char msg[] = "Variable is not locked";
   if(stat != NULL)
@@ -333,17 +322,9 @@ PREFIX (init) (int *argc, char ***argv)
 {
   if (caf_num_images == 0)
     {
-      int ierr = 0, i = 0, j = 0, prov_lev = 0;
+      int ierr = 0, i = 0, j = 0;
 
-      int is_init = 0, prior_thread_level;
-#ifdef ASYNC_PROGRESS
-      prior_thread_level = MPI_THREAD_MULTIPLE;
-#ifdef NO_MULTIPLE
-      prior_thread_level = MPI_THREAD_FUNNELED;
-#endif
-#else
-      prior_thread_level = MPI_THREAD_SINGLE;
-#endif
+      int is_init = 0, prior_thread_level = MPI_THREAD_SINGLE;
       MPI_Initialized(&is_init);
 
       if (is_init) {
@@ -365,7 +346,7 @@ PREFIX (init) (int *argc, char ***argv)
       if (is_init) {
           caf_owns_mpi = false;
       } else {
-          MPI_Init_thread(argc, argv, prior_thread_level, &prov_lev);
+          MPI_Init(argc, argv);
           caf_owns_mpi = true;
       }
 #endif
@@ -378,41 +359,9 @@ PREFIX (init) (int *argc, char ***argv)
 
       MPI_Comm_size(CAF_COMM_WORLD, &caf_num_images);
       MPI_Comm_rank(CAF_COMM_WORLD, &caf_this_image);
-#ifdef SHARED
-      MPI_Comm_split_type(CAF_COMM_WORLD,MPI_COMM_TYPE_SHARED,0,MPI_INFO_NULL, &SHARED_COMM);
-      MPI_Comm_group(SHARED_COMM, &local_group);
-      MPI_Comm_group(MPI_COMM_WORLD, &global_group);
-      MPI_Group_size(local_group, &local_size);
-
-      local_ranks = (int *) malloc(local_size * sizeof(int));
-      global_ranks = (int *) malloc(caf_num_images * sizeof(int));
-
-      for (i = 0; i < local_size; i++)
-        local_ranks[i] = i;
-
-      MPI_Group_translate_ranks(local_group, local_size, local_ranks, global_group, global_ranks);
-
-      for(i = 1; i < caf_num_images; i++)
-        if(global_ranks[i] == 0)
-          global_ranks[i] = -1;
-
-      if(shared_win == MPI_KEYVAL_INVALID)
-        MPI_Win_create_keyval(MPI_WIN_NULL_COPY_FN,
-                              MPI_WIN_NULL_DELETE_FN,
-                              &shared_win, (void *)0);
-#endif
 
       caf_this_image++;
       caf_is_finalized = 0;
-
-#ifdef ASYNC_PROGRESS
-      setup_send_sock();
-      neigh_list_1st();
-      pthread_create(&comm_thread, NULL, comm_thread_routine, NULL);
-      neigh_list_2nd();
-      check_helper_init();
-      MPI_Barrier(CAF_COMM_WORLD);
-#endif
 
       images_full = (int *) calloc (caf_num_images-1, sizeof (int));
 
@@ -543,11 +492,8 @@ void *
   /* Token contains only a list of pointers.  */
 
   *token = malloc (sizeof(MPI_Win));
-  MPI_Win *p = token[0];
 
-#ifdef SHARED
-  MPI_Win *p_local = malloc(sizeof(MPI_Win));
-#endif
+  MPI_Win *p = *token;
 
   if(type == CAF_REGTYPE_LOCK_STATIC || type == CAF_REGTYPE_LOCK_ALLOC ||
      type == CAF_REGTYPE_CRITICAL || type == CAF_REGTYPE_EVENT_STATIC ||
@@ -560,13 +506,7 @@ void *
     actual_size = size;
 
 #if MPI_VERSION >= 3
-#ifdef SHARED
-  MPI_Win_allocate_shared(actual_size, 1, MPI_INFO_NULL, SHARED_COMM, &mem, p_local);
-  MPI_Win_create(mem, actual_size, 1, mpi_info_same_size, CAF_COMM_WORLD, token[0]);
-  MPI_Win_lock_all(MPI_MODE_NOCHECK, *p_local);
-#else
   MPI_Win_allocate(actual_size, 1, mpi_info_same_size, CAF_COMM_WORLD, &mem, *token);
-#endif
 # ifndef CAF_MPI_LOCK_UNLOCK
   MPI_Win_lock_all(MPI_MODE_NOCHECK, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
@@ -575,11 +515,7 @@ void *
   MPI_Win_create(mem, actual_size, 1, MPI_INFO_NULL, CAF_COMM_WORLD, *token);
 #endif // MPI_VERSION
 
-  p = token[0];
-#ifdef SHARED
-  /* shared window attached to remote window as attribute */
-  MPI_Win_set_attr(*p, shared_win, (void*)p_local);
-#endif
+  p = *token;
 
   if(l_var)
     {
@@ -735,13 +671,7 @@ PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
 #if defined(NONBLOCKING_PUT) && !defined(CAF_MPI_LOCK_UNLOCK)
       explicit_flush();
 #endif
-#if defined(ASYNC_PROGRESS) && defined(NO_MULTIPLE)
-      pthread_mutex_lock (&comm_mutex);
-#endif
       MPI_Barrier(CAF_COMM_WORLD);
-#if defined(ASYNC_PROGRESS) && defined(NO_MULTIPLE)
-      pthread_mutex_unlock (&comm_mutex);
-#endif
       ierr = 0;
     }
 
@@ -912,7 +842,7 @@ PREFIX (sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
               stride = dest->dim[j]._stride;
             }
 
-          extent = (dest->dim[rank-1]._ubound - dest->dim[rank-1].lower_bound + 1);
+	  extent = (dest->dim[rank-1]._ubound - dest->dim[rank-1].lower_bound + 1);
           array_offset_dst += (i / extent) * dest->dim[rank-1]._stride;
           dst_offset = offset_s + array_offset_dst*GFC_DESCRIPTOR_SIZE (dest);
 
@@ -931,7 +861,7 @@ PREFIX (sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
                   stride = src->dim[j]._stride;
                 }
 
-              extent = (src->dim[rank-1]._ubound - src->dim[rank-1].lower_bound + 1);
+	      extent = (src->dim[rank-1]._ubound - src->dim[rank-1].lower_bound + 1);
               array_offset_sr += (i / extent) * src->dim[rank-1]._stride;
               array_offset_sr *= GFC_DESCRIPTOR_SIZE (src);
             }
@@ -1024,16 +954,6 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
         for (i = 0; i < (dst_size-src_size)/4; i++)
               ((int32_t*) pad_str)[i] = (int32_t) ' ';
     }
-#ifdef SHARED
-  if(global_ranks[image_index-1] != -1)
-    {
-      /* Images on same node. Let's use the shared memory window */
-      int flag = 0;
-      MPI_Win_get_attr(*p,shared_win,&p,&flag);
-      image_index = global_ranks[image_index-1];
-      image_index++;
-    }
-#endif
   if (rank == 0
       || (GFC_DESCRIPTOR_TYPE (dest) == GFC_DESCRIPTOR_TYPE (src)
           && dst_kind == src_kind && GFC_DESCRIPTOR_RANK (src) != 0
@@ -1050,60 +970,45 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
         }
       else
         {
-#if defined(ASYNC_PROGRESS) && defined(NO_MULTIPLE)
-      pthread_mutex_lock (&comm_mutex);
-#endif
 #ifdef CAF_MPI_LOCK_UNLOCK
           MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
 #endif // CAF_MPI_LOCK_UNLOCK
           if (GFC_DESCRIPTOR_TYPE (dest) == GFC_DESCRIPTOR_TYPE (src)
               && dst_kind == src_kind)
-             {
-#if defined(ASYNC_PROGRESS)
-                send_sig(image_index-1,caf_this_image-1);
-#endif
             ierr = MPI_Put (src->base_addr, (dst_size > src_size ? src_size : dst_size)*size, MPI_BYTE,
                             image_index-1, offset,
                             (dst_size > src_size ? src_size : dst_size) * size,
                             MPI_BYTE, *p);
-             }
           if (pad_str)
-            {
-              size_t newoff = offset + (dst_size > src_size ? src_size : dst_size) * size;
-              ierr = MPI_Put (pad_str, dst_size-src_size, MPI_BYTE, image_index-1,
-                              newoff, dst_size - src_size, MPI_BYTE, *p);
-            }
+	    {
+	      size_t newoff = offset + (dst_size > src_size ? src_size : dst_size) * size;
+	      ierr = MPI_Put (pad_str, dst_size-src_size, MPI_BYTE, image_index-1,
+			      newoff, dst_size - src_size, MPI_BYTE, *p);
+	    }
 #ifdef CAF_MPI_LOCK_UNLOCK
           MPI_Win_unlock (image_index-1, *p);
 #elif NONBLOCKING_PUT
-          /* Pending puts init */
-          if(pending_puts == NULL)
-            {
-              pending_puts = calloc(1,sizeof(win_sync));
-              pending_puts->next=NULL;
-              pending_puts->win = token;
-              pending_puts->img = image_index-1;
-              last_elem = pending_puts;
-              last_elem->next = NULL;
-            }
-          else
-            {
-              last_elem->next = calloc(1,sizeof(win_sync));
-              last_elem = last_elem->next;
-              last_elem->win = token;
-              last_elem->img = image_index-1;
-              last_elem->next = NULL;
-            }
+	  /* Pending puts init */
+	  if(pending_puts == NULL)
+	    {
+	      pending_puts = calloc(1,sizeof(win_sync));
+	      pending_puts->next=NULL;
+	      pending_puts->win = token;
+	      pending_puts->img = image_index-1;
+	      last_elem = pending_puts;
+	      last_elem->next = NULL;
+	    }
+	  else
+	    {
+	      last_elem->next = calloc(1,sizeof(win_sync));
+	      last_elem = last_elem->next;
+	      last_elem->win = token;
+	      last_elem->img = image_index-1;
+	      last_elem->next = NULL;
+	    }
 #else
-          MPI_Win_flush (image_index-1, *p);
-#if defined(ASYNC_PROGRESS)
-          ack_sig(image_index-1);
-          /* MPI_Send(&caf_this_image,1,MPI_INT,image_index-1,10,CAF_COMM_WORLD); */
-#endif
+	  MPI_Win_flush (image_index-1, *p);
 #endif // CAF_MPI_LOCK_UNLOCK
-#if defined(ASYNC_PROGRESS) && defined(NO_MULTIPLE)
-      pthread_mutex_unlock (&comm_mutex);
-#endif
         }
 
       if (ierr != 0)
@@ -1146,7 +1051,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
               ptrdiff_t array_offset_dst = 0;
               ptrdiff_t stride = 1;
               ptrdiff_t extent = 1;
-              ptrdiff_t tot_ext = 1;
+	      ptrdiff_t tot_ext = 1;
               for (j = 0; j < rank-1; j++)
                 {
                   array_offset_dst += ((i / tot_ext)
@@ -1155,7 +1060,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
                     * dest->dim[j]._stride;
                   extent = (dest->dim[j]._ubound - dest->dim[j].lower_bound + 1);
                   stride = dest->dim[j]._stride;
-                  tot_ext *= extent;
+		  tot_ext *= extent;
                 }
 
               array_offset_dst += (i / tot_ext) * dest->dim[rank-1]._stride;
@@ -1166,7 +1071,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
                   ptrdiff_t array_offset_sr = 0;
                   stride = 1;
                   extent = 1;
-                  tot_ext = 1;
+		  tot_ext = 1;
                   for (j = 0; j < GFC_DESCRIPTOR_RANK (src)-1; j++)
                     {
                       array_offset_sr += ((i / tot_ext)
@@ -1175,7 +1080,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
                         * src->dim[j]._stride;
                       extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1);
                       stride = src->dim[j]._stride;
-                      tot_ext *= extent;
+		      tot_ext *= extent;
                     }
 
                   array_offset_sr += (i / tot_ext) * src->dim[rank-1]._stride;
@@ -1197,28 +1102,16 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
       MPI_Type_commit(&dt_d);
 
       dst_offset = offset;
-#if defined(ASYNC_PROGRESS) && defined(NO_MULTIPLE)
-      pthread_mutex_lock (&comm_mutex);
-#endif
+
 # ifdef CAF_MPI_LOCK_UNLOCK
       MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
-#if defined(ASYNC_PROGRESS)
-      send_sig(image_index-1,caf_this_image-1);
-#endif
       ierr = MPI_Put (sr, 1, dt_s, image_index-1, dst_offset, 1, dt_d, *p);
 # ifdef CAF_MPI_LOCK_UNLOCK
       MPI_Win_unlock (image_index-1, *p);
 # else // CAF_MPI_LOCK_UNLOCK
       MPI_Win_flush (image_index-1, *p);
-#if defined(ASYNC_PROGRESS)
-      ack_sig(image_index-1);
-      /* MPI_Send(&caf_this_image,1,MPI_INT,image_index-1,10,CAF_COMM_WORLD); */
-#endif
 # endif // CAF_MPI_LOCK_UNLOCK
-#if defined(ASYNC_PROGRESS) && defined(NO_MULTIPLE)
-      pthread_mutex_unlock (&comm_mutex);
-#endif
 
       if (ierr != 0)
         {
@@ -1295,7 +1188,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
           ptrdiff_t array_offset_dst = 0;
           ptrdiff_t stride = 1;
           ptrdiff_t extent = 1;
-          ptrdiff_t tot_ext = 1;
+	  ptrdiff_t tot_ext = 1;
           for (j = 0; j < rank-1; j++)
             {
               array_offset_dst += ((i / tot_ext)
@@ -1304,7 +1197,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
                 * dest->dim[j]._stride;
               extent = (dest->dim[j]._ubound - dest->dim[j].lower_bound + 1);
               stride = dest->dim[j]._stride;
-              tot_ext *= extent;
+	      tot_ext *= extent;
             }
 
           array_offset_dst += (i / tot_ext) * dest->dim[rank-1]._stride;
@@ -1316,7 +1209,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
               ptrdiff_t array_offset_sr = 0;
               stride = 1;
               extent = 1;
-              tot_ext = 1;
+	      tot_ext = 1;
               for (j = 0; j < GFC_DESCRIPTOR_RANK (src)-1; j++)
                 {
                   array_offset_sr += ((i / tot_ext)
@@ -1325,7 +1218,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
                     * src->dim[j]._stride;
                   extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1);
                   stride = src->dim[j]._stride;
-                  tot_ext *= extent;
+		  tot_ext *= extent;
                 }
 
               array_offset_sr += (i / tot_ext) * src->dim[rank-1]._stride;
@@ -1370,7 +1263,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
                   ptrdiff_t array_offset_dst = 0;
                   ptrdiff_t stride = 1;
                   ptrdiff_t extent = 1;
-                  ptrdiff_t tot_ext = 1;
+		  ptrdiff_t tot_ext = 1;
                   for (j = 0; j < rank-1; j++)
                     {
                       array_offset_dst += ((i / tot_ext)
@@ -1379,10 +1272,10 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
                         * dest->dim[j]._stride;
                       extent = (dest->dim[j]._ubound - dest->dim[j].lower_bound + 1);
                       stride = dest->dim[j]._stride;
-                      tot_ext *= extent;
+		      tot_ext *= extent;
                     }
 
-                  //extent = (dest->dim[rank-1]._ubound - dest->dim[rank-1].lower_bound + 1);
+		  //extent = (dest->dim[rank-1]._ubound - dest->dim[rank-1].lower_bound + 1);
                   array_offset_dst += (i / tot_ext) * dest->dim[rank-1]._stride;
                   dst_offset = offset + array_offset_dst*GFC_DESCRIPTOR_SIZE (dest);
                   memmove(src->base_addr+dst_offset,t_buff+i*GFC_DESCRIPTOR_SIZE (src),GFC_DESCRIPTOR_SIZE (src));
@@ -1444,16 +1337,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
         for (i = 0; i < (dst_size-src_size)/4; i++)
               ((int32_t*) pad_str)[i] = (int32_t) ' ';
     }
-#ifdef SHARED
-  if(global_ranks[image_index-1] != -1)
-    {
-      /* Images on same node. Let's use the shared memory window */
-      int flag = 0;
-      MPI_Win_get_attr(*p,shared_win,&p,&flag);
-      image_index = global_ranks[image_index-1];
-      image_index++;
-    }
-#endif
+
   if (rank == 0
       || (GFC_DESCRIPTOR_TYPE (dest) == GFC_DESCRIPTOR_TYPE (src)
           && dst_kind == src_kind
@@ -1472,15 +1356,9 @@ PREFIX (get) (caf_token_t token, size_t offset,
         }
       else
         {
-#if defined(ASYNC_PROGRESS) && defined(NO_MULTIPLE)
-      pthread_mutex_lock (&comm_mutex);
-#endif
 # ifdef CAF_MPI_LOCK_UNLOCK
           MPI_Win_lock (MPI_LOCK_SHARED, image_index-1, 0, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
-#if defined(ASYNC_PROGRESS)
-          send_sig(image_index-1,caf_this_image-1);
-#endif
           ierr = MPI_Get (dest->base_addr, dst_size*size, MPI_BYTE,
                           image_index-1, offset, dst_size*size, MPI_BYTE, *p);
           if (pad_str)
@@ -1490,14 +1368,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
           MPI_Win_unlock (image_index-1, *p);
 # else // CAF_MPI_LOCK_UNLOCK
           MPI_Win_flush (image_index-1, *p);
-#if defined(ASYNC_PROGRESS)
-          ack_sig(image_index-1);
-          /* MPI_Send(&caf_this_image,1,MPI_INT,image_index-1,10,CAF_COMM_WORLD); */
-#endif
 # endif // CAF_MPI_LOCK_UNLOCK
-#if defined(ASYNC_PROGRESS) && defined(NO_MULTIPLE)
-      pthread_mutex_unlock (&comm_mutex);
-#endif
         }
       if (ierr != 0)
         error_stop (ierr);
@@ -1539,7 +1410,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
           ptrdiff_t array_offset_dst = 0;
           ptrdiff_t stride = 1;
           ptrdiff_t extent = 1;
-          ptrdiff_t tot_ext = 1;
+	  ptrdiff_t tot_ext = 1;
           for (j = 0; j < rank-1; j++)
             {
               array_offset_dst += ((i / tot_ext)
@@ -1548,17 +1419,17 @@ PREFIX (get) (caf_token_t token, size_t offset,
                 * dest->dim[j]._stride;
               extent = (dest->dim[j]._ubound - dest->dim[j].lower_bound + 1);
               stride = dest->dim[j]._stride;
-              tot_ext *= extent;
+	      tot_ext *= extent;
             }
 
-          //extent = (dest->dim[rank-1]._ubound - dest->dim[rank-1].lower_bound + 1);
+	  //extent = (dest->dim[rank-1]._ubound - dest->dim[rank-1].lower_bound + 1);
           array_offset_dst += (i / tot_ext) * dest->dim[rank-1]._stride;
           arr_dsp_d[i] = array_offset_dst;
 
           ptrdiff_t array_offset_sr = 0;
           stride = 1;
           extent = 1;
-          tot_ext = 1;
+	  tot_ext = 1;
           for (j = 0; j < GFC_DESCRIPTOR_RANK (src)-1; j++)
             {
               array_offset_sr += ((i / tot_ext)
@@ -1567,10 +1438,10 @@ PREFIX (get) (caf_token_t token, size_t offset,
                 * src->dim[j]._stride;
               extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1);
               stride = src->dim[j]._stride;
-              tot_ext *= extent;
+	      tot_ext *= extent;
             }
 
-          //extent = (src->dim[rank-1]._ubound - src->dim[rank-1].lower_bound + 1);
+	  //extent = (src->dim[rank-1]._ubound - src->dim[rank-1].lower_bound + 1);
           array_offset_sr += (i / tot_ext) * src->dim[rank-1]._stride;
           arr_dsp_s[i] = array_offset_sr;
 
@@ -1588,28 +1459,19 @@ PREFIX (get) (caf_token_t token, size_t offset,
   MPI_Type_commit(&dt_d);
 
   //sr_off = offset;
-#if defined(ASYNC_PROGRESS) && defined(NO_MULTIPLE)
-      pthread_mutex_lock (&comm_mutex);
-#endif
+
 # ifdef CAF_MPI_LOCK_UNLOCK
   MPI_Win_lock (MPI_LOCK_SHARED, image_index-1, 0, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
-#if defined(ASYNC_PROGRESS)
-  send_sig(image_index-1,caf_this_image-1);
-#endif
+
   ierr = MPI_Get (dst, 1, dt_d, image_index-1, offset, 1, dt_s, *p);
+
 # ifdef CAF_MPI_LOCK_UNLOCK
   MPI_Win_unlock (image_index-1, *p);
 # else // CAF_MPI_LOCK_UNLOCK
   MPI_Win_flush (image_index-1, *p);
-#if defined(ASYNC_PROGRESS)
-  ack_sig(image_index-1);
-  /* MPI_Send(&caf_this_image,1,MPI_INT,image_index-1,10,CAF_COMM_WORLD); */
-#endif
 # endif // CAF_MPI_LOCK_UNLOCK
-#if defined(ASYNC_PROGRESS) && defined(NO_MULTIPLE)
-      pthread_mutex_unlock (&comm_mutex);
-#endif
+
   if (ierr != 0)
     error_stop (ierr);
 
@@ -1640,7 +1502,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
                               * dest->dim[j]._stride;
           extent = (dest->dim[j]._ubound - dest->dim[j].lower_bound + 1);
           stride = dest->dim[j]._stride;
-          tot_ext *= extent;
+	  tot_ext *= extent;
         }
 
       array_offset_dst += (i / tot_ext) * dest->dim[rank-1]._stride;
@@ -1657,7 +1519,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
                           * src->dim[j]._stride;
           extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1);
           stride = src->dim[j]._stride;
-          tot_ext *= extent;
+	  tot_ext *= extent;
         }
 
       array_offset_sr += (i / tot_ext) * src->dim[rank-1]._stride;
@@ -1699,7 +1561,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
               ptrdiff_t array_offset_sr = 0;
               ptrdiff_t stride = 1;
               ptrdiff_t extent = 1;
-              ptrdiff_t tot_ext = 1;
+	      ptrdiff_t tot_ext = 1;
               for (j = 0; j < GFC_DESCRIPTOR_RANK (src)-1; j++)
                 {
                   array_offset_sr += ((i / tot_ext)
@@ -1708,10 +1570,10 @@ PREFIX (get) (caf_token_t token, size_t offset,
                     * src->dim[j]._stride;
                   extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1);
                   stride = src->dim[j]._stride;
-                  tot_ext *= extent;
+		  tot_ext *= extent;
                 }
 
-              //extent = (src->dim[rank-1]._ubound - src->dim[rank-1].lower_bound + 1);
+	      //extent = (src->dim[rank-1]._ubound - src->dim[rank-1].lower_bound + 1);
               array_offset_sr += (i / tot_ext) * src->dim[rank-1]._stride;
 
               size_t sr_off = offset + array_offset_sr*GFC_DESCRIPTOR_SIZE (src);
@@ -1780,48 +1642,40 @@ PREFIX (sync_images) (int count, int images[], int *stat, char *errmsg,
 #if defined(NONBLOCKING_PUT) && !defined(CAF_MPI_LOCK_UNLOCK)
        explicit_flush();
 #endif
-#if defined(ASYNC_PROGRESS) && defined(NO_MULTIPLE)
-      pthread_mutex_lock (&comm_mutex);
-#endif
 
        for(i = 0; i < count; i++)
            ierr = MPI_Irecv(&arrived[images[i]-1], 1, MPI_INT, images[i]-1, 0, CAF_COMM_WORLD, &handlers[images[i]-1]);
 
        for(i=0;i<count;i++)
-         {
+	 {
 # ifdef CAF_MPI_LOCK_UNLOCK
-           MPI_Win_lock (MPI_LOCK_SHARED, images[i]-1, 0, *stat_tok);
+	   MPI_Win_lock (MPI_LOCK_SHARED, images[i]-1, 0, *stat_tok);
 # endif // CAF_MPI_LOCK_UNLOCK
-           ierr = MPI_Get (&remote_stat, 1, MPI_INT,
-                           images[i]-1, 0, 1, MPI_INT, *stat_tok);
+	   ierr = MPI_Get (&remote_stat, 1, MPI_INT,
+			   images[i]-1, 0, 1, MPI_INT, *stat_tok);
 # ifdef CAF_MPI_LOCK_UNLOCK
-           MPI_Win_unlock (images[i]-1, *stat_tok);
+	   MPI_Win_unlock (images[i]-1, *stat_tok);
 # else // CAF_MPI_LOCK_UNLOCK
-           MPI_Win_flush (images[i]-1, *stat_tok);
+	   MPI_Win_flush (images[i]-1, *stat_tok);
 # endif // CAF_MPI_LOCK_UNLOCK
-           if(remote_stat != 0)
-             {
-               ierr = STAT_STOPPED_IMAGE;
-               if(stat != NULL)
-                 *stat = ierr;
-               goto sync_images_err_chk;
-             }
-         }
+	   if(remote_stat != 0)
+	     {
+	       ierr = STAT_STOPPED_IMAGE;
+	       if(stat != NULL)
+		 *stat = ierr;
+	       goto sync_images_err_chk;
+	     }
+	 }
 
        for(i=0; i < count; i++)
-          {
          ierr = MPI_Send(&caf_this_image, 1, MPI_INT, images[i]-1, 0, CAF_COMM_WORLD);
-          }
 
        for(i=0; i < count; i++)
          ierr = MPI_Wait(&handlers[images[i]-1], &s);
 
        memset(arrived, 0, sizeof(int)*caf_num_images);
-    }
 
-#if defined(ASYNC_PROGRESS) && defined(NO_MULTIPLE)
-      pthread_mutex_unlock (&comm_mutex);
-#endif
+    }
 
   if (stat)
     *stat = ierr;
@@ -2182,7 +2036,7 @@ error:
 
 void
 PREFIX (co_reduce) (gfc_descriptor_t *a, void *(*opr) (void *, void *), int opr_flags,
-                    int result_image, int *stat, char *errmsg, int a_len, int errmsg_len)
+		    int result_image, int *stat, char *errmsg, int a_len, int errmsg_len)
 {
   MPI_Op op;
   if(GFC_DESCRIPTOR_TYPE(a) == BT_INTEGER)
@@ -2193,15 +2047,15 @@ PREFIX (co_reduce) (gfc_descriptor_t *a, void *(*opr) (void *, void *), int opr_
   else if(GFC_DESCRIPTOR_TYPE(a) == BT_REAL)
     {
       if(GFC_DESCRIPTOR_SIZE(a) == sizeof(float))
-          {
-            foo_float = (typeof(foo_float))opr;
-            MPI_Op_create(redux_real32, 1, &op);
-          }
+  	{
+  	  foo_float = (typeof(foo_float))opr;
+  	  MPI_Op_create(redux_real32, 1, &op);
+  	}
       else
-          {
-            foo_double = (typeof(foo_double))opr;
-            MPI_Op_create(redux_real64, 1, &op);
-          }
+  	{
+  	  foo_double = (typeof(foo_double))opr;
+  	  MPI_Op_create(redux_real64, 1, &op);
+  	}
     }
   else if(GFC_DESCRIPTOR_TYPE(a) == BT_LOGICAL)
     {
@@ -2469,8 +2323,8 @@ PREFIX (atomic_op) (int op, caf_token_t token ,
 
 void
 PREFIX (event_post) (caf_token_t token, size_t index,
-                     int image_index, int *stat,
-                     char *errmsg, int errmsg_len)
+		     int image_index, int *stat,
+		     char *errmsg, int errmsg_len)
 {
   int image, value=1, ierr=0;
   MPI_Win *p = token;
@@ -2501,19 +2355,19 @@ PREFIX (event_post) (caf_token_t token, size_t index,
   if(ierr != MPI_SUCCESS)
     {
       if(stat != NULL)
-        *stat = ierr;
+	*stat = ierr;
       if(errmsg != NULL)
-        {
-          memset(errmsg,' ',errmsg_len);
-          memcpy(errmsg, msg, MIN(errmsg_len,strlen(msg)));
-        }
+	{
+	  memset(errmsg,' ',errmsg_len);
+	  memcpy(errmsg, msg, MIN(errmsg_len,strlen(msg)));
+	}
     }
 }
 
 void
 PREFIX (event_wait) (caf_token_t token, size_t index,
-                     int until_count, int *stat,
-                     char *errmsg, int errmsg_len)
+		     int until_count, int *stat,
+		     char *errmsg, int errmsg_len)
 {
   int ierr=0,count=0,i,image=caf_this_image-1;
   int *var=NULL,flag,old=0;
@@ -2532,19 +2386,19 @@ PREFIX (event_wait) (caf_token_t token, size_t index,
       MPI_Win_sync(*p);
       count = var[index];
       if(count >= until_count)
-        break;
+	break;
     }
 
   i=1;
   while(count < until_count)
     /* for(i = 0; i < spin_loop_max; ++i) */
       {
-        MPI_Win_sync(*p);
-        count = var[index];
-        /* if(count >= until_count) */
-        /*   break; */
-        usleep(2*i);
-        i++;
+	MPI_Win_sync(*p);
+	count = var[index];
+	/* if(count >= until_count) */
+	/*   break; */
+	usleep(5*i);
+	i++;
       }
 
   newval = -until_count;
@@ -2561,18 +2415,18 @@ PREFIX (event_wait) (caf_token_t token, size_t index,
   if(ierr != MPI_SUCCESS)
     {
       if(stat != NULL)
-        *stat = ierr;
+	*stat = ierr;
       if(errmsg != NULL)
-        {
-          memset(errmsg,' ',errmsg_len);
-          memcpy(errmsg, msg, MIN(errmsg_len,strlen(msg)));
-        }
+	{
+	  memset(errmsg,' ',errmsg_len);
+	  memcpy(errmsg, msg, MIN(errmsg_len,strlen(msg)));
+	}
     }
 }
 
 void
 PREFIX (event_query) (caf_token_t token, size_t index,
-                      int image_index, int *count, int *stat)
+		      int image_index, int *count, int *stat)
 {
   int image,ierr=0;
   MPI_Win *p = token;

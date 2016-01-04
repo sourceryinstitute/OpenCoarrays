@@ -691,6 +691,9 @@ print_header()
   fi
 }
 
+. install_prerequisites/set_SUDO.sh
+set_SUDO_if_necessary 
+
 build_opencoarrays()
 {
   print_header
@@ -840,8 +843,6 @@ else # Find or install prerequisites and install OpenCoarrays
 
   cd install_prerequisites &&
   installation_record=install-opencoarrays.log &&
-  . set_SUDO.sh &&
-  set_SUDO_if_necessary  &&
   CMAKE=$CMAKE build_opencoarrays 2>&1 | tee ../$installation_record
   report_results 2>&1 | tee -a ../$installation_record
 
