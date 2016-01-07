@@ -10,13 +10,38 @@ env:
     - MPICH_BOT_URL_HEAD="https://github.com/sourceryinstitute/opencoarrays/files/64308/"
     - MPICH_BOT_URL_TAIL="mpich-3.2.yosemite.bottle.1.tar.gz"
     - OSX_PACKAGES="gcc cmake"
-    - BUILD_TYPE="CodeCoverage"
 
 matrix:
   include:
     - os: osx
+      env:
+        - BUILD_TYPE="CodeCoverage"
+    - os: osx
+      env:
+       - BUILD_TYPE="Release"
     - os: linux
       sudo: false
+      env:
+        - BUILD_TYPE="CodeCoverage"
+      cache:
+        directories:
+          - "$CACHE"
+          - "$HOME/.cache/pip"
+      addons:
+        apt:
+          sources:
+            - george-edison55-precise-backports
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-5
+            - gfortran-5
+            - binutils
+            - cmake-data
+            - cmake
+    - os: linux
+      sudo: false
+      env:
+        - BUILD_TYPE="Release"
       cache:
         directories:
           - "$CACHE"
