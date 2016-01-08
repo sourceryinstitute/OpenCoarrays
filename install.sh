@@ -534,7 +534,7 @@ find_or_install()
       echo "$this_script: Ready to build $package executable $executable in $package_install_path"
     fi
 
-    printf "$this_script: Ok to download, build, and install $package from source? (y/n) "
+    printf "$this_script: Ok to download (if necessary), build, and install $package from source? (y/n) "
     read proceed_with_build
 
     if [[ $proceed_with_build != "y" ]]; then
