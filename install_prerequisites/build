@@ -55,18 +55,9 @@ usage()
     echo "   $this_script --help"
     echo "   $this_script --list"
     echo ""
-    exit 1
+    echo "[exit 10]"
+    exit 10
 }
-
-# If this script is invoked without arguements, print usage information
-# and terminate execution of the script.
-if [ $# == 0 ]; then
-  usage | less
-  exit 1
-fi
-
-# Interpret the first argument as the name of the package to build
-package_to_build=$1
 
 # If the package name is recognized, then set the default version.
 # Otherwise, list the allowable package names and default versions and then exit.
@@ -101,9 +92,11 @@ set_default_version()
          printf "%s (default version %s)\n" "$KEY" "$VALUE"
        fi
      elif [[ "$KEY" == "_unknown" ]]; then
-       # No recognizeable argument passed so print usage information and exit:
+       # No recognizeable argument passed so exit:
        printf "$this_script: Package name not recognized.  Execute '$this_script --list' to list the allowable package names.\n"
-       exit 1
+       echo ""
+       echo "Aborting. [exit 20]"
+       exit 20
      elif [[ $package_to_build == "$KEY" ]]; then
        # We recognize the package name so we set the default version:
        verbosity=$1
@@ -116,38 +109,10 @@ set_default_version()
   done
   if [[ $package_to_build == "--list" || $package_to_build == "-l" ]]; then
     echo ""
-    exit 1
+    echo "Aborting. [exit 30]"
+    exit 30
   fi
 }
-
-# Interpret the second command-line argument, if present, as the package version.
-# Otherwise, set the default package version.
-if [[ -z $2 ]]; then
-  set_default_version
-  version_to_build=$default_version
-elif [[ $2 == "--default" ]]; then
-  set_default_version "quietly"
-  version_to_build=$default_version
-else
-  version_to_build=$2
-fi
-
-# Interpret the third command-line argument, if present, as the installation path.
-# Otherwise, install in a subdirectory of the present working directory.
-default_install_path=${PWD}/$package_to_build-$version_to_build-installation
-if [[ -z $3 || $3 == "--query-path" ]]; then
-  install_path=$default_install_path
-else
-  install_path=$3
-fi
-
-# Interpret the fourth command-line argument, if present, as the number of threads for 'make'.
-# Otherwise, default to single-threaded 'make'.
-if [ -z $4 ]; then
-  num_threads=1
-else
-  num_threads=$4
-fi
 
 check_prerequisites()
 {
@@ -173,7 +138,8 @@ check_prerequisites()
      if [[ "$KEY" == "_unknown" ]]; then
        printf "$this_script: No specified dowload mechanism.\n"
        printf "Please add a 'KEY:VALUE' pair to the 'package_download_mechanism' list in the '$this_script' script.\n"
-       exit 1
+       echo "Aborting. [exit 40]"
+       exit 40
      elif [[ "$package_to_build" == "$KEY" ]]; then
        # Set the download mechanism corresponding to the recognized package:
        fetch=$VALUE
@@ -190,19 +156,13 @@ check_prerequisites()
   if ! type make > /dev/null; then
     printf "$this_script: 'make' is required for compiling packages from source. \n"
     printf " Please ensure that 'make' is installed and in your path.  Aborting.\n"
-    exit 1
-  fi
-  # Verify that the download mechanism is in the path.
-  if ! type $fetch > /dev/null; then
-    printf "$this_script: the default download mechanism for $KEY is $fetch.\n"
-    printf "Please ensure that $fetch is installed and in your path.  Aborting.\n"
-    exit 1
+    echo "Aborting. [exit 50]"
+    exit 50
   fi
 }
 
-
-# Download pkg-config if the tar ball is not already in the present working directory
-download_if_necessary()
+# Define the package location 
+set_url()
 {
   if [[ $package_to_build == 'cmake' ]]; then
     major_minor="${version_to_build%.*}"
@@ -224,9 +184,10 @@ download_if_necessary()
      KEY="${package%%;*}"
      VALUE="${package##*;}"
      if [[ "$KEY" == "_unknown" ]]; then
-       # No recognizeable argument passed so print usage information and exit:
+       # No recognizeable argument passed so exit:
        printf "$this_script: Package name not recognized.  Execute '$this_script --list' to list the allowable package names.\n"
-       exit 1
+       echo "Aborting. [exit 60]"
+       exit 60
      elif [[ $package_to_build == "$KEY" ]]; then
        # We recognize the package name so we set the URL head:
        url_head=$VALUE
@@ -261,9 +222,10 @@ download_if_necessary()
      KEY="${package%%;*}"
      VALUE="${package##*;}"
      if [[ "$KEY" == "_unknown" ]]; then
-       # No recognizeable argument passed so print usage information and exit:
+       # No recognizeable argument passed so exit:
        printf "$this_script: Package name not recognized.  Execute '$this_script --list' to list the allowable package names.\n"
-       exit 1
+       echo "Aborting. [exit 70]"
+       exit 70
      elif [[ $package_to_build == "$KEY" ]]; then
        # We recognize the package name so we set the URL tail:
        url_tail=$VALUE
@@ -272,6 +234,13 @@ download_if_necessary()
   done
   url="$url_head""$url_tail"
 
+}
+
+# Download pkg-config if the tar ball is not already in the present working directory
+download_if_necessary()
+{
+  set_url
+   
   if [ -f $url_tail ] || [ -d $url_tail ]; then
     echo "Found '$url_tail' in ${PWD}."
     echo "If it resulted from an incomplete download, building $package_to_build could fail."
@@ -282,9 +251,33 @@ download_if_necessary()
     else
       printf "n\n"
       printf "Please remove $url_tail and restart the installation to to ensure a fresh download."
-      exit 1
+      echo "Aborting. [exit 80]"
+      exit 80
     fi
+  elif ! type $fetch &> /dev/null; then
+    # The download mechanism is missing
+    echo ""
+    echo ""
+    echo "*****************"
+    printf "$this_script: The default download mechanism for $KEY is $fetch.\n"
+    printf "$this_script: Please either ensure that $fetch is installed and in your PATH \n"
+    printf "$this_script: or download the $KEY source from "
+    set_url
+    printf "$url\n" 
+    called_by_install_sh=`echo "$(ps -p $PPID -o args=)" | grep install.sh`
+    printf "$this_script: Place the downloaded file in ${PWD}\n"
+    if [[ ! -z $called_by_install_sh ]]; then
+      caller="install.sh"
+    else
+      caller="build"
+    fi
+    printf "$this_script: Then restart $caller. Aborting [exit 90]\n"
+    echo "*****************"
+    echo ""
+    echo ""
+    exit 90
   else
+    # The download mechanism is in the path.
     if [[ "$fetch" == "svn" ]]; then
       if [[ $version_to_build == '--avail' || $version_to_build == '-a' ]]; then
         args=ls
@@ -317,12 +310,13 @@ download_if_necessary()
     else
       echo "Download failed: $url_tail is not in the following, expected location:"
       echo "$download_path"
-      exit 1
+      echo "Aborting. [exit 110]"
+      exit 110
     fi
   fi
 }
 
-# Unpack pkg-config if the unpacked tar ball is not in the present working directory
+# Unpack if the unpacked tar ball is not in the present working directory
 unpack_if_necessary()
 {
   if [[ $fetch == "svn" || $fetch == "git" ]]; then
@@ -377,10 +371,48 @@ build_and_install()
   popd
 }
 
+# Print usage information and exit if script is invoked without arguments or with --help or -h as the first argument
 if [ $# == 0 ]; then
-  # Print usage information if script is invoked without arguments
   usage | less
+  exit 120
 elif [[ $1 == '--help' || $1 == '-h' ]]; then
+  usage | less
+  exit 130
+fi
+
+# Interpret the first argument as the name of the package to build
+package_to_build=$1
+
+# Interpret the second command-line argument, if present, as the package version.
+# Otherwise, set the default package version.
+if [[ -z $2 ]]; then
+  set_default_version
+  version_to_build=$default_version
+elif [[ $2 == "--default" ]]; then
+  set_default_version "quietly"
+  version_to_build=$default_version
+else
+  version_to_build=$2
+fi
+
+# Interpret the third command-line argument, if present, as the installation path.
+# Otherwise, install in a subdirectory of the present working directory.
+default_install_path=${PWD}/$package_to_build-$version_to_build-installation
+if [[ -z $3 || $3 == "--query-path" ]]; then
+  install_path=$default_install_path
+else
+  install_path=$3
+fi
+
+# Interpret the fourth command-line argument, if present, as the number of threads for 'make'.
+# Otherwise, default to single-threaded 'make'.
+if [ -z $4 ]; then
+  num_threads=1
+else
+  num_threads=$4
+fi
+
+if [[ $1 == '--help' || $1 == '-h' ]]; then
   # Print usage information if script is invoked with --help or -h argument
   usage | less
 elif [[ $2 == '--default' && $3 == '--query-path' ]]; then
@@ -389,6 +421,10 @@ elif [[ $2 == '--default' && $3 == '--query-path' ]]; then
   exit 0
 elif [[ $2 == '--default' && $3 == '--query-version' ]]; then
   printf "$default_version\n"
+  exit 0
+elif [[ $2 == '--default' && $3 == '--query-url' ]]; then
+  set_url
+  printf "$url\n"
   exit 0
 elif [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
   # Print script copyright if invoked with -v, -V, or --version argument
