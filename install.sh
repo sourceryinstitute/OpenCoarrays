@@ -141,6 +141,7 @@ find_or_install()
     "mpich:mpif90"
     "flex:flex"
     "bison:yacc"
+    "m4:m4"
     "_unknown:0"
   )
   for element in "${package_executable_array[@]}" ; do
@@ -480,8 +481,67 @@ find_or_install()
       fi
 
     else # $package not in PATH and not yet installed by this script
+      # Trigger 'find_or_install bison' and subsequent build of $package
+      stack_push dependency_pkg "m4"
+      stack_push dependency_exe "m4"
+      stack_push dependency_path `./build m4 --default --query-path`
+    fi
+
+  elif [[ $package == "m4" ]]; then
+
+    # We arrive when the 'elif [[ $package == "bison" ]]' block pushes "m4" onto the
+    # the dependency_pkg stack, resulting in the recursive call 'find_or_install m4'
+
+    # Every branch that discovers an acceptable pre-existing installation must set the
+    # M4 environment variable. Every branch must also manage the dependency stack.
+
+    if [[ "$script_installed_package" == true ]]; then
+      printf "$this_script: Using the $package executable $executable installed by $this_script\n"
+      export M4=$package_install_path/bin/m4
+      # Remove m4 from the dependency stack
+      stack_pop dependency_pkg package_done
+      stack_pop dependency_exe executable_done
+      stack_pop dependency_path package_done_path
+      # Put $package onto the script_installed log
+      stack_push script_installed package_done
+      stack_push script_installed executable_done
+      stack_push script_installed package_done_path
       # Halt the recursion and signal that there are no prerequisites to build
-      export YACC="$package_install_path/bin/yacc"
+      stack_push dependency_pkg "none"
+      stack_push dependency_exe "none"
+      stack_push dependency_path "none"
+
+    elif [[ "$package_in_path" == "true" ]]; then
+      printf "$this_script: Checking whether $package executable $executable in PATH is version < $minimum_version... "
+      if [[ "$package_version_in_path" < "$package (GNU Bison) $minimum_version" ]]; then
+        printf "yes.\n"
+        export M4="$package_install_path/bin/m4"
+        # Halt the recursion and signal that there are no prerequisites to build
+        stack_push dependency_pkg "none"
+        stack_push dependency_exe "none"
+        stack_push dependency_path "none"
+      else
+        printf "no.\n"
+        printf "$this_script: Using the $package executable $executable found in the PATH.\n"
+        M4=m4
+        stack_push acceptable_in_path $package $executable
+        # Remove m4 from the dependency stack
+        stack_pop dependency_pkg package_done
+        stack_pop dependency_exe executable_done
+        stack_pop dependency_path package_done_path
+        # Put $package onto the script_installed log
+        stack_push script_installed package_done
+        stack_push script_installed executable_done
+        stack_push script_installed package_done_path
+        # Halt the recursion and signal that there are no prerequisites to build
+        stack_push dependency_pkg "none"
+        stack_push dependency_exe "none"
+        stack_push dependency_path "none"
+      fi
+
+    else # $package not in PATH and not yet installed by this script
+      # Halt the recursion and signal that there are no prerequisites to build
+      export M4="$package_install_path/bin/m4"
       stack_push dependency_pkg  "none"
       stack_push dependency_exe  "none"
       stack_push dependency_path "none"
