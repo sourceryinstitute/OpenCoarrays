@@ -72,7 +72,7 @@ set_default_version()
   # See http://stackoverflow.com/questions/1494178/how-to-define-hash-tables-in-bash
   package_version=(
     "cmake:3.4.0"
-    "gcc:trunk"
+    "gcc:gcc-5-branch"
     "mpich:3.1.4"
     "wget:1.16.3"
     "flex:2.6.0"
@@ -304,12 +304,17 @@ download_if_necessary()
       # In this case, args="ls" and the list of available versions has been printed so we can move on.
       exit 1
     fi
-    if [ -f $download_path/$url_tail ] || [ -d $download_path/$url_tail ]; then
-      echo "Download succeeded. $url_tail is in the following location:"
-      echo "$download_path"
+    if [[ "$fetch" == "svn" ]]; then
+      search_path=$download_path/$version_to_build
     else
-      echo "Download failed: $url_tail is not in the following, expected location:"
-      echo "$download_path"
+      search_path=$download_path/$url_tail
+    fi
+    if [ -f $search_path ] || [ -d $search_path ]; then
+      echo "Download succeeded. The $package_to_build source is in the following location:"
+      echo "$search_path"
+    else
+      echo "Download failed. The $package_to_build source is not in the following, expected location:"
+      echo "$search_path"
       echo "Aborting. [exit 110]"
       exit 110
     fi
@@ -320,7 +325,7 @@ download_if_necessary()
 unpack_if_necessary()
 {
   if [[ $fetch == "svn" || $fetch == "git" ]]; then
-    package_source_directory=$url_tail
+    package_source_directory=$version_to_build
   else
     printf "Unpacking $url_tail. \n"
     printf "Unpack command: tar xf $url_tail \n"

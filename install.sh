@@ -265,7 +265,7 @@ find_or_install()
         stack_push dependency_path "none" `./build $package --default --query-path` `./build gcc --default --query-path`
       else
         printf "yes.\n"
-        printf "$this_script: Checking whether $executable in PATH wraps gfortran version 5.1.0 or later... "
+        printf "$this_script: Checking whether $executable in PATH wraps gfortran version 5.3.0 or later... "
         $executable acceptable_compiler.f90 -o acceptable_compiler
         $executable print_true.f90 -o print_true
         acceptable=`./acceptable_compiler`
@@ -332,7 +332,7 @@ find_or_install()
       stack_push dependency_path "none"
 
     elif [[ "$package_in_path" == "true" ]]; then
-      printf "$this_script: Checking whether $executable in PATH is version 5.1.0 or later..."
+      printf "$this_script: Checking whether $executable in PATH is version 5.3.0 or later..."
       $executable -o acceptable_compiler acceptable_compiler.f90
       $executable -o print_true print_true.f90
       is_true=`./print_true`
@@ -712,7 +712,7 @@ print_header()
   clear
   echo ""
   echo "*** A default build of OpenCoarrays requires CMake 3.4.0 or later     ***"
-  echo "*** and MPICH 3.1.4 wrapping GCC Fortran (gfortran) 5.1.0 or later.   ***"
+  echo "*** and MPICH 3.1.4 wrapping GCC Fortran (gfortran) 5.3.0 or later.   ***"
   echo "*** Additionally, CMake, MPICH, and GCC have their own prerequisites. ***"
   echo "*** This script will check for most known requirements in your PATH   ***"
   echo "*** environment variable and in the default installation directory    ***"
