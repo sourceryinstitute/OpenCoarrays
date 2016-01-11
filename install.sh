@@ -462,11 +462,11 @@ find_or_install()
       printf "$this_script: Checking whether $package executable $executable in PATH is version < $minimum_version... "
       if [[ "$package_version_in_path" < "$package (GNU Bison) $minimum_version" ]]; then
         printf "yes.\n"
-        export YACC="$package_install_path/bin/yacc"
-        # Halt the recursion and signal that there are no prerequisites to build
-        stack_push dependency_pkg "none"
-        stack_push dependency_exe "none"
-        stack_push dependency_path "none"
+        export YACC="$package_install_path/bin/$executable"
+        # Trigger 'find_or_install m4' and subsequent build of $package
+        stack_push dependency_pkg "m4"
+        stack_push dependency_exe "m4"
+        stack_push dependency_path `./build m4 --default --query-path`
       else
         printf "no.\n"
         printf "$this_script: Using the $package executable $executable found in the PATH.\n"
@@ -487,7 +487,7 @@ find_or_install()
       fi
 
     else # $package not in PATH and not yet installed by this script
-      # Trigger 'find_or_install bison' and subsequent build of $package
+      # Trigger 'find_or_install m4' and subsequent build of $package
       stack_push dependency_pkg "m4"
       stack_push dependency_exe "m4"
       stack_push dependency_path `./build m4 --default --query-path`
@@ -665,6 +665,9 @@ find_or_install()
         elif [[ $package == "flex" ]]; then
           echo "$this_script: export FLEX=$package_install_path/bin/$executable"
                               export FLEX="$package_install_path/bin/$executable"
+        elif [[ $package == "m4" ]]; then
+          echo "$this_script: export M4=$package_install_path/bin/$executable"
+                              export M4="$package_install_path/bin/$executable"
         elif [[ $package == "gcc" ]]; then
           echo "$this_script: export FC=$package_install_path/bin/gfortran"
                               export FC="$package_install_path/bin/gfortran"
@@ -847,6 +850,14 @@ report_results()
       echo "  export PATH=\"$bison_install_path/bin\"                            " >> setup.sh
       echo "else                                                                 " >> setup.sh
       echo "  export PATH=\"$bison_install_path/bin\":\$PATH                     " >> setup.sh
+      echo "fi                                                                   " >> setup.sh
+    fi
+    m4_install_path=`./build m4 --default --query-path`
+    if [[ -x "$m4_install_path/bin/yacc" ]]; then
+      echo "if [[ -z \"\$PATH\" ]]; then                                         " >> setup.sh
+      echo "  export PATH=\"$m4_install_path/bin\"                               " >> setup.sh
+      echo "else                                                                 " >> setup.sh
+      echo "  export PATH=\"$m4_install_path/bin\":\$PATH                        " >> setup.sh
       echo "fi                                                                   " >> setup.sh
     fi
     setup_sh_location=$install_path
