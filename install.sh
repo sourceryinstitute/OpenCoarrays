@@ -5,8 +5,8 @@
 # -- This script installs OpenCoarrays and its prerequisites.
 #
 # OpenCoarrays is distributed under the OSI-approved BSD 3-clause License:
-# Copyright (c) 2015, Sourcery, Inc.
-# Copyright (c) 2015, Sourcery Institute
+# Copyright (c) 2015-2016, Sourcery, Inc.
+# Copyright (c) 2015-2016, Sourcery Institute
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification,
@@ -207,7 +207,7 @@ find_or_install()
     elif [[ "$package_in_path" == "true" ]]; then
       printf "$this_script: Checking whether $package in PATH is version < $minimum_version... "
 
-      if [[ "$package_version_in_path" < "$executable version $minimum_version" ]]; then
+      if ! ./check_version.sh $package `./build $package --default --query-version`; then
         printf "yes.\n"
         # Here we place $package on the dependency stack to trigger the build of the above file:
         stack_push dependency_pkg $package "none"
@@ -400,7 +400,7 @@ find_or_install()
     elif [[ "$package_in_path" == "true" ]]; then
 
       printf "$this_script: Checking whether $package in PATH is version < $minimum_version... "
-      if [[ "$package_version_in_path" < "$executable $minimum_version" ]]; then
+      if ! ./check_version.sh $package `./build $package --default --query-version`; then
         printf "yes\n"
 
         export FLEX="$package_install_path/bin/$executable"
@@ -460,7 +460,7 @@ find_or_install()
 
     elif [[ "$package_in_path" == "true" ]]; then
       printf "$this_script: Checking whether $package executable $executable in PATH is version < $minimum_version... "
-      if [[ "$package_version_in_path" < "$package (GNU Bison) $minimum_version" ]]; then
+      if ! ./check_version.sh $package `./build $package --default --query-version`; then
         printf "yes.\n"
         export YACC="$package_install_path/bin/$executable"
         # Trigger 'find_or_install m4' and subsequent build of $package
@@ -519,7 +519,7 @@ find_or_install()
 
     elif [[ "$package_in_path" == "true" ]]; then
       printf "$this_script: Checking whether $package executable $executable in PATH is version < $minimum_version... "
-      if [[ "$package_version_in_path" < "$package (GNU Bison) $minimum_version" ]]; then
+      if ! ./check_version.sh $package `./build $package --default --query-version`; then
         printf "yes.\n"
         export M4="$package_install_path/bin/m4"
         # Halt the recursion and signal that there are no prerequisites to build
@@ -905,8 +905,8 @@ elif [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
   echo "opencoarrays $opencoarrays_version"
   echo ""
   echo "OpenCoarrays installer"
-  echo "Copyright (C) 2015 Sourcery, Inc."
-  echo "Copyright (C) 2015 Sourcery Institute"
+  echo "Copyright (C) 2015-2016 Sourcery, Inc."
+  echo "Copyright (C) 2015-2016 Sourcery Institute"
   echo ""
   echo "OpenCoarrays comes with NO WARRANTY, to the extent permitted by law."
   echo "You may redistribute copies of $this_script under the terms of the"
