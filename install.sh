@@ -408,14 +408,20 @@ find_or_install()
         stack_push dependency_pkg "bison"
         stack_push dependency_exe "yacc"
         stack_push dependency_path `./build bison --default --query-path`
-
       else
         printf "no.\n"
         printf "$this_script: Using the $executable found in the PATH.\n"
         export FLEX=$executable
         stack_push acceptable_in_path $package $executable
-        # Halt the recursion by removing flex from the dependency stack and indicating
-        # that none of the prerequisites required to build flex are needed.
+        # Remove $package from the dependency stack
+        stack_pop dependency_pkg package_done
+        stack_pop dependency_exe executable_done
+        stack_pop dependency_path package_done_path
+        # Put $package onto the script_installed log
+        stack_push script_installed package_done
+        stack_push script_installed executable_done
+        stack_push script_installed package_done_path
+        # Halt the recursion and signal that none of $package's prerequisites need to be built
         stack_push dependency_pkg "none"
         stack_push dependency_exe "none"
         stack_push dependency_path "none"
