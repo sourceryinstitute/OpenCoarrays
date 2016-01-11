@@ -5,8 +5,8 @@
 # -- This script downloads and installs the OpenCoarrays prerequisites
 #
 # OpenCoarrays is distributed under the OSI-approved BSD 3-clause License:
-# Copyright (c) 2015, Sourcery, Inc.
-# Copyright (c) 2015, Sourcery Institute
+# Copyright (c) 2015-2016, Sourcery, Inc.
+# Copyright (c) 2015-2016, Sourcery Institute
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification,
@@ -57,22 +57,52 @@ usage()
     echo ""
     echo "[exit 10]"
     exit 10
+ 
+# Private usage information
+#
+# The following arguments are intentionally not documented in the above public usage information because
+# they are intended for use by ../install.sh only rather than for use interactively at the command line:
+#    Argument $2  Argument $3      Description 
+#    --default                     install the default version for the corresponding package
+#    --default    --query-path     return the default installation location for the package
+#    --default    --query-version  return the default version for the package
+#    --default    --query-url      return the default download location for the package
+#
+#   Example: ./build gcc --default --query-path
+#
+#  With the exception of gcc, all uses of "--default" refer to the package version that would be downloaded
+#  if no version is specified, e.g., "./build mpich". By contrast, "./build gcc" downloads the latest 
+#  pre-release, development branch (the "trunk"), whereas "./build gcc --default" downloads a released 
+#  version of gcc.
+#
+# The following argument works only with gcc and is mutually exclusive with the above private arguments 
+# (it could be extended to work with any svn download):
+#    Argument $2  Description 
+#    --avail      list the development branches available for checkout
+#    -a           same as --avail
+#
+#   Example: ./build gcc --avail
 }
 
 # If the package name is recognized, then set the default version.
 # Otherwise, list the allowable package names and default versions and then exit.
 set_default_version()
 {
+  version_requested=$2
   if [[ $package_to_build == "--list" || $package_to_build == "-l" ]]; then
        printf "\n"
        printf "The '$this_script' script can build the following packages:\n"
+  elif [[ $package_to_build == "gcc" && $version_requested == "--default" ]]; then
+    gcc_version="5.3.0"
+  else
+    gcc_version="trunk"
   fi
   # This is a bash 3 hack standing in for a bash 4 hash (bash 3 is the lowest common
   # denominator because, for licensing reasons, OS X only has bash 3 by default.)
   # See http://stackoverflow.com/questions/1494178/how-to-define-hash-tables-in-bash
   package_version=(
     "cmake:3.4.0"
-    "gcc:trunk"
+    "gcc:$gcc_version"
     "mpich:3.1.4"
     "wget:1.16.3"
     "flex:2.6.0"
@@ -100,7 +130,7 @@ set_default_version()
      elif [[ $package_to_build == "$KEY" ]]; then
        # We recognize the package name so we set the default version:
        verbosity=$1
-       if [[ $verbosity != "quietly" ]]; then
+       if [[ $2 != "--default" ]]; then
          printf "Using default version $VALUE\n"
        fi
        default_version=$VALUE
@@ -116,11 +146,16 @@ set_default_version()
 
 check_prerequisites()
 {
+  if [[ $package_to_build == "gcc" && $version_requested == "--default" ]]; then
+    gcc_fetch="ftp"
+  else
+    gcc_fetch="svn"
+  fi
   # This is a bash 3 hack standing in for a bash 4 hash (bash 3 is the lowest common
   # denominator because, for licensing reasons, OS X only has bash 3 by default.)
   # See http://stackoverflow.com/questions/1494178/how-to-define-hash-tables-in-bash
   package_download_mechanism=(
-    "gcc:svn"
+    "gcc:$gcc_fetch"
     "wget:ftp"
     "cmake:wget"
     "mpich:wget"
@@ -166,9 +201,13 @@ set_url()
 {
   if [[ $package_to_build == 'cmake' ]]; then
     major_minor="${version_to_build%.*}"
+  elif [[ "$package_to_build" == "gcc" && "$version_to_build" == "$default_version" ]]; then
+    gcc_url_head="http://ftpmirror.gnu.org/gcc/gcc-5.3.0/"
+  else
+    gcc_url_head="svn://gcc.gnu.org/svn/gcc/"
   fi
   package_url_head=(
-    "gcc;svn://gcc.gnu.org/svn/gcc/"
+    "gcc;$gcc_url_head"
     "wget;ftp.gnu.org:/gnu/wget/"
     "m4;ftp.gnu.org:/gnu/m4/"
     "pkg-config;http://pkgconfig.freedesktop.org/releases/"
@@ -202,7 +241,7 @@ set_url()
     elif [[ $version_to_build == '--avail' || $version_to_build == '-a' ]]; then
       gcc_tail='branches'
     else
-      gcc_tail=/branches/$version_to_build
+      gcc_tail="gcc-$version_to_build.tar.bz2"
     fi
   fi
   package_url_tail=(
@@ -299,17 +338,23 @@ download_if_necessary()
     printf "Downloading $package_to_build $version_to_build to the following location:\n"
     printf "$download_path/$package_source_directory \n"
     printf "Download command: $fetch $args $url\n"
+    printf "Depending on the file size and network bandwidth, this could take several minutes or longer."
     $fetch $args $url
     if [[ $version_to_build == '--avail' || $version_to_build == '-a' ]]; then
       # In this case, args="ls" and the list of available versions has been printed so we can move on.
       exit 1
     fi
-    if [ -f $download_path/$url_tail ] || [ -d $download_path/$url_tail ]; then
-      echo "Download succeeded. $url_tail is in the following location:"
-      echo "$download_path"
+    if [[ "$fetch" == "svn" ]]; then
+      search_path=$download_path/$version_to_build
     else
-      echo "Download failed: $url_tail is not in the following, expected location:"
-      echo "$download_path"
+      search_path=$download_path/$url_tail
+    fi
+    if [ -f $search_path ] || [ -d $search_path ]; then
+      echo "Download succeeded. The $package_to_build source is in the following location:"
+      echo "$search_path"
+    else
+      echo "Download failed. The $package_to_build source is not in the following, expected location:"
+      echo "$search_path"
       echo "Aborting. [exit 110]"
       exit 110
     fi
@@ -320,7 +365,7 @@ download_if_necessary()
 unpack_if_necessary()
 {
   if [[ $fetch == "svn" || $fetch == "git" ]]; then
-    package_source_directory=$url_tail
+    package_source_directory=$version_to_build
   else
     printf "Unpacking $url_tail. \n"
     printf "Unpack command: tar xf $url_tail \n"
@@ -385,11 +430,8 @@ package_to_build=$1
 
 # Interpret the second command-line argument, if present, as the package version.
 # Otherwise, set the default package version.
-if [[ -z $2 ]]; then
-  set_default_version
-  version_to_build=$default_version
-elif [[ $2 == "--default" ]]; then
-  set_default_version "quietly"
+if [[ -z $2 || $2 == "--default"  ]]; then
+  set_default_version $*
   version_to_build=$default_version
 else
   version_to_build=$2
@@ -441,7 +483,7 @@ elif [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
 else
   # Download, unpack, and build CMake
   download_path=${PWD}
-  check_prerequisites &&
+  check_prerequisites $* &&
   download_if_necessary &&
   unpack_if_necessary &&
   CC=$CC CXX=$CXX build_and_install $package_to_build $version_to_build $install_path $num_threads $download_path \
