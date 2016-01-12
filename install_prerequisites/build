@@ -48,61 +48,44 @@ usage()
     echo ""
     echo " Examples:"
     echo ""
-    echo "   $this_script gcc "
-    echo "   $this_script gcc trunk"
-    echo "   $this_script gcc 5.2.0 /opt/gnu/5.2.0 4"
-    echo "   $this_script wget"
+    echo "   $this_script gcc                              Build the default GCC release"
+    echo "   $this_script gcc trunk                        Build the GCC development trunk"
+    echo "   $this_script gcc --default /opt/gnu/5.3.0 4   Build the default release in the specified path using 4 threads"  
+    echo "   $this_script gcc 5.2.0 /opt/gnu/5.2.0         Build the GCC 5.2.0 release"  
+    echo "   $this_script wget                             Build the wget package"
+    echo "   $this_script mpich --default --query-version  Return the default mpich version built by $this_script"
+    echo "   $this_script flex  --default --query-path     Return the default flex installation path"
+    echo "   $this_script mpich --default --query-url      Return the default mpich version built by $this_script"
     echo "   $this_script --help"
     echo "   $this_script --list"
     echo ""
     echo "[exit 10]"
     exit 10
  
-# Private usage information
+# The following argument invocation works only with gcc but could be extended to work with any svn download:
+# 
+#    ./build gcc --avail  list the development branches available for checkout
+#    ./build gcc --a      same as --avail
 #
-# The following arguments are intentionally not documented in the above public usage information because
-# they are intended for use by ../install.sh only rather than for use interactively at the command line:
-#    Argument $2  Argument $3      Description 
-#    --default                     install the default version for the corresponding package
-#    --default    --query-path     return the default installation location for the package
-#    --default    --query-version  return the default version for the package
-#    --default    --query-url      return the default download location for the package
-#
-#   Example: ./build gcc --default --query-path
-#
-#  With the exception of gcc, all uses of "--default" refer to the package version that would be downloaded
-#  if no version is specified, e.g., "./build mpich". By contrast, "./build gcc" downloads the latest 
-#  pre-release, development branch (the "trunk"), whereas "./build gcc --default" downloads a released 
-#  version of gcc.
-#
-# The following argument works only with gcc and is mutually exclusive with the above private arguments 
-# (it could be extended to work with any svn download):
-#    Argument $2  Description 
-#    --avail      list the development branches available for checkout
-#    -a           same as --avail
-#
-#   Example: ./build gcc --avail
+#  The --avail and -a options are not listed in the printed usage information because building 
+#  non-trunk development branches (e.g., gcc-5-branch) is currently broken.  A fix could be 
+#  accomplished most elegantly by first implementing POSIX getopts argument parsing.
 }
 
 # If the package name is recognized, then set the default version.
 # Otherwise, list the allowable package names and default versions and then exit.
 set_default_version()
 {
-  version_requested=$2
   if [[ $package_to_build == "--list" || $package_to_build == "-l" ]]; then
        printf "\n"
        printf "The '$this_script' script can build the following packages:\n"
-  elif [[ $package_to_build == "gcc" && $version_requested == "--default" ]]; then
-    gcc_version="5.3.0"
-  else
-    gcc_version="trunk"
   fi
   # This is a bash 3 hack standing in for a bash 4 hash (bash 3 is the lowest common
   # denominator because, for licensing reasons, OS X only has bash 3 by default.)
   # See http://stackoverflow.com/questions/1494178/how-to-define-hash-tables-in-bash
   package_version=(
     "cmake:3.4.0"
-    "gcc:$gcc_version"
+    "gcc:5.3.0"
     "mpich:3.1.4"
     "wget:1.16.3"
     "flex:2.6.0"
@@ -129,7 +112,6 @@ set_default_version()
        exit 20
      elif [[ $package_to_build == "$KEY" ]]; then
        # We recognize the package name so we set the default version:
-       verbosity=$1
        if [[ $2 != "--default" ]]; then
          printf "Using default version $VALUE\n"
        fi
@@ -146,7 +128,7 @@ set_default_version()
 
 check_prerequisites()
 {
-  if [[ $package_to_build == "gcc" && $version_requested == "--default" ]]; then
+  if [[ "$package_to_build" == "gcc" && "$version_to_build" != "trunk" ]]; then
     gcc_fetch="ftp"
   else
     gcc_fetch="svn"
@@ -201,8 +183,8 @@ set_url()
 {
   if [[ $package_to_build == 'cmake' ]]; then
     major_minor="${version_to_build%.*}"
-  elif [[ "$package_to_build" == "gcc" && "$version_to_build" == "$default_version" ]]; then
-    gcc_url_head="http://ftpmirror.gnu.org/gcc/gcc-5.3.0/"
+  elif [[ "$package_to_build" == "gcc" && "$version_to_build" != "trunk" ]]; then
+    gcc_url_head="http://ftpmirror.gnu.org/gcc/gcc-$version_to_build/"
   else
     gcc_url_head="svn://gcc.gnu.org/svn/gcc/"
   fi
@@ -236,8 +218,8 @@ set_url()
 
   # Set differing tails for GCC trunk versus branches
   if [[ $package_to_build == 'gcc' ]]; then
-    if [[ $version_to_build == 'trunk' ]]; then
-      gcc_tail='trunk'
+    if [[ $fetch == 'svn' ]]; then
+      gcc_tail=$version_to_build
     elif [[ $version_to_build == '--avail' || $version_to_build == '-a' ]]; then
       gcc_tail='branches'
     else
