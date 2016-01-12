@@ -5,8 +5,8 @@
 # -- This script installs OpenCoarrays and its prerequisites.
 #
 # OpenCoarrays is distributed under the OSI-approved BSD 3-clause License:
-# Copyright (c) 2015, Sourcery, Inc.
-# Copyright (c) 2015, Sourcery Institute
+# Copyright (c) 2015-2016, Sourcery, Inc.
+# Copyright (c) 2015-2016, Sourcery Institute
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification,
@@ -141,6 +141,7 @@ find_or_install()
     "mpich:mpif90"
     "flex:flex"
     "bison:yacc"
+    "m4:m4"
     "_unknown:0"
   )
   for element in "${package_executable_array[@]}" ; do
@@ -206,7 +207,7 @@ find_or_install()
     elif [[ "$package_in_path" == "true" ]]; then
       printf "$this_script: Checking whether $package in PATH is version < $minimum_version... "
 
-      if [[ "$package_version_in_path" < "$executable version $minimum_version" ]]; then
+      if ! ./check_version.sh $package `./build $package --default --query-version`; then
         printf "yes.\n"
         # Here we place $package on the dependency stack to trigger the build of the above file:
         stack_push dependency_pkg $package "none"
@@ -264,7 +265,7 @@ find_or_install()
         stack_push dependency_path "none" `./build $package --default --query-path` `./build gcc --default --query-path`
       else
         printf "yes.\n"
-        printf "$this_script: Checking whether $executable in PATH wraps gfortran version 5.1.0 or later... "
+        printf "$this_script: Checking whether $executable in PATH wraps gfortran version 5.3.0 or later... "
         $executable acceptable_compiler.f90 -o acceptable_compiler
         $executable print_true.f90 -o print_true
         acceptable=`./acceptable_compiler`
@@ -331,7 +332,7 @@ find_or_install()
       stack_push dependency_path "none"
 
     elif [[ "$package_in_path" == "true" ]]; then
-      printf "$this_script: Checking whether $executable in PATH is version 5.1.0 or later..."
+      printf "$this_script: Checking whether $executable in PATH is version 5.3.0 or later..."
       $executable -o acceptable_compiler acceptable_compiler.f90
       $executable -o print_true print_true.f90
       is_true=`./print_true`
@@ -399,7 +400,7 @@ find_or_install()
     elif [[ "$package_in_path" == "true" ]]; then
 
       printf "$this_script: Checking whether $package in PATH is version < $minimum_version... "
-      if [[ "$package_version_in_path" < "$executable $minimum_version" ]]; then
+      if ! ./check_version.sh $package `./build $package --default --query-version`; then
         printf "yes\n"
 
         export FLEX="$package_install_path/bin/$executable"
@@ -407,14 +408,20 @@ find_or_install()
         stack_push dependency_pkg "bison"
         stack_push dependency_exe "yacc"
         stack_push dependency_path `./build bison --default --query-path`
-
       else
         printf "no.\n"
         printf "$this_script: Using the $executable found in the PATH.\n"
         export FLEX=$executable
         stack_push acceptable_in_path $package $executable
-        # Halt the recursion by removing flex from the dependency stack and indicating
-        # that none of the prerequisites required to build flex are needed.
+        # Remove $package from the dependency stack
+        stack_pop dependency_pkg package_done
+        stack_pop dependency_exe executable_done
+        stack_pop dependency_path package_done_path
+        # Put $package onto the script_installed log
+        stack_push script_installed package_done
+        stack_push script_installed executable_done
+        stack_push script_installed package_done_path
+        # Halt the recursion and signal that none of $package's prerequisites need to be built
         stack_push dependency_pkg "none"
         stack_push dependency_exe "none"
         stack_push dependency_path "none"
@@ -453,13 +460,13 @@ find_or_install()
 
     elif [[ "$package_in_path" == "true" ]]; then
       printf "$this_script: Checking whether $package executable $executable in PATH is version < $minimum_version... "
-      if [[ "$package_version_in_path" < "$package (GNU Bison) $minimum_version" ]]; then
+      if ! ./check_version.sh $package `./build $package --default --query-version`; then
         printf "yes.\n"
-        export YACC="$package_install_path/bin/yacc"
-        # Halt the recursion and signal that there are no prerequisites to build
-        stack_push dependency_pkg "none"
-        stack_push dependency_exe "none"
-        stack_push dependency_path "none"
+        export YACC="$package_install_path/bin/$executable"
+        # Trigger 'find_or_install m4' and subsequent build of $package
+        stack_push dependency_pkg "m4"
+        stack_push dependency_exe "m4"
+        stack_push dependency_path `./build m4 --default --query-path`
       else
         printf "no.\n"
         printf "$this_script: Using the $package executable $executable found in the PATH.\n"
@@ -480,8 +487,67 @@ find_or_install()
       fi
 
     else # $package not in PATH and not yet installed by this script
+      # Trigger 'find_or_install m4' and subsequent build of $package
+      stack_push dependency_pkg "m4"
+      stack_push dependency_exe "m4"
+      stack_push dependency_path `./build m4 --default --query-path`
+    fi
+
+  elif [[ $package == "m4" ]]; then
+
+    # We arrive when the 'elif [[ $package == "bison" ]]' block pushes "m4" onto the
+    # the dependency_pkg stack, resulting in the recursive call 'find_or_install m4'
+
+    # Every branch that discovers an acceptable pre-existing installation must set the
+    # M4 environment variable. Every branch must also manage the dependency stack.
+
+    if [[ "$script_installed_package" == true ]]; then
+      printf "$this_script: Using the $package executable $executable installed by $this_script\n"
+      export M4=$package_install_path/bin/m4
+      # Remove m4 from the dependency stack
+      stack_pop dependency_pkg package_done
+      stack_pop dependency_exe executable_done
+      stack_pop dependency_path package_done_path
+      # Put $package onto the script_installed log
+      stack_push script_installed package_done
+      stack_push script_installed executable_done
+      stack_push script_installed package_done_path
       # Halt the recursion and signal that there are no prerequisites to build
-      export YACC="$package_install_path/bin/yacc"
+      stack_push dependency_pkg "none"
+      stack_push dependency_exe "none"
+      stack_push dependency_path "none"
+
+    elif [[ "$package_in_path" == "true" ]]; then
+      printf "$this_script: Checking whether $package executable $executable in PATH is version < $minimum_version... "
+      if ! ./check_version.sh $package `./build $package --default --query-version`; then
+        printf "yes.\n"
+        export M4="$package_install_path/bin/m4"
+        # Halt the recursion and signal that there are no prerequisites to build
+        stack_push dependency_pkg "none"
+        stack_push dependency_exe "none"
+        stack_push dependency_path "none"
+      else
+        printf "no.\n"
+        printf "$this_script: Using the $package executable $executable found in the PATH.\n"
+        M4=m4
+        stack_push acceptable_in_path $package $executable
+        # Remove m4 from the dependency stack
+        stack_pop dependency_pkg package_done
+        stack_pop dependency_exe executable_done
+        stack_pop dependency_path package_done_path
+        # Put $package onto the script_installed log
+        stack_push script_installed package_done
+        stack_push script_installed executable_done
+        stack_push script_installed package_done_path
+        # Halt the recursion and signal that there are no prerequisites to build
+        stack_push dependency_pkg "none"
+        stack_push dependency_exe "none"
+        stack_push dependency_path "none"
+      fi
+
+    else # $package not in PATH and not yet installed by this script
+      # Halt the recursion and signal that there are no prerequisites to build
+      export M4="$package_install_path/bin/m4"
       stack_push dependency_pkg  "none"
       stack_push dependency_exe  "none"
       stack_push dependency_path "none"
@@ -599,6 +665,9 @@ find_or_install()
         elif [[ $package == "flex" ]]; then
           echo "$this_script: export FLEX=$package_install_path/bin/$executable"
                               export FLEX="$package_install_path/bin/$executable"
+        elif [[ $package == "m4" ]]; then
+          echo "$this_script: export M4=$package_install_path/bin/$executable"
+                              export M4="$package_install_path/bin/$executable"
         elif [[ $package == "gcc" ]]; then
           echo "$this_script: export FC=$package_install_path/bin/gfortran"
                               export FC="$package_install_path/bin/gfortran"
@@ -652,7 +721,7 @@ print_header()
   clear
   echo ""
   echo "*** A default build of OpenCoarrays requires CMake 3.4.0 or later     ***"
-  echo "*** and MPICH 3.1.4 wrapping GCC Fortran (gfortran) 5.1.0 or later.   ***"
+  echo "*** and MPICH 3.1.4 wrapping GCC Fortran (gfortran) 5.3.0 or later.   ***"
   echo "*** Additionally, CMake, MPICH, and GCC have their own prerequisites. ***"
   echo "*** This script will check for most known requirements in your PATH   ***"
   echo "*** environment variable and in the default installation directory    ***"
@@ -783,6 +852,14 @@ report_results()
       echo "  export PATH=\"$bison_install_path/bin\":\$PATH                     " >> setup.sh
       echo "fi                                                                   " >> setup.sh
     fi
+    m4_install_path=`./build m4 --default --query-path`
+    if [[ -x "$m4_install_path/bin/yacc" ]]; then
+      echo "if [[ -z \"\$PATH\" ]]; then                                         " >> setup.sh
+      echo "  export PATH=\"$m4_install_path/bin\"                               " >> setup.sh
+      echo "else                                                                 " >> setup.sh
+      echo "  export PATH=\"$m4_install_path/bin\":\$PATH                        " >> setup.sh
+      echo "fi                                                                   " >> setup.sh
+    fi
     setup_sh_location=$install_path
     $SUDO mv setup.sh $install_path || setup_sh_location=${PWD}
     echo "*** Before using caf, cafrun, or build, please execute the following command ***"
@@ -828,8 +905,8 @@ elif [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
   echo "opencoarrays $opencoarrays_version"
   echo ""
   echo "OpenCoarrays installer"
-  echo "Copyright (C) 2015 Sourcery, Inc."
-  echo "Copyright (C) 2015 Sourcery Institute"
+  echo "Copyright (C) 2015-2016 Sourcery, Inc."
+  echo "Copyright (C) 2015-2016 Sourcery Institute"
   echo ""
   echo "OpenCoarrays comes with NO WARRANTY, to the extent permitted by law."
   echo "You may redistribute copies of $this_script under the terms of the"
