@@ -1,0 +1,11 @@
+approve_by_comment: true
+approve_regex: '^([Aa]pproved|:\+1:|:shipit:|:ship: it|LGTM|:zap:|:boom:|:clap:|:bow:)'
+reject_regex: '^([Nn]ope|[Nn]ope\.jpg|[Dd]enied|[Rr]ejected|:\-1:)'
+reset_on_push: true
+author_approval: default
+reviewers:
+    required: 1
+    members:
+        - afanfa
+        - rouson
+        - zbeekman

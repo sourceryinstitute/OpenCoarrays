@@ -24,6 +24,7 @@ install_prerequisites/build text
 
 # Prevent dev-ops files from making it into the release archives
 .travis.yml export-ignore
+.pullapprove.yml export-ignore
 .gitattributes export-ignore
 .gitignore export-ignore
 developer-scripts export-ignore
