@@ -156,13 +156,13 @@ Known Issues
 To-Do List
 ----------
 
-* Additional tests and documentation.
-* Improvement of error handling and diagnostics, including but not
-  limited to filling the `ERRMSG=` variable in case of errors.
-* Providing a diagnostic mode with run-time consistency checks.
-* Better integration with the test cases of GCC.  For more information,
-  see the GCC source code files in `gcc/testsuite/gfortran.dg/`,
-  in particular, the `dg-do run` tests in `coarray*f90` and `coarray/`).
+* [ ] Additional tests and documentation.
+* [ ] Improvement of error handling and diagnostics, including but not
+      limited to filling the `ERRMSG=` variable in case of errors.
+* [ ] Providing a diagnostic mode with run-time consistency checks.
+* [ ] Better integration with the test cases of GCC.  For more information,
+      see the GCC source code files in `gcc/testsuite/gfortran.dg/`,
+      in particular, the `dg-do run` tests in `coarray*f90` and `coarray/`).
 
 
 [Hyperlinks]:#
