@@ -5,6 +5,11 @@
 OpenCoarrays Application Binary Interface (ABI)
 ===============================================
 
+[![Download as PDF][pdf img]](http://md2pdf.herokuapp.com/sourceryinstitute/opencoarrays/blob/master/CAF_ABI.pdf)
+
+Download this file as a PDF document
+[here](http://md2pdf.herokuapp.com/sourceryinstitute/opencoarrays/blob/master/CAF_ABI.pdf).
+
 * [To Do](#to-do)
 * [Implementation status](#implementation-status)
 * [Definitions and types](#definitions-and-types)
@@ -563,3 +568,4 @@ __TODO__:
 [Implementation status]: #implementation-status
 [Definitions and types]: #definitions-and-types
 [Provided functions]: #provided-functions
+[pdf img]: https://img.shields.io/badge/PDF-CAF_ABI.md-6C2DC7.svg?style=flat-square "Download as PDF"

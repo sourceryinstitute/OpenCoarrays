@@ -7,6 +7,11 @@
 OpenCoarrays Status
 ===================
 
+[![Download as PDF][pdf img]](http://md2pdf.herokuapp.com/sourceryinstitute/opencoarrays/blob/master/STATUS.pdf)
+
+Download this file as a PDF document
+[here](http://md2pdf.herokuapp.com/sourceryinstitute/opencoarrays/blob/master/STATUS.pdf).
+
  *  [Feature Coverage](#feature-coverage)
  *  [Compiler Status](#compiler-status)
      * [OpenCoarrays-Aware (OCA) Coarray Fortran (CAF) Compilers]
@@ -198,3 +203,4 @@ To-Do List
 [OpenCoarrays Google Group]: https://groups.google.com/forum/#!forum/opencoarrays
 [Sourcery Store]: http://www.sourceryinstitute.org/store
 [Issues]: https://github.com/sourceryinstitute/opencoarrays/issues
+[pdf img]: https://img.shields.io/badge/PDF-STATUS.md-6C2DC7.svg?style=flat-square "Download as PDF"

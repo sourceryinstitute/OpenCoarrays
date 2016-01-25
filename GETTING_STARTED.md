@@ -7,6 +7,11 @@
 Getting Started
 ===============
 
+[![Download as PDF][pdf img]](http://md2pdf.herokuapp.com/sourceryinstitute/opencoarrays/blob/master/GETTING_STARTED.pdf)
+
+Download this file as a PDF document
+[here](http://md2pdf.herokuapp.com/sourceryinstitute/opencoarrays/blob/master/GETTING_STARTED.pdf).
+
 * [The caf compiler wrapper]
 * [A sample basic workflow]
 * [An advanced workflow]
@@ -124,3 +129,4 @@ mpirun -np <number-of-images> ./tally
 [TS 18508]: http://isotc.iso.org/livelink/livelink?func=ll&objId=17181227&objAction=Open
 [The caf compiler wrapper]: #the-caf-compiler-wrapper
 [The cafrun program launcher]: #the-cafrun-program-launcher
+[pdf img]: https://img.shields.io/badge/PDF-GETTING_STARTED.md-6C2DC7.svg?style=flat-square "Download as PDF"

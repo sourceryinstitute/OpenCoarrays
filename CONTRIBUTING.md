@@ -3,6 +3,11 @@
 Contributing to OpenCoarrays
 ============================
 
+[![Download as PDF][pdf img]](http://md2pdf.herokuapp.com/sourceryinstitute/opencoarrays/blob/master/CONTRIBUTING.pdf)
+
+Download this file as a PDF document
+[here](http://md2pdf.herokuapp.com/sourceryinstitute/opencoarrays/blob/master/CONTRIBUTING.pdf).
+
 - [Reporting Defects](#reporting-defects)
 - [Requesting Enhancements](#requesting-enhancements)
 - [Helping Out](#helping-out)
@@ -106,3 +111,4 @@ This is the development branch, akin to GCC's `trunk`. Both of `devel` and `mast
 [mailing list]: https://groups.google.com/forum/#!forum/opencoarrays
 [using OpenCoarrays]: ./GETTING_STARTED.md
 [new issue]: https://github.com/sourceryinstitute/opencoarrays/issues/new
+[pdf img]: https://img.shields.io/badge/PDF-CONTRIBUTING.md-6C2DC7.svg?style=flat-square "Download as PDF"

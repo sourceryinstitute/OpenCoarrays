@@ -8,9 +8,12 @@ OpenCoarrays
 ============
 
 [![CI Build Status][build img]](https://travis-ci.org/sourceryinstitute/opencoarrays)
-[![GitHub release][release img]](https://github.com/sourceryinstitute/opencoarrays/releases/latest)
-[![GitHub license][license img]](COPYRIGHT-BSD3)
+[![GitHub license][license img]](./COPYRIGHT-BSD3)
+[![Download as PDF][pdf img]](http://md2pdf.herokuapp.com/sourceryinstitute/opencoarrays/blob/master/README.pdf)
+<!-- [![GitHub release][release img]](https://github.com/sourceryinstitute/opencoarrays/releases/latest) -->
 <!-- [![Release Downloads][download img]](https://github.com/sourceryinstitute/opencoarrays/releases) -->
+
+Download this file as a PDF document [here](http://md2pdf.herokuapp.com/sourceryinstitute/opencoarrays/blob/master/README.pdf).
 
 * [Overview](#overview)
 * [Downloads](#downloads)
@@ -35,7 +38,7 @@ OpenCoarrays enables CAF application developers to express parallel algorithms w
 
 Downloads
 ---------
-[![Release Downloads][download img]](https://github.com/sourceryinstitute/opencoarrays/releases/latest)
+<!--[![Release Downloads][download img]](https://github.com/sourceryinstitute/opencoarrays/releases/latest)-->
 
 Please see our [Releases] page.
 
@@ -125,8 +128,9 @@ We gratefully acknowledge support from the following institutions:
 [Issues]: https://github.com/sourceryinstitute/opencoarrays/issues
 [Releases]: https://github.com/sourceryinstitute/opencoarrays/releases
 
-[build img]: https://img.shields.io/travis-ci/sourceryinstitute/opencoarrays/master.svg?style=flat-square "Travis-CI badge image source"
-[CI Master Branch]: https://travis-ci.org/sourceryinstitute/opencoarrays?branch=master "Travis-CI builds"
+[build img]: https://img.shields.io/travis-ci/sourceryinstitute/opencoarrays/master.svg?style=flat-square "View Travis-CI builds"
+[CI Master Branch]: https://travis-ci.org/sourceryinstitute/opencoarrays?branch=master "View Travis-CI builds"
 [download img]: https://img.shields.io/github/downloads/sourceryinstitute/opencoarrays/total.svg?style=flat-square "Download count image source"
-[license img]: https://img.shields.io/github/license/sourceryinstitute/opencoarrays.svg?style=flat-square "BSD-3 License badge"
-[release img]: https://img.shields.io/github/release/sourceryinstitute/opencoarrays.svg?style=flat-square "Latest release badge"
+[license img]: https://img.shields.io/badge/License-BSD--3-blue.svg?style=flat-square "View BSD-3 License"
+[release img]: https://img.shields.io/github/release/sourceryinstitute/opencoarrays.svg?style=flat-square "View latest release"
+[pdf img]: https://img.shields.io/badge/PDF-README.md-6C2DC7.svg?style=flat-square "Download as PDF"

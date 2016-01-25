@@ -7,6 +7,11 @@
 Installing OpenCoarrays
 =======================
 
+[![Download as PDF][pdf img]](http://md2pdf.herokuapp.com/sourceryinstitute/opencoarrays/blob/master/INSTALL.pdf)
+
+Download this file as a PDF document
+[here](http://md2pdf.herokuapp.com/sourceryinstitute/opencoarrays/blob/master/INSTALL.pdf).
+
  *  [End-User Installation]
      * [Installation Script]
      * [OS X]
@@ -258,3 +263,4 @@ where the second line builds the flex package that is required for building gcc 
 [Arch Linux]: https://www.archlinux.org
 [aur package]: https://aur.archlinux.org/packages/opencoarrays/
 [Releases]: https://github.com/sourceryinstitute/opencoarrays/releases
+[pdf img]: https://img.shields.io/badge/PDF-INSTALL.md-6C2DC7.svg?style=flat-square "Download as PDF"
