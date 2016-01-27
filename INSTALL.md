@@ -111,7 +111,7 @@ Advanced Installation from Source
 
 ### Prerequisites: ###
 
-The following prerequisites and their dependencies are recommended for the broadest coverage of CAF features. The download, compilation and installation of these prerequisites will be automatically attempted by the [install.sh] script, if any of them are missing or outdated.
+The prerequisites below and their dependencies are recommended for the broadest coverage of CAF features. If a prerequisite is missing or outdated, the [install.sh] script will prompt the user for permission to download, compile, and install it. Before doing so, [install.sh] will verify whether that prerequisite's prerequisites are present and will recursively traverse the dependency tree until reaching an acceptable prerequisite or reaching the end of a branch.
 
 ```
 opencoarrays
@@ -236,7 +236,6 @@ where the second line builds the flex package that is required for building gcc 
 [make.inc]: ./src/make.inc
 [opencoarrays]: ./src/extensions/opencoarrays.F90
 [install_prerequisites]: ./install_prerequisites
-[build]: ./install_prerequisites/build
 [MPICH]: http://www.mpich.org
 [MVAPICH]:http://mvapich.cse.ohio-state.edu
 [MacPorts]: http://www.macports.org
