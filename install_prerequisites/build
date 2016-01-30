@@ -184,7 +184,7 @@ set_url()
   if [[ $package_to_build == 'cmake' ]]; then
     major_minor="${version_to_build%.*}"
   elif [[ "$package_to_build" == "gcc" && "$version_to_build" != "trunk" ]]; then
-    gcc_url_head="ftp.gnu.org:/gnu/gcc/gcc-$version_to_build"
+    gcc_url_head="ftp.gnu.org:/gnu/gcc/gcc-$version_to_build/"
   else
     gcc_url_head="svn://gcc.gnu.org/svn/gcc/"
   fi
