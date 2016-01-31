@@ -312,11 +312,11 @@ find_or_install()
       export CC=$package_install_path/bin/gcc
       export CXX=$package_install_path/bin/g++
       if [[ -z "$LD_LIBRARY_PATH" ]]; then
-        echo "$this_script: export LD_LIBRARY_PATH=$package_install_path/lib/"
-                            export LD_LIBRARY_PATH=$package_install_path/lib/
+        echo "$this_script: export LD_LIBRARY_PATH=$package_install_path/lib64/"
+                            export LD_LIBRARY_PATH=$package_install_path/lib64/
       else
-        echo "$this_script: export LD_LIBRARY_PATH=$package_install_path/lib/:$LD_LIBRARY_PATH"
-                            export LD_LIBRARY_PATH=$package_install_path/lib/:$LD_LIBRARY_PATH
+        echo "$this_script: export LD_LIBRARY_PATH=$package_install_path/lib64/:$LD_LIBRARY_PATH"
+                            export LD_LIBRARY_PATH=$package_install_path/lib64/:$LD_LIBRARY_PATH
       fi
       # Remove $package from the dependency stack
       stack_pop dependency_pkg package_done
@@ -676,9 +676,9 @@ find_or_install()
           echo "$this_script: export CXX=$package_install_path/bin/g++"
                               export CXX="$package_install_path/bin/g++"
           if [[ -z "$LD_LIBRARY_PATH" ]]; then
-            export LD_LIBRARY_PATH="$package_install_path/lib/"
+            export LD_LIBRARY_PATH="$package_install_path/lib64/"
           else
-            export LD_LIBRARY_PATH="$package_install_path/lib/:$LD_LIBRARY_PATH"
+            export LD_LIBRARY_PATH="$package_install_path/lib64/:$LD_LIBRARY_PATH"
           fi
         elif [[ $package == "mpich" ]]; then
           echo "$this_script: export MPIFC=$package_install_path/bin/mpif90"
@@ -860,8 +860,15 @@ report_results()
       echo "  export PATH=\"$m4_install_path/bin\":\$PATH                        " >> setup.sh
       echo "fi                                                                   " >> setup.sh
     fi
-    setup_sh_location=$install_path
-    $SUDO mv setup.sh $install_path || setup_sh_location=${PWD}
+    opencoarrays_install_path=$install_path
+    if [[ -x "$opencoarrays_install_path/bin/caf" ]]; then
+      echo "if [[ -z \"\$PATH\" ]]; then                                         " >> setup.sh
+      echo "  export PATH=\"$opencoarrays_install_path/bin\"                     " >> setup.sh
+      echo "else                                                                 " >> setup.sh
+      echo "  export PATH=\"$opencoarrays_install_path/bin\":\$PATH              " >> setup.sh
+      echo "fi                                                                   " >> setup.sh
+    fi
+    $SUDO mv setup.sh $opencoarrays_install_path && setup_sh_location=$opencoarrays_install_path || setup_sh_location=${PWD}
     echo "*** Before using caf, cafrun, or build, please execute the following command ***"
     echo "*** or add it to your login script and launch a new shell (or the equivalent ***"
     echo "*** for your shell if you are not using a bash shell):                       ***"
