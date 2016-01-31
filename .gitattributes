@@ -27,4 +27,5 @@ install_prerequisites/build text
 .pullapprove.yml export-ignore
 .gitattributes export-ignore
 .gitignore export-ignore
+.gitmodules export-ignore
 developer-scripts export-ignore

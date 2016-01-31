@@ -8,7 +8,8 @@ if [[ "$1" ]]; then
 	echo "WARNING: Settings will be applied globally. This may over-write some of your global git settings."
 	read -p "Press Ctrl-C to abort, and try again without \`--global\` or press any key to contibue" foo
     else
-	echo -e "Usage: $0 [--global] [--help]\n"
+	echo "Usage: $0 [--global] [--help]"
+	echo ""
 	echo "This script is to configure your git environment"
 	echo "For contributing to OpenCoarrays. The \`--help\`"
 	echo "flag will print this message. The \`--global\`"
@@ -27,7 +28,8 @@ system=$(uname)
 if [[ "X$system" == "XDarwin" || "X$system" == "XLinux" ]]; then
     git config $flags core.autocrlf input
 else # assume windows
-    git fonfig $flags core.autocrlf true
+# Safer, maybe, to just not do anything...
+#    git fonfig $flags core.autocrlf true
 fi
 
 git config $flags core.whitespace trailing-space,space-before-tab,blank-at-eol,blank-at-eof
@@ -35,6 +37,17 @@ git config $flags core.whitespace trailing-space,space-before-tab,blank-at-eol,b
 git config $flags apply.whitespace fix
 
 git config $flags color.diff.whitespace red reverse
+
+# Lets update some stuff to work better with submodules (for OFP)
+git config $flags diff.submodule log
+
+git config $flags status.submodulesummary 1
+
+git config $flags push.recurseSubmodules check
+
+git config alias.sdiff '!'"git diff && git submodule foreach 'git diff'"
+git config alias.spush 'push --recurse-submodules=on-demand'
+git config alias.supdate 'submodule update --remote --merge'
 
 gitroot="$(git rev-parse --show-toplevel)"
 echo "WARNING: About to install and overwrite project level githooks in $gitroot/.git/hooks"
