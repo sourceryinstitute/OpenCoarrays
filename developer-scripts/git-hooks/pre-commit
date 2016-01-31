@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # An example hook script to verify what is about to be committed.
 # Called by "git commit" with no arguments.  The hook should
@@ -71,15 +71,18 @@ for f in $(git diff-index --name-status --cached $against | grep -v ^D | cut -c3
     if [[ "$f" =~ ([.](h|m|c|rb|sh|py|txt|md|f90|F90|cmake|x64|csh)|makefile|Makefile)$ ]] ||
        head -n 1 | grep '^#!/'; then
 	if ! ends_with_newline "$f"; then
-	    echo &>2 "No newline at end of file: $f\n"
+	    echo &>2 "No newline at end of file: $f"
+	    echo ""
 	    let status=1
 	fi
     fi
 done
 
 # If there are whitespace errors, print the offending file names and fail.
-git diff-index --check --cached $against -- || let status=1
+git diff-index --check --cached $against -- || (let status=1 echo 'white space violations found')
 
-if [[ $status != 0 ]]; then
-    exit 1
+if [[ $status = 0 ]]; then
+    exit 0
 fi
+
+exit 1
