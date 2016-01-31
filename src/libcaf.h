@@ -57,6 +57,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 #define STAT_UNLOCKED		0
 #define STAT_LOCKED		1
 #define STAT_LOCKED_OTHER_IMAGE	2
+#define STAT_DUP_SYNC_IMAGES    3
 #define STAT_STOPPED_IMAGE 	6000
 
 /* Describes what type of array we are registerring. Keep in sync with

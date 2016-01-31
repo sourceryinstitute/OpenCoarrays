@@ -17,7 +17,7 @@ Download this file as a PDF document
      * [OS X]
      * [Windows]
      * [Linux]
- *  [Building from Source]
+ *  [Advanced Installation from Source]
      *  [Prerequisites]
      *  [CMake]
      *  [Make]
@@ -39,7 +39,7 @@ cd opencoarrays
 ```
 
 Before installing OpenCoarrays, the above bash script will attempt to detect the presence
-of the default prequisite packages: [GCC], [MPICH] , and [CMake].  If any of the
+of the default prequisite packages: [GCC], [MPICH] , and [CMake].  For additional details, see the [Prerequisites] section. If any of the
 aforementioned packages appear to be absent from the user's PATH environment variable,
 the [install.sh] script will attempt to download, build, and install any missing packages
 after asking permission to do so.  The script has been tested on Linux and OS X.  Please
@@ -106,41 +106,27 @@ for the relevant Linux distribution.  Alternatively, if you desire to install us
 Linux package management software such as [yum] or [apt-get], please submit a feature
 request via our [Issues] page.
 
-Building from source
+Advanced Installation from Source
 --------------------
 
 ### Prerequisites: ###
 
-For broad coverage of CAF features, ease of installation, and ease of use, first
-install the following:
+The prerequisites below and their dependencies are recommended for the broadest coverage of CAF features. If a prerequisite is missing or outdated, the [install.sh] script will prompt the user for permission to download, compile, and install it. Before doing so, [install.sh] will verify whether that prerequisite's prerequisites are present and will recursively traverse the dependency tree until reaching an acceptable prerequisite or reaching the end of a branch.
 
-* An OpenCoarrays-aware Fortran compiler: currently [GCC] 5.1 or later,
-* The Fortran compiler's companion C compiler that supports the C99 standard, and
-* An MPI implementation that supports MPI 3.0 and is built by the aforementioned
-  Fortran and C compilers (preferably the [MPICH] or [MVAPICH] implementations for
-  robustness and high performance)
+```
+opencoarrays
+├── cmake-3.4.0
+└── mpich-3.1.4
+    └── gcc-5.3.0
+        ├── flex-2.6.0
+        │   └── bison-3.0.4
+        │       └── m4-1.4.17
+        ├── gmp
+        ├── mpc
+        └── mpfr
+```
 
-The [install_prerequisites] directory contains experimental [buildgcc], [buildmpich], and
-[buildcmake] bash shell scripts that can download and build any one of several versions of the
-[GCC]  C, C++, and Fortran compilers; the [CMake] build sytem; and the [MPICH] communication
-library.  (Because newer parts of the GNU Fortran compiler gfortran are written in C++,
-installing the GNU Fortran compiler from source requires also installing the GNU C++ compiler
-`g++`.)  The CMake scripts that build OpenCoarrays also copy [buildgcc], [buildmpich], and
-[buildcmake] into the `bin` directory of the OpenCoarrays installation for later use.
-
-We have tested the build scripts  on OS X and Linux. Please submit suggestions for improving
-the scripts to our [Issues] page or preferably suggeste edits by forking a copy of the
-[OpenCoarrays] repository, making the suggested edits, and submitting a pull request.
-
-If installing the above prerequisites is infeasible, then a limited coverage of CAF
-features is available via the OpenCoarrays `caf` compiler wrapper and the
-[opencoarrays] module, for which the installation prerequisites are the following:
-
-* A Fortran compiler that supports the C-interoperability features of Fortran 2003,
-* The Fortran compiler's companion C compiler that supports the C99 standard, and
-* An MPI implementation that supports MPI 3.0 and is built by the aforementioned
-  Fortran and C compilers (preferably the [MPICH] or [MVAPICH] implementations for
-  robustness and high performance)
+If using the advanced [CMake] or [Make] builds detailed below, please ensure that these dependencies are met before attempting to build and install OpenCoarrays.
 
 ### CMake ###
 
@@ -235,7 +221,7 @@ where the second line builds the flex package that is required for building gcc 
 [ticket]: https://trac.macports.org/ticket/47806
 [Windows]: #windows
 [Linux]: #linux
-[Building from Source]: #building-from-source
+[Advanced Installation from Source]: #advanced-installation-from-source
 [Prerequisites]: #prerequisites
 [CMake]: #cmake
 [Make]: #make
@@ -250,9 +236,6 @@ where the second line builds the flex package that is required for building gcc 
 [make.inc]: ./src/make.inc
 [opencoarrays]: ./src/extensions/opencoarrays.F90
 [install_prerequisites]: ./install_prerequisites
-[buildgcc]: ./install_prerequisites/buildgcc
-[buildmpich]: ./install_prerequisites/buildmpich
-[buildcmake]: ./install_prerequisites/buildcmake
 [MPICH]: http://www.mpich.org
 [MVAPICH]:http://mvapich.cse.ohio-state.edu
 [MacPorts]: http://www.macports.org

@@ -1739,6 +1739,7 @@ PREFIX (sync_images) (int count, int images[], int *stat, char *errmsg,
                      int errmsg_len)
 {
   int ierr = 0, i=0, remote_stat = 0;
+  int dup = 0, j = 0;
   MPI_Status s;
 
   if (count == 0 || (count == 1 && images[0] == caf_this_image))
@@ -1747,6 +1748,16 @@ PREFIX (sync_images) (int count, int images[], int *stat, char *errmsg,
         *stat = 0;
       return;
     }
+
+  for(i=0;i<count;i++)
+    for(j=0;j<i;j++)
+      if(images[i] == images[j])
+	{
+	  ierr = STAT_DUP_SYNC_IMAGES;
+	  if(stat)
+	    *stat = ierr;
+	  goto sync_images_err_chk;
+	}
 
 #ifdef GFC_CAF_CHECK
   {
