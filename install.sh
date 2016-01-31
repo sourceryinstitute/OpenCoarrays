@@ -92,8 +92,6 @@ if [[ ! -x "$build_script" ]]; then
   echo "$this_script: $build_script script does not exist or the user lacks executable permission for it."
   echo "$this_script: Please run this_script in the top-level OpenCoarrays source directory or set the"
   echo "$this_script: OPENCOARRAYS_SRC_DIR environment variable to the top-level OpenCoarrays source path."
-  echo "$this_script: If you have specified an installation directory that requires administrative privileges,"
-  echo "$this_script: please prepend 'sudo' or 'sudo -E' to your invocation of the script [exit 20]."
   exit 20
 fi
 
@@ -687,11 +685,6 @@ find_or_install()
                               export MPICC="$package_install_path/bin/mpicc"
           echo "$this_script: export MPICXX=$package_install_path/bin/mpicxx"
                               export MPICXX="$package_install_path/bin/mpicxx"
-         #if [[ -z "$LD_LIBRARY_PATH" ]]; then
-         #  export LD_LIBRARY_PATH="$package_install_path/lib/"
-         #else
-         #  export LD_LIBRARY_PATH="$package_install_path/lib/:$LD_LIBRARY_PATH"
-         #fi
         else
           printf "$this_script: WARNING: $package executable $executable installed correctly but the \n"
           printf "$this_script:          corresponding environment variable(s) have not been set. This \n"
@@ -814,9 +807,9 @@ report_results()
     gcc_install_path=`./build gcc --default --query-path`
     if [[ -d "$gcc_install_path/lib" ]]; then
       echo "if [[ -z \"\$LD_LIBRARY_PATH\" ]]; then                              " >> setup.sh
-      echo "  export LD_LIBRARY_PATH=\"$gcc_install_path/lib\"                   " >> setup.sh
+      echo "  export LD_LIBRARY_PATH=\"$gcc_install_path/lib64\"                   " >> setup.sh
       echo "else                                                                 " >> setup.sh
-      echo "  export LD_LIBRARY_PATH=\"$gcc_install_path/lib\":\$LD_LIBRARY_PATH " >> setup.sh
+      echo "  export LD_LIBRARY_PATH=\"$gcc_install_path/lib64\":\$LD_LIBRARY_PATH " >> setup.sh
       echo "fi                                                                   " >> setup.sh
     fi
     echo "                                                                       " >> setup.sh
