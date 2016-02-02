@@ -1,4 +1,4 @@
-OFP_HOME   = /Users/rasmus/ofp-sdf
+OFP_HOME = /Users/rouson/Code/ofp-sdf
 
 include $(OFP_HOME)/make.inc
 
