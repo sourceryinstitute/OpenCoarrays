@@ -309,12 +309,13 @@ find_or_install()
       export FC=$package_install_path/bin/gfortran
       export CC=$package_install_path/bin/gcc
       export CXX=$package_install_path/bin/g++
+      gfortran_lib_paths="$package_install_path/lib64/:$package_install_path/lib"
       if [[ -z "$LD_LIBRARY_PATH" ]]; then
-        echo "$this_script: export LD_LIBRARY_PATH=$package_install_path/lib64/"
-                            export LD_LIBRARY_PATH=$package_install_path/lib64/
+        echo "$this_script: export LD_LIBRARY_PATH=\"$gfortran_lib_paths\""
+                            export LD_LIBRARY_PATH="$gfortran_lib_paths"
       else
-        echo "$this_script: export LD_LIBRARY_PATH=$package_install_path/lib64/:$LD_LIBRARY_PATH"
-                            export LD_LIBRARY_PATH=$package_install_path/lib64/:$LD_LIBRARY_PATH
+        echo "$this_script: export LD_LIBRARY_PATH=\"$gfortran_lib_paths:$LD_LIBRARY_PATH\""
+                            export LD_LIBRARY_PATH="$gfortran_lib_paths:$LD_LIBRARY_PATH"
       fi
       # Remove $package from the dependency stack
       stack_pop dependency_pkg package_done
@@ -625,7 +626,7 @@ find_or_install()
 
       # On OS X, CMake must be built with Apple LLVM g++, which XCode command-line tools puts in /usr/bin
       if [[ `uname` == "Darwin" && $package == "cmake"  ]]; then
-        if [[ -x "/usr/bin/gcc" ]]; then
+        if [[ -x "/usr/bin/g++" ]]; then
           CXX=/usr/bin/g++
         else
           printf "$this_script: OS X detected.  Please install XCode command-line tools \n"
@@ -673,10 +674,11 @@ find_or_install()
                               export CC="$package_install_path/bin/gcc"
           echo "$this_script: export CXX=$package_install_path/bin/g++"
                               export CXX="$package_install_path/bin/g++"
+          gfortran_lib_paths="$package_install_path/lib64/:$package_install_path/lib"
           if [[ -z "$LD_LIBRARY_PATH" ]]; then
-            export LD_LIBRARY_PATH="$package_install_path/lib64/"
+            export LD_LIBRARY_PATH="$gfortran_lib_paths"
           else
-            export LD_LIBRARY_PATH="$package_install_path/lib64/:$LD_LIBRARY_PATH"
+            export LD_LIBRARY_PATH="$gfortran_lib_paths:$LD_LIBRARY_PATH"
           fi
         elif [[ $package == "mpich" ]]; then
           echo "$this_script: export MPIFC=$package_install_path/bin/mpif90"
@@ -805,11 +807,19 @@ report_results()
     echo "fi                                                                     " >> setup.sh
     echo "                                                                       " >> setup.sh
     gcc_install_path=`./build gcc --default --query-path`
-    if [[ -d "$gcc_install_path/lib" ]]; then
-      echo "if [[ -z \"\$LD_LIBRARY_PATH\" ]]; then                              " >> setup.sh
-      echo "  export LD_LIBRARY_PATH=\"$gcc_install_path/lib64\"                   " >> setup.sh
+    if [[ -x "$gcc_install_path/bin/gfortran" ]]; then
+      echo "if [[ -z \"\$PATH\" ]]; then                                         " >> setup.sh
+      echo "  export PATH=\"$gcc_install_path/bin\"                              " >> setup.sh
       echo "else                                                                 " >> setup.sh
-      echo "  export LD_LIBRARY_PATH=\"$gcc_install_path/lib64\":\$LD_LIBRARY_PATH " >> setup.sh
+      echo "  export PATH=\"$gcc_install_path/bin:\$PATH\"                       " >> setup.sh
+      echo "fi                                                                   " >> setup.sh
+    fi
+    if [[ -d "$gcc_install_path/lib" || -d "$gcc_install_path/lib64" ]]; then
+      gfortran_lib_paths="$gcc_install_path/lib64/:$gcc_install_path/lib"
+      echo "if [[ -z \"\$LD_LIBRARY_PATH\" ]]; then                              " >> setup.sh
+      echo "  export LD_LIBRARY_PATH=\"$gfortran_lib_paths\"                     " >> setup.sh
+      echo "else                                                                 " >> setup.sh
+      echo "  export LD_LIBRARY_PATH=\"$gfortran_lib_paths:\$LD_LIBRARY_PATH\"   " >> setup.sh
       echo "fi                                                                   " >> setup.sh
     fi
     echo "                                                                       " >> setup.sh
@@ -846,7 +856,7 @@ report_results()
       echo "fi                                                                   " >> setup.sh
     fi
     m4_install_path=`./build m4 --default --query-path`
-    if [[ -x "$m4_install_path/bin/yacc" ]]; then
+    if [[ -x "$m4_install_path/bin/m4" ]]; then
       echo "if [[ -z \"\$PATH\" ]]; then                                         " >> setup.sh
       echo "  export PATH=\"$m4_install_path/bin\"                               " >> setup.sh
       echo "else                                                                 " >> setup.sh
