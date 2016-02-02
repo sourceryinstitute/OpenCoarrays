@@ -1,4 +1,4 @@
-OFP_HOME   = /Users/rasmus/ofp-sdf
+OFP_HOME   = /Users/rouson/Code/ofp-sdf
 
 include $(OFP_HOME)/make.inc
 
@@ -35,19 +35,19 @@ fast-to-ocaf : fast-to-ocaf.str
 	$(ST_PATH)/strc -i fast-to-ocaf.str $(CFLAGS) $(LDFLAGS) --main io-fast-to-ocaf
 
 check : fast-to-ocaf
-	@sglri -p $(TBL) -i testfile.f90 | $(TO_FAST) | fast-to-ocaf | $(TO_PP) | ast2text -p $(PP)
+	@$(ST_PATH)/sglri -p $(TBL) -i testfile.f90 | $(TO_FAST) | fast-to-ocaf | $(TO_PP) | ast2text -p $(PP)
 
 check-orig : fast-to-ocaf
-	@sglri -p $(TBL) -i testfile.f90.orig | $(TO_FAST) | fast-to-ocaf | $(TO_PP) | ast2text -p $(PP)
+	@$(ST_PATH)/sglri -p $(TBL) -i testfile.f90.orig | $(TO_FAST) | fast-to-ocaf | $(TO_PP) | ast2text -p $(PP)
 
 check-fast : fast-to-ocaf
-	sglri -p $(TBL) -i testfile.f90 | $(TO_FAST) | pp-aterm
+	$(ST_PATH)/sglri -p $(TBL) -i testfile.f90 | $(TO_FAST) | pp-aterm
 
 check-last : fast-to-ocaf
-	sglri -p $(TBL) -i testfile.f90 | $(TO_FAST) | fast-to-ocaf | pp-aterm
+	$(ST_PATH)/sglri -p $(TBL) -i testfile.f90 | $(TO_FAST) | fast-to-ocaf | pp-aterm
 
 check-lower : caf-lower
-	sglri -p $(TBL) -i testfile.f90 | $(TO_FAST) | caf-lower | $(TO_PP) | ast2text -p $(PP)
+	$(ST_PATH)/sglri -p $(TBL) -i testfile.f90 | $(TO_FAST) | caf-lower | $(TO_PP) | ast2text -p $(PP)
 
 clean :
 	rm -f caf-lower caf-lower.c
