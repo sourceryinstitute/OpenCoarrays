@@ -527,6 +527,10 @@ caf-lower-ast =
   ;  !CallStmt(label, "sync_all", sync_stat_list)
 
 caf-lower-ast =
+     ?SyncImagesStmt(label, image_set, sync_stat_list)
+  ;  !CallStmt(label, "sync_images", <concat>[[image_set],sync_stat_list] )
+
+caf-lower-ast =
      ?Codimension(_)
   ;  ![]
 
