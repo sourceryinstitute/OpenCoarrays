@@ -26,8 +26,8 @@ strategies //=================START OF STRATEGIES============================
         ;  new-hashtable => lt
         ;  !Program(units)
         ;  topdown(try(fast-get-symbols(|st)))
-        ;  topdown(try(cafe-get-symbols(|st,lt)))
-        ;  bottomup(try(cafe-add-cl(|st,lt)))
+        ;  topdown(try(ocaf-get-symbols(|st,lt)))
+        ;  bottomup(try(ocaf-add-calls(|st,lt)))
         ;  topdown(try(fast-flatten-scope-parts))
         ;  bottomup(try(caf-lower-ast))  => save
         ;  !"--------------------------------------------------------------------------------------"
@@ -249,7 +249,7 @@ ofp-ident
 
 // add subimage device
 //
-cafe-add-subimage-symbol(|ct,lhs) =
+ocaf-add-subimage-symbol(|ct,lhs) =
      ?PartRef("get_subimage",args,no-image-selector())
   ;  <hashtable-put(|<fast-var-name>lhs, (<cl-wrap-var>lhs,DerivedType("CLDevice",[]),[]))> ct
   ;  !PartRef("get_subimage",args,no-image-selector())
@@ -259,7 +259,7 @@ st-add-symbol(|st,type,attrs) =
      ?var
   ;  <hashtable-put(|<ofp-ident>var,(type,attrs))> st
 
-// Add a symbol to the CAFe symbol table
+// Add a symbol to the OCAF symbol table
 ct-add-symbol(|ct,type,attrs) =
      ?symbol
   ;  <hashtable-put(|symbol,(<cl-wrap-name>symbol,type,attrs))> ct
@@ -287,15 +287,15 @@ fast-get-symbols(|st) =
   ;  !AllocateStmt(label,type,alloc_list,options)
 
 
-// Get symbols specifically relevant to CAFe
+// Get symbols specifically relevant to OCAF
 // -----------------------------------------
 
-cafe-get-symbols(|st,ct) =
+ocaf-get-symbols(|st,ct) =
      ?AssignmentStmt(label,lhs,rhs)
-  ;  <cafe-add-subimage-symbol(|ct,lhs)> rhs
+  ;  <ocaf-add-subimage-symbol(|ct,lhs)> rhs
   ;  !AssignmentStmt(label,lhs,rhs)
 
-//cafe-get-symbols(|st,ct) =
+//ocaf-get-symbols(|st,ct) =
 //     ?CoAllocateStmt(label,type,alloc_list,options,image,eos)
 //  ;  <map(ct-add-symbol(|ct,DerivedType("CLBuffer",[]),[]))>
 //         <map(fast-allocation-object)> alloc_list
@@ -303,43 +303,43 @@ cafe-get-symbols(|st,ct) =
 //  ;  !CoAllocateStmt(label,type,alloc_list,options,image,eos)
 
 // Mark CallStmts having an ImageExecutionSelector (ImageExecStmt)
-//cafe-get-symbols(|st,ct) =
+//ocaf-get-symbols(|st,ct) =
 //     ?ImageExecStmt(label,name,args,image,eos)
-//  ;  <cafe-get-stmt-symbol(|st,ct)> <id>
+//  ;  <ocaf-get-stmt-symbol(|st,ct)> <id>
 //  ;  !ImageExecStmt(label,name,args,image,eos)
 
 // Mark DO CONCURRENT loops having an ImageExecutionSelector
-cafe-get-symbols(|st,ct) =
+ocaf-get-symbols(|st,ct) =
      ?BlockDoConstruct(begin,stmts,end)
 //  ;  !begin
 //  ;  ?NonlabelDoStmt(_,_,ConcurrentExecControl(_,image))
-//  ;  <map(cafe-get-stmt-symbol(|st,ct))> stmts
-//  ;  !BlockDoConstruct(begin,stmts,end) {[("ImageExecutionSelector",<cafe-subimage>image)]}
+//  ;  <map(ocaf-get-stmt-symbol(|st,ct))> stmts
+//  ;  !BlockDoConstruct(begin,stmts,end) {[("ImageExecutionSelector",<ocaf-subimage>image)]}
 
 // Unmark DO CONCURRENT loop (assumes no embedded do loops)
-//cafe-get-symbols(|st,ct) =
+//ocaf-get-symbols(|st,ct) =
 //     ?EndDoStmt(label,name)
-//  ;  <hashtable-get(|"cafe_do_concurrent_tmp_")> ct
-//  ;  <hashtable-remove(|"cafe_do_concurrent_tmp_")> ct
+//  ;  <hashtable-get(|"ocaf_do_concurrent_tmp_")> ct
+//  ;  <hashtable-remove(|"ocaf_do_concurrent_tmp_")> ct
 //  ;  !EndDoStmt(label,name)
 
-// Add CONCURRENT subroutine names to CAFe symbols
-cafe-get-stmt-symbol(|st,ct) =
+// Add CONCURRENT subroutine names to OCAF symbols
+ocaf-get-stmt-symbol(|st,ct) =
      ?CallStmt(label, name, args)
   ;  <hashtable-put(|name,(<cl-wrap-name>name
             , DerivedType("CLKernel",[])
             , []){[("args",args)]})> ct
   ;  !CallStmt(label, name, args)
 
-// Add ImageExecStmt subroutine name to CAFe symbols
-//cafe-get-stmt-symbol(|st,ct) =
+// Add ImageExecStmt subroutine name to OCAF symbols
+//ocaf-get-stmt-symbol(|st,ct) =
 //     ?ImageExecStmt(label,name,args,image,eos)
 //  ;  <hashtable-put(|name,(<cl-wrap-name>name
 //            , DerivedType("CLKernel",[])
 //            , []){[("args",args)]})> ct
 //  ;  !ImageExecStmt(label,name,args,image,eos)
 
-//cafe-subimage =
+//ocaf-subimage =
 //     ?ImageExecutionSelector([VarRef(device)])
 //  ;  !device
 
@@ -350,7 +350,7 @@ cafe-get-stmt-symbol(|st,ct) =
 // Replace get_subimage call with ForOpenCl counterpart
 //  - also create kernel calls here
 //     - TODO: fix for multiple devices
-cafe-add-cl(|st,ct) =
+ocaf-add-calls(|st,ct) =
      ?AssignmentStmt(label,VarDef(lhs),PartRef("get_subimage",[arg],_))
   ;  <flatten-list> <map(opencl-build-create-kernel(|ct,lhs))> <hashtable-keys> ct
   ;  <concat> [[AssignmentStmt(label,VarDef(lhs),FunctionReference("get_subimage",
@@ -358,14 +358,12 @@ cafe-add-cl(|st,ct) =
 
 // Add variables associated with ForOpenCL calls
 //    focl_intvar__, cl_status__, cl_size__, ch_ng__(3)
-cafe-add-cl(|st,ct) =
+ocaf-add-calls(|st,ct) =
      ?Scope(decls,execs,funcs)
   ;  <concat> [[<fast-build-use-stmt>"opencoarrays"], decls]
   ;  <concat> [<id>, <map(ct-add-type-decl(|ct))> <hashtable-keys()> ct]
   ;  <concat> [<id>, [<fast-build-type-decl(|
                           INTEGER(no-kind()),[])> "focl_intvar__"]]
-  ;  <concat> [<id>, [<fast-build-type-decl(|
-                          INTEGER(Kind(VarRef("cl_int"  ))),[])> "cl_status__"]]
   ;  <concat> [<id>, [<fast-build-type-decl(|
                           INTEGER(Kind(VarRef("c_size_t"))),[])> "cl_size__"]]
   ;  <concat> [<id>, [TypeDeclarationStmt(no-label()
@@ -394,10 +392,10 @@ cafe-add-cl(|st,ct) =
   ;  !Scope(<id>,  <concat> [[CallStmt(no-label(), "caf_init", [])], execs] ,funcs)
 
 // Replace coallocate statement with function call to alloc memory on device
-//cafe-add-cl(|st,ct) =
+//ocaf-add-calls(|st,ct) =
 //{device
 //  :  ?CoAllocateStmt(label,type,alloc_list,options,image,eos)
-//  ;  <cl-wrap-name> <cafe-subimage> image => device
+//  ;  <cl-wrap-name> <ocaf-subimage> image => device
 //  ;  <map(ct-add-symbol(|ct,DerivedType("CLBuffer",[]),[]))>
 //         <map(fast-allocation-object)> alloc_list
 //  ;  <map(fast-allocation-object)> alloc_list
@@ -405,15 +403,15 @@ cafe-add-cl(|st,ct) =
 //}
 
 // Replace codeallocate statement with function call to free memory on device
-//cafe-add-cl(|st,ct) =
+//ocaf-add-calls(|st,ct) =
 //{device
 //  :  ?CoDeallocateStmt(label,dealloc_list,options,image,eos)
-//  ;  <cl-wrap-name> <cafe-subimage> image => device
+//  ;  <cl-wrap-name> <ocaf-subimage> image => device
 //  ;  <map(opencl-build-release-buffer(|st,device))> dealloc_list
 //}
 
 // Replace assignment statements with memory transfer with read/writeBuffer
-cafe-add-cl(|st,ct) =
+ocaf-add-calls(|st,ct) =
      ?AssignmentStmt(label,PartRef(var,no-section-subscripts(),[VarRef(device)]),VarRef(obj))
   ;  <fast-allocation-size(|st)> var
   ;  ![  AssignmentStmt(no-label(),VarDef("cl_size__"),<id>)
@@ -430,11 +428,11 @@ cafe-add-cl(|st,ct) =
       ]
 
 // Add arguments to OpenCL kernels and run them; replacing DO CONCURRENT loop
-cafe-add-cl(|st,ct) =
+ocaf-add-calls(|st,ct) =
 {device,triplets
   :  ?BlockDoConstruct(begin,stmts,end) {annotations}
 //  ;  <lookup> ("ImageExecutionSelector", annotations)  => device
-//  ;  <cafe-forall-triplet> begin                       => triplets
+//  ;  <ocaf-forall-triplet> begin                       => triplets
 //  ;  ![]
 //  ;  <concat> [<id>, <map(opencl-build-calc-global-offset)> <add-indices> triplets]
 //  ;  <concat> [<id>, <map(opencl-build-calc-global-size  )> <add-indices> triplets]
@@ -444,10 +442,10 @@ cafe-add-cl(|st,ct) =
 }
 
 // Add arguments to OpenCL kernels and run them; replacing ImageExecStmts
-//cafe-add-cl(|st,ct) =
+//ocaf-add-calls(|st,ct) =
 //{device,rank
 //  :  ?ImageExecStmt(label,name,args,image,eos)
-//  ;  <cafe-subimage> image    => device
+//  ;  <ocaf-subimage> image    => device
 //  ;  <opencl-rank(|st)> args  => rank
 //  ;  <flatten-list>  <opencl-build-set-kernel-args(|ct,device)> (name,args)
 //  ;  <concat> [<id>, [<opencl-build-calc-global-offset-of-args(|st)> args]]
@@ -461,7 +459,7 @@ cafe-add-cl(|st,ct) =
 //}
 
 // Retrieve list of ForallHeader triplets
-//cafe-forall-triplet =
+//ocaf-forall-triplet =
 //     ?NonlabelDoStmt(_,_,ConcurrentExecControl(ForallHeader(_,triplet_list,_),_))
 //  ;  !triplet_list
 
@@ -526,7 +524,6 @@ fast-call-stmt-name =
 // ----------------------------
 caf-lower-ast =
      ?SyncAllStmt(label, sync_stat_list)
-;debug(!"------SyncAll--------")
   ;  !CallStmt(label, "sync_all", sync_stat_list)
 
 caf-lower-ast =
