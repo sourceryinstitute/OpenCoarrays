@@ -1611,6 +1611,7 @@ PREFIX (sync_images) (int count, int images[], int *stat, char *errmsg,
       return;
     }
 
+  /* halt execution if sync images contains duplicate image numbers */
   for(i=0;i<count;i++)
     for(j=0;j<i;j++)
       if(images[i] == images[j])
