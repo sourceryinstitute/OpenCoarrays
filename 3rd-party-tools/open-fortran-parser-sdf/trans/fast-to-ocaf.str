@@ -369,13 +369,6 @@ ocaf-add-calls(|st,ct) =
   ;  <concat> [<id>, [TypeDeclarationStmt(no-label()
                         , INTEGER(Kind(VarRef("c_size_t")))
                         , []
-                        , [Var("cl_gwo__",
-                             ArrayType(INTEGER(Kind(VarRef("c_size_t")))
-                                     , [Range(no-lower-bound(), IntVal("3"))],[]), no-init())]
-                        )]]
-  ;  <concat> [<id>, [TypeDeclarationStmt(no-label()
-                        , INTEGER(Kind(VarRef("c_size_t")))
-                        , []
                         , [Var("cl_gws__",
                              ArrayType(INTEGER(Kind(VarRef("c_size_t")))
                                      , [Range(no-lower-bound(), IntVal("3"))],[]), no-init())]
@@ -389,7 +382,11 @@ ocaf-add-calls(|st,ct) =
                                           , Init(ArrayConstructor(AcSpec(no-type-spec()
                                                                          ,<opencl-local-size>))))]
                         )]]
-  ;  !Scope(<id>,  <concat> [[CallStmt(no-label(), "caf_init", [])], execs] ,funcs)
+  ;  !Scope(<id>, execs, funcs)
+  ;  ?Scope(decls2, execs2, funcs2)
+  ;  <concat> [[CallStmt(no-label(), "caf_init", [])], execs2]
+  ;  <concat> [<id>, [CallStmt(no-label(), "caf_finalize", [])]]
+  ;  !Scope(decls2, <id> ,funcs2)
 
 // Replace coallocate statement with function call to alloc memory on device
 //ocaf-add-calls(|st,ct) =
