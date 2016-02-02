@@ -1,4 +1,4 @@
-OFP_HOME   = /Users/rouson/Code/ofp-sdf
+OFP_HOME   = /Users/rasmus/ofp-sdf
 
 include $(OFP_HOME)/make.inc
 
@@ -41,13 +41,13 @@ check-orig : fast-to-ocaf
 	@$(ST_PATH)/sglri -p $(TBL) -i testfile.f90.orig | $(TO_FAST) | fast-to-ocaf | $(TO_PP) | ast2text -p $(PP)
 
 check-fast : fast-to-ocaf
-	$(ST_PATH)/sglri -p $(TBL) -i testfile.f90 | $(TO_FAST) | pp-aterm
+	$(ST_PATH)/sglri -p $(TBL) -i testfile.f90 | $(TO_FAST) | $(ST_PATH)/pp-aterm
 
 check-last : fast-to-ocaf
-	$(ST_PATH)/sglri -p $(TBL) -i testfile.f90 | $(TO_FAST) | fast-to-ocaf | pp-aterm
+	$(ST_PATH)/sglri -p $(TBL) -i testfile.f90 | $(TO_FAST) | fast-to-ocaf | $(ST_PATH)/pp-aterm
 
 check-lower : caf-lower
-	$(ST_PATH)/sglri -p $(TBL) -i testfile.f90 | $(TO_FAST) | caf-lower | $(TO_PP) | ast2text -p $(PP)
+	$(ST_PATH)/sglri -p $(TBL) -i testfile.f90 | $(TO_FAST) | caf-lower | $(TO_PP) | $(ST_PATH)/ast2text -p $(PP)
 
 clean :
 	rm -f caf-lower caf-lower.c
