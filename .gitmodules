@@ -1,3 +1,0 @@
-[submodule "vendor/OFP"]
-	path = vendor/OFP
-	url = git://github.com/OpenFortranProject/open-fortran-parser.git
