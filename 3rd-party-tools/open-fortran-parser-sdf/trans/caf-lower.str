@@ -1,0 +1,74 @@
+module lope-lower
+
+imports
+   libstratego-lib
+   LOPe
+
+signature
+  constructors
+
+   OfpProgram  : A * B -> OfpProgram
+   OfpSpecPart : A     -> OfpSpecPart
+
+   zPartRef    : A * B * C -> zPartRef
+   zEntityDecl : A * B * C * D * E -> zEntityDecl
+
+strategies //=================START OF STRATEGIES============================
+
+  io-lope-lower =
+    io-wrap(lope-symbols)
+
+//  io-lope-lower =
+//    io-wrap(lope-lower)
+
+  lope-symbols =
+{ st :
+       ?OfpProgram(name, list)
+    ;  new-hashtable => st
+    ;  !OfpProgram(name, list)
+    ;  innermost(debug(!"DEBUG::::::  "); get-symbols(|st))
+//    ;  <hashtable-get(|"two")> st
+    ;  <hashtable-values> st
+    ;  debug(!"Symbols.....")
+}
+
+  lope-lower = 
+      innermost(caf-lower-ast)
+    ; innermost(lope-lower-ast)
+    ; innermost(back-to-fast)
+
+rules //========================START OF RULES===============================
+
+get-symbols:  PartRef("get_subimage",args,no-image-selector())         -> "0"
+get-symbols(|st) = 
+      ?OfpSpecPart(list)
+    ;  <hashtable-put(|"two", 2)> st
+    ; !["bb"]
+
+// remove image selector
+caf-lower-ast:  EntityDecl(obj,as,is,cs,init)   -> zEntityDecl(obj,as,[],cs,init)
+
+// transform THIS_IMAGE() to 0
+caf-lower-ast:  StructureConstructor(DerivedTypeSpec("THIS_IMAGE",[]),[]) -> "0"
+
+// transform get_subimage() to 0
+lope-lower-ast:  PartRef("get_subimage",args,no-image-selector())         -> "0"
+
+lope-lower-ast:  PartRef(name,ss,is)  -> zPartRef(name,ss,no-image-selector())
+
+lope-lower-ast:
+  ConcurrentExecControl(forall,image)           -> LoopConcurrentControl(forall)
+
+lope-lower-ast:
+  CoAllocateStmt(label,type,obj,list,image,eos) -> AllocateStmt(label,type,obj,list,eos)
+
+lope-lower-ast:
+  CoDeallocateStmt(label,obj,list,image,eos)    -> DeallocateStmt(label,obj,list,eos)
+
+lope-lower-ast:  [HaloAlloc(_)]                 -> []
+
+// Transform temporary ATerms back to original
+//
+
+back-to-fast:  zPartRef(name,ss,is)             -> PartRef(name,ss,is)
+back-to-fast:  zEntityDecl(obj,as,is,cs,init)   -> EntityDecl(obj,as,is,cs,init)
