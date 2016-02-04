@@ -72,7 +72,7 @@ link_args="-fcoarray=lib -lcaf_mpi"
 if [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
     echo ""
     echo "OpenCoarrays Coarray Fortran Compiler Wrapper (caf version $caf_version)"
-    echo "Copyright (C) 2015 Sourcery, Inc."
+    echo "Copyright (C) 2015-2016 Sourcery, Inc."
     echo ""
     echo "OpenCoarrays comes with NO WARRANTY, to the extent permitted by law."
     echo "You may redistribute copies of OpenCoarrays under the terms of the"
