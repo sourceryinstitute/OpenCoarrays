@@ -14,8 +14,8 @@ use_case=\
     command 'tree opencoarrays'."
 #
 # OpenCoarrays is distributed under the OSI-approved BSD 3-clause License:
-# Copyright (c) 2015, Sourcery, Inc.
-# Copyright (c) 2015, Sourcery Institute
+# Copyright (c) 2015, 2016, Sourcery, Inc.
+# Copyright (c) 2015, 2016, Sourcery Institute
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification,
