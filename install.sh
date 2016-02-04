@@ -92,8 +92,6 @@ if [[ ! -x "$build_script" ]]; then
   echo "$this_script: $build_script script does not exist or the user lacks executable permission for it."
   echo "$this_script: Please run this_script in the top-level OpenCoarrays source directory or set the"
   echo "$this_script: OPENCOARRAYS_SRC_DIR environment variable to the top-level OpenCoarrays source path."
-  echo "$this_script: If you have specified an installation directory that requires administrative privileges,"
-  echo "$this_script: please prepend 'sudo' or 'sudo -E' to your invocation of the script [exit 20]."
   exit 20
 fi
 
@@ -311,12 +309,13 @@ find_or_install()
       export FC=$package_install_path/bin/gfortran
       export CC=$package_install_path/bin/gcc
       export CXX=$package_install_path/bin/g++
+      gfortran_lib_paths="$package_install_path/lib64/:$package_install_path/lib"
       if [[ -z "$LD_LIBRARY_PATH" ]]; then
-        echo "$this_script: export LD_LIBRARY_PATH=$package_install_path/lib/"
-                            export LD_LIBRARY_PATH=$package_install_path/lib/
+        echo "$this_script: export LD_LIBRARY_PATH=\"$gfortran_lib_paths\""
+                            export LD_LIBRARY_PATH="$gfortran_lib_paths"
       else
-        echo "$this_script: export LD_LIBRARY_PATH=$package_install_path/lib/:$LD_LIBRARY_PATH"
-                            export LD_LIBRARY_PATH=$package_install_path/lib/:$LD_LIBRARY_PATH
+        echo "$this_script: export LD_LIBRARY_PATH=\"$gfortran_lib_paths:$LD_LIBRARY_PATH\""
+                            export LD_LIBRARY_PATH="$gfortran_lib_paths:$LD_LIBRARY_PATH"
       fi
       # Remove $package from the dependency stack
       stack_pop dependency_pkg package_done
@@ -627,7 +626,7 @@ find_or_install()
 
       # On OS X, CMake must be built with Apple LLVM g++, which XCode command-line tools puts in /usr/bin
       if [[ `uname` == "Darwin" && $package == "cmake"  ]]; then
-        if [[ -x "/usr/bin/gcc" ]]; then
+        if [[ -x "/usr/bin/g++" ]]; then
           CXX=/usr/bin/g++
         else
           printf "$this_script: OS X detected.  Please install XCode command-line tools \n"
@@ -675,10 +674,11 @@ find_or_install()
                               export CC="$package_install_path/bin/gcc"
           echo "$this_script: export CXX=$package_install_path/bin/g++"
                               export CXX="$package_install_path/bin/g++"
+          gfortran_lib_paths="$package_install_path/lib64/:$package_install_path/lib"
           if [[ -z "$LD_LIBRARY_PATH" ]]; then
-            export LD_LIBRARY_PATH="$package_install_path/lib/"
+            export LD_LIBRARY_PATH="$gfortran_lib_paths"
           else
-            export LD_LIBRARY_PATH="$package_install_path/lib/:$LD_LIBRARY_PATH"
+            export LD_LIBRARY_PATH="$gfortran_lib_paths:$LD_LIBRARY_PATH"
           fi
         elif [[ $package == "mpich" ]]; then
           echo "$this_script: export MPIFC=$package_install_path/bin/mpif90"
@@ -687,11 +687,6 @@ find_or_install()
                               export MPICC="$package_install_path/bin/mpicc"
           echo "$this_script: export MPICXX=$package_install_path/bin/mpicxx"
                               export MPICXX="$package_install_path/bin/mpicxx"
-         #if [[ -z "$LD_LIBRARY_PATH" ]]; then
-         #  export LD_LIBRARY_PATH="$package_install_path/lib/"
-         #else
-         #  export LD_LIBRARY_PATH="$package_install_path/lib/:$LD_LIBRARY_PATH"
-         #fi
         else
           printf "$this_script: WARNING: $package executable $executable installed correctly but the \n"
           printf "$this_script:          corresponding environment variable(s) have not been set. This \n"
@@ -812,11 +807,19 @@ report_results()
     echo "fi                                                                     " >> setup.sh
     echo "                                                                       " >> setup.sh
     gcc_install_path=`./build gcc --default --query-path`
-    if [[ -d "$gcc_install_path/lib" ]]; then
-      echo "if [[ -z \"\$LD_LIBRARY_PATH\" ]]; then                              " >> setup.sh
-      echo "  export LD_LIBRARY_PATH=\"$gcc_install_path/lib\"                   " >> setup.sh
+    if [[ -x "$gcc_install_path/bin/gfortran" ]]; then
+      echo "if [[ -z \"\$PATH\" ]]; then                                         " >> setup.sh
+      echo "  export PATH=\"$gcc_install_path/bin\"                              " >> setup.sh
       echo "else                                                                 " >> setup.sh
-      echo "  export LD_LIBRARY_PATH=\"$gcc_install_path/lib\":\$LD_LIBRARY_PATH " >> setup.sh
+      echo "  export PATH=\"$gcc_install_path/bin:\$PATH\"                       " >> setup.sh
+      echo "fi                                                                   " >> setup.sh
+    fi
+    if [[ -d "$gcc_install_path/lib" || -d "$gcc_install_path/lib64" ]]; then
+      gfortran_lib_paths="$gcc_install_path/lib64/:$gcc_install_path/lib"
+      echo "if [[ -z \"\$LD_LIBRARY_PATH\" ]]; then                              " >> setup.sh
+      echo "  export LD_LIBRARY_PATH=\"$gfortran_lib_paths\"                     " >> setup.sh
+      echo "else                                                                 " >> setup.sh
+      echo "  export LD_LIBRARY_PATH=\"$gfortran_lib_paths:\$LD_LIBRARY_PATH\"   " >> setup.sh
       echo "fi                                                                   " >> setup.sh
     fi
     echo "                                                                       " >> setup.sh
@@ -853,15 +856,22 @@ report_results()
       echo "fi                                                                   " >> setup.sh
     fi
     m4_install_path=`./build m4 --default --query-path`
-    if [[ -x "$m4_install_path/bin/yacc" ]]; then
+    if [[ -x "$m4_install_path/bin/m4" ]]; then
       echo "if [[ -z \"\$PATH\" ]]; then                                         " >> setup.sh
       echo "  export PATH=\"$m4_install_path/bin\"                               " >> setup.sh
       echo "else                                                                 " >> setup.sh
       echo "  export PATH=\"$m4_install_path/bin\":\$PATH                        " >> setup.sh
       echo "fi                                                                   " >> setup.sh
     fi
-    setup_sh_location=$install_path
-    $SUDO mv setup.sh $install_path || setup_sh_location=${PWD}
+    opencoarrays_install_path=$install_path
+    if [[ -x "$opencoarrays_install_path/bin/caf" ]]; then
+      echo "if [[ -z \"\$PATH\" ]]; then                                         " >> setup.sh
+      echo "  export PATH=\"$opencoarrays_install_path/bin\"                     " >> setup.sh
+      echo "else                                                                 " >> setup.sh
+      echo "  export PATH=\"$opencoarrays_install_path/bin\":\$PATH              " >> setup.sh
+      echo "fi                                                                   " >> setup.sh
+    fi
+    $SUDO mv setup.sh $opencoarrays_install_path && setup_sh_location=$opencoarrays_install_path || setup_sh_location=${PWD}
     echo "*** Before using caf, cafrun, or build, please execute the following command ***"
     echo "*** or add it to your login script and launch a new shell (or the equivalent ***"
     echo "*** for your shell if you are not using a bash shell):                       ***"

@@ -1,6 +1,6 @@
 /* PSNAP Test: timemeausure.c
 
-  Copyright (c) 2012-2015, Sourcery, Inc.
+  Copyright (c) 2012-2016, Sourcery, Inc.
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without

@@ -1,4 +1,4 @@
-! Copyright (c) 2012-2015, Sourcery, Inc.
+! Copyright (c) 2012-2016, Sourcery, Inc.
 ! All rights reserved.
 !
 ! Unit tests for co_min: verify parallel, collective minimum
