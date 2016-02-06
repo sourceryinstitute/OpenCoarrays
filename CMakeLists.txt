@@ -107,23 +107,27 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 add_subdirectory(src)
 add_subdirectory(install_prerequisites)
 
+#-----------------------------------------------------
+# Publicize installed location to other CMake projects
+#-----------------------------------------------------
 install(EXPORT OpenCoarraysTargets
   NAMESPACE
     OpenCoarrays::
   DESTINATION
     lib/cmake/opencoarrays
 )
-include(CMakePackageConfigHelpers)
+include(CMakePackageConfigHelpers) # standard CMake module
 write_basic_package_version_file(
   "${CMAKE_CURRENT_BINARY_DIR}/OpenCoarraysConfigVersion.cmake"
   VERSION "${opencoarrays_VERSION}"
   COMPATIBILITY AnyNewerVersion
 )
-configure_file(OpenCoarraysConfig.cmake.in CMakeFiles/OpenCoarraysConfig.cmake @ONLY)
+configure_file("${CMAKE_SOURCE_DIR}/cmake/pkg/OpenCoarraysConfig.cmake.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/OpenCoarraysConfig.cmake" @ONLY)
 
 install(
   FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/OpenCoarraysConfig.cmake
+    "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/OpenCoarraysConfig.cmake"
     "${CMAKE_CURRENT_BINARY_DIR}/OpenCoarraysConfigVersion.cmake"
   DESTINATION
     lib/cmake/opencoarrays
