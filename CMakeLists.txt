@@ -139,6 +139,17 @@ target_link_libraries(OpenCoarrays INTERFACE caf_mpi)
 
 install(DIRECTORY  ${CMAKE_BINARY_DIR}/mod DESTINATION .)
 
+#------------------------------------------
+# Add portable unistall command to makefile
+#------------------------------------------
+# Adapted from the CMake Wiki FAQ
+configure_file ( "${CMAKE_SOURCE_DIR}/cmake/uninstall.cmake.in" "${CMAKE_BINARY_DIR}/uninstall.cmake"
+    @ONLY)
+
+add_custom_target ( uninstall
+  COMMAND ${CMAKE_COMMAND} -P "${CMAKE_BINARY_DIR}/uninstall.cmake" )
+
+
 enable_testing()
 
 function(add_mpi_test name num_mpi_proc path)
