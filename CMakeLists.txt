@@ -87,8 +87,10 @@ else()
   endif()
 endif()
 
-
-include(CheckFortranSourceCompiles.cmake)
+if(gfortran_compiler)
+  set(CMAKE_REQUIRED_FLAGS "-fcoarray=single")
+endif()
+include(CheckFortranSourceCompiles)
 CHECK_Fortran_SOURCE_COMPILES("
   program main
     implicit none
@@ -96,6 +98,9 @@ CHECK_Fortran_SOURCE_COMPILES("
     i = this_image()
   end program
 " Check_Simple_Coarray_Fortran_Source_Compiles)
+if(gfortran_compiler)
+  unset(CMAKE_REQUIRED_FLAGS)
+endif()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
