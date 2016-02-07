@@ -228,12 +228,12 @@ set_url()
   fi
   package_url_tail=(
     "gcc;$gcc_tail"
-    "wget;wget-$version_to_build.tar.xz"
-    "m4;m4-$version_to_build.tar.xz"
+    "wget;wget-$version_to_build.tar.gz"
+    "m4;m4-$version_to_build.tar.bz2"
     "pkg-config;pkg-config-$version_to_build.tar.gz"
     "mpich;mpich-$version_to_build.tar.gz"
-    "flex;flex-$version_to_build.tar.xz"
-    "bison;bison-$version_to_build.tar.xz"
+    "flex;flex-$version_to_build.tar.bz2"
+    "bison;bison-$version_to_build.tar.gz"
     "make;make-$version_to_build.tar.bz2"
     "cmake;cmake-$version_to_build.tar.gz "
     "subversion;subversion-$version_to_build.tar.gz"
