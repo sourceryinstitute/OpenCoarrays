@@ -599,16 +599,16 @@ find_or_install()
       echo "$this_script: Ready to build $package executable $executable in $package_install_path"
     fi
 
-    printf "$this_script: Ok to download (if necessary), build, and install $package from source? (y/n) "
+    printf "$this_script: Ok to download (if necessary), build, and install $package from source? (Y/n) "
     read proceed_with_build
 
-    if [[ $proceed_with_build != "y" ]]; then
-      printf "y\n"
+    if [[ "$proceed_with_build" == "n" || "$proceed_with_build" == "no" ]]; then
+      printf "n\n"
       printf "$this_script: OpenCoarrays installation requires $package. Aborting. [exit 70]\n"
       exit 70
 
     else # permission granted to build
-      printf "n\n"
+      printf "Y\n"
 
       # On OS X, CMake must be built with Apple LLVM gcc, which XCode command-line tools puts in /usr/bin
       if [[ `uname` == "Darwin" && $package == "cmake"  ]]; then
@@ -745,11 +745,11 @@ print_header()
     printf "in                                 ***\n"
     echo "$install_path"
   fi
-  printf "Ready to proceed? (y/n)"
+  printf "Ready to proceed? (Y/n)"
   read install_now
   printf " $install_now\n"
 
-  if [[ "$install_now" != "y" ]]; then
+  if [[ "$install_now" == "n"|| "$install_now" == "no" ]]; then
     printf "$this_script: Aborting. [exit 85]\n"
     exit 85
   fi
