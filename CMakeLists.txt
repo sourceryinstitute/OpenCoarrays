@@ -87,8 +87,10 @@ else()
   endif()
 endif()
 
-
-include(CheckFortranSourceCompiles.cmake)
+if(gfortran_compiler)
+  set(CMAKE_REQUIRED_FLAGS "-fcoarray=single")
+endif()
+include(CheckFortranSourceCompiles)
 CHECK_Fortran_SOURCE_COMPILES("
   program main
     implicit none
@@ -96,29 +98,36 @@ CHECK_Fortran_SOURCE_COMPILES("
     i = this_image()
   end program
 " Check_Simple_Coarray_Fortran_Source_Compiles)
+if(gfortran_compiler)
+  unset(CMAKE_REQUIRED_FLAGS)
+endif()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 add_subdirectory(src)
 add_subdirectory(install_prerequisites)
 
+#-----------------------------------------------------
+# Publicize installed location to other CMake projects
+#-----------------------------------------------------
 install(EXPORT OpenCoarraysTargets
   NAMESPACE
     OpenCoarrays::
   DESTINATION
     lib/cmake/opencoarrays
 )
-include(CMakePackageConfigHelpers)
+include(CMakePackageConfigHelpers) # standard CMake module
 write_basic_package_version_file(
   "${CMAKE_CURRENT_BINARY_DIR}/OpenCoarraysConfigVersion.cmake"
-  VERSION 1.0
+  VERSION "${opencoarrays_VERSION}"
   COMPATIBILITY AnyNewerVersion
 )
-configure_file(OpenCoarraysConfig.cmake.in CMakeFiles/OpenCoarraysConfig.cmake @ONLY)
+configure_file("${CMAKE_SOURCE_DIR}/cmake/pkg/OpenCoarraysConfig.cmake.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/OpenCoarraysConfig.cmake" @ONLY)
 
 install(
   FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/OpenCoarraysConfig.cmake
+    "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/OpenCoarraysConfig.cmake"
     "${CMAKE_CURRENT_BINARY_DIR}/OpenCoarraysConfigVersion.cmake"
   DESTINATION
     lib/cmake/opencoarrays
@@ -129,6 +138,17 @@ target_compile_options(OpenCoarrays INTERFACE -fcoarray=lib)
 target_link_libraries(OpenCoarrays INTERFACE caf_mpi)
 
 install(DIRECTORY  ${CMAKE_BINARY_DIR}/mod DESTINATION .)
+
+#------------------------------------------
+# Add portable unistall command to makefile
+#------------------------------------------
+# Adapted from the CMake Wiki FAQ
+configure_file ( "${CMAKE_SOURCE_DIR}/cmake/uninstall.cmake.in" "${CMAKE_BINARY_DIR}/uninstall.cmake"
+    @ONLY)
+
+add_custom_target ( uninstall
+  COMMAND ${CMAKE_COMMAND} -P "${CMAKE_BINARY_DIR}/uninstall.cmake" )
+
 
 enable_testing()
 
@@ -169,15 +189,10 @@ if(opencoarrays_aware_compiler)
   add_mpi_test(hello_multiverse 2 ${tests_root}/integration/coarrayHelloWorld/hello_multiverse)
   add_mpi_test(coarray_burgers_pde 2 ${tests_root}/integration/pde_solvers/coarrayBurgers/coarray_burgers_pde)
   add_mpi_test(co_heat 2 ${tests_root}/integration/pde_solvers/coarrayHeatSimplified/co_heat)
-
-  execute_process (COMMAND uname -m
-                   OUTPUT_VARIABLE MACHINE_TYPE)
-  if ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux" )
-    if ("${MACHINE_TYPE}" MATCHES "x86_64")
-      if ( NOT (DEFINED ENV{TRAVIS}))
-	add_mpi_test(coarray_navier_stokes 2 ${tests_root}/integration/pde_solvers/navier-stokes/coarray_navier_stokes)
-	set_property(TEST coarray_navier_stokes PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
-      endif()
+  if ( ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "x86_64") AND ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux") )
+    if ( NOT (DEFINED ENV{TRAVIS}))
+      add_mpi_test(coarray_navier_stokes 2 ${tests_root}/integration/pde_solvers/navier-stokes/coarray_navier_stokes)
+      set_property(TEST coarray_navier_stokes PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
     endif()
   endif()
 else()
