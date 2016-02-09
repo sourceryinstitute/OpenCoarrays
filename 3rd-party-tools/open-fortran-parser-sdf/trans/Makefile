@@ -1,8 +1,23 @@
-# Example usage:
+# Usage:
+#
+# If the OFP_HOME environment variable contains the path to the Open Fortran Parser,
+# then this Makefile transforms the coarray Fortran (CAF) source defined in SOURCE 
+# environment variable into the OpenCoarrays CAF (OCAF) dialect printed to the 
+# standard output.  Most commonly, one sets SOURCE on the command line that invokes
+# "make":
+#
+#    make SOURCE=foo.f90 check > ocaf-foo.f90
+#    make clean
+#
+# Alternatively, one can set OFP_HOME also in the "make" invocation: 
 #
 #    make SOURCE=foo.f90 OFP_HOME=/opt/ofp-sdf check >  ocaf-foo.f90
 #    make OFP_HOME=/opt/ofp-sdf clean
 #
+
+ifeq ($(OFP_HOME),)
+  $(error Usage: make SOURCE=foo.f90 OFP_HOME=/path/to/ofp-sdf check >  ocaf-foo.f90)
+endif
 
 include $(OFP_HOME)/make.inc
 
