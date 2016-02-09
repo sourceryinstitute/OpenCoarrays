@@ -59,7 +59,8 @@ and keeping a clean history, please see:
  2. http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html
  3. https://www.reviewboard.org/docs/codebase/dev/git/clean-commits/
 
-And for funny examples of what not to do, see: http://whatthecommit.com
+And for funny examples of what not to do, see: http://whatthecommit.com and
+http://stopwritingramblingcommitmessages.com
 EOF
 
 }
