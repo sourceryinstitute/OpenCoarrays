@@ -361,27 +361,27 @@ ocaf-add-calls(|st,ct) =
 ocaf-add-calls(|st,ct) =
      ?Scope(decls,execs,funcs)
   ;  <concat> [[<fast-build-use-stmt>"opencoarrays"], decls]
-  ;  <concat> [<id>, <map(ct-add-type-decl(|ct))> <hashtable-keys()> ct]
-  ;  <concat> [<id>, [<fast-build-type-decl(|
-                          INTEGER(no-kind()),[])> "focl_intvar__"]]
-  ;  <concat> [<id>, [<fast-build-type-decl(|
-                          INTEGER(Kind(VarRef("c_size_t"))),[])> "cl_size__"]]
-  ;  <concat> [<id>, [TypeDeclarationStmt(no-label()
-                        , INTEGER(Kind(VarRef("c_size_t")))
-                        , []
-                        , [Var("cl_gws__",
-                             ArrayType(INTEGER(Kind(VarRef("c_size_t")))
-                                     , [Range(no-lower-bound(), IntVal("3"))],[]), no-init())]
-                        )]]
-  ;  <concat> [<id>, [TypeDeclarationStmt(no-label()
-                        , INTEGER(Kind(VarRef("c_size_t")))
-                        , []
-                        , [Var("cl_lws__",
-                             ArrayType(INTEGER(Kind(VarRef("c_size_t")))
-                                     , [Range(no-lower-bound(), IntVal("3"))],[])
-                                          , Init(ArrayConstructor(AcSpec(no-type-spec()
-                                                                         ,<opencl-local-size>))))]
-                        )]]
+//  ;  <concat> [<id>, <map(ct-add-type-decl(|ct))> <hashtable-keys()> ct]
+//  ;  <concat> [<id>, [<fast-build-type-decl(|
+//                          INTEGER(no-kind()),[])> "focl_intvar__"]]
+//  ;  <concat> [<id>, [<fast-build-type-decl(|
+//                          INTEGER(Kind(VarRef("c_size_t"))),[])> "cl_size__"]]
+//  ;  <concat> [<id>, [TypeDeclarationStmt(no-label()
+//                        , INTEGER(Kind(VarRef("c_size_t")))
+//                        , []
+//                        , [Var("cl_gws__",
+//                             ArrayType(INTEGER(Kind(VarRef("c_size_t")))
+//                                     , [Range(no-lower-bound(), IntVal("3"))],[]), no-init())]
+//                        )]]
+//  ;  <concat> [<id>, [TypeDeclarationStmt(no-label()
+//                        , INTEGER(Kind(VarRef("c_size_t")))
+//                        , []
+//                        , [Var("cl_lws__",
+//                             ArrayType(INTEGER(Kind(VarRef("c_size_t")))
+//                                     , [Range(no-lower-bound(), IntVal("3"))],[])
+//                                          , Init(ArrayConstructor(AcSpec(no-type-spec()
+//                                                                         ,<opencl-local-size>))))]
+//                        )]]
   ;  !Scope(<id>, execs, funcs)
   ;  ?Scope(decls2, execs2, funcs2)
   ;  <concat> [[CallStmt(no-label(), "caf_init", [])], execs2]
@@ -397,14 +397,6 @@ ocaf-add-calls(|st,ct) =
 //         <map(fast-allocation-object)> alloc_list
 //  ;  <map(fast-allocation-object)> alloc_list
 //  ;  <map(opencl-build-create-buffer(|st,device))> <id>
-//}
-
-// Replace codeallocate statement with function call to free memory on device
-//ocaf-add-calls(|st,ct) =
-//{device
-//  :  ?CoDeallocateStmt(label,dealloc_list,options,image,eos)
-//  ;  <cl-wrap-name> <ocaf-subimage> image => device
-//  ;  <map(opencl-build-release-buffer(|st,device))> dealloc_list
 //}
 
 // Replace assignment statements with memory transfer with read/writeBuffer
@@ -423,6 +415,11 @@ ocaf-add-calls(|st,ct) =
          , FunctionReference("readBuffer"
             ,[<cl-wrap-name>obj,<conc-strings>("C_LOC(",var,")"),VarRef("cl_size__")]))
       ]
+
+//TODO - replace with function reference, not a PartRef
+ocaf-add-calls(|st,ct) =
+     ? PartRef(name, subscripts, cosubscripts)
+  ;  ! PartRef("caf_get", [VarRef("array"), ArrayConstructor(AcSpec(no-type-spec(), [IntVal("13")]))], no-image-selector())
 
 // Add arguments to OpenCL kernels and run them; replacing DO CONCURRENT loop
 ocaf-add-calls(|st,ct) =
