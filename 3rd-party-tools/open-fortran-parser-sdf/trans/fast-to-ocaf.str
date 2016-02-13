@@ -20,23 +20,42 @@ strategies //=================START OF STRATEGIES============================
     io-wrap(fast-to-ocaf)
 
   fast-to-ocaf =
-{ st,lt,save
+{ st,lt
         :  ?Program(units)
         ;  new-hashtable => st
         ;  new-hashtable => lt
         ;  !Program(units)
         ;  topdown(try(fast-get-symbols(|st)))
         ;  topdown(try(ocaf-get-symbols(|st,lt)))
-        ;  bottomup(try(ocaf-add-calls(|st,lt)))
+        ;  bottomup(try(ocaf-init-finalize(|st,lt)))
+        ;  bottomup(try(ocaf-replace-image-selector(|st,lt)))
         ;  topdown(try(fast-flatten-scope-parts))
-        ;  bottomup(try(caf-lower-ast))  => save
-        ;  !"--------------------------------------------------------------------------------------"
-        ;  debug()
-        ;  !save
+        ;  bottomup(try(caf-lower-ast))
 }
 
 
 rules //========================START OF RULES===============================
+
+
+// Add "use opencoarrays" and caf_init and caf_finalize calls
+//
+ocaf-init-finalize(|st,ct) =
+     ? Scope(decls,execs,funcs)
+  ;  <concat> [[<fast-build-use-stmt>"opencoarrays"], decls]
+  ;  ! Scope(<id>, execs, funcs)
+  ;  ? Scope(decls2, execs2, funcs2)
+  ;  <concat> [[CallStmt(no-label(), "caf_init", [])], execs2]
+  ;  <concat> [<id>, [CallStmt(no-label(), "caf_finalize", [])]]
+  ;  ! Scope(decls2, <id> ,funcs2)
+
+// Replace image selectors with calls to OCAF functions
+//
+ocaf-replace-image-selector(|st,ct) =
+     ? PartRef(name, subscripts, cosubscripts)
+//  ;  ! FunctionReference("caf_get", [VarRef("array"), ArrayConstructor(AcSpec(no-type-spec(), [IntVal("13")]))])
+  ;  ! FunctionReference("caf_get", [VarRef("array"), cosubscripts])
+
+
 
 // Local thread group size
 // TODO - make dependent on dim and device
@@ -356,38 +375,6 @@ ocaf-add-calls(|st,ct) =
   ;  <concat> [[AssignmentStmt(label,VarDef(lhs),FunctionReference("get_subimage",
                                       [arg,<cl-wrap-name>lhs]))], <id>]
 
-// Add variables associated with ForOpenCL calls
-//    focl_intvar__, cl_status__, cl_size__, ch_ng__(3)
-ocaf-add-calls(|st,ct) =
-     ?Scope(decls,execs,funcs)
-  ;  <concat> [[<fast-build-use-stmt>"opencoarrays"], decls]
-//  ;  <concat> [<id>, <map(ct-add-type-decl(|ct))> <hashtable-keys()> ct]
-//  ;  <concat> [<id>, [<fast-build-type-decl(|
-//                          INTEGER(no-kind()),[])> "focl_intvar__"]]
-//  ;  <concat> [<id>, [<fast-build-type-decl(|
-//                          INTEGER(Kind(VarRef("c_size_t"))),[])> "cl_size__"]]
-//  ;  <concat> [<id>, [TypeDeclarationStmt(no-label()
-//                        , INTEGER(Kind(VarRef("c_size_t")))
-//                        , []
-//                        , [Var("cl_gws__",
-//                             ArrayType(INTEGER(Kind(VarRef("c_size_t")))
-//                                     , [Range(no-lower-bound(), IntVal("3"))],[]), no-init())]
-//                        )]]
-//  ;  <concat> [<id>, [TypeDeclarationStmt(no-label()
-//                        , INTEGER(Kind(VarRef("c_size_t")))
-//                        , []
-//                        , [Var("cl_lws__",
-//                             ArrayType(INTEGER(Kind(VarRef("c_size_t")))
-//                                     , [Range(no-lower-bound(), IntVal("3"))],[])
-//                                          , Init(ArrayConstructor(AcSpec(no-type-spec()
-//                                                                         ,<opencl-local-size>))))]
-//                        )]]
-  ;  !Scope(<id>, execs, funcs)
-  ;  ?Scope(decls2, execs2, funcs2)
-  ;  <concat> [[CallStmt(no-label(), "caf_init", [])], execs2]
-  ;  <concat> [<id>, [CallStmt(no-label(), "caf_finalize", [])]]
-  ;  !Scope(decls2, <id> ,funcs2)
-
 // Replace coallocate statement with function call to alloc memory on device
 //ocaf-add-calls(|st,ct) =
 //{device
@@ -416,46 +403,6 @@ ocaf-add-calls(|st,ct) =
             ,[<cl-wrap-name>obj,<conc-strings>("C_LOC(",var,")"),VarRef("cl_size__")]))
       ]
 
-//TODO - replace with function reference, not a PartRef
-ocaf-add-calls(|st,ct) =
-     ? PartRef(name, subscripts, cosubscripts)
-  ;  ! PartRef("caf_get", [VarRef("array"), ArrayConstructor(AcSpec(no-type-spec(), [IntVal("13")]))], no-image-selector())
-
-// Add arguments to OpenCL kernels and run them; replacing DO CONCURRENT loop
-ocaf-add-calls(|st,ct) =
-{device,triplets
-  :  ?BlockDoConstruct(begin,stmts,end) {annotations}
-//  ;  <lookup> ("ImageExecutionSelector", annotations)  => device
-//  ;  <ocaf-forall-triplet> begin                       => triplets
-//  ;  ![]
-//  ;  <concat> [<id>, <map(opencl-build-calc-global-offset)> <add-indices> triplets]
-//  ;  <concat> [<id>, <map(opencl-build-calc-global-size  )> <add-indices> triplets]
-//  ;  <concat> [<id>, <map(opencl-replace-call-stmt(|ct,triplets))> stmts]
-//  ;  <concat> [<id>, <map(opencl-build-finish-kernel)> <map(fast-call-stmt-name)> stmts]
-//  ;  <flatten-list> <id>
-}
-
-// Add arguments to OpenCL kernels and run them; replacing ImageExecStmts
-//ocaf-add-calls(|st,ct) =
-//{device,rank
-//  :  ?ImageExecStmt(label,name,args,image,eos)
-//  ;  <ocaf-subimage> image    => device
-//  ;  <opencl-rank(|st)> args  => rank
-//  ;  <flatten-list>  <opencl-build-set-kernel-args(|ct,device)> (name,args)
-//  ;  <concat> [<id>, [<opencl-build-calc-global-offset-of-args(|st)> args]]
-//  ;  <concat> [<id>, [<opencl-build-calc-global-size-of-args  (|st)> args]]
-//  ;  <concat> [<id>,
-//               [AssignmentStmt(label,VarDef("cl_status__")
-//                  , FunctionReference("run",[<cl-wrap-name> name
-//                    ,rank, VarRef("cl_gwo__"), VarRef("cl_gws__"), VarRef("cl_lws__")]))]]
-//  ;  <concat> [<id>, [<opencl-build-finish-kernel> name]]
-//  ;  <flatten-list> <id>
-//}
-
-// Retrieve list of ForallHeader triplets
-//ocaf-forall-triplet =
-//     ?NonlabelDoStmt(_,_,ConcurrentExecControl(ForallHeader(_,triplet_list,_),_))
-//  ;  !triplet_list
 
 // Build AssignmentStmt calculating global offset from a ForallHeader triplet
 // TODO - incorporate step information
@@ -524,9 +471,19 @@ caf-lower-ast =
      ?SyncImagesStmt(label, image_set, sync_stat_list)
   ;  !CallStmt(label, "sync_images", <concat>[[image_set],sync_stat_list] )
 
+// Remove codimension from an array type declaration
+//
 caf-lower-ast =
      ?Codimension(_)
   ;  ![]
+
+// Remove coshape from an array type declaration
+//
+caf-lower-ast =
+     ? ArrayType(type, [], coshape)
+  ;  ! type
+ <+  ? ArrayType(type, shape, coshape)
+  ;  ! ArrayType(type, shape, [])
 
 caf-lower-ast =
      ?EntityDecl(name,array_spec,coarray_spec,char_length,init)
