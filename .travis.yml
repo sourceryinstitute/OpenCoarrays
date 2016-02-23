@@ -28,10 +28,10 @@ cache:
 env:
   matrix:
     - BUILD=CodeCoverage
-    - BUILD=Release lMPI=MPICH
+    - BUILD=Release
     - BUILD=Release lMPI=OMPI
-    - BUILD=Script
-    - BUILD=Lint
+    - BUILD=Script  lMPI=NONE
+    - BUILD=Lint    lMPI=NONE
   global:
     - CACHE="$HOME/.local"
     - MPICH_VER="3.1.4"
@@ -42,16 +42,27 @@ env:
     - MPICH_BOT_URL_TAIL="mpich-3.2.yosemite.bottle.1.tar.gz"
 before_install:
   - uname
-  - if [[ "$(uname)" = "Darwin" ]]; then brew update > /dev/null; fi
+  - true #.travis-scripts/set-env.sh # map travis-ci environment to saner variables
+install:
+  - true # .travis-scripts/install.$os.sh --build=$BUILD --lmpi=${lMPI:-MPICH}
 script:
-  - gcc --version
-  - gcc-5 --version
-  - gfortran-5 --version
-  - g++ --version
-  - g++-5 --version
-  - ls -l $(which gcc)
-  - ls -l $(which gcc-5)
-  - ls -l $(which gfortran-5)
+  - true # .travis-scripts/build.$os.sh --build=$BUILD --lmpi=${lMPI:-MPICH}
+after_success:
+  - find . -name '*.gcno' -print
+  - gcov-5 --version
+  - bash <(curl -s https://codecov.io/bash) -x $(which gcov-5)
+  - cat install.log || true
+after_failure:
+  - cat install.log || true
+notifications:
+  webhooks:
+    urls:
+      # - https://webhooks.gitter.im/e/93dbafbdf76c1732a623
+      - https://webhooks.gitter.im/e/935231573bf1b9f2fe40
+      - secure: Vg9emW6xdaDsNkVyg0uykqFZPvVBbqOJqmuSSU5WwVS+vYO0am/du33q2FRe2bzJ7kKayl2udgdmnPTYxX3wDVfvzjE6AHG5zVdaESCorU1LiThaWHhgKGciyJDJbbZpkl6Ekp6qgf6Uvq0xYKiEbTgLMVaSMG5HtP3e/AB5vgf4QOHvLB7Ph5EhkhzrX52MaA00OganuWr2aZ089VEVugeGFcoBAs/Ndl08b67NQTiAFeQaUqY0Vaqn6b9Izgj1tJkB5FCgD0zZ0tTWPr+J73y4cmCXB8hpnt4d3v6z/CMPU8NivJy3KuRw2kI6K3rH1eoIPv4TfLUqyoQMCebT+2x+R9pAnZdwfJQGX18OXyjKlQrzlEIKXpo/aXWSyY7GZDpFGKLKMAozsdOf/cB5o+VZtw+HdoZIuHHTLoLVnnYBOAr7bpSlKyWY8eJnJZ6swvoT8mIFMMRrYHqxHDFfz1UFIwGV1wPp97sY6ejxWZ1tNTC7FxJan9EaxR9MqmSAyOl1oRDOEU+HKhgsnVTTtmpsWQlISJtyx1a7/24rdpQviaBwFJG7lQXCK4eWgASTbga4y2n5VY2MHzbqJyQnx68/NNhtB8OomPaS3kDlu6FmdQdOmnZHjawsSHDpe3WtZm/7doD3Od/4S8L5z6Lxj7DJod4pUtz873P/5sXgVKQ=
+    on_success: change  # options: [always|never|change]
+    on_failure: always
+    on_start: always
 # matrix:
 #   include:
 #     - os: osx
@@ -208,21 +219,3 @@ script:
 #       make install
 #       cd ..
 #     fi
-
-# after_success:
-#   - find . -name '*.gcno' -print
-#   - gcov-5 --version
-#   - bash <(curl -s https://codecov.io/bash) -x $(which gcov-5)
-#   - cat install.log || true
-
-# after_failure:
-#   - cat install.log || true
-
-# notifications:
-#   webhooks:
-#     urls:
-#       - https://webhooks.gitter.im/e/93dbafbdf76c1732a623
-#       - https://webhooks.gitter.im/e/935231573bf1b9f2fe40
-#     on_success: change  # options: [always|never|change]
-#     on_failure: always
-#     on_start: always
