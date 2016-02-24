@@ -11,27 +11,28 @@ matrix:
     - os: osx
       env: BUILD=Lint lMPI=NONE
 
-addons: # Packages and their sources for linux container builds
+# Deep clone so we can check things with git,
+# C.F. https://github.com/travis-ci/travis-ci/issues/4942
+git:
+  depth: 99999
+
+addons: # Packages needed to bootstrap linuxbrew
   apt:
-    sources:
-      - ubuntu-toolchain-r-test
-      - george-edison55-precise-backports
     packages:
-      - gcc-5
-      - gfortran-5
-      - g++-5
-      - cmake-data
-      - cmake
-      - binutils
+      - gawk
+      - build-essential
+      - ruby
+      - curl
 
 cache: # Use caching on linux container builds
   apt: true
   directories:
     - "$HOME/.cache"
+    - "$HOME/.linuxbrew"
 
 env:
   matrix:
-    - BUILD=CodeCoverage
+    - BUILD=CodeCoverage lMPI=MPICH
     - BUILD=Release lMPI=MPICH
     - BUILD=Release lMPI=OMPI
     - BUILD=Script lMPI=NONE
@@ -47,7 +48,8 @@ env:
 
 before_install:
   - uname
-  - true #.travis-scripts/set-env.sh # map travis-ci environment to saner variables
+  - source .travis-scripts/set-env.sh # map travis-ci environment to saner variables
+
 install:
   - true # .travis-scripts/install.$os.sh --build=$BUILD --lmpi=${lMPI:-MPICH}
 
