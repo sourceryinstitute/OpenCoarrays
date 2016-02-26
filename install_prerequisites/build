@@ -94,6 +94,7 @@ set_default_version()
     "make:4.1"
     "m4:1.4.17"
     "subversion:1.9.2"
+    "aterm:2.5"
     "_unknown:0"
   )
   for package in "${package_version[@]}" ; do
@@ -147,6 +148,7 @@ check_prerequisites()
     "make:ftp-url"
     "m4:ftp-url"
     "subversion:wget"
+    "aterm:wget"
     "_unknown:0"
   )
   for package in "${package_download_mechanism[@]}" ; do
@@ -199,6 +201,7 @@ set_url()
     "bison;ftp.gnu.org:/gnu/bison/"
     "cmake;http://www.cmake.org/files/v$major_minor/"
     "subversion;http://www.eu.apache.org/dist/subversion/"
+    "aterm;http://releases.strategoxt.org/strategoxt-0.17/aterm/aterm-2.5pre21238-26ra85lr/"
     "_unknown;0"
   )
   for package in "${package_url_head[@]}" ; do
@@ -237,6 +240,7 @@ set_url()
     "make;make-$version_to_build.tar.bz2"
     "cmake;cmake-$version_to_build.tar.gz "
     "subversion;subversion-$version_to_build.tar.gz"
+    "aterm;aterm-$version_to_build.tar.gz"
     "_unknown;0"
   )
   for package in "${package_url_tail[@]}" ; do
