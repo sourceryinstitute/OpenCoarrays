@@ -131,9 +131,13 @@ build_from_source()
   
 install_binaries()
 {
-  wget http://ftp.strategoxt.org/pub/stratego/StrategoXT/strategoxt-0.17/macosx/strategoxt-superbundle-0.17-macosx.tar.gz
-  tar xf strategoxt-superbundle-0.17-macosx.tar.gz
-  cd strategoxt-superbundle-0.17-macosx/opt
+  if [ ! -f strategoxt-superbundle-0.17-macosx.tar.gz ]; then
+    echo "Downloading strategoxt-superbundle-0.17-macosx.tar.gz "
+    wget http://ftp.strategoxt.org/pub/stratego/StrategoXT/strategoxt-0.17/macosx/strategoxt-superbundle-0.17-macosx.tar.gz
+  fi &&
+  echo "Uncompressing strategoxt-superbundle-0.17-macosx.tar.gz " &&
+  tar xf strategoxt-superbundle-0.17-macosx.tar.gz &&
+  cd strategoxt-superbundle-0.17-macosx/opt &&
   if [ ! -d "$PREFIX" ]; then
     mkdir $PREFIX 
   fi
