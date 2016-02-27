@@ -335,7 +335,10 @@ for f in "${FILES_CHANGED[@]}"; do
   echo "    $f"
 done
 
-export FILES_CHANGED=${FILES_CHANGED[@]} # Can't export array variables
+tmp=${FILES_CHANGED[@]}
+unset FILES_CHANGED
+export FILES_CHANGED=${tmp} # Can't export array variables
+info "Files changed: $FILES_CHANGED"
 
 COMMITS_TESTED=($(git rev-list ${COMMIT_RANGE} || git rev-list "${GIT_COMMIT}^..${GIT_COMMIT}"))
 info "The following commits are being tested in $COMMIT_RANGE:"
@@ -348,7 +351,9 @@ if [ "$LOG_LEVEL" -ge 6 ]; then
   done
 fi
 
-export COMMITS_TESTED=${COMMITS_TESTED[@]} # Can't export array variables
+tmp=${COMMITS_TESTED[@]}
+unset COMMITS_TESTED
+export COMMITS_TESTED=${tmp} # Can't export array variables
 
 # Undo settings we may have set
 # debug mode

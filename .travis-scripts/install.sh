@@ -295,6 +295,7 @@ info "Done installing gcc, version: $(gcc --version)"
 
 # Use FILES_CHANGED defined in set-env.sh to determine if we need to test installation of
 # prerequisites with build script
+info "Files changed: $FILES_CHANGED"
 echo "install.sh" > script_files.txt
 for f in install_prerequisites/*; do
   echo "$f" >> script_files.txt
@@ -314,10 +315,10 @@ if [ "$LOG_LEVEL" -ge 7 ]; then
   done
 fi
 
-if [[ "X$arg_b" = "XScript" && ${_install_script_touched:-false} ]]; then
+if [[ "X$arg_b" = "XScript" ]] && ${_install_script_touched:-false} ; then
   # Don't install CMake or MPI implementation
   info "Install script files \`install.sh\` and/or stuff in \`install_prerequisites\` has changed."
-  info "Not installing CMake or MPI implementation so that the isntall script may be fully tested."
+  info "Not installing CMake or MPI implementation so that the install script may be fully tested."
 elif [[ "X$arg_b" = "XLint" ]]; then
   info "Installing packages for linting recent changes"
 else
