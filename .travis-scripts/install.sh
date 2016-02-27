@@ -296,7 +296,7 @@ info "Done installing gcc, version: $(gcc --version)"
 # Use FILES_CHANGED defined in set-env.sh to determine if we need to test installation of
 # prerequisites with build script
 info "Files changed: $FILES_CHANGED"
-echo "${BUILD_DIR}/install.sh" > script_files.txt
+echo "./install.sh" > script_files.txt
 for f in install_prerequisites/*; do
   echo "$f" >> script_files.txt
 done
