@@ -3,6 +3,8 @@
 # details please see the "LICENSE" file at the root directory of the
 # project.
 #
+# This script is used to bootstrap dependencies on
+#
 # AUTHORS: Izaak B Beekman (https://izaakbeekman.com)
 #
 # Copyright (c) 2016 SourceryInstitute
@@ -15,10 +17,14 @@
 ### Configuration
 #####################################################################
 
-# We are sourcing this file on travis... make sure that these are not
-# set in travis' environment
-#set -o errexit
-#set -o nounset
+# Exit on error. Append ||true if you expect an error.
+# `set` is safer than relying on a shebang like `#!/bin/bash -e` because that is neutralized
+# when someone runs your script as `bash yourscript.sh`
+set -o errexit
+set -o nounset
+
+# Bash will remember & return the highest exitcode in a chain of pipes.
+# This way you can catch the error in case mysqldump fails in `mysqldump |gzip`
 set -o pipefail
 # set -o xtrace
 
@@ -36,9 +42,11 @@ fi
 #   need not have a long option
 # - `--` is respected as the separator between options and arguments
 read -r -d '' usage <<-'EOF' || true # exits non-zero when EOF encountered
-  -v --verbose     Enable verbose mode, print script as it is executed
-  -d --debug       Enables debug mode
-  -h --help        This page
+  -b --build   [arg] Set build type to setup. Required.
+  -m --mpi-lib [arg] Set MPI library to use. Default="mpich"
+  -v --verbose       Enable verbose mode, print script as it is executed
+  -d --debug         Enables debug mode
+  -h --help          This page
 EOF
 
 # Set magic variables for current file and its directory.
@@ -54,6 +62,17 @@ fi
 
 ### Functions
 #####################################################################
+
+function bottle_install () {
+    brew install $1 --only-dependencies || true # try to keep going
+    brew install $1 --force-bottle || \
+      brew upgrade $1 --force-bottle || \
+      brew outdated $1 # throw an error if outdated or not installed
+}
+
+function brew_install () {
+    brew install $1 || brew upgrade $1 || brew outdated $1
+}
 
 function _fmt ()      {
   local color_debug="\x1b[35m"
@@ -89,13 +108,13 @@ function help () {
   echo "" 1>&2
   echo "  ${usage}" 1>&2
   echo "" 1>&2
-#  exit 1
+  exit 1
 }
 
 function cleanup_before_exit () {
-  info "Done setting up environment."
+  info "Cleaning up. Done"
 }
-#trap cleanup_before_exit EXIT
+trap cleanup_before_exit EXIT
 
 
 ### Parse commandline options
@@ -180,6 +199,7 @@ while getopts "${opts}" opt; do
   eval "${varname}=\"${value}\""
   debug "cli arg ${varname} = ($default) -> ${!varname}"
 done
+set -o nounset # no more unbound variable references expected
 
 shift $((OPTIND-1))
 
@@ -210,15 +230,16 @@ fi
 ### Validation (decide what's required for running your script and error out)
 #####################################################################
 
+[ -z "${arg_b:-}" ]     && help      "Setting a build type with -b or --build is required"
 [ -z "${LOG_LEVEL:-}" ] && emergency "Cannot continue without LOG_LEVEL. "
 
 
 ### Runtime
 #####################################################################
 if ${CI:-false} ; then
-  info "Setting up environment on Travis-CI $__os image for ${BUILD:-testing} build type."
+  info "Installing prerequisite software on Travis-CI $__os image for ${arg_b:-testing} build type."
 else
-  info "Setting up environment for local testing on $__os for ${BUILD:-testing} build type."
+  info "Installing prerequisite software for local testing on $__os for ${arg_b:-testing} build type."
 fi
 
 debug "__file: ${__file}"
@@ -226,129 +247,104 @@ debug "__dir: ${__dir}"
 debug "__base: ${__base}"
 debug "__os: ${__os}"
 
+debug "arg_b: ${arg_b}"
+debug "arg_m: ${arg_m}"
 debug "arg_d: ${arg_d}"
 debug "arg_v: ${arg_v}"
 debug "arg_h: ${arg_h}"
 
-### Start mapping Travis-CI vars to saner counterparts,
-### using some local value if not on Travis-CI
+### Install prerequisite software via Homebrew
 #####################################################################
 
-# Attempt to unshallow git, if shallow clone detected
-if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-debug "$(git status)"
+info "All dependencies are managed with Homebrew or Linuxbrew"
 
-if ! ${CI:-false}; then
-  # This code would fail on travis because travis checks out detached HEAD
-  _branch_name="$(git symbolic-ref -q HEAD)"
-  _branch_name="${_branch_name##refs/heads/}"
-  _branch_name="${_branch_name:-HEAD}"
-fi
-
-export GIT_BR=${TRAVIS_BRANCH:-"${_branch_name:-}"}
-info "GIT_BR = $GIT_BR"
-export BUILD_DIR=${TRAVIS_BUILD_DIR:-"${__dir}/.."}
-info "BUILD_DIR = $BUILD_DIR"
-export BUILD_ID=${TRAVIS_BUILD_ID:-foo-build-local-testing}
-debug "BUILD_ID = $BUILD_ID"
-export BUILD_NUM=${TRAVIS_BUILD_NUMBER:-0}
-info "BUILD_NUM = $BUILD_NUM"
-export GIT_COMMIT=${TRAVIS_COMMIT:-"$(git rev-parse HEAD)"}
-info "GIT_COMMIT = $GIT_COMMIT"
-# if not on travis, just use current commit as commit range
-export COMMIT_RANGE=${TRAVIS_COMMIT_RANGE:-"$(git rev-parse HEAD)^..$(git rev-parse HEAD)"}
-info "COMMIT_RANGE = $COMMIT_RANGE"
-export JOB_ID=${TRAVIS_JOB_ID:-foo-job-local-testing}
-debug "JOB_ID = $JOB_ID"
-export JOB_NUMBER=${TRAVIS_JOB_NUMBER:-"0.0"}
-info "JOB_NUMBER = $JOB_NUMBER"
-export MY_OS=${TRAVIS_OS_NAME:-$(tr '[:upper:]' '[:lower:]' <<< "$__os")}
-info "MY_OS = $MY_OS"
-export PR=${TRAVIS_PULL_REQUEST:-false}
-info "PR = $PR"
-_origin_url="$(git config --get remote.origin.url)"
-_GH_repo_slug="$(sed 's/.*github\.com[:/]\(.*\)\(\.git\)\{0,1\}/\1/' <<< $_origin_url)"
-export REPO_SLUG=${TRAVIS_REPO_SLUG:-${_GH_repo_slug}}
-info "REPO_SLUG = $REPO_SLUG"
-export SECURE_ENV=${TRAVIS_SECURE_ENV_VARS:-false}
-info "SECURE_ENV = $SECURE_ENV"
-#TRAVIS_TEST_RESULT: is set to 0 if the build is successful and 1 if the build is broken.
-debug "TRAVIS_TEST_RESULT = ${TRAVIS_TEST_RESULT:-0}"
-_maybe_tag="$(git describe --tags)"
-# If there have been commits since the last tag (matching [vV]?[0-9]+\.[0-9]+\(\.[0-9]+\)*)
-# Pull out what the last tag was
-_base_tag="$(sed -n 's/^\([vV]\{0,1\}[0-9]\{1,\}\.[0-9]\{1,\}\(\.[0-9]\{1,\}\)*\).*/\1/p' <<< $_maybe_tag)"
-if ${CI:-false}; then
-  export GIT_TAG=${TRAVIS_TAG:-''}
-elif [[ "X$_maybe_tag" = "X$_base_tag" ]]; then # No commits since last tag
-  export GIT_TAG="$_base_tag"
-else # Commits since last tag, not a tag
-  declare GIT_TAG
-  export GIT_TAG
-fi
-info "GIT_TAG = $GIT_TAG"
-
-### prepare for linux brew
-#####################################################################
 if [[ "X$MY_OS" = "Xlinux" ]]; then
-  export PATH="${HOME}/.linuxbrew/bin:$PATH"
-fi
-
-### Determine the files changed in the commit range being tested
-#####################################################################
-
-# Be carefull here; pull requests with forced pushes can potentially
-# cause issues
-if [ "$PR" != "false" ]; then # Use github API to get changed files
-  _files_changed=($(curl "https://api.github.com/repos/$REPO_SLUG/pulls/$PR/files" | \
-			 jq '.[] | .filename' | tr '"' ' '))
-  if [[ ${#_files_changed[@]} -eq 0 || -z ${_files_changed[@]} ]]; then
-    # no files detected, try using git instead
-    # This approach may only pick up files from the most recent commit, but that's
-    # better than nothing
-    _files_changed=($(git diff --name-only $COMMIT_RANGE || \
-                      git diff --name-only "${GIT_COMMIT}^..${GIT_COMMIT}" || echo ''))
+  if [ ! -x "${HOME}/.linuxbrew/bin/brew" ]; then # Linux brew *NOT* installed in cache
+    info "Linux brew not installed/cached. Installing linux brew now..."
+    yes | ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/linuxbrew/go/install)" || true
+    info "Done installing Linux brew!"
+    info "Updating formula library..."
+    brew update > /dev/null
+    brew update > /dev/null
+    info "Done updating formula library."
+    if [ "${LOG_LEVEL}" -ge 6 ]; then # do some debugging
+      info "Checking health of Linux brew using \`brew doctor\`..."
+      brew doctor || true
+    fi
+  else
+    info "Linux brew appears to already be installed"
   fi
 else
-  # We should be ok using git, see https://github.com/travis-ci/travis-ci/issues/2668
-  _files_changed=($(git diff --name-only $COMMIT_RANGE || \
-                    git diff --name-only "${GIT_COMMIT}^..${GIT_COMMIT}" || echo '<none>'))
+  info "Updating formula library..."
+  brew update > /dev/null
+  info "Done updating formula library."
 fi
 
-FILES_CHANGED=()
-for file in "${_files_changed[@]}"; do
-  if [[ ! -f "$file" ]]; then
-    info "File $file no longer exists, removing from list of changed files"
-  else
-    FILES_CHANGED+=("$file")
-  fi
+info "Installing latest GCC, this could take some time..."
+bottle_install gcc
+cd $(brew --cellar)/gcc/5.3.0/bin
+[ -f "gcc" ] || ln -s gcc-5 gcc
+[ -f "gfortran" ] || ln -s gfortran-5 gfortran
+[ -f "g++" ] || ln -s g++-5 g++
+cd -
+brew unlink gcc || true
+brew link --force gcc || true
+info "Done installing gcc, version: $(gcc --version)"
+
+[ "X$MY_OS" = "Xlinux" ] && brew_install openldap # needed for curl, needed for CMake
+
+# Use FILES_CHANGED defined in set-env.sh to determine if we need to test installation of
+# prerequisites with build script
+echo "install.sh" > script_files.txt
+for f in install_prerequisites/*; do
+  echo "$f" >> script_files.txt
 done
+if fgrep -f script_files.txt <<< "${FILES_CHANGED}" > /dev/null ; then
+  info "Detected changes to install scripts, testing as many prerequisite installs as possible"
+  _install_script_touched=true
+else
+  info "No changes to install scripts detected, installing CMake & MPI via package manager"
+fi
 
-info "Files changed in $COMMIT_RANGE:"
-for f in "${FILES_CHANGED[@]}"; do
-  echo "    $f"
-done
-
-export FILES_CHANGED=${FILES_CHANGED[@]} # Can't export array variables
-
-COMMITS_TESTED=($(git rev-list ${COMMIT_RANGE} && using_commit_range=true || git rev-list "${GIT_COMMIT}^..${GIT_COMMIT}"))
-info "The following commits are being tested in $COMMIT_RANGE:"
-info "(if \`git rev-list \$COMMIT_RANGE\` fails, just use current commit)"
-${using_commit_range:-false} && info "Using \$COMMIT_RANGE" || info "Unable to use \$COMMIT_RANGE"
-if [ "$LOG_LEVEL" -ge 6 ]; then
-  for commit in ${COMMITS_TESTED[@]}; do
-    echo "    $commit"
+# if debugging show what we thing changed
+debug "Here are the FILES_CHANGED:"
+if [ "$LOG_LEVEL" -ge 7 ]; then
+  for f in ${FILES_CHANGED}; do
+      echo "    $f"
   done
 fi
 
-export COMMITS_TESTED=${COMMITS_TESTED[@]} # Can't export array variables
+if [[ "X$arg_b" = "XScript" && ${_install_script_touched:-false} ]]; then
+  # Don't install CMake or MPI implementation
+  info "Install script files \`install.sh\` and/or stuff in \`install_prerequisites\` has changed."
+  info "Not installing CMake or MPI implementation so that the isntall script may be fully tested."
+elif [[ "X$arg_b" = "XLint" ]]; then
+  info "Installing packages for linting recent changes"
+else
+  info "Normal build without changes to install script. Installing CMake and $arg_m."
+  bottle_install cmake
+  if [[ "X$MY_OS" = "Xosx" ]]; then
+    # Set custom OSX bottle download locations, used only if needed
+    mpich="https://github.com/sourceryinstitute/opencoarrays/files/64308/mpich-3.2.yosemite.bottle.1.tar.gz"
+    openmpi="https://github.com/sourceryinstitute/opencoarrays/files/64404/open-mpi-1.10.1_1.yosemite.bottle.1.tar.gz"
+    bottle_install $arg_m || (curl -O "${!arg_m}" && brew install "${!arg_m##*/}")
+    mpif90 --version
+    mpicc --version
+    mpicxx --version
+  else
+    # We can upload a custom Linux MPICH bottle, but we'll need to patch mpich.rb too...
+      bottle_install $arg_m
+      mpif90 --version
+      mpicc --version
+      mpicxx --version
+  fi
+fi
 
-# Undo settings we may have set
-# debug mode
-set +o xtrace
-# verbose mode
-set +o verbose
+if ! ${CI:-false}; then
+  info "Attempting to remove outdated packages"
+  brew cleanup --force || info "No outdated packages found"
+fi
 
-set +o errexit
-set +o nounset
-set +o pipefail
+info "The following packages are installed via Homebrew/Linuxbrew:"
+brew list
+brew doctor || true

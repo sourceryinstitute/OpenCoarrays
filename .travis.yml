@@ -10,6 +10,8 @@ matrix:
   exclude: # Don't run the "Lint" build on OS X
     - os: osx
       env: BUILD=Lint lMPI=NONE
+    - os: linux
+      env: BUILD=Release lMPI=openmpi
 
 # Deep clone so we can check things with git,
 # C.F. https://github.com/travis-ci/travis-ci/issues/4942
@@ -32,29 +34,29 @@ cache: # Use caching on linux container builds
 
 env:
   matrix:
-    - BUILD=CodeCoverage lMPI=MPICH
-    - BUILD=Release lMPI=MPICH
-    - BUILD=Release lMPI=OMPI
-    - BUILD=Script lMPI=NONE
+    - BUILD=CodeCoverage lMPI=mpich
+    - BUILD=Release lMPI=mpich
+    - BUILD=Release lMPI=openmpi
+    - BUILD=Script lMPI=mpich
     - BUILD=Lint lMPI=NONE
-  global:
-    - CACHE="$HOME/.local"
-    - MPICH_VER="3.1.4"
-    - MPICH_URL_HEAD="http://www.mpich.org/static/downloads/$MPICH_VER"
-    - MPICH_URL_TAIL="mpich-${MPICH_VER}.tar.gz"
-    - MPICH_DIR="$HOME/.local/usr/mpich"
-    - MPICH_BOT_URL_HEAD="https://github.com/sourceryinstitute/opencoarrays/files/64308/"
-    - MPICH_BOT_URL_TAIL="mpich-3.2.yosemite.bottle.1.tar.gz"
+  # global:
+  #   - CACHE="$HOME/.local"
+  #   - MPICH_VER="3.1.4"
+  #   - MPICH_URL_HEAD="http://www.mpich.org/static/downloads/$MPICH_VER"
+  #   - MPICH_URL_TAIL="mpich-${MPICH_VER}.tar.gz"
+  #   - MPICH_DIR="$HOME/.local/usr/mpich"
+  #   - MPICH_BOT_URL_HEAD="https://github.com/sourceryinstitute/opencoarrays/files/64308/"
+  #   - MPICH_BOT_URL_TAIL="mpich-3.2.yosemite.bottle.1.tar.gz"
 
 before_install:
   - uname
   - source .travis-scripts/set-env.sh # map travis-ci environment to saner variables
 
 install:
-  - true # .travis-scripts/install.$os.sh --build=$BUILD --lmpi=${lMPI:-MPICH}
+  - .travis-scripts/install.sh --build=$BUILD --lmpi=${lMPI:-mpich}
 
 script:
-  - true # .travis-scripts/build.$os.sh --build=$BUILD --lmpi=${lMPI:-MPICH}
+  - true # .travis-scripts/build.$os.sh --build=$BUILD --lmpi=${lMPI:-mpich}
 
 after_success: # Upload coverage data and dump logs
   - find . -name '*.gcno' -print
