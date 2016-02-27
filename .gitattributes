@@ -28,3 +28,4 @@ install_prerequisites/build text
 .gitattributes export-ignore
 .gitignore export-ignore
 developer-scripts export-ignore
+.travis-scripts export-ignore
