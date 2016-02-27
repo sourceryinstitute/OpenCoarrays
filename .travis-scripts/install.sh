@@ -265,7 +265,6 @@ if [[ "X$MY_OS" = "Xlinux" ]]; then
     info "Done installing Linux brew!"
     info "Updating formula library..."
     brew update > /dev/null
-    brew update > /dev/null
     info "Done updating formula library."
     if [ "${LOG_LEVEL}" -ge 6 ]; then # do some debugging
       info "Checking health of Linux brew using \`brew doctor\`..."
@@ -343,7 +342,7 @@ fi
 
 if ! ${CI:-false}; then
   info "Attempting to remove outdated packages"
-  brew cleanup --force || info "No outdated packages found"
+  [ "X$MY_OS" = "Xlinux" ] && brew cleanup --force || info "No outdated packages found"
 fi
 
 info "The following packages are installed via Homebrew/Linuxbrew:"
