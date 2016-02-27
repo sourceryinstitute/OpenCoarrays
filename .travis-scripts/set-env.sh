@@ -300,6 +300,7 @@ fi
 # Be carefull here; pull requests with forced pushes can potentially
 # cause issues
 if [ "$PR" != "false" ]; then # Use github API to get changed files
+  [ "X$MY_OS" = "Xosx" ] && brew install --force-bottle jq || or true
   _files_changed=($(curl "https://api.github.com/repos/$REPO_SLUG/pulls/$PR/files" | \
 			 jq '.[] | .filename' | tr '"' ' '))
   if [[ ${#_files_changed[@]} -eq 0 || -z ${_files_changed[@]} ]]; then
@@ -307,18 +308,16 @@ if [ "$PR" != "false" ]; then # Use github API to get changed files
     # no files detected, try using git instead
     # This approach may only pick up files from the most recent commit, but that's
     # better than nothing
-    _files_changed=($(git diff --name-only $COMMIT_RANGE || \
-                      info "Failed getting files changed using \$COMMIT_RANGE=$COMMIT_RANGE" && \
-                      git diff --name-only "${GIT_COMMIT}^..${GIT_COMMIT}" || echo '<none>'))
+    _files_changed=($(git diff --name-only $COMMIT_RANGE | sort -u || \
+                      git diff --name-only "${GIT_COMMIT}^..${GIT_COMMIT}" | sort -u || echo '<none>'))
   else
     info "Using Github API to determine changed files"
   fi
 else
   info "Using git to determine changed files"
   # We should be ok using git, see https://github.com/travis-ci/travis-ci/issues/2668
-  _files_changed=($(git diff --name-only $COMMIT_RANGE || \
-		    info "Failed getting files changed using \$COMMIT_RANGE=$COMMIT_RANGE" && \
-                    git diff --name-only "${GIT_COMMIT}^..${GIT_COMMIT}" || echo '<none>'))
+  _files_changed=($(git diff --name-only $COMMIT_RANGE | sort -u || \
+                    git diff --name-only "${GIT_COMMIT}^..${GIT_COMMIT}" | sort -u || echo '<none>'))
 fi
 
 FILES_CHANGED=()
@@ -337,7 +336,7 @@ done
 
 tmp=${FILES_CHANGED[@]}
 unset FILES_CHANGED
-export FILES_CHANGED=${tmp} # Can't export array variables
+export FILES_CHANGED=$(sort -u <<< ${tmp}) # Can't export array variables
 info "Files changed: $FILES_CHANGED"
 
 COMMITS_TESTED=($(git rev-list ${COMMIT_RANGE} || git rev-list "${GIT_COMMIT}^..${GIT_COMMIT}"))

@@ -300,8 +300,10 @@ echo "install.sh" > script_files.txt
 for f in install_prerequisites/*; do
   echo "$f" >> script_files.txt
 done
-if fgrep -f script_files.txt <<< "${FILES_CHANGED}" > /dev/null ; then
-  info "Detected changes to install scripts, testing as many prerequisite installs as possible"
+info "Script files:"
+cat script_files.txt
+if grep -F -f script_files.txt <<< "${FILES_CHANGED}" > /dev/null ; then
+  info "Detected changes to install scripts"
   _install_script_touched=true
 else
   info "No changes to install scripts detected, installing CMake & MPI via package manager"
@@ -315,7 +317,7 @@ if [ "$LOG_LEVEL" -ge 7 ]; then
   done
 fi
 
-if [[ "X$arg_b" = "XScript" ]] && ${_install_script_touched:-false} ; then
+if ([[ "X$arg_b" = "XScript" ]] && ${_install_script_touched:-false}); then
   # Don't install CMake or MPI implementation
   info "Install script files \`install.sh\` and/or stuff in \`install_prerequisites\` has changed."
   info "Not installing CMake or MPI implementation so that the install script may be fully tested."
@@ -329,14 +331,20 @@ else
     mpich="https://github.com/sourceryinstitute/opencoarrays/files/64308/mpich-3.2.yosemite.bottle.1.tar.gz"
     openmpi="https://github.com/sourceryinstitute/opencoarrays/files/64404/open-mpi-1.10.1_1.yosemite.bottle.1.tar.gz"
     bottle_install $arg_m || (curl -O "${!arg_m}" && brew install "${!arg_m##*/}")
+    mpif90 --show
     mpif90 --version
+    mpicc --show
     mpicc --version
+    mpicxx --show
     mpicxx --version
   else
     # We can upload a custom Linux MPICH bottle, but we'll need to patch mpich.rb too...
       bottle_install $arg_m
+      mpif90 --show
       mpif90 --version
+      mpicc --show
       mpicc --version
+      mpicxx --show
       mpicxx --version
   fi
 fi
