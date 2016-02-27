@@ -291,7 +291,7 @@ brew unlink gcc || true
 brew link --force gcc || true
 info "Done installing gcc, version: $(gcc --version)"
 
-[ "X$MY_OS" = "Xlinux" ] && brew_install openldap # needed for curl, needed for CMake
+[ "X$MY_OS" = "Xlinux" ] && brew_install homebrew/dupes/openldap # needed for curl, needed for CMake
 
 # Use FILES_CHANGED defined in set-env.sh to determine if we need to test installation of
 # prerequisites with build script
