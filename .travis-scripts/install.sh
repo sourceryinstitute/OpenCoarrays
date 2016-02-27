@@ -296,7 +296,7 @@ info "Done installing gcc, version: $(gcc --version)"
 # Use FILES_CHANGED defined in set-env.sh to determine if we need to test installation of
 # prerequisites with build script
 info "Files changed: $FILES_CHANGED"
-echo "install.sh" > script_files.txt
+echo "${BUILD_DIR}/install.sh" > script_files.txt
 for f in install_prerequisites/*; do
   echo "$f" >> script_files.txt
 done
@@ -331,20 +331,20 @@ else
     mpich="https://github.com/sourceryinstitute/opencoarrays/files/64308/mpich-3.2.yosemite.bottle.1.tar.gz"
     openmpi="https://github.com/sourceryinstitute/opencoarrays/files/64404/open-mpi-1.10.1_1.yosemite.bottle.1.tar.gz"
     bottle_install $arg_m || (curl -O "${!arg_m}" && brew install "${!arg_m##*/}")
-    mpif90 --show
+    ls -l $(which mpif90)
     mpif90 --version
-    mpicc --show
+    ls -l $(which mpicc)
     mpicc --version
-    mpicxx --show
+    ls -l $(which mpicxx)
     mpicxx --version
   else
     # We can upload a custom Linux MPICH bottle, but we'll need to patch mpich.rb too...
       bottle_install $arg_m
-      mpif90 --show
+      ls -l $(which mpif90)
       mpif90 --version
-      mpicc --show
+      ls -l $(which mpicc)
       mpicc --version
-      mpicxx --show
+      ls -l $(which mpicxx)
       mpicxx --version
   fi
 fi
