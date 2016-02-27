@@ -303,15 +303,21 @@ if [ "$PR" != "false" ]; then # Use github API to get changed files
   _files_changed=($(curl "https://api.github.com/repos/$REPO_SLUG/pulls/$PR/files" | \
 			 jq '.[] | .filename' | tr '"' ' '))
   if [[ ${#_files_changed[@]} -eq 0 || -z ${_files_changed[@]} ]]; then
+    info "Using git to determine changed files"
     # no files detected, try using git instead
     # This approach may only pick up files from the most recent commit, but that's
     # better than nothing
     _files_changed=($(git diff --name-only $COMMIT_RANGE || \
-                      git diff --name-only "${GIT_COMMIT}^..${GIT_COMMIT}" || echo ''))
+                      info "Failed getting files changed using \$COMMIT_RANGE=$COMMIT_RANGE" && \
+                      git diff --name-only "${GIT_COMMIT}^..${GIT_COMMIT}" || echo '<none>'))
+  else
+    info "Using Github API to determine changed files"
   fi
 else
+  info "Using git to determine changed files"
   # We should be ok using git, see https://github.com/travis-ci/travis-ci/issues/2668
   _files_changed=($(git diff --name-only $COMMIT_RANGE || \
+		    info "Failed getting files changed using \$COMMIT_RANGE=$COMMIT_RANGE" && \
                     git diff --name-only "${GIT_COMMIT}^..${GIT_COMMIT}" || echo '<none>'))
 fi
 
@@ -331,10 +337,11 @@ done
 
 export FILES_CHANGED=${FILES_CHANGED[@]} # Can't export array variables
 
-COMMITS_TESTED=($(git rev-list ${COMMIT_RANGE} && using_commit_range=true || git rev-list "${GIT_COMMIT}^..${GIT_COMMIT}"))
+COMMITS_TESTED=($(git rev-list ${COMMIT_RANGE} || git rev-list "${GIT_COMMIT}^..${GIT_COMMIT}"))
 info "The following commits are being tested in $COMMIT_RANGE:"
 info "(if \`git rev-list \$COMMIT_RANGE\` fails, just use current commit)"
-${using_commit_range:-false} && info "Using \$COMMIT_RANGE" || info "Unable to use \$COMMIT_RANGE"
+git rev-list ${COMMIT_RANGE} >/dev/null 2>/dev/null && info "Using \$COMMIT_RANGE" || \
+    info "Unable to use \$COMMIT_RANGE"
 if [ "$LOG_LEVEL" -ge 6 ]; then
   for commit in ${COMMITS_TESTED[@]}; do
     echo "    $commit"
