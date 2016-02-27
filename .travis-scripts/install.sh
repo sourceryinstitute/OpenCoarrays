@@ -281,6 +281,7 @@ else
 fi
 
 info "Installing latest GCC, this could take some time..."
+[ "X$MY_OS" = "Xosx" ] && brew unlink gcc cmake
 bottle_install gcc
 cd $(brew --cellar)/gcc/5.3.0/bin
 [ -f "gcc" ] || ln -s gcc-5 gcc
