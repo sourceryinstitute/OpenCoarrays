@@ -53,7 +53,7 @@ before_install:
   - source .travis-scripts/set-env.sh # map travis-ci environment to saner variables
 
 install:
-  - .travis-scripts/install.sh --build=$BUILD --lmpi=${lMPI:-mpich}
+  - .travis-scripts/install.sh --build=$BUILD --lib-mpi=${lMPI:-mpich}
 
 script:
   - true # .travis-scripts/build.$os.sh --build=$BUILD --lmpi=${lMPI:-mpich}
