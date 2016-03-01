@@ -794,7 +794,7 @@ report_results()
     # Prepend the OpenCoarrays license to the setup.sh script:
     while IFS='' read -r line || [[ -n "$line" ]]; do
         echo "# $line" >> setup.sh
-    done < "$opencoarrays_src_dir/COPYRIGHT-BSD3"
+    done < "$opencoarrays_src_dir/LICENSE"
     echo "#                                                                      " >> setup.sh
     echo "# Execute this script via the following commands:                      " >> setup.sh
     echo "# cd $install_path                                                     " >> setup.sh
