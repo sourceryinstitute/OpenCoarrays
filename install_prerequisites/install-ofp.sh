@@ -53,9 +53,9 @@ NO_COLOR="${NO_COLOR:-}"    # true = disable color. otherwise autodetected
 read -r -d '' usage <<-'EOF' || true # exits non-zero when EOF encountered
   -f --file  [arg] Filename to process. Required.
   -o --ofp-prefix [arg] Open Fortran Parser installation path. Default="${PWD}"
-  -v --versbose               Enable verbose mode, print script as it is executed
-  -d --debug       Enables debug mode
-  -h --help        This page
+  -v --versbose         Enable verbose mode, print script as it is executed
+  -d --debug            Enables debug mode
+  -h --help             This page
 EOF
 
 # Set magic variables for current file and its directory.
@@ -114,7 +114,39 @@ function cleanup_before_exit () {
 }
 trap cleanup_before_exit EXIT
 
-install_binaries()
+# Define the sudo command to be used if the installation path requires administrative permissions
+SUDO=""
+# Use the following version if the subshell needs to inherit an environment variable
+#SUDO_COMMAND="sudo env LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
+function set_SUDO_if_necessary()
+{
+  install_path=$arg_o
+  SUDO_COMMAND="sudo"
+  printf "$__base: installation path is $install_path"
+  printf "$__base: Checking whether the installation path exists... "
+  if [[ -d "$install_path" ]]; then
+    printf "yes\n"
+    printf "Checking whether I have write permissions to the installation path... "
+    if [[ -w "$install_path" ]]; then
+      printf "yes\n"
+    else
+      printf "no\n"
+      SUDO=$SUDO_COMMAND
+    fi
+  else
+    printf "no\n"
+    printf "$__base: Checking whether I can create the installation path... "
+    if mkdir -p $install_path >& /dev/null; then
+      printf "yes.\n"
+    else
+      printf "no.\n"
+      SUDO=$SUDO_COMMAND
+    fi
+  fi
+}
+
+# Uncompress and move aterm, sdf2-bundle, and strategoxt to their $install_path
+function install_prerequisite_binaries()
 {
   if [ ! -f strategoxt-superbundle-0.17-macosx.tar.gz ]; then
     info "Downloading strategoxt-superbundle-0.17-macosx.tar.gz "
@@ -125,23 +157,110 @@ install_binaries()
   tar xf strategoxt-superbundle-0.17-macosx.tar.gz 
   [  -d opt ] || critical "Decompression of StrategoXT tar ball failed"
   pushd opt
-  [ -d "$arg_o" ] || mkdir -p $arg_o
-  if [ -d "$arg_o/aterm" ]; then
-    warning "An aterm installation exists in the installation path $arg_o/aterm. Please remove it if you want to replace it."
+  [ -d "$install_path" ] || mkdir -p $install_path
+  aterm_bin=$install_path/aterm/v2.5/bin
+  sdf2_bundle_bin=$install_path/sdf2-bundle/v2.4/bin
+  strategoxt_bin=$install_path/strategoxt/v0.17/bin
+  if [ -d "$install_path/aterm" ]; then
+    warning "aterm exists in the installation path $install_path/aterm. Please remove it if you want to replace it."
   else
-    mv aterm $arg_o
+    $SUDO mv aterm $install_path
   fi
-  if [ -d "$arg_o/sdf2-bundle" ]; then
-    warning "An sdf2-bundle installation exists in the installation path $arg_o/sdf2-bundle.  Please remove it if you want to replace it."
+  if [ -d "$install_path/sdf2-bundle" ]; then
+    warning "sdf2-bundle exists in the installation path $install_path/sdf2-bundle.  Please remove it if you want to replace it."
   else
-    mv sdf2-bundle $arg_o
+    $SUDO mv sdf2-bundle $install_path
   fi
-  if [ -d "$arg_o/strategoxt" ]; then
-    warning "A strategoxt installation exists in the installation path $arg_o/strategoxt.  Please remove it if you want to replace it."
+  if [ -d "$install_path/strategoxt" ]; then
+    warning "strategoxt exists in the installation path $install_path/strategoxt.  Please remove it if you want to replace it."
   else
-    mv strategoxt $arg_o
+    $SUDO mv strategoxt $install_path
   fi
   popd
+}
+
+function download_ofp_if_necessary()
+{
+  # Download and uncompress the ofp-sdf tar ball
+  if [ ! -f ofp-sdf.tar.bz2 ]; then
+    info "Downloading Open Fortran Parser (OFP) source tar ball: ofp-sdf.tar.bz2."
+    wget https://dl.dropboxusercontent.com/u/7038972/ofp-sdf.tar.bz2
+    [ -f ofp-sdf.tar.bz2 ] || critical "Download of OFP succeeded."
+  fi
+  info "Uncompressing ofp-sdf."
+  tar xf ofp-sdf.tar.bz2
+  [ -d "ofp-sdf" ] || critical "Uncompressing OFP source tar ball failed."
+}
+  
+function build_parse_table()
+{
+  info "Building parse table"
+  pushd ofp-sdf/fortran/syntax
+  info "Build command: make SDF2_PATH='$aterm_bin' ST_PATH='$sdf2_bundle_bin'"
+  make SDF2_PATH="$sdf2_bundle_bin" ST_PATH="$strategoxt_bin" 
+  popd
+  pushd ofp-sdf/fortran/trans
+  make
+  popd
+}
+
+# Create file for users to source to set environment variables for using OFP
+function write_setup_sh()
+{
+  # Report installation success or failure:
+  if [[ -x "$aterm_bin/atdiff" && -x "$sdf2_bundle_bin/sdf2table"  && -x "$strategoxt_bin/sglri" ]]; then
+
+    # Installation succeeded
+    echo "$__base: Done."
+    echo ""
+    echo "*** The Open Fortran Parser (ofp-sdf) and its prerequisites aterm, ***"
+    echo "*** sdf2-bundle, and strategoxt are in the following directory:    ***"
+    echo ""
+    echo "$install_path/"
+    echo ""
+    if [[ -f setup.sh ]]; then
+      $SUDO rm setup-ofp.sh
+    fi
+    # Prepend the OpenCoarrays license to the setup.sh script:
+    while IFS='' read -r line || [[ -n "$line" ]]; do
+        echo "# $line" >> setup.sh
+    done < "../LICENSE"
+   #done < "$opencoarrays_src_dir/LICENSE"
+    echo "#                                                 " >> setup.sh
+    echo "# Execute this script via the following commands: " >> setup.sh
+    echo "# cd $install_path                                " >> setup.sh
+    echo "# source setup-ofp.sh                             " >> setup.sh
+    echo "                                                  " >> setup.sh
+    echo "if [[ -z \"\$PATH\" ]]; then                      " >> setup.sh
+    echo "  export PATH=\"$aterm_bin\"                      " >> setup.sh
+    echo "else                                              " >> setup.sh
+    echo "  export PATH=\"$aterm_bin:\$PATH\"               " >> setup.sh
+    echo "fi                                                " >> setup.sh
+    echo "if [[ -z \"\$PATH\" ]]; then                      " >> setup.sh
+    echo "  export PATH=\"$sdf2_bundle_bin\"                " >> setup.sh
+    echo "else                                              " >> setup.sh
+    echo "  export PATH=\"$sdf2_bundle_bin:\$PATH\"         " >> setup.sh
+    echo "fi                                                " >> setup.sh
+    echo "if [[ -z \"\$PATH\" ]]; then                      " >> setup.sh
+    echo "  export PATH=\"$strategoxt_bin\"                 " >> setup.sh
+    echo "else                                              " >> setup.sh
+    echo "  export PATH=\"$strategoxt_bin:\$PATH\"          " >> setup.sh
+    echo "fi                                                " >> setup.sh
+    $SUDO mv setup.sh $install_path && setup_sh_location=$install_path || setup_sh_location=${PWD}
+    echo "*** Before using OFP, please execute the following command or add ***"
+    echo "*** it to your login script and launch a new shell (or the        ***"
+    echo "*** equivalent for your shell if you are not using a bash shell): ***"
+    echo ""
+    echo " source $setup_sh_location/setup.sh"
+    echo ""
+    echo "*** Installation complete.                                        ***"
+  else # Installation failed
+    echo "Something went wrong. The expected executable files were not successfully installed."
+    echo "If this script's output does not indicate the source of the problem, please submit"
+    echo "an bug report at https://github.com/sourceryinstitute/opencoarrays/issues"
+    echo "[exit 100]"
+    exit 100
+  fi # Ending check for OFP prerequisite executables
 }
 
 
@@ -273,21 +392,10 @@ info "arg_v: ${arg_v}"
 info "arg_h: ${arg_h}"
 info "arg_o: ${arg_o}"
 
-install_binaries
+set_SUDO_if_necessary 
 
-# Download and uncompress the ofp-sdf tar ball
-info "Downloading Open Fortran Parser (OFP) source tar ball: ofp-sdf.tar.bz2."
-wget https://dl.dropboxusercontent.com/u/7038972/ofp-sdf.tar.bz2
-[ -f ofp-sdf.tar.bz2 ] || critical "Download of OFP succeeded."
-info "Uncompressing ofp-sdf."
-tar xf ofp-sdf.tar.bz2 
-[ -d "ofp-sdf" ] || critical "Uncompressing OFP source tar ball succeeded."
-  
-# Build OFP
-info "Building parse table"
-pushd ofp-sdf/fortran/syntax
-make
-popd
-pushd ofp-sdf/fortran/trans
-make
-popd
+install_prerequisite_binaries
+
+download_ofp_if_necessary
+
+build_parse_table
