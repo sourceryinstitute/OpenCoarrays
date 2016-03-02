@@ -8,7 +8,7 @@ OpenCoarrays
 ============
 
 [![CI Build Status][build img]](https://travis-ci.org/sourceryinstitute/opencoarrays)
-[![GitHub license][license img]](./COPYRIGHT-BSD3)
+[![GitHub license][license img]](./LICENSE)
 [![Download as PDF][pdf img]](http://md2pdf.herokuapp.com/sourceryinstitute/opencoarrays/blob/master/README.pdf)
 <!-- [![GitHub release][release img]](https://github.com/sourceryinstitute/opencoarrays/releases/latest) -->
 <!-- [![Release Downloads][download img]](https://github.com/sourceryinstitute/opencoarrays/releases) -->
