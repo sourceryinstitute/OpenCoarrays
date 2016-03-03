@@ -204,6 +204,8 @@ fi
 # verbose mode
 if [ "${arg_v}" = "1" ]; then
   set -o verbose
+  export VERBOSE=1
+  export CTEST_VERBOSE='--verbose'
 fi
 
 # help mode
@@ -234,7 +236,10 @@ debug "arg_d: ${arg_d}"
 debug "arg_v: ${arg_v}"
 debug "arg_h: ${arg_h}"
 
-
+if [ "${LOG_LEVEL}" -ge 7 ]; then
+  export VERBOSE=1
+  export CTEST_VERBOSE='--verbose'
+fi
 
 info "Build type is $arg_b"
 case $arg_b in
@@ -247,7 +252,7 @@ case $arg_b in
 	cd cmake-build
 	cmake -DCMAKE_INSTALL_PREFIX:PATH="$HOME/OpenCoarrays" -DCMAKE_BUILD_TYPE="$arg_b" ..
 	make -j 4
-	ctest --verbose
+	ctest ${CTEST_VERBOSE:-}
 	make install
 	cd ..
 	;;
@@ -279,7 +284,7 @@ case $arg_b in
 	info "Done installing OpenCoarrays using install.sh"
 	ls
 	cd "${OPENCOARRAYS_SRC_DIR:-$PWD}/opencoarrays-build"
-	ctest --verbose
+	ctest ${CTEST_VERBOSE:-}
 	cd -
 	;;
     *)
