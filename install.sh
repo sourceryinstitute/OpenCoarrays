@@ -54,6 +54,9 @@
 #
 # __________ Process command-line arguments and environment variables _____________
 
+# Make sure we really exit with correct status when piping function output
+set -o pipefail
+
 this_script=`basename $0`
 
 # Interpret the first command-line argument, if present, as the OpenCoarrays installation path.
