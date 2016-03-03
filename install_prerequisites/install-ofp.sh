@@ -52,7 +52,7 @@ NO_COLOR="${NO_COLOR:-}"    # true = disable color. otherwise autodetected
 # - `--` is respected as the separator between options and arguments
 read -r -d '' usage <<-'EOF' || true # exits non-zero when EOF encountered
   -f --file  [arg] Filename to process. Required.
-  -o --ofp-prefix [arg] Open Fortran Parser installation path. Default="${PWD}"
+  -o --ofp-prefix [arg] Open Fortran Parser installation path. Default="/opt"
   -v --versbose         Enable verbose mode, print script as it is executed
   -d --debug            Enables debug mode
   -h --help             This page
@@ -209,6 +209,7 @@ function build_parse_table()
 # Create file for users to source to set environment variables for using OFP
 function write_setup_sh()
 {
+  pushd ofp-sdf
   # Report installation success or failure:
   if [[ -x "$aterm_bin/atdiff" && -x "$sdf2_bundle_bin/sdf2table"  && -x "$strategoxt_bin/sglri" ]]; then
 
@@ -248,7 +249,7 @@ function write_setup_sh()
     echo "else                                              " >> setup.sh
     echo "  export PATH=\"$strategoxt_bin:\$PATH\"          " >> setup.sh
     echo "fi                                                " >> setup.sh
-    $SUDO mv setup.sh $install_path && setup_sh_location=$install_path || setup_sh_location=${PWD}
+    $SUDO mv setup.sh $install_path && setup_sh_location=$install_path || setup_sh_location=$install_path/ofp-sdf
     echo "*** Before using OFP, please execute the following command or add ***"
     echo "*** it to your login script and launch a new shell (or the        ***"
     echo "*** equivalent for your shell if you are not using a bash shell): ***"
@@ -263,6 +264,7 @@ function write_setup_sh()
     echo "[exit 100]"
     exit 100
   fi # Ending check for OFP prerequisite executables
+  popd
 }
 
 
@@ -401,3 +403,5 @@ install_prerequisite_binaries
 download_ofp_if_necessary
 
 build_parse_table
+
+$SUDO mv ofp-sdf $install_path
