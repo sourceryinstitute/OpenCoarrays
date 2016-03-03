@@ -159,8 +159,10 @@ function install_prerequisite_binaries()
   pushd opt
   [ -d "$install_path" ] || mkdir -p $install_path
   aterm_bin=$install_path/aterm/v2.5/bin
+  aterm_lib=$install_path/aterm/v2.5/lib
   sdf2_bundle_bin=$install_path/sdf2-bundle/v2.4/bin
   strategoxt_bin=$install_path/strategoxt/v0.17/bin
+  strategoxt_lib=$install_path/strategoxt/v0.17/lib
   if [ -d "$install_path/aterm" ]; then
     warning "aterm exists in the installation path $install_path/aterm. Please remove it if you want to replace it."
   else
@@ -196,8 +198,8 @@ function build_parse_table()
 {
   info "Building parse table"
   pushd ofp-sdf/fortran/syntax
-  info "Build command: make SDF2_PATH='$aterm_bin' ST_PATH='$sdf2_bundle_bin'"
-  make SDF2_PATH="$sdf2_bundle_bin" ST_PATH="$strategoxt_bin" 
+  info "Build command: make SDF2_PATH='$sdf2_bundle_bin' ST_PATH='$strategoxt_bin' DYLD_LIBRARY_PATH='$strategoxt_lib:$aterm_lib' " 
+  make SDF2_PATH="$sdf2_bundle_bin" ST_PATH="$strategoxt_bin" DYLD_LIBRARY_PATH="$strategoxt_lib:$aterm_lib" 
   popd
   pushd ofp-sdf/fortran/trans
   make
