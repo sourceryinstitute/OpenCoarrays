@@ -225,6 +225,9 @@ fi
 ### Runtime
 #####################################################################
 
+info "Changing directories to Travis build directory: $BUILD_DIR"
+cd "$BUILD_DIR"
+
 debug "__file: ${__file}"
 debug "__dir: ${__dir}"
 debug "__base: ${__base}"
@@ -284,7 +287,7 @@ case $arg_b in
             sleep 300 # prevent Travis-CI abort due to inactivity and excessive logging
           done
 	fi
-	for package in "${__dir}/install_prerequisites/"*/bin ; do
+	for package in "${PWD}/install_prerequisites/"*/bin ; do
 	    info "Adding $package to \$PATH."
 	    export PATH="$package:$PATH"
 	done

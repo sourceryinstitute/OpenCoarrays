@@ -242,6 +242,9 @@ else
   info "Installing prerequisite software for local testing on $__os for ${arg_b:-testing} build type."
 fi
 
+info "Changing directories to Travis build directory: $BUILD_DIR"
+cd "$BUILD_DIR"
+
 debug "__file: ${__file}"
 debug "__dir: ${__dir}"
 debug "__base: ${__base}"
