@@ -274,6 +274,9 @@ case $arg_b in
 	  info "CMake and/or MPI not found. This implies that install.sh or install_prerequisites/* "
 	  info "has changed and we are testing the fullest capabilities of the install script that we can..."
 	  info "The log will be displayed after the installation due to Travis-CI considerations"
+	  info "CMake from: $(which cmake || true) (should be empty/missing)"
+	  info "CTest from: $(which ctest || true) (should be empty/missing)"
+	  info "mpif90 from: $(which mpif90 || true) (should be empty/missing)"
 	  (yes ||true) | ./install.sh "$HOME/opt/opencoarrays" 4 > install.log &
 	  install_sh_PID=$!
           while ps -p $install_sh_PID > /dev/null; do
@@ -286,7 +289,6 @@ case $arg_b in
 	    export PATH="$package:$PATH"
 	done
 	info "Done installing OpenCoarrays using install.sh"
-	ls
 	cd "${OPENCOARRAYS_SRC_DIR:-$PWD}/opencoarrays-build"
 	ctest ${CTEST_VERBOSE:-}
 	cd -
