@@ -269,6 +269,9 @@ case $arg_b in
 	export CC=gcc
 	export CXX=g++
 	mkdir -p "$HOME/opt/opencoarrays"
+	git archive --prefix="OpenCoarrays-$(git describe --tags)/" -o "OpenCoarrays-$(git describe --tags).tar.gz" "${GIT_TAG:-HEAD}"
+	tar xvzf "OpenCoarrays-$(git describe --tags).tar.gz"
+	cd "OpenCoarrays-$(git describe --tags)"
 	if (which cmake >/dev/null 2>/dev/null && which mpif90 >/dev/null 2>/dev/null); then
 	  info "Testing install.sh installation script. Install scripts unchanged."
 	  # We shouldn't need to background the process due to time out/verbosity issues
@@ -291,8 +294,15 @@ case $arg_b in
 	    info "Adding $package to \$PATH."
 	    export PATH="$package:$PATH"
 	done
+
+	cd ..
+	echo "\# Verify checksums with \`shasum -c opencoarrays-$(git describe --tags)-SHA-256.txt\` on OS X" \
+	     > "opencoarrays-$(git describe --tags)-SHA-256.txt"
+	echo "\# or \`sha256sum opencoarrays-$(git describe --tags)-SHA-256.txt\` on Linux" \
+	     >> "OpenCoarrays-$(git describe --tags)-SHA-256.txt"
+
 	info "Done installing OpenCoarrays using install.sh"
-	cd "${OPENCOARRAYS_SRC_DIR:-$PWD}/opencoarrays-build"
+	cd "OpenCoarrays-$(git describe --tags)/opencoarrays-build"
 	ctest ${CTEST_VERBOSE:-}
 	cd -
 	;;

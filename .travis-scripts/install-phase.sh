@@ -301,6 +301,8 @@ info "Done installing gcc, version: $(gcc --version)"
 
 [ "X$MY_OS" = "Xlinux" ] && brew_install homebrew/dupes/openldap # needed for curl, needed for CMake
 
+brew_install makeself # For creating self extracting tgz archives
+
 # Use FILES_CHANGED defined in set-env.sh to determine if we need to test installation of
 # prerequisites with build script
 info "Files changed:"
