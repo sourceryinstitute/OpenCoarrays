@@ -281,6 +281,10 @@ case $arg_b in
             sleep 300 # prevent Travis-CI abort due to inactivity and excessive logging
           done
 	fi
+	for package in "${__dir}/install_prerequisites/"*/bin ; do
+	    info "Adding $package to \$PATH."
+	    export PATH="$package:$PATH"
+	done
 	info "Done installing OpenCoarrays using install.sh"
 	ls
 	cd "${OPENCOARRAYS_SRC_DIR:-$PWD}/opencoarrays-build"
