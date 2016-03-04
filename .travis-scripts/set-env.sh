@@ -301,6 +301,7 @@ fi
 
 # Be carefull here; pull requests with forced pushes can potentially
 # cause issues
+_diff_range="$(sed 's/\.\.\./../' <<< $COMMIT_RANGE )"
 if [ "$PR" != "false" ]; then # Use github API to get changed files
   [ "X$MY_OS" = "Xosx" ] && (brew update > /dev/null || true ; brew install jq || true)
   _files_changed=($(curl "https://api.github.com/repos/$REPO_SLUG/pulls/$PR/files" 2> /dev/null | \
@@ -310,7 +311,7 @@ if [ "$PR" != "false" ]; then # Use github API to get changed files
     # no files detected, try using git instead
     # This approach may only pick up files from the most recent commit, but that's
     # better than nothing
-    _files_changed=($(git diff --name-only $COMMIT_RANGE | sort -u || \
+    _files_changed=($(git diff --name-only "$_diff_range" | sort -u || \
                       git diff --name-only "${GIT_COMMIT}^..${GIT_COMMIT}" | sort -u || echo '<none>'))
   else
     info "Using Github API to determine changed files"
@@ -318,7 +319,7 @@ if [ "$PR" != "false" ]; then # Use github API to get changed files
 else
   info "Using git to determine changed files"
   # We should be ok using git, see https://github.com/travis-ci/travis-ci/issues/2668
-  _files_changed=($(git diff --name-only $COMMIT_RANGE | sort -u || \
+  _files_changed=($(git diff --name-only "$_diff_range" | sort -u || \
                     git diff --name-only "${GIT_COMMIT}^..${GIT_COMMIT}" | sort -u || echo '<none>'))
 fi
 
