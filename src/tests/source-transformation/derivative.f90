@@ -1,8 +1,9 @@
 ! derivative.f90
 !
 ! -- This program provides a test target for the Open Fortran Parser source
-!    transformation rules defined in 3rd-party-tools/open-fortran-parser-sdf
-!    to support compiling coarray Fortran (CAF) programs with non-CAF compilers
+!    transformation rules defined in 3rd-party-tools/open-fortran-parser-sdf/trans
+!    to support compiling coarray Fortran (CAF) programs with non-CAF compilers.
+!    The desired transformed source is in transformed-derivative.f90.
 !
 ! OpenCoarrays is distributed under the OSI-approved BSD 3-clause License:
 ! Copyright (c) 2016, Sourcery Inc.
@@ -46,8 +47,21 @@ program main
   my_num_points=num_points/num_images()
   my_first=(this_image()-1)*my_num_points 
   my_last = my_first + my_num_points - 1
+
+  ! In the transformed source, this coarray allocation must be done by
+  ! invoking caf_allocate to
+  ! 1. Construct the array descriptor
+  ! 2. Invoke caf_register, which
+  !    a.) allocates memory
+  !    b.) performs an implicit synchronization
+  ! 3. Associate a Fortran pointer with the C-allocated target
   allocate(f(my_first:my_last)[*],df_dx(my_first:my_last))
   f(my_first:my_last) = sin(([(i,i=my_first,my_last)])*dx)
+
+  ! f is now a pointer, which hopefully obviates the need to transform any
+  ! further non-coarray code involving f requires
+
+  ! compute neighboring image numbers
   left  = merge(this_image()-1,num_images(),this_image()/=1)
   right = merge(this_image()+1,1           ,this_image()/=num_images())
   if (left==right) then
@@ -55,11 +69,22 @@ program main
   else
     neighbors = [left,right]
   end if
+  ! change "sync images" this to "call sync_images(neighbors)"
   sync images(neighbors)
+ 
+  !                             access local data / get remote data
   df_dx(my_first)             = (f(my_first+1) - f(my_last)[left])/(2.*dx)
+
+  !                             access local data
   df_dx(my_first+1:my_last-1) = [ ((f(i+1) - f(i-1))/(2.*dx), i=my_first+1,my_last-1) ]
+
+  !                             get remote data     / access local data 
   df_dx(my_last)              = (f(my_first)[right] - f(my_last-1))/(2.*dx)
+  !  change 'error stop "..."' to 'call error_stop("...")'
   if (any(abs(df_dx-cos([(i,i=my_first,my_last)]*dx))>tolerance)) error stop "inaccurate derivative"
+  
+  ! wait for every image to pass the test
+  ! change "sync all" a "call sync_all()"
   sync all
   if (this_image()==1) print *, "Test passed."
 end program
