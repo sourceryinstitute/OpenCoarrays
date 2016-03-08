@@ -52,6 +52,10 @@
 #    Alternatively, check the dependency stacks for the package before entering the
 #    main conditional blocks in find_or_install.
 #
+ 
+# Make sure we really exit with correct status when piping function output
+set -o pipefail
+
 # __________ Process command-line arguments and environment variables _____________
 
 this_script=`basename $0`
