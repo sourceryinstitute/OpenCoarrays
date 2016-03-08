@@ -113,7 +113,7 @@ else()
 endif()
 
 if(gfortran_compiler)
-  set(CMAKE_REQUIRED_FLAGS "-fcoarray=single")
+  set(CMAKE_REQUIRED_FLAGS "-fcoarray=single -ffree-form")
 endif()
 include(CheckFortranSourceCompiles)
 CHECK_Fortran_SOURCE_COMPILES("
