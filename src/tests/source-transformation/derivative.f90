@@ -50,7 +50,11 @@ program main
   f(1:my_num_points) = sin(([(i,i=my_first,my_last)]-1)*dx)
   left  = merge(this_image()-1,num_images(),this_image()/=1)
   right = merge(this_image()+1,1           ,this_image()/=num_images())
-  neighbors = merge([left],[left,right],left==right)
+  if (left==right) then
+    neighbors = [left]
+  else
+    neighbors = [left,right]
+  end if
   sync images(neighbors)
   df_dx(1)                 = (f(2) - f(my_num_points)[left])/(2.*dx)
   df_dx(2:my_num_points-1) = [ ((f(i+1) - f(i-1))/(2.*dx), i=2,my_num_points-1) ]
