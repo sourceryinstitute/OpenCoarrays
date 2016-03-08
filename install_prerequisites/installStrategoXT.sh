@@ -8,6 +8,7 @@
 # Copyright (c) 2016, Sourcery, Inc.
 # Copyright (c) 2016, Sourcery Institute
 # Copyright (c) 2016, Soren Rasmussen
+# Copyright (c) 2016, Paradox PTF
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification,
