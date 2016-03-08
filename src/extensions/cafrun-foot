@@ -35,7 +35,7 @@ elif [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
   echo "OpenCoarrays comes with NO WARRANTY, to the extent permitted by law."
   echo "You may redistribute copies of OpenCoarrays under the terms of the"
   echo "BSD 3-Clause License.  For more information about these matters, see"
-  echo "the file named COPYRIGHT-BSD3."
+  echo "the file named LICENSE."
   echo ""
 elif [[ $1 == '-w' || $1 == '--wraps' ]]; then
   mpirun -v
