@@ -44,10 +44,10 @@ program main
   integer, allocatable :: neighbors(:)
   if (mod(num_points,num_images()) /= 0) error stop "not evenly divisible"
   my_num_points=num_points/num_images()
-  my_first=(this_image()-1)*my_num_points + 1
+  my_first=(this_image()-1)*my_num_points 
   my_last = my_first + my_num_points - 1
-  allocate(f(my_num_points)[*],df_dx(my_num_points))
-  f(1:my_num_points) = sin(([(i,i=my_first,my_last)]-1)*dx)
+  allocate(f(my_first:my_last)[*],df_dx(my_first:my_last))
+  f(my_first:my_last) = sin(([(i,i=my_first,my_last)])*dx)
   left  = merge(this_image()-1,num_images(),this_image()/=1)
   right = merge(this_image()+1,1           ,this_image()/=num_images())
   if (left==right) then
@@ -56,10 +56,10 @@ program main
     neighbors = [left,right]
   end if
   sync images(neighbors)
-  df_dx(1)                 = (f(2) - f(my_num_points)[left])/(2.*dx)
-  df_dx(2:my_num_points-1) = [ ((f(i+1) - f(i-1))/(2.*dx), i=2,my_num_points-1) ]
-  df_dx(my_num_points)     = (f(1)[right] - f(my_num_points-1))/(2.*dx)
-  if (any(abs(df_dx-cos([(i,i=my_first-1,my_last-1)]*dx))>tolerance)) error stop "inaccurate derivative"
+  df_dx(my_first)             = (f(my_first+1) - f(my_last)[left])/(2.*dx)
+  df_dx(my_first+1:my_last-1) = [ ((f(i+1) - f(i-1))/(2.*dx), i=my_first+1,my_last-1) ]
+  df_dx(my_last)              = (f(my_first)[right] - f(my_last-1))/(2.*dx)
+  if (any(abs(df_dx-cos([(i,i=my_first,my_last)]*dx))>tolerance)) error stop "inaccurate derivative"
   sync all
   if (this_image()==1) print *, "Test passed."
 end program
