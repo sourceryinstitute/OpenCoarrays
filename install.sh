@@ -796,15 +796,8 @@ report_results()
         echo "# $line" >> setup.sh
     done < "$opencoarrays_src_dir/LICENSE"
     echo "#                                                                      " >> setup.sh
-    echo "# Execute this script via the following commands:                      " >> setup.sh
-    echo "# cd $install_path                                                     " >> setup.sh
-    echo "# source setup.sh                                                      " >> setup.sh
-    echo "                                                                       " >> setup.sh
-    echo "if [[ -z \"\$PATH\" ]]; then                                           " >> setup.sh
-    echo "  export PATH=\"bin\"                                                  " >> setup.sh
-    echo "else                                                                   " >> setup.sh
-    echo "  export PATH=\"bin\":\$PATH                                           " >> setup.sh
-    echo "fi                                                                     " >> setup.sh
+    echo "# Execute this script via the following command:                       " >> setup.sh
+    echo "# source $install_path/setup.sh                                        " >> setup.sh
     echo "                                                                       " >> setup.sh
     gcc_install_path=`./build gcc --default --query-path`
     if [[ -x "$gcc_install_path/bin/gfortran" ]]; then
