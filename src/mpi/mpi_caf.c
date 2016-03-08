@@ -814,6 +814,18 @@ void selectType(int size, MPI_Datatype *dt)
 
 }
 
+/* 
+  x in {s,g}, where s=send, g=get 
+  token_(x): MPI_Win window needed for interacting with remote images (caf_register allocates window)
+  offset_(x): designates a start position within the window (corresponding to range of elements in an array)
+  image_index(x): CAF index
+  dest: gfortran variable descriptor for destination data
+  dst_vector: vector subscript (supported by gfortran currently unused/unsupported in libcaf_mpi)
+  src: gfortran variable descriptor for source data
+  dst_kind: kind parameter for destination data
+  src_kind: kind parameter for source data
+  mrt: flag designating whether this communication might necessitate temporary
+*/
 void
 PREFIX (sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
                   gfc_descriptor_t *dest,
@@ -979,6 +991,18 @@ PREFIX (sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
 
 /* Send array data from src to dest on a remote image.  */
 /* The last argument means may_require_temporary */
+
+/* 
+  token: MPI_Win window needed for interacting with remote images (caf_register allocates window)
+  offset: designates a start position within the window (corresponding to range of elements in an array)
+  image_index: CAF index
+  dest: gfortran variable descriptor for destination data
+  dst_vector: vector subscript (supported by gfortran currently unused/unsupported in libcaf_mpi)
+  src: gfortran variable descriptor for source data
+  dst_kind: kind parameter for destination data
+  src_kind: kind parameter for source data
+  mrt: flag designating whether this communication might necessitate temporary
+*/
 
 void
 PREFIX (send) (caf_token_t token, size_t offset, int image_index,
