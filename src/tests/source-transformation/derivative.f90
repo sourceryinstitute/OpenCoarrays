@@ -56,10 +56,11 @@ program main
   !    b.) performs an implicit synchronization
   ! 3. Associate a Fortran pointer with the C-allocated target
   allocate(f(my_first:my_last)[*],df_dx(my_first:my_last))
-  f(my_first:my_last) = sin(([(i,i=my_first,my_last)])*dx)
 
   ! f is now a pointer, which hopefully obviates the need to transform any
   ! further non-coarray code involving f requires
+
+  f(my_first:my_last) = sin(([(i,i=my_first,my_last)])*dx)
 
   ! compute neighboring image numbers
   left  = merge(this_image()-1,num_images(),this_image()/=1)
@@ -69,6 +70,7 @@ program main
   else
     neighbors = [left,right]
   end if
+
   ! change "sync images" this to "call sync_images(neighbors)"
   sync images(neighbors)
  
@@ -80,10 +82,11 @@ program main
 
   !                             get remote data     / access local data 
   df_dx(my_last)              = (f(my_first)[right] - f(my_last-1))/(2.*dx)
+
   !  change 'error stop "..."' to 'call error_stop("...")'
   if (any(abs(df_dx-cos([(i,i=my_first,my_last)]*dx))>tolerance)) error stop "inaccurate derivative"
   
-  ! wait for every image to pass the test
+  ! Wait for every image to pass the test:
   ! change "sync all" a "call sync_all()"
   sync all
   if (this_image()==1) print *, "Test passed."
