@@ -345,10 +345,13 @@ fast-get-symbols(|st) =
 // Get symbols specifically relevant to OCAF
 // -----------------------------------------
 
+//
+//
 ocaf-get-symbols(|st,ct) =
-     ?AssignmentStmt(label,lhs,rhs)
-  ;  <ocaf-add-subimage-symbol(|ct,lhs)> rhs
-  ;  !AssignmentStmt(label,lhs,rhs)
+     ?TypeDeclarationStmt(label,type,attrs,vars)
+;debug(!"-------------- type decl -----------------\n")
+//  ;  <ocaf-add-subimage-symbol(|ct,lhs)> rhs
+  ;  !TypeDeclarationStmt(label,type,attrs,vars)
 
 //ocaf-get-symbols(|st,ct) =
 //     ?CoAllocateStmt(label,type,alloc_list,options,image,eos)
