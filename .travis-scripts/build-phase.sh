@@ -261,7 +261,17 @@ case $arg_b in
 	;;
     Lint)
 	info "Performing Lint build: coding standards compliance and limited static analysis."
-	info "Empty for now."
+	info "Enforcing whitespace rules."
+	yes | developer-scripts/setup-git.sh
+	bad_commits=()
+	for commit in $COMMITS_TESTED ; do
+	    git diff --check ${commit}^..${commit} || bad_commits+=("$commit")
+	done
+	if [[ "${#bad_commits[@]}" != 0 ]]; then
+	  error "The following pushed commits have whitespace errors: ${bad_commits[@]:0:8}"
+	  # just display short hash, 8 chars is fine
+	  false # trigger error
+	fi
 	;;
     Script)
 	info "Performing build using isntall.sh. This will install CMake and MPICH if it has been modified."
