@@ -264,9 +264,7 @@ export JOB_NUMBER=${TRAVIS_JOB_NUMBER:-"0.0"}
 info "JOB_NUMBER = $JOB_NUMBER"
 export MY_OS=${TRAVIS_OS_NAME:-$(tr '[:upper:]' '[:lower:]' <<< "$__os")}
 info "MY_OS = $MY_OS"
-PR=${TRAVIS_PULL_REQUEST:-false}
-[ "X$PR" = "X1" ] && PR="true"
-export PR
+export PR=${TRAVIS_PULL_REQUEST:-false}
 info "PR = $PR"
 _origin_url="$(git config --get remote.origin.url)"
 _GH_repo_slug="$(sed 's/.*github\.com[:/]\(.*\)\(\.git\)\{0,1\}/\1/' <<< $_origin_url)"

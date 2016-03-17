@@ -46,7 +46,7 @@ install:
   - .travis-scripts/install-phase.sh --build=$BUILD --mpi-lib=${lMPI:-mpich}
 
 script:
-  - .travis-scripts/build-phase.sh --build=$BUILD --lmpi=${lMPI:-mpich}
+  - .travis-scripts/build-phase.sh --build=$BUILD --mpi-lib=${lMPI:-mpich}
 
 after_success: # Upload coverage data and dump logs
   - find . -name '*.gcno' -print
