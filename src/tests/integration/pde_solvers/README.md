@@ -25,7 +25,9 @@ The launch script instruments the Burgers solver for performance analysis using 
 open-source Tuning and Analysis Utilities ([TAU]) package.  The instrumented Burgers 
 solver has been demonstrated to execute with 87% parallel efficiency on 16,384
 cores in weak scaling when compiled with the Cray Compiler Environment.  For
-new scalabiliby studies, it is important to run problems of sufficient size.
+new scalabiliby studies, it is important to run problems of sufficient size.  For
+performance and complexity comparisons, an MPI version of the Burgers solver is
+in the [performance] directory at the same level as the current directory.
 
 The Navier-Stokes solver uses Fourier-spectral methods and Runge-Kutta time advancement
 to simulate the evolution of statistically homogeneous turbulent flow in a 3D box with 
@@ -45,3 +47,4 @@ and a coarray Fortran (CAF) version of the same solution algorithm.
 [run.sh]: ./coarrayBurgers/run.sh
 [TAU]: http://tau.uoregon.edu
 [navier-stokes]: ./navier-stokes
+[performance]: ../../performance
