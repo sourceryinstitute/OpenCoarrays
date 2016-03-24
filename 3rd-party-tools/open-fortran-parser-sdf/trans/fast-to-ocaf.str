@@ -66,7 +66,7 @@ strategies //=================START OF STRATEGIES============================
         ;  bottomup(try(ocaf-init-finalize(|st,lt)))
         ;  bottomup(try(ocaf-replace-image-selector(|st,lt)))
         ;  topdown(try(fast-flatten-scope-parts))
-        ;  bottomup(try(caf-lower-ast))
+        ;  bottomup(try(caf-lower-ast(|lt)))
 }
 
 
@@ -286,28 +286,29 @@ opencl-kernel-arg-type(|ct) =
 cl-wrap-name =
      is-string
   ;  <conc-strings>("cl_", <id>, "_")
- +>  ?VarRef(name)
+ <+  ?VarRef(name)
   ;  debug(!"CL_WRAP_NAME: ERROR isVarRef ------------------------------------------------")
   ;  <conc-strings>("cl_", name, "_")
 
 cl-wrap-var =
      ?VarRef(name)
   ;  <conc-strings>("cl_", name, "_")
- +>  ?VarDef(name)
+ <+  ?VarDef(name)
   ;  <conc-strings>("cl_", name, "_")
- +>  is-string
+ <+  is-string
   ;  debug(!"CL_WRAP_VAR: ERROR is-string ------------------------------------------------")
   ;  <conc-strings>("cl_", <id>, "_")
 
 ofp-ident
   :  Var(ident,_,_) -> ident
 
-// add subimage device
+// add CAF symbols to caf symbol table
 //
-ocaf-add-subimage-symbol(|ct,lhs) =
-     ?PartRef("get_subimage",args,no-image-selector())
-  ;  <hashtable-put(|<fast-var-name>lhs, (<cl-wrap-var>lhs,DerivedType("CLDevice",[]),[]))> ct
-  ;  !PartRef("get_subimage",args,no-image-selector())
+ocaf-add-caf-symbol(|ct) =
+     ? Var(name,ArrayType(type,dims,  []  ),init)    /* not a coarray so don't add symbol */
+ <+  ? Var(name,ArrayType(type,dims,codims),init)
+  ;  <hashtable-put(|name, (name,ArrayType(type,dims,codims)))> ct
+  ;  ! Var(name,ArrayType(type,dims,codims),init)
 
 // Add a symbol to the symbol table
 st-add-symbol(|st,type,attrs) =
@@ -349,8 +350,7 @@ fast-get-symbols(|st) =
 //
 ocaf-get-symbols(|st,ct) =
      ?TypeDeclarationStmt(label,type,attrs,vars)
-;debug(!"-------------- type decl -----------------\n")
-//  ;  <ocaf-add-subimage-symbol(|ct,lhs)> rhs
+  ;  <map(ocaf-add-caf-symbol(|ct))> vars
   ;  !TypeDeclarationStmt(label,type,attrs,vars)
 
 //ocaf-get-symbols(|st,ct) =
@@ -434,7 +434,7 @@ ocaf-add-calls(|st,ct) =
          , FunctionReference("writeBuffer"
             ,[<cl-wrap-name>var,<conc-strings>("C_LOC(",obj,")"),VarRef("cl_size__")]))
       ]
- +>  ?AssignmentStmt(label,VarDef(var),PartRef(obj,no-section-subscripts(),[VarRef(device)]))
+ <+  ?AssignmentStmt(label,VarDef(var),PartRef(obj,no-section-subscripts(),[VarRef(device)]))
   ;  <fast-allocation-size(|st)> obj
   ;  ![  AssignmentStmt(no-label(),VarDef("cl_size__"),<id>)
        , AssignmentStmt(no-label(),VarDef("cl_status__")
@@ -502,6 +502,21 @@ fast-call-stmt-name =
 
 // Lower CAF components to OCAF
 // ----------------------------
+
+// drop symbols that are in the caf symbol table
+//
+remove-caf-decl(|st) =
+     ? Var(name,_,_)
+  ;  <hashtable-get(|name)> st
+  ;  ! [ ]
+ <+ id
+
+// remove coarray variables
+//
+caf-lower-ast(|st) =
+     ? TypeDeclarationStmt(label,type,attrs,vars)
+  ;  ! TypeDeclarationStmt(label,type,attrs,<flatten-list><map(remove-caf-decl(|st))>vars)
+
 caf-lower-ast =
      ?SyncAllStmt(label, sync_stat_list)
   ;  !CallStmt(label, "sync_all", sync_stat_list)
@@ -527,11 +542,6 @@ caf-lower-ast =
 caf-lower-ast =
      ?EntityDecl(name,array_spec,coarray_spec,char_length,init)
   ;  !EntityDecl(name,array_spec,          [],char_length,init)
-
-// This is just used to flatten the attribute list after removing Codimension attribute
-caf-lower-ast =
-     ?TypeDeclarationStmt(label,type,attrs,vars)
-  ;  !TypeDeclarationStmt(label,type,<flatten-list>attrs,vars)
 
 caf-lower-ast =
      ?Allocation(var,shape,coshape)
