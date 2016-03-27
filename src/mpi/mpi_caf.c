@@ -56,7 +56,6 @@ static void error_stop (int error) __attribute__ ((noreturn));
 static int caf_this_image;
 static int caf_num_images;
 static int caf_is_finalized;
-MPI_Request ibarrier_req;
 
 #if MPI_VERSION >= 3
   MPI_Info mpi_info_same_size;
