@@ -76,6 +76,10 @@ function info ()      { [ "${LOG_LEVEL}" -ge 6 ] && echo "$(_fmt info) ${@}" 1>&
 # debug "Info useful to developers for debugging the application, not useful during operations."
 function debug ()     { [ "${LOG_LEVEL}" -ge 7 ] && echo "$(_fmt debug) ${@}" 1>&2 || true; }
 
+function suppress_debug_messages() { export LOG_LEVEL=6; }
+function suppress_info_debug_messages () { export LOG_LEVEL=5; }
+function suppress_notice_info_debug_messages () { export LOG_LEVEL=4; }
+
 function help () {
   echo "" 1>&2
   echo " ${@}" 1>&2
@@ -93,3 +97,6 @@ export -f warning
 export -f notice
 export -f info
 export -f debug
+export suppress_debug_messages
+export suppress_info_debug_messages
+export suppress_notice_info_debug_messages

@@ -1,0 +1,7 @@
+  -d --debug                 Enable debug mode.
+  -e --verbose               Enable verbose mode, print script as it is executed.
+  -h --help                  This page.
+  -l --list-packages         List the packages this script can install.
+  -p --package [arg]         Package to build. 
+  -P --print-path [arg]      Print installation path for package specified in argument.
+  -V --print-version [arg]   Print installation version for package specified in argument.

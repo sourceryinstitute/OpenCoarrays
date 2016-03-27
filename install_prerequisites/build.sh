@@ -1,21 +1,11 @@
 #!/usr/bin/env bash
 # BASH3 Boilerplate
 #
-# my-script.sh
+# build.sh
 #
-#  - Is a template to write better bash scripts
-#  - Demonstrates a use case for the bash3boilerplate main.sh in which all boilerplate
-#    functionality and variables are imported in ounce source command, which need
-#    never be modified when creating new scripts from this template.
+#  - Build OpenCoarrays prerequisite packages and their prerequisites
 #
 # Usage: LOG_LEVEL=7 B3B_USE_CASE=/opt/bash3boilerplate/src/use-case ./my-script.sh -f script_input.txt 
-#
-# Workflow: 
-# 1. If so desired, rename the current file, e.g., to "do-something.sh". 
-# 2. Rename the usage file accordingly, e.g., to "do-something.sh-usage".
-# 3. Edit the (renamed) usage file. 
-# 4. Edit the (renamed) current script, adding all desired functionality
-#    below the the block marked "do not edit".
 #
 # More info:
 #
@@ -49,6 +39,7 @@ else
 fi
 ### End of boilerplate -- start user edits below #########################
 
+
 # Set up a function to call when receiving an EXIT signal to do some cleanup. Remove if
 # not needed. Other signals can be trapped too, like SIGINT and SIGTERM.
 function cleanup_before_exit () {
@@ -59,7 +50,26 @@ trap cleanup_before_exit EXIT # The signal is specified here. Could be SIGINT, S
 ### Validation (decide what's required for running your script and error out)
 #####################################################################
 
+export __flag_present=1
+
+if [[ "${arg_l}" != "${__flag_present}" && "${arg_L}" != "${__flag_present}" &&
+      "${arg_v}" != "${__flag_present}" && "${arg_h}" != "${__flag_present}" &&
+      -z "${arg_p:-${arg_P:-${arg_U:-${arg_V}}}}" ]]; then
+  help "${__base}: Insufficient arguments. Please pass either -l, -L, -v, -h, -p, -P, -U, -V, or a longer equivalent."
+fi
+
+# Suppress info and debug messages if -l, -P, -U, -V, or their longer equivalent is present: 
+[[ "${arg_l}" == "${__flag_present}" || ! -z "${arg_P:-${arg_U:-${arg_V}}}" ]] && suppress_info_debug_messages
+
 [ -z "${LOG_LEVEL:-}" ] && emergency "Cannot continue without LOG_LEVEL. "
+
+### Enforce mutual exclusivity of arguments that print single-line output
+[ ! -z "${arg_P:-}" ] && [ ! -z "${arg_V:-}" ] && emergency "Only specify one of -P, -U, -V, or their long-form equivalents."
+[ ! -z "${arg_P:-}" ] && [ ! -z "${arg_U:-}" ] && emergency "Only specify one of -P, -U, -V, or their long-form equivalents."
+[ ! -z "${arg_U:-}" ] && [ ! -z "${arg_V:-}" ] && emergency "Only specify one of -P, -U, -V, or their long-form equivalents."
+
+[ -z "${OPENCOARRAYS_SRC_DIR:-}" ] && emergency "Please set OPENCOARRAYS_SRC_DIR to the OpenCoarrays source directory path."
+
 
 ### Print bootstrapped magic variables to STDERR when LOG_LEVEL 
 ### is at the default value (6) or above.
@@ -92,3 +102,8 @@ info "arg_t:  ${arg_t}"
 info "arg_U:  ${arg_U}"
 info "arg_v:  ${arg_v}"
 info "arg_V:  ${arg_V}"
+
+source "${OPENCOARRAYS_SRC_DIR:-}"/install_prerequisites/set_or_list_versions.sh
+set_or_list_versions
+[[ ! -z "${arg_p}" ]] && info "package (default version):  ${arg_p} (${default_version})"
+
