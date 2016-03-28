@@ -43,7 +43,7 @@ set_or_list_versions()
      elif [[ "${package_name}" == "${KEY}" ]]; then
        # We recognize the package name so we set the default version:
        default_version=${VALUE}
-       [[ ! -z "${arg_V}" ]] && printf "${default_version}"
+       [[ ! -z "${arg_V}" ]] && printf "${default_version}\n"
        break # exit the for loop
      fi
   done
