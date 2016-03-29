@@ -40,6 +40,6 @@ function set_magic_variables(){
   if [[ "${OSTYPE:-}" == "darwin"* ]]; then
     __os="OSX"
   fi
-  __usage="${__file}-usage"
+  __usage="${__usage:-${__file}-usage}"
 }
 set_magic_variables "${@}"
