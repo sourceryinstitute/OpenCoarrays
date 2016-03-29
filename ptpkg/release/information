@@ -1,0 +1,9 @@
+NAME="OpenCoarrays"
+
+VERSION="1.3.9"
+
+DESCRIPT_LONG="\
+OpenCoarrays is an open-source software project that produces an application binary interface (ABI) supporting coarray Fortran (CAF) compilers, an application programming interface (API) that supports users of non-CAF compilers, and an associated compiler wrapper and program launcher. OpenCoarrays supports the coarray parallel programming feature set specified in the Fortran 2008 standard.  We also support several features proposed for Fortran 2015 in the draft Technical Specification TS18508 Additional Parallel Features in Fortran.
+"
+
+DESCRIPT_SHORT="A transport layer for coarray Fortran compilers."

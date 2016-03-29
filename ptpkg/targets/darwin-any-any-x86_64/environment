@@ -1,0 +1,30 @@
+#
+# ParaTools Packages
+#
+# Copyright (c) ParaTools, Inc.
+#
+# File: environment
+# Created: 15 Dec. 2011
+# Author: John C. Linford (jlinford@paratools.com)
+#
+# Description:
+#    Target environment
+# 
+
+if envIsBuild ; then
+  # Compilers 
+  envSet CPP cpp
+  envSet CC gcc
+  envSet CXX g++
+  envSet FC gfortran
+  envSet LD ld
+
+  # Compiler flags
+  envSet CPPFLAGS
+  envSet CFLAGS -O2 -m64
+  envSet CXXFLAGS -O2 -m64
+  envSet FFLAGS -O2 -m64
+  envSet LDFLAGS -O2 -m64
+fi
+
+# EOF

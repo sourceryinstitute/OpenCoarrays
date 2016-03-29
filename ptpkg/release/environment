@@ -1,0 +1,27 @@
+#
+# This script is executed when the user loads your project's module file
+# or sources the PROJECT_NAME.bashrc file.
+#
+# Examples below are from PToolsRTE
+#
+
+#
+## Shortcut to installation directory
+#envSet PTOOLSDIR     $PTPKG_INSTALL_PREFIX
+#envSet PTOOLSPKGSDIR $PTPKG_INSTALL_PREFIX
+#
+## Give preference to system libraries before PToolsRTE but after
+## anything loaded before PToolsRTE installation was started.
+#envPathAppend $PTPKG_TARGET_LIBRARY_PATH /lib64 /usr/lib64 /lib /usr/lib
+#if envIsBuild ; then
+#  envAppend CPPFLAGS -I/usr/include -I/usr/local/include
+#  envAppend LDFLAGS -L/lib64 -L/usr/lib64 -L/lib -L/usr/lib
+#fi
+#
+## Include the external folder in the compilation after everything else.
+#if envIsBuild ; then
+#  envAppend CPPFLAGS -I${PTPKG_EXTERNAL_PREFIX}/include
+#  envAppend LDFLAGS -L${PTPKG_EXTERNAL_PREFIX}/lib -L${PTPKG_EXTERNAL_PREFIX}/lib64
+#fi
+#
+

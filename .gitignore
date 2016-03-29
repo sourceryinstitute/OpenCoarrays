@@ -1,0 +1,7 @@
+.*.swp
+
+# Archives
+*.tar.gz
+*.tgz
+*.bz2
+*.zip

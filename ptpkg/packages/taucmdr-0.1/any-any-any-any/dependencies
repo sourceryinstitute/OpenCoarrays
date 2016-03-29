@@ -1,0 +1,3 @@
+PROVIDES=( )
+REQUIRES=( gcc miniconda )
+EXCLUDES=( )

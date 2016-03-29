@@ -1,0 +1,18 @@
+#
+# ParaTools Packages
+#
+# Copyright (c) ParaTools, Inc.
+#
+# File: install.sh
+# Created: 15 Dec. 2011
+# Author: John C. Linford (jlinford@paratools.com)
+#
+# Description:
+#    Package installation script
+# 
+
+pkgUnpack
+
+mv $PTPKG_PKG_BUILD_DIR $PTPKG_PKG_INSTALL_DIR
+
+# EOF

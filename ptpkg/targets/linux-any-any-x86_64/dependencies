@@ -1,0 +1,11 @@
+#
+# ParaTools Packages
+#
+# Target manifest
+#
+
+# Dependency information
+PROVIDES=( glib pkg-config )
+REQUIRES=( )
+EXCLUDES=( )
+

@@ -1,0 +1,16 @@
+#
+# ParaTools Packages
+#
+# Copyright (c) ParaTools, Inc.
+#
+# File: install.sh
+# Created: 15 Dec. 2011
+# Author: John C. Linford (jlinford@paratools.com)
+#
+# Description:
+#    Package installation script
+# 
+
+pkgAbort "Miniconda is not available for your combination of OS and CPU architecture."
+
+# EOF
