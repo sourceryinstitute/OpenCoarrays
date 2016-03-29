@@ -30,12 +30,17 @@
 # (3) Parse the usage information (default usage file name: current file's name with -usage appended).
 # (4) Parse the command line using the usage information.  
 
+export __usage=${OPENCOARRAYS_SRC_DIR}/install_prerequisites/build.sh-usage
+
 ### Start of boilerplate -- do not edit this block #######################
-if [[ -f "${B3B_USE_CASE:-}/bootstrap.sh" ]]; then
-  source "${B3B_USE_CASE}/bootstrap.sh" "$@"
-else
+if [[ ! -f "${B3B_USE_CASE:-}/bootstrap.sh" ]]; then
   echo "Please set B3B_USE_CASE to the bash3boilerplate use-case directory path." 
   exit 1
+elif [[ ! -d "${OPENCOARRAYS_SRC_DIR:-}" ]]; then
+  echo "Please set OPENCOARRAYS_SRC_DIR to the OpenCoarrays source directory path." 
+  exit 2
+else
+  source "${B3B_USE_CASE}/bootstrap.sh" "$@"
 fi
 ### End of boilerplate -- start user edits below #########################
 
@@ -68,9 +73,6 @@ fi
 [ ! -z "${arg_P:-}" ] && [ ! -z "${arg_U:-}" ] && emergency "Only specify one of -P, -U, -V, or their long-form equivalents."
 [ ! -z "${arg_U:-}" ] && [ ! -z "${arg_V:-}" ] && emergency "Only specify one of -P, -U, -V, or their long-form equivalents."
 
-[ -z "${OPENCOARRAYS_SRC_DIR:-}" ] && emergency "Please set OPENCOARRAYS_SRC_DIR to the OpenCoarrays source directory path."
-
-
 ### Print bootstrapped magic variables to STDERR when LOG_LEVEL 
 ### is at the default value (6) or above.
 #####################################################################
@@ -90,6 +92,7 @@ info "arg_e:  ${arg_e}"
 info "arg_f:  ${arg_f}"
 info "arg_h:  ${arg_h}"
 info "arg_i:  ${arg_i}"
+info "arg_j:  ${arg_j}"
 info "arg_I:  ${arg_I}"
 info "arg_l:  ${arg_l}"
 info "arg_L:  ${arg_L}"
@@ -99,6 +102,7 @@ info "arg_n:  ${arg_n}"
 info "arg_p:  ${arg_p}"
 info "arg_P:  ${arg_P}"
 info "arg_t:  ${arg_t}"
+info "arg_T:  ${arg_T}"
 info "arg_U:  ${arg_U}"
 info "arg_v:  ${arg_v}"
 info "arg_V:  ${arg_V}"
@@ -106,4 +110,3 @@ info "arg_V:  ${arg_V}"
 source "${OPENCOARRAYS_SRC_DIR:-}"/install_prerequisites/set_or_list_versions.sh
 set_or_list_versions
 [[ ! -z "${arg_p}" ]] && info "package (default version):  ${arg_p} (${default_version})"
-

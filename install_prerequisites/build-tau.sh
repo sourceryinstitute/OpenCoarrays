@@ -33,11 +33,14 @@
 export __usage=${OPENCOARRAYS_SRC_DIR}/install_prerequisites/build.sh-usage
 
 ### Start of boilerplate -- do not edit this block #######################
-if [[ -f "${B3B_USE_CASE:-}/bootstrap.sh" ]]; then
-  source "${B3B_USE_CASE}/bootstrap.sh" "$@"
-else
+if [[ ! -f "${B3B_USE_CASE:-}/bootstrap.sh" ]]; then
   echo "Please set B3B_USE_CASE to the bash3boilerplate use-case directory path." 
   exit 1
+elif [[ ! -d "${OPENCOARRAYS_SRC_DIR:-}" ]]; then
+  echo "Please set OPENCOARRAYS_SRC_DIR to the OpenCoarrays source directory path." 
+  exit 2
+else
+  source "${B3B_USE_CASE}/bootstrap.sh" "$@"
 fi
 ### End of boilerplate -- start user edits below #########################
 
@@ -69,8 +72,6 @@ fi
 [ ! -z "${arg_P:-}" ] && [ ! -z "${arg_V:-}" ] && emergency "Only specify one of -P, -U, -V, or their long-form equivalents."
 [ ! -z "${arg_P:-}" ] && [ ! -z "${arg_U:-}" ] && emergency "Only specify one of -P, -U, -V, or their long-form equivalents."
 [ ! -z "${arg_U:-}" ] && [ ! -z "${arg_V:-}" ] && emergency "Only specify one of -P, -U, -V, or their long-form equivalents."
-
-[ -z "${OPENCOARRAYS_SRC_DIR:-}" ] && emergency "Please set OPENCOARRAYS_SRC_DIR to the OpenCoarrays source directory path."
 
 ### Print bootstrapped magic variables to STDERR when LOG_LEVEL 
 ### is at the default value (6) or above.
