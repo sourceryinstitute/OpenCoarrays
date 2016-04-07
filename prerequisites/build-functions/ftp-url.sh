@@ -7,31 +7,31 @@
 #    ftp-url -n ftp.gnu.org:/gnu/m4/m4-1.4.17.tar.bz2
 ftp-url()
 {
-  ftp_mode=$1
-  url=$2
+  ftp_mode="${1}"
+  url="${2}"
 
   text_before_colon="${url%%:*}"
-  FTP_SERVER=$text_before_colon
+  FTP_SERVER="${text_before_colon}"
 
   text_after_colon="${url##*:}"
   text_after_final_slash="${text_after_colon##*/}"
-  FILE_NAME=$text_after_final_slash
+  FILE_NAME="${text_after_final_slash}"
 
   text_before_final_slash="${text_after_colon%/*}"
-  FILE_PATH="$text_before_final_slash"
+  FILE_PATH="${text_before_final_slash}"
 
   USERNAME=anonymous
   PASSWORD=""
-  echo "$this_script: starting anonymous download: ftp $ftp_mode $FTP_SERVER... cd $FILE_PATH... get $FILE_NAME"
+  info "starting anonymous download: ftp ${ftp_mode} ${FTP_SERVER}... cd ${FILE_PATH}... get ${FILE_NAME}"
 
-ftp $ftp_mode $FTP_SERVER <<Done-ftp
-user $USERNAME $PASSWORD
-cd $FILE_PATH
+ftp "${ftp_mode}" "${FTP_SERVER}" <<Done-ftp
+user "${USERNAME}" "${PASSWORD}"
+cd "${FILE_PATH}"
 passive
 binary
-get "$FILE_NAME"
+get "${FILE_NAME}"
 bye
 Done-ftp
 
-echo "$this_script: finished anonymous ftp"
+info "finished anonymous ftp"
 }

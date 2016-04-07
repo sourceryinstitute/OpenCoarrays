@@ -1,6 +1,6 @@
 # If -p, -D, -P, or -V specifies a package, set package_url
 # If -U specifies a package, print the package_url and exit with normal status
-set_package_url()
+set_or_print_url()
 {
   # Verify requirements 
   [ ! -z "${arg_U}" ] && [ ! -z "${arg_D:-${arg_p:-${arg_P:-${arg_V}}}}" ] &&

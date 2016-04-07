@@ -1,14 +1,14 @@
-source "${OPENCOARRAYS_SRC_DIR:-}/install_prerequisites/build-functions/ftp-url.sh"
-source "${OPENCOARRAYS_SRC_DIR:-}/install_prerequisites/build-functions/set_SUDO_if_needed_to_create.sh"
+source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/ftp-url.sh"
+source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/set_SUDO_if_needed_to_write_to_directory.sh"
 
 # Download pkg-config if the tar ball is not already in the present working directory
 download_if_necessary()
 {
-  download_path="${PWD}/opencoarrays-downloads"
-  set_SUDO_if_needed_to_create_directory "${download_path}"
+  download_path="${PWD}/downloads"
+  set_SUDO_if_needed_to_write_to_directory "${download_path}"
   if [ -f $url_tail ] || [ -d $url_tail ]; then
     info "Found '${url_tail}' in ${PWD}."
-    info "If it resulted from an incomplete download, building ${package_to_build} could fail."
+    info "If it resulted from an incomplete download, building ${package_name} could fail."
     info "Would you like to proceed anyway? (y/n)"
     read proceed
     if [[ "${proceed}" == "y"  ]]; then
@@ -20,9 +20,9 @@ download_if_necessary()
     fi
   elif ! type "${fetch}" &> /dev/null; then
     # The download mechanism is missing
-    info "The default download mechanism for ${package_to_build} is ${fetch}."
+    info "The default download mechanism for ${package_name} is ${fetch}."
     info "Please either ensure that ${fetch} is installed and in your PATH"
-    info "or download the ${package_to_build} source from "
+    info "or download the ${package_name} source from "
     info "${package_url}" 
    #called_by_install_sh=`echo "$(ps -p $PPID -o args=)" | grep install.sh`
     info "Place the downloaded file in ${download_path} and restart this script."
@@ -50,9 +50,9 @@ download_if_necessary()
     if [[ "${fetch}" == "svn" || "${fetch}" == "git" ]]; then
       package_source_directory="${url_tail}"
     else
-      package_source_directory="${package_to_build}-${version_to_build}"
+      package_source_directory="${package_name}-${version_to_build}"
     fi
-    info "Downloading ${package_to_build} ${version_to_build} to the following location:"
+    info "Downloading ${package_name} ${version_to_build} to the following location:"
     info "${download_path}/${package_source_directory}"
     info "Download command: ${fetch} ${args} ${package_url}"
     info "Depending on the file size and network bandwidth, this could take several minutes or longer."
@@ -69,10 +69,10 @@ download_if_necessary()
       search_path="${download_path}/${url_tail}"
     fi
     if [ -f "${search_path}" ] || [ -d "${search_path}" ]; then
-      info "Download succeeded. The "${package_to_build}" source is in the following location:"
+      info "Download succeeded. The "${package_name}" source is in the following location:"
       info "${search_path}"
     else
-      info "Download failed. The "${package_to_build}" source is not in the following, expected location:"
+      info "Download failed. The "${package_name}" source is not in the following, expected location:"
       info "${search_path}"
       emergency "Aborting. [exit 110]"
     fi

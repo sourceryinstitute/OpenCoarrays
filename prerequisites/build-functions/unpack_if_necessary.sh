@@ -9,6 +9,6 @@ unpack_if_necessary()
     pushd "${download_path}"
     tar xf "${url_tail}"
     popd
-    package_source_directory="${package_to_build}-${version_to_build}"
+    package_source_directory="${package_name}-${version_to_build}"
   fi
 }

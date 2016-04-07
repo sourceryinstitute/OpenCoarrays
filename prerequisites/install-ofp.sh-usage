@@ -1,0 +1,9 @@
+  -d --debug                     Enable debug mode.
+  -D --print-downloaders         Print the name of the download programs for OFP and its prerequisites. 
+  -e --verbose                   Enable verbose mode, print script as it is executed.
+  -h --help                      This page.
+  -i --installation-path  [arg]  Specify installation path. Default="${OPENCOARRAYS_SRC_DIR}/prerequisites/installations"
+  -n --no-color                  Disable color output.
+  -P --print-paths               Print the default installation paths for OFP and its prerequisites. 
+  -U --print-URLs                Print the URLs for OFP and its prerequisites. 
+  -V --print-versions            Print the default installation versions for OFP and its prerequisites. 

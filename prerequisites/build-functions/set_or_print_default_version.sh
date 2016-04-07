@@ -1,7 +1,7 @@
 # If -p, -D, -P, or -U specifies a package, set default_version
 # If -V specifies a package, print the default_version and exit with normal status
 # If -l is present, list all packages and versions and exit with normal status
-set_or_list_versions()
+set_or_print_default_version()
 {
   # Verify requirements 
   [ "${arg_l}" == "${__flag_present}" ] && [ ! -z "${arg_D:-${arg_p:-${arg_P:-${arg_U:-${arg_V}}}}}" ] &&

@@ -38,7 +38,7 @@ if [ "${arg_d}" = "1" ]; then
 fi
 
 # verbose mode
-if [ "${arg_V}" = "1" ]; then
+if [ "${arg_e}" = "1" ]; then
   set -o verbose
 fi
 

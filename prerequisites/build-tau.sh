@@ -30,7 +30,7 @@
 # (3) Parse the usage information (default usage file name: current file's name with -usage appended).
 # (4) Parse the command line using the usage information.  
 
-export __usage=${OPENCOARRAYS_SRC_DIR}/install_prerequisites/build.sh-usage
+export __usage=${OPENCOARRAYS_SRC_DIR}/prerequisites/build.sh-usage
 
 ### Start of boilerplate -- do not edit this block #######################
 if [[ ! -f "${B3B_USE_CASE:-}/bootstrap.sh" ]]; then
@@ -107,6 +107,6 @@ info "arg_U:  ${arg_U}"
 info "arg_v:  ${arg_v}"
 info "arg_V:  ${arg_V}"
 
-source "${OPENCOARRAYS_SRC_DIR:-}"/install_prerequisites/set_or_list_versions.sh
+source "${OPENCOARRAYS_SRC_DIR:-}"/prerequisites/set_or_list_versions.sh
 set_or_list_versions
 [[ ! -z "${arg_p}" ]] && info "package (default version):  ${arg_p} (${default_version})"
