@@ -1,8 +1,8 @@
 /*
  * fast-to-ocaf.str
  *
- * -- This file contains Stratego/XT rules to transform coarray Fortran
- *    source files to standard Fortran with library calls.
+ * -- This file contains Stratego/XT rules to transform coarray Fortran 2015
+ *    source files to Fortran 2003 with library calls.
  *
  * OpenCoarrays is distributed under the OSI-approved BSD 3-clause License:
  * Copyright (c) 2016, Paradox PTF
@@ -34,15 +34,17 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+// StrategoXT module
 module fast-to-ocaf
 
+
 imports
-   libstratego-lib
-   FAST
-   ofp-simplify
+   libstratego-lib // Standard StrategoXT library
+   FAST            // Transformations to produce the Fortran abstract syntax tree 
+   ofp-simplify    // Transformations to simply the parse tree before FAST transformations
 
 signature
-  constructors
+  constructors     // Declaring annotated terms ("aterms")
 
   ALLOCATED : ALLOCATED
   INTERNAL  : INTERNAL
@@ -52,9 +54,13 @@ signature
 
 strategies //=================START OF STRATEGIES============================
 
+// To Do:
+// 1. Attach symbol tables to scopes to avoid erroneous transformations
+
   io-fast-to-ocaf =
     io-wrap(fast-to-ocaf)
 
+// set of transformations (st: symbol table, lt: local table)
   fast-to-ocaf =
 { st,lt
         :  ?Program(units)
@@ -63,6 +69,7 @@ strategies //=================START OF STRATEGIES============================
         ;  !Program(units)
         ;  topdown(try(fast-get-symbols(|st)))
         ;  topdown(try(ocaf-get-symbols(|st,lt)))
+        ;  topdown(try(add-caf-decls(|lt)))
         ;  bottomup(try(ocaf-init-finalize(|st,lt)))
         ;  bottomup(try(ocaf-replace-image-selector(|st,lt)))
         ;  topdown(try(fast-flatten-scope-parts))
@@ -72,6 +79,15 @@ strategies //=================START OF STRATEGIES============================
 
 rules //========================START OF RULES===============================
 
+// Add new declaration for emulated coarrays
+//
+add-caf-decls(|ct) =
+     ? Scope(decls,execs,funcs)
+//;  <concat> [[<fast-build-use-stmt>"opencoarrays"], decls]
+  ;  <hashtable-keys>ct
+//;  debug(!"--------------- keys --------------\n")
+  ;  <map(build-caf-decl)> <id>
+  ;  ! Scope(<concat>[<id>,decls],execs,funcs)
 
 // Add "use opencoarrays" and caf_init and caf_finalize calls
 //
@@ -200,6 +216,14 @@ fast-update-allocation-symbol(|st) =
 fast-build-use-stmt =
      ?module_name
   ;  !UseStmt(no-label(), no-module-nature(), module_name, [])
+
+build-caf-decl =
+     ?object_name
+  ;  !TypeDeclarationStmt(  no-label()
+                          , DerivedType("coarray", [])
+                          , []
+                          , [Var(<conc-strings>(object_name,"_coarray_"),DerivedType("coarray",[]),no-init())]
+                         )
 
 fast-build-type-decl(|type,attrs) =
      ?object_name
@@ -346,8 +370,8 @@ fast-get-symbols(|st) =
 // Get symbols specifically relevant to OCAF
 // -----------------------------------------
 
-//
-//
+// apply (map) ocaf-add-caf-symbol strategy to vars list
+// ct = coarray fortran table
 ocaf-get-symbols(|st,ct) =
      ?TypeDeclarationStmt(label,type,attrs,vars)
   ;  <map(ocaf-add-caf-symbol(|ct))> vars
