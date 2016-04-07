@@ -79,15 +79,16 @@ strategies //=================START OF STRATEGIES============================
 
 rules //========================START OF RULES===============================
 
+
 // Add new declaration for emulated coarrays
 //
 add-caf-decls(|ct) =
      ? Scope(decls,execs,funcs)
 //;  <concat> [[<fast-build-use-stmt>"opencoarrays"], decls]
-  ;  <hashtable-keys>ct
-//;  debug(!"--------------- keys --------------\n")
-  ;  <map(build-caf-decl)> <id>
+  ;  <map(build-caf-decls)> <hashtable-values> ct 
   ;  ! Scope(<concat>[<id>,decls],execs,funcs)
+
+//;  debug(!"--------------- values --------------\n")
 
 // Add "use opencoarrays" and caf_init and caf_finalize calls
 //
@@ -217,13 +218,25 @@ fast-build-use-stmt =
      ?module_name
   ;  !UseStmt(no-label(), no-module-nature(), module_name, [])
 
-build-caf-decl =
-     ?object_name
-  ;  !TypeDeclarationStmt(  no-label()
+build-caf-decls =
+     ?(object_name,ArrayType(type,dim,codim))
+  ;  debug(!"--------------- values --------------\n")
+  ; ! [ TypeDeclarationStmt(  no-label()
                           , DerivedType("coarray", [])
                           , []
                           , [Var(<conc-strings>(object_name,"_coarray_"),DerivedType("coarray",[]),no-init())]
-                         )
+        ),
+        TypeDeclarationStmt(  
+          no-label()
+          , type
+          , [POINTER()]
+          , [ Var( object_name,ArrayType(type,dim,[]),PointerInit(NullInit(FunctionReference("null", [])))
+              ) 
+            ]
+        )
+      ]
+  ;  debug(!"--------------- values --------------\n")
+            
 
 fast-build-type-decl(|type,attrs) =
      ?object_name
