@@ -91,7 +91,7 @@ if [[ "$directory_exists" == "false" ]]; then
 fi
 
 build_path=$opencoarrays_src_dir/opencoarrays-build
-build_script=$opencoarrays_src_dir/install_prerequisites/build
+build_script=$opencoarrays_src_dir/prerequisites/build
 if [[ ! -x "$build_script" ]]; then
   echo "$this_script: $build_script script does not exist or the user lacks executable permission for it."
   echo "$this_script: Please run this_script in the top-level OpenCoarrays source directory or set the"
@@ -124,7 +124,7 @@ usage()
 }
 
 # Include stack management functions
-. ./install_prerequisites/stack.sh
+. ./prerequisites/stack.sh
 stack_new dependency_pkg
 stack_new dependency_exe
 stack_new dependency_path
@@ -741,7 +741,7 @@ print_header()
   popd > /dev/null
   echo ""
   echo "*** All prerequisites will be downloaded to, built in, and installed in ***"
-  echo "$opencoarrays_src_dir/install_prerequisites"
+  echo "$opencoarrays_src_dir/prerequisites"
   printf "*** OpenCoarrays will be installed "
   if [[ "$install_path" == "$opencoarrays_src_dir/opencoarrays-installation" ]]; then
     printf "in the above location also.        ***\n"
@@ -922,7 +922,7 @@ elif [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
   echo ""
 else # Find or install prerequisites and install OpenCoarrays
 
-  cd install_prerequisites &&
+  cd prerequisites &&
   installation_record=install-opencoarrays.log &&
   . set_SUDO.sh &&
   set_SUDO_if_necessary  &&

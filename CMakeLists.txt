@@ -105,7 +105,7 @@ endif()
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 add_subdirectory(src)
-add_subdirectory(install_prerequisites)
+add_subdirectory(prerequisites)
 
 #-----------------------------------------------------
 # Publicize installed location to other CMake projects

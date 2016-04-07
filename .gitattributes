@@ -10,7 +10,7 @@
 *.md text
 *.txt text
 *.sh text
-install_prerequisites/build text
+prerequisites/build text
 *.cu text
 *.x64 text
 
