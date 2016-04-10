@@ -62,7 +62,7 @@ check-orig : fast-to-ocaf
 check-fast : fast-to-ocaf
 	$(ST_PATH)/sglri -p $(TBL) -i $(SOURCE) | $(TO_FAST) | $(ST_PATH)/pp-aterm
 
-check-last : fast-to-ocaf
+check-ocaf-ast : fast-to-ocaf
 	$(ST_PATH)/sglri -p $(TBL) -i $(SOURCE) | $(TO_FAST) | ./fast-to-ocaf | $(ST_PATH)/pp-aterm
 
 check-lower : caf-lower
