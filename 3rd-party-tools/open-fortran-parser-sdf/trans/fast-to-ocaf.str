@@ -69,11 +69,12 @@ strategies //=================START OF STRATEGIES============================
         ;  !Program(units)
         ;  topdown(try(fast-get-symbols(|st)))
         ;  topdown(try(ocaf-get-symbols(|st,lt)))
+        ;  topdown(try(remove-caf-type-decls(|lt)))
         ;  topdown(try(add-caf-decls(|lt)))
         ;  bottomup(try(ocaf-init-finalize(|st,lt)))
         ;  bottomup(try(ocaf-replace-image-selector(|st,lt)))
         ;  topdown(try(fast-flatten-scope-parts))
-        ;  bottomup(try(caf-lower-ast(|lt)))
+        ;  bottomup(try(ocaf-lower-ast(|lt)))
 }
 
 
@@ -84,18 +85,15 @@ rules //========================START OF RULES===============================
 //
 add-caf-decls(|ct) =
      ? Scope(decls,execs,funcs)
-//;  <concat> [[<fast-build-use-stmt>"opencoarrays"], decls]
+  ;  <fast-build-use-stmt> "opencoarrays"
+  ;  ? use_stmt                                            // bind current term to use_stmt
   ;  <map(build-caf-decls)> <hashtable-values> ct 
-  ;  ! Scope(<concat>[<id>,decls],execs,funcs)
-
-//;  debug(!"--------------- values --------------\n")
+  ;  ! Scope(<concat>[[use_stmt],decls,<id>],execs,funcs)
 
 // Add "use opencoarrays" and caf_init and caf_finalize calls
 //
 ocaf-init-finalize(|st,ct) =
      ? Scope(decls,execs,funcs)
-  ;  <concat> [[<fast-build-use-stmt>"opencoarrays"], decls]
-  ;  ! Scope(<id>, execs, funcs)
   ;  ? Scope(decls2, execs2, funcs2)
   ;  <concat> [[CallStmt(no-label(), "caf_init", [])], execs2]
   ;  <concat> [<id>, [CallStmt(no-label(), "caf_finalize", [])]]
@@ -220,23 +218,18 @@ fast-build-use-stmt =
 
 build-caf-decls =
      ?(object_name,ArrayType(type,dim,codim))
-  ;  debug(!"--------------- values --------------\n")
-  ; ! [ TypeDeclarationStmt(  no-label()
+  ; ! [ TypeDeclarationStmt(no-label()
                           , DerivedType("coarray", [])
                           , []
                           , [Var(<conc-strings>(object_name,"_coarray_"),DerivedType("coarray",[]),no-init())]
         ),
         TypeDeclarationStmt(  
-          no-label()
+            no-label()
           , type
           , [POINTER()]
-          , [ Var( object_name,ArrayType(type,dim,[]),PointerInit(NullInit(FunctionReference("null", [])))
-              ) 
-            ]
+          , [ Var(object_name,ArrayType(type,dim,[]),PointerInit(FunctionReference("null", []))) ]
         )
       ]
-  ;  debug(!"--------------- values --------------\n")
-            
 
 fast-build-type-decl(|type,attrs) =
      ?object_name
@@ -550,17 +543,27 @@ remove-caf-decl(|st) =
 
 // remove coarray variables
 //
-caf-lower-ast(|st) =
+remove-caf-type-decls(|lt) =
      ? TypeDeclarationStmt(label,type,attrs,vars)
-  ;  ! TypeDeclarationStmt(label,type,attrs,<flatten-list><map(remove-caf-decl(|st))>vars)
+  ;  ! TypeDeclarationStmt(label,type,attrs,<flatten-list><map(remove-caf-decl(|lt))>vars)
 
-caf-lower-ast =
-     ?SyncAllStmt(label, sync_stat_list)
-  ;  !CallStmt(label, "sync_all", sync_stat_list)
+// change "sync images" to a call to sync_images subroutine"
+//
+ocaf-lower-ast(|lt) =
+     ? SyncAllStmt(label, sync_stat_list)
+  ;  ! CallStmt(label, "sync_all", sync_stat_list)
 
-caf-lower-ast =
-     ?SyncImagesStmt(label, image_set, sync_stat_list)
-  ;  !CallStmt(label, "sync_images", <concat>[[image_set],sync_stat_list] )
+// change "sync all" to a call to sync_all subroutine"
+//
+ocaf-lower-ast(|lt) =
+     ? SyncImagesStmt(label, image_set, sync_stat_list)
+  ;  ! CallStmt(label, "sync_images", <concat>[[image_set],sync_stat_list] )
+
+// change "error stop" to a call to error_stop subroutine"
+//
+ocaf-lower-ast(|lt) =
+     ? ErrorStopStmt(label, code)
+  ;  ! CallStmt(label, "error_stop", [code])
 
 // Remove codimension from an array type declaration
 //
