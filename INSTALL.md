@@ -203,7 +203,7 @@ the [Installation Script] section.  Or try building each prerequisite from sourc
 follows:
 
 ```
-cd install_prerequisites
+cd prerequisites
 CC=gcc FC=gfortran CXX=g++ ./build flex
 ./build gcc
 CC=gcc FC=gfortran CXX=g++ ./build mpich
@@ -235,7 +235,7 @@ where the second line builds the flex package that is required for building gcc 
 [Issues]: https://github.com/sourceryinstitute/opencoarrays/issues
 [make.inc]: ./src/make.inc
 [opencoarrays]: ./src/extensions/opencoarrays.F90
-[install_prerequisites]: ./install_prerequisites
+[prerequisites]: ./prerequisites
 [MPICH]: http://www.mpich.org
 [MVAPICH]:http://mvapich.cse.ohio-state.edu
 [MacPorts]: http://www.macports.org
