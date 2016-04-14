@@ -116,7 +116,7 @@ install:
     elif [[ "X$BUILD_TYPE" != "XInstallScript" ]]; then # Ubuntu on Travis-CI, NOT testing install.sh
       if ! ( [[ -x "$HOME/.local/bin/mpif90" ]] && [[ -x "$HOME/.local/bin/mpicc" ]] ); then
         # mpich install not cached
-        # could use install_prerequisites/build instead...
+        # could use prerequisites/build instead...
         wget "${MPICH_URL_HEAD}/${MPICH_URL_TAIL}"
         mv "$MPICH_URL_TAIL" "$MPICH_DIR/.."
         pushd "$MPICH_DIR/.."
