@@ -154,7 +154,7 @@ function stack_pop
 # Usage: stack_print name
 #
 # Modification for use with bash3boilerplate: 
-#    replaced "let _i=${_i}-1" with "(( _i=${_i}-1 ))" to facilitate execution with "set -o nounset"
+#    replaced "let _i=${_i}-1" with "(( _i=${_i}-1 )) || true" to support execution with "set -o nounset"
        
 function stack_print
 {
@@ -171,10 +171,11 @@ function stack_print
 
     while (( $_i > 0 ))
     do
-       (( _i=${_i}-1 ))
+       (( _i=${_i}-1 )) || true
         eval 'e=$'"{_stack_$1[$_i]}"
         tmp="$tmp $e"
     done
+
     echo "(" $tmp ")"
 }
 
