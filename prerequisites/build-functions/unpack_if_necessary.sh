@@ -5,9 +5,11 @@ unpack_if_necessary()
     package_source_directory="${version_to_build}"
   else
     info "Unpacking ${url_tail}."
-    info "Unpack command: tar xf ${download_path}/${url_tail}"
+    info "pushd ${download_path}"
     pushd "${download_path}"
+    info "Unpack command: tar xf ${url_tail}"
     tar xf "${url_tail}"
+    info "popd"
     popd
     package_source_directory="${package_name}-${version_to_build}"
   fi

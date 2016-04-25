@@ -40,7 +40,7 @@ find_or_install()
     package_in_path=false
   fi
 
-  package_install_path=`./build $package --default --query-path`
+  package_install_path=`./build.sh -P $package`
 
   printf "$this_script: Checking whether $executable is in the directory in which $this_script\n"
   printf "            installs it by default and whether the user has executable permission for it..."
@@ -53,7 +53,7 @@ find_or_install()
     printf "no.\n"
   fi
 
-  minimum_version=`./build $package --default --query-version`
+  minimum_version=`./build.sh -V $package`
 
   if [[ "$package" == "cmake" ]]; then
 
@@ -76,12 +76,12 @@ find_or_install()
     elif [[ "$package_in_path" == "true" ]]; then
       printf "$this_script: Checking whether $package in PATH is version < $minimum_version... "
 
-      if ! ./check_version.sh $package `./build $package --default --query-version`; then
+      if ! ./check_version.sh $package `./build.sh -V $package`; then
         printf "yes.\n"
         # Here we place $package on the dependency stack to trigger the build of the above file:
         stack_push dependency_pkg $package "none"
         stack_push dependency_exe $package "none"
-        stack_push dependency_path `./build cmake --default --query-path` "none"
+        stack_push dependency_path `./build.sh -P cmake` "none"
 
       else
         printf "no.\n"
@@ -96,7 +96,7 @@ find_or_install()
     else # Build package ($package has no prerequisites)
       stack_push dependency_pkg $package "none"
       stack_push dependency_exe $package "none"
-      stack_push dependency_path `./build $package --default --query-path` "none"
+      stack_push dependency_path `./build.sh -P $package` "none"
     fi
 
   elif [[ $package == "mpich" ]]; then
@@ -130,7 +130,7 @@ find_or_install()
         # Trigger 'find_or_install gcc' and subsequent build of $package
         stack_push dependency_pkg "none" $package "gcc"
         stack_push dependency_exe "none" $executable "gfortran"
-        stack_push dependency_path "none" `./build $package --default --query-path` `./build gcc --default --query-path`
+        stack_push dependency_path "none" `./build.sh -P $package` `./build -P gcc`
       else
         printf "yes.\n"
         printf "$this_script: Checking whether $executable in PATH wraps gfortran version 5.3.0 or later... "
@@ -156,7 +156,7 @@ find_or_install()
           # Trigger 'find_or_install gcc' and subsequent build of $package
           stack_push dependency_pkg "none" $package "gcc"
           stack_push dependency_exe "none" $executable "gfortran"
-          stack_push dependency_path "none" `./build $package --default --query-path` `./build gcc --default --query-path`
+          stack_push dependency_path "none" `./build.sh -P $package` `./build.sh gcc`
         fi
       fi
 
@@ -164,7 +164,7 @@ find_or_install()
       # Trigger 'find_or_install gcc' and subsequent build of $package
       stack_push dependency_pkg  "none" $package "gcc"
       stack_push dependency_exe  "none" $executable "gfortran"
-      stack_push dependency_path "none" `./build $package --default --query-path` `./build gcc --default --query-path`
+      stack_push dependency_path "none" `./build.sh -P $package` `./build.sh -P gcc`
     fi
 
   elif [[ $package == "gcc" ]]; then
@@ -334,7 +334,7 @@ find_or_install()
         # Trigger 'find_or_install m4' and subsequent build of $package
         stack_push dependency_pkg "m4"
         stack_push dependency_exe "m4"
-        stack_push dependency_path `./build m4 --default --query-path`
+        stack_push dependency_path `./build.sh -P m4`
       else
         printf "no.\n"
         printf "$this_script: Using the $package executable $executable found in the PATH.\n"
@@ -357,7 +357,7 @@ find_or_install()
       # Trigger 'find_or_install m4' and subsequent build of $package
       stack_push dependency_pkg "m4"
       stack_push dependency_exe "m4"
-      stack_push dependency_path `./build m4 --default --query-path`
+      stack_push dependency_path `./build.sh -P m4`
     fi
 
   elif [[ $package == "m4" ]]; then
@@ -386,7 +386,7 @@ find_or_install()
 
     elif [[ "$package_in_path" == "true" ]]; then
       printf "$this_script: Checking whether $package executable $executable in PATH is version < $minimum_version... "
-      if ! ./check_version.sh $package `./build $package --default --query-version`; then
+      if ! ./check_version.sh $package `./build.sh -V $package`; then
         printf "yes.\n"
         export M4="$package_install_path/bin/m4"
         # Halt the recursion and signal that there are no prerequisites to build
@@ -512,8 +512,8 @@ find_or_install()
       fi
 
       printf "$this_script: Downloading, building, and installing $package \n"
-      echo "$this_script: Build command: FC=$FC CC=$CC CXX=$CXX ./build $package --default $package_install_path $num_threads"
-      FC="$FC" CC="$CC" CXX="$CXX" ./build "$package" --default "$package_install_path" "$num_threads"
+      echo "$this_script: Build command: FC=$FC CC=$CC CXX=$CXX ./build -p $package -i $package_install_path -j $num_threads"
+      FC="$FC" CC="$CC" CXX="$CXX" ./build.sh -p "$package" -i "$package_install_path" -j "$num_threads"
 
       if [[ -x "$package_install_path/bin/$executable" ]]; then
         printf "$this_script: Installation successful.\n"

@@ -30,19 +30,21 @@
 # (3) Parse the usage information (default usage file name: current file's name with -usage appended).
 # (4) Parse the command line using the usage information.  
 
-export __usage=${OPENCOARRAYS_SRC_DIR}/prerequisites/build.sh-usage
 
-### Start of boilerplate -- do not edit this block #######################
+export OPENCOARRAYS_SRC_DIR="${OPENCOARRAYS_SRC_DIR:-${PWD}/..}"
+export __usage=${OPENCOARRAYS_SRC_DIR}/prerequisites/build.sh-usage
+if [[ ! -f "${OPENCOARRAYS_SRC_DIR}/src/libcaf.h" ]]; then
+  echo "Please run this script inside the top-level OpenCoarrays source directory "
+  echo "or set OPENCOARRAYS_SRC_DIR to the OpenCoarrays source directory path."
+  exit 1
+fi
+export B3B_USE_CASE="${B3B_USE_CASE:-${OPENCOARRAYS_SRC_DIR}/prerequisites/use-case}"
 if [[ ! -f "${B3B_USE_CASE:-}/bootstrap.sh" ]]; then
   echo "Please set B3B_USE_CASE to the bash3boilerplate use-case directory path." 
-  exit 1
-elif [[ ! -d "${OPENCOARRAYS_SRC_DIR:-}" ]]; then
-  echo "Please set OPENCOARRAYS_SRC_DIR to the OpenCoarrays source directory path." 
   exit 2
-else
-  source "${B3B_USE_CASE}/bootstrap.sh" "$@"
 fi
-### End of boilerplate -- start user edits below #########################
+source "${B3B_USE_CASE}/bootstrap.sh" "$@"
+
 
 
 # Set up a function to call when receiving an EXIT signal to do some cleanup. Remove if
