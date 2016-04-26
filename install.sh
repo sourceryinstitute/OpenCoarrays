@@ -256,15 +256,11 @@ elif [[ ! -z "${arg_D:-${arg_P:-${arg_U:-${arg_V}}}}" ||  "${arg_l}" == "${__fla
   "${opencoarrays_src_dir}"/prerequisites/build.sh "${build_flag}" "${build_arg}"
   # Add lines other packages the current script builds
   if [[ "${arg_l}" == "${__flag_present}" ]]; then
-    echo "opencoarrays (default version `${build_script} -V opencoarrays`)"
-    echo "ofp (default version `${build_script} -V ofp`)"
+    echo "opencoarrays (version `${opencoarrays_src_dir}/install.sh -V opencoarrays`)"
+    echo "ofp (version: ofp-sdf for OS X )"
   fi
 
-elif [[ ! -z "${arg_p:-}" && "${arg_p:-}" != "opencoarrays" ]]; then
-
-  "${opencoarrays_src_dir}"/prerequisites/build.sh -p "${arg_p}"
-
-else # Find or install prerequisites and install OpenCoarrays
+elif [[ "${arg_p:-}" == "opencoarrays" ]]; then
 
   cd prerequisites 
   installation_record=install-opencoarrays.log 
@@ -272,6 +268,14 @@ else # Find or install prerequisites and install OpenCoarrays
   set_SUDO_if_needed_to_write_to_directory "${install_path}"
   build_opencoarrays 2>&1 | tee ../"${installation_record}"
   report_results 2>&1 | tee -a ../"${installation_record}"
+
+elif [[ "${arg_p:-}" == "ofp" ]]; then
+
+  "${opencoarrays_src_dir}"/prerequisites/install-ofp.sh
+
+elif [[ ! -z "${arg_p:-}" ]]; then
+
+  "${opencoarrays_src_dir}"/prerequisites/build.sh -p "${arg_p}"
 
 fi
 # ____________________________________ End of Main Body ____________________________________________
