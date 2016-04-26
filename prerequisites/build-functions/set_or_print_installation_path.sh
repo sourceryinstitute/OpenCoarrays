@@ -7,14 +7,14 @@ set_or_print_installation_path()
     emergency "Please pass only one of {-D, -p, -P, -U, -V} or a longer equivalent (multiple detected)."
  
   # ../build.sh-usage specifies the following installation path default for illustrative purposes only:
-  # Default="${OPENCOARRAYS_SRC_DIR}/prerequisites/installations/${package_name:-}/${version_to_build:-}/"
-  # When the parse_command_line function executes, ${package_name:-} and ${version_to_build:-} are empty,
-  # but they have been set before reaching the current function so now we can get the true values if the
+  # Default="${OPENCOARRAYS_SRC_DIR}/prerequisites/installations/${package_name:-}/"
+  # When the parse_command_line function executes, ${package_name:-} is empty, but it has 
+  # been set before reaching the current function so now we can get the true values if the
   # user didn't override the default: 
 
-  path_in_usage_file="${OPENCOARRAYS_SRC_DIR}/prerequisites/installations///"
+  path_in_usage_file="${OPENCOARRAYS_SRC_DIR}/prerequisites/installations//"
   if [[ "${arg_i}" == "${path_in_usage_file}" ]]; then
-    install_path="${OPENCOARRAYS_SRC_DIR}/prerequisites/installations/${package_name}/${version_to_build}/"
+    install_path="${OPENCOARRAYS_SRC_DIR}/prerequisites/installations/${package_name}/"
   else
     install_path="${arg_i}"
   fi

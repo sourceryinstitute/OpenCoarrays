@@ -33,25 +33,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-# Create a new stack.
-#
-# Usage: stack_new name
-#
-# Example: stack_new x
-function stack_new
-{
-    : ${1?'Missing stack name'}
-    if stack_exists $1
-    then
-        echo "Stack already exists -- $1" >&2
-        return 1
-    fi
-
-    eval "declare -ag _stack_$1" >& /dev/null
-    eval "declare -ig _stack_$1_i" >& /dev/null
-    eval "let _stack_$1_i=0"
-    return 0
-}
+# Source: http://brizzled.clapper.org/blog/2011/10/28/a-bash-stack/
 
 # Destroy a stack
 #
@@ -92,29 +74,6 @@ function stack_push
     return 0
 }
 
-# Print a stack to stdout.
-#
-# Usage: stack_print name
-function stack_print
-{
-    : ${1?'Missing stack name'}
-
-    if no_such_stack $1
-    then
-        echo "No such stack -- $1" >&2
-        return 1
-    fi
-
-    tmp=""
-    eval 'let _i=$'_stack_$1_i
-    while (( $_i > 0 ))
-    do
-        let _i=${_i}-1
-        eval 'e=$'"{_stack_$1[$_i]}"
-        tmp="$tmp $e"
-    done
-    echo "(" $tmp ")"
-}
 
 # Get the size of a stack
 #
@@ -135,6 +94,23 @@ function stack_size
     eval "$2"='$'"{#_stack_$1[*]}"
 }
 
+function no_such_stack
+{
+    : ${1?'Missing stack name'}
+    stack_exists $1
+    ret=$?
+    declare -i x
+    let x="1-$ret"
+    return $x
+}
+
+#### Functions modified by Damian Rouson
+
+# These functions were modified to work with the shell settings in bash3boilerplate 
+# (https://github.com/zbeekman/bash3boilerplate), primarily the "set -o unset" and 
+# "set -o pipefail" settings.  The required modifications are described below.
+# 
+
 # Pop the top element from the stack.
 #
 # Usage: stack_pop name var
@@ -142,12 +118,17 @@ function stack_size
 # Example:
 #    stack_pop mystack top
 #    echo "Got $top"
+#
+# Modification for use with bash3boilerplate: 
+#    replaced "let _i-=1" with  "(( _i-=1 )) || true" 
+ 
 function stack_pop
 {
     : ${1?'Missing stack name'}
     : ${2?'Missing name of variable for popped result'}
 
     eval 'let _i=$'"_stack_$1_i"
+
     if no_such_stack $1
     then
         echo "No such stack -- $1" >&2
@@ -160,7 +141,7 @@ function stack_pop
         return 1
     fi
 
-    let _i-=1
+   (( _i-=1 )) || true
     eval "$2"='$'"{_stack_$1[$_i]}"
     eval "unset _stack_$1[$_i]"
     eval "_stack_$1_i=$_i"
@@ -168,21 +149,83 @@ function stack_pop
     return 0
 }
 
-function no_such_stack
+# Print a stack to stdout.
+#
+# Usage: stack_print name
+#
+# Modification for use with bash3boilerplate: 
+#    replaced "let _i=${_i}-1" with "(( _i=${_i}-1 )) || true" to support execution with "set -o nounset"
+       
+function stack_print
 {
     : ${1?'Missing stack name'}
-    stack_exists $1
-    ret=$?
-    declare -i x
-    let x="1-$ret"
-    return $x
+
+    if no_such_stack $1
+    then
+        echo "No such stack -- $1" >&2
+        return 1
+    fi
+
+    tmp=""
+    eval 'let _i=$'_stack_$1_i
+
+    while (( $_i > 0 ))
+    do
+       (( _i=${_i}-1 )) || true
+        eval 'e=$'"{_stack_$1[$_i]}"
+        tmp="$tmp $e"
+    done
+
+    echo "(" $tmp ")"
 }
+
+# Create a new stack.
+#
+# Usage: stack_new name
+#
+# Example: stack_new x
+#
+# Modification for use with bash3boilerplate: 
+#    added "|| true" to allow execution with "set -o nounset" on OS X
+
+function stack_new
+{
+    : ${1?'Missing stack name'}
+    if stack_exists $1
+    then
+        echo "Stack already exists -- $1" >&2
+        return 1
+    fi
+
+    if [[ `uname` == "Darwin" ]]; then 
+      eval "declare -ag _stack_$1" >& /dev/null || true
+      eval "declare -ig _stack_$1_i" >& /dev/null || true
+    else
+      eval "declare -ag _stack_$1" >& /dev/null
+      eval "declare -ig _stack_$1_i" >& /dev/null
+    fi
+
+    variableName="_stack_$1_i"
+    variableVal="0"
+    eval ${variableName}=`echo -ne \""${variableVal}"\"`
+
+    return 0
+}
+
+# Verify stack existence.
+#
+# Usage: stack_exists name
+#
+# Example: stack_new x
+#
+# Modification for use with bash3boilerplate: 
+#    added curly braces in eval statement to allow execution with "set -o nounset"
 
 function stack_exists
 {
     : ${1?'Missing stack name'}
 
-    eval '_i=$'"_stack_$1_i"
+    eval '_i=$'"{_stack_$1_i:-}"
     if [[ -z "$_i" ]]
     then
         return 1

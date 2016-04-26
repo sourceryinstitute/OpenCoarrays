@@ -9,14 +9,14 @@ download_if_necessary()
   if [ -f $url_tail ] || [ -d $url_tail ]; then
     info "Found '${url_tail}' in ${PWD}."
     info "If it resulted from an incomplete download, building ${package_name} could fail."
-    info "Would you like to proceed anyway? (y/n)"
+    info "Would you like to proceed anyway? (Y/n)"
     read proceed
-    if [[ "${proceed}" == "y"  ]]; then
-      info "y"
-    else
+    if [[ "${proceed}" == "n" || "${proceed}" == "N" || "${proceed}" == "no"  ]]; then
       info "n"
       info "Please remove $url_tail and restart the installation to to ensure a fresh download." 1>&2
       emergency "Aborting. [exit 80]"
+    else
+      info "y"
     fi
   elif ! type "${fetch}" &> /dev/null; then
     # The download mechanism is missing
