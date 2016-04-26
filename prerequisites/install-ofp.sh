@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # BASH3 Boilerplate
 #
-# install-binary.sh
+# install-ofp.sh
 #
-#  - Build OpenCoarrays prerequisite packages and their prerequisites
+#  - Build the Open Fortran Parser
 #
-# Usage: LOG_LEVEL=7 B3B_USE_CASE=/opt/bash3boilerplate/src/use-case ./install-opfp.sh 
+# Usage: ./install-ofp.sh -i /opt
 #
 # More info:
 #
@@ -30,23 +30,19 @@
 # (3) Parse the usage information (default usage file name: current file's name with -usage appended).
 # (4) Parse the command line using the usage information.  
 
-export __usage="${OPENCOARRAYS_SRC_DIR}/prerequisites/install-ofp.sh-usage"
-
 export OPENCOARRAYS_SRC_DIR="${OPENCOARRAYS_SRC_DIR:-${PWD}/..}"
+export __usage="${OPENCOARRAYS_SRC_DIR}/prerequisites/install-ofp.sh-usage"
 if [[ ! -f "${OPENCOARRAYS_SRC_DIR}/src/libcaf.h" ]]; then
-  echo "Please run this script inside the OpenCoarrays "prerequisites" subdirectory "
-  echo "or set OPENCOARRAYS_SRC_DIR to the OpenCoarrays source directory path." 
+  echo "Please run this script inside the OpenCoarrays source \"prerequisites\" subdirectory"
+  echo "or set OPENCOARRAYS_SRC_DIR to the top-level OpenCoarrays source directory path." 
   exit 1
 fi
-
-### Import bash3boilerplate functionality 
 export B3B_USE_CASE="${B3B_USE_CASE:-${OPENCOARRAYS_SRC_DIR}/prerequisites/use-case}"
 if [[ ! -f "${B3B_USE_CASE:-}/bootstrap.sh" ]]; then
   echo "Please set B3B_USE_CASE to the bash3boilerplate use-case directory path." 
   exit 2
-else
-  source "${B3B_USE_CASE}/bootstrap.sh" "$@"
 fi
+source "${B3B_USE_CASE}/bootstrap.sh" "$@"
 
 # Set up a function to call when receiving an EXIT signal to do some cleanup. Remove if
 # not needed. Other signals can be trapped too, like SIGINT and SIGTERM.
@@ -115,14 +111,17 @@ info "__os: ${__os}"
 info "__usage: ${__usage}"
 info "LOG_LEVEL: ${LOG_LEVEL}"
 
-info "-d (--debug):             ${arg_d}"
-info "-D (--print-downloaders): ${arg_D}"
-info "-e (--verbose):           ${arg_e}"
-info "-h (--help):              ${arg_h}"
-info "-n (--no-color):          ${arg_n}"
-info "-P (--print-paths):       ${arg_P}" 
-info "-U (--print-URLs):        ${arg_U}"
-info "-V (--print-versions):    ${arg_V}"
+info "-d (--debug):            ${arg_d}"
+info "-D (--print-downloader): ${arg_D}"
+info "-e (--verbose):          ${arg_e}"
+info "-h (--help):             ${arg_h}"
+info "-i (--install-dir):      ${arg_i}"
+info "-I (--install-version):  ${arg_i}"
+info "-j (--num-threads):      ${arg_j}"
+info "-n (--no-color):         ${arg_n}"
+info "-P (--print-path):       ${arg_P}" 
+info "-U (--print-url):        ${arg_U}"
+info "-V (--print-version):    ${arg_V}"
 
 # Set OFP installation path to the value of the -i argument if present.
 # Otherwise, install OFP in the OpenCoarrays prerequisites/installations directory.
