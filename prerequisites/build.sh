@@ -34,8 +34,8 @@
 export OPENCOARRAYS_SRC_DIR="${OPENCOARRAYS_SRC_DIR:-${PWD}/..}"
 export __usage=${OPENCOARRAYS_SRC_DIR}/prerequisites/build.sh-usage
 if [[ ! -f "${OPENCOARRAYS_SRC_DIR}/src/libcaf.h" ]]; then
-  echo "Please run this script inside the top-level OpenCoarrays source directory "
-  echo "or set OPENCOARRAYS_SRC_DIR to the OpenCoarrays source directory path." 
+  echo "Please run this script inside the OpenCoarrays source \"prerequisites\" subdirectory"
+  echo "or set OPENCOARRAYS_SRC_DIR to the top-level OpenCoarrays source directory path." 
   exit 1
 fi
 export B3B_USE_CASE="${B3B_USE_CASE:-${OPENCOARRAYS_SRC_DIR}/prerequisites/use-case}"
