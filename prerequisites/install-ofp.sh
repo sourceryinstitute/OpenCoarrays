@@ -5,7 +5,7 @@
 #
 #  - Build OpenCoarrays prerequisite packages and their prerequisites
 #
-# Usage: LOG_LEVEL=7 B3B_USE_CASE=/opt/bash3boilerplate/src/use-case ./my-script.sh -f script_input.txt 
+# Usage: LOG_LEVEL=7 B3B_USE_CASE=/opt/bash3boilerplate/src/use-case ./install-opfp.sh 
 #
 # More info:
 #
@@ -32,17 +32,21 @@
 
 export __usage="${OPENCOARRAYS_SRC_DIR}/prerequisites/install-ofp.sh-usage"
 
-### Start of boilerplate -- do not edit this block #######################
+export OPENCOARRAYS_SRC_DIR="${OPENCOARRAYS_SRC_DIR:-${PWD}/..}"
+if [[ ! -f "${OPENCOARRAYS_SRC_DIR}/src/libcaf.h" ]]; then
+  echo "Please run this script inside the OpenCoarrays "prerequisites" subdirectory "
+  echo "or set OPENCOARRAYS_SRC_DIR to the OpenCoarrays source directory path." 
+  exit 1
+fi
+
+### Import bash3boilerplate functionality 
+export B3B_USE_CASE="${B3B_USE_CASE:-${OPENCOARRAYS_SRC_DIR}/prerequisites/use-case}"
 if [[ ! -f "${B3B_USE_CASE:-}/bootstrap.sh" ]]; then
   echo "Please set B3B_USE_CASE to the bash3boilerplate use-case directory path." 
-  exit 1
-elif [[ ! -d "${OPENCOARRAYS_SRC_DIR:-}" ]]; then
-  echo "Please set OPENCOARRAYS_SRC_DIR to the OpenCoarrays source directory path." 
   exit 2
 else
   source "${B3B_USE_CASE}/bootstrap.sh" "$@"
 fi
-### End of boilerplate -- start user edits below #########################
 
 # Set up a function to call when receiving an EXIT signal to do some cleanup. Remove if
 # not needed. Other signals can be trapped too, like SIGINT and SIGTERM.
