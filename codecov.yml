@@ -1,0 +1,31 @@
+comment:
+  layout: header, changes, diff, sunburst
+coverage:
+  ignore:
+  - src/tests
+  - src/single
+  - src/gasnet
+  - src/mpi_cuda
+  - src/armci
+  notify:
+    gitter:
+      default:
+        branches:
+        - master
+        threshold: '0.1'
+        url: https://webhooks.gitter.im/e/cd081feecb000a89d36b
+    slack:
+      default:
+        branches:
+        - master
+        threshold: '0.01'
+        url: https://hooks.slack.com/services/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
+  status:
+    patch: false
+    project:
+      default:
+        branches:
+        - master
+        - devel
+        target: auto
+  
