@@ -130,7 +130,7 @@ find_or_install()
         # Trigger 'find_or_install gcc' and subsequent build of $package
         stack_push dependency_pkg "none" $package "gcc"
         stack_push dependency_exe "none" $executable "gfortran"
-        stack_push dependency_path "none" `./build.sh -P $package` `./build -P gcc`
+        stack_push dependency_path "none" `./build.sh -P $package` `./build.sh -P gcc`
       else
         printf "yes.\n"
         printf "$this_script: Checking whether $executable in PATH wraps gfortran version 5.3.0 or later... "
@@ -231,14 +231,14 @@ find_or_install()
         # Trigger 'find_or_install flex' and subsequent build of $package
         stack_push dependency_pkg "flex"
         stack_push dependency_exe "flex"
-        stack_push dependency_path `./build flex --default --query-path`
+        stack_push dependency_path `./build.sh -P flex`
       fi
 
     else # $package is not in PATH and not yet installed by this script
       # Trigger 'find_or_install flex' and subsequent build of $package
       stack_push dependency_pkg "flex"
       stack_push dependency_exe "flex"
-      stack_push dependency_path `./build flex --default --query-path`
+      stack_push dependency_path `./build.sh -P flex`
     fi
 
   elif [[ $package == "flex" ]]; then
@@ -269,14 +269,14 @@ find_or_install()
     elif [[ "$package_in_path" == "true" ]]; then
 
       printf "$this_script: Checking whether $package in PATH is version < $minimum_version... "
-      if ! ./check_version.sh $package `./build $package --default --query-version`; then
+      if ! ./check_version.sh $package `./build.sh -V $package`; then
         printf "yes\n"
 
         export FLEX="$package_install_path/bin/$executable"
         # Trigger 'find_or_install bison' and subsequent build of $package
         stack_push dependency_pkg "bison"
         stack_push dependency_exe "yacc"
-        stack_push dependency_path `./build bison --default --query-path`
+        stack_push dependency_path `./build.sh -P bison`
       else
         printf "no.\n"
         printf "$this_script: Using the $executable found in the PATH.\n"
@@ -299,7 +299,7 @@ find_or_install()
       # Trigger 'find_or_install bison' and subsequent build of $package
       stack_push dependency_pkg "bison"
       stack_push dependency_exe "yacc"
-      stack_push dependency_path `./build bison --default --query-path`
+      stack_push dependency_path `./build.sh -P bison`
     fi
 
   elif [[ $package == "bison" ]]; then
@@ -328,7 +328,7 @@ find_or_install()
 
     elif [[ "$package_in_path" == "true" ]]; then
       printf "$this_script: Checking whether $package executable $executable in PATH is version < $minimum_version... "
-      if ! ./check_version.sh $package `./build $package --default --query-version`; then
+      if ! ./check_version.sh $package `./build.sh -V $package`; then
         printf "yes.\n"
         export YACC="$package_install_path/bin/$executable"
         # Trigger 'find_or_install m4' and subsequent build of $package
@@ -433,7 +433,7 @@ find_or_install()
   stack_print dependency_pkg
 
   stack_size dependency_pkg num_stacked
-  (( num_dependencies=num_stacked-1 ))
+  (( num_dependencies=num_stacked-1 )) || true
 
   if [[ $num_dependencies < 0 ]]; then
     emergency "The procedure named in the external call to find_or_install is not on the dependency stack. [exit 60]\n"
@@ -512,7 +512,7 @@ find_or_install()
       fi
 
       printf "$this_script: Downloading, building, and installing $package \n"
-      echo "$this_script: Build command: FC=$FC CC=$CC CXX=$CXX ./build -p $package -i $package_install_path -j $num_threads"
+      echo "$this_script: Build command: FC=$FC CC=$CC CXX=$CXX ./build.sh -p $package -i $package_install_path -j $num_threads"
       FC="$FC" CC="$CC" CXX="$CXX" ./build.sh -p "$package" -i "$package_install_path" -j "$num_threads"
 
       if [[ -x "$package_install_path/bin/$executable" ]]; then

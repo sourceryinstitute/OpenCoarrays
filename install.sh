@@ -110,22 +110,22 @@ trap cleanup_before_exit EXIT # The signal is specified here. Could be SIGINT, S
 
 [ -z "${LOG_LEVEL:-}" ] && emergency "Cannot continue without LOG_LEVEL. "
 
-[ ! -z "${arg_D}" ] && [ ! -z "${arg_p:-${arg_P:-${arg_U:-${arg_V}}}}" ] &&
-  emergency "Please pass only one of {-D, -p, -P, -U, -V} or a longer equivalent (multiple detected)."
+if [[ "${arg_v}" == "${__flag_present}" || "${arg_l}" == "${__flag_present}" || ! -z "${arg_P:-${arg_U:-${arg_V:-${arg_D}}}}" ]]; then
+   print_debug_only=7
+   if [ "$(( LOG_LEVEL < print_debug_only ))" -ne 0 ]; then
+     debug "Supressing info and debug messages: one of {-l, -v, -P, -U, -V, -D} present."
+     suppress_info_debug_messages
+   fi
+fi
 
-[ ! -z "${arg_p}" ] && [ ! -z "${arg_P:-${arg_U:-${arg_V}}}" ] &&
-  emergency "Please pass only one of {-D, -p, -P, -U, -V} or a longer equivalent (multiple detected)."
+[ ! -z "${arg_D}" ] && [ ! -z "${arg_P:-${arg_U:-${arg_V}}}" ] &&
+  emergency "Please pass only one of {-D, -p, -P, -U, -V} or a longer equivalent (multiple detected). [exit 101]"
 
 [ ! -z "${arg_P}" ] && [ ! -z "${arg_U:-${arg_V}}" ] &&
-  emergency "Please pass only one of {-D, -p, -P, -U, -V} or a longer equivalent (multiple detected)."
+  emergency "Please pass only one of {-D, -p, -P, -U, -V} or a longer equivalent (multiple detected). [exit 103]"
 
 [ ! -z "${arg_U}" ] && [ ! -z "${arg_V}" ] &&
-  emergency "Please pass only one of {-D, -p, -P, -U, -V} or a longer equivalent (multiple detected)."
-
-if [[ "${arg_v}" == "${__flag_present}" || "${arg_l}" == "${__flag_present}" || ! -z "${arg_P:-${arg_U:-${arg_V:-${arg_D}}}}" ]]; then
-   debug "Supressing info and debug messages: one of {-l, -v, -P, -U, -V, -D} present."
-   suppress_info_debug_messages
-fi
+  emergency "Please pass only one of {-D, -p, -P, -U, -V} or a longer equivalent (multiple detected). [exit 104]"
 
 ### Print bootstrapped magic variables to STDERR when LOG_LEVEL
 ### is at the default value (6) or above.
@@ -183,8 +183,8 @@ info  "-V (--print-version):    ${arg_V}"
 
 export this_script=`basename $0`
 
-export install_path="${arg_i}"
-info "install_path=${arg_i}"
+export install_path="${arg_i}/${arg_p}"
+info "install_path=${arg_i}/${arg_p}"
 
 export num_threads="${arg_j}"
 info "num_threads=${arg_j}"
@@ -192,8 +192,8 @@ info "num_threads=${arg_j}"
 export opencoarrays_src_dir="${OPENCOARRAYS_SRC_DIR}"
 info "opencoarrays_src_dir=${OPENCOARRAYS_SRC_DIR}"
 
-export build_path=$opencoarrays_src_dir/prerequisites/build_directories
-info "build_path=$opencoarrays_src_dir/prerequisites/build_directories"
+export build_path=$opencoarrays_src_dir/prerequisites/builds
+info "build_path=$opencoarrays_src_dir/prerequisites/builds"
 
 export build_script=$opencoarrays_src_dir/prerequisites/build.sh
 info "build_script=$opencoarrays_src_dir/prerequisites/build.sh"
@@ -243,13 +243,20 @@ if [[ "${arg_v}" == "${__flag_present}" || "${arg_V}" == "opencoarrays" ]]; then
     echo "${opencoarrays_version}"
   fi
 
-elif [[ "${arg_l}" == "${__flag_present}" ]]; then
+elif [[ ! -z "${arg_D:-${arg_P:-${arg_U:-${arg_V}}}}" ||  "${arg_l}" == "${__flag_present}" ]]; then
 
-   "${opencoarrays_src_dir}"/prerequisites/build.sh -l
+  # Delegate to build.sh
+  build_arg=${arg_D:-${arg_P:-${arg_U:-${arg_V:-${arg_p}}}}}
+  [ ! -z "${arg_D}" ] && build_flag="-D"
+  [ ! -z "${arg_P}" ] && build_flag="-P"
+  [ ! -z "${arg_U}" ] && build_flag="-U"
+  [ ! -z "${arg_V}" ] && build_flag="-V"
+  [ "${arg_l}" == "${__flag_present}" ] && build_flag="-l"
+  "${opencoarrays_src_dir}"/prerequisites/build.sh "${build_flag}" "${build_arg}"
 
 elif [[ ! -z "${arg_p:-}" && "${arg_p:-}" != "opencoarrays" ]]; then
 
-   "${opencoarrays_src_dir}"/prerequisites/build.sh -p "${arg_p}"
+  "${opencoarrays_src_dir}"/prerequisites/build.sh -p "${arg_p}"
 
 else # Find or install prerequisites and install OpenCoarrays
 
