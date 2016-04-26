@@ -156,7 +156,7 @@ find_or_install()
           # Trigger 'find_or_install gcc' and subsequent build of $package
           stack_push dependency_pkg "none" $package "gcc"
           stack_push dependency_exe "none" $executable "gfortran"
-          stack_push dependency_path "none" `./build.sh -P $package` `./build.sh gcc`
+          stack_push dependency_path "none" `./build.sh -P $package` `./build.sh -P gcc`
         fi
       fi
 
@@ -169,7 +169,7 @@ find_or_install()
 
   elif [[ $package == "gcc" ]]; then
 
-    # We arrive when the 'elif [[ $package == "mpich" ]]' block pushes "gcc" onto the
+    # We arrive when the 'elif [[ $package == "gcc" ]]' block pushes "gcc" onto the
     # the dependency_pkg stack, resulting in the recursive call 'find_or_install gcc'
 
     # Every branch that discovers an acceptable pre-existing installation must set the
