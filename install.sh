@@ -82,7 +82,8 @@
 ### Start of boilerplate -- do not edit this block #######################
 export OPENCOARRAYS_SRC_DIR="${OPENCOARRAYS_SRC_DIR:-${PWD}}"
 if [[ ! -f "${OPENCOARRAYS_SRC_DIR}/src/libcaf.h" ]]; then
-  echo "Please run this script inside the top-level OpenCoarrays source directory or set OPENCOARRAYS_SRC_DIR to the OpenCoarrays source directory path."
+  echo "Please run this script inside the top-level OpenCoarrays source directory or "
+  echo "set OPENCOARRAYS_SRC_DIR to the OpenCoarrays source directory path."
   exit 1
 fi
 export B3B_USE_CASE="${B3B_USE_CASE:-${OPENCOARRAYS_SRC_DIR}/prerequisites/use-case}"
@@ -245,7 +246,7 @@ if [[ "${arg_v}" == "${__flag_present}" || "${arg_V}" == "opencoarrays" ]]; then
 
 elif [[ ! -z "${arg_D:-${arg_P:-${arg_U:-${arg_V}}}}" ||  "${arg_l}" == "${__flag_present}" ]]; then
 
-  # Delegate to build.sh
+  # Delegate to build.sh for the packages it builds
   build_arg=${arg_D:-${arg_P:-${arg_U:-${arg_V:-${arg_p}}}}}
   [ ! -z "${arg_D}" ] && build_flag="-D"
   [ ! -z "${arg_P}" ] && build_flag="-P"
@@ -253,6 +254,11 @@ elif [[ ! -z "${arg_D:-${arg_P:-${arg_U:-${arg_V}}}}" ||  "${arg_l}" == "${__fla
   [ ! -z "${arg_V}" ] && build_flag="-V"
   [ "${arg_l}" == "${__flag_present}" ] && build_flag="-l"
   "${opencoarrays_src_dir}"/prerequisites/build.sh "${build_flag}" "${build_arg}"
+  # Add lines other packages the current script builds
+  if [[ "${arg_l}" == "${__flag_present}" ]]; then
+    echo "opencoarrays (default version `${build_script} -V opencoarrays`)"
+    echo "ofp (default version `${build_script} -V ofp`)"
+  fi
 
 elif [[ ! -z "${arg_p:-}" && "${arg_p:-}" != "opencoarrays" ]]; then
 
