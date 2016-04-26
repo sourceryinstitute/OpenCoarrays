@@ -120,7 +120,7 @@ function no_such_stack
 #    echo "Got $top"
 #
 # Modification for use with bash3boilerplate:
-#    replaced "let _i-=1" with  "(( _i-=1 ))"
+#    replaced "let _i-=1" with  "(( _i-=1 )) || true"
 
 function stack_pop
 {
@@ -141,7 +141,7 @@ function stack_pop
         return 1
     fi
 
-   (( _i-=1 ))
+   (( _i-=1 )) || true
     eval "$2"='$'"{_stack_$1[$_i]}"
     eval "unset _stack_$1[$_i]"
     eval "_stack_$1_i=$_i"
