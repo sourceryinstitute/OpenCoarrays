@@ -42,6 +42,7 @@ if [[ ! -f "${B3B_USE_CASE:-}/bootstrap.sh" ]]; then
   echo "Please set B3B_USE_CASE to the bash3boilerplate use-case directory path."
   exit 2
 fi
+# shellcheck source=./use-case/bootstrap.sh
 source "${B3B_USE_CASE}/bootstrap.sh" "$@"
 
 # Set up a function to call when receiving an EXIT signal to do some cleanup. Remove if
@@ -53,57 +54,63 @@ trap cleanup_before_exit EXIT # The signal is specified here. Could be SIGINT, S
 
 export __flag_present=1
 
-# Verify requirements 
+# Verify requirements
 
 [ -z "${LOG_LEVEL:-}" ] && emergency "Cannot continue without LOG_LEVEL. "
 
+# shellcheck disable=SC2154
 if [[ "${__os}" != "OSX" ]]; then
    info      "${__base} currently installs binaries that work only on OS X"
    emergency "To request other platforms, please submit an issue at http://github.com/sourceryinstitute/opencoarrays/issues"
 fi
 
 default_ofp_downloader=wget
-# If -D is passed, print the download programs used for OFP and its prerequisites.  
+# If -D is passed, print the download programs used for OFP and its prerequisites.
 # Then exit with normal status.
+# shellcheck  disable=SC2154
 if [[ "${arg_D}" == "${__flag_present}" ]]; then
-  echo "strategoxt-superbundle downloader: `${OPENCOARRAYS_SRC_DIR}/prerequisites/install-binary.sh -D strategoxt-superbundle`"
+  echo "strategoxt-superbundle downloader: $("${OPENCOARRAYS_SRC_DIR}/prerequisites/install-binary.sh" -D strategoxt-superbundle)"
   echo "ofp-sdf default downloader: ${default_ofp_downloader}"
   exit 0
 fi
 
-# If -P is passed, print the default installation paths for OFP and its prerequisites.  
+# If -P is passed, print the default installation paths for OFP and its prerequisites.
 # Then exit with normal status.
 default_ofp_install_path="${OPENCOARRAYS_SRC_DIR}/prerequisites/installations"
 install_path="${arg_i:-"${default_ofp_install_path}"}"
 strategoxt_superbundle_install_path="/opt"
+# shellcheck disable=SC2154
 if [[ "${arg_P}" == "${__flag_present}" ]]; then
   echo "strategoxt-superbundle default installation path: ${strategoxt_superbundle_install_path}"
   echo "ofp default installation path: ${default_ofp_install_path}"
   exit 0
 fi
 
-# If -V is passed, print the default versions of OFP and its prerequisites.  
+# If -V is passed, print the default versions of OFP and its prerequisites.
 # Then exit with normal status.
 default_ofp_version=sdf
+# shellcheck disable=SC2154
 if [[ "${arg_V}" == "${__flag_present}" ]]; then
-  echo "strategoxt-superbundle default version: `${OPENCOARRAYS_SRC_DIR}/prerequisites/install-binary.sh -V strategoxt-superbundle`"
+  echo "strategoxt-superbundle default version: $("${OPENCOARRAYS_SRC_DIR}/prerequisites/install-binary.sh" -V strategoxt-superbundle)"
   echo "ofp default version: ${default_ofp_version}"
   exit 0
 fi
 
-# If -U is passed, print the URLs for OFP and its prerequisites.  
+# If -U is passed, print the URLs for OFP and its prerequisites.
 # Then exit with normal status.
 ofp_URL="https://github.com/sourceryinstitute/opencoarrays/files/213108/ofp-sdf.tar.gz"
+# shellcheck disable=SC2154
 if [[ "${arg_U}" == "${__flag_present}" ]]; then
-  echo "strategoxt-superbundle URL: `${OPENCOARRAYS_SRC_DIR}/prerequisites/install-binary.sh -U strategoxt-superbundle`"
+  echo "strategoxt-superbundle URL: $("${OPENCOARRAYS_SRC_DIR}/prerequisites/install-binary.sh" -U strategoxt-superbundle)"
   echo "ofp URL: ${ofp_URL}"
   exit 0
 fi
 
-### Print bootstrapped magic variables to STDERR when LOG_LEVEL 
+### Print bootstrapped magic variables to STDERR when LOG_LEVEL
 ### is at the default value (6) or above.
 #####################################################################
-
+# shellcheck disable=SC2154
+{
 info "__file: ${__file}"
 info "__dir: ${__dir}"
 info "__base: ${__base}"
@@ -122,7 +129,7 @@ info "-n (--no-color):         ${arg_n}"
 info "-P (--print-path):       ${arg_P}"
 info "-U (--print-url):        ${arg_U}"
 info "-V (--print-version):    ${arg_V}"
-
+}
 # Set OFP installation path to the value of the -i argument if present.
 # Otherwise, install OFP in the OpenCoarrays prerequisites/installations directory.
 opencoarrays_prerequisites_dir="${OPENCOARRAYS_SRC_DIR}"/prerequisites/
@@ -135,6 +142,7 @@ fi
 ofp_prereqs_install_dir="/opt"
 # Change present working directory to installation directory
 if [[ ! -d "${install_path}" ]]; then
+  # shellcheck source=./build-functions/set_SUDO_if_needed_to_write_to_directory.sh
   source "${opencoarrays_prerequisites_dir}/build-functions/set_SUDO_if_needed_to_write_to_directory.sh"
   set_SUDO_if_needed_to_write_to_directory "${install_path}"
   ${SUDO:-} mkdir -p "${install_path}"
@@ -153,6 +161,7 @@ export SDF2_PATH="${ofp_prereqs_install_dir}"/sdf2-bundle/v2.4/bin
 export ST_PATH="${ofp_prereqs_install_dir}"/strategoxt/v0.17/bin
 export DYLD_LIBRARY_PATH="${ofp_prereqs_install_dir}"/strategoxt/v0.17/lib:/opt/aterm/v2.5/lib
 
-OFP_HOME="${install_path}"/ofp-sdf
+export OFP_HOME="${install_path}"/ofp-sdf
+# shellcheck source=./install-binary-functions/build_parse_table.sh
 source "${opencoarrays_prerequisites_dir}"/install-binary-functions/build_parse_table.sh
 build_parse_table
