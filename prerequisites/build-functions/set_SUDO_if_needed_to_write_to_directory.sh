@@ -6,11 +6,11 @@ set_SUDO_if_needed_to_write_to_directory()
   else
     directory_to_create=$1
   fi
-  if [[ -z "${LD_LIBRARY_PATH:-}" ]]; then 
+  if [[ -z "${LD_LIBRARY_PATH:-}" ]]; then
      info "\${LD_LIBRARY_PATH} is empty. Try setting it if the compiler encounters linking problems."
   fi
   SUDO_COMMAND="sudo env LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-""}"
-  info "Checking whether the directory ${directory_to_create} exists... " 
+  info "Checking whether the directory ${directory_to_create} exists... "
   if [[ -d "${directory_to_create}" ]]; then
     info "yes"
     info "Checking whether I have write permissions to ${directory_to_create} ... "
@@ -27,6 +27,7 @@ set_SUDO_if_needed_to_write_to_directory()
       info "yes."
     else
       info "no."
+      # shellcheck disable=SC2034
       SUDO="${SUDO_COMMAND}"
     fi
   fi

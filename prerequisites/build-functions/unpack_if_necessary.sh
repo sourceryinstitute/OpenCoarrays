@@ -1,4 +1,5 @@
 # Unpack if the unpacked tar ball is not in the present working directory
+# shellcheck disable=SC2154
 unpack_if_necessary()
 {
   if [[ "${fetch}" == "svn" || "${fetch}" == "git" ]]; then
@@ -11,6 +12,7 @@ unpack_if_necessary()
     tar xf "${url_tail}"
     info "popd"
     popd
+    # shellcheck disable=SC2034
     package_source_directory="${package_name}-${version_to_build}"
   fi
 }
