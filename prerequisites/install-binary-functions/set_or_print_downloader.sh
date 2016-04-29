@@ -1,10 +1,11 @@
 # If -p, -P, -U, or -V specifies a package, set fetch variable
 # If -D specifies a package, print "${fetch}" and exit with normal status
 # If -l is present, list all packages and versions and exit with normal status
+# shellcheck disable=SC2154
 set_or_print_downloader()
 {
-  # Verify requirements 
-  if [[ ! -z "${arg_D}" ]]; then 
+  # Verify requirements
+  if [[ ! -z "${arg_D}" ]]; then
     if  [[ "${arg_N:-}" == "${__flag_present}" || ! -z "${arg_p:-${arg_P:-${arg_U:-${arg_V}}}}" ]]; then
       emergency "Please pass only one of {-D, -N, -p, -P, -U, -V} or a longer equivalent (multiple detected)."
     fi
@@ -22,8 +23,8 @@ set_or_print_downloader()
      if [[ "${package_name}" == "${KEY}" ]]; then
        # We recognize the package name so we set the download mechanism:
        fetch=${VALUE}
-       # If a printout of the download mechanism was requested, then print it and exit with normal status 
-       [[ ! -z "${arg_D}" ]] && printf "${fetch}\n" && exit 0
+       # If a printout of the download mechanism was requested, then print it and exit with normal status
+       [[ ! -z "${arg_D}" ]] && printf "%s\n" "${fetch}" && exit 0
        break # exit the for loop
      fi
   done

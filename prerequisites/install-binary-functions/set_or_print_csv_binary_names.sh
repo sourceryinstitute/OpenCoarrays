@@ -1,9 +1,10 @@
 # If -p, -P, -U, or -V specifies a package, set fetch variable
 # If -D specifies a package, print "${fetch}" and exit with normal status
 # If -l is present, list all packages and versions and exit with normal status
+# shellcheck disable=SC2154
 set_or_print_csv_binary_names()
 {
-  # Verify requirements 
+  # Verify requirements
   [ "${arg_N:-}" == "${__flag_present}" ] && [ ! -z "${arg_D:-${arg_p:-${arg_P:-${arg_U:-${arg_V}}}}}" ] &&
     emergency "Please pass only one of {-D, -N, -p, -P, -U, -V} or a longer equivalent (multiple detected)."
 
@@ -19,8 +20,8 @@ set_or_print_csv_binary_names()
      if [[ "${package_name}" == "${KEY}" ]]; then
        # We recognize the package name so we set the download mechanism:
        install_names=${VALUE}
-       # If a printout of the download mechanism was requested, then print it and exit with normal status 
-       [[ "${arg_N:-}" == "${__flag_present}" ]] && printf "${install_names}\n" && exit 0
+       # If a printout of the download mechanism was requested, then print it and exit with normal status
+       [[ "${arg_N:-}" == "${__flag_present}" ]] && printf "%s\n" "${install_names}" && exit 0
        break # exit the for loop
      fi
   done
