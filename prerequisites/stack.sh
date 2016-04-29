@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # A stack, using bash arrays.
 # ---------------------------------------------------------------------------
 # This software is released under a BSD license, adapted from
@@ -40,7 +41,7 @@
 # Usage: stack_destroy name
 function stack_destroy
 {
-    : ${1?'Missing stack name'}
+    : "${1?'Missing stack name'}"
     eval "unset _stack_$1 _stack_$1_i"
     return 0
 }
@@ -50,10 +51,10 @@ function stack_destroy
 # Usage: stack_push stack item ...
 function stack_push
 {
-    : ${1?'Missing stack name'}
-    : ${2?'Missing item(s) to push'}
+    : "${1?'Missing stack name'}"
+    : "${2?'Missing item(s) to push'}"
 
-    if no_such_stack $1
+    if no_such_stack "$1"
     then
         echo "No such stack -- $1" >&2
         return 1
@@ -84,9 +85,9 @@ function stack_push
 #    echo "Size is $n"
 function stack_size
 {
-    : ${1?'Missing stack name'}
-    : ${2?'Missing name of variable for stack size result'}
-    if no_such_stack $1
+    : "${1?'Missing stack name'}"
+    : "${2?'Missing name of variable for stack size result'}"
+    if no_such_stack "$1"
     then
         echo "No such stack -- $1" >&2
         return 1
@@ -96,8 +97,8 @@ function stack_size
 
 function no_such_stack
 {
-    : ${1?'Missing stack name'}
-    stack_exists $1
+    : "${1?'Missing stack name'}"
+    stack_exists "$1"
     ret=$?
     declare -i x
     let x="1-$ret"
@@ -124,12 +125,12 @@ function no_such_stack
 
 function stack_pop
 {
-    : ${1?'Missing stack name'}
-    : ${2?'Missing name of variable for popped result'}
+    : "${1?'Missing stack name'}"
+    : "${2?'Missing name of variable for popped result'}"
 
     eval 'let _i=$'"_stack_$1_i"
 
-    if no_such_stack $1
+    if no_such_stack "$1"
     then
         echo "No such stack -- $1" >&2
         return 1
@@ -158,24 +159,25 @@ function stack_pop
 
 function stack_print
 {
-    : ${1?'Missing stack name'}
+    : "${1?'Missing stack name'}"
 
-    if no_such_stack $1
+    if no_such_stack "$1"
     then
         echo "No such stack -- $1" >&2
         return 1
     fi
 
     tmp=""
-    eval 'let _i=$'_stack_$1_i
+    eval 'let _i=$'"_stack_$1_i"
 
-    while (( $_i > 0 ))
+    while (( _i > 0 ))
     do
-       (( _i=${_i}-1 )) || true
+       (( _i = _i - 1 )) || true
         eval 'e=$'"{_stack_$1[$_i]}"
+	# shellcheck  disable=SC2154
         tmp="$tmp $e"
     done
-
+    # shellcheck  disable=SC2086
     echo "(" $tmp ")"
 }
 
@@ -190,14 +192,14 @@ function stack_print
 
 function stack_new
 {
-    : ${1?'Missing stack name'}
-    if stack_exists $1
+    : "${1?'Missing stack name'}"
+    if stack_exists "$1"
     then
         echo "Stack already exists -- $1" >&2
         return 1
     fi
 
-    if [[ `uname` == "Darwin" ]]; then
+    if [[ $(uname) == "Darwin" ]]; then
       eval "declare -ag _stack_$1" >& /dev/null || true
       eval "declare -ig _stack_$1_i" >& /dev/null || true
     else
@@ -207,7 +209,7 @@ function stack_new
 
     variableName="_stack_$1_i"
     variableVal="0"
-    eval ${variableName}=`echo -ne \""${variableVal}"\"`
+    eval "${variableName}"="$(echo -ne \""${variableVal}"\")"
 
     return 0
 }
@@ -223,7 +225,7 @@ function stack_new
 
 function stack_exists
 {
-    : ${1?'Missing stack name'}
+    : "${1?'Missing stack name'}"
 
     eval '_i=$'"{_stack_$1_i:-}"
     if [[ -z "$_i" ]]
@@ -246,7 +248,8 @@ function stack_exists
 #    echo "Got $top"
 function stack_peek
 {
-  stack_pop $1 $2
-  eval argument_name=\$$2
-  stack_push $1 $argument_name
+  stack_pop "$1" "$2"
+  eval argument_name="\$$2"
+  # shellcheck disable=SC2154
+  stack_push "$1" "$argument_name"
 }
