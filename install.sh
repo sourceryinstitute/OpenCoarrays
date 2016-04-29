@@ -91,7 +91,8 @@ if [[ ! -f "${B3B_USE_CASE:-}/bootstrap.sh" ]]; then
   echo "Please set B3B_USE_CASE to the bash3boilerplate use-case directory path."
   exit 2
 else
-  source "${B3B_USE_CASE}/bootstrap.sh" "$@"
+    # shellcheck source=./prerequisites/use-case/bootstrap.sh
+    source "${B3B_USE_CASE}/bootstrap.sh" "$@"
 fi
 ### End of boilerplate -- start user edits below #########################
 
@@ -111,6 +112,7 @@ trap cleanup_before_exit EXIT # The signal is specified here. Could be SIGINT, S
 
 [ -z "${LOG_LEVEL:-}" ] && emergency "Cannot continue without LOG_LEVEL. "
 
+# shellcheck disable=SC2154
 if [[ "${arg_v}" == "${__flag_present}" || "${arg_l}" == "${__flag_present}" || ! -z "${arg_P:-${arg_U:-${arg_V:-${arg_D}}}}" ]]; then
    print_debug_only=7
    if [ "$(( LOG_LEVEL < print_debug_only ))" -ne 0 ]; then
@@ -131,7 +133,8 @@ fi
 ### Print bootstrapped magic variables to STDERR when LOG_LEVEL
 ### is at the default value (6) or above.
 #####################################################################
-
+# shellcheck disable=SC2154
+{
 info "__file: ${__file}"
 info "__dir: ${__dir}"
 info "__base: ${__base}"
@@ -158,7 +161,7 @@ info  "-P (--print-path):       ${arg_P}"
 info  "-U (--print-url):        ${arg_U}"
 info  "-v (--version):          ${arg_v}"
 info  "-V (--print-version):    ${arg_V}"
-
+}
 # This file is organized into three sections:
 # 1. Command-line argument and environment variable processing.
 # 2. Function definitions.
@@ -182,7 +185,8 @@ info  "-V (--print-version):    ${arg_V}"
 
 # __________ Process command-line arguments and environment variables _____________
 
-export this_script=`basename $0`
+this_script="$(basename "$0")"
+export this_script
 
 export install_path="${arg_i}/${arg_p}"
 info "install_path=${arg_i}/${arg_p}"
@@ -204,15 +208,19 @@ info "build_script=$opencoarrays_src_dir/prerequisites/build.sh"
 
 # Include stack management functions
 #. ./prerequisites/stack.sh
+# shellcheck source=./prerequisites/stack.sh
 source $opencoarrays_src_dir/prerequisites/stack.sh
 stack_new dependency_pkg
 stack_new dependency_exe
 stack_new dependency_path
 stack_new script_installed
-
+# shellcheck source=./prerequisites/install-functions/find_or_install.sh
 source $opencoarrays_src_dir/prerequisites/install-functions/find_or_install.sh
+# shellcheck source=./prerequisites/install-functions/print_header.sh
 source $opencoarrays_src_dir/prerequisites/install-functions/print_header.sh
+# shellcheck source=./prerequisites/install-functions/build_opencoarrays.sh
 source $opencoarrays_src_dir/prerequisites/install-functions/build_opencoarrays.sh
+# shellcheck source=./prerequisites/install-functions/report_results.sh
 source $opencoarrays_src_dir/prerequisites/install-functions/report_results.sh
 
 # ___________________ End of function definitions for use in the Main Body __________________
@@ -224,7 +232,7 @@ source $opencoarrays_src_dir/prerequisites/install-functions/report_results.sh
 if [[ "${arg_v}" == "${__flag_present}" || "${arg_V}" == "opencoarrays" ]]; then
 
   # Print script copyright if invoked with -v, -V, or --version argument
-  cmake_project_line=`grep project CMakeLists.txt | grep VERSION`
+  cmake_project_line=$(grep project CMakeLists.txt | grep VERSION)
   text_after_version_keyword="${cmake_project_line##*VERSION}"
   text_before_language_keyword="${text_after_version_keyword%%LANGUAGES*}"
   opencoarrays_version=$text_before_language_keyword
@@ -256,14 +264,15 @@ elif [[ ! -z "${arg_D:-${arg_P:-${arg_U:-${arg_V}}}}" ||  "${arg_l}" == "${__fla
   "${opencoarrays_src_dir}"/prerequisites/build.sh "${build_flag}" "${build_arg}"
   # Add lines other packages the current script builds
   if [[ "${arg_l}" == "${__flag_present}" ]]; then
-    echo "opencoarrays (version `${opencoarrays_src_dir}/install.sh -V opencoarrays`)"
+    echo "opencoarrays (version $("${opencoarrays_src_dir}/install.sh" -V opencoarrays))"
     echo "ofp (version: ofp-sdf for OS X )"
   fi
 
 elif [[ "${arg_p:-}" == "opencoarrays" ]]; then
 
-  cd prerequisites
+  cd prerequisites || exit 1
   installation_record=install-opencoarrays.log
+  # shellcheck source=./prerequisites/build-functions/set_SUDO_if_needed_to_write_to_directory.sh
   source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/set_SUDO_if_needed_to_write_to_directory.sh"
   set_SUDO_if_needed_to_write_to_directory "${install_path}"
   build_opencoarrays 2>&1 | tee ../"${installation_record}"
