@@ -8,7 +8,7 @@ build_opencoarrays()
   find_or_install cmake
   mkdir -p "$build_path"
   pushd "$build_path"
-  if [[ -z "$MPICC" || -z "$MPIFC" || -z "$CMAKE" ]]; then
+  if [[ -z "${MPICC:-}" || -z "${MPIFC:-}" || -z "${CMAKE:-}" ]]; then
     emergency "Empty MPICC=$MPICC or MPIFC=$MPIFC or CMAKE=$CMAKE [exit 90]"
   else
     info "Configuring OpenCoarrays in ${PWD} with the command:"
