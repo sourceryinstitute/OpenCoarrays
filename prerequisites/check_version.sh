@@ -33,13 +33,13 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 # Interpret the first argument as the package executable name
-package=$1
+package="$1"
 # Interpret the second argument as the minimimum acceptable package version number
-minimum_version=$2
+minimum_version="$2"
 # Interpret the third argument as indicating the desired verbosity
 verbose=$3
 
-this_script=`basename $0`
+this_script=$(basename "$0")
 
 usage()
 {
@@ -58,31 +58,31 @@ usage()
     echo ""
     echo "   $this_script cmake 3.4.0"
     echo "   $this_script flex 2.6.0 --verbose"
-    echo "   $this_script flex `./build flex --default --query-version`"
+    echo "   $this_script flex $(./build.sh -V flex )"
     echo "   $this_script --help"
     echo "   $this_script --list"
     echo ""
     echo "[exit 10]"
     exit 10
-}  
+}
 
 # Print usage information and exit if script is invoked without arguments or with --help or -h as the first argument
 if [ $# == 0 ]; then
   usage | less
-  exit 20 
+  exit 20
 
 elif [[ $1 == '--help' || $1 == '-h' ]]; then
   usage | less
-  exit 30 
+  exit 0
 
 elif [[ $1 == '--list' || $1 == '-l' ]]; then
  echo "$this_script currently verifies minimum version numbers for the following OpenCoarrays prerequisites:"
  echo "   cmake, flex, bison, m4"
- exit 40 
+ exit 40
 
 elif [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
   # Print script copyright if invoked with -v, -V, or --version argument
-  cmake_project_line=`grep project ../CMakeLists.txt | grep VERSION`
+  cmake_project_line=$(grep project ../CMakeLists.txt | grep VERSION)
   text_after_version_keyword="${cmake_project_line##*VERSION}"
   text_before_language_keyword="${text_after_version_keyword%%LANGUAGES*}"
   opencoarrays_version=$text_before_language_keyword
@@ -99,9 +99,9 @@ elif [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
   echo ""
 fi
 
-package_version_header=`$1 --version | head -1`
+package_version_header=$($package --version | head -1)
 if [[ "$verbose" == "--verbose" ]]; then
-  echo $package_version_header
+  echo "$package_version_header"
 fi
 
 # Extract the text after the final space:

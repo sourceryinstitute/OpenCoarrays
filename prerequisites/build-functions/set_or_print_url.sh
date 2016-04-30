@@ -1,8 +1,9 @@
 # If -p, -D, -P, or -V specifies a package, set package_url
 # If -U specifies a package, print the package_url and exit with normal status
+# shellcheck disable=SC2154
 set_or_print_url()
 {
-  # Verify requirements 
+  # Verify requirements
   [ ! -z "${arg_U}" ] && [ ! -z "${arg_D:-${arg_p:-${arg_P:-${arg_V}}}}" ] &&
     emergency "Please pass only one of {-D, -p, -P, -U, -V} or a longer equivalent (multiple detected)."
 
@@ -76,9 +77,9 @@ set_or_print_url()
 
   package_url="${url_head}""${url_tail}"
 
-  # If a printout of the package URL was requested, then print it and exit with normal status 
-  if [[ ! -z "${arg_U:-}" ]]; then 
-    printf "${package_url}\n" 
+  # If a printout of the package URL was requested, then print it and exit with normal status
+  if [[ ! -z "${arg_U:-}" ]]; then
+    printf "%s\n" "${package_url}"
     exit 0
   fi
 }

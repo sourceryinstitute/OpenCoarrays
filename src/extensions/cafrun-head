@@ -4,7 +4,7 @@
 #
 # Copyright (c) 2015-2016, Sourcery, Inc.
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #     * Redistributions of source code must retain the above copyright
@@ -15,7 +15,7 @@
 #     * Neither the name of the Sourcery, Inc., nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -25,11 +25,11 @@
 # LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
- 
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 # This script invokes the chosen Fortran compiler with the received command-line
 # arguments.  Current assumptions:
 #    1. The only argument is either an informational flag or a CAF executable
-#       file. 
-#    2. The environment variable "FC" is used to determine the identity fo the Fortran compiler/linker. 
-#    3. If "FC" is empty, a default value of "mpif90" is used. 
+#       file.
+#    2. The environment variable "FC" is used to determine the identity fo the Fortran compiler/linker.
+#    3. If "FC" is empty, a default value of "mpif90" is used.

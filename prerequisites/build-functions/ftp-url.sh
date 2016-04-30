@@ -1,9 +1,9 @@
-# Download a file from an anonymous ftp site 
+# Download a file from an anonymous ftp site
 #
 # Usage:
 #    ftp-url  <ftp-mode>  <ftp-site-address>:/<path-to-file>/<file-name>
 #
-# Example:  
+# Example:
 #    ftp-url -n ftp.gnu.org:/gnu/m4/m4-1.4.17.tar.bz2
 ftp-url()
 {

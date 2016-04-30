@@ -150,7 +150,7 @@ script:
       ln -fs "$(which gcc-5)" "$HOME/bin/gcc"
       ln -fs "$(which g++-5)" "$HOME/bin/g++"
       export PATH="$PATH:$HOME/bin"
-      yes | ./install.sh $HOME/opt/opencoarrays 4 > install.log &
+      yes | ./install.sh --install-dir="$HOME/opt/opencoarrays" -j 4 > install.log &
       install_sh_PID=$!
       echo "install.log will be displayed after success or failure"
       while ps -p $install_sh_PID > /dev/null; do
