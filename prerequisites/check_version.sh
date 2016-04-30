@@ -73,7 +73,7 @@ if [ $# == 0 ]; then
 
 elif [[ $1 == '--help' || $1 == '-h' ]]; then
   usage | less
-  exit 30
+  exit 0
 
 elif [[ $1 == '--list' || $1 == '-l' ]]; then
  echo "$this_script currently verifies minimum version numbers for the following OpenCoarrays prerequisites:"
