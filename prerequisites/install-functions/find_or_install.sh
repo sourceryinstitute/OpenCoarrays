@@ -503,7 +503,7 @@ find_or_install()
           exit 76
         fi
       # Otherwise, if no CXX has been defined yet, use the g++ in the user's PATH
-      elif [[ -z "$CC" ]]; then
+      elif [[ -z "$CXX" ]]; then
         CXX=g++
       fi
 
