@@ -1,4 +1,4 @@
-cmd=`basename $0`
+cmd=$(basename "$0")
 
 usage()
 {
@@ -24,7 +24,7 @@ usage()
     echo " 1. With an OpenCoarrays-Aware (OCA) compiler (GNU 5.1.0 or later),"
     echo "   a. If any of the options listed above appear, any remaining arguments are ignored."
     echo "   b. If present, <fortran-source-file> must"
-    echo "      * be a Fortran source file," 
+    echo "      * be a Fortran source file,"
     echo "      * appear before all other arguments,"
     echo "      * be the only Fortran source file in the argument list,"
     echo "      * have a name of the form *.f90, *.F90, *.f, or *.F. "
@@ -87,28 +87,28 @@ elif [[ $1 == '-h' || $1 == '--help' ]]; then
   exit 1
 elif [ "$caf_compiler" = "true" ]; then
   # Nothing to do other than invoke the compiler with all the command-line arguments:
-  $CAFC "$@" -L $caf_lib_dir $link_args
+  $CAFC "$@" -L "$caf_lib_dir" $link_args
 else
   # Verify that a file with the .f90, .F90, .f, or .F extension is the first argument:
-  src_extension=`echo "$1" | cut -f2 -d'.'`
+  src_extension=$(echo "$1" | cut -f2 -d'.')
   if [[ $src_extension == 'f90' || $src_extension == 'F90' || $src_extension == 'f' || $src_extension == 'F' ]]; then
     # copy the source file into a new file for pre-processing (preprending "caf-" to the new file name):
-    cp $1 caf-$1
+    cp "$1" "caf-$1"
     # Edit the copied source to replace CAF syntax with calls to public procedures in opencoarrays.f90:
     if [ "$linux" = "true" ]; then
-      sed -i'' 's/sync all/call sync_all/g' caf-$1
-      sed -i'' 's/error stop/call error_stop/g' caf-$1
-      sed -i'' 's/sync images/call sync_images/g' caf-$1
+      sed -i'' 's/sync all/call sync_all/g' "caf-$1"
+      sed -i'' 's/error stop/call error_stop/g' "caf-$1"
+      sed -i'' 's/sync images/call sync_images/g' "caf-$1"
     else
       # This works on OS X and other POSIX-compliant operating systems:
-      sed -i '' 's/sync all/call sync_all/g' caf-$1
-      sed -i '' 's/error stop/call error_stop/g' caf-$1
-      sed -i '' 's/sync images/call sync_images/g' caf-$1
+      sed -i '' 's/sync all/call sync_all/g' "caf-$1"
+      sed -i '' 's/error stop/call error_stop/g' "caf-$1"
+      sed -i '' 's/sync images/call sync_images/g' "caf-$1"
     fi
     # Replace the file name in command-line argment 1 with the new name beofre invoking the compiler:
-    set -- "caf-$1" "${@:2:max_arguments}"
+    set -- "caf-$1" "${@:2:$max_arguments}"
     # Invoke the compiler along with all command-line arguments:
-    $CAFC "$@" -L $caf_lib_dir -I $caf_mod_dir $link_args
+    $CAFC "$@" -L "$caf_lib_dir" -I "$caf_mod_dir" $link_args
   else
     # Print usage information upon encountering an unknowon CAF source file extension
     usage | less
