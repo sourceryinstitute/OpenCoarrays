@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 # A stack, using bash arrays.
 # ---------------------------------------------------------------------------
 # This software is released under a BSD license, adapted from

@@ -1,3 +1,4 @@
+# shellcheck disable=SC2154,SC2129
 report_results()
 {
   # Report installation success or failure:
@@ -22,7 +23,7 @@ report_results()
     echo "# Execute this script via the following command:                       " >> setup.sh
     echo "# source $install_path/setup.sh                                        " >> setup.sh
     echo "                                                                       " >> setup.sh
-    gcc_install_path=`"${build_script}" -P gcc`
+    gcc_install_path=$("${build_script}" -P gcc)
     if [[ -x "$gcc_install_path/bin/gfortran" ]]; then
       echo "if [[ -z \"\$PATH\" ]]; then                                         " >> setup.sh
       echo "  export PATH=\"$gcc_install_path/bin\"                              " >> setup.sh
@@ -39,7 +40,7 @@ report_results()
       echo "fi                                                                   " >> setup.sh
     fi
     echo "                                                                       " >> setup.sh
-    mpich_install_path=`"${build_script}" -P mpich`
+    mpich_install_path=$("${build_script}" -P mpich)
     if [[ -x "$mpich_install_path/bin/mpif90" ]]; then
       echo "if [[ -z \"\$PATH\" ]]; then                                         " >> setup.sh
       echo "  export PATH=\"$mpich_install_path/bin\"                            " >> setup.sh
@@ -47,7 +48,7 @@ report_results()
       echo "  export PATH=\"$mpich_install_path/bin\":\$PATH                     " >> setup.sh
       echo "fi                                                                   " >> setup.sh
     fi
-    cmake_install_path=`"${build_script}" -P cmake`
+    cmake_install_path=$("${build_script}" -P cmake)
     if [[ -x "$cmake_install_path/bin/cmake" ]]; then
       echo "if [[ -z \"\$PATH\" ]]; then                                         " >> setup.sh
       echo "  export PATH=\"$cmake_install_path/bin\"                            " >> setup.sh
@@ -55,7 +56,7 @@ report_results()
       echo "  export PATH=\"$cmake_install_path/bin\":\$PATH                     " >> setup.sh
       echo "fi                                                                   " >> setup.sh
     fi
-    flex_install_path=`"${build_script}" -P flex`
+    flex_install_path=$("${build_script}" -P flex)
     if [[ -x "$flex_install_path/bin/flex" ]]; then
       echo "if [[ -z \"\$PATH\" ]]; then                                         " >> setup.sh
       echo "  export PATH=\"$flex_install_path/bin\"                             " >> setup.sh
@@ -63,7 +64,7 @@ report_results()
       echo "  export PATH=\"$flex_install_path/bin\":\$PATH                      " >> setup.sh
       echo "fi                                                                   " >> setup.sh
     fi
-    bison_install_path=`"${build_script}" -P bison`
+    bison_install_path=$("${build_script}" -P bison)
     if [[ -x "$bison_install_path/bin/yacc" ]]; then
       echo "if [[ -z \"\$PATH\" ]]; then                                         " >> setup.sh
       echo "  export PATH=\"$bison_install_path/bin\"                            " >> setup.sh
@@ -71,7 +72,7 @@ report_results()
       echo "  export PATH=\"$bison_install_path/bin\":\$PATH                     " >> setup.sh
       echo "fi                                                                   " >> setup.sh
     fi
-    m4_install_path=`"${build_script}" -P m4`
+    m4_install_path=$("${build_script}" -P m4)
     if [[ -x "$m4_install_path/bin/m4" ]]; then
       echo "if [[ -z \"\$PATH\" ]]; then                                         " >> setup.sh
       echo "  export PATH=\"$m4_install_path/bin\"                               " >> setup.sh
@@ -87,7 +88,7 @@ report_results()
       echo "  export PATH=\"$opencoarrays_install_path/bin\":\$PATH              " >> setup.sh
       echo "fi                                                                   " >> setup.sh
     fi
-    if ${SUDO:-} mv setup.sh $opencoarrays_install_path; then
+    if ${SUDO:-} mv setup.sh "$opencoarrays_install_path"; then
        setup_sh_location=$opencoarrays_install_path
     else
        setup_sh_location=${PWD}

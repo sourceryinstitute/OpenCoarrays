@@ -1,3 +1,4 @@
+# shellcheck disable=SC2154
 build_opencoarrays()
 {
   print_header
@@ -5,8 +6,8 @@ build_opencoarrays()
   find_or_install mpich
   info "find_or_install cmake"
   find_or_install cmake
-  mkdir -p $build_path
-  pushd $build_path
+  mkdir -p "$build_path"
+  pushd "$build_path"
   if [[ -z "$MPICC" || -z "$MPIFC" || -z "$CMAKE" ]]; then
     emergency "Empty MPICC=$MPICC or MPIFC=$MPIFC or CMAKE=$CMAKE [exit 90]"
   else
@@ -14,7 +15,7 @@ build_opencoarrays()
     info "CC=\"${MPICC}\" FC=\"${MPIFC}\" $CMAKE \"${opencoarrays_src_dir}\" -DCMAKE_INSTALL_PREFIX=\"${install_path}\""
     CC="${MPICC}" FC="${MPIFC}" $CMAKE "${opencoarrays_src_dir}" -DCMAKE_INSTALL_PREFIX="${install_path}"
     info "Building OpenCoarrays in ${PWD} with the command make -j${num_threads}"
-    make -j${num_threads}
+    make "-j${num_threads}"
     if [[ ! -z ${SUDO:-} ]]; then
       printf "\nThe chosen installation path requires sudo privileges. Please enter password if prompted.\n"
     fi
