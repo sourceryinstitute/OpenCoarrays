@@ -1,16 +1,15 @@
-#!/usr/bin/env bash
 # BASH3 Boilerplate
 #
 #  set_environment_and_color.sh
 #
 #  - Sets variables that control the behavior of the invoking script.
 #  - Contains commands extracted from the bash3boilerplate main.sh as
-#    part of a refactoring to facilitate wholesale reuse of main.sh's 
+#    part of a refactoring to facilitate wholesale reuse of main.sh's
 #    contents of without modification.
 #
-# Usage (as invoked in bootstrap.sh): 
+# Usage (as invoked in bootstrap.sh):
 #
-#  source set_environment_and_color.sh  
+#  source set_environment_and_color.sh
 #
 # More info:
 #

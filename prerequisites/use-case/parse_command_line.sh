@@ -1,11 +1,10 @@
-#!/usr/bin/env bash
 # BASH3 Boilerplate
 #
 #  parse_command_line.sh
 #
 #  - Uses usage information defined in "${__usage}" to parse the command line.
 #  - Defines a function containing commands extracted from the bash3boilerplate
-#    main.sh as part of a refactoring to facilitate wholesale reuse of main.sh's 
+#    main.sh as part of a refactoring to facilitate wholesale reuse of main.sh's
 #    contents of without modification.
 #
 # More info:
@@ -25,7 +24,7 @@
 # Usage (as invoked in bootstraph.sh):
 #
 #   source parse_command_line.sh
-#   parse_command_line ${@:2}   
+#   parse_command_line ${@:2}
 #
 # Licensed under MIT
 # Copyright (c) 2013 Kevin van Zonneveld (http://kvz.io)
@@ -36,13 +35,14 @@ function parse_command_line(){
 # source this script and pass $@ as the argument
 
 # Translate usage string -> getopts arguments, and set $arg_<flag> defaults
-while read line; do
+# shellcheck disable=SC2154
+while read -r line; do
   # fetch single character version of option string
   opt="$(echo "${line}" |awk '{print $1}' |sed -e 's#^-##')"
 
   # fetch long version if present
   long_opt="$(echo "${line}" |awk '/\-\-/ {print $2}' |sed -e 's#^--##')"
-  long_opt_mangled="$(sed 's#-#_#g' <<< $long_opt)"
+  long_opt_mangled="$(sed 's#-#_#g' <<< "$long_opt")"
 
   # map long name back to short name
   varname="short_opt_${long_opt_mangled}"
@@ -69,6 +69,7 @@ while read line; do
   fi
 done < "${__usage}"
 
+
 # Allow long options like --this
 opts="${opts}-:"
 
@@ -80,21 +81,21 @@ set +o nounset # unexpected arguments will cause unbound variables
                # to be dereferenced
 # Overwrite $arg_<flag> defaults with the actual CLI options
 while getopts "${opts}" opt; do
-  [ "${opt}" = "?" ] && help "Invalid use of script: ${@} "
+  [ "${opt}" = "?" ] && help "Invalid use of script: ${*} "
 
   if [ "${opt}" = "-" ]; then
     # OPTARG is long-option-name or long-option=value
     if [[ "${OPTARG}" =~ .*=.* ]]; then
       # --key=value format
       long=${OPTARG/=*/}
-      long_mangled="$(sed 's#-#_#g' <<< $long)"
+      long_mangled="$(sed 's#-#_#g' <<< "$long")"
       # Set opt to the short option corresponding to the long option
       eval "opt=\"\${short_opt_${long_mangled}}\""
       OPTARG=${OPTARG#*=}
     else
       # --key value format
       # Map long name to short version of option
-      long_mangled="$(sed 's#-#_#g' <<< $OPTARG)"
+      long_mangled="$(sed 's#-#_#g' <<< "$OPTARG")"
       eval "opt=\"\${short_opt_${long_mangled}}\""
       # Only assign OPTARG if option takes an argument
       eval "OPTARG=\"\${@:OPTIND:\${has_arg_${opt}}}\""
@@ -119,6 +120,7 @@ set -o nounset # no more unbound variable references expected
 
 shift $((OPTIND-1))
 
+# shellcheck disable=SC2015
 [ "${1:-}" = "--" ] && shift || true
 }
 export -f parse_command_line # make function available to subshells

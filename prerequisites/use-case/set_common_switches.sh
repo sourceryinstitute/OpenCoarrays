@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 # BASH3 Boilerplate
 #
 #  set_common_switches.sh
@@ -31,6 +30,8 @@
 ### Switches (like -d for debugmode, -h for showing helppage)
 #####################################################################
 
+# shellcheck disable=SC2154
+{
 # debug mode
 if [ "${arg_d}" = "1" ]; then
   set -o xtrace
@@ -47,3 +48,4 @@ if [ "${arg_h}" = "1" ]; then
   # Help exists with code 1
   help "Help using ${0}"
 fi
+}
