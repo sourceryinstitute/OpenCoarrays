@@ -182,7 +182,7 @@ find_or_install()
       export CC=$package_install_path/bin/gcc
       export CXX=$package_install_path/bin/g++
       gfortran_lib_paths="$package_install_path/lib64/:$package_install_path/lib"
-      if [[ -z "$LD_LIBRARY_PATH" ]]; then
+      if [[ -z "${LD_LIBRARY_PATH:-}" ]]; then
         echo "$this_script: export LD_LIBRARY_PATH=\"$gfortran_lib_paths\""
                             export LD_LIBRARY_PATH="$gfortran_lib_paths"
       else
@@ -421,7 +421,7 @@ find_or_install()
     fi
 
   else
-    if [[ -z "$package" ]]; then
+    if [[ -z "${package:-}" ]]; then
       echo -e "$this_script: empty package name passed to find_or_install function. [exit 50]\n"
       exit 50
     else
@@ -489,7 +489,7 @@ find_or_install()
           exit 75
         fi
       # Otherwise, if no CC has been defined yet, use the gcc in the user's PATH
-      elif [[ -z "$CC" ]]; then
+      elif [[ -z "${CC:-}" ]]; then
         CC=gcc
       fi
 
@@ -503,12 +503,12 @@ find_or_install()
           exit 76
         fi
       # Otherwise, if no CXX has been defined yet, use the g++ in the user's PATH
-      elif [[ -z "$CXX" ]]; then
+      elif [[ -z "${CXX:-}" ]]; then
         CXX=g++
       fi
 
       # If no FC has been defined yet, use the gfortran in the user's PATH
-      if [[ -z "$FC" ]]; then
+      if [[ -z "${FC:-}" ]]; then
         FC=gfortran
       fi
 
@@ -544,7 +544,7 @@ find_or_install()
           echo "$this_script: export CXX=$package_install_path/bin/g++"
                               export CXX="$package_install_path/bin/g++"
           gfortran_lib_paths="$package_install_path/lib64/:$package_install_path/lib"
-          if [[ -z "$LD_LIBRARY_PATH" ]]; then
+          if [[ -z "${LD_LIBRARY_PATH:-}" ]]; then
             export LD_LIBRARY_PATH="$gfortran_lib_paths"
           else
             export LD_LIBRARY_PATH="$gfortran_lib_paths:$LD_LIBRARY_PATH"
@@ -562,7 +562,7 @@ find_or_install()
           echo -e "$this_script:          could prevent a complete build of OpenCoarrays. Please report this\n"
           echo -e "$this_script:          issue at https://github.com/sourceryinstitute/opencoarrays/issues\n"
         fi
-        if [[ -z "$PATH" ]]; then
+        if [[ -z "${PATH:-}" ]]; then
           export PATH="$package_install_path/bin"
         else
           export PATH="$package_install_path/bin:$PATH"

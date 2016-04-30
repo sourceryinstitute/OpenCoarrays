@@ -227,7 +227,7 @@ function stack_exists
     : "${1?'Missing stack name'}"
 
     eval '_i=$'"{_stack_$1_i:-}"
-    if [[ -z "$_i" ]]
+    if [[ -z "${_i:-}" ]]
     then
         return 1
     else
