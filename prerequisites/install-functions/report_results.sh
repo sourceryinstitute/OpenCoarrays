@@ -15,14 +15,20 @@ report_results()
     if [[ -f setup.sh ]]; then
       ${SUDO:-} rm setup.sh
     fi
+    if [[ -f setup.csh ]]; then
+      ${SUDO:-} rm setup.csh
+    fi
     # Prepend the OpenCoarrays license to the setup.sh script:
     while IFS='' read -r line || [[ -n "$line" ]]; do
         echo "# $line" >> setup.sh
     done < "${opencoarrays_src_dir}/LICENSE"
-    echo "#                                                                      " >> setup.sh
-    echo "# Execute this script via the following command:                       " >> setup.sh
-    echo "# source $install_path/setup.sh                                        " >> setup.sh
-    echo "                                                                       " >> setup.sh
+    while IFS='' read -r line || [[ -n "$line" ]]; do
+        echo "# $line" >> setup.csh
+    done < "${opencoarrays_src_dir}/LICENSE"
+    echo "#                                                                      " | tee -a setup.csh setup.sh
+    echo "# Execute this script via the following command:                       " | tee -a setup.csh setup.sh
+    echo "# source $install_path/setup.sh                                        " | tee -a setup.csh setup.sh
+    echo "                                                                       " | tee -a setup.csh setup.sh
     gcc_install_path=$("${build_script}" -P gcc)
     if [[ -x "$gcc_install_path/bin/gfortran" ]]; then
       echo "if [[ -z \"\$PATH\" ]]; then                                         " >> setup.sh
@@ -30,6 +36,7 @@ report_results()
       echo "else                                                                 " >> setup.sh
       echo "  export PATH=\"$gcc_install_path/bin:\$PATH\"                       " >> setup.sh
       echo "fi                                                                   " >> setup.sh
+      echo "set path = (\"$gcc_install_path\"/bin "\$path")                      " >> setup.csh
     fi
     if [[ -d "$gcc_install_path/lib" || -d "$gcc_install_path/lib64" ]]; then
       gfortran_lib_paths="$gcc_install_path/lib64/:$gcc_install_path/lib"
@@ -38,6 +45,7 @@ report_results()
       echo "else                                                                 " >> setup.sh
       echo "  export LD_LIBRARY_PATH=\"$gfortran_lib_paths:\$LD_LIBRARY_PATH\"   " >> setup.sh
       echo "fi                                                                   " >> setup.sh
+      echo "set LD_LIBRARY_PATH = (\"$gfortran_lib_paths\"/bin "\$LD_LIBRARY_PATH")                      " >> setup.csh
     fi
     echo "                                                                       " >> setup.sh
     mpich_install_path=$("${build_script}" -P mpich)
@@ -47,6 +55,7 @@ report_results()
       echo "else                                                                 " >> setup.sh
       echo "  export PATH=\"$mpich_install_path/bin\":\$PATH                     " >> setup.sh
       echo "fi                                                                   " >> setup.sh
+      echo "set path = (\"$mpich_install_path\"/bin "\$path")                      " >> setup.csh
     fi
     cmake_install_path=$("${build_script}" -P cmake)
     if [[ -x "$cmake_install_path/bin/cmake" ]]; then
@@ -55,6 +64,7 @@ report_results()
       echo "else                                                                 " >> setup.sh
       echo "  export PATH=\"$cmake_install_path/bin\":\$PATH                     " >> setup.sh
       echo "fi                                                                   " >> setup.sh
+      echo "set path = (\"$cmake_install_path\"/bin "\$path")                      " >> setup.csh
     fi
     flex_install_path=$("${build_script}" -P flex)
     if [[ -x "$flex_install_path/bin/flex" ]]; then
@@ -62,6 +72,7 @@ report_results()
       echo "  export PATH=\"$flex_install_path/bin\"                             " >> setup.sh
       echo "else                                                                 " >> setup.sh
       echo "  export PATH=\"$flex_install_path/bin\":\$PATH                      " >> setup.sh
+      echo "set path = (\"$flex_install_path\"/bin "\$path")                      " >> setup.csh
       echo "fi                                                                   " >> setup.sh
     fi
     bison_install_path=$("${build_script}" -P bison)
@@ -71,6 +82,7 @@ report_results()
       echo "else                                                                 " >> setup.sh
       echo "  export PATH=\"$bison_install_path/bin\":\$PATH                     " >> setup.sh
       echo "fi                                                                   " >> setup.sh
+      echo "set path = (\"$bison_install_path\"/bin "\$path")                      " >> setup.csh
     fi
     m4_install_path=$("${build_script}" -P m4)
     if [[ -x "$m4_install_path/bin/m4" ]]; then
@@ -79,6 +91,7 @@ report_results()
       echo "else                                                                 " >> setup.sh
       echo "  export PATH=\"$m4_install_path/bin\":\$PATH                        " >> setup.sh
       echo "fi                                                                   " >> setup.sh
+      echo "set path = (\"$m4_install_path\"/bin "\$path")                      " >> setup.csh
     fi
     opencoarrays_install_path="${install_path}"
     if [[ -x "$opencoarrays_install_path/bin/caf" ]]; then
@@ -87,17 +100,25 @@ report_results()
       echo "else                                                                 " >> setup.sh
       echo "  export PATH=\"$opencoarrays_install_path/bin\":\$PATH              " >> setup.sh
       echo "fi                                                                   " >> setup.sh
+      echo "set path = (\"$opencoarrays_install_path\"/bin "\$path")                      " >> setup.csh
     fi
     if ${SUDO:-} mv setup.sh "$opencoarrays_install_path"; then
        setup_sh_location=$opencoarrays_install_path
     else
        setup_sh_location=${PWD}
     fi
-    echo "*** Before using caf, cafrun, or build, please execute the following command ***"
-    echo "*** or add it to your login script and launch a new shell (or the equivalent ***"
-    echo "*** for your shell if you are not using a bash shell):                       ***"
+    if ${SUDO:-} mv setup.csh "$opencoarrays_install_path"; then
+       setup_csh_location=$opencoarrays_install_path
+    else
+       setup_csh_location=${PWD}
+    fi
+    echo "*** To set up your environment for using caf and cafrun, please   ***"
+    echo "*** source the installed setup.sh file in a bash shell  setup.csh ***"
+    echo "*** if you use a C-shell as follows (or add one of the following  ***"
+    echo "*** statements to your login file:                                 ***"
     echo ""
     echo " source $setup_sh_location/setup.sh"
+    echo " source $setup_csh_location/setup.csh"
     echo ""
     echo "*** Installation complete.                                                   ***"
 
