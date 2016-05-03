@@ -134,7 +134,7 @@ find_or_install()
         stack_push dependency_path "none" "$(./build.sh -P "$package")" "$(./build.sh -P gcc)"
       else
         printf "yes.\n"
-        echo -e "$this_script: Checking whether $executable in PATH wraps gfortran version 5.3.0 or later... "
+        echo -e "$this_script: Checking whether $executable in PATH wraps gfortran version `./build.sh -V gcc` or later... "
         $executable acceptable_compiler.f90 -o acceptable_compiler
         $executable print_true.f90 -o print_true
         acceptable=$(./acceptable_compiler)
@@ -203,7 +203,7 @@ find_or_install()
       stack_push dependency_path "none"
 
     elif [[ "$package_in_path" == "true" ]]; then
-      echo -e "$this_script: Checking whether $executable in PATH is version 5.3.0 or later..."
+      echo -e "$this_script: Checking whether $executable in PATH is version `./build.sh -V gcc` or later..."
       $executable -o acceptable_compiler acceptable_compiler.f90
       $executable -o print_true print_true.f90
       is_true=$(./print_true)
