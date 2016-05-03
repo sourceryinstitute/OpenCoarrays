@@ -284,7 +284,7 @@ elif [[ "${arg_p:-}" == "ofp" ]]; then
 
 elif [[ ! -z "${arg_p:-}" ]]; then
 
-  "${opencoarrays_src_dir}"/prerequisites/build.sh -p "${arg_p}"
+  "${opencoarrays_src_dir}"/prerequisites/build.sh ${@:-}
 
 fi
 # ____________________________________ End of Main Body ____________________________________________
