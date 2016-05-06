@@ -9,7 +9,7 @@ set_SUDO_if_needed_to_write_to_directory()
   if [[ -z "${LD_LIBRARY_PATH:-}" ]]; then
      info "\${LD_LIBRARY_PATH} is empty. Try setting it if the compiler encounters linking problems."
   fi
-  SUDO_COMMAND="sudo env LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-""}"
+  SUDO_COMMAND="sudo env LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-} PATH=${PATH:-}"
   info "Checking whether the directory ${directory_to_create} exists... "
   if [[ -d "${directory_to_create}" ]]; then
     info "yes"

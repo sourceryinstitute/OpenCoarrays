@@ -134,15 +134,18 @@ find_or_install()
         stack_push dependency_path "none" "$(./build.sh -P "$package")" "$(./build.sh -P gcc)"
       else
         printf "yes.\n"
+
         echo -e "$this_script: Checking whether $executable in PATH wraps gfortran version `./build.sh -V gcc` or later... "
         $executable acceptable_compiler.f90 -o acceptable_compiler
         $executable print_true.f90 -o print_true
         acceptable=$(./acceptable_compiler)
         is_true=$(./print_true)
         rm acceptable_compiler print_true
+       
+        [ "$acceptable" == "$is_true" ] && printf "yes.\n"
+        [ ! -z "${arg_f}" ] && printf "no.\n Default compiler installation overridden by --with-fortran/-f=${arg_f}\n"
 
-        if [[ "$acceptable" == "$is_true"  ]]; then
-          printf "yes.\n"
+        if [[ "$acceptable" == "$is_true"  || ! -z "${arg_f}" ]]; then
           echo -e "$this_script: Using the $executable found in the PATH.\n"
           export MPIFC=mpif90
           export MPICC=mpicc
