@@ -3,7 +3,7 @@ source "${OPENCOARRAYS_SRC_DIR}/prerequisites/build-functions/ftp-url.sh"
 # shellcheck source=./set_SUDO_if_needed_to_write_to_directory.sh
 source "${OPENCOARRAYS_SRC_DIR}/prerequisites/build-functions/set_SUDO_if_needed_to_write_to_directory.sh"
 
-# Download pkg-config if the tar ball is not already in the present working directory
+# Download package if the tar ball is not already in the present working directory
 # shellcheck disable=SC2154
 download_if_necessary()
 {
@@ -27,13 +27,7 @@ download_if_necessary()
     info "Please either ensure that ${fetch} is installed and in your PATH"
     info "or download the ${package_name} source from "
     info "${package_url}"
-   #called_by_install_sh=`echo "$(ps -p $PPID -o args=)" | grep install.sh`
     info "Place the downloaded file in ${download_path} and restart this script."
-   #if [[ ! -z $called_by_install_sh ]]; then
-   #  caller="install.sh"
-   #else
-   #  caller="build"
-   #fi
     emergency "Aborting [exit 90]"
   else
     # The download mechanism is in the path.
