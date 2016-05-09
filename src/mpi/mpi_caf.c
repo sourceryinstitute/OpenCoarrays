@@ -143,8 +143,8 @@ static void verbose_comm_errhandler(MPI_Comm* pcomm, int* err, ...){
 
   n_failed_imgs = nf;
 
-  /* used_comm++; */
-  /* CAF_COMM_WORLD = communicators[used_comm]; */
+  used_comm++;
+  CAF_COMM_WORLD = communicators[used_comm];
 }
 
 /* For MPI interoperability, allow external initialization
