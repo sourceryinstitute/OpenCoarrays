@@ -110,7 +110,13 @@ MPI_Comm CAF_COMM_WORLD;
 MPI_Comm *communicators;
 int used_comm = -1;
 int *ranks_gc,*ranks_gf; //to be returned by failed images
-MPI_Errhandler errh;
+MPI_Errhandler errh,errh_w;
+
+static void verbose_win_errhandler(MPI_Win* win, int* err, ...) {
+  /* printf("in win err handler\n"); */
+  /* used_comm++; */
+  /* CAF_COMM_WORLD = communicators[used_comm]; */
+}
 
 static void verbose_comm_errhandler(MPI_Comm* pcomm, int* err, ...){
   MPI_Comm comm;
@@ -132,13 +138,11 @@ static void verbose_comm_errhandler(MPI_Comm* pcomm, int* err, ...){
   for(i = 0; i < nf; i++)
     {
       ranks_gc[i] = i+1;
-      printf("me: %d - ranks failed %d\n",caf_this_image,ranks_gc[i]);
+      /* printf("me: %d - ranks failed %d\n",caf_this_image,ranks_gc[i]); */
     }
   
-  used_comm++;
-  CAF_COMM_WORLD = communicators[used_comm];
-  /* MPI_Barrier(CAF_COMM_WORLD); */
-  /* printf("%d after barrier %d\n",caf_this_image,used_comm); */
+  //used_comm++;
+  //CAF_COMM_WORLD = communicators[used_comm];
 }
 
 /* For MPI interoperability, allow external initialization
@@ -421,6 +425,8 @@ PREFIX (init) (int *argc, char ***argv)
       MPI_Comm_create_errhandler(verbose_comm_errhandler, &errh);
       MPI_Comm_set_errhandler(CAF_COMM_WORLD, errh);
 
+      MPI_Win_create_errhandler(verbose_win_errhandler, &errh_w);
+
       for(i=0;i<caf_num_images;i++)
 	{
 	  MPI_Comm_dup(CAF_COMM_WORLD,&communicators[i]);
@@ -569,6 +575,8 @@ void *
 #endif // MPI_VERSION
 
   p = *token;
+
+  MPI_Win_set_errhandler(*p,errh_w);
 
   if(l_var)
     {
