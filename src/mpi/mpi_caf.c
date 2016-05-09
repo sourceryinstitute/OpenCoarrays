@@ -41,6 +41,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 #include <unistd.h>
 #include <mpi.h>
 #include <pthread.h>
+#include <signal.h>
+#include <mpi-ext.h>
 
 #include "libcaf.h"
 
@@ -104,9 +106,40 @@ char err_buffer[MPI_MAX_ERROR_STRING];
    MPI_COMM_WORLD for interoperability purposes. */
 MPI_Comm CAF_COMM_WORLD;
 
-/* Replicated communicators used by Failed Images */
+/* Failed Images */
 MPI_Comm *communicators;
 int used_comm = -1;
+int *ranks_gc,*ranks_gf; //to be returned by failed images
+MPI_Errhandler errh;
+
+static void verbose_comm_errhandler(MPI_Comm* pcomm, int* err, ...){
+  MPI_Comm comm;
+  int nf,nc,i;
+  MPI_Group group_c, group_f;
+  comm = *pcomm;
+
+  memset(ranks_gf,0,sizeof(int)*caf_num_images);
+  memset(ranks_gc,0,sizeof(int)*caf_num_images);
+  
+  MPIX_Comm_failure_ack(comm);
+  MPIX_Comm_failure_get_acked(comm, &group_f);
+  MPI_Group_size(group_f, &nf);
+  MPI_Comm_group(comm, &group_c);
+  for(i = 0; i < nf; i++)
+    ranks_gf[i] = i;
+  MPI_Group_translate_ranks(group_f, nf, ranks_gf,
+			    group_c, ranks_gc);
+  for(i = 0; i < nf; i++)
+    {
+      ranks_gc[i] = i+1;
+      printf("me: %d - ranks failed %d\n",caf_this_image,ranks_gc[i]);
+    }
+  
+  used_comm++;
+  CAF_COMM_WORLD = communicators[used_comm];
+  /* MPI_Barrier(CAF_COMM_WORLD); */
+  /* printf("%d after barrier %d\n",caf_this_image,used_comm); */
+}
 
 /* For MPI interoperability, allow external initialization
    (and thus finalization) of MPI. */
@@ -385,8 +418,17 @@ PREFIX (init) (int *argc, char ***argv)
 
       communicators = (MPI_Comm *)calloc(caf_num_images,sizeof(MPI_Comm));
 
+      MPI_Comm_create_errhandler(verbose_comm_errhandler, &errh);
+      MPI_Comm_set_errhandler(CAF_COMM_WORLD, errh);
+
       for(i=0;i<caf_num_images;i++)
-	MPI_Comm_dup(MPI_COMM_WORLD,&communicators[i]);
+	{
+	  MPI_Comm_dup(CAF_COMM_WORLD,&communicators[i]);
+	  MPI_Comm_set_errhandler(communicators[i], errh);
+	}
+      
+      ranks_gf = (int*)malloc(caf_num_images * sizeof(int));
+      ranks_gc = (int*)malloc(caf_num_images * sizeof(int));
 
 #if MPI_VERSION >= 3
       MPI_Info_create (&mpi_info_same_size);
@@ -2534,4 +2576,11 @@ PREFIX (error_stop) (int32_t error)
 {
   fprintf (stderr, "ERROR STOP %d\n", error);
   error_stop (error);
+}
+
+void
+PREFIX (fail_image) (void)
+{
+  /* *img_status = STAT_FAILED_IMAGE; */
+  raise(SIGKILL);
 }
