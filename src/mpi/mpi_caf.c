@@ -2620,8 +2620,11 @@ PREFIX (image_status) (int image)
   if(remote_stat != 0)
     res = STAT_STOPPED_IMAGE;
 
-  if(ierr != MPI_SUCCESS)
-    res = 1;
+  /* if(ierr != MPI_SUCCESS) */
+  /*   { */
+  /*     printf("error %d\n",ierr); */
+  /*     res = 1; */
+  /*   } */
   
   return res;
 }
