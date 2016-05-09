@@ -104,6 +104,10 @@ char err_buffer[MPI_MAX_ERROR_STRING];
    MPI_COMM_WORLD for interoperability purposes. */
 MPI_Comm CAF_COMM_WORLD;
 
+/* Replicated communicators used by Failed Images */
+MPI_Comm *communicators;
+int used_comm = -1;
+
 /* For MPI interoperability, allow external initialization
    (and thus finalization) of MPI. */
 bool caf_owns_mpi = false;
@@ -378,6 +382,11 @@ PREFIX (init) (int *argc, char ***argv)
       handlers = malloc(caf_num_images * sizeof(MPI_Request));
 
       stat_tok = malloc (sizeof(MPI_Win));
+
+      communicators = (MPI_Comm *)calloc(caf_num_images,sizeof(MPI_Comm));
+
+      for(i=0;i<caf_num_images;i++)
+	MPI_Comm_dup(MPI_COMM_WORLD,&communicators[i]);
 
 #if MPI_VERSION >= 3
       MPI_Info_create (&mpi_info_same_size);
