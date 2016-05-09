@@ -28,9 +28,9 @@ find_or_install()
   done
 
   if [[ "$package" == "$executable" ]]; then
-    echo -e "$this_script: Checking whether $executable is in the PATH..."
+    printf "$this_script: Checking whether $executable is in the PATH..."
   else
-    echo -e "$this_script: Checking whether $package executable $executable is in the PATH..."
+    printf "$this_script: Checking whether $package executable $executable is in the PATH..."
   fi
   if type "$executable" > /dev/null; then
     printf "yes.\n"
@@ -43,8 +43,7 @@ find_or_install()
 
   package_install_path=$(./build.sh -P "$package")
 
-  echo -e "$this_script: Checking whether $executable is in the directory in which $this_script\n"
-  printf "            installs it by default and whether the user has executable permission for it..."
+  printf "Checking whether $executable is in the prerequisites/instalations directory.."
   if [[ -x "$package_install_path/bin/$executable" ]]; then
     printf "yes.\n"
     script_installed_package=true
@@ -111,8 +110,30 @@ find_or_install()
     # Every branch that discovers an acceptable pre-existing installation must set the
     # MPIFC, MPICC, and MPICXX environment variables. Every branch must also manage the
     # dependency stack.
+   
+    if [[ ! -z "${arg_f}" ]]; then
 
-    if [[ "$script_installed_package" == true ]]; then
+      # -f or --with-fortran argument specifies a compiler, which we use if mpif90
+      # invokes the specified compiler.  Otherwise, we halt and print an error message.
+
+      mpif90_wraps=$(mpif90 --version)
+      compiler=$(${arg_f} --version)
+      if [[ "${mpif90_wraps}" != "${compiler}"   ]]; then
+        emergency "The specified compiler ${arg_f} differs from the compiler that mpif90 invokes."
+      else
+        info "mpif90 invokes the specified compiler ${arg_f}"
+      fi
+      export MPIFC=mpif90
+      export MPICC=mpicc
+      export MPICXX=mpicxx
+
+      # Halt the recursion
+      stack_push dependency_pkg "none"
+      stack_push dependency_exe "none"
+      stack_push dependency_path "none"
+
+    elif [[ "$script_installed_package" == true ]]; then
+
       echo -e "$this_script: Using the $package installed by $this_script\n"
       export MPIFC=$package_install_path/bin/mpif90
       export MPICC=$package_install_path/bin/mpicc
@@ -123,9 +144,10 @@ find_or_install()
       stack_push dependency_path "none"
 
     elif [[ "$package_in_path" == "true" ]]; then
+
       echo -e "$this_script: Checking whether $executable in PATH wraps gfortran... "
-      mpif90__version_header=$(mpif90 --version | head -1)
-      first_three_characters=$(echo "$mpif90__version_header" | cut -c1-3)
+      mpif90_version_header=$(mpif90 --version | head -1)
+      first_three_characters=$(echo "$mpif90_version_header" | cut -c1-3)
       if [[ "$first_three_characters" != "GNU" ]]; then
         printf "no.\n"
         # Trigger 'find_or_install gcc' and subsequent build of $package
@@ -134,16 +156,16 @@ find_or_install()
         stack_push dependency_path "none" "$(./build.sh -P "$package")" "$(./build.sh -P gcc)"
       else
         printf "yes.\n"
-        echo -e "$this_script: Checking whether $executable in PATH wraps gfortran version 5.3.0 or later... "
+
+        echo -e "$this_script: Checking whether $executable in PATH wraps gfortran version `./build.sh -V gcc` or later... "
         $executable acceptable_compiler.f90 -o acceptable_compiler
         $executable print_true.f90 -o print_true
         acceptable=$(./acceptable_compiler)
         is_true=$(./print_true)
         rm acceptable_compiler print_true
-
-        if [[ "$acceptable" == "$is_true"  ]]; then
-          printf "yes.\n"
-          echo -e "$this_script: Using the $executable found in the PATH.\n"
+       
+        if [[ "$acceptable" == "$is_true" ]]; then
+          printf "yes.\n $this_script: Using the $executable found in the PATH.\n"
           export MPIFC=mpif90
           export MPICC=mpicc
           export MPICXX=mpicxx
@@ -170,7 +192,7 @@ find_or_install()
 
   elif [[ $package == "gcc" ]]; then
 
-    # We arrive when the 'elif [[ $package == "gcc" ]]' block pushes "gcc" onto the
+    # We arrive here when the 'elif [[ $package == "mpich" ]]' block pushes "gcc" onto the
     # the dependency_pkg stack, resulting in the recursive call 'find_or_install gcc'
 
     # Every branch that discovers an acceptable pre-existing installation must set the
@@ -203,7 +225,7 @@ find_or_install()
       stack_push dependency_path "none"
 
     elif [[ "$package_in_path" == "true" ]]; then
-      echo -e "$this_script: Checking whether $executable in PATH is version 5.3.0 or later..."
+      echo -e "$this_script: Checking whether $executable in PATH is version `./build.sh -V gcc` or later..."
       $executable -o acceptable_compiler acceptable_compiler.f90
       $executable -o print_true print_true.f90
       is_true=$(./print_true)

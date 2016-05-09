@@ -117,7 +117,7 @@ The prerequisites below and their dependencies are recommended for the broadest 
 opencoarrays
 ├── cmake-3.4.0
 └── mpich-3.1.4
-    └── gcc-5.3.0
+    └── gcc-6.1.0
         ├── flex-2.6.0
         │   └── bison-3.0.4
         │       └── m4-1.4.17

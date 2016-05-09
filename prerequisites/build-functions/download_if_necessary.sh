@@ -1,16 +1,16 @@
 # shellcheck source=./ftp-url.sh
-source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/ftp-url.sh"
+source "${OPENCOARRAYS_SRC_DIR}/prerequisites/build-functions/ftp-url.sh"
 # shellcheck source=./set_SUDO_if_needed_to_write_to_directory.sh
-source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/set_SUDO_if_needed_to_write_to_directory.sh"
+source "${OPENCOARRAYS_SRC_DIR}/prerequisites/build-functions/set_SUDO_if_needed_to_write_to_directory.sh"
 
-# Download pkg-config if the tar ball is not already in the present working directory
+# Download package if the tar ball is not already in the present working directory
 # shellcheck disable=SC2154
 download_if_necessary()
 {
-  download_path="${PWD}/downloads"
+  download_path="${OPENCOARRAYS_SRC_DIR}/prerequisites/downloads"
   set_SUDO_if_needed_to_write_to_directory "${download_path}"
-  if [ -f "$url_tail" ] || [ -d "$url_tail" ]; then
-    info "Found '${url_tail}' in ${PWD}."
+  if  [[ -f "${download_path}/${url_tail}" || -d "${download_path}/${url_tail}" ]] ; then
+    info "Found '${url_tail}' in ${download_path}."
     info "If it resulted from an incomplete download, building ${package_name} could fail."
     info "Would you like to proceed anyway? (Y/n)"
     read -r proceed
@@ -27,13 +27,7 @@ download_if_necessary()
     info "Please either ensure that ${fetch} is installed and in your PATH"
     info "or download the ${package_name} source from "
     info "${package_url}"
-   #called_by_install_sh=`echo "$(ps -p $PPID -o args=)" | grep install.sh`
     info "Place the downloaded file in ${download_path} and restart this script."
-   #if [[ ! -z $called_by_install_sh ]]; then
-   #  caller="install.sh"
-   #else
-   #  caller="build"
-   #fi
     emergency "Aborting [exit 90]"
   else
     # The download mechanism is in the path.

@@ -19,7 +19,7 @@ build_and_install()
     "${PWD}"/contrib/download_prerequisites
     info "popd"
     popd
-    info "Configuring with the following command:"
+    info "Configuring gcc/g++/gfortran builds with the following command:"
     info "${download_path}/${package_source_directory}/configure --prefix=${install_path} --enable-languages=c,c++,fortran,lto --disable-multilib --disable-werror"
     "${download_path}/${package_source_directory}/configure" --prefix="${install_path}" --enable-languages=c,c++,fortran,lto --disable-multilib --disable-werror
     info "Building with the following command: 'make -j${num_threads} bootstrap'"
@@ -32,11 +32,11 @@ build_and_install()
     ${SUDO:-} make install
   else
     info "Configuring ${package_to_build} ${version_to_build} with the following command:"
-    info "CC=\"${CC:-'gcc'}\" CXX=\"${CXX:-'g++'}\" \"${download_path}/${package_source_directory}\"/configure --prefix=\"${install_path}\""
-    CC="${CC:-'gcc'}" CXX="${CXX:-'g++'}" "${download_path}/${package_source_directory}"/configure --prefix="${install_path}"
+    info "FC=\"${FC:-'gfortran'}\" CC=\"${CC:-'gcc'}\" CXX=\"${CXX:-'g++'}\" \"${download_path}/${package_source_directory}\"/configure --prefix=\"${install_path}\""
+    FC="${FC:-'gfortran'}" CC="${CC:-'gcc'}" CXX="${CXX:-'g++'}" "${download_path}/${package_source_directory}"/configure --prefix="${install_path}"
     info "Building with the following command:"
-    info "CC=\"${CC:-'gcc'}\" CXX=\"${CXX:-'g++'}\" make -j\"${num_threads}\""
-    CC="${CC:-'gcc'}" CXX="${CXX:-'g++'}" make "-j${num_threads}"
+    info "FC=\"${FC:-'gfortran'}\" CC=\"${CC:-'gcc'}\" CXX=\"${CXX:-'g++'}\" make -j\"${num_threads}\""
+    FC="${FC:-'gfortran'}" CC="${CC:-'gcc'}" CXX="${CXX:-'g++'}" make "-j${num_threads}"
     info "Installing ${package_to_build} in ${install_path}"
     if [[ ! -z "${SUDO:-}" ]]; then
       info "You do not have write permissions to the installation path ${install_path}"

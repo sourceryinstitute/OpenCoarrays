@@ -188,8 +188,8 @@ info  "-V (--print-version):    ${arg_V}"
 this_script="$(basename "$0")"
 export this_script
 
-export install_path="${arg_i}/${arg_p}"
-info "install_path=${arg_i}/${arg_p}"
+export install_path="${arg_i}"
+info "install_path=${arg_i}"
 
 export num_threads="${arg_j}"
 info "num_threads=${arg_j}"
@@ -284,7 +284,7 @@ elif [[ "${arg_p:-}" == "ofp" ]]; then
 
 elif [[ ! -z "${arg_p:-}" ]]; then
 
-  "${opencoarrays_src_dir}"/prerequisites/build.sh -p "${arg_p}"
+  "${opencoarrays_src_dir}"/prerequisites/build.sh ${@:-}
 
 fi
 # ____________________________________ End of Main Body ____________________________________________

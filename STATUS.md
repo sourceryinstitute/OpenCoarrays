@@ -134,14 +134,13 @@ Known Issues
         access as in `coarray(:,:)[i]%comp`.
      * An internal compiler error (ICE) occurs with non-allocatable, polymorphic coarrays
        in `associate` or `select type` statements.
-     * `co_reduce` with GCC 5 and 6 requires patches committed on 17 July 2015 and will
-       work with the GCC 5.3.0 and 6.1.0 releases.
+     * `co_reduce` requires GCC 5.4.0 or later.
      * `co_reduce` only supports arguments of intrinsic type.
+     * Proper execution of `stop` when `this_image()>1` requires GCC 5.4.0 or later.
      * No support for type finalization or allocatable components of derived-type coarrays
        passed to the collective subroutines (e.g., `co_sum`, `co_reduce`, etc.).
-	 * Optimization levels other than `-O0` introduce correctness errors
-	   in the compiled binaries. A patch has been submitted by @afanfa
-	   to the GFortran team. See #28 for some more context.
+     * Optimization levels other than `-O0` require GCC 5.3.0 or later. 
+     * Using `stop` to halt an individual image without halting all images requires GCC 5.4.0 or later. 
 <a name="compiler-issues-intel">
 * **Intel** (ifort)</a>
      * Supported via the [opencoarrays module]  only.
