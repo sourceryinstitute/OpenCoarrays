@@ -143,8 +143,8 @@ static void verbose_comm_errhandler(MPI_Comm* pcomm, int* err, ...){
 
   n_failed_imgs = nf;
 
-  //used_comm++;
-  //CAF_COMM_WORLD = communicators[used_comm];
+  /* used_comm++; */
+  /* CAF_COMM_WORLD = communicators[used_comm]; */
 }
 
 /* For MPI interoperability, allow external initialization
@@ -2620,11 +2620,8 @@ PREFIX (image_status) (int image)
   if(remote_stat != 0)
     res = STAT_STOPPED_IMAGE;
 
-  /* if(ierr != MPI_SUCCESS) */
-  /*   { */
-  /*     printf("error %d\n",ierr); */
-  /*     res = 1; */
-  /*   } */
+  if(ierr != MPI_SUCCESS)
+    res = 1;
   
   return res;
 }
