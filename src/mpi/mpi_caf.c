@@ -137,10 +137,10 @@ static void verbose_comm_errhandler(MPI_Comm* pcomm, int* err, ...){
 			    group_c, ranks_gc);
   for(i = 0; i < nf; i++)
     {
-      ranks_gc[i] = i+1;
+      ranks_gc[i]++;
       printf("me: %d - ranks failed %d\n",caf_this_image,ranks_gc[i]);
     }
-  
+
   //used_comm++;
   //CAF_COMM_WORLD = communicators[used_comm];
 }
