@@ -108,7 +108,7 @@ MPI_Comm CAF_COMM_WORLD;
 
 /* Failed Images */
 MPI_Comm *communicators;
-int used_comm = -1;
+int used_comm = -1, n_failed_imgs=0;
 int *ranks_gc,*ranks_gf; //to be returned by failed images
 MPI_Errhandler errh,errh_w;
 
@@ -138,8 +138,10 @@ static void verbose_comm_errhandler(MPI_Comm* pcomm, int* err, ...){
   for(i = 0; i < nf; i++)
     {
       ranks_gc[i]++;
-      printf("me: %d - ranks failed %d\n",caf_this_image,ranks_gc[i]);
+      /* printf("me: %d - ranks failed %d\n",caf_this_image,ranks_gc[i]); */
     }
+
+  n_failed_imgs = nf;
 
   //used_comm++;
   //CAF_COMM_WORLD = communicators[used_comm];
@@ -449,6 +451,7 @@ PREFIX (init) (int *argc, char ***argv)
       MPI_Win_create(img_status, sizeof(int), 1, MPI_INFO_NULL, CAF_COMM_WORLD, stat_tok);
 #endif // MPI_VERSION
       *img_status = 0;
+      MPI_Win_set_errhandler(*stat_tok,errh_w);
     }
   /* MPI_Barrier(CAF_COMM_WORLD); */
 }
@@ -2591,4 +2594,34 @@ PREFIX (fail_image) (void)
 {
   /* *img_status = STAT_FAILED_IMAGE; */
   raise(SIGKILL);
+}
+
+int
+PREFIX (image_status) (int image)
+{
+  int i,res=0, remote_stat=0,ierr;
+
+  for(i=0;i<n_failed_imgs;i++)
+    if(image == ranks_gc[i])
+      res = STAT_FAILED_IMAGE;
+
+  if(res == STAT_FAILED_IMAGE)
+    return res;
+  
+# ifdef CAF_MPI_LOCK_UNLOCK
+  MPI_Win_lock (MPI_LOCK_SHARED, image-1, 0, *stat_tok);
+# endif // CAF_MPI_LOCK_UNLOCK
+  ierr = MPI_Get (&remote_stat, 1, MPI_INT, image-1, 0, 1, MPI_INT, *stat_tok);
+# ifdef CAF_MPI_LOCK_UNLOCK
+  MPI_Win_unlock (image-1, *stat_tok);
+# else // CAF_MPI_LOCK_UNLOCK
+  MPI_Win_flush (image-1, *stat_tok);
+# endif // CAF_MPI_LOCK_UNLOCK
+  if(remote_stat != 0)
+    res = STAT_STOPPED_IMAGE;
+
+  if(ierr != MPI_SUCCESS)
+    res = 1;
+  
+  return res;
 }
