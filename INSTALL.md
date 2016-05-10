@@ -117,7 +117,7 @@ The prerequisites below and their dependencies are recommended for the broadest 
 opencoarrays
 ├── cmake-3.4.0
 └── mpich-3.1.4
-    └── gcc-5.3.0
+    └── gcc-6.1.0
         ├── flex-2.6.0
         │   └── bison-3.0.4
         │       └── m4-1.4.17
@@ -203,7 +203,7 @@ the [Installation Script] section.  Or try building each prerequisite from sourc
 follows:
 
 ```
-cd install_prerequisites
+cd prerequisites
 CC=gcc FC=gfortran CXX=g++ ./build flex
 ./build gcc
 CC=gcc FC=gfortran CXX=g++ ./build mpich
@@ -235,7 +235,7 @@ where the second line builds the flex package that is required for building gcc 
 [Issues]: https://github.com/sourceryinstitute/opencoarrays/issues
 [make.inc]: ./src/make.inc
 [opencoarrays]: ./src/extensions/opencoarrays.F90
-[install_prerequisites]: ./install_prerequisites
+[prerequisites]: ./prerequisites
 [MPICH]: http://www.mpich.org
 [MVAPICH]:http://mvapich.cse.ohio-state.edu
 [MacPorts]: http://www.macports.org

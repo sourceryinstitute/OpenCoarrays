@@ -459,6 +459,7 @@ PREFIX (finalize) (void)
 {
   *img_status = STAT_STOPPED_IMAGE; /* GFC_STAT_STOPPED_IMAGE = 6000 */
   MPI_Win_sync(*stat_tok);
+
   MPI_Barrier(CAF_COMM_WORLD);
 
   while (caf_static_list != NULL)
@@ -496,6 +497,7 @@ PREFIX (finalize) (void)
   pthread_mutex_lock(&lock_am);
   caf_is_finalized = 1;
   pthread_mutex_unlock(&lock_am);
+  exit(0);
 }
 
 
@@ -2652,6 +2654,25 @@ error_stop (int error)
   exit (error);
 }
 
+/* STOP function for integer arguments.  */
+void
+PREFIX (stop_numeric) (int32_t stop_code)
+{
+  fprintf (stderr, "STOP %d\n", stop_code);
+  PREFIX (finalize) ();
+}
+
+/* STOP function for string arguments.  */
+void
+PREFIX (stop_str) (const char *string, int32_t len)
+{
+  fputs ("STOP ", stderr);
+  while (len--)
+    fputc (*(string++), stderr);
+  fputs ("\n", stderr);
+
+  PREFIX (finalize) ();
+}
 
 /* ERROR STOP function for string arguments.  */
 

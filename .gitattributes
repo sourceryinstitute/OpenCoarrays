@@ -10,7 +10,7 @@
 *.md text
 *.txt text
 *.sh text
-install_prerequisites/build text
+prerequisites/build text
 *.cu text
 *.x64 text
 
@@ -28,3 +28,4 @@ install_prerequisites/build text
 .gitattributes export-ignore
 .gitignore export-ignore
 developer-scripts export-ignore
+codecov.yml export-ignore

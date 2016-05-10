@@ -39,6 +39,7 @@ matrix:
           packages:
             - gcc-5
             - gfortran-5
+            - g++-5
             - binutils
             - cmake-data
             - cmake
@@ -116,7 +117,7 @@ install:
     elif [[ "X$BUILD_TYPE" != "XInstallScript" ]]; then # Ubuntu on Travis-CI, NOT testing install.sh
       if ! ( [[ -x "$HOME/.local/bin/mpif90" ]] && [[ -x "$HOME/.local/bin/mpicc" ]] ); then
         # mpich install not cached
-        # could use install_prerequisites/build instead...
+        # could use prerequisites/build instead...
         wget "${MPICH_URL_HEAD}/${MPICH_URL_TAIL}"
         mv "$MPICH_URL_TAIL" "$MPICH_DIR/.."
         pushd "$MPICH_DIR/.."
@@ -150,7 +151,7 @@ script:
       ln -fs "$(which gcc-5)" "$HOME/bin/gcc"
       ln -fs "$(which g++-5)" "$HOME/bin/g++"
       export PATH="$PATH:$HOME/bin"
-      yes | ./install.sh $HOME/opt/opencoarrays 4 > install.log &
+      yes | ./install.sh --install-dir="$HOME/opt/opencoarrays" -j 4 > install.log &
       install_sh_PID=$!
       echo "install.log will be displayed after success or failure"
       while ps -p $install_sh_PID > /dev/null; do

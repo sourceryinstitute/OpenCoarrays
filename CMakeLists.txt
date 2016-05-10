@@ -113,7 +113,7 @@ else()
 endif()
 
 if(gfortran_compiler)
-  set(CMAKE_REQUIRED_FLAGS "-fcoarray=single")
+  set(CMAKE_REQUIRED_FLAGS "-fcoarray=single -ffree-form")
 endif()
 include(CheckFortranSourceCompiles)
 CHECK_Fortran_SOURCE_COMPILES("
@@ -141,7 +141,6 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 #endif()
 
 add_subdirectory(src)
-add_subdirectory(install_prerequisites)
 add_subdirectory(3rd-party-tools/open-fortran-parser-sdf/trans)
 
 #-----------------------------------------------------
