@@ -7,7 +7,7 @@ set_or_print_installation_path()
   [ ! -z "${arg_P}" ] && [ ! -z "${arg_D:-${arg_p:-${arg_U:-${arg_V}}}}" ] &&
     emergency "Please pass only one of {-D, -p, -P, -U, -V} or a longer equivalent (multiple detected)."
 
-  install_path="${arg_i}"
+  install_path="${arg_i}/${arg_p:-${arg_D:-${arg_P:-${arg_U:-${arg_V}}}}}/${version_to_build}"
 
   # If -P is present, print ${install_path} and exit with normal status
   if [[ ! -z "${arg_P:-}" ]]; then
