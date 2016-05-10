@@ -9,10 +9,19 @@ set_or_print_downloader()
     emergency "Please pass only one of {-D, -p, -P, -U, -V} or a longer equivalent (multiple detected)."
 
   package_name="${arg_p:-${arg_D:-${arg_P:-${arg_U:-${arg_V}}}}}"
+  if [[ "${package_name}" == "ofp" ]]; then
+    ${OPENCOARRAYS_SRC_DIR}/prerequisites/install-ofp.sh "${@}"
+    exit 0
+  fi
   if [[ "${package_name}" == "gcc" && "${version_to_build}" != "trunk" ]]; then
     gcc_fetch="ftp-url"
   else
     gcc_fetch="svn"
+  fi
+  if [[ $(uname) == "Darwin" ]]; then
+    wget_or_curl=curl
+  else
+    wget_or_curl=wget
   fi
   # This is a bash 3 hack standing in for a bash 4 hash (bash 3 is the lowest common
   # denominator because, for licensing reasons, OS X only has bash 3 by default.)
@@ -20,14 +29,14 @@ set_or_print_downloader()
   package_fetch=(
     "gcc:$gcc_fetch"
     "wget:ftp-url"
-    "cmake:wget"
-    "mpich:wget"
-    "flex:wget"
+    "cmake:${wget_or_curl}"
+    "mpich:${wget_or_curl}"
+    "flex:${wget_or_curl}"
     "bison:ftp-url"
-    "pkg-config:wget"
+    "pkg-config:${wget_or_curl}"
     "make:ftp-url"
     "m4:ftp-url"
-    "subversion:wget"
+    "subversion:${wget_or_curl}"
   )
   for package in "${package_fetch[@]}" ; do
      KEY="${package%%:*}"

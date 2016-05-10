@@ -30,18 +30,22 @@
 # (3) Parse the usage information (default usage file name: current file's name with -usage appended).
 # (4) Parse the command line using the usage information.
 
-export __usage="${OPENCOARRAYS_SRC_DIR}/prerequisites/install-binary.sh-usage"
 
 ### Start of boilerplate -- do not edit this block #######################
+export OPENCOARRAYS_SRC_DIR="${OPENCOARRAYS_SRC_DIR:-${PWD}/../}"
+if [[ ! -f "${OPENCOARRAYS_SRC_DIR}/src/libcaf.h" ]]; then
+  echo "Please run this script inside the top-level OpenCoarrays source \"prerequisites\" "
+  echo "subdirectory or set OPENCOARRAYS_SRC_DIR to the OpenCoarrays source directory path."
+  exit 1
+fi
+export __usage="${OPENCOARRAYS_SRC_DIR}/prerequisites/install-binary.sh-usage"
+export B3B_USE_CASE="${B3B_USE_CASE:-${OPENCOARRAYS_SRC_DIR}/prerequisites/use-case}"
 if [[ ! -f "${B3B_USE_CASE:-}/bootstrap.sh" ]]; then
   echo "Please set B3B_USE_CASE to the bash3boilerplate use-case directory path."
-  exit 1
-elif [[ ! -d "${OPENCOARRAYS_SRC_DIR:-}" ]]; then
-  echo "Please set OPENCOARRAYS_SRC_DIR to the OpenCoarrays source directory path."
   exit 2
 else
-  # shellcheck source=./use-case/bootstrap.sh
-  source "${B3B_USE_CASE}/bootstrap.sh" "$@"
+    # shellcheck source=./prerequisites/use-case/bootstrap.sh
+    source "${B3B_USE_CASE}/bootstrap.sh" "$@"
 fi
 ### End of boilerplate -- start user edits below #########################
 
@@ -131,7 +135,7 @@ set_or_print_csv_binary_names
 
 # shellcheck source=./build-functions/set_SUDO_if_needed_to_write_to_directory.sh
 source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/set_SUDO_if_needed_to_write_to_directory.sh"
-set_SUDO_if_needed_to_write_to_directory /opt
+set_SUDO_if_needed_to_write_to_directory "${arg_i}"
 
 # shellcheck source=./install-binary-functions/move_binaries_to_install_path.sh
 source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/install-binary-functions/move_binaries_to_install_path.sh"
