@@ -15,7 +15,7 @@ if(gfortran_compiler AND (NOT opencoarrays_aware_compiler))
   add_definitions(-DCOMPILER_SUPPORTS_CAF_INTRINSICS)
 endif()
 
-add_library(caf_mpi mpi_caf.c ../common/caf_auxiliary.c ../extensions/opencoarrays.F90)
+add_library(caf_mpi mpi_caf.c ../common/caf_auxiliary.c ../cafe/opencoarrays.F90)
 
 target_include_directories(caf_mpi PRIVATE ${MPI_C_INCLUDE_PATH})
 if (gfortran_compiler)
@@ -38,7 +38,7 @@ install(
     PERMISSIONS WORLD_EXECUTE WORLD_READ WORLD_WRITE OWNER_EXECUTE OWNER_READ OWNER_WRITE GROUP_EXECUTE GROUP_READ GROUP_WRITE
     DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/
 )
-file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/caf-head CAF_HEADER)
+file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../cafe/caf-head CAF_HEADER)
 file(WRITE  "${compiler_wrapper}" "${CAF_HEADER}\n")
 file(APPEND "${compiler_wrapper}"  "caf_mod_dir=${CMAKE_INSTALL_PREFIX}/mod\n")
 file(APPEND "${compiler_wrapper}"  "caf_lib_dir=${CMAKE_INSTALL_PREFIX}/lib\n")
@@ -56,7 +56,7 @@ endif()
 if ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
   file(APPEND "${compiler_wrapper}"  "linux=true\n")
 endif()
-file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/caf-foot FOOTER)
+file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../cafe/caf-foot FOOTER)
 file(APPEND "${compiler_wrapper}" "${FOOTER}")
 
 # Now we write the script that transforms CAF source into the OCAF dialect 
@@ -68,10 +68,10 @@ install(
     PERMISSIONS WORLD_EXECUTE WORLD_READ WORLD_WRITE OWNER_EXECUTE OWNER_READ OWNER_WRITE GROUP_EXECUTE GROUP_READ GROUP_WRITE
     DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/
 )
-file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/caf2ocaf-head.sh CAF2OCAF_HEADER)
+file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../cafe/caf2ocaf-head.sh CAF2OCAF_HEADER)
 file(WRITE  "${transpiler}" "${CAF2OCAF_HEADER}\n")
 file(APPEND "${transpiler}"  "caf_version=${PROJECT_VERSION}\n")
-file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/caf2ocaf-foot.sh CAF2OCAF_FOOTER)
+file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../cafe/caf2ocaf-foot.sh CAF2OCAF_FOOTER)
 file(APPEND "${transpiler}" "${CAF2OCAF_FOOTER}")
 
 # Now we write the script that launches executable files produced from CAF codes
@@ -81,11 +81,11 @@ install(
     PERMISSIONS WORLD_EXECUTE WORLD_READ WORLD_WRITE OWNER_EXECUTE OWNER_READ OWNER_WRITE GROUP_EXECUTE GROUP_READ GROUP_WRITE
     DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
 )
-file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/cafrun-head CAFRUN_HEADER)
+file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../cafe/cafrun-head CAFRUN_HEADER)
 file(WRITE  "${caf_launcher}" "${CAFRUN_HEADER}\n")
 file(APPEND "${caf_launcher}"  "caf_version=${PROJECT_VERSION}\n")
 
-file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/cafrun-foot FOOTER)
+file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../cafe/cafrun-foot FOOTER)
 file(APPEND "${caf_launcher}" "${FOOTER}")
 
 # This could be needed to produce shared libraries:

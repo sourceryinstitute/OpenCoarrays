@@ -4,7 +4,7 @@ compile_fortran=/lustre/atlas/proj-shared/csc109/gcc/bin/gfortran -fcoarray=lib
 compile_cuda=nvcc
 link=ftn
 
-API_PATH=$(OPENCOARRAYS_SRC_DIR)/src/extensions/
+API_PATH=$(OPENCOARRAYS_SRC_DIR)/src/cafe/
 TIMER_PATH=$(OPENCOARRAYS_SRC_DIR)/src/tests/integration/pde_solvers/navier-stokes
 
 OPTS=-L$(OPENCOARRAYS_SRC_DIR)/src/cuda_mpi

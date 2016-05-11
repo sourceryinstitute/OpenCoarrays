@@ -464,7 +464,7 @@ PREFIX (num_images)(int distance __attribute__ ((unused)),
 
 /* Register user-allocated memory for management by CUDA (works for coarrays and non-coarrays):
    This procedure is exposed in the OpenCoarrays Fortran application programming interface (API)
-   contained in ../extensions/opencoarrays.f90 to expose it to Fortran programmers who want
+   contained in ../cafe/opencoarrays.f90 to expose it to Fortran programmers who want
    to explicitly allocate memory related to manycore devices: currently via CUDA for NVIDIA
    GPUs and possibly in the future via another mechanism for Intel MIC architecture processors.
 */
