@@ -44,7 +44,14 @@ download_if_necessary()
     elif [[ "${fetch}" == "git" ]]; then
       args="clone"
     elif [[ "${fetch}" == "curl" ]]; then
-      args="-LO"
+      first_three_characters=$(echo "${package_url}" | cut -c1-3)
+      if [[ "${first_three_characters}" == "ftp"  ]]; then 
+        args="-LO -u anonymous:"
+      elif [[ "${first_three_characters}" == "htt"  ]]; then 
+        args="-LO"
+      else
+        emergency "download_if_necessary.sh: Unrecognized URL."
+      fi
     fi
 
     if [[ "${fetch}" == "svn" || "${fetch}" == "git" ]]; then
