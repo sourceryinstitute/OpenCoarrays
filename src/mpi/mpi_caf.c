@@ -2625,3 +2625,15 @@ PREFIX (image_status) (int image)
   
   return res;
 }
+
+void *
+PREFIX (failed_images) (int *num_failed_images, int team __attribute__ ((unused)),
+			int kind __attribute__ ((unused)))
+{
+  void *mem;
+  printf("Failed images:%d\n",n_failed_imgs);
+  *num_failed_images = n_failed_imgs;
+  mem = calloc(n_failed_imgs,sizeof(int));
+  memcpy(mem,ranks_gc,n_failed_imgs*sizeof(int));
+  return mem;
+}
