@@ -123,6 +123,37 @@ find_or_install()
       else
         info "mpif90 invokes the specified compiler ${arg_f}"
       fi
+
+      echo "$this_script: Checking whether $executable in PATH wraps gfortran... "
+      mpif90_version_header=$(mpif90 --version | head -1)
+      first_three_characters=$(echo "$mpif90_version_header" | cut -c1-3)
+      if [[ "$first_three_characters" != "GNU" ]]; then
+        printf "no.\n"
+        export translate_source="true"
+      else
+        first_caf_version="5.1.0"
+        printf "yes.\n"
+        printf "$this_script: Checking whether ${executable} in PATH wraps gfortran version ${first_caf_version} or later... "
+  
+        if ! "${OPENCOARRAYS_SRC_DIR}"/prerequisites/check_version.sh "${executable}" "${first_caf_version}"; then
+          printf "no.\n"
+          export translate_source="true"
+        else
+          printf "yes.\n"
+          export translate_source="false"
+        fi
+      fi
+      if  [[ ${translate_source} == "true" ]]; then
+        echo "Supporting the chosen compiler or compiler version requires the Open Fortran Parser"
+        echo "for pre-compilation CAF to non-CAF source transformations. Ok to download and install OFP?"
+        read -r go
+        if [[ "${go}" == "n" || "${go}" == "N" || "${go}" == "no"  || "${go}" == "NO" || "${go}" == "No" ]]; then
+          emergency "OFP installation declined. Aborting"
+        else
+          "${OPENCOARRAYS_SRC_DIR}"/prerequisites/install-ofp.sh
+        fi
+      fi
+
       export MPIFC=mpif90
       export MPICC=mpicc
       export MPICXX=mpicxx

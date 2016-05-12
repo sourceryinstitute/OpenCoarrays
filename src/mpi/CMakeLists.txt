@@ -10,10 +10,6 @@ elseif("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "PGI")
   set(portland_group_compiler true)
 endif()
 
-if(gfortran_compiler AND (NOT opencoarrays_aware_compiler))
-  # This applied to gfortran 4.9 and some earlier versions (FIX ME: find out which)
-  add_definitions(-DCOMPILER_SUPPORTS_CAF_INTRINSICS)
-endif()
 
 add_library(caf_mpi mpi_caf.c ../common/caf_auxiliary.c ../cafe/opencoarrays.F90)
 
@@ -43,36 +39,35 @@ file(WRITE  "${compiler_wrapper}" "${CAF_HEADER}\n")
 file(APPEND "${compiler_wrapper}"  "caf_mod_dir=${CMAKE_INSTALL_PREFIX}/mod\n")
 file(APPEND "${compiler_wrapper}"  "caf_lib_dir=${CMAKE_INSTALL_PREFIX}/lib\n")
 file(APPEND "${compiler_wrapper}"  "caf_version=${PROJECT_VERSION}\n")
+
 if(gfortran_compiler)
-  file(APPEND "${compiler_wrapper}"  "link_args='-fcoarray=lib -lcaf_mpi'\n")
+  if(opencoarrays_aware_compiler)
+    file(APPEND "${compiler_wrapper}"  "link_args='-fcoarray=lib -lcaf_mpi'\n")
+  else()
+    file(APPEND "${compiler_wrapper}"  "link_args='-lcaf_mpi'\n")
+    # add_definitions(-DCOMPILER_SUPPORTS_CAF_INTRINSICS)
+  endif()
 elseif(portland_group_compiler)
   file(APPEND "${compiler_wrapper}"  "link_args=-lcaf_mpi\n")
 endif()
+
+# Write the environment varialbe set by ${OPENCOARRAYS_SRC_DIR}/prerequisites/install-functions/find_or_install.sh
+message( STATUS "transform_source=$ENV{transform_source}" )
+
 if(opencoarrays_aware_compiler)
-  file(APPEND "${compiler_wrapper}"  "caf_compiler=true\n")
+  file(APPEND "${compiler_wrapper}"  "transform_source=false\n")
 else()
-  file(APPEND "${compiler_wrapper}"  "caf_compiler=false\n")
+  file(APPEND "${compiler_wrapper}"  "transform_source=true\n")
+  file(APPEND "${compiler_wrapper}"  "OFP_HOME='${CMAKE_INSTALL_PREFIX}/ofp-sdf'\n")
+  file(APPEND "${compiler_wrapper}"  "transpiler_dir='${CMAKE_INSTALL_PREFIX}/transpiler'\n")
 endif()
+
 if ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
   file(APPEND "${compiler_wrapper}"  "linux=true\n")
 endif()
+
 file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../cafe/caf-foot FOOTER)
 file(APPEND "${compiler_wrapper}" "${FOOTER}")
-
-# Now we write the script that transforms CAF source into the OCAF dialect 
-# intended to support non-CAF compilers.
-set(exe_dir ${CMAKE_BINARY_DIR}/bin_staging)
-set(transpiler ${exe_dir}/caf2ocaf)
-install(
-    FILES "${transpiler}"
-    PERMISSIONS WORLD_EXECUTE WORLD_READ WORLD_WRITE OWNER_EXECUTE OWNER_READ OWNER_WRITE GROUP_EXECUTE GROUP_READ GROUP_WRITE
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/
-)
-file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../cafe/caf2ocaf-head.sh CAF2OCAF_HEADER)
-file(WRITE  "${transpiler}" "${CAF2OCAF_HEADER}\n")
-file(APPEND "${transpiler}"  "caf_version=${PROJECT_VERSION}\n")
-file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../cafe/caf2ocaf-foot.sh CAF2OCAF_FOOTER)
-file(APPEND "${transpiler}" "${CAF2OCAF_FOOTER}")
 
 # Now we write the script that launches executable files produced from CAF codes
 set(caf_launcher ${exe_dir}/cafrun)
@@ -90,5 +85,3 @@ file(APPEND "${caf_launcher}" "${FOOTER}")
 
 # This could be needed to produce shared libraries:
 #target_link_libraries(caf_mpi PRIVATE ${MPI_C_LIBRARIES})
-
-#set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${exe_dir}/cafrun;${exe_dir}/caf;${exe_dir}/test-caf-tally.sh")
