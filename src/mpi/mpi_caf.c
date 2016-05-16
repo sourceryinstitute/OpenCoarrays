@@ -107,10 +107,11 @@ char err_buffer[MPI_MAX_ERROR_STRING];
 MPI_Comm CAF_COMM_WORLD;
 
 /* Failed Images */
-MPI_Comm *communicators;
-int used_comm = -1, n_failed_imgs=0;
+/* MPI_Comm *communicators; */
+int used_comm = -1, n_failed_imgs=0, error_called=0;
 int *ranks_gc,*ranks_gf; //to be returned by failed images
 MPI_Errhandler errh,errh_w;
+int completed = 0;
 
 static void verbose_win_errhandler(MPI_Win* win, int* err, ...) {
   /* printf("in win err handler\n"); */
@@ -142,9 +143,9 @@ static void verbose_comm_errhandler(MPI_Comm* pcomm, int* err, ...){
     }
 
   n_failed_imgs = nf;
-
-  used_comm++;
-  CAF_COMM_WORLD = communicators[used_comm];
+  error_called = 1;
+  /* used_comm++; */
+  /* CAF_COMM_WORLD = communicators[used_comm]; */
 }
 
 /* For MPI interoperability, allow external initialization
@@ -422,18 +423,18 @@ PREFIX (init) (int *argc, char ***argv)
 
       stat_tok = malloc (sizeof(MPI_Win));
 
-      communicators = (MPI_Comm *)calloc(caf_num_images,sizeof(MPI_Comm));
+      /* communicators = (MPI_Comm *)calloc(caf_num_images,sizeof(MPI_Comm)); */
 
       MPI_Comm_create_errhandler(verbose_comm_errhandler, &errh);
       MPI_Comm_set_errhandler(CAF_COMM_WORLD, errh);
 
       MPI_Win_create_errhandler(verbose_win_errhandler, &errh_w);
 
-      for(i=0;i<caf_num_images;i++)
-	{
-	  MPI_Comm_dup(CAF_COMM_WORLD,&communicators[i]);
-	  MPI_Comm_set_errhandler(communicators[i], errh);
-	}
+      /* for(i=0;i<caf_num_images;i++) */
+      /* 	{ */
+      /* 	  MPI_Comm_dup(CAF_COMM_WORLD,&communicators[i]); */
+      /* 	  MPI_Comm_set_errhandler(communicators[i], errh); */
+      /* 	} */
       
       ranks_gf = (int*)malloc(caf_num_images * sizeof(int));
       ranks_gc = (int*)malloc(caf_num_images * sizeof(int));
@@ -466,6 +467,7 @@ _gfortran_caf_finalize (void)
 PREFIX (finalize) (void)
 #endif
 {
+  completed = 1;
   *img_status = STAT_STOPPED_IMAGE; /* GFC_STAT_STOPPED_IMAGE = 6000 */
   MPI_Win_sync(*stat_tok);
 
@@ -524,6 +526,67 @@ PREFIX (num_images)(int distance __attribute__ ((unused)),
   return caf_num_images;
 }
 
+static int communicator_shrink()
+{
+  int ns,srank,crank,rc,flag,i,drank,nc,nd;
+  MPI_Comm shrunk, *newcomm;
+  MPI_Group cgrp, sgrp, dgrp;
+
+ redo:
+  newcomm = (MPI_Comm *)calloc(1,sizeof(MPI_Comm));
+  
+  MPIX_Comm_shrink(CAF_COMM_WORLD, &shrunk);
+  MPI_Comm_set_errhandler( shrunk, errh );
+  MPI_Comm_size(shrunk, &ns); MPI_Comm_rank(shrunk, &srank);
+
+  MPI_Comm_rank(CAF_COMM_WORLD, &crank);
+
+  /* if(MPI_COMM_NULL != CAF_COMM_WORLD) { /\* I was not a spare before... *\/ */
+  /*   /\* not enough processes to continue, aborting. *\/ */
+  /*   MPI_Comm_size(CAF_COMM_WORLD, &nc); */
+  /*   if( nc > ns ) MPI_Abort(CAF_COMM_WORLD, MPI_ERR_PROC_FAILED); */
+    
+  /*   /\* remembering the former rank: we will reassign the same */
+  /*    * ranks in the new world. *\/ */
+  /*   MPI_Comm_rank(CAF_COMM_WORLD, &crank); */
+    
+  /*   /\* the rank 0 in the shrinked comm is going to determine the */
+  /*    * ranks at which the spares need to be inserted. *\/ */
+  /*   if(0 == srank) { */
+  /*     /\* getting the group of dead processes: */
+  /*      *   those in comm, but not in shrinked are the deads *\/ */
+  /*     MPI_Comm_group(CAF_COMM_WORLD, &cgrp); MPI_Comm_group(shrunk, &sgrp); */
+  /*     MPI_Group_difference(cgrp, sgrp, &dgrp); MPI_Group_size(dgrp, &nd); */
+  /*     /\* Computing the rank assignment for the newly inserted spares *\/ */
+  /*     for(i=0; i<ns-(nc-nd); i++) { */
+  /* 	if( i < nd ) MPI_Group_translate_ranks(dgrp, 1, &i, cgrp, &drank); */
+  /* 	else drank=-1; /\* still a spare *\/ */
+  /* 	/\* sending their new assignment to all spares *\/ */
+  /* 	MPI_Send(&drank, 1, MPI_INT, i+nc-nd, 1, shrunk); */
+  /*     } */
+  /*     MPI_Group_free(&cgrp); MPI_Group_free(&sgrp); MPI_Group_free(&dgrp); */
+  /*   } */
+  /* } else { /\* I was a spare, waiting for my new assignment *\/ */
+  /*   MPI_Recv(&crank, 1, MPI_INT, 0, 1, shrunk, MPI_STATUS_IGNORE); */
+  /* } */
+
+  /* Split does the magic: removing spare processes and reordering ranks
+   * so that all surviving processes remain at their former place */
+  rc = MPI_Comm_split(shrunk, crank<0?MPI_UNDEFINED:1, crank, newcomm);
+  
+  /* Split or some of the communications above may have failed if
+   * new failures have disrupted the process: we need to
+   * make sure we succeeded at all ranks, or retry until it works. */
+  flag = MPIX_Comm_agree(shrunk, &flag);
+  MPI_Comm_free(&shrunk);
+  if( MPI_SUCCESS != flag ) {
+    if( MPI_SUCCESS == rc ) MPI_Comm_free(newcomm);
+    goto redo;
+  }
+  CAF_COMM_WORLD = *newcomm;
+  return MPI_SUCCESS;
+}
+
 
 #ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
 void *
@@ -566,6 +629,13 @@ void *
     }
   else
     actual_size = size;
+
+  if(error_called == 1)
+    {
+      /* MPIX_Comm_agree( CAF_COMM_WORLD, &completed ); */
+      communicator_shrink();
+      error_called = 0;
+    }
 
 #if MPI_VERSION >= 3
   MPI_Win_allocate(actual_size, 1, mpi_info_same_size, CAF_COMM_WORLD, &mem, *token);
@@ -727,6 +797,13 @@ void
 PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
 {
   int ierr=0;
+
+  if(error_called == 1)
+    {
+      /* MPIX_Comm_agree( CAF_COMM_WORLD, &completed ); */
+      communicator_shrink();
+      error_called = 0;
+    }
 
   if (unlikely (caf_is_finalized))
     ierr = STAT_STOPPED_IMAGE;
@@ -2626,14 +2703,13 @@ PREFIX (image_status) (int image)
   return res;
 }
 
-void *
+int *
 PREFIX (failed_images) (int *num_failed_images, int team __attribute__ ((unused)),
 			int kind __attribute__ ((unused)))
 {
-  void *mem;
-  printf("Failed images:%d\n",n_failed_imgs);
+  int *mem;
   *num_failed_images = n_failed_imgs;
-  mem = calloc(n_failed_imgs,sizeof(int));
+  mem = (int *)calloc(n_failed_imgs,sizeof(int));
   memcpy(mem,ranks_gc,n_failed_imgs*sizeof(int));
   return mem;
 }
