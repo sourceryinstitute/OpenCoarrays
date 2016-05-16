@@ -268,7 +268,7 @@ void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
 {
   const char msg[] = "Already locked";
 #if MPI_VERSION >= 3
-  int value=1, compare = 0, newval = caf_this_image, i = 1;
+  int value=1, compare = 0, newval = caf_this_image, i = 1,zero=0;
 
   if(stat != NULL)
     *stat = 0;
@@ -290,8 +290,26 @@ void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
   while(value != 0)
     {
       locking_atomic_op(win, &value, newval, compare, image_index, index);
-      usleep(caf_this_image*i);
-      i++;
+      printf("n_failed_images: %d\n",n_failed_imgs);
+      for(i=0;i<n_failed_imgs;i++)
+	{
+	  printf("value: %d\n",value);
+	  if(ranks_gc[i] == value)
+	    {
+# ifdef CAF_MPI_LOCK_UNLOCK
+	      MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, win);
+# endif // CAF_MPI_LOCK_UNLOCK
+	      MPI_Fetch_and_op(&zero, &value, MPI_INT, image_index-1, index*sizeof(int), MPI_REPLACE, win);
+# ifdef CAF_MPI_LOCK_UNLOCK
+	      MPI_Win_unlock (image_index-1, win);
+# else // CAF_MPI_LOCK_UNLOCK
+	      MPI_Win_flush (image_index-1, win);
+# endif // CAF_MPI_LOCK_UNLOCK
+	      break;
+	    }
+	}
+      //      usleep(caf_this_image*i);
+      //i++;
     }
 
   return;
@@ -457,7 +475,6 @@ PREFIX (init) (int *argc, char ***argv)
   /* MPI_Barrier(CAF_COMM_WORLD); */
 }
 
-
 /* Finalize coarray program.   */
 
 void
@@ -467,12 +484,13 @@ _gfortran_caf_finalize (void)
 PREFIX (finalize) (void)
 #endif
 {
-  completed = 1;
   *img_status = STAT_STOPPED_IMAGE; /* GFC_STAT_STOPPED_IMAGE = 6000 */
   MPI_Win_sync(*stat_tok);
 
-  MPI_Barrier(CAF_COMM_WORLD);
+  completed = 1;
 
+  MPI_Barrier(CAF_COMM_WORLD);
+  
   while (caf_static_list != NULL)
     {
       caf_static_t *tmp = caf_static_list->prev;
@@ -552,21 +570,21 @@ static int communicator_shrink()
     
   /*   /\* the rank 0 in the shrinked comm is going to determine the */
   /*    * ranks at which the spares need to be inserted. *\/ */
-  /*   if(0 == srank) { */
-  /*     /\* getting the group of dead processes: */
-  /*      *   those in comm, but not in shrinked are the deads *\/ */
-  /*     MPI_Comm_group(CAF_COMM_WORLD, &cgrp); MPI_Comm_group(shrunk, &sgrp); */
-  /*     MPI_Group_difference(cgrp, sgrp, &dgrp); MPI_Group_size(dgrp, &nd); */
-  /*     /\* Computing the rank assignment for the newly inserted spares *\/ */
-  /*     for(i=0; i<ns-(nc-nd); i++) { */
-  /* 	if( i < nd ) MPI_Group_translate_ranks(dgrp, 1, &i, cgrp, &drank); */
-  /* 	else drank=-1; /\* still a spare *\/ */
-  /* 	/\* sending their new assignment to all spares *\/ */
-  /* 	MPI_Send(&drank, 1, MPI_INT, i+nc-nd, 1, shrunk); */
-  /*     } */
-  /*     MPI_Group_free(&cgrp); MPI_Group_free(&sgrp); MPI_Group_free(&dgrp); */
+  /* if(0 == srank) { */
+  /*   /\* getting the group of dead processes: */
+  /*    *   those in comm, but not in shrinked are the deads *\/ */
+  /*   MPI_Comm_group(CAF_COMM_WORLD, &cgrp); MPI_Comm_group(shrunk, &sgrp); */
+  /*   MPI_Group_difference(cgrp, sgrp, &dgrp); MPI_Group_size(dgrp, &nd); */
+  /*   /\* Computing the rank assignment for the newly inserted spares *\/ */
+  /*   for(i=0; i<ns-(nc-nd); i++) { */
+  /*     if( i < nd ) MPI_Group_translate_ranks(dgrp, 1, &i, cgrp, &drank); */
+  /*     else drank=-1; /\* still a spare *\/ */
+  /*     /\* sending their new assignment to all spares *\/ */
+  /*     MPI_Send(&drank, 1, MPI_INT, i+nc-nd, 1, shrunk); */
   /*   } */
-  /* } else { /\* I was a spare, waiting for my new assignment *\/ */
+  /*   MPI_Group_free(&cgrp); MPI_Group_free(&sgrp); MPI_Group_free(&dgrp); */
+  /* } */
+  /* else { /\* I was a spare, waiting for my new assignment *\/ */
   /*   MPI_Recv(&crank, 1, MPI_INT, 0, 1, shrunk, MPI_STATUS_IGNORE); */
   /* } */
 
@@ -586,7 +604,6 @@ static int communicator_shrink()
   CAF_COMM_WORLD = *newcomm;
   return MPI_SUCCESS;
 }
-
 
 #ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
 void *
