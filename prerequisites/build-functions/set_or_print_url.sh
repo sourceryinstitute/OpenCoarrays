@@ -53,7 +53,7 @@ set_or_print_url()
     "gcc;${gcc_tail:-}"
     "wget;wget-${version_to_build}.tar.gz"
     "m4;m4-${version_to_build}.tar.bz2"
-    "pkg-config;pkg-config-$version_to_build}.tar.gz"
+    "pkg-config;pkg-config-${version_to_build}.tar.gz"
     "mpich;mpich-${version_to_build}.tar.gz"
     "flex;flex-${version_to_build}.tar.bz2"
     "bison;bison-${version_to_build}.tar.gz"

@@ -13,6 +13,14 @@ set_or_print_default_version()
   fi
   # Get package name from argument passed with -p, -V, -D, or -U
   package_name="${arg_p:-${arg_D:-${arg_P:-${arg_U:-${arg_V}}}}}" # not needed for -l
+
+  if [[ "${package_name}" == "ofp" ]]; then
+    ${OPENCOARRAYS_SRC_DIR}/prerequisites/install-ofp.sh "${@}"
+    exit 0
+  fi 
+
+  [ "${package_name}" == "opencoarrays" ] && 
+    emergency "Please use this script with a previously downloaded opencoarrays source archive. This script does not download opencoarrays "
   # This is a bash 3 hack standing in for a bash 4 hash (bash 3 is the lowest common
   # denominator because, for licensing reasons, OS X only has bash 3 by default.)
   # See http://stackoverflow.com/questions/1494178/how-to-define-hash-tables-in-bash
@@ -26,7 +34,8 @@ set_or_print_default_version()
     "pkg-config:0.28"
     "make:4.1"
     "m4:1.4.17"
-    "subversion:1.9.2"
+    "subversion:1.9.4"
+    "ofp:sdf"
   )
   for package in "${package_version[@]}" ; do
      KEY="${package%%:*}"
