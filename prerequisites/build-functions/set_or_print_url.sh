@@ -58,7 +58,7 @@ set_or_print_url()
     "flex;flex-${version_to_build}.tar.bz2"
     "bison;bison-${version_to_build}.tar.gz"
     "make;make-${version_to_build}.tar.bz2"
-    "cmake;cmake-${version_to_build}.tar.gz "
+    "cmake;cmake-${version_to_build}.tar.gz"
     "subversion;subversion-${version_to_build}.tar.gz"
   )
   for package in "${package_url_tail[@]}" ; do
