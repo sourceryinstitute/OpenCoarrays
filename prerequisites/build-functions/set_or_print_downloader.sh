@@ -13,29 +13,31 @@ set_or_print_downloader()
     ${OPENCOARRAYS_SRC_DIR}/prerequisites/install-ofp.sh "${@}"
     exit 0
   fi
-  if [[ "${package_name}" == "gcc" && "${version_to_build}" != "trunk" ]]; then
-    gcc_fetch="ftp-url"
-  else
-    gcc_fetch="svn"
-  fi
   if [[ $(uname) == "Darwin" ]]; then
     wget_or_curl=curl
+    ftp_or_curl=curl
   else
     wget_or_curl=wget
+    ftp_or_curl=ftp-url
+  fi
+  if [[ "${package_name}" == "gcc" && "${version_to_build}" != "trunk" ]]; then
+    gcc_fetch="${ftp_or_curl}"
+  else
+    gcc_fetch="svn"
   fi
   # This is a bash 3 hack standing in for a bash 4 hash (bash 3 is the lowest common
   # denominator because, for licensing reasons, OS X only has bash 3 by default.)
   # See http://stackoverflow.com/questions/1494178/how-to-define-hash-tables-in-bash
   package_fetch=(
-    "gcc:$gcc_fetch"
-    "wget:ftp-url"
+    "gcc:${gcc_fetch}"
+    "wget:${ftp_or_curl}"
     "cmake:${wget_or_curl}"
     "mpich:${wget_or_curl}"
     "flex:${wget_or_curl}"
-    "bison:ftp-url"
+    "bison:${ftp_or_curl}"
     "pkg-config:${wget_or_curl}"
-    "make:ftp-url"
-    "m4:ftp-url"
+    "make:${ftp_or_curl}"
+    "m4:${ftp_or_curl}"
     "subversion:${wget_or_curl}"
   )
   for package in "${package_fetch[@]}" ; do
