@@ -287,7 +287,6 @@ void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
 
   if(error_called == 1)
     {
-      /* MPIX_Comm_agree( CAF_COMM_WORLD, &completed ); */
       /* communicator_shrink(&lock_comm); */
       communicator_shrink(&CAF_COMM_WORLD);
       error_called = 0;
@@ -319,7 +318,6 @@ void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
 
       if(error_called == 1)
 	{
-	  /* MPIX_Comm_agree( CAF_COMM_WORLD, &completed ); */
 	  //communicator_shrink(&lock_comm);
 	  communicator_shrink(&CAF_COMM_WORLD);
 	  error_called = 0;
@@ -518,6 +516,10 @@ PREFIX (finalize) (void)
 
   completed = 1;
 
+  printf("finalizing\n");
+
+  MPI_Cancel(&lock_req);
+  MPI_Request_free(&lock_req);
   MPI_Barrier(CAF_COMM_WORLD);
   
   while (caf_static_list != NULL)
@@ -649,8 +651,7 @@ void *
 
   if(error_called == 1)
     {
-      /* MPIX_Comm_agree( CAF_COMM_WORLD, &completed ); */
-      //communicator_shrink(&lock_comm);
+      /* communicator_shrink(&lock_comm); */
       communicator_shrink(&CAF_COMM_WORLD);
       error_called = 0;
     }
@@ -818,8 +819,7 @@ PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
 
   if(error_called == 1)
     {
-      /* MPIX_Comm_agree( CAF_COMM_WORLD, &completed ); */
-      //communicator_shrink(&lock_comm);
+      /* communicator_shrink(&lock_comm); */
       communicator_shrink(&CAF_COMM_WORLD);
       error_called = 0;
     }
