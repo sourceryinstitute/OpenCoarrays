@@ -114,7 +114,7 @@ find_or_install()
     # If the user specified a Fortran compiler, verify that mpif90 wraps the specified compiler
     if [[ ! -z "${arg_M:-}" ]]; then
 
-      echo -e "$this_script: Using the $package specified by -M or --MPI-path: ${arg_M}\n"
+      echo -e "$this_script: Using the $package specified by -M or --with-mpi: ${arg_M}\n"
       export MPIFC="${arg_M}"/bin/mpif90
       export MPICC="${arg_M}"/bin/mpicc
       export MPICXX="${arg_M}"/bin/mpicxx

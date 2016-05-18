@@ -12,7 +12,7 @@
   -l --list-packages          List the packages this script can install.
   -L --list-branches          List the repository branches this script can download.
   -m --with-cmake [arg]       Use the specified CMake installation. Default="cmake"
-  -M --MPI-path [arg]         Use the specified MPI installation. 
+  -M --with-mpi [arg]         Use the specified MPI installation. 
   -n --no-color               Disable color output.
   -p --package [arg]          Package to install. 
   -P --print-path [arg]       Print installation path for package specified in argument.

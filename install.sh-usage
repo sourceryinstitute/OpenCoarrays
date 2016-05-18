@@ -10,7 +10,7 @@
   -j --num-threads [arg]      Number of threads to use when invoking make. Default="1"
   -l --list-packages          Print packages this script can install.
   -m --with-cmake [arg]       Use specified CMake installation. Default="cmake"
-  -M --MPI-path [arg]         Use specified MPI installation.
+  -M --with-mpi [arg]         Use specified MPI installation.
   -n --no-color               Disable color output.
   -p --package [arg]          Install specified package. Default="opencoarrays"
   -P --print-path [arg]       Print installation directory for specified package.
