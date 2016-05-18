@@ -516,8 +516,6 @@ PREFIX (finalize) (void)
 
   completed = 1;
 
-  printf("finalizing\n");
-
   MPI_Cancel(&lock_req);
   MPI_Request_free(&lock_req);
   MPI_Barrier(CAF_COMM_WORLD);
@@ -557,6 +555,7 @@ PREFIX (finalize) (void)
   pthread_mutex_lock(&lock_am);
   caf_is_finalized = 1;
   pthread_mutex_unlock(&lock_am);
+  printf("finalizing\n");
   exit(0);
 }
 
