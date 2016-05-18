@@ -91,7 +91,7 @@ info "LOG_LEVEL: ${LOG_LEVEL}"
 
 info "-b (--branch):           ${arg_b} "
 info "-c (--with-c):           ${arg_c} "
-info "-C (--with-cpp):         ${arg_C} "
+info "-C (--with-cxx):         ${arg_C} "
 info "-d (--debug):            ${arg_d} "
 info "-D (--print-downloader): ${arg_D} "
 info "-e (--verbose):          ${arg_e} "
