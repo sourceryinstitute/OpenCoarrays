@@ -158,29 +158,45 @@ find_or_install()
       else
         printf "yes.\n"
 
-        echo -e "$this_script: Checking whether $executable in PATH wraps gfortran version `./build.sh -V gcc` or later... "
-        $executable acceptable_compiler.f90 -o acceptable_compiler
-        $executable print_true.f90 -o print_true
-        acceptable=$(./acceptable_compiler)
-        is_true=$(./print_true)
-        rm acceptable_compiler print_true
-       
-        if [[ "$acceptable" == "$is_true" ]]; then
-          printf "yes.\n $this_script: Using the $executable found in the PATH.\n"
+        if [[ ! -z "${arg_f:-}" ]]; then
+          
+          info "-f (or --with-fortran) argument detected with value ${arg_f}"
+          printf "yes.\n $this_script: Using the specified $executable.\n"
           export MPIFC=mpif90
           export MPICC=mpicc
           export MPICXX=mpicxx
-
+  
           # Halt the recursion
           stack_push dependency_pkg "none"
           stack_push dependency_exe "none"
           stack_push dependency_path "none"
+
         else
-          printf "no\n"
-          # Trigger 'find_or_install gcc' and subsequent build of $package
-          stack_push dependency_pkg "none" "$package" "gcc"
-          stack_push dependency_exe "none" "$executable" "gfortran"
-          stack_push dependency_path "none" "$(./build.sh -P "$package")" "$(./build.sh -P gcc)"
+
+          echo -e "$this_script: Checking whether $executable in PATH wraps gfortran version `./build.sh -V gcc` or later... "
+          $executable acceptable_compiler.f90 -o acceptable_compiler
+          $executable print_true.f90 -o print_true
+          acceptable=$(./acceptable_compiler)
+          is_true=$(./print_true)
+          rm acceptable_compiler print_true
+         
+          if [[ "$acceptable" == "$is_true" ]]; then
+            printf "yes.\n $this_script: Using the $executable found in the PATH.\n"
+            export MPIFC=mpif90
+            export MPICC=mpicc
+            export MPICXX=mpicxx
+  
+            # Halt the recursion
+            stack_push dependency_pkg "none"
+            stack_push dependency_exe "none"
+            stack_push dependency_path "none"
+          else
+            printf "no\n"
+            # Trigger 'find_or_install gcc' and subsequent build of $package
+            stack_push dependency_pkg "none" "$package" "gcc"
+            stack_push dependency_exe "none" "$executable" "gfortran"
+            stack_push dependency_path "none" "$(./build.sh -P "$package")" "$(./build.sh -P gcc)"
+          fi
         fi
       fi
 
