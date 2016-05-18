@@ -288,7 +288,7 @@ void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
   if(error_called == 1)
     {
       /* MPIX_Comm_agree( CAF_COMM_WORLD, &completed ); */
-      communicator_shrink(&lock_comm);
+      /* communicator_shrink(&lock_comm); */
       communicator_shrink(&CAF_COMM_WORLD);
       error_called = 0;
     }
@@ -320,7 +320,7 @@ void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
       if(error_called == 1)
 	{
 	  /* MPIX_Comm_agree( CAF_COMM_WORLD, &completed ); */
-	  communicator_shrink(&lock_comm);
+	  //communicator_shrink(&lock_comm);
 	  communicator_shrink(&CAF_COMM_WORLD);
 	  error_called = 0;
 	}
@@ -591,7 +591,7 @@ int communicator_shrink(MPI_Comm *comm)
   /* Split does the magic: removing spare processes and reordering ranks
    * so that all surviving processes remain at their former place */
   rc = MPI_Comm_split(shrunk, crank<0?MPI_UNDEFINED:1, crank, newcomm);
-  
+   
   /* Split or some of the communications above may have failed if
    * new failures have disrupted the process: we need to
    * make sure we succeeded at all ranks, or retry until it works. */
@@ -650,8 +650,8 @@ void *
   if(error_called == 1)
     {
       /* MPIX_Comm_agree( CAF_COMM_WORLD, &completed ); */
+      //communicator_shrink(&lock_comm);
       communicator_shrink(&CAF_COMM_WORLD);
-      communicator_shrink(&lock_comm);
       error_called = 0;
     }
 
@@ -819,8 +819,8 @@ PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
   if(error_called == 1)
     {
       /* MPIX_Comm_agree( CAF_COMM_WORLD, &completed ); */
+      //communicator_shrink(&lock_comm);
       communicator_shrink(&CAF_COMM_WORLD);
-      communicator_shrink(&lock_comm);
       error_called = 0;
     }
 
