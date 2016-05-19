@@ -2721,13 +2721,16 @@ PREFIX (image_status) (int image)
   return res;
 }
 
-int *
-PREFIX (failed_images) (int *num_failed_images, int team __attribute__ ((unused)),
+void
+PREFIX (failed_images) (gfc_descriptor_t *array, int team __attribute__ ((unused)),
 			int kind __attribute__ ((unused)))
 {
-  int *mem;
-  *num_failed_images = n_failed_imgs;
-  mem = (int *)calloc(n_failed_imgs,sizeof(int));
+  int *mem = (int *)calloc(n_failed_imgs,sizeof(int));
+  array->base_addr = mem;
   memcpy(mem,ranks_gc,n_failed_imgs*sizeof(int));
-  return mem;
+  array->dtype = 265;
+  array->dim[0].lower_bound = 1;
+  array->dim[0]._ubound = n_failed_imgs;
+  array->dim[0]._stride = 1;
+  array->offset = -1;
 }
