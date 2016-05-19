@@ -58,6 +58,7 @@ matrix:
           packages:
             - gcc-5
             - gfortran-5
+            - g++-5
             - binutils
             - cmake-data
             - cmake
@@ -72,6 +73,7 @@ matrix:
           packages:
             - gcc-5
             - gfortran-5
+            - g++-5
 
 before_install:
   - |
