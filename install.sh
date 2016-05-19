@@ -80,7 +80,7 @@
 # (4) Parse the command line using the usage information.
 
 ### Start of boilerplate -- do not edit this block #######################
-export OPENCOARRAYS_SRC_DIR="${OPENCOARRAYS_SRC_DIR:-${PWD}}"
+export OPENCOARRAYS_SRC_DIR="${OPENCOARRAYS_SRC_DIR:-${PWD%/}}"
 if [[ ! -f "${OPENCOARRAYS_SRC_DIR}/src/libcaf.h" ]]; then
   echo "Please run this script inside the top-level OpenCoarrays source directory or "
   echo "set OPENCOARRAYS_SRC_DIR to the OpenCoarrays source directory path."
@@ -149,7 +149,7 @@ info  "-D (--print-downloader): ${arg_D}"
 info  "-e (--verbose):          ${arg_e}"
 info  "-f (--with-fortran):     ${arg_f}"
 info  "-h (--help):             ${arg_h}"
-info  "-i (--install-dir):      ${arg_i}"
+info  "-i (--install-prefix):   ${arg_i}"
 info  "-I (--install-version):  ${arg_I}"
 info  "-j (--num-threads):      ${arg_j}"
 info  "-l (--list-packages):    ${arg_l}"
@@ -188,21 +188,20 @@ info  "-V (--print-version):    ${arg_V}"
 this_script="$(basename "$0")"
 export this_script
 
-export install_path="${arg_i}"
-info "install_path=${arg_i}"
+export install_path="${arg_i%/}"
+info "install_path=\"${install_path}\""
 
 export num_threads="${arg_j}"
-info "num_threads=${arg_j}"
+info "num_threads=\"${arg_j}\""
 
 export opencoarrays_src_dir="${OPENCOARRAYS_SRC_DIR}"
 info "opencoarrays_src_dir=${OPENCOARRAYS_SRC_DIR}"
 
-export build_path=$opencoarrays_src_dir/prerequisites/builds
-info "build_path=$opencoarrays_src_dir/prerequisites/builds"
+export build_path="${opencoarrays_src_dir}"/prerequisites/builds
+info "build_path=\"${opencoarrays_src_dir}\"/prerequisites/builds"
 
-export build_script=$opencoarrays_src_dir/prerequisites/build.sh
-info "build_script=$opencoarrays_src_dir/prerequisites/build.sh"
-
+export build_script="${opencoarrays_src_dir}"/prerequisites/build.sh
+info "build_script=\"${opencoarrays_src_dir}\"/prerequisites/build.sh"
 
 # ___________________ Define functions for use in the Main Body ___________________
 
@@ -214,12 +213,16 @@ stack_new dependency_pkg
 stack_new dependency_exe
 stack_new dependency_path
 stack_new script_installed
+
 # shellcheck source=./prerequisites/install-functions/find_or_install.sh
 source $opencoarrays_src_dir/prerequisites/install-functions/find_or_install.sh
+
 # shellcheck source=./prerequisites/install-functions/print_header.sh
 source $opencoarrays_src_dir/prerequisites/install-functions/print_header.sh
+
 # shellcheck source=./prerequisites/install-functions/build_opencoarrays.sh
 source $opencoarrays_src_dir/prerequisites/install-functions/build_opencoarrays.sh
+
 # shellcheck source=./prerequisites/install-functions/report_results.sh
 source $opencoarrays_src_dir/prerequisites/install-functions/report_results.sh
 
@@ -232,7 +235,7 @@ source $opencoarrays_src_dir/prerequisites/install-functions/report_results.sh
 if [[ "${arg_v}" == "${__flag_present}" || "${arg_V}" == "opencoarrays" ]]; then
 
   # Print script copyright if invoked with -v, -V, or --version argument
-  cmake_project_line=$(grep project CMakeLists.txt | grep VERSION)
+  cmake_project_line=$(grep project ${opencoarrays_src_dir}/CMakeLists.txt | grep VERSION)
   text_after_version_keyword="${cmake_project_line##*VERSION}"
   text_before_language_keyword="${text_after_version_keyword%%LANGUAGES*}"
   opencoarrays_version=$text_before_language_keyword
@@ -249,7 +252,7 @@ if [[ "${arg_v}" == "${__flag_present}" || "${arg_V}" == "opencoarrays" ]]; then
     echo "http://www.sourceryinstitute.org/license.html"
     echo ""
   elif [[ "${arg_V}" == "opencoarrays" ]]; then
-    echo "${opencoarrays_version}"
+    echo "${opencoarrays_version//[[:space:]]/}"
   fi
 
 elif [[ ! -z "${arg_D:-${arg_P:-${arg_U:-${arg_V}}}}" ||  "${arg_l}" == "${__flag_present}" ]]; then
@@ -261,29 +264,48 @@ elif [[ ! -z "${arg_D:-${arg_P:-${arg_U:-${arg_V}}}}" ||  "${arg_l}" == "${__fla
   [ ! -z "${arg_U}" ] && build_flag="-U"
   [ ! -z "${arg_V}" ] && build_flag="-V"
   [ "${arg_l}" == "${__flag_present}" ] && build_flag="-l"
-  "${opencoarrays_src_dir}"/prerequisites/build.sh "${build_flag}" "${build_arg}"
-  # Add lines other packages the current script builds
-  if [[ "${arg_l}" == "${__flag_present}" ]]; then
-    echo "opencoarrays (version $("${opencoarrays_src_dir}/install.sh" -V opencoarrays))"
-    echo "ofp (version: ofp-sdf for OS X )"
+
+  if [[ "${arg_P}" == "opencoarrays" ]]; then
+
+    version="$("${opencoarrays_src_dir}/install.sh" -V opencoarrays)"
+    echo "${install_path%/}/opencoarrays/${version}"
+
+  else
+
+    info "Invoking build script with the following command:"
+    info "\"${opencoarrays_src_dir}\"/prerequisites/build.sh \"${build_flag}\" \"${build_arg}\""
+    "${opencoarrays_src_dir}"/prerequisites/build.sh "${build_flag}" "${build_arg}"
+
+    # Add lines other packages the current script builds
+    if [[ "${arg_l}" == "${__flag_present}" ]]; then
+      echo "opencoarrays (version $("${opencoarrays_src_dir}/install.sh" -V opencoarrays))"
+      echo "ofp (version: ofp-sdf for OS X )"
+    fi
   fi
 
 elif [[ "${arg_p:-}" == "opencoarrays" ]]; then
 
+  
   cd prerequisites || exit 1
   installation_record=install-opencoarrays.log
   # shellcheck source=./prerequisites/build-functions/set_SUDO_if_needed_to_write_to_directory.sh
   source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/set_SUDO_if_needed_to_write_to_directory.sh"
+  version="$("${opencoarrays_src_dir}/install.sh" -V opencoarrays)"
+  install_path="${install_path}/opencoarrays/${version}"
   set_SUDO_if_needed_to_write_to_directory "${install_path}"
   build_opencoarrays 2>&1 | tee ../"${installation_record}"
   report_results 2>&1 | tee -a ../"${installation_record}"
 
 elif [[ "${arg_p:-}" == "ofp" ]]; then
 
+  info "Invoking Open Fortran Parser build script with the following command:"
+  info "\"${opencoarrays_src_dir}\"/prerequisites/install-ofp.sh"
   "${opencoarrays_src_dir}"/prerequisites/install-ofp.sh
 
 elif [[ ! -z "${arg_p:-}" ]]; then
 
+  info "Invoking build script with the following command:"
+  info "\"${opencoarrays_src_dir}\"/prerequisites/build.sh ${@:-}"
   "${opencoarrays_src_dir}"/prerequisites/build.sh ${@:-}
 
 fi

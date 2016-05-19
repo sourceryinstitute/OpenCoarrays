@@ -7,6 +7,7 @@ build_and_install()
 
   info "Building ${package_to_build} ${version_to_build}"
   info "Build path: ${build_path}"
+  info "Installation path: ${install_path}"
 
   set_SUDO_if_needed_to_write_to_directory "${build_path}"
   set_SUDO_if_needed_to_write_to_directory "${install_path}"

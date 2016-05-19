@@ -31,7 +31,7 @@
 # (4) Parse the command line using the usage information.
 
 
-export OPENCOARRAYS_SRC_DIR="${OPENCOARRAYS_SRC_DIR:-${PWD}/..}"
+export OPENCOARRAYS_SRC_DIR="${OPENCOARRAYS_SRC_DIR:-${PWD%prerequisites*}}"
 export __usage=${OPENCOARRAYS_SRC_DIR}/prerequisites/build.sh-usage
 if [[ ! -f "${OPENCOARRAYS_SRC_DIR}/src/libcaf.h" ]]; then
   echo "Please run this script inside the OpenCoarrays source \"prerequisites\" subdirectory"
@@ -91,13 +91,13 @@ info "LOG_LEVEL: ${LOG_LEVEL}"
 
 info "-b (--branch):           ${arg_b} "
 info "-c (--with-c):           ${arg_c} "
-info "-C (--with-cpp):         ${arg_C} "
+info "-C (--with-cxx):         ${arg_C} "
 info "-d (--debug):            ${arg_d} "
 info "-D (--print-downloader): ${arg_D} "
 info "-e (--verbose):          ${arg_e} "
 info "-f (--with-fortran):     ${arg_f} "
 info "-h (--help):             ${arg_h} "
-info "-i (--install-dir):      ${arg_i} "
+info "-i (--install-prefix):   ${arg_i} "
 info "-j (--num-threads):      ${arg_j} "
 info "-I (--install-version):  ${arg_I} "
 info "-l (--list-packages):    ${arg_l} "
@@ -112,6 +112,7 @@ info "-U (--print-url):        ${arg_U} "
 info "-v (--version):          ${arg_v} "
 info "-V (--print-version):    ${arg_V} "
 }
+
 # shellcheck source=./build-functions/set_or_print_default_version.sh
 source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/set_or_print_default_version.sh"
 set_or_print_default_version "${@}"

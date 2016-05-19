@@ -58,6 +58,7 @@ matrix:
           packages:
             - gcc-5
             - gfortran-5
+            - g++-5
             - binutils
             - cmake-data
             - cmake
@@ -72,6 +73,7 @@ matrix:
           packages:
             - gcc-5
             - gfortran-5
+            - g++-5
 
 before_install:
   - |
@@ -151,13 +153,7 @@ script:
       ln -fs "$(which gcc-5)" "$HOME/bin/gcc"
       ln -fs "$(which g++-5)" "$HOME/bin/g++"
       export PATH="$PATH:$HOME/bin"
-      yes | ./install.sh -i "$HOME/opt/opencoarrays" -j 4 -f "$HOME/bin/gfortran" -c "$HOME/bin/gcc" -C "$HOME/bin/g++" > install.log &
-      install_sh_PID=$!
-      echo "install.log will be displayed after success or failure"
-      while ps -p $install_sh_PID > /dev/null; do
-        echo "Still working on installing opencoarrays and dependencies"
-        sleep 300 # prevent Travis-CI abort due to inactivity and excessive logging
-      done
+      yes | ./install.sh -i "$HOME/opt/opencoarrays" -j 4 -f "$HOME/bin/gfortran" -c "$HOME/bin/gcc" -C "$HOME/bin/g++"
     else
       mkdir cmake-build
       cd cmake-build
@@ -172,10 +168,6 @@ after_success:
   - find . -name '*.gcno' -print
   - gcov-5 --version
   - bash <(curl -s https://codecov.io/bash) -x $(which gcov-5)
-  - cat install.log || true
-
-after_failure:
-  - cat install.log || true
 
 notifications:
   webhooks:
