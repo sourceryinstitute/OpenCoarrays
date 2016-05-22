@@ -4,11 +4,13 @@
 # shellcheck disable=SC2154
 set_or_print_downloader()
 {
-  # Verify requirements
-  [ ! -z "${arg_D}" ] && [ ! -z "${arg_p:-${arg_P:-${arg_U:-${arg_V}}}}" ] &&
-    emergency "Please pass only one of {-D, -p, -P, -U, -V} or a longer equivalent (multiple detected)."
 
-  package_name="${arg_p:-${arg_D:-${arg_P:-${arg_U:-${arg_V}}}}}"
+  # Verify requirements
+  [ ! -z "${arg_D}" ] && [ ! -z "${arg_p:-${arg_P:-${arg_U:-${arg_V:-${arg_B}}}}}" ] &&
+    emergency "Please pass only one of {-B, -D, -p, -P, -U, -V} or a longer equivalent (multiple detected)."
+
+  package_name="${arg_p:-${arg_D:-${arg_P:-${arg_U:-${arg_V:-${arg_B}}}}}}"
+
   if [[ "${package_name}" == "ofp" ]]; then
     ${OPENCOARRAYS_SRC_DIR}/prerequisites/install-ofp.sh "${@}"
     exit 0
@@ -20,10 +22,12 @@ set_or_print_downloader()
     wget_or_curl=wget
     ftp_or_curl=ftp-url
   fi
-  if [[ "${package_name}" == "gcc" && "${version_to_build}" != "trunk" ]]; then
-    gcc_fetch="${ftp_or_curl}"
-  else
-    gcc_fetch="svn"
+  if [[ "${package_name}" == "gcc" ]]; then
+    if [[ -z "${arg_b:-${arg_B:-}}" ]]; then
+      gcc_fetch="${ftp_or_curl}"
+    else
+      gcc_fetch="svn"
+    fi
   fi
   # This is a bash 3 hack standing in for a bash 4 hash (bash 3 is the lowest common
   # denominator because, for licensing reasons, OS X only has bash 3 by default.)

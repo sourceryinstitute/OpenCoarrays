@@ -1,4 +1,5 @@
-  -b --branch [arg]           Repository branch to download. Default="trunk"
+  -b --branch [arg]           Install the specified repository development branch.
+  -B --list-branches [arg]    List the available branches in the specified package's repository. (currently only arg=gcc is supported)
   -c --with-c [arg]           Use the specified C compiler. Default="gcc"
   -C --with-cxx [arg]         Use the specified C++ compiler. Default="g++"
   -d --debug                  Enable debug mode.
