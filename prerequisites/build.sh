@@ -46,8 +46,6 @@ fi
 # shellcheck source=./use-case/bootstrap.sh
 source "${B3B_USE_CASE}/bootstrap.sh" "$@"
 
-
-
 # Set up a function to call when receiving an EXIT signal to do some cleanup. Remove if
 # not needed. Other signals can be trapped too, like SIGINT and SIGTERM.
 function cleanup_before_exit () {
@@ -118,7 +116,7 @@ if [[ -z "${arg_B}" ]]; then
   # shellcheck source=./build-functions/set_or_print_default_version.sh
   source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/set_or_print_default_version.sh"
   set_or_print_default_version "${@}"
-  export version_to_build="${arg_I:-${default_version}}"
+  export version_to_build="${arg_I:-${arg_b:-${default_version}}}"
 fi
 
 # shellcheck source=./build-functions/set_or_print_downloader.sh
