@@ -1,5 +1,5 @@
-  -b --branch [arg]           Install the specified repository development branch.
-  -B --list-branches [arg]    List the available branches in the specified package's repository. (currently only arg=gcc is supported)
+  -b --install-branch [arg]   Install the specified repository development branch.
+  -B --list-branches [arg]    List the available branches in the specified package's repository.
   -c --with-c [arg]           Use the specified C compiler. Default="gcc"
   -C --with-cxx [arg]         Use the specified C++ compiler. Default="g++"
   -d --debug                  Enable debug mode.
@@ -11,7 +11,6 @@
   -j --num-threads [arg]      Number of threads to use when invoking make. Default="1"
   -I --install-version [arg]  Package version to install. (To see default, use -V or --print-version)
   -l --list-packages          List the packages this script can install.
-  -L --list-branches          List the repository branches this script can download.
   -m --with-cmake [arg]       Use the specified CMake installation. Default="cmake"
   -M --with-mpi [arg]         Use the specified MPI installation. 
   -n --no-color               Disable color output.

@@ -1,3 +1,5 @@
+  -b --branch [arg]           Install the specified repository development branch.
+  -B --list-branches [arg]    List the available branches in the specified package's repository.
   -c --with-c [arg]           Use specified C compiler. 
   -C --with-cxx [arg]         Use specified C++ compiler. 
   -d --debug                  Enable debug mode.

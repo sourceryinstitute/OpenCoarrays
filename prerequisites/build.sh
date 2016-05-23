@@ -59,8 +59,9 @@ trap cleanup_before_exit EXIT # The signal is specified here. Could be SIGINT, S
 export __flag_present=1
 
 # shellcheck disable=SC2154
-if [[ "${arg_l}" != "${__flag_present}" && "${arg_L}" != "${__flag_present}" &&
-      "${arg_v}" != "${__flag_present}" && "${arg_h}" != "${__flag_present}" &&
+if [[ "${arg_l}" != "${__flag_present}" && 
+      "${arg_v}" != "${__flag_present}" && 
+      "${arg_h}" != "${__flag_present}" &&
       -z "${arg_D:-${arg_p:-${arg_P:-${arg_U:-${arg_V:-${arg_B}}}}}}" ]]; then
   help "${__base}: Insufficient arguments. Please pass either -B, -D, -h, -l, -L, -p, -P, -U, -v, -V, or a longer equivalent."
 fi
@@ -100,7 +101,6 @@ info "-i (--install-prefix):   ${arg_i} "
 info "-j (--num-threads):      ${arg_j} "
 info "-I (--install-version):  ${arg_I} "
 info "-l (--list-packages):    ${arg_l} "
-info "-L (--list-branches):    ${arg_L} "
 info "-m (--with-cmake):       ${arg_m} "
 info "-M (--with-mpi):         ${arg_M} "
 info "-n (--no-color):         ${arg_n} "
