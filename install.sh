@@ -125,12 +125,12 @@ fi
   emergency "Please pass only one of {-B, -D, -p, -P, -U, -V} or a longer equivalent (multiple detected). [exit 101]"
 
 [ ! -z "${arg_P}" ] && [ ! -z "${arg_U:-${arg_V:-${arg_B}}}" ] &&
-  emergency "Please pass only one of {-B, -D, -p, -P, -U, -V} or a longer equivalent (multiple detected). [exit 103]"
+  emergency "Please pass only one of {-B, -D, -p, -P, -U, -V} or a longer equivalent (multiple detected). [exit 102]"
 
 [ ! -z "${arg_U}" ] && [ ! -z "${arg_V:-${arg_B}}" ] &&
-  emergency "Please pass only one of {-B, -D, -p, -P, -U, -V} or a longer equivalent (multiple detected). [exit 104]"
+  emergency "Please pass only one of {-B, -D, -p, -P, -U, -V} or a longer equivalent (multiple detected). [exit 103]"
 
-[ ! -z "${arg_V}" ] && [ ! -z "${arg_B}}" ] &&
+[ ! -z "${arg_V}" ] && [ ! -z "${arg_B}" ] &&
   emergency "Please pass only one of {-B, -D, -p, -P, -U, -V} or a longer equivalent (multiple detected). [exit 104]"
 
 ### Print bootstrapped magic variables to STDERR when LOG_LEVEL

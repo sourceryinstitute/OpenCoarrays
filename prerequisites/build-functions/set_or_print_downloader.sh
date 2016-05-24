@@ -33,16 +33,16 @@ set_or_print_downloader()
   # denominator because, for licensing reasons, OS X only has bash 3 by default.)
   # See http://stackoverflow.com/questions/1494178/how-to-define-hash-tables-in-bash
   package_fetch=(
-    "gcc:${gcc_fetch}"
-    "wget:${ftp_or_curl}"
-    "cmake:${wget_or_curl}"
-    "mpich:${wget_or_curl}"
-    "flex:${wget_or_curl}"
-    "bison:${ftp_or_curl}"
-    "pkg-config:${wget_or_curl}"
-    "make:${ftp_or_curl}"
-    "m4:${ftp_or_curl}"
-    "subversion:${wget_or_curl}"
+    "gcc:${gcc_fetch-}"
+    "wget:${ftp_or_curl-}"
+    "cmake:${wget_or_curl-}"
+    "mpich:${wget_or_curl-}"
+    "flex:${wget_or_curl-}"
+    "bison:${ftp_or_curl-}"
+    "pkg-config:${wget_or_curl-}"
+    "make:${ftp_or_curl-}"
+    "m4:${ftp_or_curl-}"
+    "subversion:${wget_or_curl-}"
   )
   for package in "${package_fetch[@]}" ; do
      KEY="${package%%:*}"
