@@ -292,8 +292,11 @@ void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
   locking_atomic_op(win, &value, newval, compare, image_index, index);
 
   if(value == caf_this_image && image_index == caf_this_image)
-    goto stat_error;
-
+    {
+      printf("Lock already taken %d\n",caf_this_image);
+      goto stat_error;
+    }
+  
   if(acquired_lock != NULL)
     {
       if(value == 0)
