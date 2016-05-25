@@ -678,7 +678,8 @@ void *
       MPI_Win_flush(caf_this_image-1, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
       free(init_array);
-      PREFIX(sync_all) (NULL,NULL,0);
+      MPI_Barrier(CAF_COMM_WORLD);
+      /* PREFIX(sync_all) (NULL,NULL,0); */
     }
 
   caf_static_t *tmp = malloc (sizeof (caf_static_t));
@@ -754,7 +755,8 @@ PREFIX (deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len
       caf_runtime_error (msg);
     }
 
-  PREFIX (sync_all) (NULL, NULL, 0);
+  /* PREFIX (sync_all) (NULL, NULL, 0); */
+  MPI_Barrier(CAF_COMM_WORLD);
 
   caf_static_t *tmp = caf_tot, *prev = caf_tot, *next=caf_tot;
   MPI_Win *p = *token;
@@ -811,6 +813,13 @@ PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
 {
   int ierr=0;
 
+  /* if(error_called == 1) */
+  /*   { */
+  /*     communicator_shrink(&CAF_COMM_WORLD); */
+  /*     error_called = 0; */
+  /*     ierr = STAT_FAILED_IMAGE; */
+  /*   } */
+  
   if (unlikely (caf_is_finalized))
     ierr = STAT_STOPPED_IMAGE;
   else if(ierr != STAT_FAILED_IMAGE)
@@ -819,7 +828,6 @@ PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
       explicit_flush();
 #endif
       MPI_Barrier(CAF_COMM_WORLD);
-      ierr = 0;
     }
 
   if(error_called == 1)
@@ -833,8 +841,8 @@ PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
     *stat = ierr;
   else if(ierr == STAT_FAILED_IMAGE)
     error_stop (ierr);
-    
-  if (ierr != STAT_FAILED_IMAGE)
+  
+  if (ierr != 0 && ierr != STAT_FAILED_IMAGE)
     {
       char *msg;
       if (caf_is_finalized)
