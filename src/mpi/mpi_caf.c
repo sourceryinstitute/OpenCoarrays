@@ -275,7 +275,7 @@ void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
 {
   const char msg[] = "Already locked";
 #if MPI_VERSION >= 3
-  int value=1, compare = 0, newval = caf_this_image, i = 1,zero=0,ret=0;
+  int value=0, compare = 0, newval = caf_this_image, i = 1,zero=0,ret=0;
   int flag, it = 0, check_failure = 100;
 
   if(stat != NULL)
