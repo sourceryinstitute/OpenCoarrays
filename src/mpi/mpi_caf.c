@@ -114,6 +114,11 @@ int *ranks_gc,*ranks_gf; //to be returned by failed images
 MPI_Errhandler errh,errh_w;
 int completed = 0,tmp_lock;
 
+static int cmpfunc (const void *a, const void *b)
+{
+   return ( *(int*)a - *(int*)b );
+}
+
 static void verbose_win_errhandler(MPI_Win* win, int* err, ...) {
   /* printf("in win err handler\n"); */
   /* used_comm++; */
@@ -278,13 +283,6 @@ void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
 
   MPI_Test(&lock_req,&flag,MPI_STATUS_IGNORE);
 
-  /* if(error_called == 1) */
-  /*   { */
-  /*     /\* MPIX_Comm_agree( CAF_COMM_WORLD, &completed ); *\/ */
-  /*     communicator_shrink(&CAF_COMM_WORLD); */
-  /*     error_called = 0; */
-  /*   } */
-
   if(error_called == 1)
     {
       /* communicator_shrink(&lock_comm); */
@@ -318,7 +316,7 @@ void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
 
       if(error_called == 1)
 	{
-	  //communicator_shrink(&lock_comm);
+	  /* communicator_shrink(&lock_comm); */
 	  communicator_shrink(&CAF_COMM_WORLD);
 	  error_called = 0;
 	}
@@ -2728,6 +2726,7 @@ PREFIX (failed_images) (gfc_descriptor_t *array, int team __attribute__ ((unused
   int *mem = (int *)calloc(n_failed_imgs,sizeof(int));
   array->base_addr = mem;
   memcpy(mem,ranks_gc,n_failed_imgs*sizeof(int));
+  qsort(mem,n_failed_imgs,sizeof(int),cmpfunc);
   array->dtype = 265;
   array->dim[0].lower_bound = 1;
   array->dim[0]._ubound = n_failed_imgs;
