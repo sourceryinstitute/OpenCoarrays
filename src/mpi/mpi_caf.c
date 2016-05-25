@@ -383,7 +383,7 @@ void mutex_unlock(MPI_Win win, int image_index, int index, int *stat,
 
   if(value == 0)
     goto stat_error;
-
+      
   return;
 
 stat_error:
@@ -1466,7 +1466,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
 void
 PREFIX (get) (caf_token_t token, size_t offset,
               int image_index,
-              gfc_descriptor_t *src ,
+              gfc_descriptor_t *src,
               caf_vector_t *src_vector __attribute__ ((unused)),
               gfc_descriptor_t *dest, int src_kind, int dst_kind,
               bool mrt)
