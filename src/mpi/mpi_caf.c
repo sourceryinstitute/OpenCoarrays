@@ -285,11 +285,10 @@ void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
 
   if(error_called == 1)
     {
-      /* communicator_shrink(&lock_comm); */
       communicator_shrink(&CAF_COMM_WORLD);
       error_called = 0;
     }
-  
+
   locking_atomic_op(win, &value, newval, compare, image_index, index);
 
   if(value == caf_this_image && image_index == caf_this_image)
@@ -316,7 +315,6 @@ void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
 
       if(error_called == 1)
 	{
-	  /* communicator_shrink(&lock_comm); */
 	  communicator_shrink(&CAF_COMM_WORLD);
 	  error_called = 0;
 	}
@@ -648,7 +646,6 @@ void *
 
   if(error_called == 1)
     {
-      /* communicator_shrink(&lock_comm); */
       communicator_shrink(&CAF_COMM_WORLD);
       error_called = 0;
     }
@@ -814,16 +811,9 @@ PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
 {
   int ierr=0;
 
-  if(error_called == 1)
-    {
-      /* communicator_shrink(&lock_comm); */
-      communicator_shrink(&CAF_COMM_WORLD);
-      error_called = 0;
-    }
-
   if (unlikely (caf_is_finalized))
     ierr = STAT_STOPPED_IMAGE;
-  else
+  else if(ierr != STAT_FAILED_IMAGE)
     {
 #if defined(NONBLOCKING_PUT) && !defined(CAF_MPI_LOCK_UNLOCK)
       explicit_flush();
@@ -832,10 +822,19 @@ PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
       ierr = 0;
     }
 
+  if(error_called == 1)
+    {
+      communicator_shrink(&CAF_COMM_WORLD);
+      error_called = 0;
+      ierr = STAT_FAILED_IMAGE;
+    }
+  
   if (stat)
     *stat = ierr;
-
-  if (ierr)
+  else if(ierr == STAT_FAILED_IMAGE)
+    error_stop (ierr);
+    
+  if (ierr != STAT_FAILED_IMAGE)
     {
       char *msg;
       if (caf_is_finalized)
