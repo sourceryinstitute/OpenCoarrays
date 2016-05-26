@@ -633,7 +633,7 @@ void *
   /* int ierr; */
   void *mem;
   size_t actual_size;
-  int l_var=0, *init_array=NULL;
+  int l_var=0, *init_array=NULL,ierr=0;
 
   if (unlikely (caf_is_finalized))
     goto error;
@@ -689,7 +689,7 @@ void *
       MPI_Win_lock(MPI_LOCK_EXCLUSIVE, caf_this_image-1, 0, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
       MPI_Put (init_array, size, MPI_INT, caf_this_image-1,
-                      0, size, MPI_INT, *p);
+	       0, size, MPI_INT, *p);
 # ifdef CAF_MPI_LOCK_UNLOCK
       MPI_Win_unlock(caf_this_image-1, *p);
 # else // CAF_MPI_LOCK_UNLOCK
@@ -706,7 +706,7 @@ void *
       error_called = 0;
       ierr = STAT_FAILED_IMAGE;
     }
-  
+
   caf_static_t *tmp = malloc (sizeof (caf_static_t));
   tmp->prev  = caf_tot;
   tmp->token = *token;
@@ -722,7 +722,7 @@ void *
 
   if (stat)
     *stat = 0;
-  else if(ierr == STAT_FAILED_IMAGE)
+  else if (ierr == STAT_FAILED_IMAGE)
     error_stop (ierr);
 
   return mem;
