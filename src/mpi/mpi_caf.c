@@ -2555,6 +2555,19 @@ PREFIX (event_post) (caf_token_t token, size_t index,
   #warning Events for MPI-2 are not implemented
   printf ("Events for MPI-2 are not supported, please update your MPI implementation\n");
 #endif // MPI_VERSION
+
+  MPI_Test(&lock_req,&flag,MPI_STATUS_IGNORE);
+  
+  if(error_called == 1)
+    {
+      communicator_shrink(&CAF_COMM_WORLD);
+      error_called = 0;
+      ierr = STAT_FAILED_IMAGE;
+    }
+
+  if(!stat && ierr == STAT_FAILED_IMAGE)
+    error_stop (ierr);
+  
   if(ierr != MPI_SUCCESS)
     {
       if(stat != NULL)
@@ -2615,6 +2628,19 @@ PREFIX (event_wait) (caf_token_t token, size_t index,
 # else // CAF_MPI_LOCK_UNLOCK
   MPI_Win_flush (image, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
+
+  MPI_Test(&lock_req,&flag,MPI_STATUS_IGNORE);
+
+  if(error_called == 1)
+    {
+      communicator_shrink(&CAF_COMM_WORLD);
+      error_called = 0;
+      ierr = STAT_FAILED_IMAGE;
+    }
+
+  if(!stat && ierr == STAT_FAILED_IMAGE)
+    error_stop (ierr);
+  
   if(ierr != MPI_SUCCESS)
     {
       if(stat != NULL)
