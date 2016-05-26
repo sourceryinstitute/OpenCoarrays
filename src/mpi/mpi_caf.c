@@ -276,7 +276,7 @@ void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
   const char msg[] = "Already locked";
 #if MPI_VERSION >= 3
   int value=0, compare = 0, newval = caf_this_image, i = 1,zero=0,ret=0;
-  int flag, it = 0, check_failure = 100;
+  int flag, it = 0, check_failure = 100,ierr=0;
 
   if(stat != NULL)
     *stat = 0;
@@ -370,7 +370,7 @@ void mutex_unlock(MPI_Win win, int image_index, int index, int *stat,
   if(stat != NULL)
     *stat = 0;
 #if MPI_VERSION >= 3
-  int value=1, compare = 1, newval = 0;
+  int value=1, compare = 1, newval = 0,flag,ierr=0;
 
   MPI_Test(&lock_req,&flag,MPI_STATUS_IGNORE);
 
@@ -2529,7 +2529,7 @@ PREFIX (event_post) (caf_token_t token, size_t index,
 		     int image_index, int *stat,
 		     char *errmsg, int errmsg_len)
 {
-  int image, value=1, ierr=0;
+  int image, value=1, ierr=0,flag;
   MPI_Win *p = token;
   const char msg[] = "Error on event post";
 
