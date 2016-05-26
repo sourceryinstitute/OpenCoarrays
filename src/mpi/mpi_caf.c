@@ -700,6 +700,13 @@ void *
       /* PREFIX(sync_all) (NULL,NULL,0); */
     }
 
+  if(error_called == 1)
+    {
+      communicator_shrink(&CAF_COMM_WORLD);
+      error_called = 0;
+      ierr = STAT_FAILED_IMAGE;
+    }
+  
   caf_static_t *tmp = malloc (sizeof (caf_static_t));
   tmp->prev  = caf_tot;
   tmp->token = *token;
@@ -715,6 +722,8 @@ void *
 
   if (stat)
     *stat = 0;
+  else if(ierr == STAT_FAILED_IMAGE)
+    error_stop (ierr);
 
   return mem;
 
