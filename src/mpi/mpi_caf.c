@@ -292,10 +292,7 @@ void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
   locking_atomic_op(win, &value, newval, compare, image_index, index);
 
   if(value == caf_this_image && image_index == caf_this_image)
-    {
-      printf("Lock already taken %d\n",caf_this_image);
-      goto stat_error;
-    }
+    goto stat_error;
   
   if(acquired_lock != NULL)
     {
@@ -320,6 +317,7 @@ void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
 	{
 	  communicator_shrink(&CAF_COMM_WORLD);
 	  error_called = 0;
+	  ierr = STAT_FAILED_IMAGE;
 	}
       
       locking_atomic_op(win, &value, newval, compare, image_index, index);
@@ -342,6 +340,11 @@ void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
 	}
     }
 
+  if(stat)
+    *stat = ierr;
+  else if(ierr == STAT_FAILED_IMAGE)
+    error_stop (ierr);
+  
   return;
 
 stat_error:
@@ -369,7 +372,14 @@ void mutex_unlock(MPI_Win win, int image_index, int index, int *stat,
 #if MPI_VERSION >= 3
   int value=1, compare = 1, newval = 0;
 
-  /* locking_atomic_op(win, &value, newval, compare, image_index, index); */
+  MPI_Test(&lock_req,&flag,MPI_STATUS_IGNORE);
+
+  if(error_called == 1)
+    {
+      communicator_shrink(&CAF_COMM_WORLD);
+      error_called = 0;
+      ierr = STAT_FAILED_IMAGE;
+    }
 
 # ifdef CAF_MPI_LOCK_UNLOCK
   MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, win);
@@ -383,6 +393,11 @@ void mutex_unlock(MPI_Win win, int image_index, int index, int *stat,
 
   if(value == 0)
     goto stat_error;
+
+  if(stat)
+    *stat = ierr;
+  else if(ierr == STAT_FAILED_IMAGE)
+    error_stop (ierr);
       
   return;
 
@@ -1852,12 +1867,21 @@ PREFIX (sync_images) (int count, int images[], int *stat, char *errmsg,
        for(i=0; i < count; i++)
          ierr = MPI_Wait(&handlers[images[i]-1], &s);
 
+       if(error_called == 1)
+	 {
+	   communicator_shrink(&CAF_COMM_WORLD);
+	   error_called = 0;
+	   ierr = STAT_FAILED_IMAGE;
+	 }
+
        memset(arrived, 0, sizeof(int)*caf_num_images);
 
     }
 
   if (stat)
     *stat = ierr;
+  else if(ierr == STAT_FAILED_IMAGE)
+    error_stop (ierr);
 
  sync_images_err_chk:
 
