@@ -534,8 +534,6 @@ PREFIX (finalize) (void)
   MPI_Win_sync(*stat_tok);
 
   completed = 1;
-  MPIX_Comm_revoke(CAF_COMM_WORLD);
-  MPI_Barrier(stopped_comm);
 
   while (caf_static_list != NULL)
     {
@@ -563,8 +561,16 @@ PREFIX (finalize) (void)
   MPI_Info_free (&mpi_info_same_size);
 #endif // MPI_VERSION
 
-  MPI_Comm_free(&CAF_COMM_WORLD);
+  //MPI_Comm_free(&CAF_COMM_WORLD);
 
+  printf("Before revoke\n");
+
+  MPIX_Comm_revoke(CAF_COMM_WORLD);
+  printf("After revoke\n");
+  MPI_Test(&stopped_req,&flag,MPI_STATUS_IGNORE);
+  communicator_shrink(&stopped_comm);
+  MPI_Barrier(stopped_comm);
+  printf("After barrier\n");
   /* Only call Finalize if CAF runtime Initialized MPI. */
   if (caf_owns_mpi) {
       MPI_Finalize();
@@ -844,7 +850,7 @@ PREFIX (sync_memory) (int *stat, char *errmsg, int errmsg_len)
 void
 PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
 {
-  int ierr=0;
+  int ierr=0,flag=0;
 
   /* if(error_called == 1) */
   /*   { */
