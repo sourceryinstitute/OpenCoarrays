@@ -107,8 +107,8 @@ char err_buffer[MPI_MAX_ERROR_STRING];
 MPI_Comm CAF_COMM_WORLD;
 
 /* Failed Images */
-MPI_Comm lock_comm;
-MPI_Request lock_req;
+MPI_Comm lock_comm,stopped_comm;
+MPI_Request lock_req,stopped_req;
 int used_comm = -1, n_failed_imgs=0, error_called=0;
 int *ranks_gc,*ranks_gf; //to be returned by failed images
 MPI_Errhandler errh,errh_w;
@@ -493,6 +493,10 @@ PREFIX (init) (int *argc, char ***argv)
       MPI_Comm_set_errhandler(lock_comm, errh);
       MPI_Irecv(&tmp_lock,1,MPI_INT,MPI_ANY_SOURCE,MPI_ANY_TAG,lock_comm,&lock_req);
 
+      MPI_Comm_dup(CAF_COMM_WORLD, &stopped_comm);
+      MPI_Comm_set_errhandler(stopped_comm, errh);
+      MPI_Irecv(&tmp_lock,1,MPI_INT,MPI_ANY_SOURCE,MPI_ANY_TAG,lock_comm,&stopped_req);
+      
       MPI_Win_create_errhandler(verbose_win_errhandler, &errh_w);
       
       ranks_gf = (int*)malloc(caf_num_images * sizeof(int));
@@ -525,15 +529,14 @@ _gfortran_caf_finalize (void)
 PREFIX (finalize) (void)
 #endif
 {
+  int flag = 0;
   *img_status = STAT_STOPPED_IMAGE; /* GFC_STAT_STOPPED_IMAGE = 6000 */
   MPI_Win_sync(*stat_tok);
 
   completed = 1;
+  MPIX_Comm_revoke(CAF_COMM_WORLD);
+  MPI_Barrier(stopped_comm);
 
-  MPI_Cancel(&lock_req);
-  MPI_Request_free(&lock_req);
-  MPI_Barrier(CAF_COMM_WORLD);
-  
   while (caf_static_list != NULL)
     {
       caf_static_t *tmp = caf_static_list->prev;
@@ -600,7 +603,7 @@ int communicator_shrink(MPI_Comm *comm)
   MPIX_Comm_shrink(*comm, &shrunk);
   MPI_Comm_set_errhandler( shrunk, errh );
   MPI_Comm_size(shrunk, &ns); MPI_Comm_rank(shrunk, &srank);
-
+  
   MPI_Comm_rank(*comm, &crank);
 
   /* Split does the magic: removing spare processes and reordering ranks
@@ -611,6 +614,7 @@ int communicator_shrink(MPI_Comm *comm)
    * new failures have disrupted the process: we need to
    * make sure we succeeded at all ranks, or retry until it works. */
   flag = MPIX_Comm_agree(shrunk, &flag);
+  
   MPI_Comm_free(&shrunk);
   if( MPI_SUCCESS != flag ) {
     if( MPI_SUCCESS == rc ) MPI_Comm_free(*newcomm);
@@ -633,7 +637,7 @@ void *
   /* int ierr; */
   void *mem;
   size_t actual_size;
-  int l_var=0, *init_array=NULL,ierr=0;
+  int l_var=0, *init_array=NULL,ierr=0,flag=0;
 
   if (unlikely (caf_is_finalized))
     goto error;
@@ -661,6 +665,8 @@ void *
     }
   else
     actual_size = size;
+
+  MPI_Test(&lock_req,&flag,MPI_STATUS_IGNORE);
 
   if(error_called == 1)
     {
