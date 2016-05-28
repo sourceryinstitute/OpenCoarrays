@@ -113,7 +113,7 @@ trap cleanup_before_exit EXIT # The signal is specified here. Could be SIGINT, S
 [ -z "${LOG_LEVEL:-}" ] && emergency "Cannot continue without LOG_LEVEL. "
 
 # shellcheck disable=SC2154
-if [[ "${arg_v}" == "${__flag_present}" || "${arg_l}" == "${__flag_present}" || ! -z "${arg_P:-${arg_U:-${arg_V:-${arg_D}}}}" ]]; then
+if [[ "${arg_v}" == "${__flag_present}" || "${arg_l}" == "${__flag_present}" || ! -z "${arg_P:-${arg_U:-${arg_V:-${arg_D:-${arg_B}}}}}" ]]; then
    print_debug_only=7
    if [ "$(( LOG_LEVEL < print_debug_only ))" -ne 0 ]; then
      debug "Supressing info and debug messages: one of {-l, -v, -P, -U, -V, -D} present."
@@ -121,14 +121,17 @@ if [[ "${arg_v}" == "${__flag_present}" || "${arg_l}" == "${__flag_present}" || 
    fi
 fi
 
-[ ! -z "${arg_D}" ] && [ ! -z "${arg_P:-${arg_U:-${arg_V}}}" ] &&
-  emergency "Please pass only one of {-D, -p, -P, -U, -V} or a longer equivalent (multiple detected). [exit 101]"
+[ ! -z "${arg_D}" ] && [ ! -z "${arg_P:-${arg_U:-${arg_V:-${arg_B}}}}" ] &&
+  emergency "Please pass only one of {-B, -D, -p, -P, -U, -V} or a longer equivalent (multiple detected). [exit 101]"
 
-[ ! -z "${arg_P}" ] && [ ! -z "${arg_U:-${arg_V}}" ] &&
-  emergency "Please pass only one of {-D, -p, -P, -U, -V} or a longer equivalent (multiple detected). [exit 103]"
+[ ! -z "${arg_P}" ] && [ ! -z "${arg_U:-${arg_V:-${arg_B}}}" ] &&
+  emergency "Please pass only one of {-B, -D, -p, -P, -U, -V} or a longer equivalent (multiple detected). [exit 102]"
 
-[ ! -z "${arg_U}" ] && [ ! -z "${arg_V}" ] &&
-  emergency "Please pass only one of {-D, -p, -P, -U, -V} or a longer equivalent (multiple detected). [exit 104]"
+[ ! -z "${arg_U}" ] && [ ! -z "${arg_V:-${arg_B}}" ] &&
+  emergency "Please pass only one of {-B, -D, -p, -P, -U, -V} or a longer equivalent (multiple detected). [exit 103]"
+
+[ ! -z "${arg_V}" ] && [ ! -z "${arg_B}" ] &&
+  emergency "Please pass only one of {-B, -D, -p, -P, -U, -V} or a longer equivalent (multiple detected). [exit 104]"
 
 ### Print bootstrapped magic variables to STDERR when LOG_LEVEL
 ### is at the default value (6) or above.
@@ -142,6 +145,8 @@ info "__os: ${__os}"
 info "__usage: ${__usage}"
 info "LOG_LEVEL: ${LOG_LEVEL}"
 
+info  "-b (--install-branch):   ${arg_b}"
+info  "-B (--list-branches):    ${arg_B}"
 info  "-c (--with-c):           ${arg_c}"
 info  "-C (--with-cxx):         ${arg_C}"
 info  "-d (--debug):            ${arg_d}"
@@ -231,7 +236,6 @@ source $opencoarrays_src_dir/prerequisites/install-functions/report_results.sh
 
 # ________________________________ Start of the Main Body ___________________________________
 
-
 if [[ "${arg_v}" == "${__flag_present}" || "${arg_V}" == "opencoarrays" ]]; then
 
   # Print script copyright if invoked with -v, -V, or --version argument
@@ -255,10 +259,11 @@ if [[ "${arg_v}" == "${__flag_present}" || "${arg_V}" == "opencoarrays" ]]; then
     echo "${opencoarrays_version//[[:space:]]/}"
   fi
 
-elif [[ ! -z "${arg_D:-${arg_P:-${arg_U:-${arg_V}}}}" ||  "${arg_l}" == "${__flag_present}" ]]; then
+elif [[ ! -z "${arg_D:-${arg_P:-${arg_U:-${arg_V:-${arg_B}}}}}" ||  "${arg_l}" == "${__flag_present}" ]]; then
 
   # Delegate to build.sh for the packages it builds
-  build_arg=${arg_D:-${arg_P:-${arg_U:-${arg_V:-${arg_p}}}}}
+  build_arg=${arg_B:-${arg_D:-${arg_P:-${arg_U:-${arg_V:-${arg_p}}}}}}
+  [ ! -z "${arg_B}" ] && build_flag="-B"
   [ ! -z "${arg_D}" ] && build_flag="-D"
   [ ! -z "${arg_P}" ] && build_flag="-P"
   [ ! -z "${arg_U}" ] && build_flag="-U"
@@ -284,7 +289,6 @@ elif [[ ! -z "${arg_D:-${arg_P:-${arg_U:-${arg_V}}}}" ||  "${arg_l}" == "${__fla
   fi
 
 elif [[ "${arg_p:-}" == "opencoarrays" ]]; then
-
   
   cd prerequisites || exit 1
   installation_record=install-opencoarrays.log

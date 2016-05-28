@@ -32,7 +32,7 @@ download_if_necessary()
   else
     # The download mechanism is in the path.
     if [[ "${fetch}" == "svn" ]]; then
-      if [[ ${version_to_build} == '--avail' || ${version_to_build} == '-a' ]]; then
+      if [[ "${arg_B:-}" == "gcc" ]]; then
         args="ls"
       else
         args="checkout"
@@ -59,29 +59,29 @@ download_if_necessary()
     else
       package_source_directory="${package_name}-${version_to_build}"
     fi
-    info "Downloading ${package_name} ${version_to_build} to the following location:"
+    info "Downloading ${package_name} ${version_to_build-} to the following location:"
     info "${download_path}/${package_source_directory}"
     info "Download command: \"${fetch}\" ${args:-} ${package_url}"
     info "Depending on the file size and network bandwidth, this could take several minutes or longer."
     pushd "${download_path}"
     "${fetch}" ${args:-} ${package_url}
     popd
-    if [[ "${version_to_build}" == '--avail' || "${version_to_build}" == '-a' ]]; then
-      # In this case, args="ls" and the list of available versions has been printed so we can move on.
-      exit 1
-    fi
-    if [[ "${fetch}" == "svn" ]]; then
-      search_path="${download_path}/${version_to_build}"
+    if [[ ! -z "${arg_B:-}" ]]; then
+      return
     else
-      search_path="${download_path}/${url_tail}"
-    fi
-    if [ -f "${search_path}" ] || [ -d "${search_path}" ]; then
-      info "Download succeeded. The ${package_name} source is in the following location:"
-      info "${search_path}"
-    else
-      info "Download failed. The ${package_name} source is not in the following, expected location:"
-      info "${search_path}"
-      emergency "Aborting. [exit 110]"
+      if [[ "${fetch}" == "svn" ]]; then
+        search_path="${download_path}/${version_to_build}"
+      else
+        search_path="${download_path}/${url_tail}"
+      fi
+      if [[ -f "${search_path}" || -d "${search_path}" ]]; then
+        info "Download succeeded. The ${package_name} source is in the following location:"
+        info "${search_path}"
+      else
+        info "Download failed. The ${package_name} source is not in the following, expected location:"
+        info "${search_path}"
+        emergency "Aborting. [exit 110]"
+      fi
     fi
   fi
 }
