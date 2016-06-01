@@ -113,6 +113,7 @@ int used_comm = -1, n_failed_imgs=0, error_called=0;
 int *ranks_gc,*ranks_gf; //to be returned by failed images
 MPI_Errhandler errh,errh_w;
 int completed = 0,tmp_lock;
+int *stopped_images;
 
 static int cmpfunc (const void *a, const void *b)
 {
@@ -501,7 +502,8 @@ PREFIX (init) (int *argc, char ***argv)
       
       ranks_gf = (int*)malloc(caf_num_images * sizeof(int));
       ranks_gc = (int*)malloc(caf_num_images * sizeof(int));
-
+      stopped_images = (int*)calloc(caf_num_images, sizeof(int));
+      
 #if MPI_VERSION >= 3
       MPI_Info_create (&mpi_info_same_size);
       MPI_Info_set (mpi_info_same_size, "same_size", "true");
@@ -533,7 +535,10 @@ PREFIX (finalize) (void)
   *img_status = STAT_STOPPED_IMAGE; /* GFC_STAT_STOPPED_IMAGE = 6000 */
   MPI_Win_sync(*stat_tok);
 
-  completed = 1;
+  MPIX_Comm_revoke(CAF_COMM_WORLD);
+  communicator_shrink(&CAF_COMM_WORLD);
+
+  MPI_Barrier(stopped_comm);
 
   while (caf_static_list != NULL)
     {
@@ -561,16 +566,8 @@ PREFIX (finalize) (void)
   MPI_Info_free (&mpi_info_same_size);
 #endif // MPI_VERSION
 
-  //MPI_Comm_free(&CAF_COMM_WORLD);
+  /* MPI_Comm_free(&CAF_COMM_WORLD); */
 
-  printf("Before revoke\n");
-
-  MPIX_Comm_revoke(CAF_COMM_WORLD);
-  printf("After revoke\n");
-  MPI_Test(&stopped_req,&flag,MPI_STATUS_IGNORE);
-  communicator_shrink(&stopped_comm);
-  MPI_Barrier(stopped_comm);
-  printf("After barrier\n");
   /* Only call Finalize if CAF runtime Initialized MPI. */
   if (caf_owns_mpi) {
       MPI_Finalize();
@@ -578,7 +575,7 @@ PREFIX (finalize) (void)
   pthread_mutex_lock(&lock_am);
   caf_is_finalized = 1;
   pthread_mutex_unlock(&lock_am);
-  printf("finalizing\n");
+  /* printf("finalizing\n"); */
   exit(0);
 }
 
@@ -614,6 +611,8 @@ int communicator_shrink(MPI_Comm *comm)
 
   /* Split does the magic: removing spare processes and reordering ranks
    * so that all surviving processes remain at their former place */
+  if (*img_status == STAT_STOPPED_IMAGE)
+    crank = -1;
   rc = MPI_Comm_split(shrunk, crank<0?MPI_UNDEFINED:1, crank, newcomm);
    
   /* Split or some of the communications above may have failed if
@@ -708,10 +707,11 @@ void *
       MPI_Win_flush(caf_this_image-1, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
       free(init_array);
-      MPI_Barrier(CAF_COMM_WORLD);
       /* PREFIX(sync_all) (NULL,NULL,0); */
     }
 
+  MPI_Barrier(CAF_COMM_WORLD);
+      
   if(error_called == 1)
     {
       communicator_shrink(&CAF_COMM_WORLD);
