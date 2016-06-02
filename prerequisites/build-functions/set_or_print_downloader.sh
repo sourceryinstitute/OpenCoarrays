@@ -30,10 +30,13 @@ set_or_print_downloader()
 
   elif type curl &> /dev/null; then
     fetch=curl
-  elif type ftp &> /dev/null; then
-    fetch=wget
   elif type wget &> /dev/null; then
-    fetch=ftp-url
+    fetch=wget
+  elif type ftp &> /dev/null; then
+    if [[ "${package_name}" == "gcc"   || "${package_name}" == "wget" || "${package_name}" == "make" ||
+          "${package_name}" == "bison" || "${package_name}" == "m4"   ]]; then
+      fetch=ftp-url
+    fi
   else
     tried="curl, wget, and ftp"
   fi  
