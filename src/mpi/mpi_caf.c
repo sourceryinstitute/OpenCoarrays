@@ -132,8 +132,8 @@ static void verbose_comm_errhandler(MPI_Comm* pcomm, int* err, ...){
   MPI_Group group_c, group_f;
   comm = *pcomm;
 
-  memset(ranks_gf,0,sizeof(int)*caf_num_images);
-  memset(ranks_gc,0,sizeof(int)*caf_num_images);
+  /* memset(ranks_gf,0,sizeof(int)*caf_num_images); */
+  /* memset(ranks_gc,0,sizeof(int)*caf_num_images); */
   
   MPIX_Comm_failure_ack(comm);
   MPIX_Comm_failure_get_acked(comm, &group_f);
@@ -144,15 +144,10 @@ static void verbose_comm_errhandler(MPI_Comm* pcomm, int* err, ...){
   MPI_Group_translate_ranks(group_f, nf, ranks_gf,
 			    group_c, ranks_gc);
   for(i = 0; i < nf; i++)
-    {
-      ranks_gc[i]++;
-      /* printf("me: %d - ranks failed %d\n",caf_this_image,ranks_gc[i]); */
-    }
+    ranks_gc[i]++;
 
-  n_failed_imgs = nf;
+  n_failed_imgs += nf;
   error_called = 1;
-  /* used_comm++; */
-  /* CAF_COMM_WORLD = communicators[used_comm]; */
 }
 
 /* For MPI interoperability, allow external initialization
@@ -500,21 +495,21 @@ PREFIX (init) (int *argc, char ***argv)
       
       MPI_Win_create_errhandler(verbose_win_errhandler, &errh_w);
       
-      ranks_gf = (int*)malloc(caf_num_images * sizeof(int));
-      ranks_gc = (int*)malloc(caf_num_images * sizeof(int));
+      ranks_gf = (int*)calloc(caf_num_images,sizeof(int));
+      ranks_gc = (int*)calloc(caf_num_images,sizeof(int));
       stopped_images = (int*)calloc(caf_num_images, sizeof(int));
       
 #if MPI_VERSION >= 3
       MPI_Info_create (&mpi_info_same_size);
       MPI_Info_set (mpi_info_same_size, "same_size", "true");
       /* Setting img_status */
-      MPI_Win_allocate(sizeof(int), 1, mpi_info_same_size, CAF_COMM_WORLD, &img_status, stat_tok);
+      MPI_Win_allocate(sizeof(int), 1, mpi_info_same_size, stopped_comm, &img_status, stat_tok);
 # ifndef CAF_MPI_LOCK_UNLOCK
       MPI_Win_lock_all(MPI_MODE_NOCHECK, *stat_tok);
 # endif // CAF_MPI_LOCK_UNLOCK
 #else
       MPI_Alloc_mem(sizeof(int), MPI_INFO_NULL, &img_status, stat_tok);
-      MPI_Win_create(img_status, sizeof(int), 1, MPI_INFO_NULL, CAF_COMM_WORLD, stat_tok);
+      MPI_Win_create(img_status, sizeof(int), 1, MPI_INFO_NULL, stopped_comm, stat_tok);
 #endif // MPI_VERSION
       *img_status = 0;
       MPI_Win_set_errhandler(*stat_tok,errh_w);
@@ -539,7 +534,7 @@ PREFIX (finalize) (void)
   communicator_shrink(&CAF_COMM_WORLD);
 
   MPI_Barrier(stopped_comm);
-
+  
   while (caf_static_list != NULL)
     {
       caf_static_t *tmp = caf_static_list->prev;
@@ -643,6 +638,7 @@ void *
   void *mem;
   size_t actual_size;
   int l_var=0, *init_array=NULL,ierr=0,flag=0;
+  MPI_Win *stopped_win;
 
   if (unlikely (caf_is_finalized))
     goto error;
@@ -658,6 +654,7 @@ void *
   /* Token contains only a list of pointers.  */
 
   *token = malloc (sizeof(MPI_Win));
+  stopped_win = (MPI_Win *)malloc(sizeof(MPI_Win));
 
   MPI_Win *p = *token;
 
@@ -671,7 +668,7 @@ void *
   else
     actual_size = size;
 
-  MPI_Test(&lock_req,&flag,MPI_STATUS_IGNORE);
+  MPI_Barrier(CAF_COMM_WORLD);
 
   if(error_called == 1)
     {
@@ -710,18 +707,21 @@ void *
       /* PREFIX(sync_all) (NULL,NULL,0); */
     }
 
-  MPI_Barrier(CAF_COMM_WORLD);
+  /* MPI_Barrier(CAF_COMM_WORLD); */
       
-  if(error_called == 1)
-    {
-      communicator_shrink(&CAF_COMM_WORLD);
-      error_called = 0;
-      ierr = STAT_FAILED_IMAGE;
-    }
+  /* if(error_called == 1) */
+  /*   { */
+  /*     communicator_shrink(&CAF_COMM_WORLD); */
+  /*     error_called = 0; */
+  /*     ierr = STAT_FAILED_IMAGE; */
+  /*   } */
 
+  /* MPI_Win_create_dynamic(MPI_INFO_NULL, stopped_comm, stopped_win); */
+  
   caf_static_t *tmp = malloc (sizeof (caf_static_t));
   tmp->prev  = caf_tot;
   tmp->token = *token;
+  tmp->stopped_token = stopped_win;
   caf_tot = tmp;
 
   if (type == CAF_REGTYPE_COARRAY_STATIC)

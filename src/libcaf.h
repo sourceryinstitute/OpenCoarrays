@@ -80,6 +80,7 @@ typedef void* caf_token_t;
 /* Linked list of static coarrays registered.  */
 typedef struct caf_static_t {
   caf_token_t token;
+  caf_token_t stopped_token;
   struct caf_static_t *prev;
 }
 caf_static_t;
