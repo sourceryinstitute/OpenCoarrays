@@ -60,10 +60,8 @@ if [ $# == 0 ]; then
   exit 1
 fi
 
-# Default to "mpif90" Fortran compiler if environment variable CAFC has zero length:
-if [ -z "$CAFC" ]; then
-   CAFC=mpif90
-fi
+# Default to "mpif90" Fortran compiler if environment variable CAFC is empty or unset:
+CAFC=${CAFC:-mpif90}
 
 # TODO -- improve the syntax of the "set" command below to accepted an unlimited number of arguments
 max_arguments=100
