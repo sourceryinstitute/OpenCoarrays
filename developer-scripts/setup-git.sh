@@ -8,7 +8,8 @@ if [[ "$1" ]]; then
 	echo "WARNING: Settings will be applied globally. This may over-write some of your global git settings."
 	read -p "Press Ctrl-C to abort, and try again without \`--global\` or press any key to contibue" foo
     else
-	echo -e "Usage: $0 [--global] [--help]\n"
+	echo "Usage: $0 [--global] [--help]"
+	echo ""
 	echo "This script is to configure your git environment"
 	echo "For contributing to OpenCoarrays. The \`--help\`"
 	echo "flag will print this message. The \`--global\`"

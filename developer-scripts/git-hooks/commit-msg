@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # An example hook script to check the commit log message.
 # Called by "git commit" with one argument, the name of the file
@@ -59,7 +59,8 @@ and keeping a clean history, please see:
  2. http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html
  3. https://www.reviewboard.org/docs/codebase/dev/git/clean-commits/
 
-And for funny examples of what not to do, see: http://whatthecommit.com
+And for funny examples of what not to do, see: http://whatthecommit.com and
+http://stopwritingramblingcommitmessages.com
 EOF
 
 }
@@ -77,7 +78,8 @@ test "" = "$(grep '^Signed-off-by: ' "$1" |
 # Check that the first line of the commit starts with a
 # capitalized letter.
 if ! (head -n 1 $1 | grep '^[A-Z]' &>/dev/null ); then
-    echo >&2 "First word of commit message must be a capitalized imperative verb.\n"
+    echo >&2 "First word of commit message must be a capitalized imperative verb."
+    echo ""
     let status=1
 fi
 
@@ -89,23 +91,28 @@ cat $1 | \
 	nchars=$(wc -c <<<$line)
 	if [[ "$ln" -eq "1" ]]; then
 	    if [[ "$nchars" -gt "51" ]]; then
-		echo >&2 "First line of commit message too long ($nchars > 50 chars)\n"
+		echo >&2 "First line of commit message too long ($nchars > 50 chars)"
+		echo ""
 		let status=1
 	    fi
 	elif [[ "$ln" -eq "2" ]]; then
 	    if [[ "$nchars" -gt "1" ]] && ! grep '^#' <<<"$line" >/dev/null; then
-		echo >&2 "Second line of commit message not blank\n"
+		echo >&2 "Second line of commit message not blank"
+		echo ""
 		let status=1
 	    fi
 	else
 	    if [[ "$nchars" -gt "72" ]]; then
-		echo >&2 "Line $ln of commit message too long ($nchars > 72 chars)\n"
+		echo >&2 "Line $ln of commit message too long ($nchars > 72 chars)"
+		echo ""
 		let status=1
 	    fi
 	fi
     done
 
-if [[ $status != 0 ]]; then
-    error_message
-    exit 1
+if [[ $status = 0 ]]; then
+    exit 0
 fi
+
+error_message
+exit 1
