@@ -77,6 +77,7 @@ matrix:
 
 before_install:
   - |
+    set -o errexit
     if [[ $TRAVIS ]] && [[ "X$TRAVIS_OS_NAME" = "Xosx" ]]; then
       export PATH="$PATH:$HOME/Library/Python/2.7/bin"
     else
@@ -88,9 +89,11 @@ before_install:
       $FC --version
       $CC --version
     fi
+    set +o errexit
 
 install:
   - |
+    set -o errexit
     if [[ $TRAVIS ]] && [[ "X$TRAVIS_OS_NAME" = "Xosx" ]]; then
       brew update > /dev/null
 
@@ -141,9 +144,11 @@ install:
       export FC=mpif90
       export CC=mpicc
     fi
+    set +o errexit
 
 script:
   - |
+    set -o errexit
     if [[ "X$BUILD_TYPE" = "XInstallScript" ]]; then
       export FC=gfortran-5
       export CC=gcc-5
@@ -163,6 +168,7 @@ script:
       make install
       cd ..
     fi
+    set +o errexit
 
 after_success:
   - find . -name '*.gcno' -print
