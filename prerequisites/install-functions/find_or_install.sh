@@ -32,7 +32,7 @@ find_or_install()
   else
     printf "$this_script: Checking whether $package executable $executable is in the PATH..."
   fi
-  if type "$executable" > /dev/null; then
+  if type "$executable" >& /dev/null; then
     printf "yes.\n"
     package_in_path=true
     package_version_in_path=$("$executable" --version|head -1)
@@ -43,7 +43,7 @@ find_or_install()
 
   package_install_path=$(./build.sh -P "$package")
 
-  printf "Checking whether $executable is in the prerequisites/instalations directory.."
+  printf "Checking whether $executable is in $package_install_path..."
   if [[ -x "$package_install_path/bin/$executable" ]]; then
     printf "yes.\n"
     script_installed_package=true
@@ -110,7 +110,7 @@ find_or_install()
     # Every branch that discovers an acceptable pre-existing installation must set the
     # MPIFC, MPICC, and MPICXX environment variables. Every branch must also manage the
     # dependency stack.
-   
+
     if [[ ! -z "${arg_f}" ]]; then
 
       # -f or --with-fortran argument specifies a compiler, which we use if mpif90
@@ -134,7 +134,7 @@ find_or_install()
         first_caf_version="5.1.0"
         printf "yes.\n"
         printf "$this_script: Checking whether ${executable} in PATH wraps gfortran version ${first_caf_version} or later... "
-  
+
         if ! "${OPENCOARRAYS_SRC_DIR}"/prerequisites/check_version.sh "${executable}" "${first_caf_version}"; then
           printf "no.\n"
           export translate_source="true"
@@ -158,10 +158,24 @@ find_or_install()
       export MPICC=mpicc
       export MPICXX=mpicxx
 
+      echo -e "$this_script: Using the $package specified by -M or --with-mpi: ${arg_M}\n"
+      export MPIFC="${arg_M}"/bin/mpif90
+      export MPICC="${arg_M}"/bin/mpicc
+      export MPICXX="${arg_M}"/bin/mpicxx
       # Halt the recursion
       stack_push dependency_pkg "none"
       stack_push dependency_exe "none"
       stack_push dependency_path "none"
+
+      if [[ ! -z "${arg_f:-}" ]]; then
+        # -f or --with-fortran argument specifies a compiler, which we use if mpif90
+        # invokes the specified compiler.  Otherwise, we halt and print an error message.
+        MPIFC_wraps=$(${MPIFC} --version)
+        compiler=$(${arg_f} --version)
+        if [[ "${MPIFC_wraps}" != "${compiler}"   ]]; then
+          emergency "Specified MPI ${MPIFC_wraps} wraps a compiler other than the specified Fortran compiler ${compiler}"
+        fi
+      fi
 
     elif [[ "$script_installed_package" == true ]]; then
 
@@ -188,29 +202,45 @@ find_or_install()
       else
         printf "yes.\n"
 
-        echo -e "$this_script: Checking whether $executable in PATH wraps gfortran version `./build.sh -V gcc` or later... "
-        $executable acceptable_compiler.f90 -o acceptable_compiler
-        $executable print_true.f90 -o print_true
-        acceptable=$(./acceptable_compiler)
-        is_true=$(./print_true)
-        rm acceptable_compiler print_true
-       
-        if [[ "$acceptable" == "$is_true" ]]; then
-          printf "yes.\n $this_script: Using the $executable found in the PATH.\n"
+        if [[ ! -z "${arg_f:-}" ]]; then
+          
+          info "-f (or --with-fortran) argument detected with value ${arg_f}"
+          printf "yes.\n $this_script: Using the specified $executable.\n"
           export MPIFC=mpif90
           export MPICC=mpicc
           export MPICXX=mpicxx
-
+  
           # Halt the recursion
           stack_push dependency_pkg "none"
           stack_push dependency_exe "none"
           stack_push dependency_path "none"
+
         else
-          printf "no\n"
-          # Trigger 'find_or_install gcc' and subsequent build of $package
-          stack_push dependency_pkg "none" "$package" "gcc"
-          stack_push dependency_exe "none" "$executable" "gfortran"
-          stack_push dependency_path "none" "$(./build.sh -P "$package")" "$(./build.sh -P gcc)"
+
+          echo -e "$this_script: Checking whether $executable in PATH wraps gfortran version `./build.sh -V gcc` or later... "
+          $executable acceptable_compiler.f90 -o acceptable_compiler
+          $executable print_true.f90 -o print_true
+          acceptable=$(./acceptable_compiler)
+          is_true=$(./print_true)
+          rm acceptable_compiler print_true
+         
+          if [[ "$acceptable" == "$is_true" ]]; then
+            printf "yes.\n $this_script: Using the $executable found in the PATH.\n"
+            export MPIFC=mpif90
+            export MPICC=mpicc
+            export MPICXX=mpicxx
+  
+            # Halt the recursion
+            stack_push dependency_pkg "none"
+            stack_push dependency_exe "none"
+            stack_push dependency_path "none"
+          else
+            printf "no\n"
+            # Trigger 'find_or_install gcc' and subsequent build of $package
+            stack_push dependency_pkg "none" "$package" "gcc"
+            stack_push dependency_exe "none" "$executable" "gfortran"
+            stack_push dependency_path "none" "$(./build.sh -P "$package")" "$(./build.sh -P gcc)"
+          fi
         fi
       fi
 
@@ -229,7 +259,26 @@ find_or_install()
     # Every branch that discovers an acceptable pre-existing installation must set the
     # FC, CC, and CXX environment variables. Every branch must also manage the dependency stack.
 
-    if [[ "$script_installed_package" == true ]]; then
+    if [[ ! -z "${arg_f:-}" ]]; then
+
+      info "-f (or --with-fortran) argument detected with value ${arg_f}"
+      [ -z "${arg_c:-}" ] && emergency "-f (--with-fortran) specifies Fortran compiler; Please also specify C/C++ compilers"
+      [ -z "${arg_C:-}" ] && emergency "-f (--with-fortran) specifies Fortran compiler; Please also specify C/C++ compilers"
+
+      export FC="${arg_f}"
+      export CC="${arg_c}"
+      export CXX="${arg_C}"
+
+      # Remove $package from the dependency stack
+      stack_pop dependency_pkg package_done
+      stack_pop dependency_exe executable_done
+      stack_pop dependency_path package_done_path
+      # Halt the recursion and signal that none of $package's prerequisites need to be built
+      stack_push dependency_pkg "none"
+      stack_push dependency_exe "none"
+      stack_push dependency_path "none"
+
+    elif [[ "$script_installed_package" == true ]]; then
       echo -e "$this_script: Using the $package executable $executable installed by $this_script\n"
       export FC=$package_install_path/bin/gfortran
       export CC=$package_install_path/bin/gcc
@@ -516,9 +565,9 @@ find_or_install()
   if [[ $package != "none" ]]; then
 
     if [[ "$package" == "$executable" ]]; then
-      echo "$this_script: Ready to build $executable in $package_install_path"
+      echo "$this_script: Ready to install $executable in $package_install_path"
     else
-      echo "$this_script: Ready to build $package executable $executable in $package_install_path"
+      echo "$this_script: Ready to install $package executable $executable in $package_install_path"
     fi
 
     echo -e "$this_script: Ok to download (if necessary), build, and install $package from source? (Y/n) "
@@ -565,9 +614,14 @@ find_or_install()
         FC=gfortran
       fi
 
+
+      # Strip trailing package name and version number, if present, from installation path
+      default_package_version=$(./build.sh -V ${package})
+      package_install_prefix="${package_install_path%${package}/${arg_I:-${default_package_version}}*}" 
+
       echo -e "$this_script: Downloading, building, and installing $package \n"
-      echo "$this_script: Build command: FC=$FC CC=$CC CXX=$CXX ./build.sh -p $package -i $package_install_path -j $num_threads"
-      FC="$FC" CC="$CC" CXX="$CXX" ./build.sh -p "$package" -i "$package_install_path" -j "$num_threads"
+      echo "$this_script: Build command: FC=$FC CC=$CC CXX=$CXX ./build.sh -p $package -i $package_install_prefix -j $num_threads"
+      FC="$FC" CC="$CC" CXX="$CXX" ./build.sh -p "$package" -i "$package_install_prefix" -j "$num_threads"
 
       if [[ -x "$package_install_path/bin/$executable" ]]; then
         echo -e "$this_script: Installation successful.\n"

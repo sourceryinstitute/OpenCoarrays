@@ -4,25 +4,27 @@
 set_or_print_url()
 {
   # Verify requirements
-  [ ! -z "${arg_U}" ] && [ ! -z "${arg_D:-${arg_p:-${arg_P:-${arg_V}}}}" ] &&
-    emergency "Please pass only one of {-D, -p, -P, -U, -V} or a longer equivalent (multiple detected)."
+  [ ! -z "${arg_U}" ] && [ ! -z "${arg_D:-${arg_p:-${arg_P:-${arg_V:-${arg_B}}}}}" ] &&
+    emergency "Please pass only one of {-B, -D, -p, -P, -U, -V} or a longer equivalent (multiple detected)."
 
   # Get package name from argument passed with  -p, -D, -P, -V, or -U
-  package_to_build="${arg_p:-${arg_D:-${arg_P:-${arg_U:-${arg_V}}}}}"
+  package_to_build="${arg_p:-${arg_D:-${arg_P:-${arg_U:-${arg_V:-${arg_B}}}}}}"
 
   if [[ "${package_to_build}" == 'cmake' ]]; then
     major_minor="${version_to_build%.*}"
-  elif [[ "${package_to_build}" == "gcc" && "${version_to_build}" != "trunk" ]]; then
-    gcc_url_head="ftp.gnu.org:/gnu/gcc/gcc-${version_to_build}/"
-  else
-    gcc_url_head="svn://gcc.gnu.org/svn/gcc/"
+  elif [[ "${package_to_build}" == "gcc" ]]; then
+    if [[ -z "${arg_b:-${arg_B}}" ]]; then
+      gcc_url_head="ftp.gnu.org:/gnu/gcc/gcc-${version_to_build}/"
+    else
+      gcc_url_head="svn://gcc.gnu.org/svn/gcc/"
+    fi
   fi
   package_url_head=(
-    "gcc;${gcc_url_head:-}"
+    "gcc;${gcc_url_head-}"
     "wget;ftp.gnu.org:/gnu/wget/"
     "m4;ftp.gnu.org:/gnu/m4/"
     "pkg-config;http://pkgconfig.freedesktop.org/releases/"
-    "mpich;http://www.mpich.org/static/downloads/${version_to_build}/"
+    "mpich;http://www.mpich.org/static/downloads/${version_to_build-}/"
     "flex;http://sourceforge.net/projects/flex/files/"
     "make;ftp://ftp.gnu.org/gnu/make/"
     "bison;ftp.gnu.org:/gnu/bison/"
@@ -32,6 +34,8 @@ set_or_print_url()
   for package in "${package_url_head[@]}" ; do
      KEY="${package%%;*}"
      VALUE="${package##*;}"
+     info "KEY=${KEY}  VALUE=${VALUE}"
+     
      if [[ "${package_to_build}" == "${KEY}" ]]; then
        # We recognize the package name so we set the URL head:
        url_head="${VALUE}"
@@ -39,27 +43,25 @@ set_or_print_url()
      fi
   done
 
-  # Set differing tails for GCC trunk versus branches
+  # Set differing tails for GCC release downloads versus development branch checkouts
   if [[ "${package_to_build}" == 'gcc' ]]; then
     if [[ "${fetch}" == 'svn' ]]; then
-      gcc_tail="${version_to_build}"
-    elif [[ "${version_to_build}" == '--avail' || "${version_to_build}" == '-a' ]]; then
-      gcc_tail='branches'
+      gcc_tail=${version_to_build-branches}
     else
       gcc_tail="gcc-${version_to_build}.tar.bz2"
     fi
   fi
   package_url_tail=(
-    "gcc;${gcc_tail:-}"
-    "wget;wget-${version_to_build}.tar.gz"
-    "m4;m4-${version_to_build}.tar.bz2"
-    "pkg-config;pkg-config-${version_to_build}.tar.gz"
-    "mpich;mpich-${version_to_build}.tar.gz"
-    "flex;flex-${version_to_build}.tar.bz2"
-    "bison;bison-${version_to_build}.tar.gz"
-    "make;make-${version_to_build}.tar.bz2"
-    "cmake;cmake-${version_to_build}.tar.gz "
-    "subversion;subversion-${version_to_build}.tar.gz"
+    "gcc;${gcc_tail-}"
+    "wget;wget-${version_to_build-}.tar.gz"
+    "m4;m4-${version_to_build-}.tar.bz2"
+    "pkg-config;pkg-config-${version_to_build-}.tar.gz"
+    "mpich;mpich-${version_to_build-}.tar.gz"
+    "flex;flex-${version_to_build-}.tar.bz2"
+    "bison;bison-${version_to_build-}.tar.gz"
+    "make;make-${version_to_build-}.tar.bz2"
+    "cmake;cmake-${version_to_build-}.tar.gz"
+    "subversion;subversion-${version_to_build-}.tar.gz"
   )
   for package in "${package_url_tail[@]}" ; do
      KEY="${package%%;*}"

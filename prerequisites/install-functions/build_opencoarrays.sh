@@ -2,10 +2,11 @@
 build_opencoarrays()
 {
   print_header
-  info "find_or_install mpich"
+  info "Invoking find_or_install mpich"
   find_or_install mpich
-  info "find_or_install cmake"
+  info "Invoking find_or_install cmake"
   find_or_install cmake
+  build_path="${build_path}"/opencoarrays/$("${opencoarrays_src_dir}"/install.sh -V opencoarrays)
   mkdir -p "$build_path"
   pushd "$build_path"
   if [[ -z "${MPICC:-}" || -z "${MPIFC:-}" || -z "${CMAKE:-}" ]]; then

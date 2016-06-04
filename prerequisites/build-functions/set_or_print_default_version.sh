@@ -57,6 +57,6 @@ set_or_print_default_version()
 
  # Exit with error status and diagnostic output if empty default_version
  if [[ -z "${default_version:-}" ]]; then
-    emergency "Package ${package_name:-} not recognized.  Use --l or --list-packages to list the allowable names."
+    emergency "set_or_print_default.sh: Package ${package_name:-} not recognized.  Use --l or --list-packages to list the allowable names."
  fi
 }

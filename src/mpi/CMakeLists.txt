@@ -62,6 +62,10 @@ else()
   file(APPEND "${compiler_wrapper}"  "transpiler_dir='${CMAKE_INSTALL_PREFIX}/transpiler'\n")
 endif()
 
+if ( DEFINED ENV{FC} )
+  file(APPEND "${compiler_wrapper}"  "CAFC=$ENV{FC}\n")
+endif ()
+
 if ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
   file(APPEND "${compiler_wrapper}"  "linux=true\n")
 endif()

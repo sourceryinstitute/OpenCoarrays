@@ -1,4 +1,5 @@
-cmd=`basename $0`
+# shellcheck shell=bash disable=SC2148
+cmd=$(basename "$0")
 
 usage()
 {
@@ -22,7 +23,7 @@ usage()
     echo ""
     echo "Given a Fortran 2015 CAF source file, $cmd produces a semantically equivalent"
     echo "program that uses a subset of Fortran supported any recently released Fortran "
-    echo "compilers.  The subset uses the opencoarrays module and is referred to as the" 
+    echo "compilers.  The subset uses the opencoarrays module and is referred to as the"
     echo "OpenCoarrays CAF (OCAF) dialect."
 }
 
@@ -46,7 +47,7 @@ if [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
     echo "OpenCoarrays comes with NO WARRANTY, to the extent permitted by law."
     echo "You may redistribute copies of OpenCoarrays under the terms of the"
     echo "BSD 3-Clause License.  For more information about these matters, see"
-    echo "the file named COPYRIGHT-BSD3."
+    echo "the file named LICENSE."
     echo ""
 elif [[ $1 == '-w' || $1 == '--wrapping' || $1 == '--wraps' ]]; then
   echo "caf wraps CAFC=$CAFC"
@@ -58,12 +59,12 @@ elif [[ "${transform_source}" = "true" ]]; then
   # Verify that a file with .f90, .F90, .f, or .F extension is the first argument:
   extension=$(echo "$1" | cut -f2 -d'.')
   if [[ $extension == 'f90' || $extension == 'F90' || $extension == 'f' || $extension == 'F' ]]; then
-    # Translate CAF syntax to invocations of procedures in opencoarrays.f90: 
+    # Translate CAF syntax to invocations of procedures in opencoarrays.f90:
 #   make SOURCE=${1} OFP_HOME="${OFP_HOME}" -f "${transpiler_dir}"/Makefile check > cafe-$1
     /opt/strategoxt/v0.17/bin/sglri -p "${transpiler_dir}"/Fortran.tbl -i "${1}".f90 | ./ofp2fast | ./fast-to-ocaf | ./fast2pp | /opt/strategoxt/v0.17/bin/ast2text -p "${transpiler_dir}"/Fortran.pp > cafe-"${1}"
     # Replace command-line argument 1 with name of transformed source file
     set -- "cafe-${1}" "${@:2:$max_arguments}"
-  else  
+  else
     # Print usage information if unknowon source file extension encountered:
     usage | less
     exit 1
@@ -71,4 +72,5 @@ elif [[ "${transform_source}" = "true" ]]; then
 fi
 
 # Invoke the supporting compiler
+# shellcheck disable=SC2086
 $CAFC "$@" -L "$caf_lib_dir" $link_args
