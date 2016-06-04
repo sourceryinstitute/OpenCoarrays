@@ -60,8 +60,9 @@ export __flag_present=1
 
 # shellcheck disable=SC2154
 if [[ "${__os}" != "OSX" ]]; then
-   info      "${__base} currently installs binaries that work only on OS X"
-   emergency "To request other platforms, please submit an issue at http://github.com/sourceryinstitute/opencoarrays/issues"
+   echo "Source tranlsation via OFP is currently supported only on OS X."
+   echo "Please submit an issue at http://github.com/sourceryinstitute/opencoarrays/issues."
+   emergency "${PWD}/install-ofp.sh: Aborting."
 fi
 
 if [[ $(uname) == "Darwin"  ]]; then
