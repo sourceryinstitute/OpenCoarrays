@@ -115,13 +115,13 @@ info "-V (--print-version):    ${arg_V} "
 if [[ -z "${arg_B}" ]]; then
   # shellcheck source=./build-functions/set_or_print_default_version.sh
   source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/set_or_print_default_version.sh"
-  set_or_print_default_version "${@}"
+  set_or_print_default_version
   export version_to_build="${arg_I:-${arg_b:-${default_version}}}"
 fi
 
 # shellcheck source=./build-functions/set_or_print_downloader.sh
 source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/set_or_print_downloader.sh"
-set_or_print_downloader "${@}"
+set_or_print_downloader
 
 # shellcheck source=./build-functions/set_or_print_url.sh
 source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/set_or_print_url.sh"
