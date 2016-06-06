@@ -32,30 +32,7 @@
     <link  href="./tipuesearch/tipuesearch.css" rel="stylesheet">
     <script src="./tipuesearch/tipuesearch_set.js"></script>
     <script src="./tipuesearch/tipuesearch.js"></script>
-
-    <link rel="apple-touch-icon" sizes="57x57" href="opencoarrays/media/favicons/apple-touch-icon-57x57.png?v=XBB8G5Ay7w">
-    <link rel="apple-touch-icon" sizes="60x60" href="opencoarrays/media/favicons/apple-touch-icon-60x60.png?v=XBB8G5Ay7w">
-    <link rel="apple-touch-icon" sizes="72x72" href="opencoarrays/media/favicons/apple-touch-icon-72x72.png?v=XBB8G5Ay7w">
-    <link rel="apple-touch-icon" sizes="76x76" href="opencoarrays/media/favicons/apple-touch-icon-76x76.png?v=XBB8G5Ay7w">
-    <link rel="apple-touch-icon" sizes="114x114" href="opencoarrays/media/favicons/apple-touch-icon-114x114.png?v=XBB8G5Ay7w">
-    <link rel="apple-touch-icon" sizes="120x120" href="opencoarrays/media/favicons/apple-touch-icon-120x120.png?v=XBB8G5Ay7w">
-    <link rel="apple-touch-icon" sizes="144x144" href="opencoarrays/media/favicons/apple-touch-icon-144x144.png?v=XBB8G5Ay7w">
-    <link rel="apple-touch-icon" sizes="152x152" href="opencoarrays/media/favicons/apple-touch-icon-152x152.png?v=XBB8G5Ay7w">
-    <link rel="apple-touch-icon" sizes="180x180" href="opencoarrays/media/favicons/apple-touch-icon-180x180.png?v=XBB8G5Ay7w">
-    <link rel="icon" type="image/png" href="opencoarrays/media/favicons/favicon-32x32.png?v=XBB8G5Ay7w" sizes="32x32">
-    <link rel="icon" type="image/png" href="opencoarrays/media/favicons/favicon-194x194.png?v=XBB8G5Ay7w" sizes="194x194">
-    <link rel="icon" type="image/png" href="opencoarrays/media/favicons/favicon-96x96.png?v=XBB8G5Ay7w" sizes="96x96">
-    <link rel="icon" type="image/png" href="opencoarrays/media/favicons/android-chrome-192x192.png?v=XBB8G5Ay7w" sizes="192x192">
-    <link rel="icon" type="image/png" href="opencoarrays/media/favicons/favicon-16x16.png?v=XBB8G5Ay7w" sizes="16x16">
-    <link rel="manifest" href="opencoarrays/media/favicons/manifest.json?v=XBB8G5Ay7w">
-    <link rel="mask-icon" href="opencoarrays/media/favicons/safari-pinned-tab.svg?v=XBB8G5Ay7w" color="#7b5bd5">
-    <link rel="shortcut icon" href="opencoarrays/media/favicons/favicon.ico?v=XBB8G5Ay7w">
-    <meta name="apple-mobile-web-app-title" content="OpenCoarrays">
-    <meta name="application-name" content="OpenCoarrays">
-    <meta name="msapplication-TileColor" content="#2d89ef">
-    <meta name="msapplication-TileImage" content="opencoarrays/media/favicons/mstile-144x144.png?v=XBB8G5Ay7w">
-    <meta name="msapplication-config" content="opencoarrays/media/favicons/browserconfig.xml?v=XBB8G5Ay7w">
-    <meta name="theme-color" content="#ffffff">
+    
 
   </head>
 
@@ -71,7 +48,7 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="./index.html">OpenCoarrays <small>master</small></a>
+          <a class="navbar-brand" href="./index.html">OpenCoarrays </a>
         </div>
         <div id="navbar" class="navbar-collapse collapse">
           <ul class="nav navbar-nav">
@@ -112,7 +89,7 @@
     
       <!-- Main component for a primary marketing message or call to action -->
       <div class="jumbotron">
-        <p>OpenCoarrays is a Coarray Fortran (CAF) implementation supporting Fortran 2008 and 2015 features</p>
+        <p>OpenCoarrays is a Coarray Fortran (<abbr title="Coarray Fortran--an extension of Fortran 95/2003 for parallel processing created by Robert Numrich and John Reid in the 1990s using a Partitioned Global Address Space (PGAS) programming model.">CAF</abbr>) implementation supporting Fortran 2008 and 2015 features</p>
         	 
 	<p> Find us on&hellip;</p>
         <p>
@@ -143,35 +120,47 @@
 <li><a href="#todo">ToDo</a></li>
 </ul>
 </li>
-<li><a href="#miscellaneous">Miscellaneous</a></li>
+<li><a href="#compilers">Compilers</a></li>
+<li><a href="#citations">Citations</a></li>
 </ul>
 </div>
 <h2 id="brief-description"><a class="toclink" href="#brief-description">Brief description</a></h2>
 <p></p><div class="alert alert-warning" role="alert"><h4>Warning</h4>The OpenCoarrays <abbr title="Application Programming Interface--a set of routines, protocols, and tools for building software applications">API</abbr> documentation is currently underconstruction. As
 such, information may be missing orincomplete on this website. Please
 check back frequently for updated content.</div>
+<p>OpenCoarrays is an open-source software project that produces an
+application binary interface (<abbr title="Application Binary Interface--the interface between two program modules, one of which is often a library or operating system, at the level of machine code">ABI</abbr>) supporting coarray Fortran (<abbr title="Coarray Fortran--an extension of Fortran 95/2003 for parallel processing created by Robert Numrich and John Reid in the 1990s using a Partitioned Global Address Space (PGAS) programming model.">CAF</abbr>)
+compilers, an application programming interface (<abbr title="Application Programming Interface--a set of routines, protocols, and tools for building software applications">API</abbr>) that supports
+users of non-<abbr title="Coarray Fortran--an extension of Fortran 95/2003 for parallel processing created by Robert Numrich and John Reid in the 1990s using a Partitioned Global Address Space (PGAS) programming model.">CAF</abbr> compilers, and an associated compiler wrapper and
+program launcher.</p>
+<p>OpenCoarrays supports the coarray parallel programming feature set
+specified in the Fortran 2008 standard.  We also support several
+features proposed for Fortran 2015 in the draft Technical
+Specification <a href="http://isotc.iso.org/livelink/livelink?func=ll&amp;objId=17288706&amp;objAction=Open" title=" draft Technical Specification TS18508 Additional Parallel Features in Fortran">TS18508</a> Additional Parallel Features in Fortran.</p>
 <h3 id="todo"><a class="toclink" href="#todo">ToDo</a></h3>
 <ul class="checklist">
-<li><input type="checkbox" disabled> Add brief description text</li>
+<li><input type="checkbox" disabled checked> Add brief description text</li>
 <li><input type="checkbox" disabled> Macros should be passed on command line to FORD by build system</li>
 <li><input type="checkbox" disabled> MPI include should be passed on the command line (ideally,
        although presently not supported) or specified by configuring this
        file with CMake&hellip;</li>
 <li><input type="checkbox" disabled> Deal with <code>include compiler_capabilities.txt</code></li>
-<li><input type="checkbox" disabled> Add documentation to [[libcaf.h]]</li>
-<li><input type="checkbox" disabled> Add documentation to [[libcaf-gfortran-descriptor.h]]</li>
-<li><input type="checkbox" disabled> Add documentation to [[mpi_caf.c]]</li>
-<li><input type="checkbox" disabled> Add documentation to [[caf_auxiliary.c]]</li>
+<li><input type="checkbox" disabled> Add documentation to <a href="./sourcefile/libcaf.h.html">libcaf.h</a></li>
+<li><input type="checkbox" disabled> Add documentation to <a href="./sourcefile/libcaf-gfortran-descriptor.h.html">libcaf-gfortran-descriptor.h</a></li>
+<li><input type="checkbox" disabled> Add documentation to <a href="./sourcefile/mpi_caf.c.html">mpi_caf.c</a></li>
+<li><input type="checkbox" disabled> Add documentation to <a href="./sourcefile/caf_auxiliary.c.html">caf_auxiliary.c</a></li>
 <li><input type="checkbox" disabled> Add documentation to <a href="./module/opencoarrays.html">opencoarrays</a></li>
-<li><input type="checkbox" disabled> Add documentation to [[single.c]] (or remove it&hellip;)</li>
+<li><input type="checkbox" disabled> Add documentation to <a href="./sourcefile/single.c.html">single.c</a> (or remove it&hellip;)</li>
 <li><input type="checkbox" disabled> Add documentation for unit tests</li>
 <li><input type="checkbox" disabled> Add documentation for integration tests</li>
 </ul>
-<p><em>Some text should be added here&hellip;</em></p>
-<h2 id="miscellaneous"><a class="toclink" href="#miscellaneous">Miscellaneous</a></h2>
-<ul>
-<li>For more information about OpenCoarrays, please see: <a href="http://www.opencoarrays.org/">http://www.opencoarrays.org/</a></li>
-</ul>
+<h2 id="compilers"><a class="toclink" href="#compilers">Compilers</a></h2>
+<p>The GNU Compiler Collection (GCC) Fortran front-end (GFortran) v. 5.1 and later employ OpenCoarrays to support parallel execution.</p>
+<h2 id="citations"><a class="toclink" href="#citations">Citations</a></h2>
+<p>Please acknowledge the use of OpenCoarrays by citing the following publication:</p>
+<blockquote>
+<p>Fanfarillo, A., Burnus, T., Cardellini, V., Filippone, S., Nagle, D., &amp; Rouson, D. (2014, October). OpenCoarrays: open-source transport layers supporting coarray Fortran compilers. In <em>Proceedings of the 8th International Conference on Partitioned Global Address Space Programming Models</em> (p. 4). ACM.﻿</p>
+</blockquote>
         <script>
             ((window.gitter = {}).chat = {}).options = {
             room: 'sourceryinstitute/opencoarrays'
@@ -377,6 +366,8 @@ check back frequently for updated content.</div>
                 
                   
                 
+                  
+                
               </ul>
           </div>
           
@@ -397,19 +388,19 @@ check back frequently for updated content.</div>
                   
                 
                   
-                    <li><a href='./module/constants_module%7E3.html'>constants_module</a></li>
-                  
-                
-                  
-                    <li><a href='./module/constants_module%7E2.html'>constants_module</a></li>
-                  
-                
-                  
                     <li><a href='./module/constants_module%7E4.html'>constants_module</a></li>
                   
                 
                   
+                    <li><a href='./module/constants_module%7E3.html'>constants_module</a></li>
+                  
+                
+                  
                     <li><a href='./module/constants_module.html'>constants_module</a></li>
+                  
+                
+                  
+                    <li><a href='./module/constants_module%7E2.html'>constants_module</a></li>
                   
                 
                   
@@ -940,7 +931,7 @@ check back frequently for updated content.</div>
           <span class="pull-right">
             Documentation generated by 
             <a href="https://github.com/cmacmackin/ford">FORD</a>
-            
+             on 2016-06-06 14:50  
           </span>
         </div>
       </div>

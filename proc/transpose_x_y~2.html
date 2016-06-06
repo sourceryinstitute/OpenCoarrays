@@ -48,7 +48,7 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="../index.html">OpenCoarrays <small>master</small></a>
+          <a class="navbar-brand" href="../index.html">OpenCoarrays </a>
         </div>
         <div id="navbar" class="navbar-collapse collapse">
           <ul class="nav navbar-nav">
@@ -587,45 +587,45 @@ subroutine transpose_X_Y()
 <polygon fill="none" stroke="black" points="84,-108 0,-108 0,-84 84,-84 84,-108"/>
 <text text-anchor="middle" x="42" y="-93.6" font-family="Helvetica,sans-Serif" font-size="10.50">transpose_X_Y</text>
 </g>
-<!-- mpi_recv -->
-<g id="proc~~transpose_x_y~2~~CallsGraph_node2" class="node"><title>mpi_recv</title>
-<polygon fill="#777777" stroke="#777777" points="180.5,-192 125.5,-192 125.5,-168 180.5,-168 180.5,-192"/>
-<text text-anchor="middle" x="153" y="-177.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mpi_recv</text>
+<!-- mpi_issend -->
+<g id="proc~~transpose_x_y~2~~CallsGraph_node2" class="node"><title>mpi_issend</title>
+<polygon fill="#777777" stroke="#777777" points="186,-192 120,-192 120,-168 186,-168 186,-192"/>
+<text text-anchor="middle" x="153" y="-177.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mpi_issend</text>
 </g>
-<!-- proc~transpose_x_y~2&#45;&gt;mpi_recv -->
-<g id="proc~~transpose_x_y~2~~CallsGraph_edge1" class="edge"><title>proc~transpose_x_y~2&#45;&gt;mpi_recv</title>
+<!-- proc~transpose_x_y~2&#45;&gt;mpi_issend -->
+<g id="proc~~transpose_x_y~2~~CallsGraph_edge1" class="edge"><title>proc~transpose_x_y~2&#45;&gt;mpi_issend</title>
 <path fill="none" stroke="#000000" d="M56.8388,-108.067C71.9869,-121.097 97.1655,-142.237 120,-159 121.399,-160.027 122.846,-161.064 124.317,-162.096"/>
 <polygon fill="#000000" stroke="#000000" points="122.588,-165.153 132.824,-167.886 126.526,-159.366 122.588,-165.153"/>
 </g>
-<!-- walltime -->
-<g id="proc~~transpose_x_y~2~~CallsGraph_node3" class="node"><title>walltime</title>
-<polygon fill="#777777" stroke="#777777" points="180,-150 126,-150 126,-126 180,-126 180,-150"/>
-<text text-anchor="middle" x="153" y="-135.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">walltime</text>
-</g>
-<!-- proc~transpose_x_y~2&#45;&gt;walltime -->
-<g id="proc~~transpose_x_y~2~~CallsGraph_edge2" class="edge"><title>proc~transpose_x_y~2&#45;&gt;walltime</title>
-<path fill="none" stroke="#000000" d="M74.235,-108.036C87.3967,-113.107 102.787,-119.037 116.387,-124.277"/>
-<polygon fill="#000000" stroke="#000000" points="115.326,-127.619 125.916,-127.949 117.843,-121.088 115.326,-127.619"/>
-</g>
 <!-- mpi_barrier -->
-<g id="proc~~transpose_x_y~2~~CallsGraph_node4" class="node"><title>mpi_barrier</title>
-<polygon fill="#777777" stroke="#777777" points="186,-108 120,-108 120,-84 186,-84 186,-108"/>
-<text text-anchor="middle" x="153" y="-93.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mpi_barrier</text>
+<g id="proc~~transpose_x_y~2~~CallsGraph_node3" class="node"><title>mpi_barrier</title>
+<polygon fill="#777777" stroke="#777777" points="186,-150 120,-150 120,-126 186,-126 186,-150"/>
+<text text-anchor="middle" x="153" y="-135.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mpi_barrier</text>
 </g>
 <!-- proc~transpose_x_y~2&#45;&gt;mpi_barrier -->
-<g id="proc~~transpose_x_y~2~~CallsGraph_edge3" class="edge"><title>proc~transpose_x_y~2&#45;&gt;mpi_barrier</title>
-<path fill="none" stroke="#000000" d="M84.2082,-96C92.6088,-96 101.458,-96 109.89,-96"/>
-<polygon fill="#000000" stroke="#000000" points="109.909,-99.5001 119.909,-96 109.909,-92.5001 109.909,-99.5001"/>
+<g id="proc~~transpose_x_y~2~~CallsGraph_edge2" class="edge"><title>proc~transpose_x_y~2&#45;&gt;mpi_barrier</title>
+<path fill="none" stroke="#000000" d="M74.235,-108.036C85.7513,-112.473 98.9737,-117.568 111.21,-122.283"/>
+<polygon fill="#000000" stroke="#000000" points="110.171,-125.633 120.76,-125.963 112.688,-119.101 110.171,-125.633"/>
 </g>
-<!-- mpi_issend -->
-<g id="proc~~transpose_x_y~2~~CallsGraph_node5" class="node"><title>mpi_issend</title>
-<polygon fill="#777777" stroke="#777777" points="186,-66 120,-66 120,-42 186,-42 186,-66"/>
-<text text-anchor="middle" x="153" y="-51.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mpi_issend</text>
+<!-- walltime -->
+<g id="proc~~transpose_x_y~2~~CallsGraph_node4" class="node"><title>walltime</title>
+<polygon fill="#777777" stroke="#777777" points="180,-108 126,-108 126,-84 180,-84 180,-108"/>
+<text text-anchor="middle" x="153" y="-93.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">walltime</text>
 </g>
-<!-- proc~transpose_x_y~2&#45;&gt;mpi_issend -->
-<g id="proc~~transpose_x_y~2~~CallsGraph_edge4" class="edge"><title>proc~transpose_x_y~2&#45;&gt;mpi_issend</title>
-<path fill="none" stroke="#000000" d="M74.235,-83.9645C85.7513,-79.527 98.9737,-74.4322 111.21,-69.7173"/>
-<polygon fill="#000000" stroke="#000000" points="112.688,-72.8988 120.76,-66.0373 110.171,-66.3669 112.688,-72.8988"/>
+<!-- proc~transpose_x_y~2&#45;&gt;walltime -->
+<g id="proc~~transpose_x_y~2~~CallsGraph_edge3" class="edge"><title>proc~transpose_x_y~2&#45;&gt;walltime</title>
+<path fill="none" stroke="#000000" d="M84.2082,-96C94.5889,-96 105.655,-96 115.771,-96"/>
+<polygon fill="#000000" stroke="#000000" points="115.9,-99.5001 125.9,-96 115.9,-92.5001 115.9,-99.5001"/>
+</g>
+<!-- mpi_recv -->
+<g id="proc~~transpose_x_y~2~~CallsGraph_node5" class="node"><title>mpi_recv</title>
+<polygon fill="#777777" stroke="#777777" points="180.5,-66 125.5,-66 125.5,-42 180.5,-42 180.5,-66"/>
+<text text-anchor="middle" x="153" y="-51.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mpi_recv</text>
+</g>
+<!-- proc~transpose_x_y~2&#45;&gt;mpi_recv -->
+<g id="proc~~transpose_x_y~2~~CallsGraph_edge4" class="edge"><title>proc~transpose_x_y~2&#45;&gt;mpi_recv</title>
+<path fill="none" stroke="#000000" d="M74.235,-83.9645C87.1942,-78.971 102.314,-73.1451 115.758,-67.9649"/>
+<polygon fill="#000000" stroke="#000000" points="117.123,-71.1897 125.196,-64.3281 114.606,-64.6578 117.123,-71.1897"/>
 </g>
 <!-- proc~mpi_copy3 -->
 <g id="proc~~transpose_x_y~2~~CallsGraph_node6" class="node"><title>proc~mpi_copy3</title>
@@ -1146,7 +1146,7 @@ implementation in a submodule of an interface in a parent module.</p>
           <span class="pull-right">
             Documentation generated by 
             <a href="https://github.com/cmacmackin/ford">FORD</a>
-            
+             on 2016-06-06 14:50  
           </span>
         </div>
       </div>

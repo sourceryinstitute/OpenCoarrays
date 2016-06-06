@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+	 
+	 <meta name="description" content="OpenCoarrays is a Coarray Fortran (CAF) implementation supporting Fortran 2008 and 2015 features">
+    
+    <meta name="author" content="Chris MacMackin" >
+    <link rel="icon" href="../favicon.png">
+
+    <title>single.c &ndash; OpenCoarrays</title>
+
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/pygments.css" rel="stylesheet">
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../css/local.css" rel="stylesheet">
+    
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../js/jquery-2.1.3.min.js"></script>
+    <script src="../js/svg-pan-zoom.min.js"></script>
+
+    
+    <script src="../tipuesearch/tipuesearch_content.js"></script>
+    <link  href="../tipuesearch/tipuesearch.css" rel="stylesheet">
+    <script src="../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../tipuesearch/tipuesearch.js"></script>
+    
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../index.html">OpenCoarrays </a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+				
+                
+            <li><a href="../lists/files.html">Source Files</a></li>
+				
+				
+            <li><a href="../lists/modules.html">Modules</a></li>
+				
+				
+            <li><a href="../lists/procedures.html">Procedures</a></li>
+				
+				
+            <li><a href="../lists/absint.html">Abstract Interfaces</a></li>
+								
+            <li><a href="../lists/types.html">Derived Types</a></li>
+				
+				
+            <li><a href="../lists/programs.html">Programs</a></li>
+				
+          </ul>
+        
+        <form action="../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+    
+  
+  <div class="row">
+    <h1>single.c
+    <small>Source File</small>
+    
+    </h1>
+	 
+<div class="row">
+<div class="col-lg-12">
+<div class="well well-sm">
+  <ul class="list-inline" style="margin-bottom:0px;display:inline">
+     
+     
+     
+     
+    
+    
+    <li><i class="fa fa-code"></i><a href="../src/single.c"> Source File</a></li>
+     
+  </ul>
+  <ol class="breadcrumb in-well text-right">
+  
+     <li class="active">single.c</li>
+  </ol>
+</div>
+</div>
+</div>
+    
+  </div>
+  <div class="row">
+    <div class="col-lg-3">
+    
+<div id="sidebar">
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="panel panel-primary">
+    <div class="panel-heading text-left"><h3 class="panel-title">Source Code</h3></div>
+    <div class="list-group">
+      <a class="list-group-item" href="../sourcefile/single.c.html#src">single.c</a>
+    </div>
+  </div>
+  
+  <hr>
+  
+  <div class="panel panel-default">
+    <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#allfiles">All Source Files</a></h3></div>
+    <div id="allfiles" class="panel-collapse collapse">
+        <div class="list-group">
+          
+          <a class="list-group-item" href="../sourcefile/allocate_as_barrier.f90.html">allocate_as_barrier.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/allocate_as_barrier_proc.f90.html">allocate_as_barrier_proc.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/caf_auxiliary.c.html">caf_auxiliary.c</a>
+          
+          <a class="list-group-item" href="../sourcefile/cafpsnap.f90.html">cafpsnap.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/co_broadcast.f90.html">co_broadcast.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/co_max.f90.html">co_max.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/co_min.f90.html">co_min.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/co_object_interface.f90.html">co_object_interface.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/co_object_interface.f90%7E2.html">co_object_interface.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/co_reduce.f90.html">co_reduce.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/co_sum.f90.html">co_sum.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/coarray-shear.f90.html">coarray-shear.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/coarray-shear_coll.f90.html">coarray-shear_coll.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/coarray-shear_coll_lock.f90.html">coarray-shear_coll_lock.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/coarray_distributed_transpose.f90.html">coarray_distributed_transpose.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/duplicate_syncimages.f90.html">duplicate_syncimages.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/fortrilinos_assertion_utility.f90.html">ForTrilinos_assertion_utility.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/fortrilinos_assertion_utility.f90%7E2.html">ForTrilinos_assertion_utility.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/fortrilinos_error.f90.html">ForTrilinos_error.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/fortrilinos_error.f90%7E2.html">ForTrilinos_error.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/get_array_test.f90.html">get_array_test.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/get_with_offset_1d.f90.html">get_with_offset_1d.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/global_field.f90.html">global_field.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/global_field.f90.html">global_field.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/hello_multiverse.f90.html">hello_multiverse.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/initialize_mpi.f90.html">initialize_mpi.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/input_file.f90.html">input_file.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/kind_parameters.f90.html">kind_parameters.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/libcaf-gfortran-descriptor.h.html">libcaf-gfortran-descriptor.h</a>
+          
+          <a class="list-group-item" href="../sourcefile/libcaf.h.html">libcaf.h</a>
+          
+          <a class="list-group-item" href="../sourcefile/local_field.f90.html">local_field.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/local_field.f90.html">local_field.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/main.f90.html">main.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/main.f90.html">main.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/main.f90%7E2.html">main.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/mpi-shear.f90.html">mpi-shear.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/mpi_caf.c.html">mpi_caf.c</a>
+          
+          <a class="list-group-item" href="../sourcefile/mpi_distributed_transpose.f90.html">mpi_distributed_transpose.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/mpi_module.f90.html">mpi_module.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/mpi_share.f90.html">mpi_share.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/object_interface.f90.html">object_interface.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/object_interface.f90%7E2.html">object_interface.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/old_get_array_test.f90.html">old_get_array_test.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/opencoarrays.f90.html">opencoarrays.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/parse_command_line.f90.html">parse_command_line.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/periodic_2nd_order.f90.html">periodic_2nd_order.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/register.f90.html">register.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/register_rename_me.f90.html">register_rename_me.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/register_rename_me_too.f90.html">register_rename_me_too.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/run.sh.html">run.sh</a>
+          
+          <a class="list-group-item" href="../sourcefile/run.sh%7E2.html">run.sh</a>
+          
+          <a class="list-group-item" href="../sourcefile/run_troubleshooting.sh.html">run_troubleshooting.sh</a>
+          
+          <a class="list-group-item" href="../sourcefile/sameloc.f90.html">sameloc.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/send_array_test.f90.html">send_array_test.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/shared.f90.html">shared.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/single.c.html">single.c</a>
+          
+          <a class="list-group-item" href="../sourcefile/strided_get.f90.html">strided_get.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/syncall.f90.html">syncall.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/syncimages.f90.html">syncimages.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/syncimages.f90%7E2.html">syncimages.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/syncimages2.c.html">syncimages2.c</a>
+          
+          <a class="list-group-item" href="../sourcefile/syncimages2.f90.html">syncimages2.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/syncimages2.f90%7E2.html">syncimages2.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/syncimages_status.f90.html">syncimages_status.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/test1caf.f90.html">test1Caf.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/testatomics.f90.html">testAtomics.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/timemeasure.c.html">timemeasure.c</a>
+          
+          <a class="list-group-item" href="../sourcefile/whole_get_array.f90.html">whole_get_array.f90</a>
+          
+        </div>
+    </div>
+  </div>
+  
+</div>
+
+    </div>
+    <div class="col-lg-9" id='text'>
+    
+    
+    <section>
+    <h2><span class="anchor" id="src"></span>Source Code</h2>
+    <div class="hl"><pre><span></span><a name="ln-1"></a><span class="cm">/* Single-Image implementation of Libcaf</span>
+<a name="ln-2"></a>
+<a name="ln-3"></a><span class="cm">Copyright (c) 2012-2014, Sourcery, Inc.</span>
+<a name="ln-4"></a><span class="cm">All rights reserved.</span>
+<a name="ln-5"></a>
+<a name="ln-6"></a><span class="cm">Redistribution and use in source and binary forms, with or without</span>
+<a name="ln-7"></a><span class="cm">modification, are permitted provided that the following conditions are met:</span>
+<a name="ln-8"></a><span class="cm">    * Redistributions of source code must retain the above copyright</span>
+<a name="ln-9"></a><span class="cm">      notice, this list of conditions and the following disclaimer.</span>
+<a name="ln-10"></a><span class="cm">    * Redistributions in binary form must reproduce the above copyright</span>
+<a name="ln-11"></a><span class="cm">      notice, this list of conditions and the following disclaimer in the</span>
+<a name="ln-12"></a><span class="cm">      documentation and/or other materials provided with the distribution.</span>
+<a name="ln-13"></a><span class="cm">    * Neither the name of the Sourcery, Inc., nor the</span>
+<a name="ln-14"></a><span class="cm">      names of its contributors may be used to endorse or promote products</span>
+<a name="ln-15"></a><span class="cm">      derived from this software without specific prior written permission.</span>
+<a name="ln-16"></a>
+<a name="ln-17"></a><span class="cm">THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND</span>
+<a name="ln-18"></a><span class="cm">ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED</span>
+<a name="ln-19"></a><span class="cm">WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE</span>
+<a name="ln-20"></a><span class="cm">DISCLAIMED. IN NO EVENT SHALL SOURCERY, INC., BE LIABLE FOR ANY</span>
+<a name="ln-21"></a><span class="cm">DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES</span>
+<a name="ln-22"></a><span class="cm">(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;</span>
+<a name="ln-23"></a><span class="cm">LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND</span>
+<a name="ln-24"></a><span class="cm">ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
+<a name="ln-25"></a><span class="cm">(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS</span>
+<a name="ln-26"></a><span class="cm">SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */</span>
+<a name="ln-27"></a>
+<a name="ln-28"></a><span class="cp">#include</span> <span class="cpf">&quot;libcaf.h&quot;</span><span class="cp"></span>
+<a name="ln-29"></a><span class="cp">#include</span> <span class="cpf">&lt;stdio.h&gt;  /* For fputs and fprintf.  */</span><span class="cp"></span>
+<a name="ln-30"></a><span class="cp">#include</span> <span class="cpf">&lt;stdlib.h&gt; /* For exit and malloc.  */</span><span class="cp"></span>
+<a name="ln-31"></a><span class="cp">#include</span> <span class="cpf">&lt;string.h&gt; /* For memcpy and memset.  */</span><span class="cp"></span>
+<a name="ln-32"></a><span class="cp">#include</span> <span class="cpf">&lt;stdarg.h&gt; /* For variadic arguments.  */</span><span class="cp"></span>
+<a name="ln-33"></a>
+<a name="ln-34"></a><span class="cm">/* Define GFC_CAF_CHECK to enable run-time checking.  */</span>
+<a name="ln-35"></a><span class="cm">/* #define GFC_CAF_CHECK  1  */</span>
+<a name="ln-36"></a>
+<a name="ln-37"></a><span class="cm">/* Single-image implementation of the CAF library.</span>
+<a name="ln-38"></a><span class="cm">   Note: For performance reasons -fcoarry=single should be used</span>
+<a name="ln-39"></a><span class="cm">   rather than this library.  */</span>
+<a name="ln-40"></a>
+<a name="ln-41"></a><span class="k">typedef</span> <span class="kt">void</span><span class="o">*</span> <span class="n">single_token_t</span><span class="p">;</span>
+<a name="ln-42"></a><span class="cp">#define TOKEN(X) ((single_token_t) (X))</span>
+<a name="ln-43"></a>
+<a name="ln-44"></a>
+<a name="ln-45"></a><span class="cm">/* Global variables.  */</span>
+<a name="ln-46"></a><span class="n">caf_static_t</span> <span class="o">*</span><span class="n">caf_static_list</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="ln-47"></a>
+<a name="ln-48"></a>
+<a name="ln-49"></a><span class="cm">/* Keep in sync with mpi.c.  */</span>
+<a name="ln-50"></a><span class="k">static</span> <span class="kt">void</span>
+<a name="ln-51"></a><span class="nf">caf_runtime_error</span> <span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">message</span><span class="p">,</span> <span class="p">...)</span>
+<a name="ln-52"></a><span class="p">{</span>
+<a name="ln-53"></a>  <span class="kt">va_list</span> <span class="n">ap</span><span class="p">;</span>
+<a name="ln-54"></a>  <span class="n">fprintf</span> <span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;Fortran runtime error: &quot;</span><span class="p">);</span>
+<a name="ln-55"></a>  <span class="n">va_start</span> <span class="p">(</span><span class="n">ap</span><span class="p">,</span> <span class="n">message</span><span class="p">);</span>
+<a name="ln-56"></a>  <span class="n">vfprintf</span> <span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">ap</span><span class="p">);</span>
+<a name="ln-57"></a>  <span class="n">va_end</span> <span class="p">(</span><span class="n">ap</span><span class="p">);</span>
+<a name="ln-58"></a>  <span class="n">fprintf</span> <span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a name="ln-59"></a>
+<a name="ln-60"></a>  <span class="cm">/* FIXME: Shutdown the Fortran RTL to flush the buffer.  PR 43849.  */</span>
+<a name="ln-61"></a>  <span class="n">exit</span> <span class="p">(</span><span class="n">EXIT_FAILURE</span><span class="p">);</span>
+<a name="ln-62"></a><span class="p">}</span>
+<a name="ln-63"></a>
+<a name="ln-64"></a><span class="kt">void</span>
+<a name="ln-65"></a><span class="nf">PREFIX</span><span class="p">(</span><span class="n">init</span><span class="p">)</span> <span class="p">(</span><span class="kt">int</span> <span class="o">*</span><span class="n">argc</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">unused</span><span class="p">)),</span>
+<a name="ln-66"></a>	      <span class="kt">char</span> <span class="o">***</span><span class="n">argv</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">unused</span><span class="p">)))</span>
+<a name="ln-67"></a><span class="p">{</span>
+<a name="ln-68"></a><span class="p">}</span>
+<a name="ln-69"></a>
+<a name="ln-70"></a>
+<a name="ln-71"></a><span class="kt">void</span>
+<a name="ln-72"></a><span class="nf">PREFIX</span> <span class="p">(</span><span class="n">finalize</span><span class="p">)</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<a name="ln-73"></a><span class="p">{</span>
+<a name="ln-74"></a>  <span class="k">while</span> <span class="p">(</span><span class="n">caf_static_list</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">)</span>
+<a name="ln-75"></a>    <span class="p">{</span>
+<a name="ln-76"></a>      <span class="n">caf_static_t</span> <span class="o">*</span><span class="n">tmp</span> <span class="o">=</span> <span class="n">caf_static_list</span><span class="o">-&gt;</span><span class="n">prev</span><span class="p">;</span>
+<a name="ln-77"></a>      <span class="n">free</span> <span class="p">(</span><span class="n">TOKEN</span> <span class="p">(</span><span class="n">caf_static_list</span><span class="o">-&gt;</span><span class="n">token</span><span class="p">));</span>
+<a name="ln-78"></a>      <span class="n">free</span> <span class="p">(</span><span class="n">caf_static_list</span><span class="p">);</span>
+<a name="ln-79"></a>      <span class="n">caf_static_list</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">;</span>
+<a name="ln-80"></a>    <span class="p">}</span>
+<a name="ln-81"></a><span class="p">}</span>
+<a name="ln-82"></a>
+<a name="ln-83"></a>
+<a name="ln-84"></a><span class="kt">int</span>
+<a name="ln-85"></a><span class="nf">PREFIX</span> <span class="p">(</span><span class="n">this_image</span><span class="p">)</span> <span class="p">(</span><span class="kt">int</span> <span class="n">distance</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">unused</span><span class="p">)))</span>
+<a name="ln-86"></a><span class="p">{</span>
+<a name="ln-87"></a>  <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+<a name="ln-88"></a><span class="p">}</span>
+<a name="ln-89"></a>
+<a name="ln-90"></a>
+<a name="ln-91"></a><span class="kt">int</span>
+<a name="ln-92"></a><span class="nf">PREFIX</span> <span class="p">(</span><span class="n">num_images</span><span class="p">)</span> <span class="p">(</span><span class="kt">int</span> <span class="n">distance</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">unused</span><span class="p">)),</span>
+<a name="ln-93"></a>		    <span class="kt">int</span> <span class="n">failed</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">unused</span><span class="p">)))</span>
+<a name="ln-94"></a><span class="p">{</span>
+<a name="ln-95"></a>  <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+<a name="ln-96"></a><span class="p">}</span>
+<a name="ln-97"></a>
+<a name="ln-98"></a>
+<a name="ln-99"></a><span class="kt">void</span> <span class="o">*</span>
+<a name="ln-100"></a><span class="nf">PREFIX</span> <span class="p">(</span><span class="k">register</span><span class="p">)</span> <span class="p">(</span><span class="kt">size_t</span> <span class="n">size</span><span class="p">,</span> <span class="n">caf_register_t</span> <span class="n">type</span><span class="p">,</span> <span class="n">caf_token_t</span> <span class="o">*</span><span class="n">token</span><span class="p">,</span>
+<a name="ln-101"></a>		  <span class="kt">int</span> <span class="o">*</span><span class="n">stat</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">errmsg</span><span class="p">,</span> <span class="kt">int</span> <span class="n">errmsg_len</span><span class="p">)</span>
+<a name="ln-102"></a><span class="p">{</span>
+<a name="ln-103"></a>  <span class="kt">void</span> <span class="o">*</span><span class="n">local</span><span class="p">;</span>
+<a name="ln-104"></a>
+<a name="ln-105"></a>  <span class="n">local</span> <span class="o">=</span> <span class="n">malloc</span> <span class="p">(</span><span class="n">size</span><span class="p">);</span>
+<a name="ln-106"></a>  <span class="o">*</span><span class="n">token</span> <span class="o">=</span> <span class="n">malloc</span> <span class="p">(</span><span class="k">sizeof</span> <span class="p">(</span><span class="n">single_token_t</span><span class="p">));</span>
+<a name="ln-107"></a>
+<a name="ln-108"></a>  <span class="k">if</span> <span class="p">(</span><span class="n">unlikely</span> <span class="p">(</span><span class="n">local</span> <span class="o">==</span> <span class="nb">NULL</span> <span class="o">||</span> <span class="n">TOKEN</span> <span class="p">(</span><span class="o">*</span><span class="n">token</span><span class="p">)</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">))</span>
+<a name="ln-109"></a>    <span class="p">{</span>
+<a name="ln-110"></a>      <span class="k">const</span> <span class="kt">char</span> <span class="n">msg</span><span class="p">[]</span> <span class="o">=</span> <span class="s">&quot;Failed to allocate coarray&quot;</span><span class="p">;</span>
+<a name="ln-111"></a>      <span class="k">if</span> <span class="p">(</span><span class="n">stat</span><span class="p">)</span>
+<a name="ln-112"></a>	<span class="p">{</span>
+<a name="ln-113"></a>	  <span class="o">*</span><span class="n">stat</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+<a name="ln-114"></a>	  <span class="k">if</span> <span class="p">(</span><span class="n">errmsg_len</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+<a name="ln-115"></a>	    <span class="p">{</span>
+<a name="ln-116"></a>	      <span class="kt">int</span> <span class="n">len</span> <span class="o">=</span> <span class="p">((</span><span class="kt">int</span><span class="p">)</span> <span class="k">sizeof</span> <span class="p">(</span><span class="n">msg</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">errmsg_len</span><span class="p">)</span> <span class="o">?</span> <span class="nl">errmsg_len</span>
+<a name="ln-117"></a>							  <span class="p">:</span> <span class="p">(</span><span class="kt">int</span><span class="p">)</span> <span class="k">sizeof</span> <span class="p">(</span><span class="n">msg</span><span class="p">);</span>
+<a name="ln-118"></a>	      <span class="n">memcpy</span> <span class="p">(</span><span class="n">errmsg</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">len</span><span class="p">);</span>
+<a name="ln-119"></a>	      <span class="k">if</span> <span class="p">(</span><span class="n">errmsg_len</span> <span class="o">&gt;</span> <span class="n">len</span><span class="p">)</span>
+<a name="ln-120"></a>		<span class="n">memset</span> <span class="p">(</span><span class="o">&amp;</span><span class="n">errmsg</span><span class="p">[</span><span class="n">len</span><span class="p">],</span> <span class="sc">&#39; &#39;</span><span class="p">,</span> <span class="n">errmsg_len</span><span class="o">-</span><span class="n">len</span><span class="p">);</span>
+<a name="ln-121"></a>	    <span class="p">}</span>
+<a name="ln-122"></a>	  <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="ln-123"></a>	<span class="p">}</span>
+<a name="ln-124"></a>      <span class="k">else</span>
+<a name="ln-125"></a>	  <span class="n">caf_runtime_error</span> <span class="p">(</span><span class="n">msg</span><span class="p">);</span>
+<a name="ln-126"></a>    <span class="p">}</span>
+<a name="ln-127"></a>
+<a name="ln-128"></a>  <span class="o">*</span><span class="n">token</span> <span class="o">=</span> <span class="n">local</span><span class="p">;</span>
+<a name="ln-129"></a>
+<a name="ln-130"></a>  <span class="k">if</span> <span class="p">(</span><span class="n">stat</span><span class="p">)</span>
+<a name="ln-131"></a>    <span class="o">*</span><span class="n">stat</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="ln-132"></a>
+<a name="ln-133"></a>  <span class="k">if</span> <span class="p">(</span><span class="n">type</span> <span class="o">==</span> <span class="n">CAF_REGTYPE_COARRAY_STATIC</span><span class="p">)</span>
+<a name="ln-134"></a>    <span class="p">{</span>
+<a name="ln-135"></a>      <span class="n">caf_static_t</span> <span class="o">*</span><span class="n">tmp</span> <span class="o">=</span> <span class="n">malloc</span> <span class="p">(</span><span class="k">sizeof</span> <span class="p">(</span><span class="n">caf_static_t</span><span class="p">));</span>
+<a name="ln-136"></a>      <span class="n">tmp</span><span class="o">-&gt;</span><span class="n">prev</span>  <span class="o">=</span> <span class="n">caf_static_list</span><span class="p">;</span>
+<a name="ln-137"></a>      <span class="n">tmp</span><span class="o">-&gt;</span><span class="n">token</span> <span class="o">=</span> <span class="o">*</span><span class="n">token</span><span class="p">;</span>
+<a name="ln-138"></a>      <span class="n">caf_static_list</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">;</span>
+<a name="ln-139"></a>    <span class="p">}</span>
+<a name="ln-140"></a>  <span class="k">return</span> <span class="n">local</span><span class="p">;</span>
+<a name="ln-141"></a><span class="p">}</span>
+<a name="ln-142"></a>
+<a name="ln-143"></a>
+<a name="ln-144"></a><span class="kt">void</span>
+<a name="ln-145"></a><span class="nf">PREFIX</span> <span class="p">(</span><span class="n">deregister</span><span class="p">)</span> <span class="p">(</span><span class="n">caf_token_t</span> <span class="o">*</span><span class="n">token</span><span class="p">,</span> <span class="kt">int</span> <span class="o">*</span><span class="n">stat</span><span class="p">,</span>
+<a name="ln-146"></a>		     <span class="kt">char</span> <span class="o">*</span><span class="n">errmsg</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">unused</span><span class="p">)),</span>
+<a name="ln-147"></a>		     <span class="kt">int</span> <span class="n">errmsg_len</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">unused</span><span class="p">)))</span>
+<a name="ln-148"></a><span class="p">{</span>
+<a name="ln-149"></a>  <span class="n">free</span> <span class="p">(</span><span class="n">TOKEN</span> <span class="p">(</span><span class="o">*</span><span class="n">token</span><span class="p">));</span>
+<a name="ln-150"></a>
+<a name="ln-151"></a>  <span class="k">if</span> <span class="p">(</span><span class="n">stat</span><span class="p">)</span>
+<a name="ln-152"></a>    <span class="o">*</span><span class="n">stat</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="ln-153"></a><span class="p">}</span>
+<a name="ln-154"></a>
+<a name="ln-155"></a>
+<a name="ln-156"></a><span class="k">static</span> <span class="kt">void</span>
+<a name="ln-157"></a><span class="nf">convert_type</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">dst</span><span class="p">,</span> <span class="kt">int</span> <span class="n">dst_type</span><span class="p">,</span> <span class="kt">int</span> <span class="n">dst_kind</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">src</span><span class="p">,</span>
+<a name="ln-158"></a>		       <span class="kt">int</span> <span class="n">src_type</span><span class="p">,</span> <span class="kt">int</span> <span class="n">src_kind</span><span class="p">)</span>
+<a name="ln-159"></a><span class="p">{</span>
+<a name="ln-160"></a><span class="cp">#ifdef HAVE_GFC_INTEGER_16</span>
+<a name="ln-161"></a>   <span class="k">typedef</span> <span class="n">__int128</span> <span class="n">int128t</span><span class="p">;</span>
+<a name="ln-162"></a><span class="cp">#else</span>
+<a name="ln-163"></a>   <span class="k">typedef</span> <span class="kt">int64_t</span> <span class="n">int128t</span><span class="p">;</span>
+<a name="ln-164"></a><span class="cp">#endif</span>
+<a name="ln-165"></a>
+<a name="ln-166"></a><span class="cp">#if defined(GFC_REAL_16_IS_LONG_DOUBLE)</span>
+<a name="ln-167"></a>   <span class="k">typedef</span> <span class="kt">long</span> <span class="kt">double</span> <span class="n">real128t</span><span class="p">;</span>
+<a name="ln-168"></a>   <span class="k">typedef</span> <span class="kt">_Complex</span> <span class="kt">long</span> <span class="kt">double</span> <span class="n">complex128t</span><span class="p">;</span>
+<a name="ln-169"></a><span class="cp">#elif defined(HAVE_GFC_REAL_16)</span>
+<a name="ln-170"></a>   <span class="k">typedef</span> <span class="kt">_Complex</span> <span class="kt">float</span> <span class="n">__attribute__</span><span class="p">((</span><span class="n">mode</span><span class="p">(</span><span class="n">TC</span><span class="p">)))</span> <span class="n">__complex128</span><span class="p">;</span>
+<a name="ln-171"></a>   <span class="k">typedef</span> <span class="n">__float128</span> <span class="n">real128t</span><span class="p">;</span>
+<a name="ln-172"></a>   <span class="k">typedef</span> <span class="n">__complex128</span> <span class="n">complex128t</span><span class="p">;</span>
+<a name="ln-173"></a><span class="cp">#elif defined(HAVE_GFC_REAL_10)</span>
+<a name="ln-174"></a>   <span class="k">typedef</span> <span class="kt">long</span> <span class="kt">double</span> <span class="n">real128t</span><span class="p">;</span>
+<a name="ln-175"></a>   <span class="k">typedef</span> <span class="kt">long</span> <span class="kt">double</span> <span class="n">complex128t</span><span class="p">;</span>
+<a name="ln-176"></a><span class="cp">#else</span>
+<a name="ln-177"></a>   <span class="k">typedef</span> <span class="kt">double</span> <span class="n">real128t</span><span class="p">;</span>
+<a name="ln-178"></a>   <span class="k">typedef</span> <span class="kt">_Complex</span> <span class="kt">double</span> <span class="n">complex128t</span><span class="p">;</span>
+<a name="ln-179"></a><span class="cp">#endif</span>
+<a name="ln-180"></a>
+<a name="ln-181"></a>   <span class="n">int128t</span> <span class="n">int_val</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="ln-182"></a>   <span class="n">real128t</span> <span class="n">real_val</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="ln-183"></a>   <span class="n">complex128t</span> <span class="n">cmpx_val</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="ln-184"></a>
+<a name="ln-185"></a>   <span class="k">switch</span> <span class="p">(</span><span class="n">src_type</span><span class="p">)</span>
+<a name="ln-186"></a>     <span class="p">{</span>
+<a name="ln-187"></a>     <span class="k">case</span> <span class="nl">BT_INTEGER</span><span class="p">:</span>
+<a name="ln-188"></a>	<span class="k">if</span> <span class="p">(</span><span class="n">src_kind</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+<a name="ln-189"></a>	  <span class="n">int_val</span> <span class="o">=</span> <span class="o">*</span><span class="p">(</span><span class="kt">int8_t</span><span class="o">*</span><span class="p">)</span> <span class="n">src</span><span class="p">;</span>
+<a name="ln-190"></a>	<span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">src_kind</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span>
+<a name="ln-191"></a>	  <span class="n">int_val</span> <span class="o">=</span> <span class="o">*</span><span class="p">(</span><span class="kt">int16_t</span><span class="o">*</span><span class="p">)</span> <span class="n">src</span><span class="p">;</span>
+<a name="ln-192"></a>	<span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">src_kind</span> <span class="o">==</span> <span class="mi">4</span><span class="p">)</span>
+<a name="ln-193"></a>	  <span class="n">int_val</span> <span class="o">=</span> <span class="o">*</span><span class="p">(</span><span class="kt">int32_t</span><span class="o">*</span><span class="p">)</span> <span class="n">src</span><span class="p">;</span>
+<a name="ln-194"></a>	<span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">src_kind</span> <span class="o">==</span> <span class="mi">8</span><span class="p">)</span>
+<a name="ln-195"></a>	  <span class="n">int_val</span> <span class="o">=</span> <span class="o">*</span><span class="p">(</span><span class="kt">int64_t</span><span class="o">*</span><span class="p">)</span> <span class="n">src</span><span class="p">;</span>
+<a name="ln-196"></a><span class="cp">#ifdef HAVE_GFC_INTEGER_16</span>
+<a name="ln-197"></a>	<span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">src_kind</span> <span class="o">==</span> <span class="mi">16</span><span class="p">)</span>
+<a name="ln-198"></a>	  <span class="n">int_val</span> <span class="o">=</span> <span class="o">*</span><span class="p">(</span><span class="n">int128t</span><span class="o">*</span><span class="p">)</span> <span class="n">src</span><span class="p">;</span>
+<a name="ln-199"></a><span class="cp">#endif</span>
+<a name="ln-200"></a>	<span class="k">else</span>
+<a name="ln-201"></a>	  <span class="k">goto</span> <span class="n">error</span><span class="p">;</span>
+<a name="ln-202"></a>	<span class="k">break</span><span class="p">;</span>
+<a name="ln-203"></a>     <span class="k">case</span> <span class="nl">BT_REAL</span><span class="p">:</span>
+<a name="ln-204"></a>	<span class="k">if</span> <span class="p">(</span><span class="n">src_kind</span> <span class="o">==</span> <span class="mi">4</span><span class="p">)</span>
+<a name="ln-205"></a>	  <span class="n">real_val</span> <span class="o">=</span> <span class="o">*</span><span class="p">(</span><span class="kt">float</span><span class="o">*</span><span class="p">)</span> <span class="n">src</span><span class="p">;</span>
+<a name="ln-206"></a>	<span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">src_kind</span> <span class="o">==</span> <span class="mi">8</span><span class="p">)</span>
+<a name="ln-207"></a>	  <span class="n">real_val</span> <span class="o">=</span> <span class="o">*</span><span class="p">(</span><span class="kt">double</span><span class="o">*</span><span class="p">)</span> <span class="n">src</span><span class="p">;</span>
+<a name="ln-208"></a><span class="cp">#ifdef HAVE_GFC_REAL_10</span>
+<a name="ln-209"></a>	<span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">src_kind</span> <span class="o">==</span> <span class="mi">10</span><span class="p">)</span>
+<a name="ln-210"></a>	  <span class="n">real_val</span> <span class="o">=</span> <span class="o">*</span><span class="p">(</span><span class="kt">long</span> <span class="kt">double</span><span class="o">*</span><span class="p">)</span> <span class="n">src</span><span class="p">;</span>
+<a name="ln-211"></a><span class="cp">#endif</span>
+<a name="ln-212"></a><span class="cp">#ifdef HAVE_GFC_REAL_16</span>
+<a name="ln-213"></a>	<span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">src_kind</span> <span class="o">==</span> <span class="mi">16</span><span class="p">)</span>
+<a name="ln-214"></a>	  <span class="n">real_val</span> <span class="o">=</span> <span class="o">*</span><span class="p">(</span><span class="n">real128t</span><span class="o">*</span><span class="p">)</span> <span class="n">src</span><span class="p">;</span>
+<a name="ln-215"></a><span class="cp">#endif</span>
+<a name="ln-216"></a>	<span class="k">else</span>
+<a name="ln-217"></a>	  <span class="k">goto</span> <span class="n">error</span><span class="p">;</span>
+<a name="ln-218"></a>	<span class="k">break</span><span class="p">;</span>
+<a name="ln-219"></a>     <span class="k">case</span> <span class="nl">BT_COMPLEX</span><span class="p">:</span>
+<a name="ln-220"></a>	<span class="k">if</span> <span class="p">(</span><span class="n">src_kind</span> <span class="o">==</span> <span class="mi">4</span><span class="p">)</span>
+<a name="ln-221"></a>	  <span class="n">cmpx_val</span> <span class="o">=</span> <span class="o">*</span><span class="p">(</span><span class="kt">_Complex</span> <span class="kt">float</span><span class="o">*</span><span class="p">)</span> <span class="n">src</span><span class="p">;</span>
+<a name="ln-222"></a>	<span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">src_kind</span> <span class="o">==</span> <span class="mi">8</span><span class="p">)</span>
+<a name="ln-223"></a>	  <span class="n">cmpx_val</span> <span class="o">=</span> <span class="o">*</span><span class="p">(</span><span class="kt">_Complex</span> <span class="kt">double</span><span class="o">*</span><span class="p">)</span> <span class="n">src</span><span class="p">;</span>
+<a name="ln-224"></a><span class="cp">#ifdef HAVE_GFC_REAL_10</span>
+<a name="ln-225"></a>	<span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">src_kind</span> <span class="o">==</span> <span class="mi">10</span><span class="p">)</span>
+<a name="ln-226"></a>	  <span class="n">cmpx_val</span> <span class="o">=</span> <span class="o">*</span><span class="p">(</span><span class="kt">_Complex</span> <span class="kt">long</span> <span class="kt">double</span><span class="o">*</span><span class="p">)</span> <span class="n">src</span><span class="p">;</span>
+<a name="ln-227"></a><span class="cp">#endif</span>
+<a name="ln-228"></a><span class="cp">#ifdef HAVE_GFC_REAL_16</span>
+<a name="ln-229"></a>	<span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">src_kind</span> <span class="o">==</span> <span class="mi">16</span><span class="p">)</span>
+<a name="ln-230"></a>	  <span class="n">cmpx_val</span> <span class="o">=</span> <span class="o">*</span><span class="p">(</span><span class="n">complex128t</span><span class="o">*</span><span class="p">)</span> <span class="n">src</span><span class="p">;</span>
+<a name="ln-231"></a><span class="cp">#endif</span>
+<a name="ln-232"></a>	<span class="k">else</span>
+<a name="ln-233"></a>	  <span class="k">goto</span> <span class="n">error</span><span class="p">;</span>
+<a name="ln-234"></a>	<span class="k">break</span><span class="p">;</span>
+<a name="ln-235"></a>     <span class="k">default</span><span class="o">:</span>
+<a name="ln-236"></a>	<span class="k">goto</span> <span class="n">error</span><span class="p">;</span>
+<a name="ln-237"></a>     <span class="p">}</span>
+<a name="ln-238"></a>
+<a name="ln-239"></a>   <span class="k">switch</span> <span class="p">(</span><span class="n">dst_type</span><span class="p">)</span>
+<a name="ln-240"></a>     <span class="p">{</span>
+<a name="ln-241"></a>     <span class="k">case</span> <span class="nl">BT_INTEGER</span><span class="p">:</span>
+<a name="ln-242"></a>	<span class="k">if</span> <span class="p">(</span><span class="n">src_type</span> <span class="o">==</span> <span class="n">BT_INTEGER</span><span class="p">)</span>
+<a name="ln-243"></a>	  <span class="p">{</span>
+<a name="ln-244"></a>	    <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+<a name="ln-245"></a>	      <span class="o">*</span><span class="p">(</span><span class="kt">int8_t</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="kt">int8_t</span><span class="p">)</span> <span class="n">int_val</span><span class="p">;</span>
+<a name="ln-246"></a>	    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span>
+<a name="ln-247"></a>	      <span class="o">*</span><span class="p">(</span><span class="kt">int16_t</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="kt">int16_t</span><span class="p">)</span> <span class="n">int_val</span><span class="p">;</span>
+<a name="ln-248"></a>	    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">4</span><span class="p">)</span>
+<a name="ln-249"></a>	      <span class="o">*</span><span class="p">(</span><span class="kt">int32_t</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="kt">int32_t</span><span class="p">)</span> <span class="n">int_val</span><span class="p">;</span>
+<a name="ln-250"></a>	    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">8</span><span class="p">)</span>
+<a name="ln-251"></a>	      <span class="o">*</span><span class="p">(</span><span class="kt">int64_t</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="kt">int64_t</span><span class="p">)</span> <span class="n">int_val</span><span class="p">;</span>
+<a name="ln-252"></a><span class="cp">#ifdef HAVE_GFC_INTEGER_16</span>
+<a name="ln-253"></a>	    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">16</span><span class="p">)</span>
+<a name="ln-254"></a>	      <span class="o">*</span><span class="p">(</span><span class="n">int128t</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="n">int128t</span><span class="p">)</span> <span class="n">int_val</span><span class="p">;</span>
+<a name="ln-255"></a><span class="cp">#endif</span>
+<a name="ln-256"></a>	    <span class="k">else</span>
+<a name="ln-257"></a>	      <span class="k">goto</span> <span class="n">error</span><span class="p">;</span>
+<a name="ln-258"></a>	  <span class="p">}</span>
+<a name="ln-259"></a>        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">src_type</span> <span class="o">==</span> <span class="n">BT_REAL</span><span class="p">)</span>
+<a name="ln-260"></a>	  <span class="p">{</span>
+<a name="ln-261"></a>	    <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+<a name="ln-262"></a>	      <span class="o">*</span><span class="p">(</span><span class="kt">int8_t</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="kt">int8_t</span><span class="p">)</span> <span class="n">real_val</span><span class="p">;</span>
+<a name="ln-263"></a>	    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span>
+<a name="ln-264"></a>	      <span class="o">*</span><span class="p">(</span><span class="kt">int16_t</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="kt">int16_t</span><span class="p">)</span> <span class="n">real_val</span><span class="p">;</span>
+<a name="ln-265"></a>	    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">4</span><span class="p">)</span>
+<a name="ln-266"></a>	      <span class="o">*</span><span class="p">(</span><span class="kt">int32_t</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="kt">int32_t</span><span class="p">)</span> <span class="n">real_val</span><span class="p">;</span>
+<a name="ln-267"></a>	    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">8</span><span class="p">)</span>
+<a name="ln-268"></a>	      <span class="o">*</span><span class="p">(</span><span class="kt">int64_t</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="kt">int64_t</span><span class="p">)</span> <span class="n">real_val</span><span class="p">;</span>
+<a name="ln-269"></a><span class="cp">#ifdef HAVE_GFC_INTEGER_16</span>
+<a name="ln-270"></a>	    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">16</span><span class="p">)</span>
+<a name="ln-271"></a>	      <span class="o">*</span><span class="p">(</span><span class="n">int128t</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="n">int128t</span><span class="p">)</span> <span class="n">real_val</span><span class="p">;</span>
+<a name="ln-272"></a><span class="cp">#endif</span>
+<a name="ln-273"></a>	    <span class="k">else</span>
+<a name="ln-274"></a>	      <span class="k">goto</span> <span class="n">error</span><span class="p">;</span>
+<a name="ln-275"></a>	  <span class="p">}</span>
+<a name="ln-276"></a>        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">src_type</span> <span class="o">==</span> <span class="n">BT_COMPLEX</span><span class="p">)</span>
+<a name="ln-277"></a>	  <span class="p">{</span>
+<a name="ln-278"></a>	    <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+<a name="ln-279"></a>	      <span class="o">*</span><span class="p">(</span><span class="kt">int8_t</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="kt">int8_t</span><span class="p">)</span> <span class="n">cmpx_val</span><span class="p">;</span>
+<a name="ln-280"></a>	    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span>
+<a name="ln-281"></a>	      <span class="o">*</span><span class="p">(</span><span class="kt">int16_t</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="kt">int16_t</span><span class="p">)</span> <span class="n">cmpx_val</span><span class="p">;</span>
+<a name="ln-282"></a>	    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">4</span><span class="p">)</span>
+<a name="ln-283"></a>	      <span class="o">*</span><span class="p">(</span><span class="kt">int32_t</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="kt">int32_t</span><span class="p">)</span> <span class="n">cmpx_val</span><span class="p">;</span>
+<a name="ln-284"></a>	    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">8</span><span class="p">)</span>
+<a name="ln-285"></a>	      <span class="o">*</span><span class="p">(</span><span class="kt">int64_t</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="kt">int64_t</span><span class="p">)</span> <span class="n">cmpx_val</span><span class="p">;</span>
+<a name="ln-286"></a><span class="cp">#ifdef HAVE_GFC_INTEGER_16</span>
+<a name="ln-287"></a>	    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">16</span><span class="p">)</span>
+<a name="ln-288"></a>	      <span class="o">*</span><span class="p">(</span><span class="n">int128t</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="n">int128t</span><span class="p">)</span> <span class="n">cmpx_val</span><span class="p">;</span>
+<a name="ln-289"></a><span class="cp">#endif</span>
+<a name="ln-290"></a>	    <span class="k">else</span>
+<a name="ln-291"></a>	      <span class="k">goto</span> <span class="n">error</span><span class="p">;</span>
+<a name="ln-292"></a>	  <span class="p">}</span>
+<a name="ln-293"></a>        <span class="k">else</span>
+<a name="ln-294"></a>          <span class="k">goto</span> <span class="n">error</span><span class="p">;</span>
+<a name="ln-295"></a>	<span class="k">break</span><span class="p">;</span>
+<a name="ln-296"></a>     <span class="k">case</span> <span class="nl">BT_REAL</span><span class="p">:</span>
+<a name="ln-297"></a>	<span class="k">if</span> <span class="p">(</span><span class="n">src_type</span> <span class="o">==</span> <span class="n">BT_INTEGER</span><span class="p">)</span>
+<a name="ln-298"></a>	  <span class="p">{</span>
+<a name="ln-299"></a>	    <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">4</span><span class="p">)</span>
+<a name="ln-300"></a>	      <span class="o">*</span><span class="p">(</span><span class="kt">float</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="kt">float</span><span class="p">)</span> <span class="n">int_val</span><span class="p">;</span>
+<a name="ln-301"></a>	    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">8</span><span class="p">)</span>
+<a name="ln-302"></a>	      <span class="o">*</span><span class="p">(</span><span class="kt">double</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="kt">double</span><span class="p">)</span> <span class="n">int_val</span><span class="p">;</span>
+<a name="ln-303"></a><span class="cp">#ifdef HAVE_GFC_REAL_10</span>
+<a name="ln-304"></a>	    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">10</span><span class="p">)</span>
+<a name="ln-305"></a>	      <span class="o">*</span><span class="p">(</span><span class="kt">long</span> <span class="kt">double</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="kt">long</span> <span class="kt">double</span><span class="p">)</span> <span class="n">int_val</span><span class="p">;</span>
+<a name="ln-306"></a><span class="cp">#endif</span>
+<a name="ln-307"></a><span class="cp">#ifdef HAVE_GFC_REAL_16</span>
+<a name="ln-308"></a>	    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">16</span><span class="p">)</span>
+<a name="ln-309"></a>	      <span class="o">*</span><span class="p">(</span><span class="n">real128t</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="n">real128t</span><span class="p">)</span> <span class="n">int_val</span><span class="p">;</span>
+<a name="ln-310"></a><span class="cp">#endif</span>
+<a name="ln-311"></a>	    <span class="k">else</span>
+<a name="ln-312"></a>	      <span class="k">goto</span> <span class="n">error</span><span class="p">;</span>
+<a name="ln-313"></a>	  <span class="p">}</span>
+<a name="ln-314"></a>	<span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">src_type</span> <span class="o">==</span> <span class="n">BT_REAL</span><span class="p">)</span>
+<a name="ln-315"></a>	  <span class="p">{</span>
+<a name="ln-316"></a>	    <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">4</span><span class="p">)</span>
+<a name="ln-317"></a>	      <span class="o">*</span><span class="p">(</span><span class="kt">float</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="kt">float</span><span class="p">)</span> <span class="n">real_val</span><span class="p">;</span>
+<a name="ln-318"></a>	    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">8</span><span class="p">)</span>
+<a name="ln-319"></a>	      <span class="o">*</span><span class="p">(</span><span class="kt">double</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="kt">double</span><span class="p">)</span> <span class="n">real_val</span><span class="p">;</span>
+<a name="ln-320"></a><span class="cp">#ifdef HAVE_GFC_REAL_10</span>
+<a name="ln-321"></a>	    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">10</span><span class="p">)</span>
+<a name="ln-322"></a>	      <span class="o">*</span><span class="p">(</span><span class="kt">long</span> <span class="kt">double</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="kt">long</span> <span class="kt">double</span><span class="p">)</span> <span class="n">real_val</span><span class="p">;</span>
+<a name="ln-323"></a><span class="cp">#endif</span>
+<a name="ln-324"></a><span class="cp">#ifdef HAVE_GFC_REAL_16</span>
+<a name="ln-325"></a>	    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">16</span><span class="p">)</span>
+<a name="ln-326"></a>	      <span class="o">*</span><span class="p">(</span><span class="n">real128t</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="n">real128t</span><span class="p">)</span> <span class="n">real_val</span><span class="p">;</span>
+<a name="ln-327"></a><span class="cp">#endif</span>
+<a name="ln-328"></a>	    <span class="k">else</span>
+<a name="ln-329"></a>	      <span class="k">goto</span> <span class="n">error</span><span class="p">;</span>
+<a name="ln-330"></a>	  <span class="p">}</span>
+<a name="ln-331"></a>	<span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">src_type</span> <span class="o">==</span> <span class="n">BT_COMPLEX</span><span class="p">)</span>
+<a name="ln-332"></a>	  <span class="p">{</span>
+<a name="ln-333"></a>	    <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">4</span><span class="p">)</span>
+<a name="ln-334"></a>	      <span class="o">*</span><span class="p">(</span><span class="kt">float</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="kt">float</span><span class="p">)</span> <span class="n">cmpx_val</span><span class="p">;</span>
+<a name="ln-335"></a>	    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">8</span><span class="p">)</span>
+<a name="ln-336"></a>	      <span class="o">*</span><span class="p">(</span><span class="kt">double</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="kt">double</span><span class="p">)</span> <span class="n">cmpx_val</span><span class="p">;</span>
+<a name="ln-337"></a><span class="cp">#ifdef HAVE_GFC_REAL_10</span>
+<a name="ln-338"></a>	    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">10</span><span class="p">)</span>
+<a name="ln-339"></a>	      <span class="o">*</span><span class="p">(</span><span class="kt">long</span> <span class="kt">double</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="kt">long</span> <span class="kt">double</span><span class="p">)</span> <span class="n">cmpx_val</span><span class="p">;</span>
+<a name="ln-340"></a><span class="cp">#endif</span>
+<a name="ln-341"></a><span class="cp">#ifdef HAVE_GFC_REAL_16</span>
+<a name="ln-342"></a>	    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">16</span><span class="p">)</span>
+<a name="ln-343"></a>	      <span class="o">*</span><span class="p">(</span><span class="n">real128t</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="n">real128t</span><span class="p">)</span> <span class="n">cmpx_val</span><span class="p">;</span>
+<a name="ln-344"></a><span class="cp">#endif</span>
+<a name="ln-345"></a>	    <span class="k">else</span>
+<a name="ln-346"></a>	      <span class="k">goto</span> <span class="n">error</span><span class="p">;</span>
+<a name="ln-347"></a>	  <span class="p">}</span>
+<a name="ln-348"></a>	<span class="k">break</span><span class="p">;</span>
+<a name="ln-349"></a>     <span class="k">case</span> <span class="nl">BT_COMPLEX</span><span class="p">:</span>
+<a name="ln-350"></a>	<span class="k">if</span> <span class="p">(</span><span class="n">src_type</span> <span class="o">==</span> <span class="n">BT_INTEGER</span><span class="p">)</span>
+<a name="ln-351"></a>	  <span class="p">{</span>
+<a name="ln-352"></a>	    <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">4</span><span class="p">)</span>
+<a name="ln-353"></a>	      <span class="o">*</span><span class="p">(</span><span class="kt">_Complex</span> <span class="kt">float</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="kt">_Complex</span> <span class="kt">float</span><span class="p">)</span> <span class="n">int_val</span><span class="p">;</span>
+<a name="ln-354"></a>	    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">8</span><span class="p">)</span>
+<a name="ln-355"></a>	      <span class="o">*</span><span class="p">(</span><span class="kt">_Complex</span> <span class="kt">double</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="kt">_Complex</span> <span class="kt">double</span><span class="p">)</span> <span class="n">int_val</span><span class="p">;</span>
+<a name="ln-356"></a><span class="cp">#ifdef HAVE_GFC_REAL_10</span>
+<a name="ln-357"></a>	    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">10</span><span class="p">)</span>
+<a name="ln-358"></a>	      <span class="o">*</span><span class="p">(</span><span class="kt">_Complex</span> <span class="kt">long</span> <span class="kt">double</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="kt">_Complex</span> <span class="kt">long</span> <span class="kt">double</span><span class="p">)</span> <span class="n">int_val</span><span class="p">;</span>
+<a name="ln-359"></a><span class="cp">#endif</span>
+<a name="ln-360"></a><span class="cp">#ifdef HAVE_GFC_REAL_16</span>
+<a name="ln-361"></a>	    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">16</span><span class="p">)</span>
+<a name="ln-362"></a>	      <span class="o">*</span><span class="p">(</span><span class="n">complex128t</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="n">complex128t</span><span class="p">)</span> <span class="n">int_val</span><span class="p">;</span>
+<a name="ln-363"></a><span class="cp">#endif</span>
+<a name="ln-364"></a>	    <span class="k">else</span>
+<a name="ln-365"></a>	      <span class="k">goto</span> <span class="n">error</span><span class="p">;</span>
+<a name="ln-366"></a>	  <span class="p">}</span>
+<a name="ln-367"></a>	<span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">src_type</span> <span class="o">==</span> <span class="n">BT_REAL</span><span class="p">)</span>
+<a name="ln-368"></a>	  <span class="p">{</span>
+<a name="ln-369"></a>	    <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">4</span><span class="p">)</span>
+<a name="ln-370"></a>	      <span class="o">*</span><span class="p">(</span><span class="kt">_Complex</span> <span class="kt">float</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="kt">_Complex</span> <span class="kt">float</span><span class="p">)</span> <span class="n">real_val</span><span class="p">;</span>
+<a name="ln-371"></a>	    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">8</span><span class="p">)</span>
+<a name="ln-372"></a>	      <span class="o">*</span><span class="p">(</span><span class="kt">_Complex</span> <span class="kt">double</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="kt">_Complex</span> <span class="kt">double</span><span class="p">)</span> <span class="n">real_val</span><span class="p">;</span>
+<a name="ln-373"></a><span class="cp">#ifdef HAVE_GFC_REAL_10</span>
+<a name="ln-374"></a>	    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">10</span><span class="p">)</span>
+<a name="ln-375"></a>	      <span class="o">*</span><span class="p">(</span><span class="kt">_Complex</span> <span class="kt">long</span> <span class="kt">double</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="kt">_Complex</span> <span class="kt">long</span> <span class="kt">double</span><span class="p">)</span> <span class="n">real_val</span><span class="p">;</span>
+<a name="ln-376"></a><span class="cp">#endif</span>
+<a name="ln-377"></a><span class="cp">#ifdef HAVE_GFC_REAL_16</span>
+<a name="ln-378"></a>	    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">16</span><span class="p">)</span>
+<a name="ln-379"></a>	      <span class="o">*</span><span class="p">(</span><span class="n">complex128t</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="n">complex128t</span><span class="p">)</span> <span class="n">real_val</span><span class="p">;</span>
+<a name="ln-380"></a><span class="cp">#endif</span>
+<a name="ln-381"></a>	    <span class="k">else</span>
+<a name="ln-382"></a>	      <span class="k">goto</span> <span class="n">error</span><span class="p">;</span>
+<a name="ln-383"></a>	  <span class="p">}</span>
+<a name="ln-384"></a>	<span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">src_type</span> <span class="o">==</span> <span class="n">BT_COMPLEX</span><span class="p">)</span>
+<a name="ln-385"></a>	  <span class="p">{</span>
+<a name="ln-386"></a>	    <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">4</span><span class="p">)</span>
+<a name="ln-387"></a>	      <span class="o">*</span><span class="p">(</span><span class="kt">_Complex</span> <span class="kt">float</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="kt">_Complex</span> <span class="kt">float</span><span class="p">)</span> <span class="n">cmpx_val</span><span class="p">;</span>
+<a name="ln-388"></a>	    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">8</span><span class="p">)</span>
+<a name="ln-389"></a>	      <span class="o">*</span><span class="p">(</span><span class="kt">_Complex</span> <span class="kt">double</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="kt">_Complex</span> <span class="kt">double</span><span class="p">)</span> <span class="n">cmpx_val</span><span class="p">;</span>
+<a name="ln-390"></a><span class="cp">#ifdef HAVE_GFC_REAL_10</span>
+<a name="ln-391"></a>	    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">10</span><span class="p">)</span>
+<a name="ln-392"></a>	      <span class="o">*</span><span class="p">(</span><span class="kt">_Complex</span> <span class="kt">long</span> <span class="kt">double</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="kt">_Complex</span> <span class="kt">long</span> <span class="kt">double</span><span class="p">)</span> <span class="n">cmpx_val</span><span class="p">;</span>
+<a name="ln-393"></a><span class="cp">#endif</span>
+<a name="ln-394"></a><span class="cp">#ifdef HAVE_GFC_REAL_16</span>
+<a name="ln-395"></a>	    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">16</span><span class="p">)</span>
+<a name="ln-396"></a>	      <span class="o">*</span><span class="p">(</span><span class="n">complex128t</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="n">complex128t</span><span class="p">)</span> <span class="n">cmpx_val</span><span class="p">;</span>
+<a name="ln-397"></a><span class="cp">#endif</span>
+<a name="ln-398"></a>	    <span class="k">else</span>
+<a name="ln-399"></a>	      <span class="k">goto</span> <span class="n">error</span><span class="p">;</span>
+<a name="ln-400"></a>	  <span class="p">}</span>
+<a name="ln-401"></a>	<span class="k">else</span>
+<a name="ln-402"></a>	  <span class="k">goto</span> <span class="n">error</span><span class="p">;</span>
+<a name="ln-403"></a>	<span class="k">break</span><span class="p">;</span>
+<a name="ln-404"></a>     <span class="k">default</span><span class="o">:</span>
+<a name="ln-405"></a>        <span class="k">goto</span> <span class="n">error</span><span class="p">;</span>
+<a name="ln-406"></a>     <span class="p">}</span>
+<a name="ln-407"></a>
+<a name="ln-408"></a><span class="nl">error</span><span class="p">:</span>
+<a name="ln-409"></a>   <span class="n">fprintf</span> <span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;RUNTIME ERROR: Cannot convert type %d kind &quot;</span>
+<a name="ln-410"></a>            <span class="s">&quot;%d to type %d kind %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">src_type</span><span class="p">,</span> <span class="n">src_kind</span><span class="p">,</span> <span class="n">dst_type</span><span class="p">,</span> <span class="n">dst_kind</span><span class="p">);</span>
+<a name="ln-411"></a>   <span class="n">PREFIX</span> <span class="p">(</span><span class="n">error_stop</span><span class="p">)</span> <span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+<a name="ln-412"></a><span class="p">}</span><span class="cm">/* Get a scalar (or contiguous) data from remote image into a buffer.  */</span>
+<a name="ln-413"></a>
+<a name="ln-414"></a>
+<a name="ln-415"></a><span class="kt">void</span>
+<a name="ln-416"></a><span class="nf">PREFIX</span> <span class="p">(</span><span class="n">get</span><span class="p">)</span> <span class="p">(</span><span class="n">caf_token_t</span> <span class="n">token</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">offset</span><span class="p">,</span>
+<a name="ln-417"></a>	      <span class="kt">int</span> <span class="n">image_index</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">unused</span><span class="p">)),</span>
+<a name="ln-418"></a>	      <span class="n">gfc_descriptor_t</span> <span class="o">*</span><span class="n">src</span> <span class="p">,</span>
+<a name="ln-419"></a>	      <span class="n">caf_vector_t</span> <span class="o">*</span><span class="n">src_vector</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">unused</span><span class="p">)),</span>
+<a name="ln-420"></a>	      <span class="n">gfc_descriptor_t</span> <span class="o">*</span><span class="n">dest</span><span class="p">,</span> <span class="kt">int</span> <span class="n">src_kind</span><span class="p">,</span> <span class="kt">int</span> <span class="n">dst_kind</span><span class="p">)</span>
+<a name="ln-421"></a><span class="p">{</span>
+<a name="ln-422"></a>  <span class="cm">/* FIXME: Handle vector subscripts; check whether strings of different</span>
+<a name="ln-423"></a><span class="cm">     kinds are permitted.  */</span>
+<a name="ln-424"></a>  <span class="kt">size_t</span> <span class="n">i</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">size</span><span class="p">;</span>
+<a name="ln-425"></a>  <span class="kt">int</span> <span class="n">j</span><span class="p">;</span>
+<a name="ln-426"></a>  <span class="kt">int</span> <span class="n">rank</span> <span class="o">=</span> <span class="n">GFC_DESCRIPTOR_RANK</span> <span class="p">(</span><span class="n">dest</span><span class="p">);</span>
+<a name="ln-427"></a>  <span class="kt">size_t</span> <span class="n">src_size</span> <span class="o">=</span> <span class="n">GFC_DESCRIPTOR_SIZE</span> <span class="p">(</span><span class="n">src</span><span class="p">);</span>
+<a name="ln-428"></a>  <span class="kt">size_t</span> <span class="n">dst_size</span> <span class="o">=</span> <span class="n">GFC_DESCRIPTOR_SIZE</span> <span class="p">(</span><span class="n">dest</span><span class="p">);</span>
+<a name="ln-429"></a>
+<a name="ln-430"></a>  <span class="k">if</span> <span class="p">(</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+<a name="ln-431"></a>    <span class="p">{</span>
+<a name="ln-432"></a>      <span class="kt">void</span> <span class="o">*</span><span class="n">sr</span> <span class="o">=</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span> <span class="p">((</span><span class="kt">char</span> <span class="o">*</span><span class="p">)</span> <span class="n">TOKEN</span> <span class="p">(</span><span class="n">token</span><span class="p">)</span> <span class="o">+</span> <span class="n">offset</span><span class="p">);</span>
+<a name="ln-433"></a>      <span class="k">if</span> <span class="p">(</span><span class="n">GFC_DESCRIPTOR_TYPE</span> <span class="p">(</span><span class="n">dest</span><span class="p">)</span> <span class="o">==</span> <span class="n">GFC_DESCRIPTOR_TYPE</span> <span class="p">(</span><span class="n">src</span><span class="p">)</span>
+<a name="ln-434"></a>	  <span class="o">&amp;&amp;</span> <span class="n">dst_kind</span> <span class="o">==</span> <span class="n">src_kind</span><span class="p">)</span>
+<a name="ln-435"></a>	<span class="n">memmove</span> <span class="p">(</span><span class="n">dest</span><span class="o">-&gt;</span><span class="n">base_addr</span><span class="p">,</span> <span class="n">sr</span><span class="p">,</span>
+<a name="ln-436"></a>		 <span class="n">dst_size</span> <span class="o">&gt;</span> <span class="n">src_size</span> <span class="o">?</span> <span class="nl">src_size</span> <span class="p">:</span> <span class="n">dst_size</span><span class="p">);</span>
+<a name="ln-437"></a>      <span class="k">else</span>
+<a name="ln-438"></a>	<span class="n">convert_type</span> <span class="p">(</span><span class="n">dest</span><span class="o">-&gt;</span><span class="n">base_addr</span><span class="p">,</span> <span class="n">GFC_DESCRIPTOR_TYPE</span> <span class="p">(</span><span class="n">dest</span><span class="p">),</span>
+<a name="ln-439"></a>		      <span class="n">dst_kind</span><span class="p">,</span> <span class="n">sr</span><span class="p">,</span> <span class="n">GFC_DESCRIPTOR_TYPE</span> <span class="p">(</span><span class="n">src</span><span class="p">),</span> <span class="n">src_kind</span><span class="p">);</span>
+<a name="ln-440"></a>      <span class="k">if</span> <span class="p">(</span><span class="n">GFC_DESCRIPTOR_TYPE</span> <span class="p">(</span><span class="n">dest</span><span class="p">)</span> <span class="o">==</span> <span class="n">BT_CHARACTER</span> <span class="o">&amp;&amp;</span> <span class="n">dst_size</span> <span class="o">&gt;</span> <span class="n">src_size</span><span class="p">)</span>
+<a name="ln-441"></a>	<span class="p">{</span>
+<a name="ln-442"></a>	  <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+<a name="ln-443"></a>	    <span class="n">memset</span> <span class="p">((</span><span class="kt">void</span><span class="o">*</span><span class="p">)(</span><span class="kt">char</span><span class="o">*</span><span class="p">)</span> <span class="n">dest</span><span class="o">-&gt;</span><span class="n">base_addr</span> <span class="o">+</span> <span class="n">src_size</span><span class="p">,</span> <span class="sc">&#39; &#39;</span><span class="p">,</span>
+<a name="ln-444"></a>		    <span class="n">dst_size</span><span class="o">-</span><span class="n">src_size</span><span class="p">);</span>
+<a name="ln-445"></a>	  <span class="k">else</span> <span class="cm">/* dst_kind == 4.  */</span>
+<a name="ln-446"></a>	    <span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="n">src_size</span><span class="o">/</span><span class="mi">4</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">dst_size</span><span class="o">/</span><span class="mi">4</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+<a name="ln-447"></a>	      <span class="p">((</span><span class="kt">int32_t</span><span class="o">*</span><span class="p">)</span> <span class="n">dest</span><span class="o">-&gt;</span><span class="n">base_addr</span><span class="p">)[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="kt">int32_t</span><span class="p">)</span> <span class="sc">&#39; &#39;</span><span class="p">;</span>
+<a name="ln-448"></a>	<span class="p">}</span>
+<a name="ln-449"></a>      <span class="k">return</span><span class="p">;</span>
+<a name="ln-450"></a>    <span class="p">}</span>
+<a name="ln-451"></a>
+<a name="ln-452"></a>  <span class="n">size</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+<a name="ln-453"></a>  <span class="k">for</span> <span class="p">(</span><span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">rank</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">)</span>
+<a name="ln-454"></a>    <span class="p">{</span>
+<a name="ln-455"></a>      <span class="kt">ptrdiff_t</span> <span class="n">dimextent</span> <span class="o">=</span> <span class="n">dest</span><span class="o">-&gt;</span><span class="n">dim</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">_ubound</span> <span class="o">-</span> <span class="n">dest</span><span class="o">-&gt;</span><span class="n">dim</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">lower_bound</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+<a name="ln-456"></a>      <span class="k">if</span> <span class="p">(</span><span class="n">dimextent</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+<a name="ln-457"></a>	<span class="n">dimextent</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="ln-458"></a>      <span class="n">size</span> <span class="o">*=</span> <span class="n">dimextent</span><span class="p">;</span>
+<a name="ln-459"></a>    <span class="p">}</span>
+<a name="ln-460"></a>
+<a name="ln-461"></a>  <span class="k">if</span> <span class="p">(</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+<a name="ln-462"></a>    <span class="k">return</span><span class="p">;</span>
+<a name="ln-463"></a>
+<a name="ln-464"></a>  <span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">size</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+<a name="ln-465"></a>    <span class="p">{</span>
+<a name="ln-466"></a>      <span class="kt">ptrdiff_t</span> <span class="n">array_offset_dst</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="ln-467"></a>      <span class="kt">ptrdiff_t</span> <span class="n">stride</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+<a name="ln-468"></a>      <span class="kt">ptrdiff_t</span> <span class="n">extent</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+<a name="ln-469"></a>      <span class="k">for</span> <span class="p">(</span><span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">rank</span><span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">)</span>
+<a name="ln-470"></a>	<span class="p">{</span>
+<a name="ln-471"></a>	  <span class="n">array_offset_dst</span> <span class="o">+=</span> <span class="p">((</span><span class="n">i</span> <span class="o">/</span> <span class="p">(</span><span class="n">extent</span><span class="o">*</span><span class="n">stride</span><span class="p">))</span>
+<a name="ln-472"></a>			       <span class="o">%</span> <span class="p">(</span><span class="n">dest</span><span class="o">-&gt;</span><span class="n">dim</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">_ubound</span>
+<a name="ln-473"></a>				  <span class="o">-</span> <span class="n">dest</span><span class="o">-&gt;</span><span class="n">dim</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">lower_bound</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+<a name="ln-474"></a>			      <span class="o">*</span> <span class="n">dest</span><span class="o">-&gt;</span><span class="n">dim</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">_stride</span><span class="p">;</span>
+<a name="ln-475"></a>	  <span class="n">extent</span> <span class="o">=</span> <span class="p">(</span><span class="n">dest</span><span class="o">-&gt;</span><span class="n">dim</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">_ubound</span> <span class="o">-</span> <span class="n">dest</span><span class="o">-&gt;</span><span class="n">dim</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">lower_bound</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+<a name="ln-476"></a>          <span class="n">stride</span> <span class="o">=</span> <span class="n">dest</span><span class="o">-&gt;</span><span class="n">dim</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">_stride</span><span class="p">;</span>
+<a name="ln-477"></a>	<span class="p">}</span>
+<a name="ln-478"></a>      <span class="n">array_offset_dst</span> <span class="o">+=</span> <span class="p">(</span><span class="n">i</span> <span class="o">/</span> <span class="n">extent</span><span class="p">)</span> <span class="o">*</span> <span class="n">dest</span><span class="o">-&gt;</span><span class="n">dim</span><span class="p">[</span><span class="n">rank</span><span class="o">-</span><span class="mi">1</span><span class="p">].</span><span class="n">_stride</span><span class="p">;</span>
+<a name="ln-479"></a>      <span class="kt">void</span> <span class="o">*</span><span class="n">dst</span> <span class="o">=</span> <span class="n">dest</span><span class="o">-&gt;</span><span class="n">base_addr</span> <span class="o">+</span> <span class="n">array_offset_dst</span><span class="o">*</span><span class="n">GFC_DESCRIPTOR_SIZE</span> <span class="p">(</span><span class="n">dest</span><span class="p">);</span>
+<a name="ln-480"></a>
+<a name="ln-481"></a>      <span class="kt">ptrdiff_t</span> <span class="n">array_offset_sr</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="ln-482"></a>      <span class="n">stride</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+<a name="ln-483"></a>      <span class="n">extent</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+<a name="ln-484"></a>      <span class="k">for</span> <span class="p">(</span><span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">GFC_DESCRIPTOR_RANK</span> <span class="p">(</span><span class="n">src</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">)</span>
+<a name="ln-485"></a>	<span class="p">{</span>
+<a name="ln-486"></a>	  <span class="n">array_offset_sr</span> <span class="o">+=</span> <span class="p">((</span><span class="n">i</span> <span class="o">/</span> <span class="p">(</span><span class="n">extent</span><span class="o">*</span><span class="n">stride</span><span class="p">))</span>
+<a name="ln-487"></a>			       <span class="o">%</span> <span class="p">(</span><span class="n">src</span><span class="o">-&gt;</span><span class="n">dim</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">_ubound</span>
+<a name="ln-488"></a>				  <span class="o">-</span> <span class="n">src</span><span class="o">-&gt;</span><span class="n">dim</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">lower_bound</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+<a name="ln-489"></a>			     <span class="o">*</span> <span class="n">src</span><span class="o">-&gt;</span><span class="n">dim</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">_stride</span><span class="p">;</span>
+<a name="ln-490"></a>	  <span class="n">extent</span> <span class="o">=</span> <span class="p">(</span><span class="n">src</span><span class="o">-&gt;</span><span class="n">dim</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">_ubound</span> <span class="o">-</span> <span class="n">src</span><span class="o">-&gt;</span><span class="n">dim</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">lower_bound</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+<a name="ln-491"></a>	  <span class="n">stride</span> <span class="o">=</span> <span class="n">src</span><span class="o">-&gt;</span><span class="n">dim</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">_stride</span><span class="p">;</span>
+<a name="ln-492"></a>	<span class="p">}</span>
+<a name="ln-493"></a>      <span class="n">array_offset_sr</span> <span class="o">+=</span> <span class="p">(</span><span class="n">i</span> <span class="o">/</span> <span class="n">extent</span><span class="p">)</span> <span class="o">*</span> <span class="n">src</span><span class="o">-&gt;</span><span class="n">dim</span><span class="p">[</span><span class="n">rank</span><span class="o">-</span><span class="mi">1</span><span class="p">].</span><span class="n">_stride</span><span class="p">;</span>
+<a name="ln-494"></a>      <span class="kt">void</span> <span class="o">*</span><span class="n">sr</span> <span class="o">=</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)((</span><span class="kt">char</span> <span class="o">*</span><span class="p">)</span> <span class="n">TOKEN</span> <span class="p">(</span><span class="n">token</span><span class="p">)</span> <span class="o">+</span> <span class="n">offset</span>
+<a name="ln-495"></a>			  <span class="o">+</span> <span class="n">array_offset_sr</span><span class="o">*</span><span class="n">GFC_DESCRIPTOR_SIZE</span> <span class="p">(</span><span class="n">src</span><span class="p">));</span>
+<a name="ln-496"></a>
+<a name="ln-497"></a>      <span class="k">if</span> <span class="p">(</span><span class="n">GFC_DESCRIPTOR_TYPE</span> <span class="p">(</span><span class="n">dest</span><span class="p">)</span> <span class="o">==</span> <span class="n">GFC_DESCRIPTOR_TYPE</span> <span class="p">(</span><span class="n">src</span><span class="p">)</span>
+<a name="ln-498"></a>	  <span class="o">&amp;&amp;</span> <span class="n">dst_kind</span> <span class="o">==</span> <span class="n">src_kind</span><span class="p">)</span>
+<a name="ln-499"></a>	<span class="n">memmove</span> <span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="n">sr</span><span class="p">,</span> <span class="n">dst_size</span> <span class="o">&gt;</span> <span class="n">src_size</span> <span class="o">?</span> <span class="nl">src_size</span> <span class="p">:</span> <span class="n">dst_size</span><span class="p">);</span>
+<a name="ln-500"></a>      <span class="k">else</span>
+<a name="ln-501"></a>	<span class="n">convert_type</span> <span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="n">GFC_DESCRIPTOR_TYPE</span> <span class="p">(</span><span class="n">dest</span><span class="p">),</span> <span class="n">dst_kind</span><span class="p">,</span>
+<a name="ln-502"></a>		      <span class="n">sr</span><span class="p">,</span> <span class="n">GFC_DESCRIPTOR_TYPE</span> <span class="p">(</span><span class="n">src</span><span class="p">),</span> <span class="n">src_kind</span><span class="p">);</span>
+<a name="ln-503"></a>      <span class="k">if</span> <span class="p">(</span><span class="n">GFC_DESCRIPTOR_TYPE</span> <span class="p">(</span><span class="n">dest</span><span class="p">)</span> <span class="o">==</span> <span class="n">BT_CHARACTER</span> <span class="o">&amp;&amp;</span> <span class="n">dst_size</span> <span class="o">&gt;</span> <span class="n">src_size</span><span class="p">)</span>
+<a name="ln-504"></a>	<span class="p">{</span>
+<a name="ln-505"></a>	  <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+<a name="ln-506"></a>	    <span class="n">memset</span> <span class="p">((</span><span class="kt">void</span><span class="o">*</span><span class="p">)(</span><span class="kt">char</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">+</span> <span class="n">src_size</span><span class="p">,</span> <span class="sc">&#39; &#39;</span><span class="p">,</span> <span class="n">dst_size</span><span class="o">-</span><span class="n">src_size</span><span class="p">);</span>
+<a name="ln-507"></a>	  <span class="k">else</span> <span class="cm">/* dst_kind == 4.  */</span>
+<a name="ln-508"></a>	    <span class="k">for</span> <span class="p">(</span><span class="n">k</span> <span class="o">=</span> <span class="n">src_size</span><span class="o">/</span><span class="mi">4</span><span class="p">;</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="n">dst_size</span><span class="o">/</span><span class="mi">4</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+<a name="ln-509"></a>	      <span class="p">((</span><span class="kt">int32_t</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span><span class="p">)[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="kt">int32_t</span><span class="p">)</span> <span class="sc">&#39; &#39;</span><span class="p">;</span>
+<a name="ln-510"></a>	<span class="p">}</span>
+<a name="ln-511"></a>    <span class="p">}</span>
+<a name="ln-512"></a><span class="p">}</span>
+<a name="ln-513"></a>
+<a name="ln-514"></a>
+<a name="ln-515"></a><span class="kt">void</span>
+<a name="ln-516"></a><span class="nf">PREFIX</span> <span class="p">(</span><span class="n">send</span><span class="p">)</span> <span class="p">(</span><span class="n">caf_token_t</span> <span class="n">token</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">offset</span><span class="p">,</span>
+<a name="ln-517"></a>	       <span class="kt">int</span> <span class="n">image_index</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">unused</span><span class="p">)),</span>
+<a name="ln-518"></a>	       <span class="n">gfc_descriptor_t</span> <span class="o">*</span><span class="n">dest</span><span class="p">,</span>
+<a name="ln-519"></a>	       <span class="n">caf_vector_t</span> <span class="o">*</span><span class="n">dst_vector</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">unused</span><span class="p">)),</span>
+<a name="ln-520"></a>	       <span class="n">gfc_descriptor_t</span> <span class="o">*</span><span class="n">src</span><span class="p">,</span> <span class="kt">int</span> <span class="n">dst_kind</span><span class="p">,</span>
+<a name="ln-521"></a>	       <span class="kt">int</span> <span class="n">src_kind</span><span class="p">)</span>
+<a name="ln-522"></a><span class="p">{</span>
+<a name="ln-523"></a>  <span class="cm">/* FIXME: Handle vector subscripts; check whether strings of different</span>
+<a name="ln-524"></a><span class="cm">     kinds are permitted.  */</span>
+<a name="ln-525"></a>  <span class="kt">size_t</span> <span class="n">i</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">size</span><span class="p">;</span>
+<a name="ln-526"></a>  <span class="kt">int</span> <span class="n">j</span><span class="p">;</span>
+<a name="ln-527"></a>  <span class="kt">int</span> <span class="n">rank</span> <span class="o">=</span> <span class="n">GFC_DESCRIPTOR_RANK</span> <span class="p">(</span><span class="n">dest</span><span class="p">);</span>
+<a name="ln-528"></a>  <span class="kt">size_t</span> <span class="n">src_size</span> <span class="o">=</span> <span class="n">GFC_DESCRIPTOR_SIZE</span> <span class="p">(</span><span class="n">src</span><span class="p">);</span>
+<a name="ln-529"></a>  <span class="kt">size_t</span> <span class="n">dst_size</span> <span class="o">=</span> <span class="n">GFC_DESCRIPTOR_SIZE</span> <span class="p">(</span><span class="n">dest</span><span class="p">);</span>
+<a name="ln-530"></a>
+<a name="ln-531"></a>  <span class="k">if</span> <span class="p">(</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+<a name="ln-532"></a>    <span class="p">{</span>
+<a name="ln-533"></a>      <span class="kt">void</span> <span class="o">*</span><span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span> <span class="p">((</span><span class="kt">char</span> <span class="o">*</span><span class="p">)</span> <span class="n">TOKEN</span> <span class="p">(</span><span class="n">token</span><span class="p">)</span> <span class="o">+</span> <span class="n">offset</span><span class="p">);</span>
+<a name="ln-534"></a>      <span class="k">if</span> <span class="p">(</span><span class="n">GFC_DESCRIPTOR_TYPE</span> <span class="p">(</span><span class="n">dest</span><span class="p">)</span> <span class="o">==</span> <span class="n">GFC_DESCRIPTOR_TYPE</span> <span class="p">(</span><span class="n">src</span><span class="p">)</span>
+<a name="ln-535"></a>	  <span class="o">&amp;&amp;</span> <span class="n">dst_kind</span> <span class="o">==</span> <span class="n">src_kind</span><span class="p">)</span>
+<a name="ln-536"></a>	<span class="n">memmove</span> <span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="n">src</span><span class="o">-&gt;</span><span class="n">base_addr</span><span class="p">,</span>
+<a name="ln-537"></a>		 <span class="n">dst_size</span> <span class="o">&gt;</span> <span class="n">src_size</span> <span class="o">?</span> <span class="nl">src_size</span> <span class="p">:</span> <span class="n">dst_size</span><span class="p">);</span>
+<a name="ln-538"></a>      <span class="k">else</span>
+<a name="ln-539"></a>	<span class="n">convert_type</span> <span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="n">GFC_DESCRIPTOR_TYPE</span> <span class="p">(</span><span class="n">dest</span><span class="p">),</span> <span class="n">dst_kind</span><span class="p">,</span> <span class="n">src</span><span class="o">-&gt;</span><span class="n">base_addr</span><span class="p">,</span>
+<a name="ln-540"></a>		      <span class="n">GFC_DESCRIPTOR_TYPE</span> <span class="p">(</span><span class="n">src</span><span class="p">),</span> <span class="n">src_kind</span><span class="p">);</span>
+<a name="ln-541"></a>      <span class="k">if</span> <span class="p">(</span><span class="n">GFC_DESCRIPTOR_TYPE</span> <span class="p">(</span><span class="n">dest</span><span class="p">)</span> <span class="o">==</span> <span class="n">BT_CHARACTER</span> <span class="o">&amp;&amp;</span> <span class="n">dst_size</span> <span class="o">&gt;</span> <span class="n">src_size</span><span class="p">)</span>
+<a name="ln-542"></a>	<span class="p">{</span>
+<a name="ln-543"></a>	  <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+<a name="ln-544"></a>	    <span class="n">memset</span> <span class="p">((</span><span class="kt">void</span><span class="o">*</span><span class="p">)(</span><span class="kt">char</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">+</span> <span class="n">src_size</span><span class="p">,</span> <span class="sc">&#39; &#39;</span><span class="p">,</span> <span class="n">dst_size</span><span class="o">-</span><span class="n">src_size</span><span class="p">);</span>
+<a name="ln-545"></a>	  <span class="k">else</span> <span class="cm">/* dst_kind == 4.  */</span>
+<a name="ln-546"></a>	    <span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="n">src_size</span><span class="o">/</span><span class="mi">4</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">dst_size</span><span class="o">/</span><span class="mi">4</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+<a name="ln-547"></a>	      <span class="p">((</span><span class="kt">int32_t</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span><span class="p">)[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="kt">int32_t</span><span class="p">)</span> <span class="sc">&#39; &#39;</span><span class="p">;</span>
+<a name="ln-548"></a>	<span class="p">}</span>
+<a name="ln-549"></a>      <span class="k">return</span><span class="p">;</span>
+<a name="ln-550"></a>    <span class="p">}</span>
+<a name="ln-551"></a>
+<a name="ln-552"></a>  <span class="n">size</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+<a name="ln-553"></a>  <span class="k">for</span> <span class="p">(</span><span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">rank</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">)</span>
+<a name="ln-554"></a>    <span class="p">{</span>
+<a name="ln-555"></a>      <span class="kt">ptrdiff_t</span> <span class="n">dimextent</span> <span class="o">=</span> <span class="n">dest</span><span class="o">-&gt;</span><span class="n">dim</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">_ubound</span> <span class="o">-</span> <span class="n">dest</span><span class="o">-&gt;</span><span class="n">dim</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">lower_bound</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+<a name="ln-556"></a>      <span class="k">if</span> <span class="p">(</span><span class="n">dimextent</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+<a name="ln-557"></a>	<span class="n">dimextent</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="ln-558"></a>      <span class="n">size</span> <span class="o">*=</span> <span class="n">dimextent</span><span class="p">;</span>
+<a name="ln-559"></a>    <span class="p">}</span>
+<a name="ln-560"></a>
+<a name="ln-561"></a>  <span class="k">if</span> <span class="p">(</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+<a name="ln-562"></a>    <span class="k">return</span><span class="p">;</span>
+<a name="ln-563"></a>
+<a name="ln-564"></a>  <span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">size</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+<a name="ln-565"></a>    <span class="p">{</span>
+<a name="ln-566"></a>      <span class="kt">ptrdiff_t</span> <span class="n">array_offset_dst</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="ln-567"></a>      <span class="kt">ptrdiff_t</span> <span class="n">stride</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+<a name="ln-568"></a>      <span class="kt">ptrdiff_t</span> <span class="n">extent</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+<a name="ln-569"></a>      <span class="k">for</span> <span class="p">(</span><span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">rank</span><span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">)</span>
+<a name="ln-570"></a>	<span class="p">{</span>
+<a name="ln-571"></a>	  <span class="n">array_offset_dst</span> <span class="o">+=</span> <span class="p">((</span><span class="n">i</span> <span class="o">/</span> <span class="p">(</span><span class="n">extent</span><span class="o">*</span><span class="n">stride</span><span class="p">))</span>
+<a name="ln-572"></a>			       <span class="o">%</span> <span class="p">(</span><span class="n">dest</span><span class="o">-&gt;</span><span class="n">dim</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">_ubound</span>
+<a name="ln-573"></a>				  <span class="o">-</span> <span class="n">dest</span><span class="o">-&gt;</span><span class="n">dim</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">lower_bound</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+<a name="ln-574"></a>			      <span class="o">*</span> <span class="n">dest</span><span class="o">-&gt;</span><span class="n">dim</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">_stride</span><span class="p">;</span>
+<a name="ln-575"></a>	  <span class="n">extent</span> <span class="o">=</span> <span class="p">(</span><span class="n">dest</span><span class="o">-&gt;</span><span class="n">dim</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">_ubound</span> <span class="o">-</span> <span class="n">dest</span><span class="o">-&gt;</span><span class="n">dim</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">lower_bound</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+<a name="ln-576"></a>          <span class="n">stride</span> <span class="o">=</span> <span class="n">dest</span><span class="o">-&gt;</span><span class="n">dim</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">_stride</span><span class="p">;</span>
+<a name="ln-577"></a>	<span class="p">}</span>
+<a name="ln-578"></a>      <span class="n">array_offset_dst</span> <span class="o">+=</span> <span class="p">(</span><span class="n">i</span> <span class="o">/</span> <span class="n">extent</span><span class="p">)</span> <span class="o">*</span> <span class="n">dest</span><span class="o">-&gt;</span><span class="n">dim</span><span class="p">[</span><span class="n">rank</span><span class="o">-</span><span class="mi">1</span><span class="p">].</span><span class="n">_stride</span><span class="p">;</span>
+<a name="ln-579"></a>      <span class="kt">void</span> <span class="o">*</span><span class="n">dst</span> <span class="o">=</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)((</span><span class="kt">char</span> <span class="o">*</span><span class="p">)</span> <span class="n">TOKEN</span> <span class="p">(</span><span class="n">token</span><span class="p">)</span> <span class="o">+</span> <span class="n">offset</span>
+<a name="ln-580"></a>			   <span class="o">+</span> <span class="n">array_offset_dst</span><span class="o">*</span><span class="n">GFC_DESCRIPTOR_SIZE</span> <span class="p">(</span><span class="n">dest</span><span class="p">));</span>
+<a name="ln-581"></a>      <span class="kt">void</span> <span class="o">*</span><span class="n">sr</span><span class="p">;</span>
+<a name="ln-582"></a>      <span class="k">if</span> <span class="p">(</span><span class="n">GFC_DESCRIPTOR_RANK</span> <span class="p">(</span><span class="n">src</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+<a name="ln-583"></a>	<span class="p">{</span>
+<a name="ln-584"></a>	  <span class="kt">ptrdiff_t</span> <span class="n">array_offset_sr</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="ln-585"></a>	  <span class="n">stride</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+<a name="ln-586"></a>	  <span class="n">extent</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+<a name="ln-587"></a>	  <span class="k">for</span> <span class="p">(</span><span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">GFC_DESCRIPTOR_RANK</span> <span class="p">(</span><span class="n">src</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">)</span>
+<a name="ln-588"></a>	    <span class="p">{</span>
+<a name="ln-589"></a>	      <span class="n">array_offset_sr</span> <span class="o">+=</span> <span class="p">((</span><span class="n">i</span> <span class="o">/</span> <span class="p">(</span><span class="n">extent</span><span class="o">*</span><span class="n">stride</span><span class="p">))</span>
+<a name="ln-590"></a>				  <span class="o">%</span> <span class="p">(</span><span class="n">src</span><span class="o">-&gt;</span><span class="n">dim</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">_ubound</span>
+<a name="ln-591"></a>				     <span class="o">-</span> <span class="n">src</span><span class="o">-&gt;</span><span class="n">dim</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">lower_bound</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+<a name="ln-592"></a>				 <span class="o">*</span> <span class="n">src</span><span class="o">-&gt;</span><span class="n">dim</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">_stride</span><span class="p">;</span>
+<a name="ln-593"></a>	      <span class="n">extent</span> <span class="o">=</span> <span class="p">(</span><span class="n">src</span><span class="o">-&gt;</span><span class="n">dim</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">_ubound</span> <span class="o">-</span> <span class="n">src</span><span class="o">-&gt;</span><span class="n">dim</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">lower_bound</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+<a name="ln-594"></a>	      <span class="n">stride</span> <span class="o">=</span> <span class="n">src</span><span class="o">-&gt;</span><span class="n">dim</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">_stride</span><span class="p">;</span>
+<a name="ln-595"></a>	    <span class="p">}</span>
+<a name="ln-596"></a>	  <span class="n">array_offset_sr</span> <span class="o">+=</span> <span class="p">(</span><span class="n">i</span> <span class="o">/</span> <span class="n">extent</span><span class="p">)</span> <span class="o">*</span> <span class="n">src</span><span class="o">-&gt;</span><span class="n">dim</span><span class="p">[</span><span class="n">rank</span><span class="o">-</span><span class="mi">1</span><span class="p">].</span><span class="n">_stride</span><span class="p">;</span>
+<a name="ln-597"></a>	  <span class="n">sr</span> <span class="o">=</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)((</span><span class="kt">char</span> <span class="o">*</span><span class="p">)</span> <span class="n">src</span><span class="o">-&gt;</span><span class="n">base_addr</span>
+<a name="ln-598"></a>			<span class="o">+</span> <span class="n">array_offset_sr</span><span class="o">*</span><span class="n">GFC_DESCRIPTOR_SIZE</span> <span class="p">(</span><span class="n">src</span><span class="p">));</span>
+<a name="ln-599"></a>	<span class="p">}</span>
+<a name="ln-600"></a>      <span class="k">else</span>
+<a name="ln-601"></a>	<span class="n">sr</span> <span class="o">=</span> <span class="n">src</span><span class="o">-&gt;</span><span class="n">base_addr</span><span class="p">;</span>
+<a name="ln-602"></a>
+<a name="ln-603"></a>      <span class="k">if</span> <span class="p">(</span><span class="n">GFC_DESCRIPTOR_TYPE</span> <span class="p">(</span><span class="n">dest</span><span class="p">)</span> <span class="o">==</span> <span class="n">GFC_DESCRIPTOR_TYPE</span> <span class="p">(</span><span class="n">src</span><span class="p">)</span>
+<a name="ln-604"></a>	  <span class="o">&amp;&amp;</span> <span class="n">dst_kind</span> <span class="o">==</span> <span class="n">src_kind</span><span class="p">)</span>
+<a name="ln-605"></a>	<span class="n">memmove</span> <span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="n">sr</span><span class="p">,</span> <span class="n">dst_size</span> <span class="o">&gt;</span> <span class="n">src_size</span> <span class="o">?</span> <span class="nl">src_size</span> <span class="p">:</span> <span class="n">dst_size</span><span class="p">);</span>
+<a name="ln-606"></a>      <span class="k">else</span>
+<a name="ln-607"></a>	<span class="n">convert_type</span> <span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="n">GFC_DESCRIPTOR_TYPE</span> <span class="p">(</span><span class="n">dest</span><span class="p">),</span> <span class="n">dst_kind</span><span class="p">,</span> <span class="n">sr</span><span class="p">,</span>
+<a name="ln-608"></a>		      <span class="n">GFC_DESCRIPTOR_TYPE</span> <span class="p">(</span><span class="n">src</span><span class="p">),</span> <span class="n">src_kind</span><span class="p">);</span>
+<a name="ln-609"></a>      <span class="k">if</span> <span class="p">(</span><span class="n">GFC_DESCRIPTOR_TYPE</span> <span class="p">(</span><span class="n">dest</span><span class="p">)</span> <span class="o">==</span> <span class="n">BT_CHARACTER</span> <span class="o">&amp;&amp;</span> <span class="n">dst_size</span> <span class="o">&gt;</span> <span class="n">src_size</span><span class="p">)</span>
+<a name="ln-610"></a>	<span class="p">{</span>
+<a name="ln-611"></a>	  <span class="k">if</span> <span class="p">(</span><span class="n">dst_kind</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+<a name="ln-612"></a>	    <span class="n">memset</span> <span class="p">((</span><span class="kt">void</span><span class="o">*</span><span class="p">)(</span><span class="kt">char</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span> <span class="o">+</span> <span class="n">src_size</span><span class="p">,</span> <span class="sc">&#39; &#39;</span><span class="p">,</span> <span class="n">dst_size</span><span class="o">-</span><span class="n">src_size</span><span class="p">);</span>
+<a name="ln-613"></a>	  <span class="k">else</span> <span class="cm">/* dst_kind == 4.  */</span>
+<a name="ln-614"></a>	    <span class="k">for</span> <span class="p">(</span><span class="n">k</span> <span class="o">=</span> <span class="n">src_size</span><span class="o">/</span><span class="mi">4</span><span class="p">;</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="n">dst_size</span><span class="o">/</span><span class="mi">4</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+<a name="ln-615"></a>	      <span class="p">((</span><span class="kt">int32_t</span><span class="o">*</span><span class="p">)</span> <span class="n">dst</span><span class="p">)[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="kt">int32_t</span><span class="p">)</span><span class="sc">&#39; &#39;</span><span class="p">;</span>
+<a name="ln-616"></a>	<span class="p">}</span>
+<a name="ln-617"></a>    <span class="p">}</span>
+<a name="ln-618"></a><span class="p">}</span>
+<a name="ln-619"></a>
+<a name="ln-620"></a>
+<a name="ln-621"></a><span class="kt">void</span>
+<a name="ln-622"></a><span class="nf">PREFIX</span> <span class="p">(</span><span class="n">sendget</span><span class="p">)</span> <span class="p">(</span><span class="n">caf_token_t</span> <span class="n">dst_token</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">dst_offset</span><span class="p">,</span> <span class="kt">int</span> <span class="n">dst_image_index</span><span class="p">,</span>
+<a name="ln-623"></a>		  <span class="n">gfc_descriptor_t</span> <span class="o">*</span><span class="n">dest</span><span class="p">,</span> <span class="n">caf_vector_t</span> <span class="o">*</span><span class="n">dst_vector</span><span class="p">,</span>
+<a name="ln-624"></a>		  <span class="n">caf_token_t</span> <span class="n">src_token</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">src_offset</span><span class="p">,</span>
+<a name="ln-625"></a>		  <span class="kt">int</span> <span class="n">src_image_index</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">unused</span><span class="p">)),</span>
+<a name="ln-626"></a>		  <span class="n">gfc_descriptor_t</span> <span class="o">*</span><span class="n">src</span><span class="p">,</span>
+<a name="ln-627"></a>		  <span class="n">caf_vector_t</span> <span class="o">*</span><span class="n">src_vector</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">unused</span><span class="p">)),</span>
+<a name="ln-628"></a>		  <span class="kt">int</span> <span class="n">dst_len</span><span class="p">,</span> <span class="kt">int</span> <span class="n">src_len</span><span class="p">)</span>
+<a name="ln-629"></a><span class="p">{</span>
+<a name="ln-630"></a>  <span class="cm">/* FIXME: Handle vector subscript of &#39;src_vector&#39;.  */</span>
+<a name="ln-631"></a>  <span class="cm">/* For a single image, src-&gt;base_addr should be the same as src_token + offset</span>
+<a name="ln-632"></a><span class="cm">     but to play save, we do it properly.  */</span>
+<a name="ln-633"></a>  <span class="kt">void</span> <span class="o">*</span><span class="n">src_base</span> <span class="o">=</span> <span class="n">src</span><span class="o">-&gt;</span><span class="n">base_addr</span><span class="p">;</span>
+<a name="ln-634"></a>  <span class="n">src</span><span class="o">-&gt;</span><span class="n">base_addr</span> <span class="o">=</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span> <span class="p">((</span><span class="kt">char</span> <span class="o">*</span><span class="p">)</span> <span class="n">TOKEN</span> <span class="p">(</span><span class="n">src_token</span><span class="p">)</span> <span class="o">+</span> <span class="n">src_offset</span><span class="p">);</span>
+<a name="ln-635"></a>  <span class="n">PREFIX</span> <span class="p">(</span><span class="n">send</span><span class="p">)</span> <span class="p">(</span><span class="n">dst_token</span><span class="p">,</span> <span class="n">dst_offset</span><span class="p">,</span> <span class="n">dst_image_index</span><span class="p">,</span> <span class="n">dest</span><span class="p">,</span> <span class="n">dst_vector</span><span class="p">,</span>
+<a name="ln-636"></a>		 <span class="n">src</span><span class="p">,</span> <span class="n">dst_len</span><span class="p">,</span> <span class="n">src_len</span><span class="p">);</span>
+<a name="ln-637"></a>  <span class="n">src</span><span class="o">-&gt;</span><span class="n">base_addr</span> <span class="o">=</span> <span class="n">src_base</span><span class="p">;</span>
+<a name="ln-638"></a><span class="p">}</span>
+<a name="ln-639"></a>
+<a name="ln-640"></a>
+<a name="ln-641"></a><span class="kt">void</span>
+<a name="ln-642"></a><span class="nf">PREFIX</span> <span class="p">(</span><span class="n">co_sum</span><span class="p">)</span> <span class="p">(</span><span class="n">gfc_descriptor_t</span> <span class="o">*</span><span class="n">a</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">unused</span><span class="p">)),</span>
+<a name="ln-643"></a>		 <span class="kt">int</span> <span class="n">result_image</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">unused</span><span class="p">)),</span> <span class="kt">int</span> <span class="o">*</span><span class="n">stat</span><span class="p">,</span>
+<a name="ln-644"></a>		 <span class="kt">char</span> <span class="o">*</span><span class="n">errmsg</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">unused</span><span class="p">)),</span>
+<a name="ln-645"></a>		 <span class="kt">int</span> <span class="n">errmsg_len</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">unused</span><span class="p">)))</span>
+<a name="ln-646"></a><span class="p">{</span>
+<a name="ln-647"></a>  <span class="k">if</span> <span class="p">(</span><span class="n">stat</span><span class="p">)</span>
+<a name="ln-648"></a>    <span class="o">*</span><span class="n">stat</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="ln-649"></a><span class="p">}</span>
+<a name="ln-650"></a>
+<a name="ln-651"></a>
+<a name="ln-652"></a><span class="kt">void</span>
+<a name="ln-653"></a><span class="nf">PREFIX</span> <span class="p">(</span><span class="n">co_min</span><span class="p">)</span> <span class="p">(</span><span class="n">gfc_descriptor_t</span> <span class="o">*</span><span class="n">a</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">unused</span><span class="p">)),</span>
+<a name="ln-654"></a>		 <span class="kt">int</span> <span class="n">result_image</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">unused</span><span class="p">)),</span> <span class="kt">int</span> <span class="o">*</span><span class="n">stat</span><span class="p">,</span>
+<a name="ln-655"></a>		 <span class="kt">char</span> <span class="o">*</span><span class="n">errmsg</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">unused</span><span class="p">)),</span>
+<a name="ln-656"></a>		 <span class="kt">int</span> <span class="n">src_len</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">unused</span><span class="p">)),</span>
+<a name="ln-657"></a>		 <span class="kt">int</span> <span class="n">errmsg_len</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">unused</span><span class="p">)))</span>
+<a name="ln-658"></a><span class="p">{</span>
+<a name="ln-659"></a>  <span class="k">if</span> <span class="p">(</span><span class="n">stat</span><span class="p">)</span>
+<a name="ln-660"></a>    <span class="o">*</span><span class="n">stat</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="ln-661"></a><span class="p">}</span>
+<a name="ln-662"></a>
+<a name="ln-663"></a>
+<a name="ln-664"></a><span class="kt">void</span>
+<a name="ln-665"></a><span class="nf">PREFIX</span> <span class="p">(</span><span class="n">co_max</span><span class="p">)</span> <span class="p">(</span><span class="n">gfc_descriptor_t</span> <span class="o">*</span><span class="n">a</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">unused</span><span class="p">)),</span>
+<a name="ln-666"></a>		 <span class="kt">int</span> <span class="n">result_image</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">unused</span><span class="p">)),</span> <span class="kt">int</span> <span class="o">*</span><span class="n">stat</span><span class="p">,</span>
+<a name="ln-667"></a>		 <span class="kt">char</span> <span class="o">*</span><span class="n">errmsg</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">unused</span><span class="p">)),</span>
+<a name="ln-668"></a>		 <span class="kt">int</span> <span class="n">src_len</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">unused</span><span class="p">)),</span>
+<a name="ln-669"></a>		 <span class="kt">int</span> <span class="n">errmsg_len</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">unused</span><span class="p">)))</span>
+<a name="ln-670"></a><span class="p">{</span>
+<a name="ln-671"></a>  <span class="k">if</span> <span class="p">(</span><span class="n">stat</span><span class="p">)</span>
+<a name="ln-672"></a>    <span class="o">*</span><span class="n">stat</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="ln-673"></a><span class="p">}</span>
+<a name="ln-674"></a>
+<a name="ln-675"></a>
+<a name="ln-676"></a><span class="kt">void</span>
+<a name="ln-677"></a><span class="nf">PREFIX</span> <span class="p">(</span><span class="n">sync_all</span><span class="p">)</span> <span class="p">(</span><span class="kt">int</span> <span class="o">*</span><span class="n">stat</span><span class="p">,</span>
+<a name="ln-678"></a>		   <span class="kt">char</span> <span class="o">*</span><span class="n">errmsg</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">unused</span><span class="p">)),</span>
+<a name="ln-679"></a>		   <span class="kt">int</span> <span class="n">errmsg_len</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">unused</span><span class="p">)))</span>
+<a name="ln-680"></a><span class="p">{</span>
+<a name="ln-681"></a>  <span class="k">if</span> <span class="p">(</span><span class="n">stat</span><span class="p">)</span>
+<a name="ln-682"></a>    <span class="o">*</span><span class="n">stat</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="ln-683"></a><span class="p">}</span>
+<a name="ln-684"></a>
+<a name="ln-685"></a>
+<a name="ln-686"></a><span class="kt">void</span>
+<a name="ln-687"></a><span class="nf">PREFIX</span> <span class="p">(</span><span class="n">sync_images</span><span class="p">)</span> <span class="p">(</span><span class="kt">int</span> <span class="n">count</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">unused</span><span class="p">)),</span>
+<a name="ln-688"></a>		      <span class="kt">int</span> <span class="n">images</span><span class="p">[]</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">unused</span><span class="p">)),</span>
+<a name="ln-689"></a>		      <span class="kt">int</span> <span class="o">*</span><span class="n">stat</span><span class="p">,</span>
+<a name="ln-690"></a>		      <span class="kt">char</span> <span class="o">*</span><span class="n">errmsg</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">unused</span><span class="p">)),</span>
+<a name="ln-691"></a>		      <span class="kt">int</span> <span class="n">errmsg_len</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">unused</span><span class="p">)))</span>
+<a name="ln-692"></a><span class="p">{</span>
+<a name="ln-693"></a><span class="cp">#ifdef GFC_CAF_CHECK</span>
+<a name="ln-694"></a>  <span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+<a name="ln-695"></a>
+<a name="ln-696"></a>  <span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">count</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+<a name="ln-697"></a>    <span class="k">if</span> <span class="p">(</span><span class="n">images</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">)</span>
+<a name="ln-698"></a>      <span class="p">{</span>
+<a name="ln-699"></a>	<span class="n">fprintf</span> <span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;COARRAY ERROR: Invalid image index %d to SYNC &quot;</span>
+<a name="ln-700"></a>		 <span class="s">&quot;IMAGES&quot;</span><span class="p">,</span> <span class="n">images</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<a name="ln-701"></a>	<span class="n">exit</span> <span class="p">(</span><span class="n">EXIT_FAILURE</span><span class="p">);</span>
+<a name="ln-702"></a>      <span class="p">}</span>
+<a name="ln-703"></a><span class="cp">#endif</span>
+<a name="ln-704"></a>
+<a name="ln-705"></a>  <span class="k">if</span> <span class="p">(</span><span class="n">stat</span><span class="p">)</span>
+<a name="ln-706"></a>    <span class="o">*</span><span class="n">stat</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="ln-707"></a><span class="p">}</span>
+<a name="ln-708"></a>
+<a name="ln-709"></a>
+<a name="ln-710"></a><span class="kt">void</span>
+<a name="ln-711"></a><span class="nf">PREFIX</span> <span class="p">(</span><span class="n">error_stop_str</span><span class="p">)</span> <span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">string</span><span class="p">,</span> <span class="kt">int32_t</span> <span class="n">len</span><span class="p">)</span>
+<a name="ln-712"></a><span class="p">{</span>
+<a name="ln-713"></a>  <span class="n">fputs</span> <span class="p">(</span><span class="s">&quot;ERROR STOP &quot;</span><span class="p">,</span> <span class="n">stderr</span><span class="p">);</span>
+<a name="ln-714"></a>  <span class="k">while</span> <span class="p">(</span><span class="n">len</span><span class="o">--</span><span class="p">)</span>
+<a name="ln-715"></a>    <span class="n">fputc</span> <span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">string</span><span class="o">++</span><span class="p">),</span> <span class="n">stderr</span><span class="p">);</span>
+<a name="ln-716"></a>  <span class="n">fputs</span> <span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">stderr</span><span class="p">);</span>
+<a name="ln-717"></a>
+<a name="ln-718"></a>  <span class="n">exit</span> <span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+<a name="ln-719"></a><span class="p">}</span>
+<a name="ln-720"></a>
+<a name="ln-721"></a>
+<a name="ln-722"></a><span class="kt">void</span>
+<a name="ln-723"></a><span class="nf">PREFIX</span><span class="p">(</span><span class="n">error_stop</span><span class="p">)</span> <span class="p">(</span><span class="kt">int32_t</span> <span class="n">error</span><span class="p">)</span>
+<a name="ln-724"></a><span class="p">{</span>
+<a name="ln-725"></a>  <span class="n">fprintf</span> <span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;ERROR STOP %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">error</span><span class="p">);</span>
+<a name="ln-726"></a>  <span class="n">exit</span> <span class="p">(</span><span class="n">error</span><span class="p">);</span>
+<a name="ln-727"></a><span class="p">}</span>
+</pre></div>
+
+    </section>
+    </div>
+  </div>
+
+    <hr>
+    <footer>
+      <div class="row">
+        <div class="col-md-4">&copy; 2016 <a rel="license" href="http://www.freebsd.org/copyright/freebsd-doc-license.html">FreeBSD Documentation License</a></div>
+        <div class="col-md-4"><span class="text-center"> OpenCoarrays was developed by Sourcery Institute</span></div>
+        <div class="col-md-4">
+          <span class="pull-right">
+            Documentation generated by 
+            <a href="https://github.com/cmacmackin/ford">FORD</a>
+             on 2016-06-06 14:50  
+          </span>
+        </div>
+      </div>
+      <br>
+    </footer>
+    </div> <!-- /container -->
+
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js'],
+        'HTML-CSS': { 
+           styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: '#000000 ! important'} }
+        }
+      });
+    </script>
+    <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  </body>
+</html>

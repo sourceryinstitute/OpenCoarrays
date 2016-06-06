@@ -48,7 +48,7 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="../index.html">OpenCoarrays <small>master</small></a>
+          <a class="navbar-brand" href="../index.html">OpenCoarrays </a>
         </div>
         <div id="navbar" class="navbar-collapse collapse">
           <ul class="nav navbar-nav">
@@ -569,31 +569,31 @@ subroutine test(burgers_solution)
 <polygon fill="none" stroke="black" points="54,-45 0,-45 0,-21 54,-21 54,-45"/>
 <text text-anchor="middle" x="27" y="-30.6" font-family="Helvetica,sans-Serif" font-size="10.50">test</text>
 </g>
-<!-- interface~assert -->
-<g id="proc~~test~~CallsGraph_node2" class="node"><title>interface~assert</title>
-<g id="a_proc~~test~~CallsGraph_node2"><a xlink:href="../interface/assert.html" xlink:title="assert">
-<polygon fill="#a7506f" stroke="#a7506f" points="248.5,-80 194.5,-80 194.5,-56 248.5,-56 248.5,-80"/>
-<text text-anchor="middle" x="221.5" y="-65.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">assert</text>
-</a>
-</g>
-</g>
-<!-- proc~test&#45;&gt;interface~assert -->
-<g id="proc~~test~~CallsGraph_edge7" class="edge"><title>proc~test&#45;&gt;interface~assert</title>
-<path fill="none" stroke="#000000" d="M54.1877,-43.2946C65.1058,-47.2108 78.0134,-51.3607 90,-54 121.294,-60.8904 157.585,-64.4352 183.941,-66.2309"/>
-<polygon fill="#000000" stroke="#000000" points="184.03,-69.7433 194.23,-66.8777 184.469,-62.7571 184.03,-69.7433"/>
-</g>
 <!-- proc~sinusoid -->
-<g id="proc~~test~~CallsGraph_node3" class="node"><title>proc~sinusoid</title>
-<g id="a_proc~~test~~CallsGraph_node3"><a xlink:href="../proc/sinusoid.html" xlink:title="sinusoid">
+<g id="proc~~test~~CallsGraph_node2" class="node"><title>proc~sinusoid</title>
+<g id="a_proc~~test~~CallsGraph_node2"><a xlink:href="../proc/sinusoid.html" xlink:title="sinusoid">
 <polygon fill="#d94e8f" stroke="#d94e8f" points="144,-45 90,-45 90,-21 144,-21 144,-45"/>
 <text text-anchor="middle" x="117" y="-30.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">sinusoid</text>
 </a>
 </g>
 </g>
 <!-- proc~test&#45;&gt;proc~sinusoid -->
-<g id="proc~~test~~CallsGraph_edge8" class="edge"><title>proc~test&#45;&gt;proc~sinusoid</title>
+<g id="proc~~test~~CallsGraph_edge7" class="edge"><title>proc~test&#45;&gt;proc~sinusoid</title>
 <path fill="none" stroke="#000000" d="M54.4029,-33C62.3932,-33 71.3106,-33 79.8241,-33"/>
 <polygon fill="#000000" stroke="#000000" points="79.919,-36.5001 89.919,-33 79.919,-29.5001 79.919,-36.5001"/>
+</g>
+<!-- interface~assert -->
+<g id="proc~~test~~CallsGraph_node3" class="node"><title>interface~assert</title>
+<g id="a_proc~~test~~CallsGraph_node3"><a xlink:href="../interface/assert.html" xlink:title="assert">
+<polygon fill="#a7506f" stroke="#a7506f" points="248.5,-80 194.5,-80 194.5,-56 248.5,-56 248.5,-80"/>
+<text text-anchor="middle" x="221.5" y="-65.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">assert</text>
+</a>
+</g>
+</g>
+<!-- proc~test&#45;&gt;interface~assert -->
+<g id="proc~~test~~CallsGraph_edge8" class="edge"><title>proc~test&#45;&gt;interface~assert</title>
+<path fill="none" stroke="#000000" d="M54.1877,-43.2946C65.1058,-47.2108 78.0134,-51.3607 90,-54 121.294,-60.8904 157.585,-64.4352 183.941,-66.2309"/>
+<polygon fill="#000000" stroke="#000000" points="184.03,-69.7433 194.23,-66.8777 184.469,-62.7571 184.03,-69.7433"/>
 </g>
 <!-- interface~error_message -->
 <g id="proc~~test~~CallsGraph_node4" class="node"><title>interface~error_message</title>
@@ -608,6 +608,16 @@ subroutine test(burgers_solution)
 <path fill="none" stroke="#000000" d="M54.0635,-22.0597C64.9626,-18.0446 77.8895,-13.9953 90,-12 116.113,-7.69764 145.567,-7.3216 169.875,-8.18452"/>
 <polygon fill="#000000" stroke="#000000" points="169.811,-11.6849 179.954,-8.62237 170.115,-4.69153 169.811,-11.6849"/>
 </g>
+<!-- proc~sinusoid&#45;&gt;interface~assert -->
+<g id="proc~~test~~CallsGraph_edge1" class="edge"><title>proc~sinusoid&#45;&gt;interface~assert</title>
+<path fill="none" stroke="#000000" d="M144.13,-41.9225C156.419,-46.1187 171.268,-51.1891 184.593,-55.739"/>
+<polygon fill="#000000" stroke="#000000" points="183.823,-59.1745 194.417,-59.0938 186.085,-52.55 183.823,-59.1745"/>
+</g>
+<!-- proc~sinusoid&#45;&gt;interface~error_message -->
+<g id="proc~~test~~CallsGraph_edge2" class="edge"><title>proc~sinusoid&#45;&gt;interface~error_message</title>
+<path fill="none" stroke="#000000" d="M144.13,-27.6465C151.973,-26.0396 160.859,-24.219 169.726,-22.4024"/>
+<polygon fill="#000000" stroke="#000000" points="170.579,-25.8005 179.673,-20.3646 169.174,-18.943 170.579,-25.8005"/>
+</g>
 <!-- proc~scalar_assert -->
 <g id="proc~~test~~CallsGraph_node5" class="node"><title>proc~scalar_assert</title>
 <g id="a_proc~~test~~CallsGraph_node5"><a xlink:href="../proc/scalar_assert.html" xlink:title="scalar_assert">
@@ -617,7 +627,7 @@ subroutine test(burgers_solution)
 </g>
 </g>
 <!-- interface~assert&#45;&gt;proc~scalar_assert -->
-<g id="proc~~test~~CallsGraph_edge2" class="edge"><title>interface~assert&#45;&gt;proc~scalar_assert</title>
+<g id="proc~~test~~CallsGraph_edge4" class="edge"><title>interface~assert&#45;&gt;proc~scalar_assert</title>
 <path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M248.709,-75.4882C261.363,-79.1037 276.932,-83.5519 291.506,-87.7159"/>
 <polygon fill="#000000" stroke="#000000" points="290.811,-91.1575 301.388,-90.5395 292.734,-84.4269 290.811,-91.1575"/>
 </g>
@@ -630,19 +640,9 @@ subroutine test(burgers_solution)
 </g>
 </g>
 <!-- interface~assert&#45;&gt;proc~vector_assert -->
-<g id="proc~~test~~CallsGraph_edge3" class="edge"><title>interface~assert&#45;&gt;proc~vector_assert</title>
+<g id="proc~~test~~CallsGraph_edge5" class="edge"><title>interface~assert&#45;&gt;proc~vector_assert</title>
 <path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M248.709,-65.9578C261.134,-64.9895 276.37,-63.8024 290.714,-62.6846"/>
 <polygon fill="#000000" stroke="#000000" points="291.251,-66.1535 300.949,-61.8871 290.707,-59.1747 291.251,-66.1535"/>
-</g>
-<!-- proc~sinusoid&#45;&gt;interface~assert -->
-<g id="proc~~test~~CallsGraph_edge4" class="edge"><title>proc~sinusoid&#45;&gt;interface~assert</title>
-<path fill="none" stroke="#000000" d="M144.13,-41.9225C156.419,-46.1187 171.268,-51.1891 184.593,-55.739"/>
-<polygon fill="#000000" stroke="#000000" points="183.823,-59.1745 194.417,-59.0938 186.085,-52.55 183.823,-59.1745"/>
-</g>
-<!-- proc~sinusoid&#45;&gt;interface~error_message -->
-<g id="proc~~test~~CallsGraph_edge5" class="edge"><title>proc~sinusoid&#45;&gt;interface~error_message</title>
-<path fill="none" stroke="#000000" d="M144.13,-27.6465C151.973,-26.0396 160.859,-24.219 169.726,-22.4024"/>
-<polygon fill="#000000" stroke="#000000" points="170.579,-25.8005 179.673,-20.3646 169.174,-18.943 170.579,-25.8005"/>
 </g>
 <!-- proc~new_message -->
 <g id="proc~~test~~CallsGraph_node8" class="node"><title>proc~new_message</title>
@@ -666,7 +666,7 @@ subroutine test(burgers_solution)
 </g>
 </g>
 <!-- proc~vector_assert&#45;&gt;proc~assert_identical -->
-<g id="proc~~test~~CallsGraph_edge1" class="edge"><title>proc~vector_assert&#45;&gt;proc~assert_identical</title>
+<g id="proc~~test~~CallsGraph_edge3" class="edge"><title>proc~vector_assert&#45;&gt;proc~assert_identical</title>
 <path fill="none" stroke="#000000" d="M377.182,-59C385.89,-59 395.325,-59 404.547,-59"/>
 <polygon fill="#000000" stroke="#000000" points="404.819,-62.5001 414.819,-59 404.819,-55.5001 404.819,-62.5001"/>
 </g>
@@ -924,7 +924,7 @@ implementation in a submodule of an interface in a parent module.</p>
           <span class="pull-right">
             Documentation generated by 
             <a href="https://github.com/cmacmackin/ford">FORD</a>
-            
+             on 2016-06-06 14:50  
           </span>
         </div>
       </div>
