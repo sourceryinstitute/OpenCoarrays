@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<browserconfig>
+  <msapplication>
+    <tile>
+      <square70x70logo src="opencoarrays/media/favicons/mstile-70x70.png?v=XBB8G5Ay7w"/>
+      <square150x150logo src="opencoarrays/media/favicons/mstile-150x150.png?v=XBB8G5Ay7w"/>
+      <square310x310logo src="opencoarrays/media/favicons/mstile-310x310.png?v=XBB8G5Ay7w"/>
+      <wide310x150logo src="opencoarrays/media/favicons/mstile-310x150.png?v=XBB8G5Ay7w"/>
+      <TileColor>#2d89ef</TileColor>
+    </tile>
+  </msapplication>
+</browserconfig>

@@ -13,7 +13,7 @@ print_header()
   echo "*** opencoarrays/prerequisites/installations:                             ***"
   echo ""
   # Move to a directory tree whose structure mirrors the dependency tree
-  pushd "$opencoarrays_src_dir/doc/dependency_tree/" > /dev/null
+  pushd "$opencoarrays_src_dir/prerequisites/dependency_tree/" > /dev/null
   if type tree &> /dev/null; then
     # dynamically compute and print the tree, suppressing the final line
     tree opencoarrays  | sed '$d'

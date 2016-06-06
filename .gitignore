@@ -1,0 +1,4 @@
+doc/
+*.mod
+build/
+*~
