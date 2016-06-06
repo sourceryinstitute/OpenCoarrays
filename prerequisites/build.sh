@@ -110,6 +110,7 @@ info "-t (--with-tau):         ${arg_t} "
 info "-U (--print-url):        ${arg_U} "
 info "-v (--version):          ${arg_v} "
 info "-V (--print-version):    ${arg_V} "
+info "-y (--yes-to-all):       ${arg_y} "
 }
 
 if [[ -z "${arg_B}" ]]; then

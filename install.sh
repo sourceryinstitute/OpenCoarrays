@@ -166,6 +166,7 @@ info  "-P (--print-path):       ${arg_P}"
 info  "-U (--print-url):        ${arg_U}"
 info  "-v (--version):          ${arg_v}"
 info  "-V (--print-version):    ${arg_V}"
+info  "-y (--yes-to-all):       ${arg_y}"
 }
 # This file is organized into three sections:
 # 1. Command-line argument and environment variable processing.
