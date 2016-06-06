@@ -44,7 +44,7 @@ if [[ ! -f "${B3B_USE_CASE:-}/bootstrap.sh" ]]; then
   echo "Please set B3B_USE_CASE to the bash3boilerplate use-case directory path."
   exit 2
 else
-    # shellcheck source=./prerequisites/use-case/bootstrap.sh
+    # shellcheck source=./use-case/bootstrap.sh
     source "${B3B_USE_CASE}/bootstrap.sh" "$@"
 fi
 ### End of boilerplate -- start user edits below #########################

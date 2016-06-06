@@ -1,4 +1,4 @@
-# shellcheck disable=SC2154,SC2129
+# shellcheck shell=bash disable=SC2154,SC2129,SC2148
 report_results()
 {
   # Report installation success or failure:
@@ -36,7 +36,7 @@ report_results()
       echo "else                                                                 " >> setup.sh
       echo "  export PATH=\"$gcc_install_path/bin:\$PATH\"                       " >> setup.sh
       echo "fi                                                                   " >> setup.sh
-      echo "set path = (\"$gcc_install_path\"/bin "\$path")                      " >> setup.csh
+      echo "set path = (\"$gcc_install_path\"/bin \"\$path\")                    " >> setup.csh
     fi
     if [[ -d "$gcc_install_path/lib" || -d "$gcc_install_path/lib64" ]]; then
       gfortran_lib_paths="$gcc_install_path/lib64/:$gcc_install_path/lib"
@@ -45,7 +45,7 @@ report_results()
       echo "else                                                                 " >> setup.sh
       echo "  export LD_LIBRARY_PATH=\"$gfortran_lib_paths:\$LD_LIBRARY_PATH\"   " >> setup.sh
       echo "fi                                                                   " >> setup.sh
-      echo "set LD_LIBRARY_PATH = (\"$gfortran_lib_paths\"/bin "\$LD_LIBRARY_PATH")                      " >> setup.csh
+      echo "set LD_LIBRARY_PATH = (\"$gfortran_lib_paths\"/bin \"\$LD_LIBRARY_PATH\")                      " >> setup.csh
     fi
     echo "                                                                       " >> setup.sh
     mpich_install_path=$("${build_script}" -P mpich)
@@ -55,7 +55,7 @@ report_results()
       echo "else                                                                 " >> setup.sh
       echo "  export PATH=\"$mpich_install_path/bin\":\$PATH                     " >> setup.sh
       echo "fi                                                                   " >> setup.sh
-      echo "set path = (\"$mpich_install_path\"/bin "\$path")                      " >> setup.csh
+      echo "set path = (\"$mpich_install_path\"/bin \"\$path\")                      " >> setup.csh
     fi
     cmake_install_path=$("${build_script}" -P cmake)
     if [[ -x "$cmake_install_path/bin/cmake" ]]; then
@@ -64,7 +64,7 @@ report_results()
       echo "else                                                                 " >> setup.sh
       echo "  export PATH=\"$cmake_install_path/bin\":\$PATH                     " >> setup.sh
       echo "fi                                                                   " >> setup.sh
-      echo "set path = (\"$cmake_install_path\"/bin "\$path")                      " >> setup.csh
+      echo "set path = (\"$cmake_install_path\"/bin \"\$path\")                      " >> setup.csh
     fi
     flex_install_path=$("${build_script}" -P flex)
     if [[ -x "$flex_install_path/bin/flex" ]]; then
@@ -72,7 +72,7 @@ report_results()
       echo "  export PATH=\"$flex_install_path/bin\"                             " >> setup.sh
       echo "else                                                                 " >> setup.sh
       echo "  export PATH=\"$flex_install_path/bin\":\$PATH                      " >> setup.sh
-      echo "set path = (\"$flex_install_path\"/bin "\$path")                      " >> setup.csh
+      echo "set path = (\"$flex_install_path\"/bin \"\$path\")                      " >> setup.csh
       echo "fi                                                                   " >> setup.sh
     fi
     bison_install_path=$("${build_script}" -P bison)
@@ -82,7 +82,7 @@ report_results()
       echo "else                                                                 " >> setup.sh
       echo "  export PATH=\"$bison_install_path/bin\":\$PATH                     " >> setup.sh
       echo "fi                                                                   " >> setup.sh
-      echo "set path = (\"$bison_install_path\"/bin "\$path")                      " >> setup.csh
+      echo "set path = (\"$bison_install_path\"/bin \"\$path\")                      " >> setup.csh
     fi
     m4_install_path=$("${build_script}" -P m4)
     if [[ -x "$m4_install_path/bin/m4" ]]; then
@@ -91,7 +91,7 @@ report_results()
       echo "else                                                                 " >> setup.sh
       echo "  export PATH=\"$m4_install_path/bin\":\$PATH                        " >> setup.sh
       echo "fi                                                                   " >> setup.sh
-      echo "set path = (\"$m4_install_path\"/bin "\$path")                      " >> setup.csh
+      echo "set path = (\"$m4_install_path\"/bin \"\$path\")                      " >> setup.csh
     fi
     opencoarrays_install_path="${install_path}"
     if [[ -x "$opencoarrays_install_path/bin/caf" ]]; then
@@ -100,7 +100,7 @@ report_results()
       echo "else                                                                 " >> setup.sh
       echo "  export PATH=\"$opencoarrays_install_path/bin\":\$PATH              " >> setup.sh
       echo "fi                                                                   " >> setup.sh
-      echo "set path = (\"$opencoarrays_install_path\"/bin "\$path")                      " >> setup.csh
+      echo "set path = (\"$opencoarrays_install_path\"/bin \"\$path\")                      " >> setup.csh
     fi
     if ${SUDO:-} mv setup.sh "$opencoarrays_install_path"; then
        setup_sh_location=$opencoarrays_install_path

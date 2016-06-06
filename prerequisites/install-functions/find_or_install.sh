@@ -1,4 +1,4 @@
-# shellcheck disable=SC2154,SC2034
+# shellcheck shell=bash disable=SC2154,SC2034,SC2148
 find_or_install()
 {
   package="$1"
@@ -28,9 +28,9 @@ find_or_install()
   done
 
   if [[ "$package" == "$executable" ]]; then
-    printf "$this_script: Checking whether $executable is in the PATH..."
+    printf "%s: Checking whether %s is in the PATH..." "$this_script" "$executable"
   else
-    printf "$this_script: Checking whether $package executable $executable is in the PATH..."
+    printf "%s: Checking whether %s executable $executable is in the PATH..." "$this_script" "$package"
   fi
   if type "$executable" >& /dev/null; then
     printf "yes.\n"
@@ -43,7 +43,7 @@ find_or_install()
 
   package_install_path=$(./build.sh -P "$package")
 
-  printf "Checking whether $executable is in $package_install_path..."
+  printf "Checking whether %s is in %s..." "$executable" "$package_install_path"
   if [[ -x "$package_install_path/bin/$executable" ]]; then
     printf "yes.\n"
     script_installed_package=true
@@ -110,7 +110,7 @@ find_or_install()
     # Every branch that discovers an acceptable pre-existing installation must set the
     # MPIFC, MPICC, and MPICXX environment variables. Every branch must also manage the
     # dependency stack.
-   
+
     # If the user specified a Fortran compiler, verify that mpif90 wraps the specified compiler
     if [[ ! -z "${arg_M:-}" ]]; then
 
@@ -159,13 +159,13 @@ find_or_install()
         printf "yes.\n"
 
         if [[ ! -z "${arg_f:-}" ]]; then
-          
+
           info "-f (or --with-fortran) argument detected with value ${arg_f}"
-          printf "yes.\n $this_script: Using the specified $executable.\n"
+          printf "yes.\n %s: Using the specified %s.\n" "$this_script" "$executable"
           export MPIFC=mpif90
           export MPICC=mpicc
           export MPICXX=mpicxx
-  
+
           # Halt the recursion
           stack_push dependency_pkg "none"
           stack_push dependency_exe "none"
@@ -173,19 +173,19 @@ find_or_install()
 
         else
 
-          echo -e "$this_script: Checking whether $executable in PATH wraps gfortran version `./build.sh -V gcc` or later... "
+          echo -e "$this_script: Checking whether $executable in PATH wraps gfortran version $(./build.sh -V gcc) or later... "
           $executable acceptable_compiler.f90 -o acceptable_compiler
           $executable print_true.f90 -o print_true
           acceptable=$(./acceptable_compiler)
           is_true=$(./print_true)
           rm acceptable_compiler print_true
-         
+
           if [[ "$acceptable" == "$is_true" ]]; then
-            printf "yes.\n $this_script: Using the $executable found in the PATH.\n"
+            printf "yes.\n %s: Using the $executable found in the PATH.\n" "$this_script"
             export MPIFC=mpif90
             export MPICC=mpicc
             export MPICXX=mpicxx
-  
+
             # Halt the recursion
             stack_push dependency_pkg "none"
             stack_push dependency_exe "none"
@@ -261,7 +261,7 @@ find_or_install()
       stack_push dependency_path "none"
 
     elif [[ "$package_in_path" == "true" ]]; then
-      echo -e "$this_script: Checking whether $executable in PATH is version `./build.sh -V gcc` or later..."
+      echo -e "$this_script: Checking whether $executable in PATH is version $(./build.sh -V gcc) or later..."
       $executable -o acceptable_compiler acceptable_compiler.f90
       $executable -o print_true print_true.f90
       is_true=$(./print_true)
@@ -576,8 +576,8 @@ find_or_install()
 
 
     # Strip trailing package name and version number, if present, from installation path
-    default_package_version=$(./build.sh -V ${package})
-    package_install_prefix="${package_install_path%${package}/${arg_I:-${default_package_version}}*}" 
+    default_package_version=$(./build.sh -V "${package}")
+    package_install_prefix="${package_install_path%${package}/${arg_I:-${default_package_version}}*}"
 
     echo -e "$this_script: Downloading, building, and installing $package \n"
     echo "$this_script: Build command: FC=$FC CC=$CC CXX=$CXX ./build.sh -p $package -i $package_install_prefix -j $num_threads"

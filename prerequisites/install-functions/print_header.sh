@@ -1,4 +1,4 @@
-# shellcheck disable=SC2154
+# shellcheck shell=bash disable=SC2154,SC2148
 print_header()
 {
   clear
@@ -23,7 +23,7 @@ print_header()
   fi
   popd > /dev/null
   echo ""
-  printf "${arg_p} will be installed in ${install_path}\n"
+  printf "%s will be installed in %s\n" "${arg_p}" "${install_path}"
   echo ""
   if [[ "${arg_y}" == "${__flag_present}" ]]; then
     info "-y or --yes-to-all flag present. Proceeding with non-interactive build."

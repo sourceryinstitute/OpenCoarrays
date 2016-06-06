@@ -36,6 +36,7 @@
 if [ "${arg_d}" = "1" ]; then
   set -o xtrace
   LOG_LEVEL="7"
+  export LOG_LEVEL
 fi
 
 # verbose mode

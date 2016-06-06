@@ -240,7 +240,7 @@ source $opencoarrays_src_dir/prerequisites/install-functions/report_results.sh
 if [[ "${arg_v}" == "${__flag_present}" || "${arg_V}" == "opencoarrays" ]]; then
 
   # Print script copyright if invoked with -v, -V, or --version argument
-  cmake_project_line=$(grep project ${opencoarrays_src_dir}/CMakeLists.txt | grep VERSION)
+  cmake_project_line="$(grep project "${opencoarrays_src_dir}/CMakeLists.txt" | grep VERSION)"
   text_after_version_keyword="${cmake_project_line##*VERSION}"
   text_before_language_keyword="${text_after_version_keyword%%LANGUAGES*}"
   opencoarrays_version=$text_before_language_keyword
@@ -310,8 +310,8 @@ elif [[ "${arg_p:-}" == "ofp" ]]; then
 elif [[ ! -z "${arg_p:-}" ]]; then
 
   info "Invoking build script with the following command:"
-  info "\"${opencoarrays_src_dir}\"/prerequisites/build.sh ${@:-}"
-  "${opencoarrays_src_dir}"/prerequisites/build.sh ${@:-}
+  info "\"${opencoarrays_src_dir}\"/prerequisites/build.sh ${*:-}"
+  "${opencoarrays_src_dir}"/prerequisites/build.sh "${@:-}"
 
 fi
 # ____________________________________ End of Main Body ____________________________________________

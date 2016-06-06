@@ -84,8 +84,9 @@ fi
 
 # If -P is passed, print the default installation paths for OFP and its prerequisites.
 # Then exit with normal status.
+# shellcheck disable=SC2154
 install_path="${arg_i}"
-strategoxt_superbundle_install_path=`${OPENCOARRAYS_SRC_DIR}/prerequisites/install-binary.sh -P strategoxt-superbundle`
+strategoxt_superbundle_install_path=$("${OPENCOARRAYS_SRC_DIR}/prerequisites/install-binary.sh" -P strategoxt-superbundle)
 # shellcheck disable=SC2154
 if [[ "${arg_P}" == "${__flag_present}" ]]; then
   echo "strategoxt-superbundle default installation path: ${strategoxt_superbundle_install_path}"
