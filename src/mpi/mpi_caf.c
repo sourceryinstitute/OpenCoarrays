@@ -2809,8 +2809,8 @@ PREFIX (failed_images) (gfc_descriptor_t *array, int team __attribute__ ((unused
   memcpy(mem,ranks_gc,n_failed_imgs*sizeof(int));
   qsort(mem,n_failed_imgs,sizeof(int),cmpfunc);
   array->dtype = 265;
-  array->dim[0].lower_bound = 1;
-  array->dim[0]._ubound = n_failed_imgs;
+  array->dim[0].lower_bound = 0;
+  array->dim[0]._ubound = n_failed_imgs-1;
   array->dim[0]._stride = 1;
   array->offset = -1;
 }
