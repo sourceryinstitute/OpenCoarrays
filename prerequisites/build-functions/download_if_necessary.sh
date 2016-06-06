@@ -12,14 +12,18 @@ download_if_necessary()
   if  [[ -f "${download_path}/${url_tail}" || -d "${download_path}/${url_tail}" ]] ; then
     info "Found '${url_tail}' in ${download_path}."
     info "If it resulted from an incomplete download, building ${package_name} could fail."
-    info "Would you like to proceed anyway? (Y/n)"
-    read -r proceed
-    if [[ "${proceed}" == "n" || "${proceed}" == "N" || "${proceed}" == "no"  ]]; then
-      info "n"
-      info "Please remove $url_tail and restart the installation to to ensure a fresh download." 1>&2
-      emergency "Aborting. [exit 80]"
+    if [[ "${arg_y}" == "${__flag_present}" ]]; then
+      info "-y or --yes-to-all flag present. Proceeding with non-interactive build."
     else
-      info "y"
+      info "Would you like to proceed anyway? (Y/n)"
+      read -r proceed
+      if [[ "${proceed}" == "n" || "${proceed}" == "N" || "${proceed}" == "no"  ]]; then
+        info "n"
+        info "Please remove $url_tail and restart the installation to to ensure a fresh download." 1>&2
+        emergency "Aborting. [exit 80]"
+      else
+        info "y"
+      fi
     fi
   elif ! type "${fetch}" &> /dev/null; then
     # The download mechanism is missing

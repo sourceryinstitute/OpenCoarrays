@@ -25,10 +25,14 @@ print_header()
   echo ""
   printf "${arg_p} will be installed in ${install_path}\n"
   echo ""
-  printf "Ready to rock and roll? (Y/n)"
-  read -r install_now
-  echo -e " $install_now\n"
-  if [[ "$install_now" == "n" || "$install_now" == "no" ]]; then
-    emergency "$this_script: Aborting. [exit 85]\n"
+  if [[ "${arg_y}" == "${__flag_present}" ]]; then
+    info "-y or --yes-to-all flag present. Proceeding with non-interactive build."
+  else
+    printf "Ready to rock and roll? (Y/n)"
+    read -r install_now
+    echo -e " $install_now\n"
+    if [[ "$install_now" == "n" || "$install_now" == "no" ]]; then
+      emergency "$this_script: Aborting. [exit 85]\n"
+    fi
   fi
 }

@@ -526,89 +526,93 @@ find_or_install()
       echo "$this_script: Ready to install $package executable $executable in $package_install_path"
     fi
 
-    echo -e "$this_script: Ok to download (if necessary), build, and install $package from source? (Y/n) "
-    read -r proceed_with_build
+    if [[ "${arg_y}" == "${__flag_present}" ]]; then
+      info "-y or --yes-to-all flag present. Proceeding with non-interactive build."
+    else
+      echo -e "$this_script: Ok to download (if necessary), build, and install $package from source? (Y/n) "
+      read -r proceed_with_build
 
-    if [[ "$proceed_with_build" == "n" || "$proceed_with_build" == "no" ]]; then
-      printf "n\n"
-      echo -e "$this_script: OpenCoarrays installation requires $package. Aborting. [exit 70]\n"
-      exit 70
-
-    else # permission granted to build
-      printf "Y\n"
-
-      # On OS X, CMake must be built with Apple LLVM gcc, which XCode command-line tools puts in /usr/bin
-      if [[ $(uname) == "Darwin" && $package == "cmake"  ]]; then
-        if [[ -x "/usr/bin/gcc" ]]; then
-          CC=/usr/bin/gcc
-        else
-          echo -e "$this_script: OS X detected.  Please install XCode command-line tools and \n"
-          echo -e "$this_script: ensure that /usr/bin/gcc exists and is executable. Aborting. [exit 75]\n"
-          exit 75
-        fi
-      # Otherwise, if no CC has been defined yet, use the gcc in the user's PATH
-      elif [[ -z "${CC:-}" ]]; then
-        CC=gcc
+      if [[ "$proceed_with_build" == "n" || "$proceed_with_build" == "no" ]]; then
+        printf "n\n"
+        echo -e "$this_script: OpenCoarrays installation requires $package. Aborting. [exit 70]\n"
+        exit 70
+      else # permission granted to build
+        printf "Y\n"
       fi
+    fi
 
-      # On OS X, CMake must be built with Apple LLVM g++, which XCode command-line tools puts in /usr/bin
-      if [[ $(uname) == "Darwin" && $package == "cmake"  ]]; then
-        if [[ -x "/usr/bin/g++" ]]; then
-          CXX=/usr/bin/g++
-        else
-          echo -e "$this_script: OS X detected.  Please install XCode command-line tools \n"
-          echo -e "$this_script: and ensure that /usr/bin/g++ exists and is executable. Aborting. [exit 76]\n"
-          exit 76
-        fi
-      # Otherwise, if no CXX has been defined yet, use the g++ in the user's PATH
-      elif [[ -z "${CXX:-}" ]]; then
-        CXX=g++
+    # On OS X, CMake must be built with Apple LLVM gcc, which XCode command-line tools puts in /usr/bin
+    if [[ $(uname) == "Darwin" && $package == "cmake"  ]]; then
+      if [[ -x "/usr/bin/gcc" ]]; then
+        CC=/usr/bin/gcc
+      else
+        echo -e "$this_script: OS X detected.  Please install XCode command-line tools and \n"
+        echo -e "$this_script: ensure that /usr/bin/gcc exists and is executable. Aborting. [exit 75]\n"
+        exit 75
       fi
+    # Otherwise, if no CC has been defined yet, use the gcc in the user's PATH
+    elif [[ -z "${CC:-}" ]]; then
+      CC=gcc
+    fi
 
-      # If no FC has been defined yet, use the gfortran in the user's PATH
-      if [[ -z "${FC:-}" ]]; then
-        FC=gfortran
+    # On OS X, CMake must be built with Apple LLVM g++, which XCode command-line tools puts in /usr/bin
+    if [[ $(uname) == "Darwin" && $package == "cmake"  ]]; then
+      if [[ -x "/usr/bin/g++" ]]; then
+        CXX=/usr/bin/g++
+      else
+        echo -e "$this_script: OS X detected.  Please install XCode command-line tools \n"
+        echo -e "$this_script: and ensure that /usr/bin/g++ exists and is executable. Aborting. [exit 76]\n"
+        exit 76
       fi
+    # Otherwise, if no CXX has been defined yet, use the g++ in the user's PATH
+    elif [[ -z "${CXX:-}" ]]; then
+      CXX=g++
+    fi
+
+    # If no FC has been defined yet, use the gfortran in the user's PATH
+    if [[ -z "${FC:-}" ]]; then
+      FC=gfortran
+    fi
 
 
-      # Strip trailing package name and version number, if present, from installation path
-      default_package_version=$(./build.sh -V ${package})
-      package_install_prefix="${package_install_path%${package}/${arg_I:-${default_package_version}}*}" 
+    # Strip trailing package name and version number, if present, from installation path
+    default_package_version=$(./build.sh -V ${package})
+    package_install_prefix="${package_install_path%${package}/${arg_I:-${default_package_version}}*}" 
 
-      echo -e "$this_script: Downloading, building, and installing $package \n"
-      echo "$this_script: Build command: FC=$FC CC=$CC CXX=$CXX ./build.sh -p $package -i $package_install_prefix -j $num_threads"
-      FC="$FC" CC="$CC" CXX="$CXX" ./build.sh -p "$package" -i "$package_install_prefix" -j "$num_threads"
+    echo -e "$this_script: Downloading, building, and installing $package \n"
+    echo "$this_script: Build command: FC=$FC CC=$CC CXX=$CXX ./build.sh -p $package -i $package_install_prefix -j $num_threads"
+    FC="$FC" CC="$CC" CXX="$CXX" ./build.sh -p "$package" -i "$package_install_prefix" -j "$num_threads"
 
-      if [[ -x "$package_install_path/bin/$executable" ]]; then
-        echo -e "$this_script: Installation successful.\n"
-        if [[ "$package" == "$executable" ]]; then
-          echo -e "$this_script: $executable is in $package_install_path/bin \n"
-        else
-          echo -e "$this_script: $package executable $executable is in $package_install_path/bin \n"
-        fi
-       # TODO Merge all applicable branches under one 'if [[ $package == $executable ]]; then'
-        if [[ $package == "cmake" ]]; then
-          echo "$this_script: export CMAKE=$package_install_path/bin/$executable"
-                              export CMAKE="$package_install_path/bin/$executable"
-        elif [[ $package == "bison" ]]; then
-          echo "$this_script: export YACC=$package_install_path/bin/$executable"
-                              export YACC="$package_install_path/bin/$executable"
-        elif [[ $package == "flex" ]]; then
-          echo "$this_script: export FLEX=$package_install_path/bin/$executable"
-                              export FLEX="$package_install_path/bin/$executable"
-        elif [[ $package == "m4" ]]; then
-          echo "$this_script: export M4=$package_install_path/bin/$executable"
-                              export M4="$package_install_path/bin/$executable"
-        elif [[ $package == "gcc" ]]; then
-          echo "$this_script: export FC=$package_install_path/bin/gfortran"
-                              export FC="$package_install_path/bin/gfortran"
-          echo "$this_script: export CC=$package_install_path/bin/gcc"
-                              export CC="$package_install_path/bin/gcc"
-          echo "$this_script: export CXX=$package_install_path/bin/g++"
-                              export CXX="$package_install_path/bin/g++"
-          gfortran_lib_paths="$package_install_path/lib64/:$package_install_path/lib"
-          if [[ -z "${LD_LIBRARY_PATH:-}" ]]; then
-            export LD_LIBRARY_PATH="$gfortran_lib_paths"
+    if [[ -x "$package_install_path/bin/$executable" ]]; then
+      echo -e "$this_script: Installation successful.\n"
+      if [[ "$package" == "$executable" ]]; then
+        echo -e "$this_script: $executable is in $package_install_path/bin \n"
+      else
+        echo -e "$this_script: $package executable $executable is in $package_install_path/bin \n"
+      fi
+     # TODO Merge all applicable branches under one 'if [[ $package == $executable ]]; then'
+      if [[ $package == "cmake" ]]; then
+        echo "$this_script: export CMAKE=$package_install_path/bin/$executable"
+                            export CMAKE="$package_install_path/bin/$executable"
+      elif [[ $package == "bison" ]]; then
+        echo "$this_script: export YACC=$package_install_path/bin/$executable"
+                            export YACC="$package_install_path/bin/$executable"
+      elif [[ $package == "flex" ]]; then
+        echo "$this_script: export FLEX=$package_install_path/bin/$executable"
+                            export FLEX="$package_install_path/bin/$executable"
+      elif [[ $package == "m4" ]]; then
+        echo "$this_script: export M4=$package_install_path/bin/$executable"
+                            export M4="$package_install_path/bin/$executable"
+      elif [[ $package == "gcc" ]]; then
+        echo "$this_script: export FC=$package_install_path/bin/gfortran"
+                            export FC="$package_install_path/bin/gfortran"
+        echo "$this_script: export CC=$package_install_path/bin/gcc"
+                            export CC="$package_install_path/bin/gcc"
+        echo "$this_script: export CXX=$package_install_path/bin/g++"
+                            export CXX="$package_install_path/bin/g++"
+        gfortran_lib_paths="$package_install_path/lib64/:$package_install_path/lib"
+        if [[ -z "${LD_LIBRARY_PATH:-}" ]]; then
+          export LD_LIBRARY_PATH="$gfortran_lib_paths"
           else
             export LD_LIBRARY_PATH="$gfortran_lib_paths:$LD_LIBRARY_PATH"
           fi
@@ -637,8 +641,6 @@ find_or_install()
         printf "Aborting. [exit 80]"
         exit 80
       fi # End 'if [[ -x "$package_install_path/bin/$executable" ]]'
-
-    fi # End 'if [[ "$proceed_with_build" == "y" ]]; then'
 
   fi # End 'if [[ "$package" != "none" ]]; then'
 }
