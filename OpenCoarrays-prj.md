@@ -9,14 +9,15 @@ md_extensions: markdown.extensions.toc(anchorlink=True)
                markdown_checklist.extension
 exclude_dir: armci
              gasnet
-             single
-extra_filetypes: c  //
-                 h  //
-                 sh #
+extra_filetypes: c   //
+                 h   //
+                 sh  #
+                 yml #
 preprocess: true
 macro: PREFIX_NAME=_gfortran_caf_
        NDEBUG
 include: /usr/local/opt/mpich/include
+docmark: <
 display: public
          protected
          private
@@ -25,6 +26,7 @@ graph: true
 sort: alpha
 extra_mods: iso_fortran_env:https://gcc.gnu.org/onlinedocs/gfortran/ISO_005fFORTRAN_005fENV.html
 print_creation_date: true
+creation_date: %Y-%m-%d %H:%M %z
 project_github: https://github.com/sourceryinstitute/opencoarrays
 favicon: media/.favicons/favicon.ico
 project_download: https://github.com/sourceryinstitute/opencoarrays/releases/latest
@@ -76,7 +78,7 @@ Specification [TS18508] Additional Parallel Features in Fortran.
  - [ ] Deal with `include compiler_capabilities.txt`
  - [ ] Add documentation to [libcaf.h](./sourcefile/libcaf.h.html)
  - [ ] Add documentation to [libcaf-gfortran-descriptor.h](./sourcefile/libcaf-gfortran-descriptor.h.html)
- - [ ] Add documentation to [mpi_caf.c](./sourcefile/caf.c.html)
+ - [ ] Add documentation to [mpi_caf.c](./sourcefile/mpi_caf.c.html)
  - [ ] Add documentation to [caf_auxiliary.c](./sourcefile/caf_auxiliary.c.html)
  - [ ] Add documentation to [[opencoarrays(module)]]
  - [ ] Add documentation to [single.c](./sourcefile/single.c.html) (or remove it...)
