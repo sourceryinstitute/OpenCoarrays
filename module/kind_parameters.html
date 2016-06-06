@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+	 
+	 <meta name="description" content="OpenCoarrays is a Coarray Fortran (CAF) implementation supporting Fortran 2008 and 2015 features">
+    
+    <meta name="author" content="Chris MacMackin" >
+    <link rel="icon" href="../favicon.png">
+
+    <title>kind_parameters &ndash; OpenCoarrays</title>
+
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/pygments.css" rel="stylesheet">
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../css/local.css" rel="stylesheet">
+    
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../js/jquery-2.1.3.min.js"></script>
+    <script src="../js/svg-pan-zoom.min.js"></script>
+
+    
+    <script src="../tipuesearch/tipuesearch_content.js"></script>
+    <link  href="../tipuesearch/tipuesearch.css" rel="stylesheet">
+    <script src="../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../tipuesearch/tipuesearch.js"></script>
+    
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../index.html">OpenCoarrays <small>master</small></a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+				
+                
+            <li><a href="../lists/files.html">Source Files</a></li>
+				
+				
+            <li><a href="../lists/modules.html">Modules</a></li>
+				
+				
+            <li><a href="../lists/procedures.html">Procedures</a></li>
+				
+				
+            <li><a href="../lists/absint.html">Abstract Interfaces</a></li>
+								
+            <li><a href="../lists/types.html">Derived Types</a></li>
+				
+				
+            <li><a href="../lists/programs.html">Programs</a></li>
+				
+          </ul>
+        
+        <form action="../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+    
+  
+  <div class="row">
+    <h1>kind_parameters 
+    <small>Module</small>
+    
+    </h1>
+	 
+<div class="row">
+<div class="col-lg-12">
+<div class="well well-sm">
+  <ul class="list-inline" style="margin-bottom:0px;display:inline">
+     
+     
+     
+     
+    
+    
+    <li><i class="fa fa-code"></i><a href="../src/kind_parameters.F90"> Source File</a></li>
+     
+  </ul>
+  <ol class="breadcrumb in-well text-right">
+  
+     <li><a href='../sourcefile/kind_parameters.f90.html'>kind_parameters.F90</a></li>
+  
+     <li class="active">kind_parameters</li>
+  </ol>
+</div>
+</div>
+</div>
+    
+  </div>
+  
+  <div class="row">
+    <div class="col-lg-3">
+    
+<div id="sidebar">
+  
+  
+  
+  <div class="panel panel-primary">
+    <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#vars">Variables</a></h3></div>
+    <div id="vars" class="panel-collapse collapse">
+      <div class="list-group">
+        
+        <a class="list-group-item" href="../module/kind_parameters.html#variable-ckind">ckind</a>
+        
+        <a class="list-group-item" href="../module/kind_parameters.html#variable-decades">decades</a>
+        
+        <a class="list-group-item" href="../module/kind_parameters.html#variable-digits">digits</a>
+        
+        <a class="list-group-item" href="../module/kind_parameters.html#variable-ikind">ikind</a>
+        
+        <a class="list-group-item" href="../module/kind_parameters.html#variable-rkind">rkind</a>
+        
+      </div>
+    </div>
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <hr>
+  
+  <div class="panel panel-default">
+    <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#allmods">All Modules</a></h3></div>
+    <div id="allmods" class="panel-collapse collapse">
+        <div class="list-group">
+          
+          <a class="list-group-item" href="../module/co_intrinsics_module.html">co_intrinsics_module</a>
+          
+          <a class="list-group-item" href="../module/co_object_interface%7E2.html">co_object_interface</a>
+          
+          <a class="list-group-item" href="../module/co_object_interface.html">co_object_interface</a>
+          
+          <a class="list-group-item" href="../module/constants_module%7E3.html">constants_module</a>
+          
+          <a class="list-group-item" href="../module/constants_module%7E2.html">constants_module</a>
+          
+          <a class="list-group-item" href="../module/constants_module%7E4.html">constants_module</a>
+          
+          <a class="list-group-item" href="../module/constants_module.html">constants_module</a>
+          
+          <a class="list-group-item" href="../module/fortrilinos_assertion_utility.html">ForTrilinos_assertion_utility</a>
+          
+          <a class="list-group-item" href="../module/fortrilinos_assertion_utility%7E2.html">ForTrilinos_assertion_utility</a>
+          
+          <a class="list-group-item" href="../module/fortrilinos_error%7E2.html">ForTrilinos_error</a>
+          
+          <a class="list-group-item" href="../module/fortrilinos_error.html">ForTrilinos_error</a>
+          
+          <a class="list-group-item" href="../module/global_field_module.html">global_field_module</a>
+          
+          <a class="list-group-item" href="../module/global_field_module%7E2.html">global_field_module</a>
+          
+          <a class="list-group-item" href="../module/initializer.html">initializer</a>
+          
+          <a class="list-group-item" href="../module/input_file.html">input_file</a>
+          
+          <a class="list-group-item" href="../module/kind_parameters.html">kind_parameters</a>
+          
+          <a class="list-group-item" href="../module/local_field_module%7E2.html">local_field_module</a>
+          
+          <a class="list-group-item" href="../module/local_field_module.html">local_field_module</a>
+          
+          <a class="list-group-item" href="../module/mpi_module.html">mpi_module</a>
+          
+          <a class="list-group-item" href="../module/mpi_run_size.html">mpi_run_size</a>
+          
+          <a class="list-group-item" href="../module/mpi_share.html">mpi_share</a>
+          
+          <a class="list-group-item" href="../module/object_interface%7E2.html">object_interface</a>
+          
+          <a class="list-group-item" href="../module/object_interface.html">object_interface</a>
+          
+          <a class="list-group-item" href="../module/opencoarrays.html">opencoarrays</a>
+          
+          <a class="list-group-item" href="../module/parse_command_line.html">parse_command_line</a>
+          
+          <a class="list-group-item" href="../module/periodic_2nd_order_module.html">periodic_2nd_order_module</a>
+          
+          <a class="list-group-item" href="../module/random_module%7E2.html">random_module</a>
+          
+          <a class="list-group-item" href="../module/random_module%7E3.html">random_module</a>
+          
+          <a class="list-group-item" href="../module/random_module.html">random_module</a>
+          
+          <a class="list-group-item" href="../module/random_module%7E4.html">random_module</a>
+          
+          <a class="list-group-item" href="../module/run_size.html">run_size</a>
+          
+          <a class="list-group-item" href="../module/run_size%7E4.html">run_size</a>
+          
+          <a class="list-group-item" href="../module/run_size%7E5.html">run_size</a>
+          
+          <a class="list-group-item" href="../module/run_size%7E3.html">run_size</a>
+          
+          <a class="list-group-item" href="../module/run_size%7E2.html">run_size</a>
+          
+          <a class="list-group-item" href="../module/shared.html">shared</a>
+          
+        </div>
+    </div>
+  </div>
+  
+</div>
+
+    </div>
+    
+    <div class="col-lg-9" id='text'>
+    
+    
+  
+
+    
+    
+    
+    
+    
+    <h3>Used By</h3>
+    
+                <div class="depgraph"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.38.0 (20140413.2041)
+ -->
+<!-- Title: module~~kind_parameters~~UsedByGraph Pages: 1 -->
+<svg id="modulekind_parametersUsedByGraph" width="572pt" height="192pt"
+ viewBox="0.00 0.00 572.00 192.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="module~~kind_parameters~~UsedByGraph" class="graph" transform="scale(1 1) rotate(0) translate(4 188)">
+<title>module~~kind_parameters~~UsedByGraph</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-188 568,-188 568,4 -4,4"/>
+<!-- module~kind_parameters -->
+<g id="module~~kind_parameters~~UsedByGraph_node1" class="node"><title>module~kind_parameters</title>
+<polygon fill="none" stroke="black" points="91,-104 0,-104 0,-80 91,-80 91,-104"/>
+<text text-anchor="middle" x="45.5" y="-89.6" font-family="Helvetica,sans-Serif" font-size="10.50">kind_parameters</text>
+</g>
+<!-- module~input_file -->
+<g id="module~~kind_parameters~~UsedByGraph_node2" class="node"><title>module~input_file</title>
+<g id="a_module~~kind_parameters~~UsedByGraph_node2"><a xlink:href="../module/input_file.html" xlink:title="input_file">
+<polygon fill="#337ab7" stroke="#337ab7" points="291.5,-184 236.5,-184 236.5,-160 291.5,-160 291.5,-184"/>
+<text text-anchor="middle" x="264" y="-169.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">input_file</text>
+</a>
+</g>
+</g>
+<!-- module~kind_parameters&#45;&gt;module~input_file -->
+<g id="module~~kind_parameters~~UsedByGraph_edge9" class="edge"><title>module~kind_parameters&#45;&gt;module~input_file</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M163,-132C185.299,-137.984 209.352,-147.501 228.278,-155.751"/>
+<polygon fill="#000000" stroke="#000000" points="227.112,-159.063 237.672,-159.924 229.954,-152.666 227.112,-159.063"/>
+</g>
+<!-- module~mpi_module -->
+<g id="module~~kind_parameters~~UsedByGraph_node3" class="node"><title>module~mpi_module</title>
+<g id="a_module~~kind_parameters~~UsedByGraph_node3"><a xlink:href="../module/mpi_module.html" xlink:title="mpi_module">
+<polygon fill="#337ab7" stroke="#337ab7" points="197,-104 127,-104 127,-80 197,-80 197,-104"/>
+<text text-anchor="middle" x="162" y="-89.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mpi_module</text>
+</a>
+</g>
+</g>
+<!-- module~kind_parameters&#45;&gt;module~mpi_module -->
+<g id="module~~kind_parameters~~UsedByGraph_edge10" class="edge"><title>module~kind_parameters&#45;&gt;module~mpi_module</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M91.0966,-92C99.5784,-92 108.45,-92 116.916,-92"/>
+<polygon fill="#000000" stroke="#000000" points="116.988,-95.5001 126.988,-92 116.988,-88.5001 116.988,-95.5001"/>
+</g>
+<!-- module~periodic_2nd_order_module -->
+<g id="module~~kind_parameters~~UsedByGraph_node4" class="node"><title>module~periodic_2nd_order_module</title>
+<g id="a_module~~kind_parameters~~UsedByGraph_node4"><a xlink:href="../module/periodic_2nd_order_module.html" xlink:title="periodic_2nd_order_module">
+<polygon fill="#337ab7" stroke="#337ab7" points="474,-114 331,-114 331,-90 474,-90 474,-114"/>
+<text text-anchor="middle" x="402.5" y="-99.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">periodic_2nd_order_module</text>
+</a>
+</g>
+</g>
+<!-- module~kind_parameters&#45;&gt;module~periodic_2nd_order_module -->
+<g id="module~~kind_parameters~~UsedByGraph_edge11" class="edge"><title>module~kind_parameters&#45;&gt;module~periodic_2nd_order_module</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M163,-132C205.926,-143.519 218.558,-132.438 263,-132"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M77.2147,-104.121C100.051,-112.791 132.121,-124.25 161,-132"/>
+</g>
+<!-- program~main~3 -->
+<g id="module~~kind_parameters~~UsedByGraph_node5" class="node"><title>program~main~3</title>
+<g id="a_module~~kind_parameters~~UsedByGraph_node5"><a xlink:href="../program/main%7E3.html" xlink:title="main">
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="564,-89 510,-89 510,-65 564,-65 564,-89"/>
+<text text-anchor="middle" x="537" y="-74.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">main</text>
+</a>
+</g>
+</g>
+<!-- module~kind_parameters&#45;&gt;program~main~3 -->
+<g id="module~~kind_parameters~~UsedByGraph_edge12" class="edge"><title>module~kind_parameters&#45;&gt;program~main~3</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M403.5,-52C436.559,-52.6673 473.475,-60.2091 499.927,-66.8362"/>
+<polygon fill="#000000" stroke="#000000" points="499.316,-70.2934 509.874,-69.4087 501.069,-63.5164 499.316,-70.2934"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M265,-52C325.153,-44.1198 340.846,-50.7757 401.5,-52"/>
+</g>
+<!-- module~initializer -->
+<g id="module~~kind_parameters~~UsedByGraph_node6" class="node"><title>module~initializer</title>
+<g id="a_module~~kind_parameters~~UsedByGraph_node6"><a xlink:href="../module/initializer.html" xlink:title="initializer">
+<polygon fill="#337ab7" stroke="#337ab7" points="429.5,-24 375.5,-24 375.5,-0 429.5,-0 429.5,-24"/>
+<text text-anchor="middle" x="402.5" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">initializer</text>
+</a>
+</g>
+</g>
+<!-- module~kind_parameters&#45;&gt;module~initializer -->
+<g id="module~~kind_parameters~~UsedByGraph_edge13" class="edge"><title>module~kind_parameters&#45;&gt;module~initializer</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M88.8991,-79.9524C101.128,-76.7465 114.536,-73.4877 127,-71 186.851,-59.0547 202.125,-56.3726 263,-52"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M265,-52C300.11,-47.4006 338.713,-35.4042 365.881,-25.7403"/>
+<polygon fill="#000000" stroke="#000000" points="367.14,-29.0066 375.345,-22.3035 364.751,-22.427 367.14,-29.0066"/>
+</g>
+<!-- module~input_file&#45;&gt;module~periodic_2nd_order_module -->
+<g id="module~~kind_parameters~~UsedByGraph_edge1" class="edge"><title>module~input_file&#45;&gt;module~periodic_2nd_order_module</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M288.465,-159.967C310.635,-148.598 344.092,-131.44 368.859,-118.739"/>
+<polygon fill="#000000" stroke="#000000" points="370.583,-121.788 377.884,-114.111 367.389,-115.56 370.583,-121.788"/>
+</g>
+<!-- module~input_file&#45;&gt;program~main~3 -->
+<g id="module~~kind_parameters~~UsedByGraph_edge2" class="edge"><title>module~input_file&#45;&gt;program~main~3</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M291.534,-169.279C332.354,-164.336 412.299,-151.619 474,-123 488.872,-116.102 503.686,-105.295 515.102,-95.8884"/>
+<polygon fill="#000000" stroke="#000000" points="517.422,-98.5103 522.767,-89.3627 512.884,-93.1804 517.422,-98.5103"/>
+</g>
+<!-- module~mpi_module&#45;&gt;module~periodic_2nd_order_module -->
+<g id="module~~kind_parameters~~UsedByGraph_edge6" class="edge"><title>module~mpi_module&#45;&gt;module~periodic_2nd_order_module</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M180.937,-104.12C200.315,-116.002 232.523,-132.3 263,-132"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M265,-132C295.98,-131.695 330.014,-124.231 356.349,-116.825"/>
+<polygon fill="#000000" stroke="#000000" points="357.418,-120.159 366.042,-114.005 355.462,-113.438 357.418,-120.159"/>
+</g>
+<!-- module~mpi_share -->
+<g id="module~~kind_parameters~~UsedByGraph_node7" class="node"><title>module~mpi_share</title>
+<g id="a_module~~kind_parameters~~UsedByGraph_node7"><a xlink:href="../module/mpi_share.html" xlink:title="mpi_share">
+<polygon fill="#337ab7" stroke="#337ab7" points="295,-104 233,-104 233,-80 295,-80 295,-104"/>
+<text text-anchor="middle" x="264" y="-89.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mpi_share</text>
+</a>
+</g>
+</g>
+<!-- module~mpi_module&#45;&gt;module~mpi_share -->
+<g id="module~~kind_parameters~~UsedByGraph_edge5" class="edge"><title>module~mpi_module&#45;&gt;module~mpi_share</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M197.135,-92C205.341,-92 214.183,-92 222.642,-92"/>
+<polygon fill="#000000" stroke="#000000" points="222.702,-95.5001 232.702,-92 222.702,-88.5001 222.702,-95.5001"/>
+</g>
+<!-- module~periodic_2nd_order_module&#45;&gt;program~main~3 -->
+<g id="module~~kind_parameters~~UsedByGraph_edge7" class="edge"><title>module~periodic_2nd_order_module&#45;&gt;program~main~3</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M467.421,-89.9394C478.522,-87.845 489.709,-85.7342 499.735,-83.8424"/>
+<polygon fill="#000000" stroke="#000000" points="500.533,-87.2537 509.711,-81.9602 499.235,-80.375 500.533,-87.2537"/>
+</g>
+<!-- module~initializer&#45;&gt;program~main~3 -->
+<g id="module~~kind_parameters~~UsedByGraph_edge8" class="edge"><title>module~initializer&#45;&gt;program~main~3</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M429.824,-20.2496C443.313,-24.8393 459.838,-31.029 474,-38 486.39,-44.0984 499.424,-52.0407 510.327,-59.1652"/>
+<polygon fill="#000000" stroke="#000000" points="508.662,-62.2617 518.924,-64.899 512.547,-56.4383 508.662,-62.2617"/>
+</g>
+<!-- module~mpi_share&#45;&gt;module~periodic_2nd_order_module -->
+<g id="module~~kind_parameters~~UsedByGraph_edge3" class="edge"><title>module~mpi_share&#45;&gt;module~periodic_2nd_order_module</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M295.294,-94.2193C302.998,-94.7837 311.648,-95.4174 320.599,-96.0732"/>
+<polygon fill="#000000" stroke="#000000" points="320.569,-99.5803 330.798,-96.8204 321.08,-92.599 320.569,-99.5803"/>
+</g>
+<!-- module~mpi_share&#45;&gt;program~main~3 -->
+<g id="module~~kind_parameters~~UsedByGraph_edge4" class="edge"><title>module~mpi_share&#45;&gt;program~main~3</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M289.528,-79.8984C316.378,-67.8286 361.009,-51.1827 401.5,-52"/>
+</g>
+</g>
+</svg>
+</div>
+                <div><a type="button" class="graph-help" data-toggle="modal" href="#graph-help-text">Help</a></div>
+                <div class="modal fade" id="graph-help-text" tabindex="-1" role="dialog">
+                  <div class="modal-dialog modal-lg" role="document">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="-graph-help-label">Graph Key</h4>
+                      </div>
+                      <div class="modal-body">
+                        
+Nodes of different colours represent the following:
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.38.0 (20140413.2041)
+ -->
+<!-- Title: Graph Key Pages: 1 -->
+<svg width="641pt" height="26pt"
+ viewBox="0.00 0.00 641.00 26.23" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(0.819693 0.819693) rotate(0) translate(4 28)">
+<title>Graph Key</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-28 778,-28 778,4 -4,4"/>
+<!-- Module -->
+<g id="node1" class="node"><title>Module</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="54,-24 0,-24 0,-0 54,-0 54,-24"/>
+<text text-anchor="middle" x="27" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Module</text>
+</g>
+<!-- Submodule -->
+<g id="node2" class="node"><title>Submodule</title>
+<polygon fill="#5bc0de" stroke="#5bc0de" points="138,-24 72,-24 72,-0 138,-0 138,-24"/>
+<text text-anchor="middle" x="105" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Submodule</text>
+</g>
+<!-- Type -->
+<g id="node3" class="node"><title>Type</title>
+<polygon fill="#5cb85c" stroke="#5cb85c" points="210,-24 156,-24 156,-0 210,-0 210,-24"/>
+<text text-anchor="middle" x="183" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Type</text>
+</g>
+<!-- Subroutine -->
+<g id="node4" class="node"><title>Subroutine</title>
+<polygon fill="#d9534f" stroke="#d9534f" points="291.5,-24 228.5,-24 228.5,-0 291.5,-0 291.5,-24"/>
+<text text-anchor="middle" x="260" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Subroutine</text>
+</g>
+<!-- Function -->
+<g id="node5" class="node"><title>Function</title>
+<polygon fill="#d94e8f" stroke="#d94e8f" points="364,-24 310,-24 310,-0 364,-0 364,-24"/>
+<text text-anchor="middle" x="337" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Function</text>
+</g>
+<!-- Interface -->
+<g id="node6" class="node"><title>Interface</title>
+<polygon fill="#a7506f" stroke="#a7506f" points="436,-24 382,-24 382,-0 436,-0 436,-24"/>
+<text text-anchor="middle" x="409" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Interface</text>
+</g>
+<!-- Unknown Procedure Type -->
+<g id="node7" class="node"><title>Unknown Procedure Type</title>
+<polygon fill="#777777" stroke="#777777" points="588,-24 454,-24 454,-0 588,-0 588,-24"/>
+<text text-anchor="middle" x="521" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Unknown Procedure Type</text>
+</g>
+<!-- Program -->
+<g id="node8" class="node"><title>Program</title>
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="660,-24 606,-24 606,-0 660,-0 660,-24"/>
+<text text-anchor="middle" x="633" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Program</text>
+</g>
+<!-- This Page&#39;s Entity -->
+<g id="node9" class="node"><title>This Page&#39;s Entity</title>
+<polygon fill="none" stroke="black" points="774,-24 678,-24 678,-0 774,-0 774,-24"/>
+<text text-anchor="middle" x="726" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50">This Page&#39;s Entity</text>
+</g>
+</g>
+</svg>
+
+Where possible, edges connecting nodes are given different colours to make them
+easier to distinguish in large graphs.
+<h5>Module Graph</h5>
+<p>Solid arrows point from a parent (sub)module to the submodule which is
+descended from it. Dashed arrows point from a module being used to the
+module using it.</p>
+<h5>Type Graph</h5>
+<p>Solid arrows point from one derived type to another which extends
+(inherits from) it. Dashed arrows point from a derived type to another
+type containing it as a components, with a label listing the name(s) of
+said component(s).</p>
+<h5>Call Graph</h5>
+<p>Solid arrows point from a procedure to one which it calls. Dashed 
+arrows point from an interface to procedures which implement that interface.
+This could include the module procedures in a generic interface or the
+implementation in a submodule of an interface in a parent module.</p>
+
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+    <br>
+    
+
+    
+    <section>
+    <h2>Variables</h2>
+    
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th><th>Visibility</th>
+
+<th>Attributes</th><th></th><th>Name</th><th></th><th>Initial</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-ckind"></span>integer,</td>
+  
+  <td>public,</td>
+  <td>parameter</td><td>::</td>
+  <td><strong>ckind</strong></td><td> =</td><td>selected_char_kind('default')</td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-decades"></span>integer,</td>
+  
+  <td>private,</td>
+  <td>parameter</td><td>::</td>
+  <td><strong>decades</strong></td><td> =</td><td>9</td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-digits"></span>integer,</td>
+  
+  <td>private,</td>
+  <td>parameter</td><td>::</td>
+  <td><strong>digits</strong></td><td> =</td><td>8</td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-ikind"></span>integer,</td>
+  
+  <td>public,</td>
+  <td>parameter</td><td>::</td>
+  <td><strong>ikind</strong></td><td> =</td><td>selected_int_kind(decades)</td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-rkind"></span>integer,</td>
+  
+  <td>public,</td>
+  <td>parameter</td><td>::</td>
+  <td><strong>rkind</strong></td><td> =</td><td>selected_real_kind(digits)</td><td></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+    </section>
+    <br>
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+
+    
+    
+    
+    </div>
+  </div>
+
+    <hr>
+    <footer>
+      <div class="row">
+        <div class="col-md-4">&copy; 2016 <a rel="license" href="http://www.freebsd.org/copyright/freebsd-doc-license.html">FreeBSD Documentation License</a></div>
+        <div class="col-md-4"><span class="text-center"> OpenCoarrays was developed by Sourcery Institute</span></div>
+        <div class="col-md-4">
+          <span class="pull-right">
+            Documentation generated by 
+            <a href="https://github.com/cmacmackin/ford">FORD</a>
+            
+          </span>
+        </div>
+      </div>
+      <br>
+    </footer>
+    </div> <!-- /container -->
+
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js'],
+        'HTML-CSS': { 
+           styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: '#000000 ! important'} }
+        }
+      });
+    </script>
+    <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  </body>
+</html>

@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+	 
+	 <meta name="description" content="OpenCoarrays is a Coarray Fortran (CAF) implementation supporting Fortran 2008 and 2015 features">
+    
+    <meta name="author" content="Chris MacMackin" >
+    <link rel="icon" href="../favicon.png">
+
+    <title>test1Caf.f90 &ndash; OpenCoarrays</title>
+
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/pygments.css" rel="stylesheet">
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../css/local.css" rel="stylesheet">
+    
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../js/jquery-2.1.3.min.js"></script>
+    <script src="../js/svg-pan-zoom.min.js"></script>
+
+    
+    <script src="../tipuesearch/tipuesearch_content.js"></script>
+    <link  href="../tipuesearch/tipuesearch.css" rel="stylesheet">
+    <script src="../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../tipuesearch/tipuesearch.js"></script>
+    
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../index.html">OpenCoarrays <small>master</small></a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+				
+                
+            <li><a href="../lists/files.html">Source Files</a></li>
+				
+				
+            <li><a href="../lists/modules.html">Modules</a></li>
+				
+				
+            <li><a href="../lists/procedures.html">Procedures</a></li>
+				
+				
+            <li><a href="../lists/absint.html">Abstract Interfaces</a></li>
+								
+            <li><a href="../lists/types.html">Derived Types</a></li>
+				
+				
+            <li><a href="../lists/programs.html">Programs</a></li>
+				
+          </ul>
+        
+        <form action="../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+    
+  
+  <div class="row">
+    <h1>test1Caf.f90
+    <small>Source File</small>
+    
+    </h1>
+	 
+<div class="row">
+<div class="col-lg-12">
+<div class="well well-sm">
+  <ul class="list-inline" style="margin-bottom:0px;display:inline">
+     
+     
+     
+     
+    
+    
+    <li><i class="fa fa-code"></i><a href="../src/test1Caf.f90"> Source File</a></li>
+     
+  </ul>
+  <ol class="breadcrumb in-well text-right">
+  
+     <li class="active">test1Caf.f90</li>
+  </ol>
+</div>
+</div>
+</div>
+    
+  </div>
+  <div class="row">
+    <div class="col-lg-3">
+    
+<div id="sidebar">
+  
+  
+  
+  
+  
+  
+  <div class="panel panel-primary">
+    <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#progs">Programs</a></h3></div>
+    <div id="progs" class="panel-collapse collapse">
+        <div class="list-group">
+          
+          <a class="list-group-item" href="../program/test1caf.html">test1caf</a>
+          
+        </div>
+    </div>
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="panel panel-primary">
+    <div class="panel-heading text-left"><h3 class="panel-title">Source Code</h3></div>
+    <div class="list-group">
+      <a class="list-group-item" href="../sourcefile/test1caf.f90.html#src">test1Caf.f90</a>
+    </div>
+  </div>
+  
+  <hr>
+  
+  <div class="panel panel-default">
+    <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#allfiles">All Source Files</a></h3></div>
+    <div id="allfiles" class="panel-collapse collapse">
+        <div class="list-group">
+          
+          <a class="list-group-item" href="../sourcefile/allocate_as_barrier.f90.html">allocate_as_barrier.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/allocate_as_barrier_proc.f90.html">allocate_as_barrier_proc.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/caf_auxiliary.c.html">caf_auxiliary.c</a>
+          
+          <a class="list-group-item" href="../sourcefile/cafpsnap.f90.html">cafpsnap.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/co_broadcast.f90.html">co_broadcast.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/co_max.f90.html">co_max.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/co_min.f90.html">co_min.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/co_object_interface.f90.html">co_object_interface.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/co_object_interface.f90%7E2.html">co_object_interface.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/co_reduce.f90.html">co_reduce.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/co_sum.f90.html">co_sum.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/coarray-shear.f90.html">coarray-shear.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/coarray-shear_coll.f90.html">coarray-shear_coll.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/coarray-shear_coll_lock.f90.html">coarray-shear_coll_lock.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/coarray_distributed_transpose.f90.html">coarray_distributed_transpose.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/duplicate_syncimages.f90.html">duplicate_syncimages.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/fortrilinos_assertion_utility.f90.html">ForTrilinos_assertion_utility.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/fortrilinos_assertion_utility.f90%7E2.html">ForTrilinos_assertion_utility.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/fortrilinos_error.f90.html">ForTrilinos_error.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/fortrilinos_error.f90%7E2.html">ForTrilinos_error.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/get_array_test.f90.html">get_array_test.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/get_with_offset_1d.f90.html">get_with_offset_1d.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/global_field.f90.html">global_field.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/global_field.f90.html">global_field.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/hello_multiverse.f90.html">hello_multiverse.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/initialize_mpi.f90.html">initialize_mpi.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/input_file.f90.html">input_file.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/kind_parameters.f90.html">kind_parameters.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/libcaf-gfortran-descriptor.h.html">libcaf-gfortran-descriptor.h</a>
+          
+          <a class="list-group-item" href="../sourcefile/libcaf.h.html">libcaf.h</a>
+          
+          <a class="list-group-item" href="../sourcefile/local_field.f90.html">local_field.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/local_field.f90.html">local_field.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/main.f90.html">main.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/main.f90.html">main.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/main.f90%7E2.html">main.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/mpi-shear.f90.html">mpi-shear.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/mpi_caf.c.html">mpi_caf.c</a>
+          
+          <a class="list-group-item" href="../sourcefile/mpi_distributed_transpose.f90.html">mpi_distributed_transpose.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/mpi_module.f90.html">mpi_module.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/mpi_share.f90.html">mpi_share.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/object_interface.f90.html">object_interface.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/object_interface.f90%7E2.html">object_interface.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/old_get_array_test.f90.html">old_get_array_test.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/opencoarrays.f90.html">opencoarrays.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/parse_command_line.f90.html">parse_command_line.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/periodic_2nd_order.f90.html">periodic_2nd_order.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/register.f90.html">register.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/register_rename_me.f90.html">register_rename_me.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/register_rename_me_too.f90.html">register_rename_me_too.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/run.sh.html">run.sh</a>
+          
+          <a class="list-group-item" href="../sourcefile/run.sh%7E2.html">run.sh</a>
+          
+          <a class="list-group-item" href="../sourcefile/run_troubleshooting.sh.html">run_troubleshooting.sh</a>
+          
+          <a class="list-group-item" href="../sourcefile/sameloc.f90.html">sameloc.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/send_array_test.f90.html">send_array_test.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/shared.f90.html">shared.F90</a>
+          
+          <a class="list-group-item" href="../sourcefile/strided_get.f90.html">strided_get.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/syncall.f90.html">syncall.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/syncimages.f90.html">syncimages.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/syncimages.f90%7E2.html">syncimages.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/syncimages2.c.html">syncimages2.c</a>
+          
+          <a class="list-group-item" href="../sourcefile/syncimages2.f90.html">syncimages2.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/syncimages2.f90%7E2.html">syncimages2.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/syncimages_status.f90.html">syncimages_status.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/test1caf.f90.html">test1Caf.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/testatomics.f90.html">testAtomics.f90</a>
+          
+          <a class="list-group-item" href="../sourcefile/timemeasure.c.html">timemeasure.c</a>
+          
+          <a class="list-group-item" href="../sourcefile/whole_get_array.f90.html">whole_get_array.f90</a>
+          
+        </div>
+    </div>
+  </div>
+  
+</div>
+
+    </div>
+    <div class="col-lg-9" id='text'>
+    
+    
+    <section>
+    <h2><span class="anchor" id="src"></span>Source Code</h2>
+    <div class="hl"><pre><span></span><a name="ln-1"></a><span class="c">! test1caf test</span>
+<a name="ln-2"></a><span class="c">!</span>
+<a name="ln-3"></a><span class="c">! Copyright (c) 2012-2014, Sourcery, Inc.</span>
+<a name="ln-4"></a><span class="c">! All rights reserved.</span>
+<a name="ln-5"></a><span class="c">!</span>
+<a name="ln-6"></a><span class="c">! Redistribution and use in source and binary forms, with or without</span>
+<a name="ln-7"></a><span class="c">! modification, are permitted provided that the following conditions are met:</span>
+<a name="ln-8"></a><span class="c">!     * Redistributions of source code must retain the above copyright</span>
+<a name="ln-9"></a><span class="c">!       notice, this list of conditions and the following disclaimer.</span>
+<a name="ln-10"></a><span class="c">!     * Redistributions in binary form must reproduce the above copyright</span>
+<a name="ln-11"></a><span class="c">!       notice, this list of conditions and the following disclaimer in the</span>
+<a name="ln-12"></a><span class="c">!       documentation and/or other materials provided with the distribution.</span>
+<a name="ln-13"></a><span class="c">!     * Neither the name of the Sourcery, Inc., nor the</span>
+<a name="ln-14"></a><span class="c">!       names of its contributors may be used to endorse or promote products</span>
+<a name="ln-15"></a><span class="c">!       derived from this software without specific prior written permission.</span>
+<a name="ln-16"></a><span class="c">!</span>
+<a name="ln-17"></a><span class="c">! THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND</span>
+<a name="ln-18"></a><span class="c">! ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED</span>
+<a name="ln-19"></a><span class="c">! WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE</span>
+<a name="ln-20"></a><span class="c">! DISCLAIMED. IN NO EVENT SHALL SOURCERY, INC., BE LIABLE FOR ANY</span>
+<a name="ln-21"></a><span class="c">! DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES</span>
+<a name="ln-22"></a><span class="c">! (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;</span>
+<a name="ln-23"></a><span class="c">! LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND</span>
+<a name="ln-24"></a><span class="c">! ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
+<a name="ln-25"></a><span class="c">! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS</span>
+<a name="ln-26"></a><span class="c">!</span>
+<a name="ln-27"></a>
+<a name="ln-28"></a><span class="k">program </span><span class="n">test1caf</span>
+<a name="ln-29"></a>  <span class="k">implicit none</span>
+<a name="ln-30"></a><span class="k">  </span><span class="kt">integer</span><span class="p">,</span> <span class="k">parameter</span> <span class="kd">::</span> <span class="n">num_local_elems</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span><span class="n">a_initial</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">b_initial</span><span class="o">=</span><span class="mi">2</span>
+<a name="ln-31"></a>  <span class="kt">integer</span> <span class="kd">::</span> <span class="n">a</span><span class="p">(</span><span class="n">num_local_elems</span><span class="p">)[</span><span class="o">*</span><span class="p">]</span><span class="o">=</span><span class="n">a_initial</span><span class="p">,</span><span class="n">b</span><span class="p">(</span><span class="n">num_local_elems</span><span class="p">)[</span><span class="o">*</span><span class="p">]</span><span class="o">=</span><span class="n">b_initial</span>
+<a name="ln-32"></a>  <span class="kt">integer</span> <span class="kd">::</span> <span class="n">i</span><span class="p">,</span><span class="n">me</span><span class="p">,</span><span class="n">np</span><span class="p">,</span><span class="n">left</span><span class="p">,</span><span class="n">right</span>
+<a name="ln-33"></a>
+<a name="ln-34"></a>  <span class="n">me</span> <span class="o">=</span> <span class="nb">this_image</span><span class="p">()</span>
+<a name="ln-35"></a>  <span class="n">np</span> <span class="o">=</span> <span class="nb">num_images</span><span class="p">()</span>
+<a name="ln-36"></a>
+<a name="ln-37"></a>  <span class="n">left</span>  <span class="o">=</span> <span class="nb">merge</span><span class="p">(</span><span class="n">np</span><span class="p">,</span><span class="n">me</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">me</span><span class="o">==</span><span class="mi">1</span><span class="p">)</span>
+<a name="ln-38"></a>  <span class="n">right</span> <span class="o">=</span> <span class="nb">merge</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">me</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">me</span><span class="o">==</span><span class="n">np</span><span class="p">)</span>
+<a name="ln-39"></a>
+<a name="ln-40"></a>  <span class="k">if</span> <span class="p">(</span><span class="nb">mod</span><span class="p">(</span><span class="n">me</span><span class="p">,</span><span class="mi">2</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="mi">0</span><span class="p">)</span> <span class="k">then</span>
+<a name="ln-41"></a><span class="k">     </span><span class="n">a</span><span class="p">(:)[</span><span class="n">right</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">(:)[</span><span class="n">right</span><span class="p">]</span><span class="o">+</span><span class="n">me</span>
+<a name="ln-42"></a>  <span class="k">else</span>
+<a name="ln-43"></a><span class="k">     </span><span class="n">b</span><span class="p">(:)[</span><span class="n">left</span><span class="p">]</span> <span class="o">=</span> <span class="n">b</span><span class="p">(:)[</span><span class="n">left</span><span class="p">]</span><span class="o">+</span><span class="n">me</span>
+<a name="ln-44"></a>  <span class="k">end if</span>
+<a name="ln-45"></a>
+<a name="ln-46"></a><span class="k">  if</span><span class="p">(</span><span class="n">me</span><span class="o">==</span><span class="mi">1</span><span class="p">)</span> <span class="k">then</span>
+<a name="ln-47"></a><span class="k">     write</span><span class="p">(</span><span class="o">*</span><span class="p">,</span><span class="o">*</span><span class="p">)</span> <span class="n">me</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span>
+<a name="ln-48"></a>  <span class="k">else</span>
+<a name="ln-49"></a><span class="k">     sync images</span><span class="p">(</span><span class="n">me</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<a name="ln-50"></a>     <span class="k">write</span><span class="p">(</span><span class="o">*</span><span class="p">,</span><span class="o">*</span><span class="p">)</span> <span class="n">me</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span>
+<a name="ln-51"></a>  <span class="k">end if</span>
+<a name="ln-52"></a>
+<a name="ln-53"></a><span class="k">  if</span><span class="p">(</span><span class="n">me</span> <span class="o">&lt;</span> <span class="n">np</span><span class="p">)</span> <span class="k">sync images</span><span class="p">(</span><span class="n">me</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+<a name="ln-54"></a>
+<a name="ln-55"></a>  <span class="k">if</span> <span class="p">(</span><span class="nb">mod</span><span class="p">(</span><span class="n">me</span><span class="p">,</span><span class="mi">2</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="mi">0</span><span class="p">)</span> <span class="k">then</span>
+<a name="ln-56"></a><span class="k">    if</span> <span class="p">(</span> <span class="nb">any</span><span class="p">(</span><span class="n">a</span><span class="p">(:)[</span><span class="n">right</span><span class="p">]</span><span class="o">/=</span><span class="n">a_initial</span><span class="o">+</span><span class="n">me</span><span class="p">))</span> <span class="n">error</span> <span class="k">stop</span> <span class="s2">&quot;Test failed.&quot;</span>
+<a name="ln-57"></a>  <span class="k">else</span>
+<a name="ln-58"></a><span class="k">    if</span> <span class="p">(</span> <span class="nb">any</span><span class="p">(</span><span class="n">b</span><span class="p">(:)[</span><span class="n">left</span><span class="p">]</span><span class="o">/=</span><span class="n">b_initial</span><span class="o">+</span><span class="n">me</span><span class="p">))</span> <span class="n">error</span> <span class="k">stop</span> <span class="s2">&quot;Test failed.&quot;</span>
+<a name="ln-59"></a>  <span class="k">end if</span>
+<a name="ln-60"></a>
+<a name="ln-61"></a><span class="k">  if</span> <span class="p">(</span><span class="n">me</span><span class="o">==</span><span class="mi">1</span><span class="p">)</span> <span class="k">print</span> <span class="o">*</span><span class="p">,</span><span class="s2">&quot;Test passed.&quot;</span>
+<a name="ln-62"></a>
+<a name="ln-63"></a><span class="k">end program </span><span class="n">test1caf</span>
+</pre></div>
+
+    </section>
+    </div>
+  </div>
+
+    <hr>
+    <footer>
+      <div class="row">
+        <div class="col-md-4">&copy; 2016 <a rel="license" href="http://www.freebsd.org/copyright/freebsd-doc-license.html">FreeBSD Documentation License</a></div>
+        <div class="col-md-4"><span class="text-center"> OpenCoarrays was developed by Sourcery Institute</span></div>
+        <div class="col-md-4">
+          <span class="pull-right">
+            Documentation generated by 
+            <a href="https://github.com/cmacmackin/ford">FORD</a>
+            
+          </span>
+        </div>
+      </div>
+      <br>
+    </footer>
+    </div> <!-- /container -->
+
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js'],
+        'HTML-CSS': { 
+           styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: '#000000 ! important'} }
+        }
+      });
+    </script>
+    <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  </body>
+</html>

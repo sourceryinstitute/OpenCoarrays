@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+	 
+	 <meta name="description" content="OpenCoarrays is a Coarray Fortran (CAF) implementation supporting Fortran 2008 and 2015 features">
+    
+    <meta name="author" content="Chris MacMackin" >
+    <link rel="icon" href="../favicon.png">
+
+    <title>co_product_c_double &ndash; OpenCoarrays</title>
+
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/pygments.css" rel="stylesheet">
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../css/local.css" rel="stylesheet">
+    
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../js/jquery-2.1.3.min.js"></script>
+    <script src="../js/svg-pan-zoom.min.js"></script>
+
+    
+    <script src="../tipuesearch/tipuesearch_content.js"></script>
+    <link  href="../tipuesearch/tipuesearch.css" rel="stylesheet">
+    <script src="../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../tipuesearch/tipuesearch.js"></script>
+    
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../index.html">OpenCoarrays <small>master</small></a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+				
+                
+            <li><a href="../lists/files.html">Source Files</a></li>
+				
+				
+            <li><a href="../lists/modules.html">Modules</a></li>
+				
+				
+            <li><a href="../lists/procedures.html">Procedures</a></li>
+				
+				
+            <li><a href="../lists/absint.html">Abstract Interfaces</a></li>
+								
+            <li><a href="../lists/types.html">Derived Types</a></li>
+				
+				
+            <li><a href="../lists/programs.html">Programs</a></li>
+				
+          </ul>
+        
+        <form action="../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+    
+  
+  <div class="row">
+    <h1>co_product_c_double
+    <small>Subroutine</small>
+    
+    </h1>
+	 
+<div class="row">
+<div class="col-lg-12">
+<div class="well well-sm">
+  <ul class="list-inline" style="margin-bottom:0px;display:inline">
+     
+     
+     
+     
+    
+    
+    <li><i class="fa fa-code"></i><a href="../src/co_reduce.F90"> Source File</a></li>
+     
+  </ul>
+  <ol class="breadcrumb in-well text-right">
+  
+     <li><a href='../sourcefile/co_reduce.f90.html'>co_reduce.F90</a></li>
+  
+     <li><a href='../module/co_intrinsics_module.html'>co_intrinsics_module</a></li>
+  
+     <li class="active">co_product_c_double</li>
+  </ol>
+</div>
+</div>
+</div>
+    
+  </div>
+  
+  <div class="row">
+    <div class="col-lg-3">
+    
+<div id="sidebar">
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="panel panel-primary">
+    <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#funcs">Functions</a></h3></div>
+    <div id="funcs" class="panel-collapse collapse">
+        <div class="list-group">
+          
+          <a class="list-group-item" href="../proc/co_product_c_double.html#proc-product_%7E5">product_</a>
+          
+        </div>
+    </div>
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <hr>
+  
+  <div class="panel panel-default">
+    <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#allprocs">All Procedures</a></h3></div>
+    <div id="allprocs" class="panel-collapse collapse">
+        <div class="list-group">
+          
+          <a class="list-group-item" href="../proc/add_field.html">add_field</a>
+          
+          <a class="list-group-item" href="../proc/add_local_field.html">add_local_field</a>
+          
+          <a class="list-group-item" href="../proc/add_local_field%7E2.html">add_local_field</a>
+          
+          <a class="list-group-item" href="../interface/assert.html">assert</a>
+          
+          <a class="list-group-item" href="../interface/assert%7E2.html">assert</a>
+          
+          <a class="list-group-item" href="../proc/assert.html">assert</a>
+          
+          <a class="list-group-item" href="../proc/assert_identical.html">assert_identical</a>
+          
+          <a class="list-group-item" href="../proc/assert_identical%7E2.html">assert_identical</a>
+          
+          <a class="list-group-item" href="../proc/assign_array.html">assign_array</a>
+          
+          <a class="list-group-item" href="../proc/assign_array%7E2.html">assign_array</a>
+          
+          <a class="list-group-item" href="../proc/assign_field.html">assign_field</a>
+          
+          <a class="list-group-item" href="../proc/assign_local_field.html">assign_local_field</a>
+          
+          <a class="list-group-item" href="../proc/assign_local_field%7E2.html">assign_local_field</a>
+          
+          <a class="list-group-item" href="../proc/barrier.html">barrier</a>
+          
+          <a class="list-group-item" href="../proc/broadcast_int.html">broadcast_int</a>
+          
+          <a class="list-group-item" href="../proc/calibrate_loop.html">calibrate_loop</a>
+          
+          <a class="list-group-item" href="../interface/co_all.html">co_all</a>
+          
+          <a class="list-group-item" href="../proc/co_all_logical.html">co_all_logical</a>
+          
+          <a class="list-group-item" href="../interface/co_broadcast.html">co_broadcast</a>
+          
+          <a class="list-group-item" href="../proc/co_broadcast_c_char.html">co_broadcast_c_char</a>
+          
+          <a class="list-group-item" href="../proc/co_broadcast_c_double.html">co_broadcast_c_double</a>
+          
+          <a class="list-group-item" href="../proc/co_broadcast_c_int.html">co_broadcast_c_int</a>
+          
+          <a class="list-group-item" href="../interface/co_max.html">co_max</a>
+          
+          <a class="list-group-item" href="../proc/co_max_c_double.html">co_max_c_double</a>
+          
+          <a class="list-group-item" href="../proc/co_max_c_int.html">co_max_c_int</a>
+          
+          <a class="list-group-item" href="../interface/co_min.html">co_min</a>
+          
+          <a class="list-group-item" href="../proc/co_min_c_double.html">co_min_c_double</a>
+          
+          <a class="list-group-item" href="../proc/co_min_c_int.html">co_min_c_int</a>
+          
+          <a class="list-group-item" href="../interface/co_product.html">co_product</a>
+          
+          <a class="list-group-item" href="../proc/co_product_c_double.html">co_product_c_double</a>
+          
+          <a class="list-group-item" href="../proc/co_product_c_int.html">co_product_c_int</a>
+          
+          <a class="list-group-item" href="../interface/co_reduce.html">co_reduce</a>
+          
+          <a class="list-group-item" href="../proc/co_reduce_c_double.html">co_reduce_c_double</a>
+          
+          <a class="list-group-item" href="../proc/co_reduce_c_int.html">co_reduce_c_int</a>
+          
+          <a class="list-group-item" href="../proc/co_reduce_logical.html">co_reduce_logical</a>
+          
+          <a class="list-group-item" href="../interface/co_sum.html">co_sum</a>
+          
+          <a class="list-group-item" href="../proc/co_sum_c_double.html">co_sum_c_double</a>
+          
+          <a class="list-group-item" href="../proc/co_sum_c_int.html">co_sum_c_int</a>
+          
+          <a class="list-group-item" href="../proc/construct.html">construct</a>
+          
+          <a class="list-group-item" href="../proc/copy3.html">copy3</a>
+          
+          <a class="list-group-item" href="../proc/copy3%7E2.html">copy3</a>
+          
+          <a class="list-group-item" href="../proc/copy3%7E3.html">copy3</a>
+          
+          <a class="list-group-item" href="../proc/copy3%7E4.html">copy3</a>
+          
+          <a class="list-group-item" href="../proc/copy3%7E5.html">copy3</a>
+          
+          <a class="list-group-item" href="../proc/d2f_dx2.html">d2f_dx2</a>
+          
+          <a class="list-group-item" href="../proc/define_error.html">define_error</a>
+          
+          <a class="list-group-item" href="../proc/define_error%7E2.html">define_error</a>
+          
+          <a class="list-group-item" href="../proc/df_dx.html">df_dx</a>
+          
+          <a class="list-group-item" href="../proc/diffusion_stability_limit.html">diffusion_stability_limit</a>
+          
+          <a class="list-group-item" href="../interface/elapsed_time.html">elapsed_time</a>
+          
+          <a class="list-group-item" href="../proc/error_code.html">error_code</a>
+          
+          <a class="list-group-item" href="../proc/error_code%7E2.html">error_code</a>
+          
+          <a class="list-group-item" href="../interface/error_message.html">error_message</a>
+          
+          <a class="list-group-item" href="../proc/error_message.html">error_message</a>
+          
+          <a class="list-group-item" href="../interface/error_message%7E2.html">error_message</a>
+          
+          <a class="list-group-item" href="../proc/error_message%7E2.html">error_message</a>
+          
+          <a class="list-group-item" href="../proc/error_stop.html">error_stop</a>
+          
+          <a class="list-group-item" href="../proc/from_lower_half.html">from_lower_half</a>
+          
+          <a class="list-group-item" href="../proc/get_c_int.html">get_c_int</a>
+          
+          <a class="list-group-item" href="../proc/get_keyword_values.html">get_keyword_values</a>
+          
+          <a class="list-group-item" href="../proc/get_time.html">get_time</a>
+          
+          <a class="list-group-item" href="../proc/get_usecs.html">get_usecs</a>
+          
+          <a class="list-group-item" href="../interface/gfc_descriptor.html">gfc_descriptor</a>
+          
+          <a class="list-group-item" href="../proc/gfc_descriptor_c_double.html">gfc_descriptor_c_double</a>
+          
+          <a class="list-group-item" href="../proc/gfc_descriptor_c_int.html">gfc_descriptor_c_int</a>
+          
+          <a class="list-group-item" href="../proc/gfc_descriptor_logical.html">gfc_descriptor_logical</a>
+          
+          <a class="list-group-item" href="../proc/global_times.html">global_times</a>
+          
+          <a class="list-group-item" href="../proc/global_times%7E2.html">global_times</a>
+          
+          <a class="list-group-item" href="../proc/global_times%7E3.html">global_times</a>
+          
+          <a class="list-group-item" href="../proc/global_times%7E4.html">global_times</a>
+          
+          <a class="list-group-item" href="../proc/grid_spacing.html">grid_spacing</a>
+          
+          <a class="list-group-item" href="../proc/has_a_zero_at.html">has_a_zero_at</a>
+          
+          <a class="list-group-item" href="../proc/init_random_seed.html">init_random_seed</a>
+          
+          <a class="list-group-item" href="../proc/init_random_seed%7E2.html">init_random_seed</a>
+          
+          <a class="list-group-item" href="../proc/init_random_seed%7E3.html">init_random_seed</a>
+          
+          <a class="list-group-item" href="../proc/init_random_seed%7E4.html">init_random_seed</a>
+          
+          <a class="list-group-item" href="../proc/laplacian.html">laplacian</a>
+          
+          <a class="list-group-item" href="../proc/local_state.html">local_state</a>
+          
+          <a class="list-group-item" href="../proc/loop.html">loop</a>
+          
+          <a class="list-group-item" href="../proc/mark_as_defined.html">mark_as_defined</a>
+          
+          <a class="list-group-item" href="../proc/mark_as_defined%7E2.html">mark_as_defined</a>
+          
+          <a class="list-group-item" href="../proc/mark_as_defined%7E3.html">mark_as_defined</a>
+          
+          <a class="list-group-item" href="../proc/mark_as_defined%7E4.html">mark_as_defined</a>
+          
+          <a class="list-group-item" href="../proc/max_velmax.html">max_velmax</a>
+          
+          <a class="list-group-item" href="../proc/max_velmax%7E2.html">max_velmax</a>
+          
+          <a class="list-group-item" href="../proc/max_velmax%7E3.html">max_velmax</a>
+          
+          <a class="list-group-item" href="../proc/mpi_begin.html">mpi_begin</a>
+          
+          <a class="list-group-item" href="../proc/mpi_copy3.html">mpi_copy3</a>
+          
+          <a class="list-group-item" href="../proc/mpi_end.html">mpi_end</a>
+          
+          <a class="list-group-item" href="../proc/multiply.html">multiply</a>
+          
+          <a class="list-group-item" href="../proc/multiply%7E2.html">multiply</a>
+          
+          <a class="list-group-item" href="../proc/multiply%7E3.html">multiply</a>
+          
+          <a class="list-group-item" href="../proc/multiply_field.html">multiply_field</a>
+          
+          <a class="list-group-item" href="../proc/multiply_real.html">multiply_real</a>
+          
+          <a class="list-group-item" href="../proc/my_dtype.html">my_dtype</a>
+          
+          <a class="list-group-item" href="../proc/new_message.html">new_message</a>
+          
+          <a class="list-group-item" href="../proc/new_message%7E2.html">new_message</a>
+          
+          <a class="list-group-item" href="../proc/num_images.html">num_images</a>
+          
+          <a class="list-group-item" href="../proc/one.html">one</a>
+          
+          <a class="list-group-item" href="../proc/one%7E2.html">one</a>
+          
+          <a class="list-group-item" href="../proc/one%7E3.html">one</a>
+          
+          <a class="list-group-item" href="../proc/oned_message.html">oned_message</a>
+          
+          <a class="list-group-item" href="../proc/only_allocate.html">only_allocate</a>
+          
+          <a class="list-group-item" href="../interface/opencoarrays_co_broadcast.html">opencoarrays_co_broadcast</a>
+          
+          <a class="list-group-item" href="../interface/opencoarrays_co_max.html">opencoarrays_co_max</a>
+          
+          <a class="list-group-item" href="../interface/opencoarrays_co_min.html">opencoarrays_co_min</a>
+          
+          <a class="list-group-item" href="../interface/opencoarrays_co_reduce.html">opencoarrays_co_reduce</a>
+          
+          <a class="list-group-item" href="../interface/opencoarrays_co_sum.html">opencoarrays_co_sum</a>
+          
+          <a class="list-group-item" href="../interface/opencoarrays_error_stop.html">opencoarrays_error_stop</a>
+          
+          <a class="list-group-item" href="../interface/opencoarrays_get.html">opencoarrays_get</a>
+          
+          <a class="list-group-item" href="../interface/opencoarrays_num_images.html">opencoarrays_num_images</a>
+          
+          <a class="list-group-item" href="../interface/opencoarrays_sync_all.html">opencoarrays_sync_all</a>
+          
+          <a class="list-group-item" href="../interface/opencoarrays_this_image.html">opencoarrays_this_image</a>
+          
+          <a class="list-group-item" href="../proc/output.html">output</a>
+          
+          <a class="list-group-item" href="../proc/output%7E2.html">output</a>
+          
+          <a class="list-group-item" href="../proc/output%7E3.html">output</a>
+          
+          <a class="list-group-item" href="../proc/output%7E4.html">output</a>
+          
+          <a class="list-group-item" href="../proc/print_banner.html">print_banner</a>
+          
+          <a class="list-group-item" href="../proc/rk2_dt.html">rk2_dt</a>
+          
+          <a class="list-group-item" href="../proc/scalar_assert.html">scalar_assert</a>
+          
+          <a class="list-group-item" href="../proc/scalar_assert%7E2.html">scalar_assert</a>
+          
+          <a class="list-group-item" href="../proc/sending_half.html">sending_half</a>
+          
+          <a class="list-group-item" href="../proc/set.html">set</a>
+          
+          <a class="list-group-item" href="../proc/set%7E2.html">set</a>
+          
+          <a class="list-group-item" href="../proc/set_time.html">set_time</a>
+          
+          <a class="list-group-item" href="../proc/sinusoid.html">sinusoid</a>
+          
+          <a class="list-group-item" href="../proc/solve_navier_stokes.html">solve_navier_stokes</a>
+          
+          <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html">solve_navier_stokes</a>
+          
+          <a class="list-group-item" href="../proc/solve_navier_stokes%7E3.html">solve_navier_stokes</a>
+          
+          <a class="list-group-item" href="../proc/solve_navier_stokes%7E4.html">solve_navier_stokes</a>
+          
+          <a class="list-group-item" href="../interface/solve_navier_stokes.html">solve_navier_stokes</a>
+          
+          <a class="list-group-item" href="../interface/solve_navier_stokes%7E2.html">solve_navier_stokes</a>
+          
+          <a class="list-group-item" href="../interface/solve_navier_stokes%7E3.html">solve_navier_stokes</a>
+          
+          <a class="list-group-item" href="../interface/solve_navier_stokes%7E4.html">solve_navier_stokes</a>
+          
+          <a class="list-group-item" href="../interface/start_timer.html">start_timer</a>
+          
+          <a class="list-group-item" href="../proc/state.html">state</a>
+          
+          <a class="list-group-item" href="../proc/state%7E2.html">state</a>
+          
+          <a class="list-group-item" href="../proc/state%7E3.html">state</a>
+          
+          <a class="list-group-item" href="../proc/state%7E4.html">state</a>
+          
+          <a class="list-group-item" href="../interface/stop_timer.html">stop_timer</a>
+          
+          <a class="list-group-item" href="../proc/subtract.html">subtract</a>
+          
+          <a class="list-group-item" href="../proc/subtract%7E2.html">subtract</a>
+          
+          <a class="list-group-item" href="../proc/sync_all.html">sync_all</a>
+          
+          <a class="list-group-item" href="../proc/synchronize.html">synchronize</a>
+          
+          <a class="list-group-item" href="../proc/synchronize%7E2.html">synchronize</a>
+          
+          <a class="list-group-item" href="../proc/ten_sin.html">ten_sin</a>
+          
+          <a class="list-group-item" href="../proc/test.html">test</a>
+          
+          <a class="list-group-item" href="../proc/test_alloc.html">test_alloc</a>
+          
+          <a class="list-group-item" href="../proc/this_image.html">this_image</a>
+          
+          <a class="list-group-item" href="../proc/this_image_contains.html">this_image_contains</a>
+          
+          <a class="list-group-item" href="../proc/three.html">three</a>
+          
+          <a class="list-group-item" href="../proc/three%7E2.html">three</a>
+          
+          <a class="list-group-item" href="../proc/three%7E3.html">three</a>
+          
+          <a class="list-group-item" href="../proc/to_upper_half.html">to_upper_half</a>
+          
+          <a class="list-group-item" href="../proc/transpose_x_y.html">transpose_X_Y</a>
+          
+          <a class="list-group-item" href="../proc/transpose_x_y%7E2.html">transpose_X_Y</a>
+          
+          <a class="list-group-item" href="../proc/transpose_y_x.html">transpose_Y_X</a>
+          
+          <a class="list-group-item" href="../proc/transpose_y_x%7E2.html">transpose_Y_X</a>
+          
+          <a class="list-group-item" href="../proc/two.html">two</a>
+          
+          <a class="list-group-item" href="../proc/two%7E2.html">two</a>
+          
+          <a class="list-group-item" href="../proc/two%7E3.html">two</a>
+          
+          <a class="list-group-item" href="../proc/u_initial.html">u_initial</a>
+          
+          <a class="list-group-item" href="../proc/usage.html">usage</a>
+          
+          <a class="list-group-item" href="../proc/user_defined.html">user_defined</a>
+          
+          <a class="list-group-item" href="../proc/user_defined%7E2.html">user_defined</a>
+          
+          <a class="list-group-item" href="../proc/user_defined%7E3.html">user_defined</a>
+          
+          <a class="list-group-item" href="../proc/user_defined%7E4.html">user_defined</a>
+          
+          <a class="list-group-item" href="../proc/vector_assert.html">vector_assert</a>
+          
+          <a class="list-group-item" href="../proc/vector_assert%7E2.html">vector_assert</a>
+          
+          <a class="list-group-item" href="../proc/warmup_loop.html">warmup_loop</a>
+          
+          <a class="list-group-item" href="../proc/x.html">x</a>
+          
+          <a class="list-group-item" href="../proc/xx.html">xx</a>
+          
+          <a class="list-group-item" href="../proc/zero.html">zero</a>
+          
+        </div>
+    </div>
+  </div>
+  
+</div>
+
+    </div>
+    
+    <div class="col-lg-9" id='text'>
+    <h2>
+private subroutine co_product_c_double(a)
+    
+    
+    
+</h2>
+    
+  
+    <ul class="list-inline">
+      <li><h4>Uses:</h4></li>
+      
+      <li><a href="https://software.intel.com/en-us/node/511038">iso_c_binding</a></li>
+      
+    </ul>
+  
+
+
+
+    <h3>Arguments</h3>
+    
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-a%7E22"></span>real(kind=c_double),</td>
+  <td>intent(inout)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>a</strong></td><td></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+    
+    
+    
+    
+     
+     <h3>Called By</h3>
+     
+                <div class="depgraph"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.38.0 (20140413.2041)
+ -->
+<!-- Title: proc~~co_product_c_double~~CalledByGraph Pages: 1 -->
+<svg id="procco_product_c_doubleCalledByGraph" width="311pt" height="32pt"
+ viewBox="0.00 0.00 311.00 32.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="proc~~co_product_c_double~~CalledByGraph" class="graph" transform="scale(1 1) rotate(0) translate(4 28)">
+<title>proc~~co_product_c_double~~CalledByGraph</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-28 307,-28 307,4 -4,4"/>
+<!-- proc~co_product_c_double -->
+<g id="proc~~co_product_c_double~~CalledByGraph_node1" class="node"><title>proc~co_product_c_double</title>
+<polygon fill="none" stroke="black" points="303,-24 190,-24 190,-0 303,-0 303,-24"/>
+<text text-anchor="middle" x="246.5" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50">co_product_c_double</text>
+</g>
+<!-- interface~co_product -->
+<g id="proc~~co_product_c_double~~CalledByGraph_node2" class="node"><title>interface~co_product</title>
+<g id="a_proc~~co_product_c_double~~CalledByGraph_node2"><a xlink:href="../interface/co_product.html" xlink:title="co_product">
+<polygon fill="#a7506f" stroke="#a7506f" points="154,-24 90,-24 90,-0 154,-0 154,-24"/>
+<text text-anchor="middle" x="122" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">co_product</text>
+</a>
+</g>
+</g>
+<!-- interface~co_product&#45;&gt;proc~co_product_c_double -->
+<g id="proc~~co_product_c_double~~CalledByGraph_edge2" class="edge"><title>interface~co_product&#45;&gt;proc~co_product_c_double</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M154.229,-12C161.973,-12 170.568,-12 179.298,-12"/>
+<polygon fill="#000000" stroke="#000000" points="179.566,-15.5001 189.566,-12 179.566,-8.5001 179.566,-15.5001"/>
+</g>
+<!-- program~main~7 -->
+<g id="proc~~co_product_c_double~~CalledByGraph_node3" class="node"><title>program~main~7</title>
+<g id="a_proc~~co_product_c_double~~CalledByGraph_node3"><a xlink:href="../program/main%7E7.html" xlink:title="main">
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="54,-24 0,-24 0,-0 54,-0 54,-24"/>
+<text text-anchor="middle" x="27" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">main</text>
+</a>
+</g>
+</g>
+<!-- program~main~7&#45;&gt;interface~co_product -->
+<g id="proc~~co_product_c_double~~CalledByGraph_edge1" class="edge"><title>program~main~7&#45;&gt;interface~co_product</title>
+<path fill="none" stroke="#000000" d="M54.4013,-12C62.266,-12 71.0805,-12 79.658,-12"/>
+<polygon fill="#000000" stroke="#000000" points="79.9233,-15.5001 89.9233,-12 79.9232,-8.5001 79.9233,-15.5001"/>
+</g>
+</g>
+</svg>
+</div>
+                <div><a type="button" class="graph-help" data-toggle="modal" href="#graph-help-text">Help</a></div>
+                <div class="modal fade" id="graph-help-text" tabindex="-1" role="dialog">
+                  <div class="modal-dialog modal-lg" role="document">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="-graph-help-label">Graph Key</h4>
+                      </div>
+                      <div class="modal-body">
+                        
+Nodes of different colours represent the following:
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.38.0 (20140413.2041)
+ -->
+<!-- Title: Graph Key Pages: 1 -->
+<svg width="641pt" height="26pt"
+ viewBox="0.00 0.00 641.00 26.23" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(0.819693 0.819693) rotate(0) translate(4 28)">
+<title>Graph Key</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-28 778,-28 778,4 -4,4"/>
+<!-- Module -->
+<g id="node1" class="node"><title>Module</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="54,-24 0,-24 0,-0 54,-0 54,-24"/>
+<text text-anchor="middle" x="27" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Module</text>
+</g>
+<!-- Submodule -->
+<g id="node2" class="node"><title>Submodule</title>
+<polygon fill="#5bc0de" stroke="#5bc0de" points="138,-24 72,-24 72,-0 138,-0 138,-24"/>
+<text text-anchor="middle" x="105" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Submodule</text>
+</g>
+<!-- Type -->
+<g id="node3" class="node"><title>Type</title>
+<polygon fill="#5cb85c" stroke="#5cb85c" points="210,-24 156,-24 156,-0 210,-0 210,-24"/>
+<text text-anchor="middle" x="183" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Type</text>
+</g>
+<!-- Subroutine -->
+<g id="node4" class="node"><title>Subroutine</title>
+<polygon fill="#d9534f" stroke="#d9534f" points="291.5,-24 228.5,-24 228.5,-0 291.5,-0 291.5,-24"/>
+<text text-anchor="middle" x="260" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Subroutine</text>
+</g>
+<!-- Function -->
+<g id="node5" class="node"><title>Function</title>
+<polygon fill="#d94e8f" stroke="#d94e8f" points="364,-24 310,-24 310,-0 364,-0 364,-24"/>
+<text text-anchor="middle" x="337" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Function</text>
+</g>
+<!-- Interface -->
+<g id="node6" class="node"><title>Interface</title>
+<polygon fill="#a7506f" stroke="#a7506f" points="436,-24 382,-24 382,-0 436,-0 436,-24"/>
+<text text-anchor="middle" x="409" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Interface</text>
+</g>
+<!-- Unknown Procedure Type -->
+<g id="node7" class="node"><title>Unknown Procedure Type</title>
+<polygon fill="#777777" stroke="#777777" points="588,-24 454,-24 454,-0 588,-0 588,-24"/>
+<text text-anchor="middle" x="521" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Unknown Procedure Type</text>
+</g>
+<!-- Program -->
+<g id="node8" class="node"><title>Program</title>
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="660,-24 606,-24 606,-0 660,-0 660,-24"/>
+<text text-anchor="middle" x="633" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Program</text>
+</g>
+<!-- This Page&#39;s Entity -->
+<g id="node9" class="node"><title>This Page&#39;s Entity</title>
+<polygon fill="none" stroke="black" points="774,-24 678,-24 678,-0 774,-0 774,-24"/>
+<text text-anchor="middle" x="726" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50">This Page&#39;s Entity</text>
+</g>
+</g>
+</svg>
+
+Where possible, edges connecting nodes are given different colours to make them
+easier to distinguish in large graphs.
+<h5>Module Graph</h5>
+<p>Solid arrows point from a parent (sub)module to the submodule which is
+descended from it. Dashed arrows point from a module being used to the
+module using it.</p>
+<h5>Type Graph</h5>
+<p>Solid arrows point from one derived type to another which extends
+(inherits from) it. Dashed arrows point from a derived type to another
+type containing it as a components, with a label listing the name(s) of
+said component(s).</p>
+<h5>Call Graph</h5>
+<p>Solid arrows point from a procedure to one which it calls. Dashed 
+arrows point from an interface to procedures which implement that interface.
+This could include the module procedures in a generic interface or the
+implementation in a submodule of an interface in a parent module.</p>
+
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+     
+    <br>
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+     
+    <section>
+    <h2>Functions</h2>
+    
+    
+  <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-product_%7E5"></span><h3>
+pure function product_(lhs, rhs) result(lhs_x_rhs)
+    
+    
+    
+</h3></div>
+  <div class="panel-body">
+       
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>real(kind=c_double),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>lhs</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>real(kind=c_double),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>rhs</strong></td><td></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+  
+  
+  
+  
+     <h4>Return Value <small>real(kind=c_double)
+  </small></h4>
+  
+    
+        
+
+  </div>
+  </div>
+
+    
+    </section>
+    <br>
+    
+
+
+    
+    
+    
+    
+    </div>
+  </div>
+
+    <hr>
+    <footer>
+      <div class="row">
+        <div class="col-md-4">&copy; 2016 <a rel="license" href="http://www.freebsd.org/copyright/freebsd-doc-license.html">FreeBSD Documentation License</a></div>
+        <div class="col-md-4"><span class="text-center"> OpenCoarrays was developed by Sourcery Institute</span></div>
+        <div class="col-md-4">
+          <span class="pull-right">
+            Documentation generated by 
+            <a href="https://github.com/cmacmackin/ford">FORD</a>
+            
+          </span>
+        </div>
+      </div>
+      <br>
+    </footer>
+    </div> <!-- /container -->
+
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js'],
+        'HTML-CSS': { 
+           styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: '#000000 ! important'} }
+        }
+      });
+    </script>
+    <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  </body>
+</html>

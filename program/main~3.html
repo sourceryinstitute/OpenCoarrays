@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+	 
+	 <meta name="description" content="OpenCoarrays is a Coarray Fortran (CAF) implementation supporting Fortran 2008 and 2015 features">
+    
+    <meta name="author" content="Chris MacMackin" >
+    <link rel="icon" href="../favicon.png">
+
+    <title>main &ndash; OpenCoarrays</title>
+
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/pygments.css" rel="stylesheet">
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../css/local.css" rel="stylesheet">
+    
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../js/jquery-2.1.3.min.js"></script>
+    <script src="../js/svg-pan-zoom.min.js"></script>
+
+    
+    <script src="../tipuesearch/tipuesearch_content.js"></script>
+    <link  href="../tipuesearch/tipuesearch.css" rel="stylesheet">
+    <script src="../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../tipuesearch/tipuesearch.js"></script>
+    
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../index.html">OpenCoarrays <small>master</small></a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+				
+                
+            <li><a href="../lists/files.html">Source Files</a></li>
+				
+				
+            <li><a href="../lists/modules.html">Modules</a></li>
+				
+				
+            <li><a href="../lists/procedures.html">Procedures</a></li>
+				
+				
+            <li><a href="../lists/absint.html">Abstract Interfaces</a></li>
+								
+            <li><a href="../lists/types.html">Derived Types</a></li>
+				
+				
+            <li><a href="../lists/programs.html">Programs</a></li>
+				
+          </ul>
+        
+        <form action="../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+    
+  
+  <div class="row">
+    <h1>main 
+    <small>Program</small>
+    
+    </h1>
+	 
+<div class="row">
+<div class="col-lg-12">
+<div class="well well-sm">
+  <ul class="list-inline" style="margin-bottom:0px;display:inline">
+     
+     
+     
+     
+    
+    
+    <li><i class="fa fa-code"></i><a href="../src/main.F90"> Source File</a></li>
+     
+  </ul>
+  <ol class="breadcrumb in-well text-right">
+  
+     <li><a href='../sourcefile/main.f90%7E2.html'>main.F90</a></li>
+  
+     <li class="active">main</li>
+  </ol>
+</div>
+</div>
+</div>
+    
+  </div>
+  
+  <div class="row">
+    <div class="col-lg-3">
+    
+<div id="sidebar">
+  
+  
+  
+  <div class="panel panel-primary">
+    <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#vars">Variables</a></h3></div>
+    <div id="vars" class="panel-collapse collapse">
+      <div class="list-group">
+        
+        <a class="list-group-item" href="../program/main%7E3.html#variable-base_output_unit">base_output_unit</a>
+        
+        <a class="list-group-item" href="../program/main%7E3.html#variable-dt%7E12">dt</a>
+        
+        <a class="list-group-item" href="../program/main%7E3.html#variable-expected_zero_location">expected_zero_location</a>
+        
+        <a class="list-group-item" href="../program/main%7E3.html#variable-half">half</a>
+        
+        <a class="list-group-item" href="../program/main%7E3.html#variable-half_uu%7E2">half_uu</a>
+        
+        <a class="list-group-item" href="../program/main%7E3.html#variable-initial%7E2">initial</a>
+        
+        <a class="list-group-item" href="../program/main%7E3.html#variable-iomsg%7E9">iomsg</a>
+        
+        <a class="list-group-item" href="../program/main%7E3.html#variable-iostat%7E9">iostat</a>
+        
+        <a class="list-group-item" href="../program/main%7E3.html#variable-iotype%7E9">iotype</a>
+        
+        <a class="list-group-item" href="../program/main%7E3.html#variable-nu%7E3">nu</a>
+        
+        <a class="list-group-item" href="../program/main%7E3.html#variable-num_steps">num_steps</a>
+        
+        <a class="list-group-item" href="../program/main%7E3.html#variable-pi%7E6">pi</a>
+        
+        <a class="list-group-item" href="../program/main%7E3.html#variable-step%7E5">step</a>
+        
+        <a class="list-group-item" href="../program/main%7E3.html#variable-steps">steps</a>
+        
+        <a class="list-group-item" href="../program/main%7E3.html#variable-t%7E7">t</a>
+        
+        <a class="list-group-item" href="../program/main%7E3.html#variable-t_1">t_1</a>
+        
+        <a class="list-group-item" href="../program/main%7E3.html#variable-t_2">t_2</a>
+        
+        <a class="list-group-item" href="../program/main%7E3.html#variable-t_3">t_3</a>
+        
+        <a class="list-group-item" href="../program/main%7E3.html#variable-t_final">t_final</a>
+        
+        <a class="list-group-item" href="../program/main%7E3.html#variable-time_initial">time_initial</a>
+        
+        <a class="list-group-item" href="../program/main%7E3.html#variable-u%7E8">u</a>
+        
+        <a class="list-group-item" href="../program/main%7E3.html#variable-u_half%7E2">u_half</a>
+        
+        <a class="list-group-item" href="../program/main%7E3.html#variable-u_surface">u_surface</a>
+        
+        <a class="list-group-item" href="../program/main%7E3.html#variable-v_list%7E9">v_list</a>
+        
+      </div>
+    </div>
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <hr>
+  
+  <div class="panel panel-default">
+    <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#allprogs">All Programs</a></h3></div>
+    <div id="allprogs" class="panel-collapse collapse">
+        <div class="list-group">
+          
+          <a class="list-group-item" href="../program/alloc_as_barrier.html">alloc_as_barrier</a>
+          
+          <a class="list-group-item" href="../program/alloc_as_barrier%7E2.html">alloc_as_barrier</a>
+          
+          <a class="list-group-item" href="../program/atomic.html">atomic</a>
+          
+          <a class="list-group-item" href="../program/coarray_distributed_transpose.html">coarray_distributed_transpose</a>
+          
+          <a class="list-group-item" href="../program/cshear.html">cshear</a>
+          
+          <a class="list-group-item" href="../program/cshear%7E2.html">cshear</a>
+          
+          <a class="list-group-item" href="../program/cshear%7E3.html">cshear</a>
+          
+          <a class="list-group-item" href="../program/duplicate_syncimages.html">duplicate_syncimages</a>
+          
+          <a class="list-group-item" href="../program/get_offset_1d.html">get_offset_1d</a>
+          
+          <a class="list-group-item" href="../program/hello_multiverse.html">hello_multiverse</a>
+          
+          <a class="list-group-item" href="../program/initialize_mpi.html">initialize_mpi</a>
+          
+          <a class="list-group-item" href="../program/main.html">main</a>
+          
+          <a class="list-group-item" href="../program/main%7E2.html">main</a>
+          
+          <a class="list-group-item" href="../program/main%7E3.html">main</a>
+          
+          <a class="list-group-item" href="../program/main%7E4.html">main</a>
+          
+          <a class="list-group-item" href="../program/main%7E5.html">main</a>
+          
+          <a class="list-group-item" href="../program/main%7E6.html">main</a>
+          
+          <a class="list-group-item" href="../program/main%7E7.html">main</a>
+          
+          <a class="list-group-item" href="../program/main%7E8.html">main</a>
+          
+          <a class="list-group-item" href="../program/main%7E9.html">main</a>
+          
+          <a class="list-group-item" href="../program/main%7E10.html">main</a>
+          
+          <a class="list-group-item" href="../program/main%7E11.html">main</a>
+          
+          <a class="list-group-item" href="../program/mpi_distributed_transpose.html">mpi_distributed_transpose</a>
+          
+          <a class="list-group-item" href="../program/mshear.html">mshear</a>
+          
+          <a class="list-group-item" href="../program/psnap.html">psnap</a>
+          
+          <a class="list-group-item" href="../program/register.html">register</a>
+          
+          <a class="list-group-item" href="../program/register2.html">register2</a>
+          
+          <a class="list-group-item" href="../program/register3.html">register3</a>
+          
+          <a class="list-group-item" href="../program/sameloc.html">sameloc</a>
+          
+          <a class="list-group-item" href="../program/strided_get.html">strided_get</a>
+          
+          <a class="list-group-item" href="../program/sync_images_stat.html">sync_images_stat</a>
+          
+          <a class="list-group-item" href="../program/syncall.html">syncall</a>
+          
+          <a class="list-group-item" href="../program/syncimages.html">syncimages</a>
+          
+          <a class="list-group-item" href="../program/syncimages%7E2.html">syncimages</a>
+          
+          <a class="list-group-item" href="../program/syncimages2.html">syncimages2</a>
+          
+          <a class="list-group-item" href="../program/syncimages2%7E2.html">syncimages2</a>
+          
+          <a class="list-group-item" href="../program/test1caf.html">test1caf</a>
+          
+          <a class="list-group-item" href="../program/whole_array_get.html">whole_array_get</a>
+          
+        </div>
+    </div>
+  </div>
+  
+</div>
+
+    </div>
+    
+    <div class="col-lg-9" id='text'>
+    
+  
+    <ul class="list-inline">
+      <li><h4>Uses:</h4></li>
+      
+      <li><a href="https://gcc.gnu.org/onlinedocs/gfortran/ISO_005fFORTRAN_005fENV.html">iso_fortran_env</a></li>
+      
+      <li><a href='../module/kind_parameters.html'>kind_parameters</a></li>
+      
+      <li><a href='../module/periodic_2nd_order_module.html'>periodic_2nd_order_module</a></li>
+      
+      <li><a href='../module/initializer.html'>initializer</a></li>
+      
+      <li><a href='../module/input_file.html'>input_file</a></li>
+      
+      <li><a href='../module/shared.html'>shared</a></li>
+      
+      <li><a href='../module/mpi_share.html'>mpi_share</a></li>
+      
+    </ul>
+  
+
+    
+                <div class="depgraph"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.38.0 (20140413.2041)
+ -->
+<!-- Title: program~~main~3~~UsesGraph Pages: 1 -->
+<svg id="programmain3UsesGraph" width="641pt" height="273pt"
+ viewBox="0.00 0.00 641.00 273.01" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="program~~main~3~~UsesGraph" class="graph" transform="scale(0.861559 0.861559) rotate(0) translate(4 312.885)">
+<title>program~~main~3~~UsesGraph</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-312.885 740,-312.885 740,4 -4,4"/>
+<!-- program~main~3 -->
+<g id="program~~main~3~~UsesGraph_node1" class="node"><title>program~main~3</title>
+<polygon fill="none" stroke="black" points="736,-171.885 682,-171.885 682,-147.885 736,-147.885 736,-171.885"/>
+<text text-anchor="middle" x="709" y="-157.485" font-family="Helvetica,sans-Serif" font-size="10.50">main</text>
+</g>
+<!-- module~mpi_share -->
+<g id="program~~main~3~~UsesGraph_node2" class="node"><title>module~mpi_share</title>
+<g id="a_program~~main~3~~UsesGraph_node2"><a xlink:href="../module/mpi_share.html" xlink:title="mpi_share">
+<polygon fill="#337ab7" stroke="#337ab7" points="467,-112.885 405,-112.885 405,-88.8846 467,-88.8846 467,-112.885"/>
+<text text-anchor="middle" x="436" y="-98.4846" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mpi_share</text>
+</a>
+</g>
+</g>
+<!-- module~mpi_share&#45;&gt;program~main~3 -->
+<g id="program~~main~3~~UsesGraph_edge18" class="edge"><title>module~mpi_share&#45;&gt;program~main~3</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M446.803,-88.5475C468.18,-63.2478 521.275,-8.9881 573.5,-22.8846"/>
+</g>
+<!-- module~periodic_2nd_order_module -->
+<g id="program~~main~3~~UsesGraph_node3" class="node"><title>module~periodic_2nd_order_module</title>
+<g id="a_program~~main~3~~UsesGraph_node3"><a xlink:href="../module/periodic_2nd_order_module.html" xlink:title="periodic_2nd_order_module">
+<polygon fill="#337ab7" stroke="#337ab7" points="646,-151.885 503,-151.885 503,-127.885 646,-127.885 646,-151.885"/>
+<text text-anchor="middle" x="574.5" y="-137.485" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">periodic_2nd_order_module</text>
+</a>
+</g>
+</g>
+<!-- module~mpi_share&#45;&gt;module~periodic_2nd_order_module -->
+<g id="program~~main~3~~UsesGraph_edge12" class="edge"><title>module~mpi_share&#45;&gt;module~periodic_2nd_order_module</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M467.294,-109.54C483.272,-114.105 503.321,-119.833 521.682,-125.079"/>
+<polygon fill="#000000" stroke="#000000" points="520.808,-128.47 531.385,-127.852 522.731,-121.739 520.808,-128.47"/>
+</g>
+<!-- module~periodic_2nd_order_module&#45;&gt;program~main~3 -->
+<g id="program~~main~3~~UsesGraph_edge19" class="edge"><title>module~periodic_2nd_order_module&#45;&gt;program~main~3</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M646.017,-150.529C654.956,-151.878 663.79,-153.211 671.866,-154.43"/>
+<polygon fill="#000000" stroke="#000000" points="671.58,-157.927 681.99,-155.959 672.625,-151.005 671.58,-157.927"/>
+</g>
+<!-- module~kind_parameters -->
+<g id="program~~main~3~~UsesGraph_node4" class="node"><title>module~kind_parameters</title>
+<g id="a_program~~main~3~~UsesGraph_node4"><a xlink:href="../module/kind_parameters.html" xlink:title="kind_parameters">
+<polygon fill="#337ab7" stroke="#337ab7" points="238.5,-251.885 147.5,-251.885 147.5,-227.885 238.5,-227.885 238.5,-251.885"/>
+<text text-anchor="middle" x="193" y="-237.485" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">kind_parameters</text>
+</a>
+</g>
+</g>
+<!-- module~kind_parameters&#45;&gt;program~main~3 -->
+<g id="program~~main~3~~UsesGraph_edge20" class="edge"><title>module~kind_parameters&#45;&gt;program~main~3</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M335,-256.885C382.808,-259.286 387.136,-297.505 435,-296.885"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M437,-296.885C516.896,-295.849 496.962,-202.827 573.5,-179.885"/>
+</g>
+<!-- module~kind_parameters&#45;&gt;module~periodic_2nd_order_module -->
+<g id="program~~main~3~~UsesGraph_edge14" class="edge"><title>module~kind_parameters&#45;&gt;module~periodic_2nd_order_module</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M335,-256.885C367.541,-258.839 439.165,-209.854 467,-192.885 484.077,-182.474 485.433,-175.445 503,-165.885 509.929,-162.114 517.518,-158.674 525.068,-155.618"/>
+<polygon fill="#000000" stroke="#000000" points="526.488,-158.822 534.56,-151.958 523.97,-152.291 526.488,-158.822"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M238.618,-246.988C265.811,-250.906 301.313,-255.293 333,-256.885"/>
+</g>
+<!-- module~input_file -->
+<g id="program~~main~3~~UsesGraph_node5" class="node"><title>module~input_file</title>
+<g id="a_program~~main~3~~UsesGraph_node5"><a xlink:href="../module/input_file.html" xlink:title="input_file">
+<polygon fill="#337ab7" stroke="#337ab7" points="463.5,-268.885 408.5,-268.885 408.5,-244.885 463.5,-244.885 463.5,-268.885"/>
+<text text-anchor="middle" x="436" y="-254.485" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">input_file</text>
+</a>
+</g>
+</g>
+<!-- module~kind_parameters&#45;&gt;module~input_file -->
+<g id="program~~main~3~~UsesGraph_edge15" class="edge"><title>module~kind_parameters&#45;&gt;module~input_file</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M335,-256.885C355.91,-258.141 379.323,-258.213 398.235,-257.938"/>
+<polygon fill="#000000" stroke="#000000" points="398.3,-261.437 408.234,-257.755 398.172,-254.438 398.3,-261.437"/>
+</g>
+<!-- module~initializer -->
+<g id="program~~main~3~~UsesGraph_node7" class="node"><title>module~initializer</title>
+<g id="a_program~~main~3~~UsesGraph_node7"><a xlink:href="../module/initializer.html" xlink:title="initializer">
+<polygon fill="#337ab7" stroke="#337ab7" points="601.5,-308.885 547.5,-308.885 547.5,-284.885 601.5,-284.885 601.5,-308.885"/>
+<text text-anchor="middle" x="574.5" y="-294.485" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">initializer</text>
+</a>
+</g>
+</g>
+<!-- module~kind_parameters&#45;&gt;module~initializer -->
+<g id="program~~main~3~~UsesGraph_edge17" class="edge"><title>module~kind_parameters&#45;&gt;module~initializer</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M437,-296.885C470.889,-296.445 509.514,-296.497 537.008,-296.628"/>
+<polygon fill="#000000" stroke="#000000" points="537.312,-300.129 547.331,-296.683 537.35,-293.13 537.312,-300.129"/>
+</g>
+<!-- module~mpi_module -->
+<g id="program~~main~3~~UsesGraph_node9" class="node"><title>module~mpi_module</title>
+<g id="a_program~~main~3~~UsesGraph_node9"><a xlink:href="../module/mpi_module.html" xlink:title="mpi_module">
+<polygon fill="#337ab7" stroke="#337ab7" points="369,-112.885 299,-112.885 299,-88.8846 369,-88.8846 369,-112.885"/>
+<text text-anchor="middle" x="334" y="-98.4846" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mpi_module</text>
+</a>
+</g>
+</g>
+<!-- module~kind_parameters&#45;&gt;module~mpi_module -->
+<g id="program~~main~3~~UsesGraph_edge5" class="edge"><title>module~kind_parameters&#45;&gt;module~mpi_module</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M222.77,-227.755C235.95,-221.31 251.222,-212.512 263,-201.885 288.802,-178.604 310.11,-144.057 322.196,-122.008"/>
+<polygon fill="#000000" stroke="#000000" points="325.321,-123.587 326.941,-113.117 319.145,-120.291 325.321,-123.587"/>
+</g>
+<!-- module~input_file&#45;&gt;program~main~3 -->
+<g id="program~~main~3~~UsesGraph_edge21" class="edge"><title>module~input_file&#45;&gt;program~main~3</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M452.732,-244.867C477.086,-227.023 526.066,-194.103 573.5,-179.885"/>
+</g>
+<!-- module~input_file&#45;&gt;module~periodic_2nd_order_module -->
+<g id="program~~main~3~~UsesGraph_edge9" class="edge"><title>module~input_file&#45;&gt;module~periodic_2nd_order_module</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M452.934,-244.873C457.791,-240.759 462.92,-235.917 467,-230.885 487.797,-205.232 477.938,-187.39 503,-165.885 507.208,-162.274 511.961,-159.146 516.964,-156.439"/>
+<polygon fill="#000000" stroke="#000000" points="518.678,-159.499 526.172,-152.01 515.643,-153.19 518.678,-159.499"/>
+</g>
+<!-- module~shared -->
+<g id="program~~main~3~~UsesGraph_node6" class="node"><title>module~shared</title>
+<g id="a_program~~main~3~~UsesGraph_node6"><a xlink:href="../module/shared.html" xlink:title="shared">
+<polygon fill="#337ab7" stroke="#337ab7" points="220,-192.885 166,-192.885 166,-168.885 220,-168.885 220,-192.885"/>
+<text text-anchor="middle" x="193" y="-178.485" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">shared</text>
+</a>
+</g>
+</g>
+<!-- module~shared&#45;&gt;program~main~3 -->
+<g id="program~~main~3~~UsesGraph_edge22" class="edge"><title>module~shared&#45;&gt;program~main~3</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M575.5,-179.885C607.272,-170.361 644.752,-165.242 671.727,-162.575"/>
+<polygon fill="#000000" stroke="#000000" points="672.241,-166.043 681.877,-161.638 671.597,-159.072 672.241,-166.043"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M437,-178.885C497.46,-173.863 515.386,-197.304 573.5,-179.885"/>
+</g>
+<!-- module~shared&#45;&gt;module~periodic_2nd_order_module -->
+<g id="program~~main~3~~UsesGraph_edge13" class="edge"><title>module~shared&#45;&gt;module~periodic_2nd_order_module</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M437,-178.885C454.66,-177.679 495.476,-165.548 527.903,-155.131"/>
+<polygon fill="#000000" stroke="#000000" points="529.229,-158.381 537.662,-151.968 527.07,-151.722 529.229,-158.381"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M220.073,-181.689C264.326,-182.825 356.938,-184.214 435,-178.885"/>
+</g>
+<!-- module~shared&#45;&gt;module~mpi_module -->
+<g id="program~~main~3~~UsesGraph_edge4" class="edge"><title>module~shared&#45;&gt;module~mpi_module</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M220.041,-173.113C233.317,-168.65 249.472,-162.429 263,-154.885 280.762,-144.979 298.889,-130.862 312.246,-119.546"/>
+<polygon fill="#000000" stroke="#000000" points="314.627,-122.114 319.9,-112.924 310.047,-116.82 314.627,-122.114"/>
+</g>
+<!-- module~initializer&#45;&gt;program~main~3 -->
+<g id="program~~main~3~~UsesGraph_edge23" class="edge"><title>module~initializer&#45;&gt;program~main~3</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M587.258,-284.727C610.184,-261.023 661.042,-208.438 688.879,-179.655"/>
+<polygon fill="#000000" stroke="#000000" points="691.641,-181.833 696.077,-172.212 686.609,-176.967 691.641,-181.833"/>
+</g>
+<!-- iso_fortran_env -->
+<g id="program~~main~3~~UsesGraph_node8" class="node"><title>iso_fortran_env</title>
+<g id="a_program~~main~3~~UsesGraph_node8"><a xlink:href="https://gcc.gnu.org/onlinedocs/gfortran/ISO_005fFORTRAN_005fENV.html" xlink:title="iso_fortran_env">
+<polygon fill="#337ab7" stroke="#337ab7" points="86,-53.8846 1,-53.8846 1,-29.8846 86,-29.8846 86,-53.8846"/>
+<text text-anchor="middle" x="43.5" y="-39.4846" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">iso_fortran_env</text>
+</a>
+</g>
+</g>
+<!-- iso_fortran_env&#45;&gt;program~main~3 -->
+<g id="program~~main~3~~UsesGraph_edge24" class="edge"><title>iso_fortran_env&#45;&gt;program~main~3</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M575.5,-22.8846C635.162,-38.7599 678.241,-104.269 697.216,-138.629"/>
+<polygon fill="#000000" stroke="#000000" points="694.325,-140.645 702.124,-147.816 700.499,-137.346 694.325,-140.645"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M86.236,-32.2679C176.814,-13.1424 397.436,23.9641 573.5,-22.8846"/>
+</g>
+<!-- module~fortrilinos_assertion_utility -->
+<g id="program~~main~3~~UsesGraph_node11" class="node"><title>module~fortrilinos_assertion_utility</title>
+<g id="a_program~~main~3~~UsesGraph_node11"><a xlink:href="../module/fortrilinos_assertion_utility.html" xlink:title="ForTrilinos_assertion_utility">
+<polygon fill="#337ab7" stroke="#337ab7" points="263,-110.885 123,-110.885 123,-86.8846 263,-86.8846 263,-110.885"/>
+<text text-anchor="middle" x="193" y="-96.4846" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">ForTrilinos_assertion_utility</text>
+</a>
+</g>
+</g>
+<!-- iso_fortran_env&#45;&gt;module~fortrilinos_assertion_utility -->
+<g id="program~~main~3~~UsesGraph_edge2" class="edge"><title>iso_fortran_env&#45;&gt;module~fortrilinos_assertion_utility</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M75.781,-53.9728C97.7811,-62.4746 127.43,-73.932 151.274,-83.1465"/>
+<polygon fill="#000000" stroke="#000000" points="150.175,-86.4738 160.764,-86.8138 152.698,-79.9444 150.175,-86.4738"/>
+</g>
+<!-- module~mpi_module&#45;&gt;module~mpi_share -->
+<g id="program~~main~3~~UsesGraph_edge7" class="edge"><title>module~mpi_module&#45;&gt;module~mpi_share</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M369.135,-100.885C377.341,-100.885 386.183,-100.885 394.642,-100.885"/>
+<polygon fill="#000000" stroke="#000000" points="394.702,-104.385 404.702,-100.885 394.702,-97.3847 394.702,-104.385"/>
+</g>
+<!-- module~mpi_module&#45;&gt;module~periodic_2nd_order_module -->
+<g id="program~~main~3~~UsesGraph_edge10" class="edge"><title>module~mpi_module&#45;&gt;module~periodic_2nd_order_module</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M437,-140.885C455.018,-142.569 474.431,-143.159 492.805,-143.159"/>
+<polygon fill="#000000" stroke="#000000" points="492.91,-146.658 502.89,-143.101 492.87,-139.658 492.91,-146.658"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M355.185,-112.978C374.782,-123.727 405.771,-138.152 435,-140.885"/>
+</g>
+<!-- module~object_interface~2 -->
+<g id="program~~main~3~~UsesGraph_node10" class="node"><title>module~object_interface~2</title>
+<g id="a_program~~main~3~~UsesGraph_node10"><a xlink:href="../module/object_interface%7E2.html" xlink:title="object_interface">
+<polygon fill="#337ab7" stroke="#337ab7" points="87,-132.885 0,-132.885 0,-108.885 87,-108.885 87,-132.885"/>
+<text text-anchor="middle" x="43.5" y="-118.485" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">object_interface</text>
+</a>
+</g>
+</g>
+<!-- module~object_interface~2&#45;&gt;module~periodic_2nd_order_module -->
+<g id="program~~main~3~~UsesGraph_edge11" class="edge"><title>module~object_interface~2&#45;&gt;module~periodic_2nd_order_module</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M194,-140.885C301.11,-140.461 328.354,-130.916 435,-140.885"/>
+</g>
+<!-- module~object_interface~2&#45;&gt;module~mpi_module -->
+<g id="program~~main~3~~UsesGraph_edge3" class="edge"><title>module~object_interface~2&#45;&gt;module~mpi_module</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M194,-140.885C230.502,-140.74 270.367,-127.863 298.007,-116.76"/>
+<polygon fill="#000000" stroke="#000000" points="299.35,-119.992 307.248,-112.93 296.67,-113.525 299.35,-119.992"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M87.2143,-129.864C116.553,-135.245 156.468,-141.025 192,-140.885"/>
+</g>
+<!-- module~object_interface~2&#45;&gt;module~fortrilinos_assertion_utility -->
+<g id="program~~main~3~~UsesGraph_edge1" class="edge"><title>module~object_interface~2&#45;&gt;module~fortrilinos_assertion_utility</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M87.1631,-114.521C95.2613,-113.313 103.972,-112.014 112.786,-110.699"/>
+<polygon fill="#000000" stroke="#000000" points="113.382,-114.149 122.756,-109.212 112.349,-107.226 113.382,-114.149"/>
+</g>
+<!-- module~fortrilinos_assertion_utility&#45;&gt;module~periodic_2nd_order_module -->
+<g id="program~~main~3~~UsesGraph_edge8" class="edge"><title>module~fortrilinos_assertion_utility&#45;&gt;module~periodic_2nd_order_module</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M239.762,-86.8445C294.68,-74.4061 389.105,-59.4521 467,-79.8846 497.894,-87.9883 529.271,-107.301 549.886,-121.842"/>
+<polygon fill="#000000" stroke="#000000" points="547.877,-124.708 558.03,-127.735 551.981,-119.037 547.877,-124.708"/>
+</g>
+<!-- module~fortrilinos_assertion_utility&#45;&gt;module~mpi_module -->
+<g id="program~~main~3~~UsesGraph_edge6" class="edge"><title>module~fortrilinos_assertion_utility&#45;&gt;module~mpi_module</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M263.093,-99.8787C271.812,-100.004 280.54,-100.13 288.727,-100.248"/>
+<polygon fill="#000000" stroke="#000000" points="288.718,-103.748 298.767,-100.392 288.819,-96.7484 288.718,-103.748"/>
+</g>
+<!-- mpi -->
+<g id="program~~main~3~~UsesGraph_node12" class="node"><title>mpi</title>
+<g id="a_program~~main~3~~UsesGraph_node12"><a xlink:href="http://www.mpi-forum.org/docs/mpi-3.1/mpi31-report/node410.htm" xlink:title="mpi">
+<polygon fill="#337ab7" stroke="#337ab7" points="70.5,-192.885 16.5,-192.885 16.5,-168.885 70.5,-168.885 70.5,-192.885"/>
+<text text-anchor="middle" x="43.5" y="-178.485" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mpi</text>
+</a>
+</g>
+</g>
+<!-- mpi&#45;&gt;module~shared -->
+<g id="program~~main~3~~UsesGraph_edge16" class="edge"><title>mpi&#45;&gt;module~shared</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M70.5305,-180.885C94.1864,-180.885 129.321,-180.885 155.727,-180.885"/>
+<polygon fill="#000000" stroke="#000000" points="155.734,-184.385 165.734,-180.885 155.734,-177.385 155.734,-184.385"/>
+</g>
+</g>
+</svg>
+</div>
+                <script>var panprogrammain3UsesGraph = svgPanZoom('#programmain3UsesGraph', {
+                    zoomEnabled: true,
+                    controlIconsEnabled: true,
+                    fit: true,
+                    center: true,});
+                    </script>
+                <div><a type="button" class="graph-help" data-toggle="modal" href="#graph-help-text">Help</a></div>
+                <div class="modal fade" id="graph-help-text" tabindex="-1" role="dialog">
+                  <div class="modal-dialog modal-lg" role="document">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="-graph-help-label">Graph Key</h4>
+                      </div>
+                      <div class="modal-body">
+                        
+Nodes of different colours represent the following:
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.38.0 (20140413.2041)
+ -->
+<!-- Title: Graph Key Pages: 1 -->
+<svg width="641pt" height="26pt"
+ viewBox="0.00 0.00 641.00 26.23" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(0.819693 0.819693) rotate(0) translate(4 28)">
+<title>Graph Key</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-28 778,-28 778,4 -4,4"/>
+<!-- Module -->
+<g id="node1" class="node"><title>Module</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="54,-24 0,-24 0,-0 54,-0 54,-24"/>
+<text text-anchor="middle" x="27" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Module</text>
+</g>
+<!-- Submodule -->
+<g id="node2" class="node"><title>Submodule</title>
+<polygon fill="#5bc0de" stroke="#5bc0de" points="138,-24 72,-24 72,-0 138,-0 138,-24"/>
+<text text-anchor="middle" x="105" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Submodule</text>
+</g>
+<!-- Type -->
+<g id="node3" class="node"><title>Type</title>
+<polygon fill="#5cb85c" stroke="#5cb85c" points="210,-24 156,-24 156,-0 210,-0 210,-24"/>
+<text text-anchor="middle" x="183" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Type</text>
+</g>
+<!-- Subroutine -->
+<g id="node4" class="node"><title>Subroutine</title>
+<polygon fill="#d9534f" stroke="#d9534f" points="291.5,-24 228.5,-24 228.5,-0 291.5,-0 291.5,-24"/>
+<text text-anchor="middle" x="260" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Subroutine</text>
+</g>
+<!-- Function -->
+<g id="node5" class="node"><title>Function</title>
+<polygon fill="#d94e8f" stroke="#d94e8f" points="364,-24 310,-24 310,-0 364,-0 364,-24"/>
+<text text-anchor="middle" x="337" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Function</text>
+</g>
+<!-- Interface -->
+<g id="node6" class="node"><title>Interface</title>
+<polygon fill="#a7506f" stroke="#a7506f" points="436,-24 382,-24 382,-0 436,-0 436,-24"/>
+<text text-anchor="middle" x="409" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Interface</text>
+</g>
+<!-- Unknown Procedure Type -->
+<g id="node7" class="node"><title>Unknown Procedure Type</title>
+<polygon fill="#777777" stroke="#777777" points="588,-24 454,-24 454,-0 588,-0 588,-24"/>
+<text text-anchor="middle" x="521" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Unknown Procedure Type</text>
+</g>
+<!-- Program -->
+<g id="node8" class="node"><title>Program</title>
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="660,-24 606,-24 606,-0 660,-0 660,-24"/>
+<text text-anchor="middle" x="633" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Program</text>
+</g>
+<!-- This Page&#39;s Entity -->
+<g id="node9" class="node"><title>This Page&#39;s Entity</title>
+<polygon fill="none" stroke="black" points="774,-24 678,-24 678,-0 774,-0 774,-24"/>
+<text text-anchor="middle" x="726" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50">This Page&#39;s Entity</text>
+</g>
+</g>
+</svg>
+
+Where possible, edges connecting nodes are given different colours to make them
+easier to distinguish in large graphs.
+<h5>Module Graph</h5>
+<p>Solid arrows point from a parent (sub)module to the submodule which is
+descended from it. Dashed arrows point from a module being used to the
+module using it.</p>
+<h5>Type Graph</h5>
+<p>Solid arrows point from one derived type to another which extends
+(inherits from) it. Dashed arrows point from a derived type to another
+type containing it as a components, with a label listing the name(s) of
+said component(s).</p>
+<h5>Call Graph</h5>
+<p>Solid arrows point from a procedure to one which it calls. Dashed 
+arrows point from an interface to procedures which implement that interface.
+This could include the module procedures in a generic interface or the
+implementation in a submodule of an interface in a parent module.</p>
+
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+    <br><br>
+    
+    
+    
+
+    
+    <section>
+    <h2>Variables</h2>
+    
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+
+<th>Attributes</th><th></th><th>Name</th><th></th><th>Initial</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-base_output_unit"></span>integer,</td>
+  
+  
+  <td>parameter</td><td>::</td>
+  <td><strong>base_output_unit</strong></td><td> =</td><td>output_unit+10</td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-dt%7E12"></span>real(kind=rkind)</td>
+  
+  
+  <td></td><td>::</td>
+  <td><strong>dt</strong></td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-expected_zero_location"></span>real(kind=rkind),</td>
+  
+  
+  <td>parameter</td><td>::</td>
+  <td><strong>expected_zero_location</strong></td><td> =</td><td>pi</td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-half"></span>real(kind=rkind)</td>
+  
+  
+  <td></td><td>::</td>
+  <td><strong>half</strong></td><td> =</td><td>0.5</td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-half_uu%7E2"></span>type(<a href='../type/periodic_2nd_order.html'>periodic_2nd_order</a>),</td>
+  
+  
+  <td>save</td><td>::</td>
+  <td><strong>half_uu</strong></td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-initial%7E2"></span>procedure(<a href='../interface/initial_field.html'>initial_field</a>),</td>
+  
+  
+  <td>pointer</td><td>::</td>
+  <td><strong>initial</strong></td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-iomsg%7E9"></span>character(len=:),</td>
+  
+  
+  <td>allocatable</td><td>::</td>
+  <td><strong>iomsg</strong></td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-iostat%7E9"></span>integer</td>
+  
+  
+  <td></td><td>::</td>
+  <td><strong>iostat</strong></td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-iotype%7E9"></span>character(len=:),</td>
+  
+  
+  <td>allocatable</td><td>::</td>
+  <td><strong>iotype</strong></td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-nu%7E3"></span>real(kind=rkind)</td>
+  
+  
+  <td></td><td>::</td>
+  <td><strong>nu</strong></td><td> =</td><td>1.</td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-num_steps"></span>integer</td>
+  
+  
+  <td></td><td>::</td>
+  <td><strong>num_steps</strong></td><td> =</td><td>100000</td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-pi%7E6"></span>real(kind=rkind),</td>
+  
+  
+  <td>parameter</td><td>::</td>
+  <td><strong>pi</strong></td><td> =</td><td>acos(-1._rkind)</td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-step%7E5"></span>integer</td>
+  
+  
+  <td></td><td>::</td>
+  <td><strong>step</strong></td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-steps"></span>integer</td>
+  
+  
+  <td></td><td>::</td>
+  <td><strong>steps</strong></td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-t%7E7"></span>real(kind=rkind)</td>
+  
+  
+  <td></td><td>::</td>
+  <td><strong>t</strong></td><td> =</td><td>0.</td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-t_1"></span>real(kind=rkind)</td>
+  
+  
+  <td></td><td>::</td>
+  <td><strong>t_1</strong></td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-t_2"></span>real(kind=rkind)</td>
+  
+  
+  <td></td><td>::</td>
+  <td><strong>t_2</strong></td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-t_3"></span>real(kind=rkind)</td>
+  
+  
+  <td></td><td>::</td>
+  <td><strong>t_3</strong></td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-t_final"></span>real(kind=rkind)</td>
+  
+  
+  <td></td><td>::</td>
+  <td><strong>t_final</strong></td><td> =</td><td>3.08</td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-time_initial"></span>real(kind=rkind),</td>
+  
+  
+  <td>parameter</td><td>::</td>
+  <td><strong>time_initial</strong></td><td> =</td><td>0.</td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-u%7E8"></span>type(<a href='../type/periodic_2nd_order.html'>periodic_2nd_order</a>),</td>
+  
+  
+  <td>save</td><td>::</td>
+  <td><strong>u</strong></td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-u_half%7E2"></span>type(<a href='../type/periodic_2nd_order.html'>periodic_2nd_order</a>),</td>
+  
+  
+  <td>save</td><td>::</td>
+  <td><strong>u_half</strong></td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-u_surface"></span>real(kind=rkind),</td>
+  
+  
+  <td>allocatable</td><td>::</td>
+  <td><strong>u_surface</strong>(:,:)</td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-v_list%7E9"></span>integer,</td>
+  
+  
+  <td>allocatable</td><td>::</td>
+  <td><strong>v_list</strong>(:)</td><td></td><td></td><td></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+    </section>
+    <br>
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+
+
+    
+    
+    
+    
+    </div>
+  </div>
+
+    <hr>
+    <footer>
+      <div class="row">
+        <div class="col-md-4">&copy; 2016 <a rel="license" href="http://www.freebsd.org/copyright/freebsd-doc-license.html">FreeBSD Documentation License</a></div>
+        <div class="col-md-4"><span class="text-center"> OpenCoarrays was developed by Sourcery Institute</span></div>
+        <div class="col-md-4">
+          <span class="pull-right">
+            Documentation generated by 
+            <a href="https://github.com/cmacmackin/ford">FORD</a>
+            
+          </span>
+        </div>
+      </div>
+      <br>
+    </footer>
+    </div> <!-- /container -->
+
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js'],
+        'HTML-CSS': { 
+           styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: '#000000 ! important'} }
+        }
+      });
+    </script>
+    <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  </body>
+</html>

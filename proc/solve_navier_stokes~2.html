@@ -1,0 +1,2388 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+	 
+	 <meta name="description" content="OpenCoarrays is a Coarray Fortran (CAF) implementation supporting Fortran 2008 and 2015 features">
+    
+    <meta name="author" content="Chris MacMackin" >
+    <link rel="icon" href="../favicon.png">
+
+    <title>solve_navier_stokes &ndash; OpenCoarrays</title>
+
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/pygments.css" rel="stylesheet">
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../css/local.css" rel="stylesheet">
+    
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../js/jquery-2.1.3.min.js"></script>
+    <script src="../js/svg-pan-zoom.min.js"></script>
+
+    
+    <script src="../tipuesearch/tipuesearch_content.js"></script>
+    <link  href="../tipuesearch/tipuesearch.css" rel="stylesheet">
+    <script src="../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../tipuesearch/tipuesearch.js"></script>
+    
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../index.html">OpenCoarrays <small>master</small></a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+				
+                
+            <li><a href="../lists/files.html">Source Files</a></li>
+				
+				
+            <li><a href="../lists/modules.html">Modules</a></li>
+				
+				
+            <li><a href="../lists/procedures.html">Procedures</a></li>
+				
+				
+            <li><a href="../lists/absint.html">Abstract Interfaces</a></li>
+								
+            <li><a href="../lists/types.html">Derived Types</a></li>
+				
+				
+            <li><a href="../lists/programs.html">Programs</a></li>
+				
+          </ul>
+        
+        <form action="../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+    
+  
+  <div class="row">
+    <h1>solve_navier_stokes
+    <small>Subroutine</small>
+    
+    </h1>
+	 
+<div class="row">
+<div class="col-lg-12">
+<div class="well well-sm">
+  <ul class="list-inline" style="margin-bottom:0px;display:inline">
+     
+     
+     
+     
+    
+    
+    <li><i class="fa fa-code"></i><a href="../src/coarray-shear_coll.F90"> Source File</a></li>
+     
+  </ul>
+  <ol class="breadcrumb in-well text-right">
+  
+     <li><a href='../sourcefile/coarray-shear_coll.f90.html'>coarray-shear_coll.F90</a></li>
+  
+     <li class="active">solve_navier_stokes</li>
+  </ol>
+</div>
+</div>
+</div>
+    
+  </div>
+  
+  <div class="row">
+    <div class="col-lg-3">
+    
+<div id="sidebar">
+  
+  
+  
+  <div class="panel panel-primary">
+    <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#vars">Variables</a></h3></div>
+    <div id="vars" class="panel-collapse collapse">
+      <div class="list-group">
+        
+        <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#variable-bufr_x_y%7E2">bufr_X_Y</a>
+        
+        <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#variable-bufr_y_x%7E2">bufr_Y_X</a>
+        
+        <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#variable-k1%7E2">k1</a>
+        
+        <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#variable-k2%7E2">k2</a>
+        
+        <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#variable-k3%7E2">k3</a>
+        
+        <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#variable-kx%7E2">kx</a>
+        
+        <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#variable-ky%7E2">ky</a>
+        
+        <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#variable-ky_%7E2">ky_</a>
+        
+        <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#variable-kz%7E2">kz</a>
+        
+        <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#variable-mk1%7E2">mk1</a>
+        
+        <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#variable-mk2%7E2">mk2</a>
+        
+        <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#variable-mk3%7E2">mk3</a>
+        
+        <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#variable-nshells%7E2">nshells</a>
+        
+        <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#variable-oflag%7E2">oflag</a>
+        
+        <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#variable-rflag%7E2">rflag</a>
+        
+        <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#variable-rkstep%7E2">rkstep</a>
+        
+        <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#variable-step%7E2">step</a>
+        
+        <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#variable-stop%7E2">stop</a>
+        
+        <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#variable-sx%7E2">sx</a>
+        
+        <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#variable-sy%7E2">sy</a>
+        
+        <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#variable-sz%7E2">sz</a>
+        
+        <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#variable-t_end">t_end</a>
+        
+        <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#variable-t_start">t_start</a>
+        
+        <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#variable-trigx%7E2">trigx</a>
+        
+        <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#variable-trigxy%7E2">trigxy</a>
+        
+        <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#variable-trigy%7E2">trigy</a>
+        
+        <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#variable-trigz%7E2">trigz</a>
+        
+        <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#variable-u%7E3">u</a>
+        
+        <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#variable-un%7E2">un</a>
+        
+        <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#variable-ur%7E2">ur</a>
+        
+      </div>
+    </div>
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="panel panel-primary">
+    <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#inters">Interfaces</a></h3></div>
+    <div id="inters" class="panel-collapse collapse">
+        <div class="list-group">
+          
+          <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#interface-cfft%7E2">cfft</a>
+          
+          <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#interface-ctrig%7E2">ctrig</a>
+          
+          <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#interface-rfft%7E2">rfft</a>
+          
+          <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#interface-rtrig%7E2">rtrig</a>
+          
+        </div>
+    </div>
+  </div>
+  
+  
+  
+  
+  
+  
+  <div class="panel panel-primary">
+    <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#subs">Subroutines</a></h3></div>
+    <div class="list-group">
+        <div id="subs" class="panel-collapse collapse">
+          
+          <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#proc-advance%7E2">advance</a>
+          
+          <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#proc-copy_n_s%7E2">copy_n_s</a>
+          
+          <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#proc-copy_s_n%7E2">copy_s_n</a>
+          
+          <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#proc-define_field%7E2">define_field</a>
+          
+          <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#proc-define_kspace%7E2">define_kspace</a>
+          
+          <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#proc-define_shifts%7E2">define_shifts</a>
+          
+          <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#proc-define_step%7E2">define_step</a>
+          
+          <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#proc-enforce_conjugate_symmetry%7E2">enforce_conjugate_symmetry</a>
+          
+          <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#proc-phase1%7E2">phase1</a>
+          
+          <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#proc-phase2%7E2">phase2</a>
+          
+          <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#proc-phase3%7E2">phase3</a>
+          
+          <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#proc-pressure%7E2">pressure</a>
+          
+          <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#proc-remesh%7E2">remesh</a>
+          
+          <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#proc-spectra%7E2">spectra</a>
+          
+          <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#proc-transpose_x_y%7E2">transpose_X_Y</a>
+          
+          <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#proc-transpose_y_x%7E2">transpose_Y_X</a>
+          
+        </div>
+    </div>
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="panel panel-primary">
+    <div class="panel-heading text-left"><h3 class="panel-title">Source Code</h3></div>
+    <div class="list-group">
+      <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html#src">solve_navier_stokes</a>
+    </div>
+  </div>
+  
+  <hr>
+  
+  <div class="panel panel-default">
+    <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#allprocs">All Procedures</a></h3></div>
+    <div id="allprocs" class="panel-collapse collapse">
+        <div class="list-group">
+          
+          <a class="list-group-item" href="../proc/add_field.html">add_field</a>
+          
+          <a class="list-group-item" href="../proc/add_local_field.html">add_local_field</a>
+          
+          <a class="list-group-item" href="../proc/add_local_field%7E2.html">add_local_field</a>
+          
+          <a class="list-group-item" href="../interface/assert.html">assert</a>
+          
+          <a class="list-group-item" href="../interface/assert%7E2.html">assert</a>
+          
+          <a class="list-group-item" href="../proc/assert.html">assert</a>
+          
+          <a class="list-group-item" href="../proc/assert_identical.html">assert_identical</a>
+          
+          <a class="list-group-item" href="../proc/assert_identical%7E2.html">assert_identical</a>
+          
+          <a class="list-group-item" href="../proc/assign_array.html">assign_array</a>
+          
+          <a class="list-group-item" href="../proc/assign_array%7E2.html">assign_array</a>
+          
+          <a class="list-group-item" href="../proc/assign_field.html">assign_field</a>
+          
+          <a class="list-group-item" href="../proc/assign_local_field.html">assign_local_field</a>
+          
+          <a class="list-group-item" href="../proc/assign_local_field%7E2.html">assign_local_field</a>
+          
+          <a class="list-group-item" href="../proc/barrier.html">barrier</a>
+          
+          <a class="list-group-item" href="../proc/broadcast_int.html">broadcast_int</a>
+          
+          <a class="list-group-item" href="../proc/calibrate_loop.html">calibrate_loop</a>
+          
+          <a class="list-group-item" href="../interface/co_all.html">co_all</a>
+          
+          <a class="list-group-item" href="../proc/co_all_logical.html">co_all_logical</a>
+          
+          <a class="list-group-item" href="../interface/co_broadcast.html">co_broadcast</a>
+          
+          <a class="list-group-item" href="../proc/co_broadcast_c_char.html">co_broadcast_c_char</a>
+          
+          <a class="list-group-item" href="../proc/co_broadcast_c_double.html">co_broadcast_c_double</a>
+          
+          <a class="list-group-item" href="../proc/co_broadcast_c_int.html">co_broadcast_c_int</a>
+          
+          <a class="list-group-item" href="../interface/co_max.html">co_max</a>
+          
+          <a class="list-group-item" href="../proc/co_max_c_double.html">co_max_c_double</a>
+          
+          <a class="list-group-item" href="../proc/co_max_c_int.html">co_max_c_int</a>
+          
+          <a class="list-group-item" href="../interface/co_min.html">co_min</a>
+          
+          <a class="list-group-item" href="../proc/co_min_c_double.html">co_min_c_double</a>
+          
+          <a class="list-group-item" href="../proc/co_min_c_int.html">co_min_c_int</a>
+          
+          <a class="list-group-item" href="../interface/co_product.html">co_product</a>
+          
+          <a class="list-group-item" href="../proc/co_product_c_double.html">co_product_c_double</a>
+          
+          <a class="list-group-item" href="../proc/co_product_c_int.html">co_product_c_int</a>
+          
+          <a class="list-group-item" href="../interface/co_reduce.html">co_reduce</a>
+          
+          <a class="list-group-item" href="../proc/co_reduce_c_double.html">co_reduce_c_double</a>
+          
+          <a class="list-group-item" href="../proc/co_reduce_c_int.html">co_reduce_c_int</a>
+          
+          <a class="list-group-item" href="../proc/co_reduce_logical.html">co_reduce_logical</a>
+          
+          <a class="list-group-item" href="../interface/co_sum.html">co_sum</a>
+          
+          <a class="list-group-item" href="../proc/co_sum_c_double.html">co_sum_c_double</a>
+          
+          <a class="list-group-item" href="../proc/co_sum_c_int.html">co_sum_c_int</a>
+          
+          <a class="list-group-item" href="../proc/construct.html">construct</a>
+          
+          <a class="list-group-item" href="../proc/copy3.html">copy3</a>
+          
+          <a class="list-group-item" href="../proc/copy3%7E2.html">copy3</a>
+          
+          <a class="list-group-item" href="../proc/copy3%7E3.html">copy3</a>
+          
+          <a class="list-group-item" href="../proc/copy3%7E4.html">copy3</a>
+          
+          <a class="list-group-item" href="../proc/copy3%7E5.html">copy3</a>
+          
+          <a class="list-group-item" href="../proc/d2f_dx2.html">d2f_dx2</a>
+          
+          <a class="list-group-item" href="../proc/define_error.html">define_error</a>
+          
+          <a class="list-group-item" href="../proc/define_error%7E2.html">define_error</a>
+          
+          <a class="list-group-item" href="../proc/df_dx.html">df_dx</a>
+          
+          <a class="list-group-item" href="../proc/diffusion_stability_limit.html">diffusion_stability_limit</a>
+          
+          <a class="list-group-item" href="../interface/elapsed_time.html">elapsed_time</a>
+          
+          <a class="list-group-item" href="../proc/error_code.html">error_code</a>
+          
+          <a class="list-group-item" href="../proc/error_code%7E2.html">error_code</a>
+          
+          <a class="list-group-item" href="../interface/error_message.html">error_message</a>
+          
+          <a class="list-group-item" href="../proc/error_message.html">error_message</a>
+          
+          <a class="list-group-item" href="../interface/error_message%7E2.html">error_message</a>
+          
+          <a class="list-group-item" href="../proc/error_message%7E2.html">error_message</a>
+          
+          <a class="list-group-item" href="../proc/error_stop.html">error_stop</a>
+          
+          <a class="list-group-item" href="../proc/from_lower_half.html">from_lower_half</a>
+          
+          <a class="list-group-item" href="../proc/get_c_int.html">get_c_int</a>
+          
+          <a class="list-group-item" href="../proc/get_keyword_values.html">get_keyword_values</a>
+          
+          <a class="list-group-item" href="../proc/get_time.html">get_time</a>
+          
+          <a class="list-group-item" href="../proc/get_usecs.html">get_usecs</a>
+          
+          <a class="list-group-item" href="../interface/gfc_descriptor.html">gfc_descriptor</a>
+          
+          <a class="list-group-item" href="../proc/gfc_descriptor_c_double.html">gfc_descriptor_c_double</a>
+          
+          <a class="list-group-item" href="../proc/gfc_descriptor_c_int.html">gfc_descriptor_c_int</a>
+          
+          <a class="list-group-item" href="../proc/gfc_descriptor_logical.html">gfc_descriptor_logical</a>
+          
+          <a class="list-group-item" href="../proc/global_times.html">global_times</a>
+          
+          <a class="list-group-item" href="../proc/global_times%7E2.html">global_times</a>
+          
+          <a class="list-group-item" href="../proc/global_times%7E3.html">global_times</a>
+          
+          <a class="list-group-item" href="../proc/global_times%7E4.html">global_times</a>
+          
+          <a class="list-group-item" href="../proc/grid_spacing.html">grid_spacing</a>
+          
+          <a class="list-group-item" href="../proc/has_a_zero_at.html">has_a_zero_at</a>
+          
+          <a class="list-group-item" href="../proc/init_random_seed.html">init_random_seed</a>
+          
+          <a class="list-group-item" href="../proc/init_random_seed%7E2.html">init_random_seed</a>
+          
+          <a class="list-group-item" href="../proc/init_random_seed%7E3.html">init_random_seed</a>
+          
+          <a class="list-group-item" href="../proc/init_random_seed%7E4.html">init_random_seed</a>
+          
+          <a class="list-group-item" href="../proc/laplacian.html">laplacian</a>
+          
+          <a class="list-group-item" href="../proc/local_state.html">local_state</a>
+          
+          <a class="list-group-item" href="../proc/loop.html">loop</a>
+          
+          <a class="list-group-item" href="../proc/mark_as_defined.html">mark_as_defined</a>
+          
+          <a class="list-group-item" href="../proc/mark_as_defined%7E2.html">mark_as_defined</a>
+          
+          <a class="list-group-item" href="../proc/mark_as_defined%7E3.html">mark_as_defined</a>
+          
+          <a class="list-group-item" href="../proc/mark_as_defined%7E4.html">mark_as_defined</a>
+          
+          <a class="list-group-item" href="../proc/max_velmax.html">max_velmax</a>
+          
+          <a class="list-group-item" href="../proc/max_velmax%7E2.html">max_velmax</a>
+          
+          <a class="list-group-item" href="../proc/max_velmax%7E3.html">max_velmax</a>
+          
+          <a class="list-group-item" href="../proc/mpi_begin.html">mpi_begin</a>
+          
+          <a class="list-group-item" href="../proc/mpi_copy3.html">mpi_copy3</a>
+          
+          <a class="list-group-item" href="../proc/mpi_end.html">mpi_end</a>
+          
+          <a class="list-group-item" href="../proc/multiply.html">multiply</a>
+          
+          <a class="list-group-item" href="../proc/multiply%7E2.html">multiply</a>
+          
+          <a class="list-group-item" href="../proc/multiply%7E3.html">multiply</a>
+          
+          <a class="list-group-item" href="../proc/multiply_field.html">multiply_field</a>
+          
+          <a class="list-group-item" href="../proc/multiply_real.html">multiply_real</a>
+          
+          <a class="list-group-item" href="../proc/my_dtype.html">my_dtype</a>
+          
+          <a class="list-group-item" href="../proc/new_message.html">new_message</a>
+          
+          <a class="list-group-item" href="../proc/new_message%7E2.html">new_message</a>
+          
+          <a class="list-group-item" href="../proc/num_images.html">num_images</a>
+          
+          <a class="list-group-item" href="../proc/one.html">one</a>
+          
+          <a class="list-group-item" href="../proc/one%7E2.html">one</a>
+          
+          <a class="list-group-item" href="../proc/one%7E3.html">one</a>
+          
+          <a class="list-group-item" href="../proc/oned_message.html">oned_message</a>
+          
+          <a class="list-group-item" href="../proc/only_allocate.html">only_allocate</a>
+          
+          <a class="list-group-item" href="../interface/opencoarrays_co_broadcast.html">opencoarrays_co_broadcast</a>
+          
+          <a class="list-group-item" href="../interface/opencoarrays_co_max.html">opencoarrays_co_max</a>
+          
+          <a class="list-group-item" href="../interface/opencoarrays_co_min.html">opencoarrays_co_min</a>
+          
+          <a class="list-group-item" href="../interface/opencoarrays_co_reduce.html">opencoarrays_co_reduce</a>
+          
+          <a class="list-group-item" href="../interface/opencoarrays_co_sum.html">opencoarrays_co_sum</a>
+          
+          <a class="list-group-item" href="../interface/opencoarrays_error_stop.html">opencoarrays_error_stop</a>
+          
+          <a class="list-group-item" href="../interface/opencoarrays_get.html">opencoarrays_get</a>
+          
+          <a class="list-group-item" href="../interface/opencoarrays_num_images.html">opencoarrays_num_images</a>
+          
+          <a class="list-group-item" href="../interface/opencoarrays_sync_all.html">opencoarrays_sync_all</a>
+          
+          <a class="list-group-item" href="../interface/opencoarrays_this_image.html">opencoarrays_this_image</a>
+          
+          <a class="list-group-item" href="../proc/output.html">output</a>
+          
+          <a class="list-group-item" href="../proc/output%7E2.html">output</a>
+          
+          <a class="list-group-item" href="../proc/output%7E3.html">output</a>
+          
+          <a class="list-group-item" href="../proc/output%7E4.html">output</a>
+          
+          <a class="list-group-item" href="../proc/print_banner.html">print_banner</a>
+          
+          <a class="list-group-item" href="../proc/rk2_dt.html">rk2_dt</a>
+          
+          <a class="list-group-item" href="../proc/scalar_assert.html">scalar_assert</a>
+          
+          <a class="list-group-item" href="../proc/scalar_assert%7E2.html">scalar_assert</a>
+          
+          <a class="list-group-item" href="../proc/sending_half.html">sending_half</a>
+          
+          <a class="list-group-item" href="../proc/set.html">set</a>
+          
+          <a class="list-group-item" href="../proc/set%7E2.html">set</a>
+          
+          <a class="list-group-item" href="../proc/set_time.html">set_time</a>
+          
+          <a class="list-group-item" href="../proc/sinusoid.html">sinusoid</a>
+          
+          <a class="list-group-item" href="../proc/solve_navier_stokes.html">solve_navier_stokes</a>
+          
+          <a class="list-group-item" href="../proc/solve_navier_stokes%7E2.html">solve_navier_stokes</a>
+          
+          <a class="list-group-item" href="../proc/solve_navier_stokes%7E3.html">solve_navier_stokes</a>
+          
+          <a class="list-group-item" href="../proc/solve_navier_stokes%7E4.html">solve_navier_stokes</a>
+          
+          <a class="list-group-item" href="../interface/solve_navier_stokes.html">solve_navier_stokes</a>
+          
+          <a class="list-group-item" href="../interface/solve_navier_stokes%7E2.html">solve_navier_stokes</a>
+          
+          <a class="list-group-item" href="../interface/solve_navier_stokes%7E3.html">solve_navier_stokes</a>
+          
+          <a class="list-group-item" href="../interface/solve_navier_stokes%7E4.html">solve_navier_stokes</a>
+          
+          <a class="list-group-item" href="../interface/start_timer.html">start_timer</a>
+          
+          <a class="list-group-item" href="../proc/state.html">state</a>
+          
+          <a class="list-group-item" href="../proc/state%7E2.html">state</a>
+          
+          <a class="list-group-item" href="../proc/state%7E3.html">state</a>
+          
+          <a class="list-group-item" href="../proc/state%7E4.html">state</a>
+          
+          <a class="list-group-item" href="../interface/stop_timer.html">stop_timer</a>
+          
+          <a class="list-group-item" href="../proc/subtract.html">subtract</a>
+          
+          <a class="list-group-item" href="../proc/subtract%7E2.html">subtract</a>
+          
+          <a class="list-group-item" href="../proc/sync_all.html">sync_all</a>
+          
+          <a class="list-group-item" href="../proc/synchronize.html">synchronize</a>
+          
+          <a class="list-group-item" href="../proc/synchronize%7E2.html">synchronize</a>
+          
+          <a class="list-group-item" href="../proc/ten_sin.html">ten_sin</a>
+          
+          <a class="list-group-item" href="../proc/test.html">test</a>
+          
+          <a class="list-group-item" href="../proc/test_alloc.html">test_alloc</a>
+          
+          <a class="list-group-item" href="../proc/this_image.html">this_image</a>
+          
+          <a class="list-group-item" href="../proc/this_image_contains.html">this_image_contains</a>
+          
+          <a class="list-group-item" href="../proc/three.html">three</a>
+          
+          <a class="list-group-item" href="../proc/three%7E2.html">three</a>
+          
+          <a class="list-group-item" href="../proc/three%7E3.html">three</a>
+          
+          <a class="list-group-item" href="../proc/to_upper_half.html">to_upper_half</a>
+          
+          <a class="list-group-item" href="../proc/transpose_x_y.html">transpose_X_Y</a>
+          
+          <a class="list-group-item" href="../proc/transpose_x_y%7E2.html">transpose_X_Y</a>
+          
+          <a class="list-group-item" href="../proc/transpose_y_x.html">transpose_Y_X</a>
+          
+          <a class="list-group-item" href="../proc/transpose_y_x%7E2.html">transpose_Y_X</a>
+          
+          <a class="list-group-item" href="../proc/two.html">two</a>
+          
+          <a class="list-group-item" href="../proc/two%7E2.html">two</a>
+          
+          <a class="list-group-item" href="../proc/two%7E3.html">two</a>
+          
+          <a class="list-group-item" href="../proc/u_initial.html">u_initial</a>
+          
+          <a class="list-group-item" href="../proc/usage.html">usage</a>
+          
+          <a class="list-group-item" href="../proc/user_defined.html">user_defined</a>
+          
+          <a class="list-group-item" href="../proc/user_defined%7E2.html">user_defined</a>
+          
+          <a class="list-group-item" href="../proc/user_defined%7E3.html">user_defined</a>
+          
+          <a class="list-group-item" href="../proc/user_defined%7E4.html">user_defined</a>
+          
+          <a class="list-group-item" href="../proc/vector_assert.html">vector_assert</a>
+          
+          <a class="list-group-item" href="../proc/vector_assert%7E2.html">vector_assert</a>
+          
+          <a class="list-group-item" href="../proc/warmup_loop.html">warmup_loop</a>
+          
+          <a class="list-group-item" href="../proc/x.html">x</a>
+          
+          <a class="list-group-item" href="../proc/xx.html">xx</a>
+          
+          <a class="list-group-item" href="../proc/zero.html">zero</a>
+          
+        </div>
+    </div>
+  </div>
+  
+</div>
+
+    </div>
+    
+    <div class="col-lg-9" id='text'>
+    <h2>
+subroutine solve_navier_stokes()
+    
+    
+    
+</h2>
+    
+  
+    <ul class="list-inline">
+      <li><h4>Uses:</h4></li>
+      
+      <li><a href='../module/run_size.html'>run_size</a></li>
+      
+    </ul>
+  
+
+
+
+    <h3>Arguments</h3>
+    
+      <em>None</em>
+    
+    
+    
+    <h3>Description</h3>
+    <p><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong>*)</p>
+<p><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong>*</strong>)</p>
+<p><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong>*)</p>
+<p><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong>**)</p>
+<p><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong>)</p>
+<p><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong>)</p>
+<p><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong>**)</p>
+<p><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong>*)</p>
+<p><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong>*)</p>
+<p><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong>*)</p>
+<p><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong>)</p>
+<p><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong>*)</p>
+<p><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong>*)</p>
+    
+    
+     <h3>Calls</h3>
+     
+                <div class="depgraph"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.38.0 (20140413.2041)
+ -->
+<!-- Title: proc~~solve_navier_stokes~2~~CallsGraph Pages: 1 -->
+<svg id="procsolve_navier_stokes2CallsGraph" width="524pt" height="742pt"
+ viewBox="0.00 0.00 524.00 742.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="proc~~solve_navier_stokes~2~~CallsGraph" class="graph" transform="scale(1 1) rotate(0) translate(4 738)">
+<title>proc~~solve_navier_stokes~2~~CallsGraph</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-738 520,-738 520,4 -4,4"/>
+<!-- proc~solve_navier_stokes~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_node1" class="node"><title>proc~solve_navier_stokes~2</title>
+<polygon fill="none" stroke="black" points="108,-381 0,-381 0,-357 108,-357 108,-381"/>
+<text text-anchor="middle" x="54" y="-366.6" font-family="Helvetica,sans-Serif" font-size="10.50">solve_navier_stokes</text>
+</g>
+<!-- none~copy_s_n~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_node2" class="node"><title>none~copy_s_n~2</title>
+<polygon fill="#d9534f" stroke="#d9534f" points="247.5,-734 190.5,-734 190.5,-710 247.5,-710 247.5,-734"/>
+<text text-anchor="middle" x="219" y="-719.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">copy_s_n</text>
+</g>
+<!-- proc~solve_navier_stokes~2&#45;&gt;none~copy_s_n~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_edge13" class="edge"><title>proc~solve_navier_stokes~2&#45;&gt;none~copy_s_n~2</title>
+<path fill="none" stroke="#000000" d="M56.6252,-381.034C64.1311,-434.912 97.0868,-653.397 144,-701 153.542,-710.682 167.195,-715.985 180.181,-718.86"/>
+<polygon fill="#000000" stroke="#000000" points="179.901,-722.365 190.362,-720.682 181.135,-715.475 179.901,-722.365"/>
+</g>
+<!-- none~define_shifts~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_node3" class="node"><title>none~define_shifts~2</title>
+<polygon fill="#d9534f" stroke="#d9534f" points="254.5,-692 183.5,-692 183.5,-668 254.5,-668 254.5,-692"/>
+<text text-anchor="middle" x="219" y="-677.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">define_shifts</text>
+</g>
+<!-- proc~solve_navier_stokes~2&#45;&gt;none~define_shifts~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_edge14" class="edge"><title>proc~solve_navier_stokes~2&#45;&gt;none~define_shifts~2</title>
+<path fill="none" stroke="#000000" d="M54.8795,-381.267C55.1369,-425.566 62.1474,-578.869 144,-659 152.037,-666.868 162.795,-671.832 173.613,-674.951"/>
+<polygon fill="#000000" stroke="#000000" points="172.948,-678.391 183.49,-677.327 174.586,-671.585 172.948,-678.391"/>
+</g>
+<!-- none~advance~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_node4" class="node"><title>none~advance~2</title>
+<polygon fill="#d9534f" stroke="#d9534f" points="246,-650 192,-650 192,-626 246,-626 246,-650"/>
+<text text-anchor="middle" x="219" y="-635.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">advance</text>
+</g>
+<!-- proc~solve_navier_stokes~2&#45;&gt;none~advance~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_edge15" class="edge"><title>proc~solve_navier_stokes~2&#45;&gt;none~advance~2</title>
+<path fill="none" stroke="#000000" d="M55.6054,-381.158C58.2695,-421.172 72.298,-550.018 144,-617 154.265,-626.589 168.588,-631.844 181.901,-634.707"/>
+<polygon fill="#000000" stroke="#000000" points="181.343,-638.162 191.801,-636.462 182.565,-631.27 181.343,-638.162"/>
+</g>
+<!-- none~rtrig~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_node5" class="node"><title>none~rtrig~2</title>
+<polygon fill="#a7506f" stroke="#a7506f" points="246,-608 192,-608 192,-584 246,-584 246,-608"/>
+<text text-anchor="middle" x="219" y="-593.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">rtrig</text>
+</g>
+<!-- proc~solve_navier_stokes~2&#45;&gt;none~rtrig~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_edge16" class="edge"><title>proc~solve_navier_stokes~2&#45;&gt;none~rtrig~2</title>
+<path fill="none" stroke="#000000" d="M56.5908,-381.086C61.9041,-416.503 82.3317,-520.94 144,-575 154.38,-584.1 168.443,-589.275 181.521,-592.211"/>
+<polygon fill="#000000" stroke="#000000" points="181.237,-595.718 191.71,-594.118 182.525,-588.838 181.237,-595.718"/>
+</g>
+<!-- none~transpose_y_x~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_node6" class="node"><title>none~transpose_y_x~2</title>
+<polygon fill="#d9534f" stroke="#d9534f" points="261,-566 177,-566 177,-542 261,-542 261,-566"/>
+<text text-anchor="middle" x="219" y="-551.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">transpose_Y_X</text>
+</g>
+<!-- proc~solve_navier_stokes~2&#45;&gt;none~transpose_y_x~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_edge17" class="edge"><title>proc~solve_navier_stokes~2&#45;&gt;none~transpose_y_x~2</title>
+<path fill="none" stroke="#000000" d="M58.1387,-381.439C66.5253,-412.081 92.409,-491.701 144,-533 150.744,-538.399 158.805,-542.41 167.086,-545.39"/>
+<polygon fill="#000000" stroke="#000000" points="166.255,-548.797 176.843,-548.436 168.341,-542.115 166.255,-548.797"/>
+</g>
+<!-- global_times -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_node7" class="node"><title>global_times</title>
+<polygon fill="#777777" stroke="#777777" points="254.5,-402 183.5,-402 183.5,-378 254.5,-378 254.5,-402"/>
+<text text-anchor="middle" x="219" y="-387.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">global_times</text>
+</g>
+<!-- proc~solve_navier_stokes~2&#45;&gt;global_times -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_edge18" class="edge"><title>proc~solve_navier_stokes~2&#45;&gt;global_times</title>
+<path fill="none" stroke="#000000" d="M108.372,-375.876C129.245,-378.565 152.924,-381.616 172.921,-384.192"/>
+<polygon fill="#000000" stroke="#000000" points="172.642,-387.685 183.007,-385.492 173.537,-380.743 172.642,-387.685"/>
+</g>
+<!-- none~ctrig~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_node8" class="node"><title>none~ctrig~2</title>
+<polygon fill="#a7506f" stroke="#a7506f" points="246,-360 192,-360 192,-336 246,-336 246,-360"/>
+<text text-anchor="middle" x="219" y="-345.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">ctrig</text>
+</g>
+<!-- proc~solve_navier_stokes~2&#45;&gt;none~ctrig~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_edge19" class="edge"><title>proc~solve_navier_stokes~2&#45;&gt;none~ctrig~2</title>
+<path fill="none" stroke="#000000" d="M108.372,-362.124C132.469,-359.019 160.305,-355.433 181.898,-352.651"/>
+<polygon fill="#000000" stroke="#000000" points="182.482,-356.105 191.952,-351.356 181.587,-349.162 182.482,-356.105"/>
+</g>
+<!-- none~define_kspace~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_node9" class="node"><title>none~define_kspace~2</title>
+<polygon fill="#d9534f" stroke="#d9534f" points="259,-318 179,-318 179,-294 259,-294 259,-318"/>
+<text text-anchor="middle" x="219" y="-303.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">define_kspace</text>
+</g>
+<!-- proc~solve_navier_stokes~2&#45;&gt;none~define_kspace~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_edge20" class="edge"><title>proc~solve_navier_stokes~2&#45;&gt;none~define_kspace~2</title>
+<path fill="none" stroke="#000000" d="M77.9714,-356.877C95.6824,-347.847 120.963,-335.638 144,-327 151.999,-324.001 160.621,-321.189 169.055,-318.659"/>
+<polygon fill="#000000" stroke="#000000" points="170.194,-321.973 178.821,-315.823 168.242,-315.251 170.194,-321.973"/>
+</g>
+<!-- none~phase1~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_node10" class="node"><title>none~phase1~2</title>
+<polygon fill="#d9534f" stroke="#d9534f" points="246,-276 192,-276 192,-252 246,-252 246,-276"/>
+<text text-anchor="middle" x="219" y="-261.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">phase1</text>
+</g>
+<!-- proc~solve_navier_stokes~2&#45;&gt;none~phase1~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_edge21" class="edge"><title>proc~solve_navier_stokes~2&#45;&gt;none~phase1~2</title>
+<path fill="none" stroke="#000000" d="M64.5818,-356.788C79.5774,-338.496 110.376,-304.097 144,-285 155.522,-278.456 169.228,-273.831 181.695,-270.619"/>
+<polygon fill="#000000" stroke="#000000" points="182.867,-273.939 191.801,-268.243 181.265,-267.125 182.867,-273.939"/>
+</g>
+<!-- none~transpose_x_y~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_node11" class="node"><title>none~transpose_x_y~2</title>
+<polygon fill="#d9534f" stroke="#d9534f" points="261,-524 177,-524 177,-500 261,-500 261,-524"/>
+<text text-anchor="middle" x="219" y="-509.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">transpose_X_Y</text>
+</g>
+<!-- proc~solve_navier_stokes~2&#45;&gt;none~transpose_x_y~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_edge22" class="edge"><title>proc~solve_navier_stokes~2&#45;&gt;none~transpose_x_y~2</title>
+<path fill="none" stroke="#000000" d="M61.0883,-381.137C73.4993,-404.696 103.97,-456.863 144,-486 150.964,-491.069 159.003,-495.22 167.163,-498.597"/>
+<polygon fill="#000000" stroke="#000000" points="166.147,-501.955 176.738,-502.216 168.621,-495.407 166.147,-501.955"/>
+</g>
+<!-- none~phase3~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_node12" class="node"><title>none~phase3~2</title>
+<polygon fill="#d9534f" stroke="#d9534f" points="246,-234 192,-234 192,-210 246,-210 246,-234"/>
+<text text-anchor="middle" x="219" y="-219.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">phase3</text>
+</g>
+<!-- proc~solve_navier_stokes~2&#45;&gt;none~phase3~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_edge23" class="edge"><title>proc~solve_navier_stokes~2&#45;&gt;none~phase3~2</title>
+<path fill="none" stroke="#000000" d="M60.1418,-356.866C71.4494,-331.669 100.943,-273.491 144,-243 155.094,-235.144 169.064,-230.216 181.871,-227.128"/>
+<polygon fill="#000000" stroke="#000000" points="182.754,-230.519 191.814,-225.026 181.306,-223.67 182.754,-230.519"/>
+</g>
+<!-- none~define_field~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_node13" class="node"><title>none~define_field~2</title>
+<polygon fill="#d9534f" stroke="#d9534f" points="252,-150 186,-150 186,-126 252,-126 252,-150"/>
+<text text-anchor="middle" x="219" y="-135.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">define_field</text>
+</g>
+<!-- proc~solve_navier_stokes~2&#45;&gt;none~define_field~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_edge24" class="edge"><title>proc~solve_navier_stokes~2&#45;&gt;none~define_field~2</title>
+<path fill="none" stroke="#000000" d="M56.4771,-356.94C61.5186,-321.1 81.3642,-214.294 144,-159 152.905,-151.139 164.555,-146.205 175.967,-143.114"/>
+<polygon fill="#000000" stroke="#000000" points="176.897,-146.492 185.861,-140.844 175.331,-139.669 176.897,-146.492"/>
+</g>
+<!-- walltime -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_node14" class="node"><title>walltime</title>
+<polygon fill="#777777" stroke="#777777" points="405,-505 351,-505 351,-481 405,-481 405,-505"/>
+<text text-anchor="middle" x="378" y="-490.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">walltime</text>
+</g>
+<!-- proc~solve_navier_stokes~2&#45;&gt;walltime -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_edge25" class="edge"><title>proc~solve_navier_stokes~2&#45;&gt;walltime</title>
+<path fill="none" stroke="#000000" d="M63.8608,-381.05C78.35,-399.779 109.027,-435.53 144,-453 208.004,-484.971 292.876,-491.949 340.522,-493.147"/>
+<polygon fill="#000000" stroke="#000000" points="340.607,-496.649 350.668,-493.327 340.732,-489.65 340.607,-496.649"/>
+</g>
+<!-- none~enforce_conjugate_symmetry~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_node15" class="node"><title>none~enforce_conjugate_symmetry~2</title>
+<polygon fill="#d9534f" stroke="#d9534f" points="294,-108 144,-108 144,-84 294,-84 294,-108"/>
+<text text-anchor="middle" x="219" y="-93.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">enforce_conjugate_symmetry</text>
+</g>
+<!-- proc~solve_navier_stokes~2&#45;&gt;none~enforce_conjugate_symmetry~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_edge26" class="edge"><title>proc~solve_navier_stokes~2&#45;&gt;none~enforce_conjugate_symmetry~2</title>
+<path fill="none" stroke="#000000" d="M55.5212,-356.933C57.9304,-316.617 71.2754,-185.282 144,-117 145.305,-115.775 146.677,-114.62 148.104,-113.532"/>
+<polygon fill="#000000" stroke="#000000" points="150.247,-116.317 156.814,-108.002 146.495,-110.407 150.247,-116.317"/>
+</g>
+<!-- none~phase2~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_node16" class="node"><title>none~phase2~2</title>
+<polygon fill="#d9534f" stroke="#d9534f" points="246,-192 192,-192 192,-168 246,-168 246,-192"/>
+<text text-anchor="middle" x="219" y="-177.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">phase2</text>
+</g>
+<!-- proc~solve_navier_stokes~2&#45;&gt;none~phase2~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_edge27" class="edge"><title>proc~solve_navier_stokes~2&#45;&gt;none~phase2~2</title>
+<path fill="none" stroke="#000000" d="M57.9253,-356.72C65.9667,-325.684 91.3895,-243.55 144,-201 154.651,-192.386 168.648,-187.303 181.599,-184.305"/>
+<polygon fill="#000000" stroke="#000000" points="182.542,-187.686 191.677,-182.32 181.189,-180.818 182.542,-187.686"/>
+</g>
+<!-- none~define_step~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_node17" class="node"><title>none~define_step~2</title>
+<polygon fill="#d9534f" stroke="#d9534f" points="252.5,-444 185.5,-444 185.5,-420 252.5,-420 252.5,-444"/>
+<text text-anchor="middle" x="219" y="-429.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">define_step</text>
+</g>
+<!-- proc~solve_navier_stokes~2&#45;&gt;none~define_step~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_edge28" class="edge"><title>proc~solve_navier_stokes~2&#45;&gt;none~define_step~2</title>
+<path fill="none" stroke="#000000" d="M77.9714,-381.123C95.6824,-390.153 120.963,-402.362 144,-411 154.045,-414.766 165.072,-418.236 175.475,-421.226"/>
+<polygon fill="#000000" stroke="#000000" points="174.634,-424.625 185.207,-423.938 176.514,-417.882 174.634,-424.625"/>
+</g>
+<!-- none~copy_n_s~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_node18" class="node"><title>none~copy_n_s~2</title>
+<polygon fill="#d9534f" stroke="#d9534f" points="247.5,-66 190.5,-66 190.5,-42 247.5,-42 247.5,-66"/>
+<text text-anchor="middle" x="219" y="-51.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">copy_n_s</text>
+</g>
+<!-- proc~solve_navier_stokes~2&#45;&gt;none~copy_n_s~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_edge29" class="edge"><title>proc~solve_navier_stokes~2&#45;&gt;none~copy_n_s~2</title>
+<path fill="none" stroke="#000000" d="M54.8197,-356.876C54.844,-312.388 61.0799,-156.487 144,-75 153.62,-65.546 167.168,-60.2831 180.047,-57.3757"/>
+<polygon fill="#000000" stroke="#000000" points="180.944,-60.7693 190.144,-55.514 179.675,-53.8853 180.944,-60.7693"/>
+</g>
+<!-- none~pressure~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_node19" class="node"><title>none~pressure~2</title>
+<polygon fill="#d9534f" stroke="#d9534f" points="246,-24 192,-24 192,-0 246,-0 246,-24"/>
+<text text-anchor="middle" x="219" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">pressure</text>
+</g>
+<!-- proc~solve_navier_stokes~2&#45;&gt;none~pressure~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_edge30" class="edge"><title>proc~solve_navier_stokes~2&#45;&gt;none~pressure~2</title>
+<path fill="none" stroke="#000000" d="M56.6038,-356.822C64.0171,-302.302 96.6311,-81.209 144,-33 153.92,-22.9042 168.309,-17.5685 181.768,-14.7818"/>
+<polygon fill="#000000" stroke="#000000" points="182.5,-18.2081 191.788,-13.111 181.349,-11.3034 182.5,-18.2081"/>
+</g>
+<!-- none~transpose_y_x~2&#45;&gt;walltime -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_edge1" class="edge"><title>none~transpose_y_x~2&#45;&gt;walltime</title>
+<path fill="none" stroke="#000000" d="M261.124,-543.691C271.94,-540.611 283.512,-536.981 294,-533 311.462,-526.371 330.262,-517.468 345.547,-509.744"/>
+<polygon fill="#000000" stroke="#000000" points="347.265,-512.796 354.566,-505.118 344.071,-506.567 347.265,-512.796"/>
+</g>
+<!-- proc~copy3 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_node20" class="node"><title>proc~copy3</title>
+<g id="a_proc~~solve_navier_stokes~2~~CallsGraph_node20"><a xlink:href="../proc/copy3.html" xlink:title="copy3">
+<polygon fill="#d9534f" stroke="#d9534f" points="405,-556 351,-556 351,-532 405,-532 405,-556"/>
+<text text-anchor="middle" x="378" y="-541.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">copy3</text>
+</a>
+</g>
+</g>
+<!-- none~transpose_y_x~2&#45;&gt;proc~copy3 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_edge2" class="edge"><title>none~transpose_y_x~2&#45;&gt;proc~copy3</title>
+<path fill="none" stroke="#000000" d="M261.25,-551.373C285.942,-549.8 317.035,-547.819 340.776,-546.307"/>
+<polygon fill="#000000" stroke="#000000" points="341.031,-549.798 350.788,-545.67 340.586,-542.812 341.031,-549.798"/>
+</g>
+<!-- none~cfft~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_node21" class="node"><title>none~cfft~2</title>
+<polygon fill="#a7506f" stroke="#a7506f" points="405,-234 351,-234 351,-210 405,-210 405,-234"/>
+<text text-anchor="middle" x="378" y="-219.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">cfft</text>
+</g>
+<!-- none~phase1~2&#45;&gt;none~cfft~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_edge3" class="edge"><title>none~phase1~2&#45;&gt;none~cfft~2</title>
+<path fill="none" stroke="#000000" d="M246.278,-256.97C272.281,-250.014 312.275,-239.315 341.178,-231.583"/>
+<polygon fill="#000000" stroke="#000000" points="342.142,-234.948 350.898,-228.983 340.333,-228.186 342.142,-234.948"/>
+</g>
+<!-- none~transpose_x_y~2&#45;&gt;walltime -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_edge4" class="edge"><title>none~transpose_x_y~2&#45;&gt;walltime</title>
+<path fill="none" stroke="#000000" d="M261.25,-507.008C285.942,-504.02 317.035,-500.257 340.776,-497.384"/>
+<polygon fill="#000000" stroke="#000000" points="341.281,-500.848 350.788,-496.172 340.44,-493.899 341.281,-500.848"/>
+</g>
+<!-- none~transpose_x_y~2&#45;&gt;proc~copy3 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_edge5" class="edge"><title>none~transpose_x_y~2&#45;&gt;proc~copy3</title>
+<path fill="none" stroke="#000000" d="M261.25,-520.408C285.942,-525.44 317.035,-531.778 340.776,-536.617"/>
+<polygon fill="#000000" stroke="#000000" points="340.29,-540.09 350.788,-538.657 341.689,-533.231 340.29,-540.09"/>
+</g>
+<!-- none~phase3~2&#45;&gt;none~cfft~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_edge6" class="edge"><title>none~phase3~2&#45;&gt;none~cfft~2</title>
+<path fill="none" stroke="#000000" d="M246.278,-222C272.167,-222 311.926,-222 340.799,-222"/>
+<polygon fill="#000000" stroke="#000000" points="340.898,-225.5 350.898,-222 340.898,-218.5 340.898,-225.5"/>
+</g>
+<!-- proc~init_random_seed -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_node22" class="node"><title>proc~init_random_seed</title>
+<g id="a_proc~~solve_navier_stokes~2~~CallsGraph_node22"><a xlink:href="../proc/init_random_seed.html" xlink:title="init_random_seed">
+<polygon fill="#d9534f" stroke="#d9534f" points="426,-150 330,-150 330,-126 426,-126 426,-150"/>
+<text text-anchor="middle" x="378" y="-135.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">init_random_seed</text>
+</a>
+</g>
+</g>
+<!-- none~define_field~2&#45;&gt;proc~init_random_seed -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_edge8" class="edge"><title>none~define_field~2&#45;&gt;proc~init_random_seed</title>
+<path fill="none" stroke="#000000" d="M252.15,-138C271.599,-138 296.963,-138 319.744,-138"/>
+<polygon fill="#000000" stroke="#000000" points="320,-141.5 330,-138 319.999,-134.5 320,-141.5"/>
+</g>
+<!-- none~phase2~2&#45;&gt;none~cfft~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_edge9" class="edge"><title>none~phase2~2&#45;&gt;none~cfft~2</title>
+<path fill="none" stroke="#000000" d="M246.278,-187.03C272.281,-193.986 312.275,-204.685 341.178,-212.417"/>
+<polygon fill="#000000" stroke="#000000" points="340.333,-215.814 350.898,-215.017 342.142,-209.052 340.333,-215.814"/>
+</g>
+<!-- none~rfft~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_node24" class="node"><title>none~rfft~2</title>
+<polygon fill="#a7506f" stroke="#a7506f" points="405,-192 351,-192 351,-168 405,-168 405,-192"/>
+<text text-anchor="middle" x="378" y="-177.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">rfft</text>
+</g>
+<!-- none~phase2~2&#45;&gt;none~rfft~2 -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_edge10" class="edge"><title>none~phase2~2&#45;&gt;none~rfft~2</title>
+<path fill="none" stroke="#000000" d="M246.278,-180C272.167,-180 311.926,-180 340.799,-180"/>
+<polygon fill="#000000" stroke="#000000" points="340.898,-183.5 350.898,-180 340.898,-176.5 340.898,-183.5"/>
+</g>
+<!-- none~define_step~2&#45;&gt;walltime -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_edge11" class="edge"><title>none~define_step~2&#45;&gt;walltime</title>
+<path fill="none" stroke="#000000" d="M252.576,-442.964C265.533,-447.45 280.535,-452.801 294,-458 309.797,-464.099 327.08,-471.301 341.765,-477.581"/>
+<polygon fill="#000000" stroke="#000000" points="340.43,-480.816 350.999,-481.553 343.197,-474.386 340.43,-480.816"/>
+</g>
+<!-- max_velmax -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_node25" class="node"><title>max_velmax</title>
+<polygon fill="#777777" stroke="#777777" points="413.5,-444 342.5,-444 342.5,-420 413.5,-420 413.5,-444"/>
+<text text-anchor="middle" x="378" y="-429.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">max_velmax</text>
+</g>
+<!-- none~define_step~2&#45;&gt;max_velmax -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_edge12" class="edge"><title>none~define_step~2&#45;&gt;max_velmax</title>
+<path fill="none" stroke="#000000" d="M252.531,-432C275.581,-432 306.797,-432 332.2,-432"/>
+<polygon fill="#000000" stroke="#000000" points="332.333,-435.5 342.333,-432 332.333,-428.5 332.333,-435.5"/>
+</g>
+<!-- none~lcg -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_node23" class="node"><title>none~lcg</title>
+<polygon fill="#d94e8f" stroke="#d94e8f" points="516,-150 462,-150 462,-126 516,-126 516,-150"/>
+<text text-anchor="middle" x="489" y="-135.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">lcg</text>
+</g>
+<!-- proc~init_random_seed&#45;&gt;none~lcg -->
+<g id="proc~~solve_navier_stokes~2~~CallsGraph_edge7" class="edge"><title>proc~init_random_seed&#45;&gt;none~lcg</title>
+<path fill="none" stroke="#000000" d="M426.175,-138C434.656,-138 443.378,-138 451.5,-138"/>
+<polygon fill="#000000" stroke="#000000" points="451.76,-141.5 461.76,-138 451.76,-134.5 451.76,-141.5"/>
+</g>
+</g>
+</svg>
+</div>
+                <div><a type="button" class="graph-help" data-toggle="modal" href="#graph-help-text">Help</a></div>
+                <div class="modal fade" id="graph-help-text" tabindex="-1" role="dialog">
+                  <div class="modal-dialog modal-lg" role="document">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="-graph-help-label">Graph Key</h4>
+                      </div>
+                      <div class="modal-body">
+                        
+Nodes of different colours represent the following:
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.38.0 (20140413.2041)
+ -->
+<!-- Title: Graph Key Pages: 1 -->
+<svg width="641pt" height="26pt"
+ viewBox="0.00 0.00 641.00 26.23" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(0.819693 0.819693) rotate(0) translate(4 28)">
+<title>Graph Key</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-28 778,-28 778,4 -4,4"/>
+<!-- Module -->
+<g id="node1" class="node"><title>Module</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="54,-24 0,-24 0,-0 54,-0 54,-24"/>
+<text text-anchor="middle" x="27" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Module</text>
+</g>
+<!-- Submodule -->
+<g id="node2" class="node"><title>Submodule</title>
+<polygon fill="#5bc0de" stroke="#5bc0de" points="138,-24 72,-24 72,-0 138,-0 138,-24"/>
+<text text-anchor="middle" x="105" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Submodule</text>
+</g>
+<!-- Type -->
+<g id="node3" class="node"><title>Type</title>
+<polygon fill="#5cb85c" stroke="#5cb85c" points="210,-24 156,-24 156,-0 210,-0 210,-24"/>
+<text text-anchor="middle" x="183" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Type</text>
+</g>
+<!-- Subroutine -->
+<g id="node4" class="node"><title>Subroutine</title>
+<polygon fill="#d9534f" stroke="#d9534f" points="291.5,-24 228.5,-24 228.5,-0 291.5,-0 291.5,-24"/>
+<text text-anchor="middle" x="260" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Subroutine</text>
+</g>
+<!-- Function -->
+<g id="node5" class="node"><title>Function</title>
+<polygon fill="#d94e8f" stroke="#d94e8f" points="364,-24 310,-24 310,-0 364,-0 364,-24"/>
+<text text-anchor="middle" x="337" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Function</text>
+</g>
+<!-- Interface -->
+<g id="node6" class="node"><title>Interface</title>
+<polygon fill="#a7506f" stroke="#a7506f" points="436,-24 382,-24 382,-0 436,-0 436,-24"/>
+<text text-anchor="middle" x="409" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Interface</text>
+</g>
+<!-- Unknown Procedure Type -->
+<g id="node7" class="node"><title>Unknown Procedure Type</title>
+<polygon fill="#777777" stroke="#777777" points="588,-24 454,-24 454,-0 588,-0 588,-24"/>
+<text text-anchor="middle" x="521" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Unknown Procedure Type</text>
+</g>
+<!-- Program -->
+<g id="node8" class="node"><title>Program</title>
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="660,-24 606,-24 606,-0 660,-0 660,-24"/>
+<text text-anchor="middle" x="633" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Program</text>
+</g>
+<!-- This Page&#39;s Entity -->
+<g id="node9" class="node"><title>This Page&#39;s Entity</title>
+<polygon fill="none" stroke="black" points="774,-24 678,-24 678,-0 774,-0 774,-24"/>
+<text text-anchor="middle" x="726" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50">This Page&#39;s Entity</text>
+</g>
+</g>
+</svg>
+
+Where possible, edges connecting nodes are given different colours to make them
+easier to distinguish in large graphs.
+<h5>Module Graph</h5>
+<p>Solid arrows point from a parent (sub)module to the submodule which is
+descended from it. Dashed arrows point from a module being used to the
+module using it.</p>
+<h5>Type Graph</h5>
+<p>Solid arrows point from one derived type to another which extends
+(inherits from) it. Dashed arrows point from a derived type to another
+type containing it as a components, with a label listing the name(s) of
+said component(s).</p>
+<h5>Call Graph</h5>
+<p>Solid arrows point from a procedure to one which it calls. Dashed 
+arrows point from an interface to procedures which implement that interface.
+This could include the module procedures in a generic interface or the
+implementation in a submodule of an interface in a parent module.</p>
+
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+     
+     
+    <br>
+    
+    <section>
+    <h2>Variables</h2>
+    
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th><th>Visibility</th>
+
+<th>Attributes</th><th></th><th>Name</th><th></th><th>Initial</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-bufr_x_y%7E2"></span>complex,</td>
+  
+  <td>public,</td>
+  <td>allocatable</td><td>::</td>
+  <td><strong>bufr_X_Y</strong>(:,:,:,:)</td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-bufr_y_x%7E2"></span>complex,</td>
+  
+  <td>public,</td>
+  <td>allocatable</td><td>::</td>
+  <td><strong>bufr_Y_X</strong>(:,:,:,:)</td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-k1%7E2"></span>real,</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>k1</strong>(nx/2)</td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-k2%7E2"></span>real,</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>k2</strong>(ny)</td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-k3%7E2"></span>real,</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>k3</strong>(nz)</td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-kx%7E2"></span>real,</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>kx</strong>(nx/2)</td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-ky%7E2"></span>real,</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>ky</strong>(nx/2,ny)</td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-ky_%7E2"></span>real,</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>ky_</strong>(nx/2,ny)</td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-kz%7E2"></span>real,</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>kz</strong>(nz)</td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-mk1%7E2"></span>real,</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>mk1</strong>(nx/2)</td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-mk2%7E2"></span>real,</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>mk2</strong>(ny)</td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-mk3%7E2"></span>real,</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>mk3</strong>(nz)</td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-nshells%7E2"></span>integer(kind=int64),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>nshells</strong></td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-oflag%7E2"></span>integer(kind=int64),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>oflag</strong></td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-rflag%7E2"></span>integer(kind=int64),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>rflag</strong></td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-rkstep%7E2"></span>integer(kind=int64),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>rkstep</strong></td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-step%7E2"></span>integer(kind=int64),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>step</strong></td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-stop%7E2"></span>integer(kind=int64),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>stop</strong></td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-sx%7E2"></span>complex,</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>sx</strong>(nx/2,3)</td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-sy%7E2"></span>complex,</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>sy</strong>(ny,3)</td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-sz%7E2"></span>complex,</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>sz</strong>(nz,3)</td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-t_end"></span>real,</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>t_end</strong></td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-t_start"></span>real,</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>t_start</strong></td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-trigx%7E2"></span>integer(kind=int64),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>trigx</strong></td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-trigxy%7E2"></span>integer(kind=int64),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>trigxy</strong></td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-trigy%7E2"></span>integer(kind=int64),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>trigy</strong></td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-trigz%7E2"></span>integer(kind=int64),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>trigz</strong></td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-u%7E3"></span>complex,</td>
+  
+  <td>public,</td>
+  <td>allocatable</td><td>::</td>
+  <td><strong>u</strong>(:,:,:,:)[:]</td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-un%7E2"></span>complex,</td>
+  
+  <td>public,</td>
+  <td>allocatable</td><td>::</td>
+  <td><strong>un</strong>(:,:,:,:)</td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-ur%7E2"></span>complex,</td>
+  
+  <td>public,</td>
+  <td>allocatable</td><td>::</td>
+  <td><strong>ur</strong>(:,:,:,:)[:]</td><td></td><td></td><td></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+    </section>
+    <br>
+    
+    
+    
+    
+    
+	<section> 
+     <h2>Interfaces</h2>
+	 
+	   
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="interface-cfft%7E2"></span><h3>interface 
+    
+  </h3></div>
+  
+  <ul class="list-group">
+  
+    <li class="list-group-item">
+    
+    
+    <h3>
+subroutine <a href='../interface/cfft%7E2.html'>cfft</a>(len, lot, data, inc, jmp, ctrig, isign) bind(C)
+    
+    
+    
+</h3>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer(kind=int64),</td>
+  <td>intent(in),</td>
+  <td></td>
+  
+  <td>value</td><td>::</td>
+  <td><strong>len</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer(kind=int64),</td>
+  <td>intent(in),</td>
+  <td></td>
+  
+  <td>value</td><td>::</td>
+  <td><strong>lot</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>complex,</td>
+  <td>intent(in),</td>
+  <td></td>
+  
+  <td>dimension(0:0)</td><td>::</td>
+  <td><strong>data</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer(kind=int64),</td>
+  <td>intent(in),</td>
+  <td></td>
+  
+  <td>value</td><td>::</td>
+  <td><strong>inc</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer(kind=int64),</td>
+  <td>intent(in),</td>
+  <td></td>
+  
+  <td>value</td><td>::</td>
+  <td><strong>jmp</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer(kind=int64),</td>
+  <td>intent(in),</td>
+  <td></td>
+  
+  <td>value</td><td>::</td>
+  <td><strong>ctrig</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer(kind=int64),</td>
+  <td>intent(in),</td>
+  <td></td>
+  
+  <td>value</td><td>::</td>
+  <td><strong>isign</strong></td><td></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+        
+
+    </li>
+  
+  </ul>
+</div>
+
+    
+	   
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="interface-ctrig%7E2"></span><h3>interface 
+    
+  </h3></div>
+  
+  <ul class="list-group">
+  
+    <li class="list-group-item">
+    
+    
+    <h3>
+function <a href='../interface/ctrig%7E2.html'>ctrig</a>(len) bind(C)
+    
+    
+    
+</h3>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer(kind=int64),</td>
+  <td>intent(in),</td>
+  <td></td>
+  
+  <td>value</td><td>::</td>
+  <td><strong>len</strong></td><td></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+  
+  
+  
+  
+     <h4>Return Value <small>integer(kind=int64)
+  </small></h4>
+  
+    
+        
+
+    </li>
+  
+  </ul>
+</div>
+
+    
+	   
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="interface-rfft%7E2"></span><h3>interface 
+    
+  </h3></div>
+  
+  <ul class="list-group">
+  
+    <li class="list-group-item">
+    
+    
+    <h3>
+subroutine <a href='../interface/rfft%7E2.html'>rfft</a>(len, lot, data, inc, jmp, rtrig, isign) bind(C)
+    
+    
+    
+</h3>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer(kind=int64),</td>
+  <td>intent(in),</td>
+  <td></td>
+  
+  <td>value</td><td>::</td>
+  <td><strong>len</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer(kind=int64),</td>
+  <td>intent(in),</td>
+  <td></td>
+  
+  <td>value</td><td>::</td>
+  <td><strong>lot</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>complex,</td>
+  <td>intent(in),</td>
+  <td></td>
+  
+  <td>dimension(0:0)</td><td>::</td>
+  <td><strong>data</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer(kind=int64),</td>
+  <td>intent(in),</td>
+  <td></td>
+  
+  <td>value</td><td>::</td>
+  <td><strong>inc</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer(kind=int64),</td>
+  <td>intent(in),</td>
+  <td></td>
+  
+  <td>value</td><td>::</td>
+  <td><strong>jmp</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer(kind=int64),</td>
+  <td>intent(in),</td>
+  <td></td>
+  
+  <td>value</td><td>::</td>
+  <td><strong>rtrig</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer(kind=int64),</td>
+  <td>intent(in),</td>
+  <td></td>
+  
+  <td>value</td><td>::</td>
+  <td><strong>isign</strong></td><td></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+        
+
+    </li>
+  
+  </ul>
+</div>
+
+    
+	   
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="interface-rtrig%7E2"></span><h3>interface 
+    
+  </h3></div>
+  
+  <ul class="list-group">
+  
+    <li class="list-group-item">
+    
+    
+    <h3>
+function <a href='../interface/rtrig%7E2.html'>rtrig</a>(len) bind(C)
+    
+    
+    
+</h3>
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer(kind=int64),</td>
+  <td>intent(in),</td>
+  <td></td>
+  
+  <td>value</td><td>::</td>
+  <td><strong>len</strong></td><td></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+  
+  
+  
+  
+     <h4>Return Value <small>integer(kind=int64)
+  </small></h4>
+  
+    
+        
+
+    </li>
+  
+  </ul>
+</div>
+
+    
+    </section>
+	 <br>
+    
+
+    
+    
+    
+    
+    
+
+
+    
+    <section>
+    <h2>Subroutines</h2>
+    
+    
+  <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-advance%7E2"></span><h3>
+subroutine advance()
+    
+    
+    
+</h3></div>
+  <div class="panel-body">
+       
+    
+    <h4>Arguments</h4>
+    
+      <em>None</em>
+    
+    
+        
+
+  </div>
+  </div>
+
+    
+    
+  <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-copy_n_s%7E2"></span><h3>
+subroutine copy_n_s()
+    
+    
+    
+</h3></div>
+  <div class="panel-body">
+       
+    
+    <h4>Arguments</h4>
+    
+      <em>None</em>
+    
+    
+        
+
+  </div>
+  </div>
+
+    
+    
+  <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-copy_s_n%7E2"></span><h3>
+subroutine copy_s_n()
+    
+    
+    
+</h3></div>
+  <div class="panel-body">
+       
+    
+    <h4>Arguments</h4>
+    
+      <em>None</em>
+    
+    
+        
+
+  </div>
+  </div>
+
+    
+    
+  <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-define_field%7E2"></span><h3>
+subroutine define_field()
+    
+    
+    
+</h3></div>
+  <div class="panel-body">
+       
+    
+    <h4>Arguments</h4>
+    
+      <em>None</em>
+    
+    
+        
+
+  </div>
+  </div>
+
+    
+    
+  <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-define_kspace%7E2"></span><h3>
+subroutine define_kspace()
+    
+    
+    
+</h3></div>
+  <div class="panel-body">
+       
+    
+    <h4>Arguments</h4>
+    
+      <em>None</em>
+    
+    
+        
+
+  </div>
+  </div>
+
+    
+    
+  <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-define_shifts%7E2"></span><h3>
+subroutine define_shifts()
+    
+    
+    
+</h3></div>
+  <div class="panel-body">
+       
+    
+    <h4>Arguments</h4>
+    
+      <em>None</em>
+    
+    
+        
+
+  </div>
+  </div>
+
+    
+    
+  <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-define_step%7E2"></span><h3>
+subroutine define_step()
+    
+    
+    
+</h3></div>
+  <div class="panel-body">
+       
+    
+    <h4>Arguments</h4>
+    
+      <em>None</em>
+    
+    
+        
+
+  </div>
+  </div>
+
+    
+    
+  <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-enforce_conjugate_symmetry%7E2"></span><h3>
+subroutine enforce_conjugate_symmetry()
+    
+    
+    
+</h3></div>
+  <div class="panel-body">
+       
+    
+    <h4>Arguments</h4>
+    
+      <em>None</em>
+    
+    
+        
+
+  </div>
+  </div>
+
+    
+    
+  <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-phase1%7E2"></span><h3>
+subroutine phase1()
+    
+    
+    
+</h3></div>
+  <div class="panel-body">
+       
+    
+    <h4>Arguments</h4>
+    
+      <em>None</em>
+    
+    
+        
+
+  </div>
+  </div>
+
+    
+    
+  <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-phase2%7E2"></span><h3>
+subroutine phase2()
+    
+    
+    
+</h3></div>
+  <div class="panel-body">
+       
+    
+    <h4>Arguments</h4>
+    
+      <em>None</em>
+    
+    
+        
+
+  </div>
+  </div>
+
+    
+    
+  <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-phase3%7E2"></span><h3>
+subroutine phase3()
+    
+    
+    
+</h3></div>
+  <div class="panel-body">
+       
+    
+    <h4>Arguments</h4>
+    
+      <em>None</em>
+    
+    
+        
+
+  </div>
+  </div>
+
+    
+    
+  <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-pressure%7E2"></span><h3>
+subroutine pressure()
+    
+    
+    
+</h3></div>
+  <div class="panel-body">
+       
+    
+    <h4>Arguments</h4>
+    
+      <em>None</em>
+    
+    
+        
+
+  </div>
+  </div>
+
+    
+    
+  <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-remesh%7E2"></span><h3>
+subroutine remesh()
+    
+    
+    
+</h3></div>
+  <div class="panel-body">
+       
+    
+    <h4>Arguments</h4>
+    
+      <em>None</em>
+    
+    
+        
+
+  </div>
+  </div>
+
+    
+    
+  <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-spectra%7E2"></span><h3>
+subroutine spectra()
+    
+    
+    
+</h3></div>
+  <div class="panel-body">
+       
+    
+    <h4>Arguments</h4>
+    
+      <em>None</em>
+    
+    
+        
+
+  </div>
+  </div>
+
+    
+    
+  <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-transpose_x_y%7E2"></span><h3>
+subroutine transpose_X_Y()
+    
+    
+    
+</h3></div>
+  <div class="panel-body">
+       
+    
+    <h4>Arguments</h4>
+    
+      <em>None</em>
+    
+    
+        
+
+  </div>
+  </div>
+
+    
+    
+  <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-transpose_y_x%7E2"></span><h3>
+subroutine transpose_Y_X()
+    
+    
+    
+</h3></div>
+  <div class="panel-body">
+       
+    
+    <h4>Arguments</h4>
+    
+      <em>None</em>
+    
+    
+        
+
+  </div>
+  </div>
+
+    
+    </section>    
+    
+    
+    
+    <section>
+    <h2><span class="anchor" id="src"></span>Source Code</h2>
+    <div class="highlight"><pre><span></span>        <span class="k">subroutine </span><span class="n">solve_navier_stokes</span>
+        <span class="k">end subroutine </span><span class="n">solve_navier_stokes</span>
+</pre></div>
+
+    </section>
+    <br>
+    
+    
+    </div>
+  </div>
+
+    <hr>
+    <footer>
+      <div class="row">
+        <div class="col-md-4">&copy; 2016 <a rel="license" href="http://www.freebsd.org/copyright/freebsd-doc-license.html">FreeBSD Documentation License</a></div>
+        <div class="col-md-4"><span class="text-center"> OpenCoarrays was developed by Sourcery Institute</span></div>
+        <div class="col-md-4">
+          <span class="pull-right">
+            Documentation generated by 
+            <a href="https://github.com/cmacmackin/ford">FORD</a>
+            
+          </span>
+        </div>
+      </div>
+      <br>
+    </footer>
+    </div> <!-- /container -->
+
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js'],
+        'HTML-CSS': { 
+           styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: '#000000 ! important'} }
+        }
+      });
+    </script>
+    <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  </body>
+</html>

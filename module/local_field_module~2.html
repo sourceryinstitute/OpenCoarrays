@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+	 
+	 <meta name="description" content="OpenCoarrays is a Coarray Fortran (CAF) implementation supporting Fortran 2008 and 2015 features">
+    
+    <meta name="author" content="Chris MacMackin" >
+    <link rel="icon" href="../favicon.png">
+
+    <title>local_field_module &ndash; OpenCoarrays</title>
+
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/pygments.css" rel="stylesheet">
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../css/local.css" rel="stylesheet">
+    
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../js/jquery-2.1.3.min.js"></script>
+    <script src="../js/svg-pan-zoom.min.js"></script>
+
+    
+    <script src="../tipuesearch/tipuesearch_content.js"></script>
+    <link  href="../tipuesearch/tipuesearch.css" rel="stylesheet">
+    <script src="../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../tipuesearch/tipuesearch.js"></script>
+    
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../index.html">OpenCoarrays <small>master</small></a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+				
+                
+            <li><a href="../lists/files.html">Source Files</a></li>
+				
+				
+            <li><a href="../lists/modules.html">Modules</a></li>
+				
+				
+            <li><a href="../lists/procedures.html">Procedures</a></li>
+				
+				
+            <li><a href="../lists/absint.html">Abstract Interfaces</a></li>
+								
+            <li><a href="../lists/types.html">Derived Types</a></li>
+				
+				
+            <li><a href="../lists/programs.html">Programs</a></li>
+				
+          </ul>
+        
+        <form action="../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+    
+  
+  <div class="row">
+    <h1>local_field_module 
+    <small>Module</small>
+    
+    </h1>
+	 
+<div class="row">
+<div class="col-lg-12">
+<div class="well well-sm">
+  <ul class="list-inline" style="margin-bottom:0px;display:inline">
+     
+     
+     
+     
+    
+    
+    <li><i class="fa fa-code"></i><a href="../src/local_field.F90"> Source File</a></li>
+     
+  </ul>
+  <ol class="breadcrumb in-well text-right">
+  
+     <li><a href='../sourcefile/local_field.f90.html'>local_field.F90</a></li>
+  
+     <li class="active">local_field_module</li>
+  </ol>
+</div>
+</div>
+</div>
+    
+  </div>
+  
+  <div class="row">
+    <div class="col-lg-3">
+    
+<div id="sidebar">
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="panel panel-primary">
+    <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#types">Derived Types</a></h3></div>
+    <div id="types" class="panel-collapse collapse">
+      <div class="list-group">
+        
+        <a class="list-group-item" href="../module/local_field_module%7E2.html#type-local_field">local_field</a>
+        
+      </div>
+    </div>
+  </div>
+  
+  
+  
+  <div class="panel panel-primary">
+    <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#funcs">Functions</a></h3></div>
+    <div id="funcs" class="panel-collapse collapse">
+        <div class="list-group">
+          
+          <a class="list-group-item" href="../module/local_field_module%7E2.html#proc-multiply%7E2">multiply</a>
+          
+          <a class="list-group-item" href="../module/local_field_module%7E2.html#proc-state%7E2">state</a>
+          
+          <a class="list-group-item" href="../module/local_field_module%7E2.html#proc-subtract">subtract</a>
+          
+        </div>
+    </div>
+  </div>
+  
+  
+  
+  <div class="panel panel-primary">
+    <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#subs">Subroutines</a></h3></div>
+    <div class="list-group">
+        <div id="subs" class="panel-collapse collapse">
+          
+          <a class="list-group-item" href="../module/local_field_module%7E2.html#proc-assign_array">assign_array</a>
+          
+          <a class="list-group-item" href="../module/local_field_module%7E2.html#proc-output%7E2">output</a>
+          
+        </div>
+    </div>
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  <hr>
+  
+  <div class="panel panel-default">
+    <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#allmods">All Modules</a></h3></div>
+    <div id="allmods" class="panel-collapse collapse">
+        <div class="list-group">
+          
+          <a class="list-group-item" href="../module/co_intrinsics_module.html">co_intrinsics_module</a>
+          
+          <a class="list-group-item" href="../module/co_object_interface%7E2.html">co_object_interface</a>
+          
+          <a class="list-group-item" href="../module/co_object_interface.html">co_object_interface</a>
+          
+          <a class="list-group-item" href="../module/constants_module%7E3.html">constants_module</a>
+          
+          <a class="list-group-item" href="../module/constants_module%7E2.html">constants_module</a>
+          
+          <a class="list-group-item" href="../module/constants_module%7E4.html">constants_module</a>
+          
+          <a class="list-group-item" href="../module/constants_module.html">constants_module</a>
+          
+          <a class="list-group-item" href="../module/fortrilinos_assertion_utility.html">ForTrilinos_assertion_utility</a>
+          
+          <a class="list-group-item" href="../module/fortrilinos_assertion_utility%7E2.html">ForTrilinos_assertion_utility</a>
+          
+          <a class="list-group-item" href="../module/fortrilinos_error%7E2.html">ForTrilinos_error</a>
+          
+          <a class="list-group-item" href="../module/fortrilinos_error.html">ForTrilinos_error</a>
+          
+          <a class="list-group-item" href="../module/global_field_module.html">global_field_module</a>
+          
+          <a class="list-group-item" href="../module/global_field_module%7E2.html">global_field_module</a>
+          
+          <a class="list-group-item" href="../module/initializer.html">initializer</a>
+          
+          <a class="list-group-item" href="../module/input_file.html">input_file</a>
+          
+          <a class="list-group-item" href="../module/kind_parameters.html">kind_parameters</a>
+          
+          <a class="list-group-item" href="../module/local_field_module%7E2.html">local_field_module</a>
+          
+          <a class="list-group-item" href="../module/local_field_module.html">local_field_module</a>
+          
+          <a class="list-group-item" href="../module/mpi_module.html">mpi_module</a>
+          
+          <a class="list-group-item" href="../module/mpi_run_size.html">mpi_run_size</a>
+          
+          <a class="list-group-item" href="../module/mpi_share.html">mpi_share</a>
+          
+          <a class="list-group-item" href="../module/object_interface%7E2.html">object_interface</a>
+          
+          <a class="list-group-item" href="../module/object_interface.html">object_interface</a>
+          
+          <a class="list-group-item" href="../module/opencoarrays.html">opencoarrays</a>
+          
+          <a class="list-group-item" href="../module/parse_command_line.html">parse_command_line</a>
+          
+          <a class="list-group-item" href="../module/periodic_2nd_order_module.html">periodic_2nd_order_module</a>
+          
+          <a class="list-group-item" href="../module/random_module%7E2.html">random_module</a>
+          
+          <a class="list-group-item" href="../module/random_module%7E3.html">random_module</a>
+          
+          <a class="list-group-item" href="../module/random_module.html">random_module</a>
+          
+          <a class="list-group-item" href="../module/random_module%7E4.html">random_module</a>
+          
+          <a class="list-group-item" href="../module/run_size.html">run_size</a>
+          
+          <a class="list-group-item" href="../module/run_size%7E4.html">run_size</a>
+          
+          <a class="list-group-item" href="../module/run_size%7E5.html">run_size</a>
+          
+          <a class="list-group-item" href="../module/run_size%7E3.html">run_size</a>
+          
+          <a class="list-group-item" href="../module/run_size%7E2.html">run_size</a>
+          
+          <a class="list-group-item" href="../module/shared.html">shared</a>
+          
+        </div>
+    </div>
+  </div>
+  
+</div>
+
+    </div>
+    
+    <div class="col-lg-9" id='text'>
+    
+    
+  
+    <ul class="list-inline">
+      <li><h4>Uses:</h4></li>
+      
+      <li><a href="https://gcc.gnu.org/onlinedocs/gfortran/ISO_005fFORTRAN_005fENV.html">iso_fortran_env</a></li>
+      
+      <li><a href='../module/fortrilinos_assertion_utility.html'>ForTrilinos_assertion_utility</a></li>
+      
+      <li><a href='../module/object_interface%7E2.html'>object_interface</a></li>
+      
+    </ul>
+  
+
+    
+                <div class="depgraph"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.38.0 (20140413.2041)
+ -->
+<!-- Title: module~~local_field_module~2~~UsesGraph Pages: 1 -->
+<svg id="modulelocal_field_module2UsesGraph" width="406pt" height="83pt"
+ viewBox="0.00 0.00 406.00 83.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="module~~local_field_module~2~~UsesGraph" class="graph" transform="scale(1 1) rotate(0) translate(4 79)">
+<title>module~~local_field_module~2~~UsesGraph</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-79 402,-79 402,4 -4,4"/>
+<!-- module~local_field_module~2 -->
+<g id="module~~local_field_module~2~~UsesGraph_node1" class="node"><title>module~local_field_module~2</title>
+<polygon fill="none" stroke="black" points="398,-45 299,-45 299,-21 398,-21 398,-45"/>
+<text text-anchor="middle" x="348.5" y="-30.6" font-family="Helvetica,sans-Serif" font-size="10.50">local_field_module</text>
+</g>
+<!-- module~fortrilinos_assertion_utility -->
+<g id="module~~local_field_module~2~~UsesGraph_node2" class="node"><title>module~fortrilinos_assertion_utility</title>
+<g id="a_module~~local_field_module~2~~UsesGraph_node2"><a xlink:href="../module/fortrilinos_assertion_utility.html" xlink:title="ForTrilinos_assertion_utility">
+<polygon fill="#337ab7" stroke="#337ab7" points="263,-45 123,-45 123,-21 263,-21 263,-45"/>
+<text text-anchor="middle" x="193" y="-30.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">ForTrilinos_assertion_utility</text>
+</a>
+</g>
+</g>
+<!-- module~fortrilinos_assertion_utility&#45;&gt;module~local_field_module~2 -->
+<g id="module~~local_field_module~2~~UsesGraph_edge3" class="edge"><title>module~fortrilinos_assertion_utility&#45;&gt;module~local_field_module~2</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M263.116,-33C271.715,-33 280.444,-33 288.863,-33"/>
+<polygon fill="#000000" stroke="#000000" points="288.951,-36.5001 298.951,-33 288.951,-29.5001 288.951,-36.5001"/>
+</g>
+<!-- iso_fortran_env -->
+<g id="module~~local_field_module~2~~UsesGraph_node3" class="node"><title>iso_fortran_env</title>
+<g id="a_module~~local_field_module~2~~UsesGraph_node3"><a xlink:href="https://gcc.gnu.org/onlinedocs/gfortran/ISO_005fFORTRAN_005fENV.html" xlink:title="iso_fortran_env">
+<polygon fill="#337ab7" stroke="#337ab7" points="86,-75 1,-75 1,-51 86,-51 86,-75"/>
+<text text-anchor="middle" x="43.5" y="-60.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">iso_fortran_env</text>
+</a>
+</g>
+</g>
+<!-- iso_fortran_env&#45;&gt;module~local_field_module~2 -->
+<g id="module~~local_field_module~2~~UsesGraph_edge4" class="edge"><title>iso_fortran_env&#45;&gt;module~local_field_module~2</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M86.2103,-63.7786C130.35,-64.0211 201.929,-62.7543 263,-54 273.884,-52.4399 285.404,-50.0711 296.32,-47.4791"/>
+<polygon fill="#000000" stroke="#000000" points="297.272,-50.8493 306.141,-45.0527 295.593,-44.0536 297.272,-50.8493"/>
+</g>
+<!-- iso_fortran_env&#45;&gt;module~fortrilinos_assertion_utility -->
+<g id="module~~local_field_module~2~~UsesGraph_edge2" class="edge"><title>iso_fortran_env&#45;&gt;module~fortrilinos_assertion_utility</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M86.373,-54.4834C97.7979,-52.1597 110.487,-49.579 122.993,-47.0354"/>
+<polygon fill="#000000" stroke="#000000" points="123.854,-50.432 132.955,-45.0091 122.458,-43.5724 123.854,-50.432"/>
+</g>
+<!-- module~object_interface~2 -->
+<g id="module~~local_field_module~2~~UsesGraph_node4" class="node"><title>module~object_interface~2</title>
+<g id="a_module~~local_field_module~2~~UsesGraph_node4"><a xlink:href="../module/object_interface%7E2.html" xlink:title="object_interface">
+<polygon fill="#337ab7" stroke="#337ab7" points="87,-24 0,-24 0,-0 87,-0 87,-24"/>
+<text text-anchor="middle" x="43.5" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">object_interface</text>
+</a>
+</g>
+</g>
+<!-- module~object_interface~2&#45;&gt;module~local_field_module~2 -->
+<g id="module~~local_field_module~2~~UsesGraph_edge5" class="edge"><title>module~object_interface~2&#45;&gt;module~local_field_module~2</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M87.3924,-8.93457C131.586,-6.49298 202.379,-4.58002 263,-12 274.373,-13.392 286.419,-15.8007 297.742,-18.502"/>
+<polygon fill="#000000" stroke="#000000" points="296.922,-21.9045 307.472,-20.9329 298.619,-15.1133 296.922,-21.9045"/>
+</g>
+<!-- module~object_interface~2&#45;&gt;module~fortrilinos_assertion_utility -->
+<g id="module~~local_field_module~2~~UsesGraph_edge1" class="edge"><title>module~object_interface~2&#45;&gt;module~fortrilinos_assertion_utility</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M87.1631,-18.0741C95.2613,-19.227 103.972,-20.4671 112.786,-21.7221"/>
+<polygon fill="#000000" stroke="#000000" points="112.363,-25.197 122.756,-23.1416 113.349,-18.2669 112.363,-25.197"/>
+</g>
+</g>
+</svg>
+</div>
+                <div><a type="button" class="graph-help" data-toggle="modal" href="#graph-help-text">Help</a></div>
+                <div class="modal fade" id="graph-help-text" tabindex="-1" role="dialog">
+                  <div class="modal-dialog modal-lg" role="document">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="-graph-help-label">Graph Key</h4>
+                      </div>
+                      <div class="modal-body">
+                        
+Nodes of different colours represent the following:
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.38.0 (20140413.2041)
+ -->
+<!-- Title: Graph Key Pages: 1 -->
+<svg width="641pt" height="26pt"
+ viewBox="0.00 0.00 641.00 26.23" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(0.819693 0.819693) rotate(0) translate(4 28)">
+<title>Graph Key</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-28 778,-28 778,4 -4,4"/>
+<!-- Module -->
+<g id="node1" class="node"><title>Module</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="54,-24 0,-24 0,-0 54,-0 54,-24"/>
+<text text-anchor="middle" x="27" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Module</text>
+</g>
+<!-- Submodule -->
+<g id="node2" class="node"><title>Submodule</title>
+<polygon fill="#5bc0de" stroke="#5bc0de" points="138,-24 72,-24 72,-0 138,-0 138,-24"/>
+<text text-anchor="middle" x="105" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Submodule</text>
+</g>
+<!-- Type -->
+<g id="node3" class="node"><title>Type</title>
+<polygon fill="#5cb85c" stroke="#5cb85c" points="210,-24 156,-24 156,-0 210,-0 210,-24"/>
+<text text-anchor="middle" x="183" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Type</text>
+</g>
+<!-- Subroutine -->
+<g id="node4" class="node"><title>Subroutine</title>
+<polygon fill="#d9534f" stroke="#d9534f" points="291.5,-24 228.5,-24 228.5,-0 291.5,-0 291.5,-24"/>
+<text text-anchor="middle" x="260" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Subroutine</text>
+</g>
+<!-- Function -->
+<g id="node5" class="node"><title>Function</title>
+<polygon fill="#d94e8f" stroke="#d94e8f" points="364,-24 310,-24 310,-0 364,-0 364,-24"/>
+<text text-anchor="middle" x="337" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Function</text>
+</g>
+<!-- Interface -->
+<g id="node6" class="node"><title>Interface</title>
+<polygon fill="#a7506f" stroke="#a7506f" points="436,-24 382,-24 382,-0 436,-0 436,-24"/>
+<text text-anchor="middle" x="409" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Interface</text>
+</g>
+<!-- Unknown Procedure Type -->
+<g id="node7" class="node"><title>Unknown Procedure Type</title>
+<polygon fill="#777777" stroke="#777777" points="588,-24 454,-24 454,-0 588,-0 588,-24"/>
+<text text-anchor="middle" x="521" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Unknown Procedure Type</text>
+</g>
+<!-- Program -->
+<g id="node8" class="node"><title>Program</title>
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="660,-24 606,-24 606,-0 660,-0 660,-24"/>
+<text text-anchor="middle" x="633" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Program</text>
+</g>
+<!-- This Page&#39;s Entity -->
+<g id="node9" class="node"><title>This Page&#39;s Entity</title>
+<polygon fill="none" stroke="black" points="774,-24 678,-24 678,-0 774,-0 774,-24"/>
+<text text-anchor="middle" x="726" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50">This Page&#39;s Entity</text>
+</g>
+</g>
+</svg>
+
+Where possible, edges connecting nodes are given different colours to make them
+easier to distinguish in large graphs.
+<h5>Module Graph</h5>
+<p>Solid arrows point from a parent (sub)module to the submodule which is
+descended from it. Dashed arrows point from a module being used to the
+module using it.</p>
+<h5>Type Graph</h5>
+<p>Solid arrows point from one derived type to another which extends
+(inherits from) it. Dashed arrows point from a derived type to another
+type containing it as a components, with a label listing the name(s) of
+said component(s).</p>
+<h5>Call Graph</h5>
+<p>Solid arrows point from a procedure to one which it calls. Dashed 
+arrows point from an interface to procedures which implement that interface.
+This could include the module procedures in a generic interface or the
+implementation in a submodule of an interface in a parent module.</p>
+
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+    
+    
+    
+    
+    <h3>Used By</h3>
+    
+                <div class="depgraph"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.38.0 (20140413.2041)
+ -->
+<!-- Title: module~~local_field_module~2~~UsedByGraph Pages: 1 -->
+<svg id="modulelocal_field_module2UsedByGraph" width="339pt" height="95pt"
+ viewBox="0.00 0.00 339.00 95.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="module~~local_field_module~2~~UsedByGraph" class="graph" transform="scale(1 1) rotate(0) translate(4 91)">
+<title>module~~local_field_module~2~~UsedByGraph</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-91 335,-91 335,4 -4,4"/>
+<!-- module~local_field_module~2 -->
+<g id="module~~local_field_module~2~~UsedByGraph_node1" class="node"><title>module~local_field_module~2</title>
+<polygon fill="none" stroke="black" points="99,-45 0,-45 0,-21 99,-21 99,-45"/>
+<text text-anchor="middle" x="49.5" y="-30.6" font-family="Helvetica,sans-Serif" font-size="10.50">local_field_module</text>
+</g>
+<!-- module~global_field_module -->
+<g id="module~~local_field_module~2~~UsedByGraph_node2" class="node"><title>module~global_field_module</title>
+<g id="a_module~~local_field_module~2~~UsedByGraph_node2"><a xlink:href="../module/global_field_module.html" xlink:title="global_field_module">
+<polygon fill="#337ab7" stroke="#337ab7" points="241,-66 135,-66 135,-42 241,-42 241,-66"/>
+<text text-anchor="middle" x="188" y="-51.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">global_field_module</text>
+</a>
+</g>
+</g>
+<!-- module~local_field_module~2&#45;&gt;module~global_field_module -->
+<g id="module~~local_field_module~2~~UsedByGraph_edge3" class="edge"><title>module~local_field_module~2&#45;&gt;module~global_field_module</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M99.0091,-40.4629C107.381,-41.7509 116.186,-43.1056 124.859,-44.4398"/>
+<polygon fill="#000000" stroke="#000000" points="124.529,-47.9302 134.945,-45.9915 125.593,-41.0116 124.529,-47.9302"/>
+</g>
+<!-- module~global_field_module~2 -->
+<g id="module~~local_field_module~2~~UsedByGraph_node3" class="node"><title>module~global_field_module~2</title>
+<g id="a_module~~local_field_module~2~~UsedByGraph_node3"><a xlink:href="../module/global_field_module%7E2.html" xlink:title="global_field_module">
+<polygon fill="#337ab7" stroke="#337ab7" points="241,-24 135,-24 135,-0 241,-0 241,-24"/>
+<text text-anchor="middle" x="188" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">global_field_module</text>
+</a>
+</g>
+</g>
+<!-- module~local_field_module~2&#45;&gt;module~global_field_module~2 -->
+<g id="module~~local_field_module~2~~UsedByGraph_edge4" class="edge"><title>module~local_field_module~2&#45;&gt;module~global_field_module~2</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M99.0091,-25.5371C107.381,-24.2491 116.186,-22.8944 124.859,-21.5602"/>
+<polygon fill="#000000" stroke="#000000" points="125.593,-24.9884 134.945,-20.0085 124.529,-18.0698 125.593,-24.9884"/>
+</g>
+<!-- program~main -->
+<g id="module~~local_field_module~2~~UsedByGraph_node4" class="node"><title>program~main</title>
+<g id="a_module~~local_field_module~2~~UsedByGraph_node4"><a xlink:href="../program/main.html" xlink:title="main">
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="331,-87 277,-87 277,-63 331,-63 331,-87"/>
+<text text-anchor="middle" x="304" y="-72.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">main</text>
+</a>
+</g>
+</g>
+<!-- module~global_field_module&#45;&gt;program~main -->
+<g id="module~~local_field_module~2~~UsedByGraph_edge1" class="edge"><title>module~global_field_module&#45;&gt;program~main</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M241.329,-63.6395C249.972,-65.2316 258.758,-66.8502 266.888,-68.3477"/>
+<polygon fill="#000000" stroke="#000000" points="266.304,-71.799 276.772,-70.1686 267.572,-64.9148 266.304,-71.799"/>
+</g>
+<!-- program~main~2 -->
+<g id="module~~local_field_module~2~~UsedByGraph_node5" class="node"><title>program~main~2</title>
+<g id="a_module~~local_field_module~2~~UsedByGraph_node5"><a xlink:href="../program/main%7E2.html" xlink:title="main">
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="331,-45 277,-45 277,-21 331,-21 331,-45"/>
+<text text-anchor="middle" x="304" y="-30.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">main</text>
+</a>
+</g>
+</g>
+<!-- module~global_field_module&#45;&gt;program~main~2 -->
+<g id="module~~local_field_module~2~~UsedByGraph_edge2" class="edge"><title>module~global_field_module&#45;&gt;program~main~2</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M241.329,-44.3605C249.972,-42.7684 258.758,-41.1498 266.888,-39.6523"/>
+<polygon fill="#000000" stroke="#000000" points="267.572,-43.0852 276.772,-37.8314 266.304,-36.201 267.572,-43.0852"/>
+</g>
+</g>
+</svg>
+</div>
+                <div><a type="button" class="graph-help" data-toggle="modal" href="#graph-help-text">Help</a></div>
+                <div class="modal fade" id="graph-help-text" tabindex="-1" role="dialog">
+                  <div class="modal-dialog modal-lg" role="document">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="-graph-help-label">Graph Key</h4>
+                      </div>
+                      <div class="modal-body">
+                        
+Nodes of different colours represent the following:
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.38.0 (20140413.2041)
+ -->
+<!-- Title: Graph Key Pages: 1 -->
+<svg width="641pt" height="26pt"
+ viewBox="0.00 0.00 641.00 26.23" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(0.819693 0.819693) rotate(0) translate(4 28)">
+<title>Graph Key</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-28 778,-28 778,4 -4,4"/>
+<!-- Module -->
+<g id="node1" class="node"><title>Module</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="54,-24 0,-24 0,-0 54,-0 54,-24"/>
+<text text-anchor="middle" x="27" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Module</text>
+</g>
+<!-- Submodule -->
+<g id="node2" class="node"><title>Submodule</title>
+<polygon fill="#5bc0de" stroke="#5bc0de" points="138,-24 72,-24 72,-0 138,-0 138,-24"/>
+<text text-anchor="middle" x="105" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Submodule</text>
+</g>
+<!-- Type -->
+<g id="node3" class="node"><title>Type</title>
+<polygon fill="#5cb85c" stroke="#5cb85c" points="210,-24 156,-24 156,-0 210,-0 210,-24"/>
+<text text-anchor="middle" x="183" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Type</text>
+</g>
+<!-- Subroutine -->
+<g id="node4" class="node"><title>Subroutine</title>
+<polygon fill="#d9534f" stroke="#d9534f" points="291.5,-24 228.5,-24 228.5,-0 291.5,-0 291.5,-24"/>
+<text text-anchor="middle" x="260" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Subroutine</text>
+</g>
+<!-- Function -->
+<g id="node5" class="node"><title>Function</title>
+<polygon fill="#d94e8f" stroke="#d94e8f" points="364,-24 310,-24 310,-0 364,-0 364,-24"/>
+<text text-anchor="middle" x="337" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Function</text>
+</g>
+<!-- Interface -->
+<g id="node6" class="node"><title>Interface</title>
+<polygon fill="#a7506f" stroke="#a7506f" points="436,-24 382,-24 382,-0 436,-0 436,-24"/>
+<text text-anchor="middle" x="409" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Interface</text>
+</g>
+<!-- Unknown Procedure Type -->
+<g id="node7" class="node"><title>Unknown Procedure Type</title>
+<polygon fill="#777777" stroke="#777777" points="588,-24 454,-24 454,-0 588,-0 588,-24"/>
+<text text-anchor="middle" x="521" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Unknown Procedure Type</text>
+</g>
+<!-- Program -->
+<g id="node8" class="node"><title>Program</title>
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="660,-24 606,-24 606,-0 660,-0 660,-24"/>
+<text text-anchor="middle" x="633" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Program</text>
+</g>
+<!-- This Page&#39;s Entity -->
+<g id="node9" class="node"><title>This Page&#39;s Entity</title>
+<polygon fill="none" stroke="black" points="774,-24 678,-24 678,-0 774,-0 774,-24"/>
+<text text-anchor="middle" x="726" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50">This Page&#39;s Entity</text>
+</g>
+</g>
+</svg>
+
+Where possible, edges connecting nodes are given different colours to make them
+easier to distinguish in large graphs.
+<h5>Module Graph</h5>
+<p>Solid arrows point from a parent (sub)module to the submodule which is
+descended from it. Dashed arrows point from a module being used to the
+module using it.</p>
+<h5>Type Graph</h5>
+<p>Solid arrows point from one derived type to another which extends
+(inherits from) it. Dashed arrows point from a derived type to another
+type containing it as a components, with a label listing the name(s) of
+said component(s).</p>
+<h5>Call Graph</h5>
+<p>Solid arrows point from a procedure to one which it calls. Dashed 
+arrows point from an interface to procedures which implement that interface.
+This could include the module procedures in a generic interface or the
+implementation in a submodule of an interface in a parent module.</p>
+
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+    <br>
+    
+
+    
+    
+    
+    
+    
+
+    
+    
+    
+    <section>
+     <h2>Derived Types</h2>
+	 
+	   
+<div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="type-local_field"></span><h3>type, public, extends(<a href='../type/object.html'>object</a>) :: <a href='../type/local_field.html'>local_field</a>
+    
+  </h3></div>
+  <div class="panel-body">
+     
+     <h4>Components</h4>
+    
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th><th>Visibility</th>
+
+<th>Attributes</th><th></th><th>Name</th><th></th><th>Initial</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-values%7E2"></span>real(kind=real64),</td>
+  
+  <td>private,</td>
+  <td>allocatable</td><td>::</td>
+  <td><strong>values</strong>(:)</td><td></td><td></td><td></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+     
+     
+          
+     
+     <h4>Type-Bound Procedures</h4>
+      <table class="table table-striped varlist">
+      <tbody>
+      
+       <tr><td>procedure, private :: <strong>assign_array</strong>  </td>
+       <td></td></tr>
+      
+       <tr><td>generic, public :: <strong>assignment(=)</strong>  => assign_array </td>
+       <td></td></tr>
+      
+       <tr><td>procedure, private, pass(rhs) :: <strong>multiply</strong>  </td>
+       <td></td></tr>
+      
+       <tr><td>generic, public :: <strong>operator(*)</strong>  => multiply </td>
+       <td></td></tr>
+      
+       <tr><td>generic, public :: <strong>operator(-)</strong>  => subtract </td>
+       <td></td></tr>
+      
+       <tr><td>procedure, public :: <strong>output</strong>  </td>
+       <td></td></tr>
+      
+       <tr><td>procedure, public :: <strong>state</strong>  </td>
+       <td></td></tr>
+      
+       <tr><td>procedure, private :: <strong>subtract</strong>  </td>
+       <td></td></tr>
+      
+       </tbody>
+       </table>
+     
+     
+  </div>
+</div>
+
+     
+    </section>
+	<br>
+    
+    
+     
+    <section>
+    <h2>Functions</h2>
+    
+    
+  <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-multiply%7E2"></span><h3>
+private pure function <a href='../proc/multiply%7E2.html'>multiply</a>(lhs, rhs) result(product_)
+    
+    
+    
+</h3></div>
+  <div class="panel-body">
+       
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>real(kind=real64),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>lhs</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/local_field.html'>local_field</a>),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>rhs</strong></td><td></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+  
+  
+  
+  
+     <h4>Return Value <small>type(<a href='../type/local_field.html'>local_field</a>)
+  </small></h4>
+  
+    
+        
+
+  </div>
+  </div>
+
+    
+    
+  <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-state%7E2"></span><h3>
+private pure function <a href='../proc/state%7E2.html'>state</a>(this) result(this_values)
+    
+    
+    
+</h3></div>
+  <div class="panel-body">
+       
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/local_field.html'>local_field</a>),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>this</strong></td><td></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+  
+  
+  
+  
+     <h4>Return Value <small>real(kind=real64),
+  allocatable,(:)</small></h4>
+  
+    
+        
+
+  </div>
+  </div>
+
+    
+    
+  <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-subtract"></span><h3>
+private pure function <a href='../proc/subtract.html'>subtract</a>(lhs, rhs) result(difference)
+    
+    
+    
+</h3></div>
+  <div class="panel-body">
+       
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/local_field.html'>local_field</a>),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>lhs</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/local_field.html'>local_field</a>),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>rhs</strong></td><td></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+
+  
+  
+  
+  
+     <h4>Return Value <small>type(<a href='../type/local_field.html'>local_field</a>)
+  </small></h4>
+  
+    
+        
+
+  </div>
+  </div>
+
+    
+    </section>
+    <br>
+    
+
+    
+    <section>
+    <h2>Subroutines</h2>
+    
+    
+  <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-assign_array"></span><h3>
+private pure subroutine <a href='../proc/assign_array.html'>assign_array</a>(lhs, rhs)
+    
+    
+    
+</h3></div>
+  <div class="panel-body">
+       
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/local_field.html'>local_field</a>),</td>
+  <td>intent(inout)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>lhs</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>real(kind=real64),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>rhs</strong>(:)</td><td></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+        
+
+  </div>
+  </div>
+
+    
+    
+  <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-output%7E2"></span><h3>
+private subroutine <a href='../proc/output%7E2.html'>output</a>(this, unit, iotype, v_list, iostat, iomsg)
+    
+    
+    
+</h3></div>
+  <div class="panel-body">
+       
+    
+    <h4>Arguments</h4>
+    
+      
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>class(<a href='../type/local_field.html'>local_field</a>),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>this</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>unit</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>character(len=*),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>iotype</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>v_list</strong>(:)</td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>integer,</td>
+  <td>intent(out)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>iostat</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" ></span>character(len=*),</td>
+  <td>intent(inout)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>iomsg</strong></td><td></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+      
+    
+    
+        
+
+  </div>
+  </div>
+
+    
+    </section>    
+    <br>
+    
+    
+    
+    </div>
+  </div>
+
+    <hr>
+    <footer>
+      <div class="row">
+        <div class="col-md-4">&copy; 2016 <a rel="license" href="http://www.freebsd.org/copyright/freebsd-doc-license.html">FreeBSD Documentation License</a></div>
+        <div class="col-md-4"><span class="text-center"> OpenCoarrays was developed by Sourcery Institute</span></div>
+        <div class="col-md-4">
+          <span class="pull-right">
+            Documentation generated by 
+            <a href="https://github.com/cmacmackin/ford">FORD</a>
+            
+          </span>
+        </div>
+      </div>
+      <br>
+    </footer>
+    </div> <!-- /container -->
+
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js'],
+        'HTML-CSS': { 
+           styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: '#000000 ! important'} }
+        }
+      });
+    </script>
+    <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  </body>
+</html>
