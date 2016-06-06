@@ -74,12 +74,12 @@ Specification [TS18508] Additional Parallel Features in Fortran.
        although presently not supported) or specified by configuring this
        file with CMake...
  - [ ] Deal with `include compiler_capabilities.txt`
- - [ ] Add documentation to [[libcaf.h]]
- - [ ] Add documentation to [[libcaf-gfortran-descriptor.h]]
- - [ ] Add documentation to [[mpi_caf.c]]
- - [ ] Add documentation to [[caf_auxiliary.c]]
+ - [ ] Add documentation to [libcaf.h](./sourcefile/libcaf.h.html)
+ - [ ] Add documentation to [libcaf-gfortran-descriptor.h](./sourcefile/libcaf-gfortran-descriptor.h.html)
+ - [ ] Add documentation to [mpi_caf.c](./sourcefile/caf.c.html)
+ - [ ] Add documentation to [caf_auxiliary.c](./sourcefile/caf_auxiliary.c.html)
  - [ ] Add documentation to [[opencoarrays(module)]]
- - [ ] Add documentation to [[single.c]] (or remove it...)
+ - [ ] Add documentation to [single.c](./sourcefile/single.c.html) (or remove it...)
  - [ ] Add documentation for unit tests
  - [ ] Add documentation for integration tests
 
