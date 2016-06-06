@@ -1,0 +1,49 @@
+commit 7881d3b4096349e330de48601c73e9886b5ed19c
+Author: Izaak Beekman <zbeekman@gmail.com>
+Date:   Mon Jun 6 14:59:32 2016 -0400
+
+    Add favicon header info
+
+diff --git a/index.html b/index.html
+index f9455e4..a15c71a 100644
+--- a/index.html
++++ b/index.html
+@@ -32,7 +32,30 @@
+     <link  href="./tipuesearch/tipuesearch.css" rel="stylesheet">
+     <script src="./tipuesearch/tipuesearch_set.js"></script>
+     <script src="./tipuesearch/tipuesearch.js"></script>
+-
++
++    <link rel="apple-touch-icon" sizes="57x57" href="opencoarrays/media/favicons/apple-touch-icon-57x57.png?v=XBB8G5Ay7w">
++    <link rel="apple-touch-icon" sizes="60x60" href="opencoarrays/media/favicons/apple-touch-icon-60x60.png?v=XBB8G5Ay7w">
++    <link rel="apple-touch-icon" sizes="72x72" href="opencoarrays/media/favicons/apple-touch-icon-72x72.png?v=XBB8G5Ay7w">
++    <link rel="apple-touch-icon" sizes="76x76" href="opencoarrays/media/favicons/apple-touch-icon-76x76.png?v=XBB8G5Ay7w">
++    <link rel="apple-touch-icon" sizes="114x114" href="opencoarrays/media/favicons/apple-touch-icon-114x114.png?v=XBB8G5Ay7w">
++    <link rel="apple-touch-icon" sizes="120x120" href="opencoarrays/media/favicons/apple-touch-icon-120x120.png?v=XBB8G5Ay7w">
++    <link rel="apple-touch-icon" sizes="144x144" href="opencoarrays/media/favicons/apple-touch-icon-144x144.png?v=XBB8G5Ay7w">
++    <link rel="apple-touch-icon" sizes="152x152" href="opencoarrays/media/favicons/apple-touch-icon-152x152.png?v=XBB8G5Ay7w">
++    <link rel="apple-touch-icon" sizes="180x180" href="opencoarrays/media/favicons/apple-touch-icon-180x180.png?v=XBB8G5Ay7w">
++    <link rel="icon" type="image/png" href="opencoarrays/media/favicons/favicon-32x32.png?v=XBB8G5Ay7w" sizes="32x32">
++    <link rel="icon" type="image/png" href="opencoarrays/media/favicons/favicon-194x194.png?v=XBB8G5Ay7w" sizes="194x194">
++    <link rel="icon" type="image/png" href="opencoarrays/media/favicons/favicon-96x96.png?v=XBB8G5Ay7w" sizes="96x96">
++    <link rel="icon" type="image/png" href="opencoarrays/media/favicons/android-chrome-192x192.png?v=XBB8G5Ay7w" sizes="192x192">
++    <link rel="icon" type="image/png" href="opencoarrays/media/favicons/favicon-16x16.png?v=XBB8G5Ay7w" sizes="16x16">
++    <link rel="manifest" href="opencoarrays/media/favicons/manifest.json?v=XBB8G5Ay7w">
++    <link rel="mask-icon" href="opencoarrays/media/favicons/safari-pinned-tab.svg?v=XBB8G5Ay7w" color="#7b5bd5">
++    <link rel="shortcut icon" href="opencoarrays/media/favicons/favicon.ico?v=XBB8G5Ay7w">
++    <meta name="apple-mobile-web-app-title" content="OpenCoarrays">
++    <meta name="application-name" content="OpenCoarrays">
++    <meta name="msapplication-TileColor" content="#2d89ef">
++    <meta name="msapplication-TileImage" content="opencoarrays/media/favicons/mstile-144x144.png?v=XBB8G5Ay7w">
++    <meta name="msapplication-config" content="opencoarrays/media/favicons/browserconfig.xml?v=XBB8G5Ay7w">
++    <meta name="theme-color" content="#ffffff">
+
+   </head>
+
+@@ -965,4 +988,4 @@ <h2 id="citations"><a class="toclink" href="#citations">Citations</a></h2>
+     </script>
+     <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+   </body>
+-</html>
+\ No newline at end of file
++</html>
