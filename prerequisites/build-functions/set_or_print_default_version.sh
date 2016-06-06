@@ -1,3 +1,4 @@
+# shellcheck shell=bash disable=SC2148
 # If -p, -D, -P, or -U specifies a package, set default_version
 # If -V specifies a package, print the default_version and exit with normal status
 # If -l is present, list all packages and versions and exit with normal status
@@ -15,11 +16,11 @@ set_or_print_default_version()
   package_name="${arg_p:-${arg_D:-${arg_P:-${arg_U:-${arg_V}}}}}" # not needed for -l
 
   if [[ "${package_name}" == "ofp" ]]; then
-    ${OPENCOARRAYS_SRC_DIR}/prerequisites/install-ofp.sh "${@}"
+    "${OPENCOARRAYS_SRC_DIR}/prerequisites/install-ofp.sh" "${@}"
     exit 0
-  fi 
+  fi
 
-  [ "${package_name}" == "opencoarrays" ] && 
+  [ "${package_name}" == "opencoarrays" ] &&
     emergency "Please use this script with a previously downloaded opencoarrays source archive. This script does not download opencoarrays "
   # This is a bash 3 hack standing in for a bash 4 hash (bash 3 is the lowest common
   # denominator because, for licensing reasons, OS X only has bash 3 by default.)

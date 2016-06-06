@@ -1,3 +1,4 @@
+# shellcheck shell=bash disable=SC2148
 # shellcheck source=./ftp-url.sh
 source "${OPENCOARRAYS_SRC_DIR}/prerequisites/build-functions/ftp-url.sh"
 # shellcheck source=./set_SUDO_if_needed_to_write_to_directory.sh
@@ -12,14 +13,18 @@ download_if_necessary()
   if  [[ -f "${download_path}/${url_tail}" || -d "${download_path}/${url_tail}" ]] ; then
     info "Found '${url_tail}' in ${download_path}."
     info "If it resulted from an incomplete download, building ${package_name} could fail."
-    info "Would you like to proceed anyway? (Y/n)"
-    read -r proceed
-    if [[ "${proceed}" == "n" || "${proceed}" == "N" || "${proceed}" == "no"  ]]; then
-      info "n"
-      info "Please remove $url_tail and restart the installation to to ensure a fresh download." 1>&2
-      emergency "Aborting. [exit 80]"
+    if [[ "${arg_y}" == "${__flag_present}" ]]; then
+      info "-y or --yes-to-all flag present. Proceeding with non-interactive build."
     else
-      info "y"
+      info "Would you like to proceed anyway? (Y/n)"
+      read -r proceed
+      if [[ "${proceed}" == "n" || "${proceed}" == "N" || "${proceed}" == "no"  ]]; then
+        info "n"
+        info "Please remove $url_tail and restart the installation to to ensure a fresh download." 1>&2
+        emergency "Aborting. [exit 80]"
+      else
+        info "y"
+      fi
     fi
   elif ! type "${fetch}" &> /dev/null; then
     # The download mechanism is missing
@@ -45,9 +50,9 @@ download_if_necessary()
       args="clone"
     elif [[ "${fetch}" == "curl" ]]; then
       first_three_characters=$(echo "${package_url}" | cut -c1-3)
-      if [[ "${first_three_characters}" == "ftp"  ]]; then 
+      if [[ "${first_three_characters}" == "ftp"  ]]; then
         args="-LO -u anonymous:"
-      elif [[ "${first_three_characters}" == "htt"  ]]; then 
+      elif [[ "${first_three_characters}" == "htt"  ]]; then
         args="-LO"
       else
         emergency "download_if_necessary.sh: Unrecognized URL."
@@ -64,7 +69,8 @@ download_if_necessary()
     info "Download command: \"${fetch}\" ${args:-} ${package_url}"
     info "Depending on the file size and network bandwidth, this could take several minutes or longer."
     pushd "${download_path}"
-    "${fetch}" ${args:-} ${package_url}
+    # args should be an array. Then "${args[@]:-}" will prevent shellcheck from complaining
+    "${fetch}" ${args:-} "${package_url}"
     popd
     if [[ ! -z "${arg_B:-}" ]]; then
       return

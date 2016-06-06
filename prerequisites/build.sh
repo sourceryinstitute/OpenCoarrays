@@ -59,8 +59,8 @@ trap cleanup_before_exit EXIT # The signal is specified here. Could be SIGINT, S
 export __flag_present=1
 
 # shellcheck disable=SC2154
-if [[ "${arg_l}" != "${__flag_present}" && 
-      "${arg_v}" != "${__flag_present}" && 
+if [[ "${arg_l}" != "${__flag_present}" &&
+      "${arg_v}" != "${__flag_present}" &&
       "${arg_h}" != "${__flag_present}" &&
       -z "${arg_D:-${arg_p:-${arg_P:-${arg_U:-${arg_V:-${arg_B}}}}}}" ]]; then
   help "${__base}: Insufficient arguments. Please pass either -B, -D, -h, -l, -L, -p, -P, -U, -v, -V, or a longer equivalent."
@@ -110,17 +110,20 @@ info "-t (--with-tau):         ${arg_t} "
 info "-U (--print-url):        ${arg_U} "
 info "-v (--version):          ${arg_v} "
 info "-V (--print-version):    ${arg_V} "
+info "-y (--yes-to-all):       ${arg_y} "
 }
 
 if [[ -z "${arg_B}" ]]; then
   # shellcheck source=./build-functions/set_or_print_default_version.sh
   source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/set_or_print_default_version.sh"
+  # shellcheck disable=SC2119
   set_or_print_default_version
   export version_to_build="${arg_I:-${arg_b:-${default_version}}}"
 fi
 
 # shellcheck source=./build-functions/set_or_print_downloader.sh
 source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/set_or_print_downloader.sh"
+# shellcheck disable=SC2119
 set_or_print_downloader
 
 # shellcheck source=./build-functions/set_or_print_url.sh
@@ -142,11 +145,11 @@ if [[ -z "${arg_B}" ]]; then
   # shellcheck source=./build-functions/unpack_if_necessary.sh
   source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/unpack_if_necessary.sh"
   unpack_if_necessary
-  
+
   # shellcheck source=./build-functions/set_compilers.sh
   source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/set_compilers.sh"
   set_compilers
-  
+
   # shellcheck source=./build-functions/build_and_install.sh
   source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/build_and_install.sh"
   build_and_install
