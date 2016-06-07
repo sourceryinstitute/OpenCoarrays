@@ -1,4 +1,4 @@
-# shellcheck disable=SC2154,SC2034
+# shellcheck shell=bash disable=SC2154,SC2034,SC2148
 find_or_install()
 {
   package="$1"
@@ -28,9 +28,9 @@ find_or_install()
   done
 
   if [[ "$package" == "$executable" ]]; then
-    printf "$this_script: Checking whether $executable is in the PATH..."
+    printf "%s: Checking whether %s is in the PATH..." "$this_script" "$executable"
   else
-    printf "$this_script: Checking whether $package executable $executable is in the PATH..."
+    printf "%s: Checking whether %s executable $executable is in the PATH..." "$this_script" "$package"
   fi
   if type "$executable" >& /dev/null; then
     printf "yes.\n"
@@ -43,7 +43,7 @@ find_or_install()
 
   package_install_path=$(./build.sh -P "$package")
 
-  printf "Checking whether $executable is in $package_install_path..."
+  printf "Checking whether %s is in %s..." "$executable" "$package_install_path"
   if [[ -x "$package_install_path/bin/$executable" ]]; then
     printf "yes.\n"
     script_installed_package=true
@@ -111,52 +111,8 @@ find_or_install()
     # MPIFC, MPICC, and MPICXX environment variables. Every branch must also manage the
     # dependency stack.
 
-    if [[ ! -z "${arg_f}" ]]; then
-
-      # -f or --with-fortran argument specifies a compiler, which we use if mpif90
-      # invokes the specified compiler.  Otherwise, we halt and print an error message.
-
-      mpif90_wraps=$(mpif90 --version)
-      compiler=$(${arg_f} --version)
-      if [[ "${mpif90_wraps}" != "${compiler}"   ]]; then
-        emergency "The specified compiler ${arg_f} differs from the compiler that mpif90 invokes."
-      else
-        info "mpif90 invokes the specified compiler ${arg_f}"
-      fi
-
-      echo "$this_script: Checking whether $executable in PATH wraps gfortran... "
-      mpif90_version_header=$(mpif90 --version | head -1)
-      first_three_characters=$(echo "$mpif90_version_header" | cut -c1-3)
-      if [[ "$first_three_characters" != "GNU" ]]; then
-        printf "no.\n"
-        export translate_source="true"
-      else
-        first_caf_version="5.1.0"
-        printf "yes.\n"
-        printf "$this_script: Checking whether ${executable} in PATH wraps gfortran version ${first_caf_version} or later... "
-
-        if ! "${OPENCOARRAYS_SRC_DIR}"/prerequisites/check_version.sh "${executable}" "${first_caf_version}"; then
-          printf "no.\n"
-          export translate_source="true"
-        else
-          printf "yes.\n"
-          export translate_source="false"
-        fi
-      fi
-      if  [[ ${translate_source} == "true" ]]; then
-        echo "Supporting the chosen compiler or compiler version requires the Open Fortran Parser"
-        echo "for pre-compilation CAF to non-CAF source transformations. Ok to download and install OFP?"
-        read -r go
-        if [[ "${go}" == "n" || "${go}" == "N" || "${go}" == "no"  || "${go}" == "NO" || "${go}" == "No" ]]; then
-          emergency "OFP installation declined. Aborting"
-        else
-          "${OPENCOARRAYS_SRC_DIR}"/prerequisites/install-ofp.sh
-        fi
-      fi
-
-      export MPIFC=mpif90
-      export MPICC=mpicc
-      export MPICXX=mpicxx
+    # If the user specified a Fortran compiler, verify that mpif90 wraps the specified compiler
+    if [[ ! -z "${arg_M:-}" ]]; then
 
       echo -e "$this_script: Using the $package specified by -M or --with-mpi: ${arg_M}\n"
       export MPIFC="${arg_M}"/bin/mpif90
@@ -203,13 +159,13 @@ find_or_install()
         printf "yes.\n"
 
         if [[ ! -z "${arg_f:-}" ]]; then
-          
+
           info "-f (or --with-fortran) argument detected with value ${arg_f}"
-          printf "yes.\n $this_script: Using the specified $executable.\n"
+          printf "yes.\n %s: Using the specified %s.\n" "$this_script" "$executable"
           export MPIFC=mpif90
           export MPICC=mpicc
           export MPICXX=mpicxx
-  
+
           # Halt the recursion
           stack_push dependency_pkg "none"
           stack_push dependency_exe "none"
@@ -217,19 +173,19 @@ find_or_install()
 
         else
 
-          echo -e "$this_script: Checking whether $executable in PATH wraps gfortran version `./build.sh -V gcc` or later... "
+          echo -e "$this_script: Checking whether $executable in PATH wraps gfortran version $(./build.sh -V gcc) or later... "
           $executable acceptable_compiler.f90 -o acceptable_compiler
           $executable print_true.f90 -o print_true
           acceptable=$(./acceptable_compiler)
           is_true=$(./print_true)
           rm acceptable_compiler print_true
-         
+
           if [[ "$acceptable" == "$is_true" ]]; then
-            printf "yes.\n $this_script: Using the $executable found in the PATH.\n"
+            printf "yes.\n %s: Using the $executable found in the PATH.\n" "$this_script"
             export MPIFC=mpif90
             export MPICC=mpicc
             export MPICXX=mpicxx
-  
+
             # Halt the recursion
             stack_push dependency_pkg "none"
             stack_push dependency_exe "none"
@@ -305,7 +261,7 @@ find_or_install()
       stack_push dependency_path "none"
 
     elif [[ "$package_in_path" == "true" ]]; then
-      echo -e "$this_script: Checking whether $executable in PATH is version `./build.sh -V gcc` or later..."
+      echo -e "$this_script: Checking whether $executable in PATH is version $(./build.sh -V gcc) or later..."
       $executable -o acceptable_compiler acceptable_compiler.f90
       $executable -o print_true print_true.f90
       is_true=$(./print_true)
@@ -570,89 +526,93 @@ find_or_install()
       echo "$this_script: Ready to install $package executable $executable in $package_install_path"
     fi
 
-    echo -e "$this_script: Ok to download (if necessary), build, and install $package from source? (Y/n) "
-    read -r proceed_with_build
+    if [[ "${arg_y}" == "${__flag_present}" ]]; then
+      info "-y or --yes-to-all flag present. Proceeding with non-interactive build."
+    else
+      echo -e "$this_script: Ok to download (if necessary), build, and install $package from source? (Y/n) "
+      read -r proceed_with_build
 
-    if [[ "$proceed_with_build" == "n" || "$proceed_with_build" == "no" ]]; then
-      printf "n\n"
-      echo -e "$this_script: OpenCoarrays installation requires $package. Aborting. [exit 70]\n"
-      exit 70
-
-    else # permission granted to build
-      printf "Y\n"
-
-      # On OS X, CMake must be built with Apple LLVM gcc, which XCode command-line tools puts in /usr/bin
-      if [[ $(uname) == "Darwin" && $package == "cmake"  ]]; then
-        if [[ -x "/usr/bin/gcc" ]]; then
-          CC=/usr/bin/gcc
-        else
-          echo -e "$this_script: OS X detected.  Please install XCode command-line tools and \n"
-          echo -e "$this_script: ensure that /usr/bin/gcc exists and is executable. Aborting. [exit 75]\n"
-          exit 75
-        fi
-      # Otherwise, if no CC has been defined yet, use the gcc in the user's PATH
-      elif [[ -z "${CC:-}" ]]; then
-        CC=gcc
+      if [[ "$proceed_with_build" == "n" || "$proceed_with_build" == "no" ]]; then
+        printf "n\n"
+        echo -e "$this_script: OpenCoarrays installation requires $package. Aborting. [exit 70]\n"
+        exit 70
+      else # permission granted to build
+        printf "Y\n"
       fi
+    fi
 
-      # On OS X, CMake must be built with Apple LLVM g++, which XCode command-line tools puts in /usr/bin
-      if [[ $(uname) == "Darwin" && $package == "cmake"  ]]; then
-        if [[ -x "/usr/bin/g++" ]]; then
-          CXX=/usr/bin/g++
-        else
-          echo -e "$this_script: OS X detected.  Please install XCode command-line tools \n"
-          echo -e "$this_script: and ensure that /usr/bin/g++ exists and is executable. Aborting. [exit 76]\n"
-          exit 76
-        fi
-      # Otherwise, if no CXX has been defined yet, use the g++ in the user's PATH
-      elif [[ -z "${CXX:-}" ]]; then
-        CXX=g++
+    # On OS X, CMake must be built with Apple LLVM gcc, which XCode command-line tools puts in /usr/bin
+    if [[ $(uname) == "Darwin" && $package == "cmake"  ]]; then
+      if [[ -x "/usr/bin/gcc" ]]; then
+        CC=/usr/bin/gcc
+      else
+        echo -e "$this_script: OS X detected.  Please install XCode command-line tools and \n"
+        echo -e "$this_script: ensure that /usr/bin/gcc exists and is executable. Aborting. [exit 75]\n"
+        exit 75
       fi
+    # Otherwise, if no CC has been defined yet, use the gcc in the user's PATH
+    elif [[ -z "${CC:-}" ]]; then
+      CC=gcc
+    fi
 
-      # If no FC has been defined yet, use the gfortran in the user's PATH
-      if [[ -z "${FC:-}" ]]; then
-        FC=gfortran
+    # On OS X, CMake must be built with Apple LLVM g++, which XCode command-line tools puts in /usr/bin
+    if [[ $(uname) == "Darwin" && $package == "cmake"  ]]; then
+      if [[ -x "/usr/bin/g++" ]]; then
+        CXX=/usr/bin/g++
+      else
+        echo -e "$this_script: OS X detected.  Please install XCode command-line tools \n"
+        echo -e "$this_script: and ensure that /usr/bin/g++ exists and is executable. Aborting. [exit 76]\n"
+        exit 76
       fi
+    # Otherwise, if no CXX has been defined yet, use the g++ in the user's PATH
+    elif [[ -z "${CXX:-}" ]]; then
+      CXX=g++
+    fi
+
+    # If no FC has been defined yet, use the gfortran in the user's PATH
+    if [[ -z "${FC:-}" ]]; then
+      FC=gfortran
+    fi
 
 
-      # Strip trailing package name and version number, if present, from installation path
-      default_package_version=$(./build.sh -V ${package})
-      package_install_prefix="${package_install_path%${package}/${arg_I:-${default_package_version}}*}" 
+    # Strip trailing package name and version number, if present, from installation path
+    default_package_version=$(./build.sh -V "${package}")
+    package_install_prefix="${package_install_path%${package}/${arg_I:-${default_package_version}}*}"
 
-      echo -e "$this_script: Downloading, building, and installing $package \n"
-      echo "$this_script: Build command: FC=$FC CC=$CC CXX=$CXX ./build.sh -p $package -i $package_install_prefix -j $num_threads"
-      FC="$FC" CC="$CC" CXX="$CXX" ./build.sh -p "$package" -i "$package_install_prefix" -j "$num_threads"
+    echo -e "$this_script: Downloading, building, and installing $package \n"
+    echo "$this_script: Build command: FC=$FC CC=$CC CXX=$CXX ./build.sh -p $package -i $package_install_prefix -j $num_threads"
+    FC="$FC" CC="$CC" CXX="$CXX" ./build.sh -p "$package" -i "$package_install_prefix" -j "$num_threads"
 
-      if [[ -x "$package_install_path/bin/$executable" ]]; then
-        echo -e "$this_script: Installation successful.\n"
-        if [[ "$package" == "$executable" ]]; then
-          echo -e "$this_script: $executable is in $package_install_path/bin \n"
-        else
-          echo -e "$this_script: $package executable $executable is in $package_install_path/bin \n"
-        fi
-       # TODO Merge all applicable branches under one 'if [[ $package == $executable ]]; then'
-        if [[ $package == "cmake" ]]; then
-          echo "$this_script: export CMAKE=$package_install_path/bin/$executable"
-                              export CMAKE="$package_install_path/bin/$executable"
-        elif [[ $package == "bison" ]]; then
-          echo "$this_script: export YACC=$package_install_path/bin/$executable"
-                              export YACC="$package_install_path/bin/$executable"
-        elif [[ $package == "flex" ]]; then
-          echo "$this_script: export FLEX=$package_install_path/bin/$executable"
-                              export FLEX="$package_install_path/bin/$executable"
-        elif [[ $package == "m4" ]]; then
-          echo "$this_script: export M4=$package_install_path/bin/$executable"
-                              export M4="$package_install_path/bin/$executable"
-        elif [[ $package == "gcc" ]]; then
-          echo "$this_script: export FC=$package_install_path/bin/gfortran"
-                              export FC="$package_install_path/bin/gfortran"
-          echo "$this_script: export CC=$package_install_path/bin/gcc"
-                              export CC="$package_install_path/bin/gcc"
-          echo "$this_script: export CXX=$package_install_path/bin/g++"
-                              export CXX="$package_install_path/bin/g++"
-          gfortran_lib_paths="$package_install_path/lib64/:$package_install_path/lib"
-          if [[ -z "${LD_LIBRARY_PATH:-}" ]]; then
-            export LD_LIBRARY_PATH="$gfortran_lib_paths"
+    if [[ -x "$package_install_path/bin/$executable" ]]; then
+      echo -e "$this_script: Installation successful.\n"
+      if [[ "$package" == "$executable" ]]; then
+        echo -e "$this_script: $executable is in $package_install_path/bin \n"
+      else
+        echo -e "$this_script: $package executable $executable is in $package_install_path/bin \n"
+      fi
+     # TODO Merge all applicable branches under one 'if [[ $package == $executable ]]; then'
+      if [[ $package == "cmake" ]]; then
+        echo "$this_script: export CMAKE=$package_install_path/bin/$executable"
+                            export CMAKE="$package_install_path/bin/$executable"
+      elif [[ $package == "bison" ]]; then
+        echo "$this_script: export YACC=$package_install_path/bin/$executable"
+                            export YACC="$package_install_path/bin/$executable"
+      elif [[ $package == "flex" ]]; then
+        echo "$this_script: export FLEX=$package_install_path/bin/$executable"
+                            export FLEX="$package_install_path/bin/$executable"
+      elif [[ $package == "m4" ]]; then
+        echo "$this_script: export M4=$package_install_path/bin/$executable"
+                            export M4="$package_install_path/bin/$executable"
+      elif [[ $package == "gcc" ]]; then
+        echo "$this_script: export FC=$package_install_path/bin/gfortran"
+                            export FC="$package_install_path/bin/gfortran"
+        echo "$this_script: export CC=$package_install_path/bin/gcc"
+                            export CC="$package_install_path/bin/gcc"
+        echo "$this_script: export CXX=$package_install_path/bin/g++"
+                            export CXX="$package_install_path/bin/g++"
+        gfortran_lib_paths="$package_install_path/lib64/:$package_install_path/lib"
+        if [[ -z "${LD_LIBRARY_PATH:-}" ]]; then
+          export LD_LIBRARY_PATH="$gfortran_lib_paths"
           else
             export LD_LIBRARY_PATH="$gfortran_lib_paths:$LD_LIBRARY_PATH"
           fi
@@ -681,8 +641,6 @@ find_or_install()
         printf "Aborting. [exit 80]"
         exit 80
       fi # End 'if [[ -x "$package_install_path/bin/$executable" ]]'
-
-    fi # End 'if [[ "$proceed_with_build" == "y" ]]; then'
 
   fi # End 'if [[ "$package" != "none" ]]; then'
 }

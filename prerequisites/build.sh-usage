@@ -21,3 +21,4 @@
   -U --print-url [arg]        Print URL for package specified in argument. 
   -v --version                Print OpenCoarrays version number.
   -V --print-version [arg]    Print installation version for package specified in argument.
+  -y --yes-to-all             Build non-interactively by assuming affirmative user responses.

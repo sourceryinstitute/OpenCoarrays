@@ -158,7 +158,7 @@ script:
       ln -fs "$(which gcc-5)" "$HOME/bin/gcc"
       ln -fs "$(which g++-5)" "$HOME/bin/g++"
       export PATH="$PATH:$HOME/bin"
-      yes | ./install.sh -i "$HOME/opt/opencoarrays" -j 4 -f "$HOME/bin/gfortran" -c "$HOME/bin/gcc" -C "$HOME/bin/g++"
+      ./install.sh --yes-to-all -i "$HOME/opt/opencoarrays" -j 4 -f "$HOME/bin/gfortran" -c "$HOME/bin/gcc" -C "$HOME/bin/g++"
     else
       mkdir cmake-build
       cd cmake-build
