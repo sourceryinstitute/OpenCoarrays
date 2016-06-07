@@ -320,6 +320,56 @@ configure_file ( "${CMAKE_SOURCE_DIR}/cmake/uninstall.cmake.in" "${CMAKE_BINARY_
 add_custom_target ( uninstall
   COMMAND ${CMAKE_COMMAND} -P "${CMAKE_BINARY_DIR}/uninstall.cmake" )
 
+#-------------------------------------
+# Build the documentation with FORD
+#-------------------------------------
+set ( SKIP_DOC_GEN FALSE CACHE BOOL
+  "Disable building the API documentation with FORD" )
+if ( NOT SKIP_DOC_GEN )
+  find_program ( FORD ford )
+  if ( FORD ) # Found
+    file ( COPY "${CMAKE_SOURCE_DIR}/media" DESTINATION "${CMAKE_BINARY_DIR}/" )
+    set ( DOC_DIR "${CMAKE_BINARY_DIR}/doc" )
+    set ( PROJ_DIR "${CMAKE_SOURCE_DIR}/src" )
+    set ( FORD_PROJECT_FILE "${CMAKE_SOURCE_DIR}/OpenCoarrays-prj.md" )
+
+    # Don't dynamically compute outputs, no need, FORD nukes everything in the doc dir anyway
+    set ( FORD_OUTPUTS "${DOC_DIR}/index.html" "${DOC_DIR}/favicon.png" )
+    set ( FORD_CLEAN_OUTPUTS   "${DOC_DIR}" )
+    set_directory_properties ( PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES
+      "${FORD_CLEAN_OUTPUTS}")
+
+    file ( GLOB_RECURSE FORD_DEPENDS
+      "${CMAKE_SOURCE_DIR}/src/*.[ch]"
+      "${CMAKE_SOURCE_DIR}/src/*.[fF]90"
+      "${CMAKE_SOURCE_DIR}/media/*"
+      "${CMAKE_SOURCE_DIR}/*.md"
+      "${CMAKE_SOURCE_DIR}/prerequisites/*.sh" )
+    add_custom_command ( OUTPUT ${FORD_OUTPUTS}
+      COMMAND "${FORD}" --debug -d "${PROJ_DIR}" "${FORD_PROJECT_FILE}"
+      MAIN_DEPENDENCY "${FORD_PROJECT_FILE}"
+      DEPENDS ${FORD_DEPENDS}
+      COMMENT "Building HTML documentation for ${CMAKE_PROJECT_NAME} using FORD, this may take a long time" )
+    add_custom_target ( documentation ALL
+      DEPENDS ${FORD_OUTPUTS} )
+    # set ( INSTALL_API_DOCUMENTATION TRUE
+    #   CACHE BOOL "Install FORD generated documentation?" )
+    # if ( INSTALL_API_DOCUMENTATION )
+    #   if ( USE_GNU_INSTALL_CONVENTION )
+    # 	install ( DIRECTORY "${DOC_DIR}/" DESTINATION "${CMAKE_INSTALL_DOCDIR}" )
+    #   else ()
+    # 	install ( DIRECTORY "${DOC_DIR}/" DESTINATION "${CMAKE_INSTALL_PREFIX}/${PACKAGE_VERSION}/doc" )
+    #   endif ()
+    # endif ()
+  else () # Not found
+    message ( WARNING
+      "FORD not found! Please set the CMake cache variable FORD to point to the installed FORD executable, and reconfigure or disable building the documentation. FORD can be installed from PYPI with `sudo pip install FORD` or from <https://github.com/cmacmackin/ford> If you do not wish to install FORD and build the OpenCoarrays documentation, then please set the CMake cache variable SKIP_DOC_GEN to TRUE." )
+  endif ()
+endif ()
+
+#---------------------------------
+# Add unit tests to run with CTest
+#---------------------------------
 enable_testing()
 
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure)
