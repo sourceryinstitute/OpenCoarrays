@@ -101,7 +101,7 @@ This is the development branch, akin to GCC's `trunk`. Both of `devel` and `mast
 [these guidelines]: http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html
 [an open issue]: https://github.com/sourceryinstitute/opencoarrays/issues
 [Create a branch]: https://help.github.com/articles/creating-and-deleting-branches-within-your-repository/
-[OpenCoarrays repo]: https://github.com/sourceryinstitute/opencoarrays#fork-destination-box
+[OpenCoarrays repo]: https://github.com/sourceryinstitute/opencoarrays/fork
 [Pull Request]: https://help.github.com/articles/using-pull-requests/
 [Fork]: https://help.github.com/articles/fork-a-repo/
 [helping out]: #helping-out

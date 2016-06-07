@@ -192,7 +192,7 @@ To-Do List
   [Numerical Algorithms Group (nagfor)]: #compiler-issues-nag
   [Portland Group (pgfortran)]: #compiler-issues-pg
   [IBM (xlf)]: #compiler-issues-ibm
-  [forking the OpenCoarrays repository]: https://github.com/sourceryinstitute/opencoarrays/blob/master/STATUS.md#fork-destination-box
+  [forking the OpenCoarrays repository]: https://github.com/sourceryinstitute/opencoarrays/fork
 
 [TS 18508]: http://isotc.iso.org/livelink/livelink?func=ll&objId=17181227&objAction=Open
 [opencoarrays module]: ./src/extensions/opencoarrays.F90
