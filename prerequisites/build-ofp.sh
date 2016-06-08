@@ -106,7 +106,7 @@ fi
 
 # If -U is passed, print the URLs for OFP and its prerequisites.
 # Then exit with normal status.
-ofp_url_head="https://github.com/sourceryinstitute/opencoarrays/files/213108/"
+ofp_url_head="https://github.com/sourceryinstitute/opencoarrays/files/305727/"
 ofp_url_tail="ofp-sdf.tar.gz"
 # shellcheck disable=SC2154
 if [[ "${arg_U}" == "${__flag_present}" ]]; then
@@ -175,3 +175,7 @@ export OFP_HOME="${build_path}"/ofp-sdf
 # shellcheck source=./install-binary-functions/build_parse_table.sh
 source "${opencoarrays_prerequisites_dir}"/install-binary-functions/build_parse_table.sh
 build_parse_table
+
+# shellcheck source=./install-binary-functions/build_parse_table.sh
+source "${opencoarrays_prerequisites_dir}"/install-binary-functions/build_source_transformation_rules.sh
+build_source_transformation_rules

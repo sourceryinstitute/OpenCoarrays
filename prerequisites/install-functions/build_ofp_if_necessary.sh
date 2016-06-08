@@ -39,10 +39,10 @@ function build_ofp_if_necessary()
     fi
   fi
   if [[ "${translate_source}" == "true" ]]; then
-      ofp_build_dir="${OPENCOARRAYS_SRC_DIR}"/prerequisites/builds
+      ofp_build_prefix="${OPENCOARRAYS_SRC_DIR}"/prerequisites/builds
       info "Building the Open Fortran Parser (ofp-sdf) with the following command:" 
-      info "\"${OPENCOARRAYS_SRC_DIR}\"/prerequisites/build-ofp.sh \"--build-dir=${ofp_build_dir}\""
-      "${OPENCOARRAYS_SRC_DIR}"/prerequisites/build-ofp.sh "--build-dir=${ofp_build_dir}"
+      info "\"${OPENCOARRAYS_SRC_DIR}\"/prerequisites/build-ofp.sh \"--build-dir=${ofp_build_prefix}\""
+      "${OPENCOARRAYS_SRC_DIR}"/prerequisites/build-ofp.sh "--build-dir=${ofp_build_prefix}"
   else
     info "No source translation required for the chosen compiler. Skipping Open Fortran Parser installation."
   fi
