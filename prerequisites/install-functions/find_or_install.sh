@@ -133,6 +133,8 @@ find_or_install()
         fi
       fi
 
+      translate_source="unknown" # will be used by install_ofp_if_necessary.sh
+
     elif [[ "$script_installed_package" == true ]]; then
 
       echo -e "$this_script: Using the $package installed by $this_script\n"
@@ -143,6 +145,8 @@ find_or_install()
       stack_push dependency_pkg "none"
       stack_push dependency_exe "none"
       stack_push dependency_path "none"
+
+      translate_source="false" # will be used by install_ofp_if_necessary.sh
 
     elif [[ "$package_in_path" == "true" ]]; then
 
@@ -155,6 +159,9 @@ find_or_install()
         stack_push dependency_pkg "none" "$package" "gcc"
         stack_push dependency_exe "none" "$executable" "gfortran"
         stack_push dependency_path "none" "$(./build.sh -P "$package")" "$(./build.sh -P gcc)"
+
+        translate_source="false" # will be used by install_ofp_if_necessary.sh
+
       else
         printf "yes.\n"
 
@@ -170,6 +177,8 @@ find_or_install()
           stack_push dependency_pkg "none"
           stack_push dependency_exe "none"
           stack_push dependency_path "none"
+
+          translate_source="unknown" # will be used by install_ofp_if_necessary.sh
 
         else
 
@@ -190,12 +199,17 @@ find_or_install()
             stack_push dependency_pkg "none"
             stack_push dependency_exe "none"
             stack_push dependency_path "none"
+
+            translate_source="false" # will be used by install_ofp_if_necessary.sh
+
           else
             printf "no\n"
             # Trigger 'find_or_install gcc' and subsequent build of $package
             stack_push dependency_pkg "none" "$package" "gcc"
             stack_push dependency_exe "none" "$executable" "gfortran"
             stack_push dependency_path "none" "$(./build.sh -P "$package")" "$(./build.sh -P gcc)"
+
+            translate_source="false" # will be used by install_ofp_if_necessary.sh
           fi
         fi
       fi
@@ -205,6 +219,7 @@ find_or_install()
       stack_push dependency_pkg  "none" "$package" "gcc"
       stack_push dependency_exe  "none" "$executable" "gfortran"
       stack_push dependency_path "none" "$(./build.sh -P "$package")" "$(./build.sh -P gcc)"
+      translate_source="true" # will be used by install_ofp_if_necessary.sh
     fi
 
   elif [[ $package == "gcc" ]]; then
@@ -579,9 +594,9 @@ find_or_install()
     default_package_version=$(./build.sh -V "${package}")
     package_install_prefix="${package_install_path%${package}/${arg_I:-${default_package_version}}*}"
 
-    echo -e "$this_script: Downloading, building, and installing $package \n"
-    echo "$this_script: Build command: FC=$FC CC=$CC CXX=$CXX ./build.sh -p $package -i $package_install_prefix -j $num_threads"
-    FC="$FC" CC="$CC" CXX="$CXX" ./build.sh -p "$package" -i "$package_install_prefix" -j "$num_threads"
+    info "Downloading, building, and installing $package"
+    info "Build command: FC=$FC CC=$CC CXX=$CXX ./build.sh -p $package -i $package_install_prefix -j $num_threads -y ${arg_y}"
+    FC="$FC" CC="$CC" CXX="$CXX" ./build.sh -p "$package" -i "$package_install_prefix" -j "$num_threads" -y "${arg_y}"
 
     if [[ -x "$package_install_path/bin/$executable" ]]; then
       echo -e "$this_script: Installation successful.\n"

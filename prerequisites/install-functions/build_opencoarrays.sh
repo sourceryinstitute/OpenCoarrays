@@ -4,6 +4,8 @@ build_opencoarrays()
   print_header
   info "Invoking find_or_install mpich"
   find_or_install mpich
+  info "Invoking install_ofp_if_necesssary"
+  build_ofp_if_necessary 
   info "Invoking find_or_install cmake"
   find_or_install cmake
   build_path="${build_path}"/opencoarrays/$("${opencoarrays_src_dir}"/install.sh -V opencoarrays)
@@ -22,5 +24,8 @@ build_opencoarrays()
     fi
     info "Installing OpenCoarrays in ${install_path} with the command ${SUDO:-} make install"
     ${SUDO:-} make install
+    if [[ "${translate_source}" == "true" ]]; then
+      install_ofp
+    fi
   fi
 }

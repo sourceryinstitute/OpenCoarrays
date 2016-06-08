@@ -163,6 +163,7 @@ info  "-M (--with-mpi):         ${arg_M}"
 info  "-n (--no-color):         ${arg_n}"
 info  "-p (--package):          ${arg_p}"
 info  "-P (--print-path):       ${arg_P}"
+info  "-s (--source-to-source): ${arg_s}"
 info  "-U (--print-url):        ${arg_U}"
 info  "-v (--version):          ${arg_v}"
 info  "-V (--print-version):    ${arg_V}"
@@ -222,6 +223,12 @@ stack_new script_installed
 
 # shellcheck source=./prerequisites/install-functions/find_or_install.sh
 source $opencoarrays_src_dir/prerequisites/install-functions/find_or_install.sh
+
+# shellcheck source=./prerequisites/install-functions/build_ofp_if_necessary.sh
+source $opencoarrays_src_dir/prerequisites/install-functions/build_ofp_if_necessary.sh
+
+# shellcheck source=./prerequisites/install-functions/install_ofp.sh
+source $opencoarrays_src_dir/prerequisites/install-functions/install_ofp.sh
 
 # shellcheck source=./prerequisites/install-functions/print_header.sh
 source $opencoarrays_src_dir/prerequisites/install-functions/print_header.sh

@@ -16,6 +16,7 @@
   -n --no-color               Disable color output.
   -p --package [arg]          Install specified package. Default="opencoarrays"
   -P --print-path [arg]       Print installation directory for specified package.
+  -s --source-to-source       Print installation directory for specified package.
   -U --print-url [arg]        Print download location for specified package.
   -v --version                Print OpenCoarrays version number.
   -V --print-version [arg]    Print version number for specified package.
