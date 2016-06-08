@@ -3,12 +3,12 @@ language: generic
 env:
   global:
     - CACHE="$HOME/.local"
-    - MPICH_VER="3.1.4"
+    - MPICH_VER="3.2"
     - MPICH_URL_HEAD="http://www.mpich.org/static/downloads/$MPICH_VER"
     - MPICH_URL_TAIL="mpich-${MPICH_VER}.tar.gz"
     - MPICH_DIR="$HOME/.local/usr/mpich"
-    - MPICH_BOT_URL_HEAD="https://github.com/sourceryinstitute/opencoarrays/files/64308/"
-    - MPICH_BOT_URL_TAIL="mpich-3.2.yosemite.bottle.1.tar.gz"
+    - MPICH_BOT_URL_HEAD="https://github.com/sourceryinstitute/opencoarrays/files/303249/"
+    - MPICH_BOT_URL_TAIL="mpich-3.2_1.yosemite.bottle.1.tar.gz"
 
 matrix:
   include:
@@ -37,9 +37,9 @@ matrix:
             - george-edison55-precise-backports
             - ubuntu-toolchain-r-test
           packages:
-            - gcc-5
-            - gfortran-5
-            - g++-5
+            - gcc-6
+            - gfortran-6
+            - g++-6
             - binutils
             - cmake-data
             - cmake
@@ -56,9 +56,9 @@ matrix:
             - george-edison55-precise-backports
             - ubuntu-toolchain-r-test
           packages:
-            - gcc-5
-            - gfortran-5
-            - g++-5
+            - gcc-6
+            - gfortran-6
+            - g++-6
             - binutils
             - cmake-data
             - cmake
@@ -71,9 +71,9 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - gcc-5
-            - gfortran-5
-            - g++-5
+            - gcc-6
+            - gfortran-6
+            - g++-6
 
 before_install:
   - |
@@ -84,10 +84,12 @@ before_install:
       [[ -d "$CACHE/bin" ]] || mkdir -p "$CACHE/bin"
       [[ -d "$MPICH_DIR" ]] || mkdir -p "$MPICH_DIR"
       export PATH="$CACHE/bin:$PATH"
-      export FC=gfortran-5
-      export CC=gcc-5
+      export FC=gfortran-6
+      export CC=gcc-6
+      export CXX=g++-6
       $FC --version
       $CC --version
+      $CXX --version
     fi
     set +o errexit
 
@@ -101,8 +103,8 @@ install:
         [[ "$(brew ls --versions $pkg)" ]] || brew install --force-bottle $pkg
         brew outdated $pkg || brew upgrade --force-bottle $pkg
       done
-      export FC=gfortran-5
-      export CC=gcc-5
+      export FC=gfortran-6
+      export CC=gcc-6
       if ! [[ "$(brew ls --versions mpich)" ]] && [[ "X$BUILD_TYPE" != "XInstallScript" ]]; then
         wget ${MPICH_BOT_URL_HEAD}${MPICH_BOT_URL_TAIL}
         brew install --force-bottle ${MPICH_BOT_URL_TAIL}
@@ -134,7 +136,7 @@ install:
         popd
         for f in "$MPICH_DIR/bin/"*; do
           if [[ -x "$f" ]]; then
-            ln -fs "$f" "$HOME/.local/bin/${f##*/}" && "${f##*/}" --version
+            ln -fs "$f" "$HOME/.local/bin/${f##*/}"
           fi
         done
       fi
@@ -150,13 +152,13 @@ script:
   - |
     set -o errexit
     if [[ "X$BUILD_TYPE" = "XInstallScript" ]]; then
-      export FC=gfortran-5
-      export CC=gcc-5
+      export FC=gfortran-6
+      export CC=gcc-6
       [[ -d "$HOME/opt" ]] || mkdir "$HOME/opt"
       [[ -d "$HOME/bin" ]] || mkdir "$HOME/bin"
-      ln -fs "$(which gfortran-5)" "$HOME/bin/gfortran"
-      ln -fs "$(which gcc-5)" "$HOME/bin/gcc"
-      ln -fs "$(which g++-5)" "$HOME/bin/g++"
+      ln -fs "$(which gfortran-6)" "$HOME/bin/gfortran"
+      ln -fs "$(which gcc-6)" "$HOME/bin/gcc"
+      ln -fs "$(which g++-6)" "$HOME/bin/g++"
       export PATH="$PATH:$HOME/bin"
       ./install.sh --yes-to-all -i "$HOME/opt/opencoarrays" -j 4 -f "$HOME/bin/gfortran" -c "$HOME/bin/gcc" -C "$HOME/bin/g++"
     else
@@ -172,8 +174,8 @@ script:
 
 after_success:
   - find . -name '*.gcno' -print
-  - gcov-5 --version
-  - bash <(curl -s https://codecov.io/bash) -x $(which gcov-5)
+  - gcov-6 --version
+  - bash <(curl -s https://codecov.io/bash) -x $(which gcov-6)
 
 notifications:
   webhooks:
