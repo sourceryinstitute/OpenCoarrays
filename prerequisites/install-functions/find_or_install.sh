@@ -115,9 +115,9 @@ find_or_install()
     if [[ ! -z "${arg_M:-}" ]]; then
 
       echo -e "$this_script: Using the $package specified by -M or --with-mpi: ${arg_M}\n"
-      export MPIFC="${arg_M}"/bin/mpif90
-      export MPICC="${arg_M}"/bin/mpicc
-      export MPICXX="${arg_M}"/bin/mpicxx
+      export MPIFC="${arg_M}"/mpif90
+      export MPICC="${arg_M}"/mpicc
+      export MPICXX="${arg_M}"/mpicxx
       # Halt the recursion
       stack_push dependency_pkg "none"
       stack_push dependency_exe "none"
