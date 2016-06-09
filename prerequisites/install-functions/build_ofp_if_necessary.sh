@@ -9,7 +9,7 @@ function build_ofp_if_necessary()
   elif [[ "${translate_source:-}" != "false" && "${translate_source:-}" != "true" ]]; then
  
     # check the compiler identify and version only if a definitive answer has not yet been
-    # reached (should only happen if -M or --mpi-path (arg_M) was specifid, in which case
+    # reached (should only happen if -M or -with-mpi (arg_M) was specifid, in which case
     # the find_or_install.sh script defers the compiler check so that any such deferrals
     # all result in the check happening in one place (for now, there is only one place where
     # such a deferral happens).
