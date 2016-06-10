@@ -1118,7 +1118,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
                gfc_descriptor_t *dest,
                caf_vector_t *dst_vector __attribute__ ((unused)),
                gfc_descriptor_t *src, int dst_kind, int src_kind,
-               bool mrt)
+               int *stat, bool mrt)
 {
   /* FIXME: Implement vector subscripts, type conversion and check whether
      string-kind conversions are permitted.
@@ -1505,11 +1505,10 @@ PREFIX (get) (caf_token_t token, size_t offset,
               gfc_descriptor_t *src,
               caf_vector_t *src_vector __attribute__ ((unused)),
               gfc_descriptor_t *dest, int src_kind, int dst_kind,
-              bool mrt)
+              int *stat, bool mrt)
 {
   size_t i, size;
-  int ierr = 0;
-  int j;
+  int ierr = 0, j, flag;
   MPI_Win *p = token;
   int rank = GFC_DESCRIPTOR_RANK (src);
   size_t src_size = GFC_DESCRIPTOR_SIZE (src);
@@ -1572,9 +1571,18 @@ PREFIX (get) (caf_token_t token, size_t offset,
 # else // CAF_MPI_LOCK_UNLOCK
           MPI_Win_flush (image_index-1, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
+	  MPI_Test(&lock_req,&flag,MPI_STATUS_IGNORE);
+
+	  if(error_called == 1)
+	    {
+	      communicator_shrink(&CAF_COMM_WORLD);
+	      error_called = 0;
+	      ierr = STAT_FAILED_IMAGE;
+	    }
+	  
+	  if(!stat && ierr == STAT_FAILED_IMAGE)
+	    error_stop (ierr);
         }
-      if (ierr != 0)
-        error_stop (ierr);
       return;
     }
 
@@ -1663,6 +1671,22 @@ PREFIX (get) (caf_token_t token, size_t offset,
 
   //sr_off = offset;
 
+  MPI_Test(&lock_req,&flag,MPI_STATUS_IGNORE);
+
+  if(error_called == 1)
+    {
+      communicator_shrink(&CAF_COMM_WORLD);
+      error_called = 0;
+      ierr = STAT_FAILED_IMAGE;
+      printf("In error_called\n");
+    }
+
+  if(!stat && ierr == STAT_FAILED_IMAGE)
+    {
+      printf("error\n");
+      error_stop (ierr);
+    }
+
 # ifdef CAF_MPI_LOCK_UNLOCK
   MPI_Win_lock (MPI_LOCK_SHARED, image_index-1, 0, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
@@ -1675,8 +1699,8 @@ PREFIX (get) (caf_token_t token, size_t offset,
   MPI_Win_flush (image_index-1, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
 
-  if (ierr != 0)
-    error_stop (ierr);
+  /* if (ierr != 0) */
+  /*   error_stop (ierr); */
 
   MPI_Type_free(&dt_s);
   MPI_Type_free(&dt_d);
