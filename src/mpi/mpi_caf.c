@@ -131,9 +131,6 @@ static void verbose_comm_errhandler(MPI_Comm* pcomm, int* err, ...){
   int nf,nc,i;
   MPI_Group group_c, group_f;
   comm = *pcomm;
-
-  /* memset(ranks_gf,0,sizeof(int)*caf_num_images); */
-  /* memset(ranks_gc,0,sizeof(int)*caf_num_images); */
   
   MPIX_Comm_failure_ack(comm);
   MPIX_Comm_failure_get_acked(comm, &group_f);
@@ -146,7 +143,9 @@ static void verbose_comm_errhandler(MPI_Comm* pcomm, int* err, ...){
   for(i = 0; i < nf; i++)
     ranks_gc[i]++;
 
-  n_failed_imgs += nf;
+  printf("numero failed images %d\n",n_failed_imgs);
+
+  n_failed_imgs = nf;
   error_called = 1;
 }
 
