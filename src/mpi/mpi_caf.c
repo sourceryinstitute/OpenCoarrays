@@ -1123,7 +1123,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
   /* FIXME: Implement vector subscripts, type conversion and check whether
      string-kind conversions are permitted.
      FIXME: Implement sendget as well.  */
-  int ierr = 0;
+  int ierr = 0, flag = 0;
   size_t i, size;
   int j;
   /* int position, msg = 0;  */
@@ -1214,8 +1214,21 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
 #endif // CAF_MPI_LOCK_UNLOCK
         }
 
-      if (ierr != 0)
-        error_stop (ierr);
+      MPI_Test(&lock_req,&flag,MPI_STATUS_IGNORE);
+      
+      if(error_called == 1)
+	{
+	  communicator_shrink(&CAF_COMM_WORLD);
+	  error_called = 0;
+	  ierr = STAT_FAILED_IMAGE;
+	}
+      
+      if(!stat && ierr == STAT_FAILED_IMAGE)
+	error_stop (ierr);
+
+      if(stat)
+	*stat = ierr;
+
       return;
     }
   else
@@ -1582,6 +1595,9 @@ PREFIX (get) (caf_token_t token, size_t offset,
 	  
 	  if(!stat && ierr == STAT_FAILED_IMAGE)
 	    error_stop (ierr);
+
+	  if(stat)
+	    *stat = ierr;
         }
       return;
     }
@@ -1678,14 +1694,10 @@ PREFIX (get) (caf_token_t token, size_t offset,
       communicator_shrink(&CAF_COMM_WORLD);
       error_called = 0;
       ierr = STAT_FAILED_IMAGE;
-      printf("In error_called\n");
     }
 
   if(!stat && ierr == STAT_FAILED_IMAGE)
-    {
-      printf("error\n");
-      error_stop (ierr);
-    }
+    error_stop (ierr);
 
 # ifdef CAF_MPI_LOCK_UNLOCK
   MPI_Win_lock (MPI_LOCK_SHARED, image_index-1, 0, *p);
