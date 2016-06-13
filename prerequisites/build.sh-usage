@@ -12,7 +12,7 @@
   -I --install-version [arg]  Package version to install. (To see default, use -V or --print-version)
   -l --list-packages          List the packages this script can install.
   -m --with-cmake [arg]       Use the specified CMake installation. Default="cmake"
-  -M --with-mpi [arg]         Use the specified MPI installation. 
+  -M --mpi-path [arg]         Use the specified MPI installation. 
   -n --no-color               Disable color output.
   -p --package [arg]          Package to install. 
   -P --print-path [arg]       Print installation path for package specified in argument.
