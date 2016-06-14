@@ -244,6 +244,10 @@ source $opencoarrays_src_dir/prerequisites/install-functions/report_results.sh
 
 # ________________________________ Start of the Main Body ___________________________________
 
+if [[ "${arg_s}" == "${__flag_present}" ]]; then
+  export translate_source="${translate_source:-"true"}"
+fi
+
 if [[ "${arg_v}" == "${__flag_present}" || "${arg_V}" == "opencoarrays" ]]; then
 
   # Print script copyright if invoked with -v, -V, or --version argument

@@ -4,7 +4,7 @@ build_opencoarrays()
   print_header
   info "Invoking find_or_install mpich"
   find_or_install mpich
-  info "Invoking install_ofp_if_necesssary"
+  info "Invoking build_ofp_if_necesssary"
   build_ofp_if_necessary 
   info "Invoking find_or_install cmake"
   find_or_install cmake
