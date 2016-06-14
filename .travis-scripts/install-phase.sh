@@ -54,7 +54,7 @@ EOF
 # If you need the script that was executed, consider using $0 instead.
 __dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 __file="${__dir}/$(basename "${BASH_SOURCE[0]}")"
-__base="$(basename ${__file} .sh)"
+__base="$(basename "${__file}" .sh)"
 __os="Linux"
 if [[ "${OSTYPE:-}" == "darwin"* ]]; then
   __os="OSX"
@@ -64,14 +64,14 @@ fi
 #####################################################################
 
 function bottle_install () {
-    brew install $1 --only-dependencies || true # try to keep going
-    brew install $1 --force-bottle || \
-      brew upgrade $1 --force-bottle || \
-      brew outdated $1 # throw an error if outdated or not installed
+    brew install "$1" --only-dependencies || true # try to keep going
+    brew install "$1" --force-bottle || \
+      brew upgrade "$1" --force-bottle || \
+      brew outdated "$1" # throw an error if outdated or not installed
 }
 
 function brew_install () {
-    brew install $1 || brew upgrade $1 || brew outdated $1
+    brew install "$1" || brew upgrade "$1" || brew outdated "$1"
 }
 
 function _fmt ()      {
@@ -91,7 +91,7 @@ function _fmt ()      {
     # Don't use colors on pipes or non-recognized terminals
     color=""; color_reset=""
   fi
-  echo -e "$(date -u +"%Y-%m-%d %H:%M:%S UTC") ${color}$(printf "[%9s]" ${1})${color_reset}";
+  echo -e "$(date -u +"%Y-%m-%d %H:%M:%S UTC") ${color}$(printf "[%9s]" "${1}")${color_reset}";
 }
 function emergency () {                             echo "$(_fmt emergency) ${@}" 1>&2 || true; exit 1; }
 function alert ()     { [ "${LOG_LEVEL}" -ge 1 ] && echo "$(_fmt alert) ${@}" 1>&2 || true; }
@@ -104,7 +104,7 @@ function debug ()     { [ "${LOG_LEVEL}" -ge 7 ] && echo "$(_fmt debug) ${@}" 1>
 
 function help () {
   echo "" 1>&2
-  echo " ${@}" 1>&2
+  echo " ${*}" 1>&2
   echo "" 1>&2
   echo "  ${usage}" 1>&2
   echo "" 1>&2
@@ -121,13 +121,13 @@ trap cleanup_before_exit EXIT
 #####################################################################
 
 # Translate usage string -> getopts arguments, and set $arg_<flag> defaults
-while read line; do
+while read -r line; do
   # fetch single character version of option string
   opt="$(echo "${line}" |awk '{print $1}' |sed -e 's#^-##')"
 
   # fetch long version if present
   long_opt="$(echo "${line}" |awk '/\-\-/ {print $2}' |sed -e 's#^--##')"
-  long_opt_mangled="$(sed 's#-#_#g' <<< $long_opt)"
+  long_opt_mangled="$(sed 's#-#_#g' <<< "$long_opt")"
 
   # map long name back to short name
   varname="short_opt_${long_opt_mangled}"
@@ -149,7 +149,7 @@ while read line; do
   if ! echo "${line}" |egrep '\. Default=' >/dev/null 2>&1; then
     eval "${varname}=\"${init}\""
   else
-    match="$(echo "${line}" |sed 's#^.*Default=\(\)#\1#g')"
+    match="$(sed 's#^.*Default=\(\)#\1#g' <<< "$line")"
     eval "${varname}=\"${match}\""
   fi
 done <<< "${usage}"
@@ -165,21 +165,21 @@ set +o nounset # unexpected arguments will cause unbound variables
                # to be dereferenced
 # Overwrite $arg_<flag> defaults with the actual CLI options
 while getopts "${opts}" opt; do
-  [ "${opt}" = "?" ] && help "Invalid use of script: ${@} "
+  [ "${opt}" = "?" ] && help "Invalid use of script: ${*} "
 
   if [ "${opt}" = "-" ]; then
     # OPTARG is long-option-name or long-option=value
     if [[ "${OPTARG}" =~ .*=.* ]]; then
       # --key=value format
       long=${OPTARG/=*/}
-      long_mangled="$(sed 's#-#_#g' <<< $long)"
+      long_mangled="$(sed 's#-#_#g' <<< "$long")"
       # Set opt to the short option corresponding to the long option
       eval "opt=\"\${short_opt_${long_mangled}}\""
       OPTARG=${OPTARG#*=}
     else
       # --key value format
       # Map long name to short version of option
-      long_mangled="$(sed 's#-#_#g' <<< $OPTARG)"
+      long_mangled="$(sed 's#-#_#g' <<< "$OPTARG")"
       eval "opt=\"\${short_opt_${long_mangled}}\""
       # Only assign OPTARG if option takes an argument
       eval "OPTARG=\"\${@:OPTIND:\${has_arg_${opt}}}\""
@@ -290,11 +290,11 @@ fi
 info "Installing latest GCC, this could take some time..."
 [ "X$MY_OS" = "Xosx" ] && brew unlink gcc cmake
 bottle_install gcc
-cd $(brew --cellar)/gcc/5.3.0/bin
-[ -f "gcc" ] || ln -s gcc-5 gcc
-[ -f "gfortran" ] || ln -s gfortran-5 gfortran
-[ -f "g++" ] || ln -s g++-5 g++
-cd -
+(cd "$(brew --prefix gcc)/bin"
+[ -f "gcc" ] || ln -s gcc-[5-9] gcc
+[ -f "gfortran" ] || ln -s gfortran-[5-9] gfortran
+[ -f "g++" ] || ln -s g++-[5-9] g++
+)
 brew unlink gcc || true
 brew link --force gcc || true
 info "Done installing gcc, version: $(gcc --version)"
@@ -341,8 +341,12 @@ if ([[ "X$arg_b" = "XScript" ]] && ($_install_script_touched || ${FORCE_PREREQ_B
   brew unlink cmake || true
   brew unlink mpich || true
   brew unlink openmpi || true
-elif [[ "X$arg_b" = "XLint" ]]; then
+elif [[ "X$arg_b" == "XLint" ]]; then
   info "Installing packages for linting recent changes"
+  bottle_install ghc
+  bottle_install cabal-install
+  bottle_install pandoc
+  bottle_install shellcheck
   # cmake & MPI may or may not be linked...
 else
   info "Normal build without changes to install script. Installing CMake and $arg_m."
@@ -356,16 +360,16 @@ else
     wget "${!arg_m}" && brew install "${!arg_m##*/}"
   else
     # We can upload a custom Linux MPICH bottle, but we'll need to patch mpich.rb too...
-      bottle_install $arg_m
+      bottle_install "$arg_m"
   fi
-  brew link $arg_m || true
-  info "mpif90 from: $(readlink $(which mpif90))"
+  brew link "$arg_m" || true
+  info "mpif90 from: $(readlink "$(which mpif90)")"
   info "mpif90 wraps: $(mpif90 --version | sed -n '1p')"
   [ "$LOG_LEVEL" -ge 7 ] && debug "Full MPI & FC info: $(mpif90 -v)"
-  info "mpicc from: $(readlink $(which mpicc))"
+  info "mpicc from: $(readlink "$(which mpicc)")"
   info "mpicc wraps: $(mpicc --version | sed -n '1p')"
   [ "$LOG_LEVEL" -ge 7 ] && debug "Full MPI & CC info: $(mpicc -v)"
-  info "mpicxx from: $(readlink $(which mpicxx))"
+  info "mpicxx from: $(readlink "$(which mpicxx)")"
   info "mpicxx wraps: $(mpicxx --version | sed -n '1p')"
   [ "$LOG_LEVEL" -ge 7 ] && debug "Full MPI & CXX info: $(mpicxx -v)"
 fi
@@ -373,9 +377,11 @@ fi
 if ${CI:-false}; then
   info "Removing outdated packages..."
   # Caching only available on Linux, don't bother cleaning up after OS X
-  [ "X$MY_OS" = "Xlinux" ] && brew cleanup --force || info "No outdated packages found"
-  # Scrub the cache too, but this won't delete downloads for installed formula
-  [ "X$MY_OS" = "Xlinux" ] && brew cleanup -s || info "No outdated cached packages found"
+  if [[ "X$MY_OS" == "Xlinux" ]]; then
+    brew cleanup --force || info "No outdated packages found"
+    # Scrub the cache too, but this won't delete downloads for installed formula
+    brew cleanup -s || info "No outdated cached packages found"
+  fi
 fi
 
 info "The following packages are installed via Homebrew/Linuxbrew:"
