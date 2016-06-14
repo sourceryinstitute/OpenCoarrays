@@ -262,7 +262,7 @@ case $arg_b in
     Lint)
 	info "Performing Lint build: coding standards compliance and limited static analysis."
 	info "Enforcing whitespace rules."
-	yes | developer-scripts/setup-git.sh
+	(yes ||true) | developer-scripts/setup-git.sh
 	bad_commits=()
 	for commit in $COMMITS_TESTED ; do
 	    git diff --check ${commit}^..${commit} || bad_commits+=("$commit")
@@ -285,7 +285,7 @@ case $arg_b in
 	if (which cmake >/dev/null 2>/dev/null && which mpif90 >/dev/null 2>/dev/null); then
 	  info "Testing install.sh installation script. Install scripts unchanged."
 	  # We shouldn't need to background the process due to time out/verbosity issues
-	  (yes ||true) | ./install.sh "$HOME/opt/opencoarrays" 4
+	  ./install.sh -y --install-prefix "$HOME/opt/opencoarrays" -j 4 -f $FC -c $CC -C $CXX
 	else
 	  info "CMake and/or MPI not found. This implies that install.sh or install_prerequisites/* "
 	  info "has changed and we are testing the fullest capabilities of the install script that we can..."

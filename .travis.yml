@@ -10,6 +10,8 @@ matrix:
   exclude: # Don't run the "Lint" build on OS X
     - os: osx
       env: BUILD=Lint lMPI=NONE
+    - os: linux
+      env: BUILD=Release lMPI=openmpi
 
 # Deep clone so we can check things with git,
 # C.F. https://github.com/travis-ci/travis-ci/issues/4942
@@ -26,9 +28,11 @@ addons: # Packages needed to bootstrap linuxbrew
 
 cache: # Use caching on linux container builds
   apt: true
+  pip: true
   directories:
     - "$HOME/.cache"
     - "$HOME/.linuxbrew"
+    - "$HOME/.cabal"
 
 env:
   matrix:
