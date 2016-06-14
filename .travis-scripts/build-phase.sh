@@ -282,6 +282,7 @@ case $arg_b in
 	git archive --prefix="OpenCoarrays-$(git describe --tags)/" -o "OpenCoarrays-$(git describe --tags).tar.gz" "${GIT_TAG:-HEAD}"
 	tar xvzf "OpenCoarrays-$(git describe --tags).tar.gz"
 	cd "OpenCoarrays-$(git describe --tags)"
+	self_version="$(./install.sh --version | sed -n '1 s/ *OpenCoarrays *\([0-9]\{1,\}\.[0-9]\{1,\}\.[0-9]\{1,\}\) */\1/p')"
 	if (which cmake >/dev/null 2>/dev/null && which mpif90 >/dev/null 2>/dev/null); then
 	  info "Testing install.sh installation script. Install scripts unchanged."
 	  # We shouldn't need to background the process due to time out/verbosity issues
@@ -312,7 +313,12 @@ case $arg_b in
 	     >> "OpenCoarrays-$(git describe --tags)-SHA-256.txt"
 
 	info "Done installing OpenCoarrays using install.sh"
-	cd "OpenCoarrays-$(git describe --tags)/opencoarrays-build"
+	cd -
+	pwd
+	ls
+	ls prerequisites
+	ls prerequisites/builds
+	cd "prerequisites/builds/opencoarrays/${self_version}/"
 	ctest ${CTEST_VERBOSE:-}
 	cd -
 	;;
