@@ -319,7 +319,7 @@ case $arg_b in
 	ls prerequisites
 	ls prerequisites/builds
 	cd "prerequisites/builds/opencoarrays/${self_version}/"
-	ctest ${CTEST_VERBOSE:-}
+	ctest --output-on-failure ${CTEST_VERBOSE:-}
 	cd -
 	;;
     *)
