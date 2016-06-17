@@ -1115,7 +1115,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
                gfc_descriptor_t *dest,
                caf_vector_t *dst_vector __attribute__ ((unused)),
                gfc_descriptor_t *src, int dst_kind, int src_kind,
-               int *stat, bool mrt)
+               bool mrt, int *stat)
 {
   /* FIXME: Implement vector subscripts, type conversion and check whether
      string-kind conversions are permitted.
@@ -1515,7 +1515,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
               gfc_descriptor_t *src,
               caf_vector_t *src_vector __attribute__ ((unused)),
               gfc_descriptor_t *dest, int src_kind, int dst_kind,
-              int *stat, bool mrt)
+              bool mrt, int *stat)
 {
   size_t i, size;
   int ierr = 0, j, flag;
