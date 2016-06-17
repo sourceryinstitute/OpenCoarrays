@@ -153,13 +153,12 @@ if [[ ! -d "${build_path}" ]]; then
 fi
 
 # Install OFP prerequisites to /opt (currently the only option)
-"${opencoarrays_prerequisites_dir}"/install-binary.sh -p strategoxt-superbundle -i "${strategoxt_superbundle_install_path}"
+"${opencoarrays_prerequisites_dir}"/install-binary.sh -p strategoxt-superbundle
 
 # Downlaod OFP
 pushd "${build_path}"
 info "OFP Download command: ${default_ofp_downloader} ${args:-} \"${ofp_url_head}${ofp_url_tail}\""
 ${default_ofp_downloader} ${args:-} "${ofp_url_head}${ofp_url_tail}" 
-
 
 # Uncompress OFP
 tar xf ofp-sdf.tar.gz

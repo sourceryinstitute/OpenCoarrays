@@ -1,9 +1,5 @@
 install_or_skip()
 {
-  SUDO=${1}
-  install_path="${2}"
-  package_to_install="${3}"
-  download_path="${4}"
   if [[ -d "${install_path}/${package_to_install}" ]]; then
     info "The following installation path exists:"
     info "${install_path}/${package_to_install}"
@@ -29,16 +25,18 @@ function move_binaries_to_install_path()
   info "Installation package names: ${install_names}"
   package_to_install="${install_names%%,*}" # remove longest back-end match for ,*
   remaining_packages="${install_names#*,}"  # remove shortest front-end match for *,
+  install_path=${arg_i}
   if [[ ! -d "${install_path}" ]]; then
     ${SUDO:-} mkdir -p "${install_path}"
   fi
   while [[ "${package_to_install}" != "${remaining_packages}" ]]; do
-    install_or_skip  "${SUDO:-}" "${install_path}" "${package_to_install}" "${download_path}"
+    info "Installing ${package_to_install} binary with the following command:"
+    install_or_skip 
     info "Remaining installation package names:  ${remaining_packages}"
     install_names="${remaining_packages}"
     package_to_install="${install_names%%,*}" # remove longest back-end match for ,*
     remaining_packages="${install_names#*,}"  # remove shortest front-end for *,
-    info "Installing ${package_to_install} binary with the following command:"
   done
-  install_or_skip  "${SUDO:-}" "${install_path}" "${package_to_install}" "${download_path}"
+  info "Installing ${package_to_install} binary with the following command:"
+  install_or_skip
 }

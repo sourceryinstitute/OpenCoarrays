@@ -94,7 +94,7 @@ info "-d (--debug):            ${arg_d} "
 info "-D (--print-downloader): ${arg_D} "
 info "-e (--verbose):          ${arg_e} "
 info "-h (--help):             ${arg_h} "
-info "-i (--install-dir):      ${arg_i} "
+info "-i (--install-prefix):   ${arg_i} "
 info "-I (--install-version):  ${arg_I} "
 info "-l (--list-packages):    ${arg_l} "
 info "-n (--no-color):         ${arg_n} "
@@ -104,6 +104,7 @@ info "-U (--print-url):        ${arg_U} "
 info "-v (--version):          ${arg_v} "
 info "-V (--print-version):    ${arg_V} "
 }
+
 # shellcheck source=./install-binary-functions/set_or_print_default_version.sh
 source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/install-binary-functions/set_or_print_default_version.sh"
 set_or_print_default_version
