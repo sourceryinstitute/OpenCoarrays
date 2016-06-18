@@ -30,27 +30,30 @@
 # (3) Parse the usage information (default usage file name: current file's name with -usage appended).
 # (4) Parse the command line using the usage information.
 
-export OPENCOARRAYS_SRC_DIR="${OPENCOARRAYS_SRC_DIR:-${PWD}/..}"
+### Start of boilerplate -- do not edit this block #######################
+export OPENCOARRAYS_SRC_DIR="${OPENCOARRAYS_SRC_DIR:-${PWD%/}}"
 if [[ ! -f "${OPENCOARRAYS_SRC_DIR}/src/libcaf.h" ]]; then
-  echo "Please run this script inside the OpenCoarrays source \"prerequisites\" subdirectory"
-  echo "or set OPENCOARRAYS_SRC_DIR to the top-level OpenCoarrays source directory path."
+  echo "Please run this script inside the top-level OpenCoarrays source directory or "
+  echo "set OPENCOARRAYS_SRC_DIR to the OpenCoarrays source directory path."
   exit 1
 fi
-export __usage="${OPENCOARRAYS_SRC_DIR}/prerequisites/build-ofp.sh-usage"
 export B3B_USE_CASE="${B3B_USE_CASE:-${OPENCOARRAYS_SRC_DIR}/prerequisites/use-case}"
 if [[ ! -f "${B3B_USE_CASE:-}/bootstrap.sh" ]]; then
   echo "Please set B3B_USE_CASE to the bash3boilerplate use-case directory path."
   exit 2
+else
+    # shellcheck source=./prerequisites/use-case/bootstrap.sh
+    source "${B3B_USE_CASE}/bootstrap.sh" "$@"
 fi
-# shellcheck source=./use-case/bootstrap.sh
-source "${B3B_USE_CASE}/bootstrap.sh" "$@"
+### End of boilerplate -- start user edits below #########################
 
 # Set up a function to call when receiving an EXIT signal to do some cleanup. Remove if
 # not needed. Other signals can be trapped too, like SIGINT and SIGTERM.
 function cleanup_before_exit () {
   info "Cleaning up. Done"
 }
-trap cleanup_before_exit EXIT # The signal is specified here. Could be SIGINT, SIGTERM etc.
+# TODO: investigate why this turns off errexit:
+#trap cleanup_before_exit EXIT # The signal is specified here. Could be SIGINT, SIGTERM etc.
 
 export __flag_present=1
 
@@ -152,17 +155,32 @@ if [[ ! -d "${build_path}" ]]; then
   ${SUDO:-} mkdir -p "${build_path}"
 fi
 
+export arg_y=${arg_y:-}
 # Install OFP prerequisites to /opt (currently the only option)
 "${opencoarrays_prerequisites_dir}"/install-binary.sh -p strategoxt-superbundle
 
 # Downlaod OFP
 pushd "${build_path}"
-info "OFP Download command: ${default_ofp_downloader} ${args:-} \"${ofp_url_head}${ofp_url_tail}\""
-${default_ofp_downloader} ${args:-} "${ofp_url_head}${ofp_url_tail}" 
+#info "OFP Download command: ${default_ofp_downloader} ${args:-} \"${ofp_url_head}${ofp_url_tail}\""
+#${default_ofp_downloader} ${args:-} "${ofp_url_head}${ofp_url_tail}" 
 
-# Uncompress OFP
-tar xf ofp-sdf.tar.gz
-# Return to the original working directory
+# shellcheck source=./build-functions/download_if_necessary.sh
+source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/download_if_necessary.sh"
+url_tail="${ofp_url_tail}" \
+fetch="${default_ofp_downloader}" \
+package_url="${ofp_url_head}${ofp_url_tail}" \
+package_name="ofp" \
+version_to_build="sdf" \
+download_if_necessary
+
+# shellcheck source=./build-functions/unpack_if_necessary.sh
+source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/unpack_if_necessary.sh"
+url_tail="${ofp_url_tail}" \
+fetch="${default_ofp_downloader}" \
+package_name="ofp" \
+version_to_build="sdf" \
+unpack_if_necessary
+
 popd
 
 ofp_prereqs_install_dir="/opt"

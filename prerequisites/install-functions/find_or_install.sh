@@ -133,7 +133,7 @@ find_or_install()
         fi
       fi
 
-      translate_source="${translate_source:-unknown}" # will be used by install_ofp_if_necessary.sh
+      translate_source="${translate_source:-unknown}" # will be used by install_transpiler_if_necessary.sh
 
     elif [[ "$script_installed_package" == true ]]; then
 
@@ -146,7 +146,7 @@ find_or_install()
       stack_push dependency_exe "none"
       stack_push dependency_path "none"
 
-      translate_source="${translate_source:-false}" # will be used by install_ofp_if_necessary.sh
+      translate_source="${translate_source:-false}" # will be used by install_transpiler_if_necessary.sh
 
     elif [[ "$package_in_path" == "true" ]]; then
 
@@ -160,7 +160,7 @@ find_or_install()
         stack_push dependency_exe "none" "$executable" "gfortran"
         stack_push dependency_path "none" "$(./build.sh -P "$package")" "$(./build.sh -P gcc)"
 
-        translate_source="${translate_source:-false}" # will be used by install_ofp_if_necessary.sh
+        translate_source="${translate_source:-false}" # will be used by install_transpiler_if_necessary.sh
 
       else
         printf "yes.\n"
@@ -178,7 +178,7 @@ find_or_install()
           stack_push dependency_exe "none"
           stack_push dependency_path "none"
 
-          translate_source="${translate_source:-unknown}" # will be used by install_ofp_if_necessary.sh
+          translate_source="${translate_source:-unknown}" # will be used by install_transpiler_if_necessary.sh
 
         else
 
@@ -200,7 +200,7 @@ find_or_install()
             stack_push dependency_exe "none"
             stack_push dependency_path "none"
 
-            translate_source="${translate_source:-false}" # will be used by install_ofp_if_necessary.sh
+            translate_source="${translate_source:-false}" # will be used by install_transpiler_if_necessary.sh
 
           else
             printf "no\n"
@@ -209,7 +209,7 @@ find_or_install()
             stack_push dependency_exe "none" "$executable" "gfortran"
             stack_push dependency_path "none" "$(./build.sh -P "$package")" "$(./build.sh -P gcc)"
 
-            translate_source="${translate_source:-false}" # will be used by install_ofp_if_necessary.sh
+            translate_source="${translate_source:-false}" # will be used by install_transpiler_if_necessary.sh
           fi
         fi
       fi
@@ -219,7 +219,7 @@ find_or_install()
       stack_push dependency_pkg  "none" "$package" "gcc"
       stack_push dependency_exe  "none" "$executable" "gfortran"
       stack_push dependency_path "none" "$(./build.sh -P "$package")" "$(./build.sh -P gcc)"
-      translate_source="${translate_source:-unknown}" # will be used by install_ofp_if_necessary.sh
+      translate_source="${translate_source:-unknown}" # will be used by install_transpiler_if_necessary.sh
     fi
 
   elif [[ $package == "gcc" ]]; then

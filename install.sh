@@ -106,7 +106,6 @@ function cleanup_before_exit () {
 }
 trap cleanup_before_exit EXIT # The signal is specified here. Could be SIGINT, SIGTERM etc.
 
-
 ### Validation (decide what's required for running your script and error out)
 #####################################################################
 
@@ -227,8 +226,8 @@ source $opencoarrays_src_dir/prerequisites/install-functions/find_or_install.sh
 # shellcheck source=./prerequisites/install-functions/build_ofp_if_necessary.sh
 source $opencoarrays_src_dir/prerequisites/install-functions/build_ofp_if_necessary.sh
 
-# shellcheck source=./prerequisites/install-functions/install_ofp.sh
-source $opencoarrays_src_dir/prerequisites/install-functions/install_ofp.sh
+# shellcheck source=./prerequisites/install-functions/install_transpiler.sh
+source $opencoarrays_src_dir/prerequisites/install-functions/install_transpiler.sh
 
 # shellcheck source=./prerequisites/install-functions/print_header.sh
 source $opencoarrays_src_dir/prerequisites/install-functions/print_header.sh

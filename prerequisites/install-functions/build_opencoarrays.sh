@@ -25,7 +25,7 @@ build_opencoarrays()
     info "Installing OpenCoarrays in ${install_path} with the command ${SUDO:-} make install"
     ${SUDO:-} make install
     if [[ "${translate_source}" == "true" ]]; then
-      install_ofp
+      install_transpiler
     fi
   fi
 }

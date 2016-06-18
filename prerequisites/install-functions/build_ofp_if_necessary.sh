@@ -14,7 +14,6 @@ function build_ofp_if_necessary()
     # all result in the check happening in one place (for now, there is only one place where
     # such a deferral happens).
 
-
     info "install_ofp_if_necessary: Checking whether ${MPIFC} wraps gfortran... "
     mpif90_version_header=$("${MPIFC}" --version | head -1)
     first_three_characters=$(echo "${mpif90_version_header}" | cut -c1-3)
@@ -42,6 +41,8 @@ function build_ofp_if_necessary()
       ofp_build_prefix="${OPENCOARRAYS_SRC_DIR}"/prerequisites/builds
       info "Building the Open Fortran Parser (ofp-sdf) with the following command:" 
       info "\"${OPENCOARRAYS_SRC_DIR}\"/prerequisites/build-ofp.sh \"--build-dir=${ofp_build_prefix}\""
+      export ofp_build_dir="${ofp_build_prefix}/ofp-sdf"
+      export arg_y=${arg_y:-}
       "${OPENCOARRAYS_SRC_DIR}"/prerequisites/build-ofp.sh "--build-dir=${ofp_build_prefix}"
   else
     info "No source translation required for the chosen compiler. Skipping Open Fortran Parser installation."

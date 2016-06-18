@@ -1,5 +1,5 @@
 # shellcheck disable=??????
-function install_ofp()
+function install_transpiler()
 {
   ofp_install_dir="${install_path}"/transpiler 
   ofp_build_dir="${ofp_build_prefix}"/ofp-sdf

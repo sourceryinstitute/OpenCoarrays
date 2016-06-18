@@ -22,9 +22,11 @@ usage()
     echo "   $cmd --help"
     echo ""
     echo "Given a Fortran 2015 CAF source file, $cmd produces a semantically equivalent"
-    echo "program that uses a subset of Fortran supported any recently released Fortran "
-    echo "compilers.  The subset uses the opencoarrays module and is referred to as the"
-    echo "OpenCoarrays CAF (OCAF) dialect."
+    echo "program expressed in a subset of Fortran that is supported most recently released"
+    echo "compilers.  The transformed source is written to a file named with a 'cafe-' prefix"
+    echo "to connote 'coarray Fortran emulated' or 'coarray Fortran extended.' $cmd "
+    echo "supports CAF programming with non-CAF compilers and extends the capabilities of"
+    echo "CAF compilers."
 }
 
 # Print usage information if caf is invoked without arguments
@@ -62,11 +64,13 @@ elif [[ "${transform_source}" = "true" ]]; then
   if [[ $extension == 'f90' || $extension == 'F90' || $extension == 'f' || $extension == 'F' ]]; then
 
     # Translate CAF syntax to invocations of procedures in opencoarrays.f90:
-    "${strategoxt_dir}"/sglri -p "${transpiler_dir}"/Fortran.tbl -i "${caf_source}" \
+
+    "${strategoxt_dir}"/sglri -p "${transpiler_dir}"/Fortran.tbl -i "${1}" \
       | "${transpiler_dir}"/ofp2fast \
       | "${transpiler_dir}"/fast-to-ocaf \
       | "${transpiler_dir}"/fast2pp \
       | "${strategoxt_dir}"/ast2text -p "${transpiler_dir}"/Fortran.pp > "cafe-${1}"
+
 
     # Replace command-line argument 1 with name of transformed source file
     cafe_source="cafe-${1}"

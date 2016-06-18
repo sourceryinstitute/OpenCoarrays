@@ -122,6 +122,7 @@ set_or_print_url
 source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/set_or_print_installation_path.sh"
 set_or_print_installation_path
 
+export arg_y=${arg_y:-}
 # shellcheck source=./build-functions/download_if_necessary.sh
 source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/download_if_necessary.sh"
 download_if_necessary
