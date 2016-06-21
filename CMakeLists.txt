@@ -151,8 +151,30 @@ add_custom_target ( uninstall
 
 enable_testing()
 
+# Determine if we're using Open MPI
+execute_process(COMMAND ${MPIEXEC} --version
+  OUTPUT_VARIABLE mpi_version_out)
+if (mpi_version_out MATCHES "[Oo]pen[ -][Mm][Pp][Ii]")
+  message( STATUS "OpenMPI detected")
+  set ( openmpi true )
+endif ()
+
+include( ProcessorCount )
+ProcessorCount(N)
 function(add_mpi_test name num_mpi_proc path)
-   set(test_parameters ${MPIEXEC_NUMPROC_FLAG} ${num_mpi_proc} )
+   if ( ((N LESS num_mpi_proc) OR (N EQUAL 0)) )
+     message(STATUS "Test ${name} is oversubscribed: ${num_mpi_proc} ranks requested with ${N} system processor available.")
+     if ( openmpi )
+       if ( N LESS 2 )
+	 set( num_mpi_proc 2 )
+	 set (test_parameters --oversubscribed)
+       else()
+	 set ( num_mpi_proc ${N} )
+       endif()
+       message( STATUS "Open-MPI detected, over-riding oversubscribed test, ${name}, with ${num_mpi_proc} ranks." )
+     endif()
+   endif()
+   set(test_parameters ${test_parameters} ${MPIEXEC_NUMPROC_FLAG} ${num_mpi_proc} )
    add_test(NAME ${name} COMMAND ${MPIEXEC} ${test_parameters} "${path}")
    set_property(TEST ${name} PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
 endfunction(add_mpi_test)
