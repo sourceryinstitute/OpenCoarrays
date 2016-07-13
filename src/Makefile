@@ -8,10 +8,10 @@
 #    launcher, the test suite, and any undetected prerequisite packages, and 
 #    which customizes the build for the environment.
 #
-# Usage (defaults: ARMCI=no, GASNET=no):
-#    make                          - Builds libcaf_mpi.a, the MPI transport layer.
-#    make ARMCI=yes GASNET=no all  - Builds libcaf_mpi.a and libcaf_gasnet.a.
-#    make clean                    - Deletes *.o files. Retains *.a files.
+# Usage (default: GASNET=no):
+#    make                      - Builds libcaf_mpi.a, the MPI transport layer.
+#    make GASNET=no all        - Builds libcaf_mpi.a and libcaf_gasnet.a.
+#    make clean                - Deletes *.o files. Retains *.a files.
 #
 # OpenCoarrays is distributed under the OSI-approved BSD 3-clause License:
 # Copyright (c) 2015-2016, Sourcery, Inc.
@@ -47,32 +47,21 @@ export
 # Conditionally enable the build of the GASNet library libcaf_gasnet.a,
 # an unmaintained but previously functional MPI alterntive.
 ifeq ($(GASNET),yes)
-  armci_=gasnet
-endif
-# Conditionally enable the build of the ARMCI library libcaf_gasnet.a,
-# an unmaintained MPI alternative retained for demonstration only.
-ifeq ($(ARMCI),yes)
-  armci_=armci
+  gasnet_=gasnet
 endif
 
 .PHONY : common
 .PHONY : gasnet
 .PHONY : mpi
 .PHONY : $(gasent_)
-.PHONY : $(armci_)
 
-all: common mpi $(gasnet_) $(armci_)
+all: common mpi $(gasnet_) 
 
 mpi: common
 	$(MAKE) -C $@
 
 common:
 	$(MAKE) -C $@
-
-ifeq ($(ARMCI),yes)
-armci: common
-	$(MAKE) -C $@
-endif
 
 ifeq ($(GASNET),yes)
 gasnet: common
@@ -86,16 +75,10 @@ clean:
 ifeq ($(GASNET),yes)
 	$(MAKE) -k -C gasnet clean
 endif
-ifeq ($(ARMCI),yes)
-	$(MAKE) -k -C armci clean
-endif
 
 distclean: clean
 	$(MAKE) -k -C common distclean
 	$(MAKE) -k -C mpi distclean
 ifeq ($(GASNET),yes)
 	$(MAKE) -k -C gasnet distclean
-endif
-ifeq ($(ARMCI),yes)
-	(MAKE) -k -C armci distclean
 endif
