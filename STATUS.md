@@ -21,7 +21,6 @@ Download this file as a PDF document
      *  [libcaf_mpi]
      *  [libcaf_x]
      *  [libcaf_gasnet]
-     *  [libcaf_armci]
      *  [libcaf_single]
  *  [Known Issues](#known-issues)
      * [Library Issues](#library-issues)
@@ -98,8 +97,6 @@ Library Status
   is currently out-of-date but might exhibit higher performance than [MPI] on
   platforms for which [GASNet] provides a tuned conduit.  Contact the
   [OpenCoarrays Google Group] for further information.
-<a name="libcaf-armci">
-* **libcaf_armci**</a> (Unsupported): developed for research purposes and evaluation.
 <a name="libcaf-single">
 * **libcaf_single**</a> (Unsupported): developed to mirror the like-named library that
   is included in GNU Fortran to facilitate compiling single-image (sequential)
@@ -185,7 +182,6 @@ To-Do List
    [libcaf_x]: #libcaf-x
    [libcaf_gasnet]:  #libcaf-gasnet
    [libcaf_single]: #libcaf-single
-   [libcaf_armci]: #libcaf-armci
   [GNU (gfortran)]: #compiler-issues-gnu
   [Cray (ftn)]: #compiler-issues-cray
   [Intel (ifort)]: #compiler-issues-intel

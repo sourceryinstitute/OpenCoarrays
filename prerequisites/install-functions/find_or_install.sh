@@ -123,16 +123,6 @@ find_or_install()
       stack_push dependency_exe "none"
       stack_push dependency_path "none"
 
-      if [[ ! -z "${arg_f:-}" ]]; then
-        # -f or --with-fortran argument specifies a compiler, which we use if mpif90
-        # invokes the specified compiler.  Otherwise, we halt and print an error message.
-        MPIFC_wraps=$(${MPIFC} --version)
-        compiler=$(${arg_f} --version)
-        if [[ "${MPIFC_wraps}" != "${compiler}"   ]]; then
-          emergency "Specified MPI ${MPIFC_wraps} wraps a compiler other than the specified Fortran compiler ${compiler}"
-        fi
-      fi
-
     elif [[ "$script_installed_package" == true ]]; then
 
       echo -e "$this_script: Using the $package installed by $this_script\n"
@@ -205,6 +195,15 @@ find_or_install()
       stack_push dependency_pkg  "none" "$package" "gcc"
       stack_push dependency_exe  "none" "$executable" "gfortran"
       stack_push dependency_path "none" "$(./build.sh -P "$package")" "$(./build.sh -P gcc)"
+    fi
+
+    # Check consistency of MPIFC, if set, and user-specified Fortran compiler
+    if [[ ! -z ${MPIFC:-} && ! -z "${arg_f:-}" ]]; then
+      MPIFC_wraps=$(${MPIFC} --version)
+      compiler=$(${arg_f} --version)
+      if [[ "${MPIFC_wraps}" != "${compiler}"   ]]; then
+        emergency "Specified MPI ${MPIFC_wraps} wraps a compiler other than the specified Fortran compiler ${compiler}"
+      fi
     fi
 
   elif [[ $package == "gcc" ]]; then
