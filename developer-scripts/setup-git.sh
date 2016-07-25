@@ -1,12 +1,28 @@
 #!/bin/bash
 # Script to congigure OpenCoarrays contributor's git environment
 # and add local git-hooks scripts to ensure properly
-let global=0
-if [[ "$1" ]]; then
+
+set -o errexit
+set -o errtrace
+set -o pipefail
+set -o nounset
+
+__file=setup-git.sh
+
+err_report() {
+    error_code=$?
+    echo 2>&1 "Error in $__file in function $1 on line $2"
+    exit $error_code
+}
+
+trap 'err_report "${FUNCNAME:-.}" $LINENO' ERR
+
+global=0
+if [[ "$#" -ge 1 ]]; then
     if [[ "$1" == "--global" ]]; then
-	let global=1
+	global=1
 	echo "WARNING: Settings will be applied globally. This may over-write some of your global git settings."
-	read -p "Press Ctrl-C to abort, and try again without \`--global\` or press any key to contibue" foo
+	read -p -r "Press Ctrl-C to abort, and try again without \`--global\` or press any key to contibue"
     else
 	echo "Usage: $0 [--global] [--help]"
 	echo ""
@@ -26,20 +42,20 @@ fi
 system=$(uname)
 
 if [[ "X$system" == "XDarwin" || "X$system" == "XLinux" ]]; then
-    git config $flags core.autocrlf input
+    git config ${flags:-} core.autocrlf input
 else # assume windows
-    git fonfig $flags core.autocrlf true
+    git config ${flags:-} core.autocrlf true
 fi
 
-git config $flags core.whitespace trailing-space,space-before-tab,blank-at-eol,blank-at-eof
+git config ${flags:-} core.whitespace trailing-space,space-before-tab,blank-at-eol,blank-at-eof
 
-git config $flags apply.whitespace fix
+git config ${flags:-} apply.whitespace fix
 
-git config $flags color.diff.whitespace red reverse
+git config ${flags:-} color.diff.whitespace red reverse
 
 gitroot="$(git rev-parse --show-toplevel)"
 echo "WARNING: About to install and overwrite project level githooks in $gitroot/.git/hooks"
-read -p "Press Ctrl-C to abort or any key to continue" foo
+read -r -p "Press Ctrl-C to abort or any key to continue"
 for f in "$gitroot/developer-scripts/git-hooks/"*; do
     echo "Copying $f"
     cp "$f" "$gitroot/.git/hooks/"
