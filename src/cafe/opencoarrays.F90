@@ -30,6 +30,7 @@ module opencoarrays
   implicit none
 
   private
+#ifndef EVENTS_ONLY
   public :: co_reduce
   public :: co_broadcast
   public :: co_sum
@@ -39,9 +40,10 @@ module opencoarrays
   public :: num_images
   public :: error_stop
   public :: sync_all
+  public :: accelerate
+#endif // ifndef EVENTS_ONLY
   public :: caf_init
   public :: caf_finalize
-  public :: accelerate
   public :: event_type
   public :: event_post
   public :: event_wait
@@ -64,6 +66,7 @@ module opencoarrays
      module procedure f_sizeof_c_int,f_sizeof_c_double,f_sizeof_c_bool,f_sizeof_c_float
   end interface
 
+#ifndef EVENTS_ONLY
   ! Generic interface to co_broadcast with implementations for various types, kinds, and ranks
   interface co_reduce
      module procedure co_reduce_c_int,co_reduce_c_double,co_reduce_logical
@@ -88,6 +91,7 @@ module opencoarrays
   interface co_max
      module procedure co_max_c_int,co_max_c_double
   end interface
+#endif // ifndef EVENTS_ONLY
 
   abstract interface
      pure function c_int_operator(lhs,rhs) result(lhs_op_rhs)
@@ -206,9 +210,6 @@ module opencoarrays
     module procedure gfc_descriptor_c_int,gfc_descriptor_c_double,gfc_descriptor_logical
   end interface
 
-  interface
-  end interface
-
   ! Bindings for OpenCoarrays C procedures
   interface
 
@@ -229,6 +230,7 @@ module opencoarrays
       type(c_ptr), value ::  argv
     end subroutine
 
+#ifndef EVENTS_ONLY
     ! C function signature from ../cuda_mpi/mpi_caf.c:
     ! void
     ! PREFIX(registernc) (void* mem,size_t mem_size)
@@ -387,6 +389,8 @@ module opencoarrays
       integer(c_int), intent(out) :: stat,unused
       character(c_char), intent(out) :: errmsg(*)
     end subroutine
+
+#endif // ifndef EVENTS_ONLY
 
   end interface
 

@@ -44,7 +44,7 @@ elseif ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "Cray" )
    "Support for the detected compiler (${CMAKE_Fortran_COMPILER_ID}) is experimental."
    "Please report any failures to opencoarrays@googlegroups.com"
   )
-  # This applies to CCE 8.4 beta or earlier
+  add_definitions(-DEVENTS_ONLY)
   add_definitions(-DCOMPILER_PROVIDES_MPI)
 elseif ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "PGI" )
   set(portland_group_compiler true)
