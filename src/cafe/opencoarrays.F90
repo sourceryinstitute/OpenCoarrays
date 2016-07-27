@@ -26,7 +26,7 @@
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 !
 module opencoarrays
-  use iso_c_binding, only : c_int,c_char,c_ptr,c_loc,c_double,c_int32_t,c_ptrdiff_t,c_bool,c_funloc,c_float
+  use iso_c_binding, only : c_int,c_char,c_ptr,c_loc,c_double,c_int32_t,c_ptrdiff_t,c_bool,c_funloc,c_float,c_size_t,c_null_ptr
   implicit none
 
   private
@@ -43,23 +43,24 @@ module opencoarrays
   public :: accelerate
 #endif // ifndef EVENTS_ONLY
   public :: caf_init
+  public :: caf_register
   public :: caf_finalize
   public :: event_type
   public :: event_post
   public :: event_wait
   public :: event_query
 
-  type, bind(C) :: opencoarrays_event_type
-    integer(c_int) :: dummy
-  end type
-
   type event_type
-    type(opencoarrays_event_type)  :: e
+    type(c_ptr) :: token
   end type
 
 #ifdef COMPILER_LACKS_C_PTRDIFF_T
   integer(c_int), parameter :: c_ptrdiff_t=c_long
 #endif
+
+  interface caf_register
+    module procedure register_event
+  end interface
 
   ! Generic interface to a function analogous to c_sizeof but for assumed-rank arguments
   interface f_sizeof
@@ -200,6 +201,32 @@ module opencoarrays
     type(u_t) :: u
   end type
 
+  ! C enumeration from ../libcaf.h:
+  ! /* Describes what type of array we are registering. Keep in sync with
+  ! gcc/fortran/trans.h.  */
+  ! typedef enum caf_register_t {
+  !   CAF_REGTYPE_COARRAY_STATIC,
+  !   CAF_REGTYPE_COARRAY_ALLOC,
+  !   CAF_REGTYPE_LOCK_STATIC,
+  !   CAF_REGTYPE_LOCK_ALLOC,
+  !   CAF_REGTYPE_CRITICAL,
+  !   CAF_REGTYPE_EVENT_STATIC,
+  !   CAF_REGTYPE_EVENT_ALLOC
+  !   }
+  ! caf_register_t;
+
+  enum ,bind(C)
+    enumerator :: &
+      CAF_REGTYPE_COARRAY_STATIC, &
+      CAF_REGTYPE_COARRAY_ALLOC, &
+      CAF_REGTYPE_LOCK_STATIC, &
+      CAF_REGTYPE_LOCK_ALLOC, &
+      CAF_REGTYPE_CRITICAL, &
+      CAF_REGTYPE_EVENT_STATIC, &
+      CAF_REGTYPE_EVENT_ALLOC
+  end enum
+  integer, parameter :: caf_register_t=c_int
+
   ! --------------------
 
   integer(c_int), save, volatile, bind(C,name="CAF_COMM_WORLD") :: CAF_COMM_WORLD
@@ -228,6 +255,55 @@ module opencoarrays
       import :: c_int,c_ptr
       integer(c_int), value ::  argc
       type(c_ptr), value ::  argv
+    end subroutine
+
+    ! C function signature from ../mpi/mpi_caf.c:
+    ! void *
+    !   PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
+    !                   int *stat, char *errmsg, int errmsg_len)
+
+    function opencoarrays_register_event(size_,type_,token,stat,errmsg,errmsg_len) result(mem) &
+      bind(C,name="_gfortran_caf_register")
+      import c_size_t, caf_register_t, c_ptr, c_int, c_char
+      integer(c_size_t), value :: size_
+      integer(caf_register_t), value :: type_
+      type(c_ptr), value :: token
+      integer(c_int) :: stat
+      character(c_char) :: errmsg
+      integer(c_int), value :: errmsg_len
+      type(c_ptr) :: mem
+    end function 
+
+    ! C function signature from ../mpi/mpi_caf.c:
+    ! void
+    ! PREFIX (event_wait) (caf_token_t token, size_t index,
+    !                      int until_count, int *stat,
+    !                      char *errmsg, int errmsg_len)
+
+    subroutine opencoarrays_event_wait(token,index_,until_count,stat,errmsg,errmsg_len) bind(C,name="_gfortran_caf_event_wait")
+      import c_size_t, c_ptr, c_int, c_char
+      type(c_ptr), value :: token
+      integer(c_size_t), value :: index_
+      integer(c_int), value :: until_count
+      integer(c_int) :: stat
+      character(c_char) :: errmsg
+      integer(c_int), value :: errmsg_len
+    end subroutine
+
+    ! C function signature from ../mpi/mpi_caf.c:
+    ! void
+    ! PREFIX (event_post) (caf_token_t token, size_t index,
+    !                      int image_index, int *stat,
+    !                      char *errmsg, int errmsg_len)
+
+    subroutine opencoarrays_event_post(token,index_,image_index,stat,errmsg,errmsg_len) bind(C,name="_gfortran_caf_event_post")
+      import c_size_t, c_ptr, c_int, c_char
+      type(c_ptr), value :: token
+      integer(c_size_t), value :: index_
+      integer(c_int), value :: image_index
+      integer(c_int) :: stat
+      character(c_char) :: errmsg
+      integer(c_int), value :: errmsg_len
     end subroutine
 
 #ifndef EVENTS_ONLY
@@ -817,18 +893,6 @@ contains
     call opencoarrays_sync_all(stat,errmsg,unused)
   end subroutine
 
-   ! Atomically increment an event count by 1
-   subroutine event_post(this,stat)
-     class(event_type), intent(inout) ::  this
-     integer, intent(out) :: stat
-   end subroutine
-
-   ! Impose a barrier and atomically decrement an event count
-   subroutine event_wait(this,until_count,stat) 
-     class(event_type), intent(inout) ::  this
-     integer, intent(in) :: until_count
-     integer, intent(out) :: stat
-   end subroutine
 
    ! Atomically fetch an event count
    subroutine event_query(this,count,stat) 
@@ -863,5 +927,36 @@ contains
     integer, parameter :: bits_per_byte=8
     f_sizeof_a  = size(a)*storage_size(1._c_float)/bits_per_byte
   end function 
+
+  subroutine register_event(event,size_)
+    class(event_type), intent(out) :: event
+    integer(c_size_t) :: size_
+    type(c_ptr) :: mem
+    integer(c_int) :: int_unused=0
+    character(len=1,c_char) :: char_unused="0"
+    mem = opencoarrays_register_event(size_,CAF_REGTYPE_EVENT_ALLOC,event%token,int_unused,char_unused,int_unused)
+  end subroutine
+
+   ! Block and atomically decrement an event count
+  subroutine event_wait(event,index_,until_count) 
+    class(event_type), intent(inout) :: event
+    integer(c_size_t), intent(in) :: index_
+    integer(c_int), intent(in) :: until_count
+    integer(c_int) :: int_unused=0
+    character(len=1,c_char) :: char_unused="0"
+    error stop "check whether index_ offset is 0 or 1"
+    call opencoarrays_event_wait(event%token,index_,until_count,int_unused,char_unused,int_unused)
+  end subroutine
+
+   ! Atomically increment an event count by 1
+  subroutine event_post(event,index_,image_index) 
+    class(event_type), intent(inout) :: event
+    integer(c_size_t), intent(in) :: index_
+    integer(c_int), intent(in) :: image_index
+    integer(c_int) :: int_unused=0
+    character(len=1,c_char) :: char_unused="0"
+    error stop "check whether index_ offset is 0 or 1"
+    call opencoarrays_event_post(event%token,index_,image_index,int_unused,char_unused,int_unused)
+  end subroutine
 
 end module
