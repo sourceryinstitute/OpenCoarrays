@@ -41,7 +41,7 @@ module opencoarrays
   public :: error_stop
   public :: sync_all
   public :: accelerate
-#endif // ifndef EVENTS_ONLY
+#endif /* ifndef EVENTS_ONLY */
   public :: caf_init
   public :: caf_register
   public :: caf_finalize
@@ -92,7 +92,7 @@ module opencoarrays
   interface co_max
      module procedure co_max_c_int,co_max_c_double
   end interface
-#endif // ifndef EVENTS_ONLY
+#endif /* ifndef EVENTS_ONLY */
 
   abstract interface
      pure function c_int_operator(lhs,rhs) result(lhs_op_rhs)
@@ -466,7 +466,7 @@ module opencoarrays
       character(c_char), intent(out) :: errmsg(*)
     end subroutine
 
-#endif // ifndef EVENTS_ONLY
+#endif /* ifndef EVENTS_ONLY */
 
   end interface
 
@@ -933,7 +933,7 @@ contains
     integer(c_size_t) :: size_
     type(c_ptr) :: mem
     integer(c_int) :: int_unused=0
-    character(len=1,c_char) :: char_unused="0"
+    character(kind=c_char,len=0) :: char_unused=""
     mem = opencoarrays_register_event(size_,CAF_REGTYPE_EVENT_ALLOC,event%token,int_unused,char_unused,int_unused)
   end subroutine
 
@@ -943,7 +943,7 @@ contains
     integer(c_size_t), intent(in) :: index_
     integer(c_int), intent(in) :: until_count
     integer(c_int) :: int_unused=0
-    character(len=1,c_char) :: char_unused="0"
+    character(kind=c_char,len=0) :: char_unused=""
     error stop "check whether index_ offset is 0 or 1"
     call opencoarrays_event_wait(event%token,index_,until_count,int_unused,char_unused,int_unused)
   end subroutine
@@ -954,7 +954,7 @@ contains
     integer(c_size_t), intent(in) :: index_
     integer(c_int), intent(in) :: image_index
     integer(c_int) :: int_unused=0
-    character(len=1,c_char) :: char_unused="0"
+    character(kind=c_char,len=0) :: char_unused=""
     error stop "check whether index_ offset is 0 or 1"
     call opencoarrays_event_post(event%token,index_,image_index,int_unused,char_unused,int_unused)
   end subroutine
