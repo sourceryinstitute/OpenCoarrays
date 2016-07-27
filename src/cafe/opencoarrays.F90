@@ -933,7 +933,7 @@ contains
     integer(c_size_t) :: size_
     type(c_ptr) :: mem
     integer(c_int) :: int_unused=0
-    character(kind=c_char,len=0) :: char_unused=""
+    character(kind=c_char,len=1) :: char_unused=""
     mem = opencoarrays_register_event(size_,CAF_REGTYPE_EVENT_ALLOC,event%token,int_unused,char_unused,int_unused)
   end subroutine
 
@@ -943,7 +943,7 @@ contains
     integer(c_size_t), intent(in) :: index_
     integer(c_int), intent(in) :: until_count
     integer(c_int) :: int_unused=0
-    character(kind=c_char,len=0) :: char_unused=""
+    character(kind=c_char,len=1) :: char_unused=""
     error stop "check whether index_ offset is 0 or 1"
     call opencoarrays_event_wait(event%token,index_,until_count,int_unused,char_unused,int_unused)
   end subroutine
@@ -954,7 +954,7 @@ contains
     integer(c_size_t), intent(in) :: index_
     integer(c_int), intent(in) :: image_index
     integer(c_int) :: int_unused=0
-    character(kind=c_char,len=0) :: char_unused=""
+    character(kind=c_char,len=1) :: char_unused=""
     error stop "check whether index_ offset is 0 or 1"
     call opencoarrays_event_post(event%token,index_,image_index,int_unused,char_unused,int_unused)
   end subroutine
