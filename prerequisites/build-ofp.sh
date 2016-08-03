@@ -180,6 +180,7 @@ fetch="${default_ofp_downloader}" \
 package_name="ofp" \
 version_to_build="sdf" \
 unpack_if_necessary
+mv -f ${OPENCOARRAYS_SRC_DIR}/prerequisites/downloads/ofp-sdf ${OPENCOARRAYS_SRC_DIR}/prerequisites/builds
 
 popd
 
