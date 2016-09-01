@@ -124,7 +124,7 @@ fi
 # shellcheck source=./build-functions/set_or_print_downloader.sh
 source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/set_or_print_downloader.sh"
 # shellcheck disable=SC2119
-set_or_print_downloader
+set_or_print_downloader $@
 
 # shellcheck source=./build-functions/set_or_print_url.sh
 source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/set_or_print_url.sh"

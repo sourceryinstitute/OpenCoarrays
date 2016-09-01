@@ -194,9 +194,6 @@ info  "-y (--yes-to-all):       ${arg_y}"
 this_script="$(basename "$0")"
 export this_script
 
-export install_path="${arg_i%/}"
-info "install_path=\"${install_path}\""
-
 export num_threads="${arg_j}"
 info "num_threads=\"${arg_j}\""
 
