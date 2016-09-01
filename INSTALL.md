@@ -33,14 +33,19 @@ a file from our [Releases] page and running the installation script in the top-l
 source directory:
 
 ```
-tar xvzf opencoarrays-x.y.z.tar.gz
-cd opencoarrays
+tar xvzf OpenCoarrays-x.y.z.tar.gz
+cd OpenCoarrays-x.y.z
 ./install.sh
 ```
 
+where `x.y.z` should be replaced with the appropriate version numbers.  For an interactive build, use
+`./install.sh -y` or equivalently `./install.sh --yes-to-all`, which will assume affirmative answers
+to all user prompts and will only prompt the user if an installation directory is chosen that requires
+`sudo` privelenges (by passing `-i` or equivalently `--install-prefix`).
+
 Before installing OpenCoarrays, the above bash script will attempt to detect the presence
 of the default prequisite packages: [GCC], [MPICH] , and [CMake].  For additional details, see the [Prerequisites] section. If any of the
-aforementioned packages appear to be absent from the user's PATH environment variable,
+aforementioned packages appear to be absent from the user's `PATH` environment variable,
 the [install.sh] script will attempt to download, build, and install any missing packages
 after asking permission to do so.  The script has been tested on Linux and OS X.  Please
 submit any related problems or questions to our [Issues] page.
