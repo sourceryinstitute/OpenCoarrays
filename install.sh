@@ -296,7 +296,6 @@ elif [[ "${arg_p:-}" == "opencoarrays" ]]; then
   # shellcheck source=./prerequisites/build-functions/set_SUDO_if_needed_to_write_to_directory.sh
   source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/set_SUDO_if_needed_to_write_to_directory.sh"
   version="$("${opencoarrays_src_dir}/install.sh" -V opencoarrays)"
-  install_path="${install_path}/opencoarrays/${version}"
   set_SUDO_if_needed_to_write_to_directory "${install_path}"
   build_opencoarrays 2>&1 | tee ../"${installation_record}"
   report_results 2>&1 | tee -a ../"${installation_record}"
