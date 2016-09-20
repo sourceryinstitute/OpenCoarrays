@@ -88,7 +88,7 @@ info "__os: ${__os}"
 info "__usage: ${__usage}"
 info "LOG_LEVEL: ${LOG_LEVEL}"
 
-info "-b (--branch):           ${arg_b} "
+info "-b (--install-branch):   ${arg_b} "
 info "-B (--list-branches):    ${arg_B} "
 info "-c (--with-c):           ${arg_c} "
 info "-C (--with-cxx):         ${arg_C} "
