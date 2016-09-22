@@ -206,7 +206,7 @@ if(opencoarrays_aware_compiler)
 
   # Integration tests verifying the use of libcaf_mpi in applications
   add_mpi_test(hello_multiverse 2 ${tests_root}/integration/coarrayHelloWorld/hello_multiverse)
-  add_mpi_test(coarray_burgers_pde 2 ${tests_root}/integration/pde_solvers/coarrayBurgers/coarray_burgers_pde)
+  add_mpi_test(coarray_burgers_pde 4 ${tests_root}/integration/pde_solvers/coarrayBurgers/coarray_burgers_pde)
   add_mpi_test(co_heat 2 ${tests_root}/integration/pde_solvers/coarrayHeatSimplified/co_heat)
   if ( ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "x86_64") AND ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux") )
     if ( NOT (DEFINED ENV{TRAVIS}))
