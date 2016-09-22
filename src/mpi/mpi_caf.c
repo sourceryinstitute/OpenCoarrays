@@ -54,7 +54,7 @@ static void error_stop (int error) __attribute__ ((noreturn));
 
 /* Global variables.  */
 static int caf_this_image;
-static int caf_num_images;
+static int caf_num_images = 0;
 static int caf_is_finalized;
 
 #if MPI_VERSION >= 3
@@ -466,13 +466,13 @@ PREFIX (num_images)(int distance __attribute__ ((unused)),
 
 
 #ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
-void *
+void
   _gfortran_caf_register (size_t size, caf_register_t type, caf_token_t *token,
-                  int *stat, char *errmsg, int errmsg_len)
+                gfc_descriptor_t *desc, int *stat, char *errmsg, int errmsg_len)
 #else
-void *
+void
   PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
-                  int *stat, char *errmsg, int errmsg_len)
+                gfc_descriptor_t *desc, int *stat, char *errmsg, int errmsg_len)
 #endif
 {
   /* int ierr; */
@@ -553,7 +553,8 @@ void *
   if (stat)
     *stat = 0;
 
-  return mem;
+  desc->base_addr = mem;
+  return;
 
 error:
   {
@@ -579,8 +580,6 @@ error:
     else
       caf_runtime_error (msg);
   }
-
-  return NULL;
 }
 
 
@@ -1595,6 +1594,76 @@ PREFIX (get) (caf_token_t token, size_t offset,
 #endif
 }
 
+
+void
+PREFIX(get_by_ref) (caf_token_t token, int image_idx,
+                        gfc_descriptor_t *dst, caf_reference_t *refs,
+                        int dst_kind, int src_kind, bool may_require_tmp,
+                        bool dst_reallocatable, int *stat)
+{
+  size_t offset = 0;
+
+  if (refs && refs->type == CAF_REF_COMPONENT)
+    {
+      offset = refs->u.c.offset;
+      refs = refs->next;
+    }
+  if (refs && refs->type == CAF_REF_ARRAY)
+    {
+      ptrdiff_t stride = 1;
+      for (int i = 0; refs->u.a.mode[i] != CAF_ARR_REF_NONE ; ++i)
+	{
+	  switch (refs->u.a.mode[i])
+	    {
+	    case CAF_ARR_REF_FULL:
+	      break;
+	    case CAF_ARR_REF_RANGE:
+	    case CAF_ARR_REF_SINGLE:
+	      /* Hard code, that arrays start with lower_bound 1.  */
+	      offset += (refs->u.a.dim[i].s.start - 1) * stride
+		  * refs->item_size;
+	      break;
+	    default:
+	      fprintf (stderr, "COARRAY ERROR: caf_get_by_ref() CAF_ARR_REF not implemented yet ");
+	      error_stop (1);
+	    }
+	  stride = dst->dim[i]._stride;
+	}
+      refs = refs->next;
+    }
+  if (!refs)
+    {
+      PREFIX (get) (token, offset, image_idx, dst, NULL, dst,
+		    dst_kind, src_kind, may_require_tmp);
+      return;
+    }
+
+  fprintf (stderr, "COARRAY ERROR: caf_get_by_ref() not implemented yet ");
+  error_stop (1);
+}
+
+
+void
+PREFIX(send_by_ref) (caf_token_t token, int image_index,
+                         gfc_descriptor_t *src, caf_reference_t *refs,
+                         int dst_kind, int src_kind, bool may_require_tmp,
+                         bool dst_reallocatable, int *stat)
+{
+  fprintf (stderr, "COARRAY ERROR: caf_send_by_ref() not implemented yet ");
+  error_stop (1);
+}
+
+
+void
+PREFIX(sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
+                            caf_reference_t *dst_refs, caf_token_t src_token,
+                            int src_image_index, caf_reference_t *src_refs,
+                            int dst_kind, int src_kind,
+                            bool may_require_tmp, int *dst_stat, int *src_stat)
+{
+  fprintf (stderr, "COARRAY ERROR: caf_sendget_by_ref() not implemented yet ");
+  error_stop (1);
+}
 
 /* SYNC IMAGES. Note: SYNC IMAGES(*) is passed as count == -1 while
    SYNC IMAGES([]) has count == 0. Note further that SYNC IMAGES(*)
