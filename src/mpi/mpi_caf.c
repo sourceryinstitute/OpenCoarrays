@@ -465,6 +465,7 @@ PREFIX (num_images)(int distance __attribute__ ((unused)),
 }
 
 
+#ifdef GCC_GE_7
 #ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
 void
   _gfortran_caf_register (size_t size, caf_register_t type, caf_token_t *token,
@@ -473,6 +474,17 @@ void
 void
   PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
                 gfc_descriptor_t *desc, int *stat, char *errmsg, int errmsg_len)
+#endif
+#else
+#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
+void *
+  _gfortran_caf_register (size_t size, caf_register_t type, caf_token_t *token,
+                int *stat, char *errmsg, int errmsg_len)
+#else
+void *
+  PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
+                int *stat, char *errmsg, int errmsg_len)
+#endif
 #endif
 {
   /* int ierr; */
@@ -553,8 +565,12 @@ void
   if (stat)
     *stat = 0;
 
+#ifdef GCC_GE_7
   desc->base_addr = mem;
   return;
+#else
+  return mem;
+#endif
 
 error:
   {
@@ -580,6 +596,9 @@ error:
     else
       caf_runtime_error (msg);
   }
+#ifndef GCC_GE_7
+  return NULL;
+#endif
 }
 
 
@@ -1595,6 +1614,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
 }
 
 
+#ifdef GCC_GE_7
 void
 PREFIX(get_by_ref) (caf_token_t token, int image_idx,
                         gfc_descriptor_t *dst, caf_reference_t *refs,
@@ -1664,6 +1684,8 @@ PREFIX(sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
   fprintf (stderr, "COARRAY ERROR: caf_sendget_by_ref() not implemented yet ");
   error_stop (1);
 }
+#endif
+
 
 /* SYNC IMAGES. Note: SYNC IMAGES(*) is passed as count == -1 while
    SYNC IMAGES([]) has count == 0. Note further that SYNC IMAGES(*)

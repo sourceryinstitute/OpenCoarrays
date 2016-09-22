@@ -43,6 +43,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 #define unlikely(x)     __builtin_expect(!!(x), 0)
 #endif
 
+#if __GNUC__ >= 7
+#define GCC_GE_7 1
+#endif
+
 #ifdef PREFIX_NAME
 #define PREFIX3(X,Y) X ## Y
 #define PREFIX2(X,Y) PREFIX3(X,Y)
@@ -101,6 +105,7 @@ typedef struct caf_vector_t {
 caf_vector_t;
 
 
+#ifdef GCC_GE_7
 /* Keep in sync with gcc/libgfortran/caf/libcaf.h.  */
 typedef enum caf_ref_type_t {
   /* Reference a component of a derived type, either regular one or an
@@ -179,6 +184,7 @@ typedef struct caf_reference_t {
     } a;
   } u;
 } caf_reference_t;
+#endif
 
 
 /* Common auxiliary functions: caf_auxiliary.c.  */
@@ -194,8 +200,13 @@ void PREFIX (finalize) (void);
 int PREFIX (this_image) (int);
 int PREFIX (num_images) (int, int);
 
+#ifdef GCC_GE_7
 void PREFIX (register) (size_t, caf_register_t, caf_token_t *,
 						gfc_descriptor_t *, int *, char *, int);
+#else
+void * PREFIX (register) (size_t, caf_register_t, caf_token_t *,
+						  int *, char *, int);
+#endif
 void PREFIX (deregister) (caf_token_t *, int *, char *, int);
 
 void PREFIX (caf_get) (caf_token_t, size_t, int, gfc_descriptor_t *,
@@ -207,6 +218,7 @@ void PREFIX (caf_sendget) (caf_token_t, size_t, int, gfc_descriptor_t *,
 			   caf_vector_t *, caf_token_t, size_t, int,
 			   gfc_descriptor_t *, caf_vector_t *, int, int);
 
+#ifdef GCC_GE_7
 void PREFIX(get_by_ref) (caf_token_t, int,
 							 gfc_descriptor_t *dst, caf_reference_t *refs,
 							 int dst_kind, int src_kind, bool may_require_tmp,
@@ -219,6 +231,7 @@ void PREFIX(sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
 		caf_reference_t *dst_refs, caf_token_t src_token, int src_image_index,
 		caf_reference_t *src_refs, int dst_kind, int src_kind,
 		bool may_require_tmp, int *dst_stat, int *src_stat);
+#endif
 
 void PREFIX (co_max) (gfc_descriptor_t *, int, int *, char *, int, int);
 void PREFIX (co_min) (gfc_descriptor_t *, int, int *, char *, int, int);
