@@ -57,7 +57,7 @@ typedef struct mpi_caf_token_t
 } mpi_caf_token_t;
 #define TOKEN(X) &(((mpi_caf_token_t *) (X))->memptr)
 #else
-typedef MPI_win *mpi_caf_token_t;
+typedef MPI_Win *mpi_caf_token_t;
 #define TOKEN(X) ((mpi_caf_token_t) (X))
 #endif
 
