@@ -163,7 +163,7 @@ find_or_install()
 
         else
 
-          echo -e "$this_script: Checking whether $executable in PATH wraps gfortran version $(./build.sh -V gcc) or later... "
+          echo -e "$this_script: Checking whether $executable in PATH wraps gfortran version >= $(./build.sh -V gcc) and < 7.0.0 ... "
           $executable acceptable_compiler.f90 -o acceptable_compiler
           $executable print_true.f90 -o print_true
           acceptable=$(./acceptable_compiler)
