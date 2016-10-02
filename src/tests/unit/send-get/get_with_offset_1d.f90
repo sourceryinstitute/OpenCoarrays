@@ -27,5 +27,5 @@ program get_offset_1d
     enddo
     write(*,*) 'Test passed.'
   endif
-
+sync all
 end program
