@@ -278,6 +278,7 @@ void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
 
   if(error_called == 1)
     {
+      MPIX_Comm_revoke(CAF_COMM_WORLD);
       communicator_shrink(&CAF_COMM_WORLD);
       error_called = 0;
     }
@@ -308,6 +309,7 @@ void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
 
       if(error_called == 1)
 	{
+	  MPIX_Comm_revoke(CAF_COMM_WORLD);
 	  communicator_shrink(&CAF_COMM_WORLD);
 	  error_called = 0;
 	  ierr = STAT_FAILED_IMAGE;
@@ -369,6 +371,7 @@ void mutex_unlock(MPI_Win win, int image_index, int index, int *stat,
 
   if(error_called == 1)
     {
+      MPIX_Comm_revoke(CAF_COMM_WORLD);
       communicator_shrink(&CAF_COMM_WORLD);
       error_called = 0;
       ierr = STAT_FAILED_IMAGE;
@@ -592,9 +595,8 @@ int communicator_shrink(MPI_Comm *comm)
   MPI_Comm shrunk, *newcomm;
   MPI_Group cgrp, sgrp, dgrp;
 
- redo:
   newcomm = (MPI_Comm *)calloc(1,sizeof(MPI_Comm));
-  
+ redo:
   MPIX_Comm_shrink(*comm, &shrunk);
   MPI_Comm_set_errhandler( shrunk, errh );
   MPI_Comm_size(shrunk, &ns); MPI_Comm_rank(shrunk, &srank);
@@ -606,7 +608,7 @@ int communicator_shrink(MPI_Comm *comm)
   if (*img_status == STAT_STOPPED_IMAGE)
     crank = -1;
   rc = MPI_Comm_split(shrunk, crank<0?MPI_UNDEFINED:1, crank, newcomm);
-   
+  flag = (rc == MPI_SUCCESS); 
   /* Split or some of the communications above may have failed if
    * new failures have disrupted the process: we need to
    * make sure we succeeded at all ranks, or retry until it works. */
@@ -687,6 +689,12 @@ void *
 
   MPI_Win_set_errhandler(*p,errh_w);
 
+  if(error_called == 1)
+    {
+      communicator_shrink(&CAF_COMM_WORLD);
+      error_called = 0;
+    }
+  
   if(l_var)
     {
       init_array = (int *)calloc(size, sizeof(int));
@@ -704,17 +712,13 @@ void *
       /* PREFIX(sync_all) (NULL,NULL,0); */
     }
 
-  /* MPI_Barrier(CAF_COMM_WORLD); */
-      
-  /* if(error_called == 1) */
-  /*   { */
-  /*     communicator_shrink(&CAF_COMM_WORLD); */
-  /*     error_called = 0; */
-  /*     ierr = STAT_FAILED_IMAGE; */
-  /*   } */
+  if(error_called == 1)
+    {
+      MPIX_Comm_revoke(CAF_COMM_WORLD);
+      communicator_shrink(&CAF_COMM_WORLD);
+      error_called = 0;
+    }
 
-  /* MPI_Win_create_dynamic(MPI_INFO_NULL, stopped_comm, stopped_win); */
-  
   caf_static_t *tmp = malloc (sizeof (caf_static_t));
   tmp->prev  = caf_tot;
   tmp->token = *token;
@@ -794,6 +798,13 @@ PREFIX (deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len
   /* PREFIX (sync_all) (NULL, NULL, 0); */
   MPI_Barrier(CAF_COMM_WORLD);
 
+  if(error_called == 1)
+    {
+      communicator_shrink(&CAF_COMM_WORLD);
+      error_called = 0;
+      MPI_Barrier(CAF_COMM_WORLD);
+    }
+
   caf_static_t *tmp = caf_tot, *prev = caf_tot, *next=caf_tot;
   MPI_Win *p = *token;
 
@@ -828,10 +839,6 @@ PREFIX (deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len
   if (stat)
     *stat = 0;
 
-  /* if (unlikely (ierr = ARMCI_Free ((*token)[caf_this_image-1]))) */
-  /*   caf_runtime_error ("ARMCI memory freeing failed: Error code %d", ierr); */
-  //gasnet_exit(0);
-
   free (*token);
 }
 
@@ -848,13 +855,6 @@ void
 PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
 {
   int ierr=0,flag=0;
-
-  /* if(error_called == 1) */
-  /*   { */
-  /*     communicator_shrink(&CAF_COMM_WORLD); */
-  /*     error_called = 0; */
-  /*     ierr = STAT_FAILED_IMAGE; */
-  /*   } */
   
   if (unlikely (caf_is_finalized))
     ierr = STAT_STOPPED_IMAGE;
@@ -871,6 +871,7 @@ PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
       communicator_shrink(&CAF_COMM_WORLD);
       error_called = 0;
       ierr = STAT_FAILED_IMAGE;
+      MPI_Barrier(CAF_COMM_WORLD);
     }
   
   if (stat)
@@ -944,6 +945,7 @@ void selectType(int size, MPI_Datatype *dt)
 
 }
 
+/* Not yet adapted for failed images */
 void
 PREFIX (sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
                   gfc_descriptor_t *dest,
@@ -1326,65 +1328,29 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
       MPI_Win_flush (image_index-1, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
 
-      if (ierr != 0)
-        {
-          error_stop (ierr);
-          return;
-        }
+      MPI_Test(&lock_req,&flag,MPI_STATUS_IGNORE);
+      
+      if(error_called == 1)
+	{
+	  communicator_shrink(&CAF_COMM_WORLD);
+	  error_called = 0;
+	  ierr = STAT_FAILED_IMAGE;
+	}
+      
+      if(!stat && ierr == STAT_FAILED_IMAGE)
+	error_stop (ierr);
+
+      if(stat)
+	*stat = ierr;
+
+      /* if (ierr != 0) */
+      /*   { */
+      /*     error_stop (ierr); */
+      /*     return; */
+      /*   } */
 
       MPI_Type_free (&dt_s);
       MPI_Type_free (&dt_d);
-
-      /* msg = 2; */
-      /* MPI_Pack(&msg, 1, MPI_INT, buff_am[caf_this_image], 1000, &position, CAF_COMM_WORLD); */
-      /* MPI_Pack(&rank, 1, MPI_INT, buff_am[caf_this_image], 1000, &position, CAF_COMM_WORLD); */
-
-      /* for(j=0;j<rank;j++) */
-      /*   { */
-      /*     MPI_Pack(&(dest->dim[j]._stride), 1, MPI_INT, buff_am[caf_this_image], 1000, &position, CAF_COMM_WORLD); */
-      /*     MPI_Pack(&(dest->dim[j].lower_bound), 1, MPI_INT, buff_am[caf_this_image], 1000, &position, CAF_COMM_WORLD); */
-      /*     MPI_Pack(&(dest->dim[j]._ubound), 1, MPI_INT, buff_am[caf_this_image], 1000, &position, CAF_COMM_WORLD); */
-      /*   } */
-
-      /* MPI_Pack(&size, 1, MPI_INT, buff_am[caf_this_image], 1000, &position, CAF_COMM_WORLD); */
-
-      /* /\* non-blocking send *\/ */
-
-      /* MPI_Issend(buff_am[caf_this_image], position, MPI_PACKED, image_index-1, 1, CAF_COMM_WORLD, &reqdt); */
-
-      /* msgbody = calloc(size, sizeof(char)); */
-
-      /* ptrdiff_t array_offset_sr = 0; */
-      /* ptrdiff_t stride = 1; */
-      /* ptrdiff_t extent = 1; */
-
-      /* for(i = 0; i < size; i++) */
-      /*   { */
-      /*     for (j = 0; j < GFC_DESCRIPTOR_RANK (src)-1; j++) */
-      /*         { */
-      /*           array_offset_sr += ((i / (extent*stride)) */
-      /*                               % (src->dim[j]._ubound */
-      /*                                  - src->dim[j].lower_bound + 1)) */
-      /*             * src->dim[j]._stride; */
-      /*           extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1); */
-      /*         stride = src->dim[j]._stride; */
-      /*         } */
-
-      /*     array_offset_sr += (i / extent) * src->dim[rank-1]._stride; */
-
-      /*     void *sr = (void *)((char *) src->base_addr */
-      /*                           + array_offset_sr*GFC_DESCRIPTOR_SIZE (src)); */
-
-      /*     memmove (msgbody+p_mb, sr, GFC_DESCRIPTOR_SIZE (src)); */
-
-      /*     p_mb += GFC_DESCRIPTOR_SIZE (src); */
-      /*   } */
-
-      /* MPI_Wait(&reqdt, &stadt); */
-
-      /* MPI_Ssend(msgbody, size, MPI_BYTE, image_index-1, 1, CAF_COMM_WORLD); */
-
-      /* free(msgbody); */
 
 #else
       if(caf_this_image == image_index && mrt)
@@ -1459,12 +1425,12 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
                 ierr = MPI_Put (pad_str, dst_size - src_size, MPI_BYTE, image_index-1,
                                 dst_offset, dst_size - src_size, MPI_BYTE, *p);
             }
-
-          if (ierr != 0)
-            {
-              error_stop (ierr);
-              return;
-            }
+	  
+          /* if (ierr != 0) */
+          /*   { */
+          /*     error_stop (ierr); */
+          /*     return; */
+          /*   } */
         }
 
       if(caf_this_image == image_index && mrt)
@@ -1503,6 +1469,20 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
       MPI_Win_flush (image_index-1, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
 #endif
+      MPI_Test(&lock_req,&flag,MPI_STATUS_IGNORE);
+	  
+      if(error_called == 1)
+	{
+	  communicator_shrink(&CAF_COMM_WORLD);
+	  error_called = 0;
+	  ierr = STAT_FAILED_IMAGE;
+	}
+      
+      if(!stat && ierr == STAT_FAILED_IMAGE)
+	error_stop (ierr);
+      
+      if(stat)
+	*stat = ierr;
     }
 }
 
@@ -1684,23 +1664,26 @@ PREFIX (get) (caf_token_t token, size_t offset,
 
   //sr_off = offset;
 
-  MPI_Test(&lock_req,&flag,MPI_STATUS_IGNORE);
+# ifdef CAF_MPI_LOCK_UNLOCK
+  MPI_Win_lock (MPI_LOCK_SHARED, image_index-1, 0, *p);
+# endif // CAF_MPI_LOCK_UNLOCK
 
+  ierr = MPI_Get (dst, 1, dt_d, image_index-1, offset, 1, dt_s, *p);
+
+  MPI_Test(&lock_req,&flag,MPI_STATUS_IGNORE);
+  
   if(error_called == 1)
     {
       communicator_shrink(&CAF_COMM_WORLD);
       error_called = 0;
       ierr = STAT_FAILED_IMAGE;
     }
-
+	  
   if(!stat && ierr == STAT_FAILED_IMAGE)
     error_stop (ierr);
 
-# ifdef CAF_MPI_LOCK_UNLOCK
-  MPI_Win_lock (MPI_LOCK_SHARED, image_index-1, 0, *p);
-# endif // CAF_MPI_LOCK_UNLOCK
-
-  ierr = MPI_Get (dst, 1, dt_d, image_index-1, offset, 1, dt_s, *p);
+  if(stat)
+    *stat = ierr;
 
 # ifdef CAF_MPI_LOCK_UNLOCK
   MPI_Win_unlock (image_index-1, *p);
