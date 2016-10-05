@@ -143,7 +143,7 @@ static void verbose_comm_errhandler(MPI_Comm* pcomm, int* err, ...){
   for(i = 0; i < nf; i++)
     ranks_gc[i]++;
 
-  n_failed_imgs = nf;
+  n_failed_imgs += nf;
   error_called = 1;
 }
 
