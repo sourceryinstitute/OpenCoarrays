@@ -109,9 +109,10 @@ MPI_Comm CAF_COMM_WORLD;
 /* Failed Images */
 MPI_Comm lock_comm,stopped_comm;
 MPI_Request lock_req,stopped_req;
-int used_comm = -1, n_failed_imgs=0, error_called=0;
+int used_comm = -1, n_failed_imgs=0;
+int error_called = 0, fake_error_called = 0;
 int *ranks_gc,*ranks_gf; //to be returned by failed images
-MPI_Errhandler errh,errh_w;
+MPI_Errhandler errh,errh_w,errh_fake;
 int completed = 0,tmp_lock;
 int *stopped_images;
 
@@ -280,6 +281,7 @@ void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
     {
       MPIX_Comm_revoke(CAF_COMM_WORLD);
       communicator_shrink(&CAF_COMM_WORLD);
+      communicator_shrink(&lock_comm);
       error_called = 0;
     }
 
@@ -311,6 +313,7 @@ void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
 	{
 	  MPIX_Comm_revoke(CAF_COMM_WORLD);
 	  communicator_shrink(&CAF_COMM_WORLD);
+	  communicator_shrink(&lock_comm);
 	  error_called = 0;
 	  ierr = STAT_FAILED_IMAGE;
 	}
@@ -324,7 +327,8 @@ void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
 # ifdef CAF_MPI_LOCK_UNLOCK
 	      MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, win);
 # endif // CAF_MPI_LOCK_UNLOCK
-	      MPI_Fetch_and_op(&zero, &value, MPI_INT, image_index-1, index*sizeof(int), MPI_REPLACE, win);
+	      /* MPI_Fetch_and_op(&zero, &newval, MPI_INT, image_index-1, index*sizeof(int), MPI_REPLACE, win); */
+	      MPI_Compare_and_swap(&zero,&value,&newval,MPI_INT,image_index-1,index*sizeof(int), win);
 # ifdef CAF_MPI_LOCK_UNLOCK
 	      MPI_Win_unlock (image_index-1, win);
 # else // CAF_MPI_LOCK_UNLOCK
@@ -373,6 +377,7 @@ void mutex_unlock(MPI_Win win, int image_index, int index, int *stat,
     {
       MPIX_Comm_revoke(CAF_COMM_WORLD);
       communicator_shrink(&CAF_COMM_WORLD);
+      communicator_shrink(&lock_comm);
       error_called = 0;
       ierr = STAT_FAILED_IMAGE;
     }
@@ -387,8 +392,9 @@ void mutex_unlock(MPI_Win win, int image_index, int index, int *stat,
   MPI_Win_flush (image_index-1, win);
 # endif // CAF_MPI_LOCK_UNLOCK
 
-  if(value == 0)
-    goto stat_error;
+  /* Temporarily commented */
+  /* if(value == 0) */
+  /*   goto stat_error; */
 
   if(stat)
     *stat = ierr;
@@ -483,15 +489,17 @@ PREFIX (init) (int *argc, char ***argv)
       stat_tok = malloc (sizeof(MPI_Win));
 
       MPI_Comm_create_errhandler(verbose_comm_errhandler, &errh);
+      /* MPI_Comm_create_errhandler(fake_comm_errhandler, &errh_fake); */
       MPI_Comm_set_errhandler(CAF_COMM_WORLD, errh);
       
       MPI_Comm_dup(CAF_COMM_WORLD, &lock_comm);
+      /* MPI_Comm_set_errhandler(lock_comm, errh_fake); */
       MPI_Comm_set_errhandler(lock_comm, errh);
       MPI_Irecv(&tmp_lock,1,MPI_INT,MPI_ANY_SOURCE,MPI_ANY_TAG,lock_comm,&lock_req);
 
       MPI_Comm_dup(CAF_COMM_WORLD, &stopped_comm);
       MPI_Comm_set_errhandler(stopped_comm, errh);
-      MPI_Irecv(&tmp_lock,1,MPI_INT,MPI_ANY_SOURCE,MPI_ANY_TAG,lock_comm,&stopped_req);
+      MPI_Irecv(&tmp_lock,1,MPI_INT,MPI_ANY_SOURCE,MPI_ANY_TAG,stopped_comm,&stopped_req);
       
       MPI_Win_create_errhandler(verbose_win_errhandler, &errh_w);
       
@@ -1218,7 +1226,9 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
       if(error_called == 1)
 	{
 	  communicator_shrink(&CAF_COMM_WORLD);
+	  communicator_shrink(&lock_comm);
 	  error_called = 0;
+	  fake_error_called = 0;
 	  ierr = STAT_FAILED_IMAGE;
 	}
       
