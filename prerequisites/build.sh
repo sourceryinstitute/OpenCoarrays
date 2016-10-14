@@ -149,7 +149,7 @@ if [[ -z "${arg_B}" ]]; then
   # shellcheck source=./build-functions/set_compilers.sh
   source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/set_compilers.sh"
   set_compilers
-
+ 
   # shellcheck source=./build-functions/build_and_install.sh
   source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/build_and_install.sh"
   build_and_install

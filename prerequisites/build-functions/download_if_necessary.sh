@@ -10,6 +10,32 @@ download_if_necessary()
 {
   download_path="${OPENCOARRAYS_SRC_DIR}/prerequisites/downloads"
   set_SUDO_if_needed_to_write_to_directory "${download_path}"
+
+  # We set args regardless of whether this function performs a download because
+  # GCC builds will need this to modify GCC's contrib/download_prerequisites script
+  if [[ "${fetch}" == "svn" ]]; then
+    if [[ "${arg_B:-}" == "gcc" ]]; then
+      args=("ls")
+    else
+      args=("checkout")
+    fi
+  elif [[ "${fetch}" == "wget" ]]; then
+    args=("--no-check-certificate")
+  elif [[ "${fetch}" == "ftp-url" ]]; then
+    args=("-n")
+  elif [[ "${fetch}" == "git" ]]; then
+    args=("clone")
+  elif [[ "${fetch}" == "curl" ]]; then
+    first_three_characters=$(echo "${package_url}" | cut -c1-3)
+    if [[ "${first_three_characters}" == "ftp"  ]]; then
+      args=("-LO" "-u" "anonymous:")
+    elif [[ "${first_three_characters}" == "htt"  ]]; then
+      args=("-LO")
+    else
+      emergency "download_if_necessary.sh: Unrecognized URL."
+    fi
+  fi
+
   if  [[ -f "${download_path}/${url_tail}" || -d "${download_path}/${url_tail}" ]] ; then
     info "Found '${url_tail}' in ${download_path}."
     info "If it resulted from an incomplete download, building ${package_name} could fail."
@@ -35,29 +61,6 @@ download_if_necessary()
     info "Place the downloaded file in ${download_path} and restart this script."
     emergency "Aborting [exit 90]"
   else
-    # The download mechanism is in the path.
-    if [[ "${fetch}" == "svn" ]]; then
-      if [[ "${arg_B:-}" == "gcc" ]]; then
-        args="ls"
-      else
-        args="checkout"
-      fi
-    elif [[ "${fetch}" == "wget" ]]; then
-      args="--no-check-certificate"
-    elif [[ "${fetch}" == "ftp-url" ]]; then
-      args="-n"
-    elif [[ "${fetch}" == "git" ]]; then
-      args="clone"
-    elif [[ "${fetch}" == "curl" ]]; then
-      first_three_characters=$(echo "${package_url}" | cut -c1-3)
-      if [[ "${first_three_characters}" == "ftp"  ]]; then
-        args="-LO -u anonymous:"
-      elif [[ "${first_three_characters}" == "htt"  ]]; then
-        args="-LO"
-      else
-        emergency "download_if_necessary.sh: Unrecognized URL."
-      fi
-    fi
 
     if [[ "${fetch}" == "svn" || "${fetch}" == "git" ]]; then
       package_source_directory="${url_tail}"
@@ -66,11 +69,10 @@ download_if_necessary()
     fi
     info "Downloading ${package_name} ${version_to_build-} to the following location:"
     info "${download_path}/${package_source_directory}"
-    info "Download command: \"${fetch}\" ${args:-} ${package_url}"
+    info "Download command: \"${fetch}\" ${args[@]:-} ${package_url}"
     info "Depending on the file size and network bandwidth, this could take several minutes or longer."
     pushd "${download_path}"
-    # args should be an array. Then "${args[@]:-}" will prevent shellcheck from complaining
-    "${fetch}" ${args:-} "${package_url}"
+    "${fetch}" ${args[@]:-} "${package_url}"
     popd
     if [[ ! -z "${arg_B:-}" ]]; then
       return
