@@ -578,9 +578,13 @@ find_or_install()
     default_package_version=$(./build.sh -V "${package}")
     package_install_prefix="${package_install_path%${package}/${arg_I:-${default_package_version}}*}"
 
+    if [[ "${arg_y}" == "${__flag_present}" ]]; then
+      yes_to_all="-y"
+    fi
+
     echo -e "$this_script: Downloading, building, and installing $package \n"
-    echo "$this_script: Build command: FC=$FC CC=$CC CXX=$CXX ./build.sh -p $package -i $package_install_prefix -j $num_threads"
-    FC="$FC" CC="$CC" CXX="$CXX" ./build.sh -p "$package" -i "$package_install_prefix" -j "$num_threads"
+    echo "$this_script: Build command: FC=$FC CC=$CC CXX=$CXX ./build.sh -p $package -i $package_install_prefix -j $num_threads ${yes_to_all:-}"
+    FC="$FC" CC="$CC" CXX="$CXX" ./build.sh -p "$package" -i "$package_install_prefix" -j "$num_threads" "${yes_to_all:-}"
 
     if [[ -x "$package_install_path/bin/$executable" ]]; then
       echo -e "$this_script: Installation successful.\n"
