@@ -1,1 +1,2 @@
 add_executable(asynchronous_hello_world async-hello.f90)
+target_link_libraries(asynchronous_hello_world OpenCoarrays)
