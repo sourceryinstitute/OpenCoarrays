@@ -594,6 +594,7 @@ int
 PREFIX (num_images)(int distance __attribute__ ((unused)),
                          int failed __attribute__ ((unused)))
 {
+  MPI_Comm_size(CAF_COMM_WORLD,&caf_num_images);
   return caf_num_images;
 }
 
@@ -1226,7 +1227,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
       if(error_called == 1)
 	{
 	  communicator_shrink(&CAF_COMM_WORLD);
-	  communicator_shrink(&lock_comm);
+	  /* communicator_shrink(&lock_comm); */
 	  error_called = 0;
 	  fake_error_called = 0;
 	  ierr = STAT_FAILED_IMAGE;
