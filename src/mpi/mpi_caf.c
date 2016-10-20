@@ -594,7 +594,6 @@ int
 PREFIX (num_images)(int distance __attribute__ ((unused)),
                          int failed __attribute__ ((unused)))
 {
-  MPI_Comm_size(CAF_COMM_WORLD,&caf_num_images);
   return caf_num_images;
 }
 
