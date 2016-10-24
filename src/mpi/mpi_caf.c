@@ -111,7 +111,7 @@ MPI_Comm lock_comm,stopped_comm;
 MPI_Request lock_req,stopped_req;
 int used_comm = -1, n_failed_imgs=0;
 int error_called = 0, fake_error_called = 0;
-int *ranks_gc,*ranks_gf; //to be returned by failed images
+int *ranks_gc,*ranks_gf, *failed_images_array; //to be returned by failed images
 MPI_Errhandler errh,errh_w,errh_fake;
 int completed = 0,tmp_lock;
 int *stopped_images;
@@ -129,22 +129,34 @@ static void verbose_win_errhandler(MPI_Win* win, int* err, ...) {
 
 static void verbose_comm_errhandler(MPI_Comm* pcomm, int* err, ...){
   MPI_Comm comm;
-  int nf,nc,i;
+  int nf,nc,i,old_nf,j;
   MPI_Group group_c, group_f;
   comm = *pcomm;
+
+  old_nf = n_failed_imgs;
   
   MPIX_Comm_failure_ack(comm);
   MPIX_Comm_failure_get_acked(comm, &group_f);
   MPI_Group_size(group_f, &nf);
-  MPI_Comm_group(comm, &group_c);
+  /* MPI_Comm_group(comm, &group_c); */
+  MPI_Comm_group(MPI_COMM_WORLD, &group_c);
   for(i = 0; i < nf; i++)
     ranks_gf[i] = i;
   MPI_Group_translate_ranks(group_f, nf, ranks_gf,
 			    group_c, ranks_gc);
-  for(i = 0; i < nf; i++)
-    ranks_gc[i]++;
+  printf("%d in verbose old_nf:%d nf:%d\n",caf_this_image,old_nf,nf);
 
   n_failed_imgs += nf;
+  j=0;
+
+  for(i = old_nf; i < n_failed_imgs; i++)
+    {
+      failed_images_array[i] = ranks_gc[j];
+      printf("Ranks_gc %d\n",ranks_gc[j]);
+      failed_images_array[i]++;
+      j++;
+    }
+  
   error_called = 1;
 }
 
@@ -322,7 +334,7 @@ void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
       
       for(i=0;i<n_failed_imgs;i++)
 	{ 
-	  if(ranks_gc[i] == value)
+	  if(failed_images_array[i] == value)
 	    {
 # ifdef CAF_MPI_LOCK_UNLOCK
 	      MPI_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, 0, win);
@@ -432,6 +444,7 @@ PREFIX (init) (int *argc, char ***argv)
   if (caf_num_images == 0)
     {
       int ierr = 0, i = 0, j = 0;
+      n_failed_imgs = 0;
 
       int is_init = 0, prior_thread_level = MPI_THREAD_SINGLE;
       MPI_Initialized(&is_init);
@@ -505,6 +518,7 @@ PREFIX (init) (int *argc, char ***argv)
       
       ranks_gf = (int*)calloc(caf_num_images,sizeof(int));
       ranks_gc = (int*)calloc(caf_num_images,sizeof(int));
+      failed_images_array = (int*)calloc(caf_num_images,sizeof(int));
       stopped_images = (int*)calloc(caf_num_images, sizeof(int));
       
 #if MPI_VERSION >= 3
@@ -522,7 +536,7 @@ PREFIX (init) (int *argc, char ***argv)
       *img_status = 0;
       MPI_Win_set_errhandler(*stat_tok,errh_w);
     }
-  /* MPI_Barrier(CAF_COMM_WORLD); */
+  MPI_Barrier(CAF_COMM_WORLD);
 }
 
 /* Finalize coarray program.   */
@@ -609,8 +623,9 @@ int communicator_shrink(MPI_Comm *comm)
   MPI_Comm_set_errhandler( shrunk, errh );
   MPI_Comm_size(shrunk, &ns); MPI_Comm_rank(shrunk, &srank);
   
-  MPI_Comm_rank(*comm, &crank);
-
+  //  MPI_Comm_rank(*comm, &crank);
+  MPI_Comm_rank(MPI_COMM_WORLD, &crank);
+  printf("me: %d becomes: %d\n",caf_this_image,crank+1);
   /* Split does the magic: removing spare processes and reordering ranks
    * so that all surviving processes remain at their former place */
   if (*img_status == STAT_STOPPED_IMAGE)
@@ -863,6 +878,15 @@ void
 PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
 {
   int ierr=0,flag=0;
+
+  if(error_called == 1)
+    {
+      printf("%d First if in sync all\n",caf_this_image);
+      communicator_shrink(&CAF_COMM_WORLD);
+      error_called = 0;
+      ierr = STAT_FAILED_IMAGE;
+      /* MPI_Barrier(CAF_COMM_WORLD); */
+    }
   
   if (unlikely (caf_is_finalized))
     ierr = STAT_STOPPED_IMAGE;
@@ -876,6 +900,7 @@ PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
 
   if(error_called == 1)
     {
+      printf("%d Second if in sync all\n",caf_this_image);
       communicator_shrink(&CAF_COMM_WORLD);
       error_called = 0;
       ierr = STAT_FAILED_IMAGE;
@@ -1221,7 +1246,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
 #endif // CAF_MPI_LOCK_UNLOCK
         }
 
-      MPI_Test(&lock_req,&flag,MPI_STATUS_IGNORE);
+      /* MPI_Test(&lock_req,&flag,MPI_STATUS_IGNORE); */
       
       if(error_called == 1)
 	{
@@ -1338,10 +1363,11 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
       MPI_Win_flush (image_index-1, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
 
-      MPI_Test(&lock_req,&flag,MPI_STATUS_IGNORE);
+      /* MPI_Test(&lock_req,&flag,MPI_STATUS_IGNORE); */
       
       if(error_called == 1)
 	{
+	  printf("%d In second shrink\n",caf_this_image);
 	  communicator_shrink(&CAF_COMM_WORLD);
 	  error_called = 0;
 	  ierr = STAT_FAILED_IMAGE;
@@ -1479,7 +1505,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
       MPI_Win_flush (image_index-1, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
 #endif
-      MPI_Test(&lock_req,&flag,MPI_STATUS_IGNORE);
+      /* MPI_Test(&lock_req,&flag,MPI_STATUS_IGNORE); */
 	  
       if(error_called == 1)
 	{
@@ -1571,7 +1597,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
 # else // CAF_MPI_LOCK_UNLOCK
           MPI_Win_flush (image_index-1, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
-	  MPI_Test(&lock_req,&flag,MPI_STATUS_IGNORE);
+	  /* MPI_Test(&lock_req,&flag,MPI_STATUS_IGNORE); */
 
 	  if(error_called == 1)
 	    {
@@ -1680,7 +1706,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
 
   ierr = MPI_Get (dst, 1, dt_d, image_index-1, offset, 1, dt_s, *p);
 
-  MPI_Test(&lock_req,&flag,MPI_STATUS_IGNORE);
+  /* MPI_Test(&lock_req,&flag,MPI_STATUS_IGNORE); */
   
   if(error_called == 1)
     {
@@ -2802,7 +2828,7 @@ PREFIX (image_status) (int image)
   int i,res=0, remote_stat=0,ierr;
 
   for(i=0;i<n_failed_imgs;i++)
-    if(image == ranks_gc[i])
+    if(image == failed_images_array[i])
       res = STAT_FAILED_IMAGE;
 
   if(res == STAT_FAILED_IMAGE)
@@ -2832,10 +2858,10 @@ PREFIX (failed_images) (gfc_descriptor_t *array, int team __attribute__ ((unused
 {
   int *mem = (int *)calloc(n_failed_imgs,sizeof(int));
   array->base_addr = mem;
-  memcpy(mem,ranks_gc,n_failed_imgs*sizeof(int));
+  memcpy(mem,failed_images_array,n_failed_imgs*sizeof(int));
   qsort(mem,n_failed_imgs,sizeof(int),cmpfunc);
   array->dtype = 265;
-  array->dim[0].lower_bound = 0;
+  array->dim[0].lower_bound = 1;
   array->dim[0]._ubound = n_failed_imgs-1;
   array->dim[0]._stride = 1;
   array->offset = -1;
