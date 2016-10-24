@@ -144,7 +144,6 @@ static void verbose_comm_errhandler(MPI_Comm* pcomm, int* err, ...){
     ranks_gf[i] = i;
   MPI_Group_translate_ranks(group_f, nf, ranks_gf,
 			    group_c, ranks_gc);
-  printf("%d in verbose old_nf:%d nf:%d\n",caf_this_image,old_nf,nf);
 
   n_failed_imgs += nf;
   j=0;
@@ -152,7 +151,6 @@ static void verbose_comm_errhandler(MPI_Comm* pcomm, int* err, ...){
   for(i = old_nf; i < n_failed_imgs; i++)
     {
       failed_images_array[i] = ranks_gc[j];
-      printf("Ranks_gc %d\n",ranks_gc[j]);
       failed_images_array[i]++;
       j++;
     }
@@ -625,7 +623,6 @@ int communicator_shrink(MPI_Comm *comm)
   
   //  MPI_Comm_rank(*comm, &crank);
   MPI_Comm_rank(MPI_COMM_WORLD, &crank);
-  printf("me: %d becomes: %d\n",caf_this_image,crank+1);
   /* Split does the magic: removing spare processes and reordering ranks
    * so that all surviving processes remain at their former place */
   if (*img_status == STAT_STOPPED_IMAGE)
@@ -881,7 +878,6 @@ PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
 
   if(error_called == 1)
     {
-      printf("%d First if in sync all\n",caf_this_image);
       communicator_shrink(&CAF_COMM_WORLD);
       error_called = 0;
       ierr = STAT_FAILED_IMAGE;
@@ -900,7 +896,6 @@ PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
 
   if(error_called == 1)
     {
-      printf("%d Second if in sync all\n",caf_this_image);
       communicator_shrink(&CAF_COMM_WORLD);
       error_called = 0;
       ierr = STAT_FAILED_IMAGE;
@@ -1367,7 +1362,6 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
       
       if(error_called == 1)
 	{
-	  printf("%d In second shrink\n",caf_this_image);
 	  communicator_shrink(&CAF_COMM_WORLD);
 	  error_called = 0;
 	  ierr = STAT_FAILED_IMAGE;
