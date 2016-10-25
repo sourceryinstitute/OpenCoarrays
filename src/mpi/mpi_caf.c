@@ -114,7 +114,7 @@ int error_called = 0, fake_error_called = 0;
 int *ranks_gc,*ranks_gf, *failed_images_array; //to be returned by failed images
 MPI_Errhandler errh,errh_w,errh_fake;
 int completed = 0,tmp_lock;
-int *stopped_images;
+int *stopped_images, n_stopped_imgs;
 
 static int cmpfunc (const void *a, const void *b)
 {
@@ -2857,6 +2857,21 @@ PREFIX (failed_images) (gfc_descriptor_t *array, int team __attribute__ ((unused
   array->dtype = 265;
   array->dim[0].lower_bound = 1;
   array->dim[0]._ubound = n_failed_imgs-1;
+  array->dim[0]._stride = 1;
+  array->offset = -1;
+}
+
+void
+PREFIX (stopped_images) (gfc_descriptor_t *array, int team __attribute__ ((unused)),
+			 int kind __attribute__ ((unused)))
+{
+  int *mem = (int *)calloc(n_stopped_imgs,sizeof(int));
+  array->base_addr = mem;
+  memcpy(mem,stopped_images,n_stopped_imgs*sizeof(int));
+  qsort(mem,n_stopped_imgs,sizeof(int),cmpfunc);
+  array->dtype = 265;
+  array->dim[0].lower_bound = 1;
+  array->dim[0]._ubound = n_stopped_imgs-1;
   array->dim[0]._stride = 1;
   array->offset = -1;
 }
