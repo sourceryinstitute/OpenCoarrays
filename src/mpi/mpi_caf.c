@@ -87,7 +87,7 @@ caf_static_t *caf_tot = NULL;
 
 /* Image status variable */
 
-static int *img_status = NULL;
+static int img_status = 0;
 MPI_Win *stat_tok;
 
 /* Active messages variables */
@@ -114,7 +114,7 @@ int error_called = 0, fake_error_called = 0;
 int *ranks_gc,*ranks_gf, *failed_images_array; //to be returned by failed images
 MPI_Errhandler errh,errh_w,errh_fake;
 int completed = 0,tmp_lock;
-int *stopped_images, n_stopped_imgs;
+int *stopped_imgs, n_stopped_imgs;
 
 static int cmpfunc (const void *a, const void *b)
 {
@@ -511,27 +511,30 @@ PREFIX (init) (int *argc, char ***argv)
       MPI_Comm_dup(CAF_COMM_WORLD, &stopped_comm);
       MPI_Comm_set_errhandler(stopped_comm, errh);
       MPI_Irecv(&tmp_lock,1,MPI_INT,MPI_ANY_SOURCE,MPI_ANY_TAG,stopped_comm,&stopped_req);
-      
+
       MPI_Win_create_errhandler(verbose_win_errhandler, &errh_w);
       
       ranks_gf = (int*)calloc(caf_num_images,sizeof(int));
       ranks_gc = (int*)calloc(caf_num_images,sizeof(int));
       failed_images_array = (int*)calloc(caf_num_images,sizeof(int));
-      stopped_images = (int*)calloc(caf_num_images, sizeof(int));
-      
+      /* stopped_imgs = (int*)calloc(caf_num_images, sizeof(int)); */
+
 #if MPI_VERSION >= 3
-      MPI_Info_create (&mpi_info_same_size);
-      MPI_Info_set (mpi_info_same_size, "same_size", "true");
+      /* MPI_Info_create (&mpi_info_same_size); */
+      /* MPI_Info_set (mpi_info_same_size, "same_size", "true"); */
       /* Setting img_status */
-      MPI_Win_allocate(sizeof(int), 1, mpi_info_same_size, stopped_comm, &img_status, stat_tok);
+      /* MPI_Win_allocate(sizeof(int), 1, mpi_info_same_size, stopped_comm, &img_status, stat_tok); */
+      MPI_Win_allocate(sizeof(int)*caf_num_images, 1, MPI_INFO_NULL, stopped_comm, &stopped_imgs, stat_tok);
 # ifndef CAF_MPI_LOCK_UNLOCK
       MPI_Win_lock_all(MPI_MODE_NOCHECK, *stat_tok);
 # endif // CAF_MPI_LOCK_UNLOCK
 #else
-      MPI_Alloc_mem(sizeof(int), MPI_INFO_NULL, &img_status, stat_tok);
-      MPI_Win_create(img_status, sizeof(int), 1, MPI_INFO_NULL, stopped_comm, stat_tok);
+      MPI_Alloc_mem(sizeof(int)*caf_num_images, MPI_INFO_NULL, &stopped_imgs, stat_tok);
+      MPI_Win_create(stopped_imgs, sizeof(int)*caf_num_images, 1, MPI_INFO_NULL, stopped_comm, stat_tok);
 #endif // MPI_VERSION
-      *img_status = 0;
+      for(i=0;i<caf_num_images;i++)
+	stopped_imgs[i] = 0;
+      /* *img_status = 0; */
       MPI_Win_set_errhandler(*stat_tok,errh_w);
     }
   MPI_Barrier(CAF_COMM_WORLD);
@@ -546,9 +549,27 @@ _gfortran_caf_finalize (void)
 PREFIX (finalize) (void)
 #endif
 {
-  int flag = 0;
-  *img_status = STAT_STOPPED_IMAGE; /* GFC_STAT_STOPPED_IMAGE = 6000 */
-  MPI_Win_sync(*stat_tok);
+  int flag = 0,i=0,j=0,failed=0,one=1;
+  img_status = STAT_STOPPED_IMAGE; /* GFC_STAT_STOPPED_IMAGE = 6000 */
+  stopped_imgs[caf_this_image-1] = 1;
+  /* MPI_Win_sync(*stat_tok); */
+
+  for(i=0;i<caf_num_images;i++)
+    {
+      for (j = 0; j < n_failed_imgs; j++)
+	if (i == (failed_images_array[j] - 1))
+	  {
+	    failed = 1;
+	    break;
+	  }
+      if (!failed)
+	{
+	  MPI_Accumulate (&one, 1, MPI_INT, i, (caf_this_image-1)*sizeof(int), 1, MPI_INT, MPI_REPLACE, *stat_tok);
+	}
+      failed = 0;
+    }
+
+  MPI_Win_flush_all(*stat_tok);
 
   MPIX_Comm_revoke(CAF_COMM_WORLD);
   communicator_shrink(&CAF_COMM_WORLD);
@@ -578,7 +599,7 @@ PREFIX (finalize) (void)
       tmp_tot = prev;
     }
 #if MPI_VERSION >= 3
-  MPI_Info_free (&mpi_info_same_size);
+  /* MPI_Info_free (&mpi_info_same_size); */
 #endif // MPI_VERSION
 
   /* MPI_Comm_free(&CAF_COMM_WORLD); */
@@ -625,7 +646,7 @@ int communicator_shrink(MPI_Comm *comm)
   MPI_Comm_rank(MPI_COMM_WORLD, &crank);
   /* Split does the magic: removing spare processes and reordering ranks
    * so that all surviving processes remain at their former place */
-  if (*img_status == STAT_STOPPED_IMAGE)
+  if (img_status == STAT_STOPPED_IMAGE)
     crank = -1;
   rc = MPI_Comm_split(shrunk, crank<0?MPI_UNDEFINED:1, crank, newcomm);
   flag = (rc == MPI_SUCCESS); 
@@ -2819,7 +2840,7 @@ PREFIX (fail_image) (void)
 int
 PREFIX (image_status) (int image)
 {
-  int i,res=0, remote_stat=0,ierr;
+  int i,res=0, ierr;
 
   for(i=0;i<n_failed_imgs;i++)
     if(image == failed_images_array[i])
@@ -2828,16 +2849,16 @@ PREFIX (image_status) (int image)
   if(res == STAT_FAILED_IMAGE)
     return res;
   
-# ifdef CAF_MPI_LOCK_UNLOCK
-  MPI_Win_lock (MPI_LOCK_SHARED, image-1, 0, *stat_tok);
-# endif // CAF_MPI_LOCK_UNLOCK
-  ierr = MPI_Get (&remote_stat, 1, MPI_INT, image-1, 0, 1, MPI_INT, *stat_tok);
-# ifdef CAF_MPI_LOCK_UNLOCK
-  MPI_Win_unlock (image-1, *stat_tok);
-# else // CAF_MPI_LOCK_UNLOCK
-  MPI_Win_flush (image-1, *stat_tok);
-# endif // CAF_MPI_LOCK_UNLOCK
-  if(remote_stat != 0)
+/* # ifdef CAF_MPI_LOCK_UNLOCK */
+/*   MPI_Win_lock (MPI_LOCK_SHARED, image-1, 0, *stat_tok); */
+/* # endif // CAF_MPI_LOCK_UNLOCK */
+/*   ierr = MPI_Get (&remote_stat, 1, MPI_INT, image-1, 0, 1, MPI_INT, *stat_tok); */
+/* # ifdef CAF_MPI_LOCK_UNLOCK */
+/*   MPI_Win_unlock (image-1, *stat_tok); */
+/* # else // CAF_MPI_LOCK_UNLOCK */
+/*   MPI_Win_flush (image-1, *stat_tok); */
+/* # endif // CAF_MPI_LOCK_UNLOCK */
+  if(stopped_imgs[image-1] != 0)
     res = STAT_STOPPED_IMAGE;
 
   if(ierr != MPI_SUCCESS)
@@ -2865,10 +2886,18 @@ void
 PREFIX (stopped_images) (gfc_descriptor_t *array, int team __attribute__ ((unused)),
 			 int kind __attribute__ ((unused)))
 {
-  int *mem = (int *)calloc(n_stopped_imgs,sizeof(int));
+  int i, *mem,j=0;
+  n_stopped_imgs = 0;
+  mem = (int *)calloc(caf_num_images,sizeof(int));
+  for(i=0;i<caf_num_images;i++)
+    if(stopped_imgs[i] == 1)
+      {
+	mem[j] = i+1;
+	j++;
+      }
+  n_stopped_imgs = j;
+  mem = realloc(mem,sizeof(int)*n_stopped_imgs);
   array->base_addr = mem;
-  memcpy(mem,stopped_images,n_stopped_imgs*sizeof(int));
-  qsort(mem,n_stopped_imgs,sizeof(int),cmpfunc);
   array->dtype = 265;
   array->dim[0].lower_bound = 1;
   array->dim[0]._ubound = n_stopped_imgs-1;
