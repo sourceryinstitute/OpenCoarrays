@@ -47,7 +47,7 @@ program main
   ! Verify collective sum of integer data by tallying image numbers
   me=this_image()
   call co_sum(me)
-  if (me==sum([(i,i=1,num_images())])) call error_stop("Test failed")
+  if (me/=sum([(i,i=1,num_images())])) call error_stop("Test failed")
 
   ! Wait for every image to pass the test
   call sync_all()
