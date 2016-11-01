@@ -1,28 +1,34 @@
 # Download a file from an anonymous ftp site
 #
 # Usage:
-#    ftp-url  <ftp-mode>  <ftp-site-address>:/<path-to-file>/<file-name>
+#    ftp-url  <ftp-mode>  ftp://<fully-qualified-domain>:/<path-to-file>/<file-name>
 #
 # Example:
-#    ftp-url -n ftp.gnu.org:/gnu/m4/m4-1.4.17.tar.bz2
+#    ftp-url -n ftp://ftp.gnu.org:/gnu/gcc/gcc-6.1.0/gcc-6.1.0.tar.bz2
 ftp-url()
 {
   ftp_mode="${1}"
   url="${2}"
 
-  text_before_colon="${url%%:*}"
-  FTP_SERVER="${text_before_colon}"
+  if [[ "${ftp_mode}" != "-n" ]]; then
+    emergency "Unexpected ftp mode received by ftp-url.sh: ${ftp_mode}"
+  fi
 
-  text_after_colon="${url##*:}"
-  text_after_final_slash="${text_after_colon##*/}"
-  FILE_NAME="${text_after_final_slash}"
+  protocol="${url%%:*}" # grab text_before_first_colon
+  if [[ "${protocol}" != "ftp" ]]; then
+    emergency "URL with unexpected protocol received by ftp-url.sh: ${text_before_first_colon}"
+  fi
 
-  text_before_final_slash="${text_after_colon%/*}"
-  FILE_PATH="${text_before_final_slash}"
+  text_after_double_slash="${url##*//}"
+  FTP_SERVER="${text_after_double_slash%:*}" # grab remaining text before colon
+  
+  text_after_final_colon="${url##*:}"
+  FILE_NAME="${url##*/}" # grab text after final slash
+  FILE_PATH="${text_after_final_colon%/*}" # grab remaining text before final slash
 
   USERNAME=anonymous
   PASSWORD=""
-  info "starting anonymous download: ftp ${ftp_mode} ${FTP_SERVER}... cd ${FILE_PATH}... get ${FILE_NAME}"
+  info "starting anonymous download: ${protocol} ${ftp_mode} ${FTP_SERVER}... cd ${FILE_PATH}... get ${FILE_NAME}"
 
 ftp "${ftp_mode}" "${FTP_SERVER}" <<Done-ftp
 user "${USERNAME}" "${PASSWORD}"
