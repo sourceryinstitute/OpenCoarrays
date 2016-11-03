@@ -14,8 +14,8 @@ program main
   call one(0, -11)
 
   ! Static coarrays
-!  call two()
-!  call three()
+  call two()
+  call three()
   write(*,*) 'Test passed'
 contains
   subroutine one(lb1, lb2)
