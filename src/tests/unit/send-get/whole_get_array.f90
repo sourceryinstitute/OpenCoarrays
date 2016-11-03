@@ -20,8 +20,7 @@ program whole_array_get
   if(me == 1) then
      y1 = x1(:)[me+1]
      if(any(y1 /= 2)) then
-        write(*,*) 'Test 1 fails'
-        call abort()
+        error stop 'Test 1 fails'
      end if
   end if
 
@@ -35,8 +34,7 @@ program whole_array_get
   if(me == 1) then
      y2 = x2(:,:)[np]
      if(any(y2 /= np)) then
-        write(*,*) 'Test 2 fails'
-        call abort()
+        error stop 'Test 2 fails'
      end if
   end if
 
@@ -49,8 +47,7 @@ program whole_array_get
   if(me == 1) then
      y1 = x2(:,n/2)[me+1]
      if(any(y1 /= 2+n/2)) then
-        write(*,*) 'Test 3 fails'
-        call abort()
+        error stop 'Test 3 fails'
      end if
   end if
 
@@ -64,8 +61,7 @@ program whole_array_get
   if(me == 1) then
      y3 = x3(:,:,:)[me+1]
      if(any(y3 /= me+1)) then
-        write(*,*) 'Test 4 fails'
-        call abort()
+        error stop 'Test 4 fails'
      end if
   endif
 
@@ -79,8 +75,7 @@ program whole_array_get
   if(me == 1) then
      y3(:,n/2,:) = x3(:,:,n/2)[me+1]
      if(any(y3(:,n/2,:) /= me+1+n/2)) then
-        write(*,*) 'Test 5 fails'
-        call abort()
+        error stop 'Test 5 fails'
      end if
   endif
 
