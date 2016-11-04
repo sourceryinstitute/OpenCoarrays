@@ -1,9 +1,4 @@
 # Fortran tests
-add_executable(sync_images syncimages.f90)
-target_link_libraries(sync_images OpenCoarrays)
-
-add_executable(is_there_a_better_name syncimages2.f90)
-target_link_libraries(is_there_a_better_name OpenCoarrays)
 
 add_executable(increment_my_neighbor test1Caf.f90)
 target_link_libraries(increment_my_neighbor OpenCoarrays)

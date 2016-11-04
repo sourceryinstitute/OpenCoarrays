@@ -20,9 +20,15 @@ if(me == 1) then
   call atomic_ref(res,atom[1])
   if(res /= (np*(np+1))/2) then
     write(*,*) 'res',res
-    call abort()
+    error stop "Atomic ref failed"
   endif
   write(*,*) 'OK'
 endif
+
+sync all
+
+if (me == 1) then
+   write(*,*) "Test passed"
+end if
 
 end program
