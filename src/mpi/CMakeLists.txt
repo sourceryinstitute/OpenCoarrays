@@ -15,6 +15,11 @@ if(gfortran_compiler AND (NOT opencoarrays_aware_compiler))
   add_definitions(-DCOMPILER_SUPPORTS_CAF_INTRINSICS)
 endif()
 
+option(CAF_EXPOSE_INIT_FINALIZE "Expose caf_init and caf_finalize in opencoarrays module" FALSE)
+if(CAF_EXPOSE_INIT_FINALIZE)
+  add_definitions(-DEXPOSE_INIT_FINALIZE)
+endif()
+
 add_library(caf_mpi mpi_caf.c ../common/caf_auxiliary.c ../extensions/opencoarrays.F90)
 
 set_target_properties ( caf_mpi
