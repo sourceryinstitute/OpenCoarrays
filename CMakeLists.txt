@@ -209,7 +209,7 @@ if(opencoarrays_aware_compiler)
   add_mpi_test(co_reduce 4 ${tests_root}/unit/collectives/co_reduce_test)
   add_mpi_test(syncimages_status 32 ${tests_root}/unit/sync/syncimages_status)
   add_mpi_test(simpleatomics 32 ${tests_root}/unit/simple/atomics)
-  # I think there is a logic error in the following test
+  # possible logic error in the following test
 #  add_mpi_test(increment_my_neighbor 32 ${tests_root}/unit/simple/increment_my_neighbor)
 
   # Integration tests verifying the use of libcaf_mpi in applications
@@ -218,7 +218,7 @@ if(opencoarrays_aware_compiler)
   add_mpi_test(co_heat 2 ${tests_root}/integration/pde_solvers/coarrayHeatSimplified/co_heat)
   add_mpi_test(asynchronous_hello_world 2 ${tests_root}/integration/events/asynchronous_hello_world)
   if ( ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "x86_64") AND ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux") )
-    if ( NOT (DEFINED ENV{TRAVIS}))
+    if ( (NOT (DEFINED ENV{TRAVIS})) AND (NOT SKIP_ASSEMBLY_DEPS) )
       add_mpi_test(coarray_navier_stokes 2 ${tests_root}/integration/pde_solvers/navier-stokes/coarray_navier_stokes)
       set_property(TEST coarray_navier_stokes PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
     endif()
