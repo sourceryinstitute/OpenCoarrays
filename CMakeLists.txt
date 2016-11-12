@@ -7,7 +7,7 @@ set ( CMAKE_BUILD_TYPE "Release"
 set_property ( CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${CMAKE_CONFIGURATION_TYPES} )
 
 #Name project and specify source languages
-project(opencoarrays VERSION 1.7.3 LANGUAGES C Fortran)
+project(opencoarrays VERSION 1.7.5 LANGUAGES C Fortran)
 
 #Print an error message on an attempt to build inside the source directory tree:
 if ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
@@ -148,8 +148,11 @@ configure_file ( "${CMAKE_SOURCE_DIR}/cmake/uninstall.cmake.in" "${CMAKE_BINARY_
 add_custom_target ( uninstall
   COMMAND ${CMAKE_COMMAND} -P "${CMAKE_BINARY_DIR}/uninstall.cmake" )
 
-
 enable_testing()
+
+add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure)
+# See JSON-Fortran's CMakeLists.txt file to find out how to get the check target to depend
+# on the test executables
 
 # Determine if we're using Open MPI
 execute_process(COMMAND ${MPIEXEC} --version
@@ -190,6 +193,7 @@ if(opencoarrays_aware_compiler)
   add_mpi_test(allocate_as_barrier 2 ${tests_root}/unit/init_register/allocate_as_barrier)
   add_mpi_test(allocate_as_barrier_proc 32 ${tests_root}/unit/init_register/allocate_as_barrier_proc)
   add_mpi_test(get_array 2 ${tests_root}/unit/send-get/get_array)
+  add_mpi_test(get_self 2 ${tests_root}/unit/send-get/get_self)
   add_mpi_test(send_array 2 ${tests_root}/unit/send-get/send_array)
   add_mpi_test(get_with_offset_1d 2 ${tests_root}/unit/send-get/get_with_offset_1d)
   add_mpi_test(whole_get_array 2 ${tests_root}/unit/send-get/whole_get_array)
@@ -200,9 +204,13 @@ if(opencoarrays_aware_compiler)
   add_mpi_test(co_max 4 ${tests_root}/unit/collectives/co_max_test)
   add_mpi_test(syncall 32 ${tests_root}/unit/sync/syncall)
   add_mpi_test(syncimages 32 ${tests_root}/unit/sync/syncimages)
+  add_mpi_test(syncimages2 32 ${tests_root}/unit/sync/syncimages2)
   add_mpi_test(duplicate_syncimages 8 ${tests_root}/unit/sync/duplicate_syncimages)
   add_mpi_test(co_reduce 4 ${tests_root}/unit/collectives/co_reduce_test)
   add_mpi_test(syncimages_status 32 ${tests_root}/unit/sync/syncimages_status)
+  add_mpi_test(simpleatomics 32 ${tests_root}/unit/simple/atomics)
+  # possible logic error in the following test
+#  add_mpi_test(increment_my_neighbor 32 ${tests_root}/unit/simple/increment_my_neighbor)
 
   # Integration tests verifying the use of libcaf_mpi in applications
   add_mpi_test(hello_multiverse 2 ${tests_root}/integration/coarrayHelloWorld/hello_multiverse)
@@ -210,7 +218,7 @@ if(opencoarrays_aware_compiler)
   add_mpi_test(co_heat 2 ${tests_root}/integration/pde_solvers/coarrayHeatSimplified/co_heat)
   add_mpi_test(asynchronous_hello_world 2 ${tests_root}/integration/events/asynchronous_hello_world)
   if ( ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "x86_64") AND ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux") )
-    if ( NOT (DEFINED ENV{TRAVIS}))
+    if ( (NOT (DEFINED ENV{TRAVIS})) AND (NOT SKIP_ASSEMBLY_DEPS) )
       add_mpi_test(coarray_navier_stokes 2 ${tests_root}/integration/pde_solvers/navier-stokes/coarray_navier_stokes)
       set_property(TEST coarray_navier_stokes PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
     endif()

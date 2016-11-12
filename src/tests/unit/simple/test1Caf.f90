@@ -52,11 +52,15 @@ program test1caf
 
   if(me < np) sync images(me+1)
 
+  sync all
+
   if (mod(me,2).eq.0) then
     if ( any(a(:)[right]/=a_initial+me)) error stop "Test failed."
   else
     if ( any(b(:)[left]/=b_initial+me)) error stop "Test failed."
   end if
+
+  sync all
 
   if (me==1) print *,"Test passed."
 

@@ -42,7 +42,7 @@ contains
     sync all
     if (this_image() == num_images()) then
       if (any (a /= caf)) &
-           call abort()
+           error stop
     end if
 
     ! Whole array: ARRAY = ARRAY
@@ -56,7 +56,7 @@ contains
     sync all
     if (this_image() == num_images()) then
       if (any (a /= caf)) &
-           call abort()
+           error stop
     end if
 
     ! Scalar assignment
@@ -88,7 +88,7 @@ contains
     sync all
     if (this_image() == num_images()) then
       if (any (a /= caf)) &
-           call abort()
+           error stop
     end if
 
     ! Array sections with different ranges and pos/neg strides
@@ -133,7 +133,7 @@ contains
                         print *, a
                         print *, caf
                         print *, a-caf
-                        call abort()
+                        error stop
                       endif
                     end if
                   end do
@@ -167,7 +167,7 @@ contains
     sync all
     if (this_image() == num_images()) then
       if (any (a /= caf)) &
-           call abort()
+           error stop
     end if
 
     ! Whole array: ARRAY = ARRAY
@@ -181,7 +181,7 @@ contains
     sync all
     if (this_image() == num_images()) then
       if (any (a /= caf)) &
-           call abort()
+           error stop
     end if
 
     ! Scalar assignment
@@ -213,7 +213,7 @@ contains
     sync all
     if (this_image() == num_images()) then
       if (any (a /= caf)) &
-           call abort()
+           error stop
     end if
 
     ! Array sections with different ranges and pos/neg strides
@@ -258,7 +258,7 @@ contains
                         print *, a
                         print *, caf
                         print *, a-caf
-                        call abort()
+                        error stop
                       endif
                     end if
                   end do
@@ -292,7 +292,7 @@ contains
     sync all
     if (this_image() == num_images()) then
       if (any (a /= caf)) &
-           call abort()
+           error stop
     end if
 
     ! Whole array: ARRAY = ARRAY
@@ -306,7 +306,7 @@ contains
     sync all
     if (this_image() == num_images()) then
       if (any (a /= caf)) &
-           call abort()
+           error stop
     end if
 
     ! Scalar assignment
@@ -338,7 +338,7 @@ contains
     sync all
     if (this_image() == num_images()) then
       if (any (a /= caf)) &
-           call abort()
+           error stop
     end if
 
     ! Array sections with different ranges and pos/neg strides
@@ -383,7 +383,7 @@ contains
                         print *, a
                         print *, caf
                         print *, a-caf
-                        call abort()
+                        error stop
                       endif
                     end if
                   end do
