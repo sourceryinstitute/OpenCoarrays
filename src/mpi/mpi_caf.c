@@ -2183,8 +2183,8 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
 		KINDCASE (2, int16_t);
 		KINDCASE (4, int32_t);
 		KINDCASE (8, int64_t);
-#ifdef HAVE_INT128_T
-		KINDCASE (16, int128_t);
+#ifdef HAVE_GFC_INTEGER_16
+		KINDCASE (16, __int128);
 #endif
 		default:
 		  caf_runtime_error (unreachable);
@@ -2325,8 +2325,8 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
 		KINDCASE (2, int16_t);
 		KINDCASE (4, int32_t);
 		KINDCASE (8, int64_t);
-#ifdef HAVE_INT128_T
-		KINDCASE (16, int128_t);
+#ifdef HAVE_GFC_INTEGER_16
+		KINDCASE (16, __int128);
 #endif
 		default:
 		  caf_runtime_error (unreachable);
@@ -2484,8 +2484,8 @@ _gfortran_caf_get_by_ref (caf_token_t token, int image_index,
 		    KINDCASE (2, int16_t);
 		    KINDCASE (4, int32_t);
 		    KINDCASE (8, int64_t);
-#if HAVE_INT128_T
-		    KINDCASE (16, int128_t);
+#if HAVE_GFC_INTEGER_16
+		    KINDCASE (16, __int128);
 #endif
 		    default:
 		      caf_runtime_error (vecrefunknownkind, stat, NULL, 0);
@@ -2671,8 +2671,8 @@ _gfortran_caf_get_by_ref (caf_token_t token, int image_index,
 		    KINDCASE (2, int16_t);
 		    KINDCASE (4, int32_t);
 		    KINDCASE (8, int64_t);
-#if HAVE_INT128_T
-		    KINDCASE (16, int128_t);
+#if HAVE_GFC_INTEGER_16
+		    KINDCASE (16, __int128);
 #endif
 		    default:
 		      caf_runtime_error (vecrefunknownkind, stat, NULL, 0);
