@@ -17,6 +17,13 @@ endif()
 
 add_library(caf_mpi mpi_caf.c ../common/caf_auxiliary.c ../extensions/opencoarrays.F90)
 
+set_target_properties ( caf_mpi
+  PROPERTIES
+  SOVERSION ${PROJECT_VERSION.MAJOR}.${PROJECT_VERSION.MINOR}
+  VERSION ${PROJECT_VERSION}
+  )
+
+
 target_include_directories(caf_mpi PRIVATE ${MPI_C_INCLUDE_PATH})
 if (gfortran_compiler)
   target_compile_options(caf_mpi INTERFACE -fcoarray=lib)
@@ -26,6 +33,7 @@ include_directories(${CMAKE_BINARY_DIR}/mod)
 
 install(TARGETS caf_mpi EXPORT OpenCoarraysTargets
   ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
 )
 install(DIRECTORY  ${CMAKE_BINARY_DIR}/mod DESTINATION .)
 
