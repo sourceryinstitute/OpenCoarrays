@@ -17,12 +17,12 @@ build_and_install()
   if [[ "${package_to_build}" == "gcc" ]]; then
     info "pushd ${download_path}/${package_source_directory} "
     pushd "${download_path}/${package_source_directory}"
-    arg_string="${args[@]:-}"
+    arg_string="${gcc_prereqs_fetch_args[@]:-}"
     if [[ "$(uname)" == "Linux" ]]; then
-      sed -i'' "s/wget/${fetch} ${arg_string}/g" "${PWD}/contrib/download_prerequisites"
+      sed -i'' s/"wget --no-verbose -O \"\${directory}\/\${ar}\""/"${gcc_prereqs_fetch} ${arg_string}"/ "${PWD}/contrib/download_prerequisites"
     else
       # This works on OS X and other POSIX-compliant operating systems:
-      sed -i '' "s/wget/${fetch} ${arg_string}/g" "${PWD}/contrib/download_prerequisites"
+      sed -i '' s/"wget --no-verbose -O \"\${directory}\/\${ar}\""/"${gcc_prereqs_fetch} ${arg_string}"/ "${PWD}/contrib/download_prerequisites"
     fi 
     "${PWD}"/contrib/download_prerequisites
     info "popd"
