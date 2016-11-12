@@ -21,25 +21,27 @@ set_or_print_downloader()
   info "Checking available download mechanisms: ftp, wget, and curl."
   info "\${package_name}=${package_name}  \${arg_b:-\${arg_B:-}}=${arg_b:-${arg_B:-}}"
 
-  if [[ "${package_name}" == "gcc" && ! -z "${arg_b:-${arg_B:-}}" ]]; then
+  if type curl &> /dev/null; then
+    gcc_prereqs_fetch=curl
+  elif type wget &> /dev/null; then
+    gcc_prereqs_fetch=wget
+  elif type ftp &> /dev/null; then
+    if [[ "${package_name}" == "gcc"   || "${package_name}" == "wget" || "${package_name}" == "make" ||
+          "${package_name}" == "bison" || "${package_name}" == "m4"   ]]; then
+      gcc_prereqs_fetch=wget
+    fi
+  else
+    tried="curl, wget, and ftp"
+  fi
 
+  if [[ "${package_name}" == "gcc" && ! -z "${arg_b:-${arg_B:-}}" ]]; then
     if type svn &> /dev/null; then
       fetch=svn
     else
       tried="svn"
     fi
-
-  elif type curl &> /dev/null; then
-    fetch=curl
-  elif type wget &> /dev/null; then
-    fetch=wget
-  elif type ftp &> /dev/null; then
-    if [[ "${package_name}" == "gcc"   || "${package_name}" == "wget" || "${package_name}" == "make" ||
-          "${package_name}" == "bison" || "${package_name}" == "m4"   ]]; then
-      fetch=ftp-url
-    fi
   else
-    tried="curl, wget, and ftp"
+    fetch=${gcc_prereqs_fetch}
   fi
 
   if [[ -z "${fetch:-}" ]]; then
