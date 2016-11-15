@@ -83,7 +83,7 @@ add-caf-decls(|ct) =
      ? Scope(decls,execs,funcs)
   ;  <fast-build-use-stmt> "opencoarrays"
   ;  ? use_stmt                                            // bind current term to use_stmt
-  ;  <map(build-caf-decls)> <hashtable-values> ct 
+  ;  <map(build-caf-decls)> <hashtable-getlist> ct
   ;  ! Scope(<concat>[[use_stmt],decls,<id>],execs,funcs)
 
 // Add "use opencoarrays" and caf_init and caf_finalize calls
@@ -230,7 +230,7 @@ fast-build-use-stmt =
   ;  !UseStmt(no-label(), no-module-nature(), module_name, [])
 
 build-caf-decls =
-     ?(object_name,ArrayType(type,dim,codim))
+    ?(object_name,(ArrayType(type,dim,codim),attrs))
   ; ! [ TypeDeclarationStmt(no-label()
                           , DerivedType("coarray", [])
                           , []
