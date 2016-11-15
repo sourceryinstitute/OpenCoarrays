@@ -1,6 +1,14 @@
 set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/mod)
 
-find_package(MPI REQUIRED)
+if (NOT MPI_C_FOUND)
+  find_package(MPI REQUIRED)
+
+  set(CMAKE_C_COMPILE_FLAGS ${CMAKE_C_COMPILE_FLAGS} ${MPI_C_COMPILE_FLAGS})
+  set(CMAKE_C_LINK_FLAGS ${CMAKE_C_LINK_FLAGS} ${MPI_C_LINK_FLAGS})
+  set(CMAKE_Fortran_COMPILE_FLAGS ${CMAKE_Fortran_COMPILE_FLAGS} ${MPI_Fortran_COMPILE_FLAGS})
+  set(CMAKE_Fortran_LINK_FLAGS ${CMAKE_Fortran_LINK_FLAGS} ${MPI_Fortran_LINK_FLAGS})
+  include_directories(BEFORE ${MPI_C_INCLUDE_PATH} ${MPI_Fortran_INCLUDE_PATH})
+endif()
 
 if("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
   set(gfortran_compiler true)
@@ -21,6 +29,7 @@ if(CAF_EXPOSE_INIT_FINALIZE)
 endif()
 
 add_library(caf_mpi mpi_caf.c ../common/caf_auxiliary.c ../extensions/opencoarrays.F90)
+target_link_libraries(caf_mpi PRIVATE ${MPI_C_LIBRARIES} ${MPI_Fortran_LIBRARIES})
 
 set_target_properties ( caf_mpi
   PROPERTIES
@@ -29,7 +38,6 @@ set_target_properties ( caf_mpi
   )
 
 
-target_include_directories(caf_mpi PRIVATE ${MPI_C_INCLUDE_PATH})
 if (gfortran_compiler)
   target_compile_options(caf_mpi INTERFACE -fcoarray=lib)
 endif()
@@ -90,8 +98,5 @@ file(APPEND "${caf_launcher}"  "caf_version=${PROJECT_VERSION}\n")
 
 file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/cafrun-foot FOOTER)
 file(APPEND "${caf_launcher}" "${FOOTER}")
-
-# This could be needed to produce shared libraries:
-#target_link_libraries(caf_mpi PRIVATE ${MPI_C_LIBRARIES})
 
 #set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${exe_dir}/cafrun;${exe_dir}/caf;${exe_dir}/test-caf-tally.sh")
