@@ -102,6 +102,21 @@ if(gfortran_compiler)
   unset(CMAKE_REQUIRED_FLAGS)
 endif()
 
+
+#----------------------------------------------------------------------------
+# Find MPI and set some flags so that FC and CC can point to gfortran and gcc
+#----------------------------------------------------------------------------
+find_package(MPI REQUIRED)
+
+set(CMAKE_C_COMPILE_FLAGS ${CMAKE_C_COMPILE_FLAGS} ${MPI_C_COMPILE_FLAGS})
+set(CMAKE_C_LINK_FLAGS ${CMAKE_C_LINK_FLAGS} ${MPI_C_LINK_FLAGS})
+set(CMAKE_Fortran_COMPILE_FLAGS ${CMAKE_Fortran_COMPILE_FLAGS} ${MPI_Fortran_COMPILE_FLAGS})
+set(CMAKE_Fortran_LINK_FLAGS ${CMAKE_Fortran_LINK_FLAGS} ${MPI_Fortran_LINK_FLAGS})
+include_directories(BEFORE ${MPI_C_INCLUDE_PATH} ${MPI_Fortran_INCLUDE_PATH})
+
+#-------------------------------
+# Recurse into the src directory
+#-------------------------------
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 add_subdirectory(src)
