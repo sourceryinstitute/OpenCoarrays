@@ -48,6 +48,8 @@ program main
   integer :: my_num_points,i,my_first,my_last,left,right
   integer, allocatable :: neighbors(:)
 
+  call caf_init()
+
   ! change 'error stop "..."' a 'call error_stop("...")'
   if (mod(num_points,num_images()) /= 0) error stop "not evenly divisible"
   my_num_points=num_points/num_images()
@@ -98,4 +100,5 @@ program main
   ! change "sync all" a "call sync_all()"
   call sync_all()
   if (this_image()==1) print *, "Test passed."
+  call caf_finalize()
 end program

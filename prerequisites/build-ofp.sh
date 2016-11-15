@@ -109,8 +109,8 @@ fi
 
 # If -U is passed, print the URLs for OFP and its prerequisites.
 # Then exit with normal status.
-ofp_url_head="https://github.com/sourceryinstitute/opencoarrays/files/305727/"
-ofp_url_tail="ofp-sdf.tar.gz"
+ofp_url_head="https://github.com/OpenFortranProject/ofp-sdf/archive/"
+ofp_url_tail="v0.9.2.tar.gz"
 # shellcheck disable=SC2154
 if [[ "${arg_U}" == "${__flag_present}" ]]; then
   echo "strategoxt-superbundle URL: $("${OPENCOARRAYS_SRC_DIR}/prerequisites/install-binary.sh" -U strategoxt-superbundle)"
