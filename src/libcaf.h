@@ -233,12 +233,16 @@ void PREFIX(sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
 		bool may_require_tmp, int *dst_stat, int *src_stat);
 #endif
 
+void PREFIX (co_broadcast) (gfc_descriptor_t *, int, int *, char *, int);			    
 void PREFIX (co_max) (gfc_descriptor_t *, int, int *, char *, int, int);
 void PREFIX (co_min) (gfc_descriptor_t *, int, int *, char *, int, int);
+void PREFIX (co_reduce) (gfc_descriptor_t *, void *(*opr) (void *, void *),
+			 int, int, int *, char *, int , int);
 void PREFIX (co_sum) (gfc_descriptor_t *, int, int *, char *, int);
 
 void PREFIX (sync_all) (int *, char *, int);
 void PREFIX (sync_images) (int, int[], int *, char *, int);
+void PREFIX (sync_memory) (int *, char *, int);
 
 void PREFIX (error_stop_str) (const char *, int32_t)
      __attribute__ ((noreturn));

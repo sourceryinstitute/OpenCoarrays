@@ -51,6 +51,10 @@ module opencoarrays
     integer(atomic_int_kind), allocatable :: atom[:]
   end type
 #endif
+#ifdef EXPOSE_INIT_FINALIZE
+  public :: caf_init
+  public :: caf_finalize
+#endif
 
   ! Generic interface to co_broadcast with implementations for various types, kinds, and ranks
   interface co_reduce
@@ -195,6 +199,29 @@ module opencoarrays
 
   ! Bindings for OpenCoarrays C procedures
   interface
+
+    ! C function signature from ../mpi/mpi_caf.c:
+    ! void
+    ! PREFIX (init) (int *argc, char ***argv)
+#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
+    subroutine caf_init(argc,argv) bind(C,name="_caf_extensions_init")
+#else
+    subroutine caf_init(argc,argv) bind(C,name="_gfortran_caf_init")
+#endif
+      import :: c_int,c_ptr
+      type(c_ptr), value :: argc
+      type(c_ptr), value :: argv
+    end subroutine
+
+    ! C function signature from ../mpi/mpi_caf.c:
+    ! void
+    ! PREFIX (finalize) (void)
+#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
+    subroutine caf_finalize() bind(C,name="_caf_extensions_finalize")
+#else
+    subroutine caf_finalize() bind(C,name="_gfortran_caf_finalize")
+#endif
+    end subroutine
 
     ! C function signature from ../mpi/mpi_caf.c:
     ! void

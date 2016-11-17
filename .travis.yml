@@ -9,6 +9,9 @@ env:
     - MPICH_DIR="$HOME/.local/usr/mpich"
     - MPICH_BOT_URL_HEAD="https://github.com/sourceryinstitute/opencoarrays/files/452136/"
     - MPICH_BOT_URL_TAIL="mpich-3.2_2.yosemite.bottle.1.tar.gz"
+    - FC=gfortran-6
+    - CC=gcc-6
+    - CXX=g++-6
 
 matrix:
   include:
@@ -84,9 +87,6 @@ before_install:
       [[ -d "$CACHE/bin" ]] || mkdir -p "$CACHE/bin"
       [[ -d "$MPICH_DIR" ]] || mkdir -p "$MPICH_DIR"
       export PATH="$CACHE/bin:$PATH"
-      export FC=gfortran-6
-      export CC=gcc-6
-      export CXX=g++-6
       $FC --version
       $CC --version
       $CXX --version
@@ -103,8 +103,6 @@ install:
         [[ "$(brew ls --versions $pkg)" ]] || brew install --force-bottle $pkg
         brew outdated $pkg || brew upgrade --force-bottle $pkg
       done
-      export FC=gfortran-6
-      export CC=gcc-6
       if ! [[ "$(brew ls --versions mpich)" ]] && [[ "X$BUILD_TYPE" != "XInstallScript" ]]; then
         wget ${MPICH_BOT_URL_HEAD}${MPICH_BOT_URL_TAIL}
         brew install --force-bottle ${MPICH_BOT_URL_TAIL}
@@ -114,8 +112,6 @@ install:
         mpif90 --version
         mpicc --version
         cmake --version
-        export FC=mpif90
-        export CC=mpicc
       elif [[ "X$BUILD_TYPE" = "XInstallScript" ]]; then # uninstall some stuff if present
         [[ "$(brew ls --versions cmake)" ]] && brew rm cmake || true
         [[ "$(brew ls --versions mpich)" ]] && brew rm mpich || true
@@ -143,8 +139,6 @@ install:
       mpif90 --version
       mpicc --version
       cmake --version
-      export FC=mpif90
-      export CC=mpicc
     fi
     set +o errexit
 
@@ -152,8 +146,6 @@ script:
   - |
     set -o errexit
     if [[ "X$BUILD_TYPE" = "XInstallScript" ]]; then
-      export FC=gfortran-6
-      export CC=gcc-6
       [[ -d "$HOME/opt" ]] || mkdir "$HOME/opt"
       [[ -d "$HOME/bin" ]] || mkdir "$HOME/bin"
       ln -fs "$(which gfortran-6)" "$HOME/bin/gfortran"
@@ -166,7 +158,7 @@ script:
       cd cmake-build
       cmake -DCMAKE_INSTALL_PREFIX:PATH="$HOME/OpenCoarrays" -DCMAKE_BUILD_TYPE="$BUILD_TYPE" ..
       make -j 4
-      ctest --verbose
+      ctest --output-on-failure
       make install
       cd ..
     fi
