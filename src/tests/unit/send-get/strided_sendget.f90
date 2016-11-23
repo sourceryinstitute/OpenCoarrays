@@ -1,3 +1,4 @@
+! Written by Andre Vehreschild
 program stridedsendgettest
 
   implicit none
