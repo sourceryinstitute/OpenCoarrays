@@ -912,18 +912,21 @@ PREFIX (sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
           ptrdiff_t array_offset_dst = 0;
           ptrdiff_t stride = 1;
           ptrdiff_t extent = 1;
+	  ptrdiff_t tot_ext = 1;
           for (j = 0; j < rank-1; j++)
             {
-              array_offset_dst += ((i / (extent*stride))
+              array_offset_dst += ((i / tot_ext)
                                    % (dest->dim[j]._ubound
                                       - dest->dim[j].lower_bound + 1))
                 * dest->dim[j]._stride;
               extent = (dest->dim[j]._ubound - dest->dim[j].lower_bound + 1);
               stride = dest->dim[j]._stride;
+	      tot_ext *= extent;
             }
 
+	  array_offset_dst += (i / tot_ext) * dest->dim[rank-1]._stride;
+	  
 	  extent = (dest->dim[rank-1]._ubound - dest->dim[rank-1].lower_bound + 1);
-          array_offset_dst += (i / extent) * dest->dim[rank-1]._stride;
           dst_offset = offset_s + array_offset_dst*GFC_DESCRIPTOR_SIZE (dest);
 
           ptrdiff_t array_offset_sr = 0;
@@ -931,18 +934,20 @@ PREFIX (sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
             {
               stride = 1;
               extent = 1;
+	      tot_ext = 1;
               for (j = 0; j < GFC_DESCRIPTOR_RANK (src)-1; j++)
                 {
-                  array_offset_sr += ((i / (extent*stride))
+                  array_offset_sr += ((i / tot_ext)
                                       % (src->dim[j]._ubound
                                          - src->dim[j].lower_bound + 1))
                     * src->dim[j]._stride;
                   extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1);
                   stride = src->dim[j]._stride;
+		  tot_ext *= extent;
                 }
 
-	      extent = (src->dim[rank-1]._ubound - src->dim[rank-1].lower_bound + 1);
-              array_offset_sr += (i / extent) * src->dim[rank-1]._stride;
+	      /* extent = (src->dim[rank-1]._ubound - src->dim[rank-1].lower_bound + 1); */
+              array_offset_sr += (i / tot_ext) * src->dim[rank-1]._stride;
               array_offset_sr *= GFC_DESCRIPTOR_SIZE (src);
             }
           src_offset = offset_g + array_offset_sr;
