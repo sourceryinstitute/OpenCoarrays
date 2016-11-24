@@ -153,6 +153,9 @@ script:
       ln -fs "$(which g++-6)" "$HOME/bin/g++"
       export PATH="$PATH:$HOME/bin"
       ./install.sh --yes-to-all -i "$HOME/opt/opencoarrays" -j 4 -f "$HOME/bin/gfortran" -c "$HOME/bin/gcc" -C "$HOME/bin/g++"
+      cd prerequisites/builds/opencoarrays*
+      ctest --output-on-failure
+      cd -
     else
       mkdir cmake-build
       cd cmake-build
