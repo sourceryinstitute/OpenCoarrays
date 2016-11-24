@@ -106,7 +106,18 @@ endif()
 #----------------------------------------------------------------------------
 # Find MPI and set some flags so that FC and CC can point to gfortran and gcc
 #----------------------------------------------------------------------------
-find_package(MPI REQUIRED)
+
+# If the user passes FC=mpif90 etc. check and prefer that location
+get_filename_component( FTN_MPI_DIR "${CMAKE_Fortran_COMPILER}"
+  REALPATH )
+get_filename_component( C_MPI_DIR "${CMAKE_C_COMPILER}"
+  REALPATH )
+set ( MPI_HOME "${MPI_HOME}" "${FTN_MPI_DIR}/.." "${C_MPI_DIR}/.." )
+
+# Check the install.sh defaut mpich installation directories
+set ( MPI_HOME "${MPI_HOME}" "${CMAKE_SOURCE_DIR}/prerequisites/installations/mpich/3.1.4" "${CMAKE_SOURCE_DIR}/prerequisites/installations/mpich/*" )
+
+find_package( MPI REQUIRED )
 
 set(CMAKE_C_COMPILE_FLAGS ${CMAKE_C_COMPILE_FLAGS} ${MPI_C_COMPILE_FLAGS})
 set(CMAKE_C_LINK_FLAGS ${CMAKE_C_LINK_FLAGS} ${MPI_C_LINK_FLAGS})
