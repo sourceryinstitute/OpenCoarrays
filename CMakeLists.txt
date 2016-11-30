@@ -15,7 +15,7 @@ if ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
     "CMAKE_CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
     " == CMAKE_CURRENT_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}"
     "\nThis archive does not support in-source builds:\n"
-    "You must now delete the CMakeCache.txt file and the CMakeFiles/ directory under"
+    "You must now delete the CMakeCache.txt file and the CMakeFiles/ directory under "
     "the 'src' source directory or you will not be able to configure correctly!"
     "\nYou must now run something like:\n"
     "  $ rm -r CMakeCache.txt CMakeFiles/"
@@ -172,9 +172,9 @@ unset(OLD_INCLUDES)
 unset(OLD_LIBRARIES)
 
 if (NOT MPI_C_COMPILES)
-  message(FATAL_ERROR "MPI_C is missing!"
-    "Try setting MPI_C_COMPILER to the appropriate C compiler wrapper script and reconfigure."
-    "i.e., `cmake -DMPI_C_COMPILER=/path/to/mpicc ..` or set it by editing the cache using"
+  message(FATAL_ERROR "MPI_C is missing! "
+    "Try setting MPI_C_COMPILER to the appropriate C compiler wrapper script and reconfigure. "
+    "i.e., `cmake -DMPI_C_COMPILER=/path/to/mpicc ..` or set it by editing the cache using "
     "cmake-gui or ccmake."
     )
 endif()
@@ -245,17 +245,17 @@ unset(OLD_INCLUDES)
 unset(OLD_LIBRARIES)
 
 if ( (NOT MPI_Fortran_MODULE_COMPILES) AND (NOT MPI_Fortran_INCLUDE_COMPILES) )
-  message ( WARNING "It appears that the Fortran MPI compiler is not working."
-    "For OpenCoarrays Aware compilers, this may be irrelavent:"
-    "  The src/extensions/opencoarrays.F90 module will be disabled, but it is"
+  message ( WARNING "It appears that the Fortran MPI compiler is not working. "
+    "For OpenCoarrays Aware compilers, this may be irrelavent: "
+    "  The src/extensions/opencoarrays.F90 module will be disabled, but it is "
     "  possible that the build will succeed, despite this fishy circumstance."
     )
 endif()
 
 if ( NOT MPI_Fortran_MODULE_COMPILES )
-  message ( WARNING "It appears that MPI was built with a different Fortran compiler."
-    "It is possible that this may cause unpredictable behavior. The build will continue"
-    "using `mpif.h` BUT please report any suspicious behavior to the OpenCoarrays"
+  message ( WARNING "It appears that MPI was built with a different Fortran compiler. "
+    "It is possible that this may cause unpredictable behavior. The build will continue "
+    "using `mpif.h` BUT please report any suspicious behavior to the OpenCoarrays "
     "developers."
     )
 endif()
