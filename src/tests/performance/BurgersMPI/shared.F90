@@ -26,7 +26,11 @@
 
 module shared
   !module for sharing mpi functionality/variables with other modules/main
+#ifdef MPI_WORKING_MODULE
   use mpi !non-native mpi functionality
+#else
+# include 'mpif.h'
+#endif
   integer :: tag, status(MPI_STATUS_SIZE)
   integer :: MPI_COMM_CART
   integer :: my_id, num_procs, ierr, local_grid_resolution, left_id, right_id

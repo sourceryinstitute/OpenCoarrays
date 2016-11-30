@@ -26,8 +26,19 @@
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 !
 program initialize_mpi
+#ifdef MPI_WORKING_MODULE
   use mpi, only : MPI_COMM_SIZE,MPI_COMM_WORLD
   implicit none
+#else
+  implicit none
+# include 'mpif.h'
+  interface
+     subroutine MPI_COMM_SIZE(mpi_comm,nranks,ierr)
+       integer, intent(in)  :: mpi_comm
+       integer, intent(out) :: nranks, ierr
+     end subroutine
+  end interface
+#endif
 
   ! Set invalid default image number and number of ranks
   integer :: me=-1,np=-1,ierr

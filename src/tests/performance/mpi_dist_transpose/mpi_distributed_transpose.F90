@@ -38,9 +38,21 @@
 module mpi_run_size
     use iso_fortran_env
 #ifndef HAVE_WALLTIME
-    use MPI, only : WALLTIME=>MPI_WTIME
+#  ifdef MPI_WORKING_MODULE
+     use MPI, only : WALLTIME=>MPI_WTIME
+     implicit none
+#  else
+     implicit none
+#    include 'mpif.h'
+     interface WALLTIME
+       function MPI_WTIME() result(res)
+         double precision :: res
+       end function
+    end interface WALLTIME
+#  endif
+#else
+  implicit none
 #endif
-    implicit none
         integer(int64) :: nx, ny, nz
         integer(int64) :: my, mx, first_y, last_y, first_x, last_x
         integer(int64) :: my_node, num_nodes

@@ -252,7 +252,9 @@ if ( (NOT MPI_Fortran_MODULE_COMPILES) AND (NOT MPI_Fortran_INCLUDE_COMPILES) )
     )
 endif()
 
-if ( NOT MPI_Fortran_MODULE_COMPILES )
+if ( MPI_Fortran_MODULE_COMPILES )
+  add_definitions(-DMPI_WORKING_MODULE)
+else()
   message ( WARNING "It appears that MPI was built with a different Fortran compiler. "
     "It is possible that this may cause unpredictable behavior. The build will continue "
     "using `mpif.h` BUT please report any suspicious behavior to the OpenCoarrays "
