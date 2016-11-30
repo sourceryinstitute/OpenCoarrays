@@ -41,11 +41,6 @@ module run_size
 #  else
      implicit none
      include 'mpif.h'
-     interface WALLTIME
-       function MPI_WTIME() result(res)
-         double precision :: res
-       end function
-    end interface WALLTIME
 #  endif
 #else
   implicit none
