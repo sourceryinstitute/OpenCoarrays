@@ -88,6 +88,7 @@ else()
 endif()
 
 if(gfortran_compiler)
+  set(OLD_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
   set(CMAKE_REQUIRED_FLAGS "-fcoarray=single -ffree-form")
 endif()
 include(CheckFortranSourceCompiles)
@@ -99,7 +100,8 @@ CHECK_Fortran_SOURCE_COMPILES("
   end program
 " Check_Simple_Coarray_Fortran_Source_Compiles)
 if(gfortran_compiler)
-  unset(CMAKE_REQUIRED_FLAGS)
+  set (CMAKE_REQUIRED_FLAGS ${OLD_REQUIRED_FLAGS})
+  unset(OLD_REQUIRED_FLAGS)
 endif()
 
 
@@ -108,17 +110,37 @@ endif()
 #----------------------------------------------------------------------------
 
 # If the user passes FC=mpif90 etc. check and prefer that location
-get_filename_component( FTN_MPI_DIR "${CMAKE_Fortran_COMPILER}"
+get_filename_component( FTN_COMPILER_NAME "${CMAKE_Fortran_COMPILER}"
+  NAME )
+get_filename_component( C_COMPILER_NAME "${CMAKE_C_COMPILER}"
+  NAME )
+get_filename_component( FTN_COMPILER_DIR "${CMAKE_Fortran_COMPILER}"
   REALPATH )
-get_filename_component( C_MPI_DIR "${CMAKE_C_COMPILER}"
+get_filename_component( C_COMPILER_DIR "${CMAKE_C_COMPILER}"
   REALPATH )
-set ( MPI_HOME "${MPI_HOME}" "${FTN_MPI_DIR}/.." "${C_MPI_DIR}/.." )
 
-# Check the install.sh defaut mpich installation directories
-set ( MPI_HOME "${MPI_HOME}" "${CMAKE_SOURCE_DIR}/prerequisites/installations/mpich/3.1.4" "${CMAKE_SOURCE_DIR}/prerequisites/installations/mpich/*" )
+if (FTN_COMPILER_NAME MATCHES '^[mM][pP][iI]')
+  set (MPI_Fortran_COMPILER "${CMAKE_Fortran_COMPILER}")
+endif()
+if (C_COMPILER_NAME MATCHES '^[mM][pP][iI]')
+  set (MPI_C_COMPILER "${CMAKE_C_COMPILER}")
+endif()
 
-find_package( MPI REQUIRED )
+find_package( MPI )
 
+if ( (NOT MPI_C_FOUND) OR (NOT MPI_Fortran_FOUND) )
+  find_program (MY_MPI_EXEC NAMES mpirun mpiexec lamexec srun
+    PATHS "${CMAKE_SOURCE_DIR/prerequisites/installations/mpich/3.1.4}" "${CMAKE_SOURCE_DIR}/prerequisites/installations/mpich/*" ENV PATH
+    HINTS "${FTN_COMPILER_DIR}" "${C_COMPILER_DIR}"
+    PATH_SUFFIXES bin)
+  set ( MPI_HOME "${MPI_HOME}" "${MY_MPI_EXEC}" "${MY_MPI_EXEC}/.." )
+  find_package( MPI REQUIRED )
+endif()
+
+
+#----------------
+# Setup MPI flags
+#----------------
 set(CMAKE_C_COMPILE_FLAGS ${CMAKE_C_COMPILE_FLAGS} ${MPI_C_COMPILE_FLAGS})
 set(CMAKE_C_LINK_FLAGS ${CMAKE_C_LINK_FLAGS} ${MPI_C_LINK_FLAGS})
 set(CMAKE_Fortran_COMPILE_FLAGS ${CMAKE_Fortran_COMPILE_FLAGS} ${MPI_Fortran_COMPILE_FLAGS})
