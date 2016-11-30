@@ -29,7 +29,7 @@ module shared
 #ifdef MPI_WORKING_MODULE
   use mpi !non-native mpi functionality
 #else
-# include 'mpif.h'
+  include 'mpif.h'
 #endif
   integer :: tag, status(MPI_STATUS_SIZE)
   integer :: MPI_COMM_CART

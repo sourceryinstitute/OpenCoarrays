@@ -31,7 +31,7 @@ program initialize_mpi
   implicit none
 #else
   implicit none
-# include 'mpif.h'
+  include 'mpif.h'
   interface
      subroutine MPI_COMM_SIZE(mpi_comm,nranks,ierr)
        integer, intent(in)  :: mpi_comm

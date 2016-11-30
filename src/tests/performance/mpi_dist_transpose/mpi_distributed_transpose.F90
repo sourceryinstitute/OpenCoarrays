@@ -43,7 +43,7 @@ module mpi_run_size
      implicit none
 #  else
      implicit none
-#    include 'mpif.h'
+     include 'mpif.h'
      interface WALLTIME
        function MPI_WTIME() result(res)
          double precision :: res

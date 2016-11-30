@@ -33,7 +33,7 @@ module opencoarrays
   implicit none
 
 #ifndef MPI_WORKING_MODULE
-#include 'mpif.h'
+  include 'mpif.h'
 #endif
 
   private
