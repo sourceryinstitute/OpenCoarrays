@@ -242,9 +242,10 @@ void PREFIX(sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
 		caf_reference_t *dst_refs, caf_token_t src_token, int src_image_index,
 		caf_reference_t *src_refs, int dst_kind, int src_kind,
 		bool may_require_tmp, int *dst_stat, int *src_stat);
+int PREFIX(is_present) (caf_token_t, int, caf_reference_t *refs);
 #endif
 
-void PREFIX (co_broadcast) (gfc_descriptor_t *, int, int *, char *, int);			    
+void PREFIX (co_broadcast) (gfc_descriptor_t *, int, int *, char *, int);
 void PREFIX (co_max) (gfc_descriptor_t *, int, int *, char *, int, int);
 void PREFIX (co_min) (gfc_descriptor_t *, int, int *, char *, int, int);
 void PREFIX (co_reduce) (gfc_descriptor_t *, void *(*opr) (void *, void *),

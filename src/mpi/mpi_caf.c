@@ -535,13 +535,11 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
 
   mpi_caf_token_t *mpi_token;
   MPI_Win *p;
-  if (!(type == CAF_REGTYPE_COARRAY_ALLOC_ALLOCATE_ONLY
-        || (type == CAF_REGTYPE_COARRAY_ALLOC && *token != NULL)))
+  if (type != CAF_REGTYPE_COARRAY_ALLOC_ALLOCATE_ONLY)
     *token = malloc (sizeof (mpi_caf_token_t));
 
   mpi_token = (mpi_caf_token_t *) *token;
   p = TOKEN(mpi_token);
-  fprintf (stderr, "%d: _caf_register(type = %d, token = %p)!\n", caf_this_image, type, *token);
 
   if (type == CAF_REGTYPE_COARRAY_ALLOC_ALLOCATE_ONLY
       || type == CAF_REGTYPE_COARRAY_ALLOC
@@ -564,8 +562,6 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
 #if MPI_VERSION >= 3
   if (type != CAF_REGTYPE_COARRAY_ALLOC_REGISTER_ONLY)
     {
-      fprintf (stderr, "%d: Adding memory to token %p, desc = %p.\n",
-	       caf_this_image, token, mpi_token->desc);
       MPI_Win_allocate (actual_size, 1, MPI_INFO_NULL, CAF_COMM_WORLD, &mem, p);
       CAF_Win_lock_all (*p);
     }
@@ -588,7 +584,7 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
 
   if (type != CAF_REGTYPE_COARRAY_ALLOC_REGISTER_ONLY)
     {
-      PREFIX(sync_all) (NULL,NULL,0);
+//      PREFIX(sync_all) (NULL,NULL,0);
 
       caf_static_t *tmp = malloc (sizeof (caf_static_t));
       tmp->prev  = caf_tot;
@@ -641,11 +637,11 @@ error:
 #ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
 void *
   _gfortran_caf_register (size_t size, caf_register_t type, caf_token_t *token,
-                int *stat, char *errmsg, int errmsg_len)
+                          int *stat, char *errmsg, int errmsg_len)
 #else
 void *
   PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
-                int *stat, char *errmsg, int errmsg_len)
+                     int *stat, char *errmsg, int errmsg_len)
 #endif
 {
   /* int ierr; */
@@ -764,8 +760,6 @@ PREFIX (deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len
 {
   /* int ierr; */
 
-  fprintf (stderr, "%d: deregistering token = %p, type = %d.\n", caf_this_image,
-	   *token, type);
   if (unlikely (caf_is_finalized))
     {
       const char msg[] = "Failed to deallocate coarray - "
@@ -2977,6 +2971,14 @@ PREFIX(sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
                             bool may_require_tmp, int *dst_stat, int *src_stat)
 {
   fprintf (stderr, "COARRAY ERROR: caf_sendget_by_ref() not implemented yet ");
+  error_stop (1);
+}
+
+
+int
+PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
+{
+  fprintf (stderr, "COARRAY ERROR: caf_is_present() not implemented yet ");
   error_stop (1);
 }
 #endif
