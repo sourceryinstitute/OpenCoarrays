@@ -28,7 +28,27 @@ if(CAF_EXPOSE_INIT_FINALIZE)
   add_definitions(-DEXPOSE_INIT_FINALIZE)
 endif()
 
-add_library(caf_mpi mpi_caf.c ../common/caf_auxiliary.c ../extensions/opencoarrays.F90)
+# Determine whether and how to include OpenCoarrays module based on if the Fortran MPI compiler:
+#   - workds
+#   - is compatible with the fortran compiler used to build the MPI implementation
+if (MPI_Fortran_MODULE_COMPILES)
+  # likely the same compiler compiled MPI
+  set(MPI_CAF_FORTRAN_FILES ../extensions/opencoarrays.F90)
+elseif(MPI_Fortran_INCLUDE_COMPILES)
+  # Likely a different version or completely different Fortran compiler built MPI
+  # Since the .mod file is incompatible hack together a replacement
+  file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/my_mpi_mod.f90"
+    "
+    module mpi
+    implicit none
+    public
+    include 'mpif.h'
+    end module"
+    )
+  set(MPI_CAF_FORTRAN_FILES "${CMAKE_CURRENT_BINARY_DIR}/my_mpi_mod.f90" ../extensions/opencoarrays.F90 )
+endif()
+
+add_library(caf_mpi mpi_caf.c ../common/caf_auxiliary.c ${MPI_CAF_FORTRAN_FILES})
 target_link_libraries(caf_mpi PRIVATE ${MPI_C_LIBRARIES} ${MPI_Fortran_LIBRARIES})
 
 set_target_properties ( caf_mpi
