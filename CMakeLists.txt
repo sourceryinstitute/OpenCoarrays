@@ -15,7 +15,7 @@ if ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
     "CMAKE_CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
     " == CMAKE_CURRENT_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}"
     "\nThis archive does not support in-source builds:\n"
-    "You must now delete the CMakeCache.txt file and the CMakeFiles/ directory under"
+    "You must now delete the CMakeCache.txt file and the CMakeFiles/ directory under "
     "the 'src' source directory or you will not be able to configure correctly!"
     "\nYou must now run something like:\n"
     "  $ rm -r CMakeCache.txt CMakeFiles/"
@@ -88,6 +88,7 @@ else()
 endif()
 
 if(gfortran_compiler)
+  set(OLD_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
   set(CMAKE_REQUIRED_FLAGS "-fcoarray=single -ffree-form")
 endif()
 include(CheckFortranSourceCompiles)
@@ -99,7 +100,8 @@ CHECK_Fortran_SOURCE_COMPILES("
   end program
 " Check_Simple_Coarray_Fortran_Source_Compiles)
 if(gfortran_compiler)
-  unset(CMAKE_REQUIRED_FLAGS)
+  set (CMAKE_REQUIRED_FLAGS ${OLD_REQUIRED_FLAGS})
+  unset(OLD_REQUIRED_FLAGS)
 endif()
 
 
@@ -108,17 +110,161 @@ endif()
 #----------------------------------------------------------------------------
 
 # If the user passes FC=mpif90 etc. check and prefer that location
-get_filename_component( FTN_MPI_DIR "${CMAKE_Fortran_COMPILER}"
+get_filename_component( FTN_COMPILER_NAME "${CMAKE_Fortran_COMPILER}"
+  NAME )
+get_filename_component( C_COMPILER_NAME "${CMAKE_C_COMPILER}"
+  NAME )
+get_filename_component( FTN_COMPILER_DIR "${CMAKE_Fortran_COMPILER}"
   REALPATH )
-get_filename_component( C_MPI_DIR "${CMAKE_C_COMPILER}"
+get_filename_component( C_COMPILER_DIR "${CMAKE_C_COMPILER}"
   REALPATH )
-set ( MPI_HOME "${MPI_HOME}" "${FTN_MPI_DIR}/.." "${C_MPI_DIR}/.." )
 
-# Check the install.sh defaut mpich installation directories
-set ( MPI_HOME "${MPI_HOME}" "${CMAKE_SOURCE_DIR}/prerequisites/installations/mpich/3.1.4" "${CMAKE_SOURCE_DIR}/prerequisites/installations/mpich/*" )
+if (FTN_COMPILER_NAME MATCHES '^[mM][pP][iI]')
+  set (MPI_Fortran_COMPILER "${CMAKE_Fortran_COMPILER}")
+endif()
+if (C_COMPILER_NAME MATCHES '^[mM][pP][iI]')
+  set (MPI_C_COMPILER "${CMAKE_C_COMPILER}")
+endif()
 
-find_package( MPI REQUIRED )
+find_package( MPI )
 
+if ( (NOT MPI_C_FOUND) OR (NOT MPI_Fortran_FOUND) )
+  find_program (MY_MPI_EXEC NAMES mpirun mpiexec lamexec srun
+    PATHS "${CMAKE_SOURCE_DIR/prerequisites/installations/mpich/3.1.4}" "${CMAKE_SOURCE_DIR}/prerequisites/installations/mpich/*" ENV PATH
+    HINTS "${FTN_COMPILER_DIR}" "${C_COMPILER_DIR}"
+    PATH_SUFFIXES bin)
+  set ( MPI_HOME "${MPI_HOME}" "${MY_MPI_EXEC}" "${MY_MPI_EXEC}/.." )
+  find_package( MPI REQUIRED )
+endif()
+
+#--------------------------------------------------------
+# Make sure a simple "hello world" C mpi program compiles
+#--------------------------------------------------------
+set(OLD_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
+set(CMAKE_REQUIRED_FLAGS ${MPI_C_COMPILE_FLAGS} ${MPI_C_LINK_FLAGS})
+set(OLD_INCLUDES ${CMAKE_REQUIRED_INCLUDES})
+set(CMAKE_REQUIRED_INCLUDES ${MPI_C_INCLUDE_PATH})
+set(OLD_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES})
+set(CMAKE_REQUIRED_LIBRARIES ${MPI_C_LIBRARIES})
+include (CheckCSourceCompiles)
+CHECK_C_SOURCE_COMPILES("
+#include <mpi.h>
+#include <stdio.h>
+int main(int argc, char** argv) {
+  MPI_Init(NULL, NULL);
+  int world_size;
+  MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+  int world_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+  char processor_name[MPI_MAX_PROCESSOR_NAME];
+  int name_len;
+  MPI_Get_processor_name(processor_name, &name_len);
+  printf('Hello world from processor %s, rank %d out of %d processors',
+         processor_name, world_rank, world_size);
+  MPI_Finalize();
+}"
+MPI_C_COMPILES)
+set(CMAKE_REQUIRED_FLAGS ${OLD_REQUIRED_FLAGS})
+set(CMAKE_REQUIRED_INCLUDES ${OLD_INCLUDES})
+set(CMAKE_REQUIRED_LIBRARIES ${OLD_LIBRARIES})
+unset(OLD_REQUIRED_FLAGS)
+unset(OLD_INCLUDES)
+unset(OLD_LIBRARIES)
+
+if (NOT MPI_C_COMPILES)
+  message(FATAL_ERROR "MPI_C is missing! "
+    "Try setting MPI_C_COMPILER to the appropriate C compiler wrapper script and reconfigure. "
+    "i.e., `cmake -DMPI_C_COMPILER=/path/to/mpicc ..` or set it by editing the cache using "
+    "cmake-gui or ccmake."
+    )
+endif()
+
+#--------------------------------------------------------------
+# Make sure a simple "hello world" Fortran mpi program compiles
+# Try using mpi.mod first then fall back on includ 'mpif.h'
+#--------------------------------------------------------------
+set(OLD_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
+set(CMAKE_REQUIRED_FLAGS "-ffree-form" ${MPI_Fortran_COMPILE_FLAGS} ${MPI_Fortran_LINK_FLAGS})
+set(OLD_INCLUDES ${CMAKE_REQUIRED_INCLUDES})
+set(CMAKE_REQUIRED_INCLUDES ${MPI_Fortran_INCLUDE_PATH})
+set(OLD_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES})
+set(CMAKE_REQUIRED_LIBRARIES ${MPI_Fortran_LIBRARIES})
+include (CheckCSourceCompiles)
+CHECK_Fortran_SOURCE_COMPILES("
+program mpi_hello
+use mpi
+implicit none
+integer :: ierr, mpi_world_size, mpi_world_rank, res_len
+character*(MPI_MAX_PROCESSOR_NAME) :: proc
+call mpi_init(ierr)
+call mpi_comm_size(MPI_COMM_WORLD,mpi_world_size,ierr)
+call mpi_comm_rank(MPI_COMM_WORLD,mpi_world_rank,ierr)
+call mpi_get_processor_name(proc,res_len,ierr)
+write(*,*) 'Hello from processor ', trim(proc), ' rank ', mpi_world_rank, ' out of ', mpi_world_size, '.'
+call mpi_finalize(ierr)
+end program
+"
+MPI_Fortran_MODULE_COMPILES)
+set(CMAKE_REQUIRED_FLAGS ${OLD_REQUIRED_FLAGS})
+set(CMAKE_REQUIRED_INCLUDES ${OLD_INCLUDES})
+set(CMAKE_REQUIRED_LIBRARIES ${OLD_LIBRARIES})
+unset(OLD_REQUIRED_FLAGS)
+unset(OLD_INCLUDES)
+unset(OLD_LIBRARIES)
+
+#--------------------------------
+# If that failed try using mpif.h
+#--------------------------------
+set(OLD_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
+set(CMAKE_REQUIRED_FLAGS "-ffree-form" ${MPI_Fortran_COMPILE_FLAGS} ${MPI_Fortran_LINK_FLAGS})
+set(OLD_INCLUDES ${CMAKE_REQUIRED_INCLUDES})
+set(CMAKE_REQUIRED_INCLUDES ${MPI_Fortran_INCLUDE_PATH})
+set(OLD_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES})
+set(CMAKE_REQUIRED_LIBRARIES ${MPI_Fortran_LIBRARIES})
+include (CheckCSourceCompiles)
+CHECK_Fortran_SOURCE_COMPILES("
+program mpi_hello
+implicit none
+include 'mpif.h'
+integer :: ierr, mpi_world_size, mpi_world_rank, res_len
+character*(MPI_MAX_PROCESSOR_NAME) :: proc
+call mpi_init(ierr)
+call mpi_comm_size(MPI_COMM_WORLD,mpi_world_size,ierr)
+call mpi_comm_rank(MPI_COMM_WORLD,mpi_world_rank,ierr)
+call mpi_get_processor_name(proc,res_len,ierr)
+write(*,*) 'Hello from processor ', trim(proc), ' rank ', mpi_world_rank, ' out of ', mpi_world_size, '.'
+call mpi_finalize(ierr)
+end program
+"
+  MPI_Fortran_INCLUDE_COMPILES)
+set(CMAKE_REQUIRED_FLAGS ${OLD_REQUIRED_FLAGS})
+set(CMAKE_REQUIRED_INCLUDES ${OLD_INCLUDES})
+set(CMAKE_REQUIRED_LIBRARIES ${OLD_LIBRARIES})
+unset(OLD_REQUIRED_FLAGS)
+unset(OLD_INCLUDES)
+unset(OLD_LIBRARIES)
+
+if ( (NOT MPI_Fortran_MODULE_COMPILES) AND (NOT MPI_Fortran_INCLUDE_COMPILES) )
+  message ( WARNING "It appears that the Fortran MPI compiler is not working. "
+    "For OpenCoarrays Aware compilers, this may be irrelavent: "
+    "  The src/extensions/opencoarrays.F90 module will be disabled, but it is "
+    "  possible that the build will succeed, despite this fishy circumstance."
+    )
+endif()
+
+if ( MPI_Fortran_MODULE_COMPILES )
+  add_definitions(-DMPI_WORKING_MODULE)
+else()
+  message ( WARNING "It appears that MPI was built with a different Fortran compiler. "
+    "It is possible that this may cause unpredictable behavior. The build will continue "
+    "using `mpif.h` BUT please report any suspicious behavior to the OpenCoarrays "
+    "developers."
+    )
+endif()
+
+#----------------
+# Setup MPI flags
+#----------------
 set(CMAKE_C_COMPILE_FLAGS ${CMAKE_C_COMPILE_FLAGS} ${MPI_C_COMPILE_FLAGS})
 set(CMAKE_C_LINK_FLAGS ${CMAKE_C_LINK_FLAGS} ${MPI_C_LINK_FLAGS})
 set(CMAKE_Fortran_COMPILE_FLAGS ${CMAKE_Fortran_COMPILE_FLAGS} ${MPI_Fortran_COMPILE_FLAGS})

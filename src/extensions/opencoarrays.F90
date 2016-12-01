@@ -32,6 +32,10 @@ module opencoarrays
   use iso_c_binding, only : c_int,c_char,c_ptr,c_loc,c_double,c_int32_t,c_ptrdiff_t,c_sizeof,c_bool,c_funloc
   implicit none
 
+#ifndef MPI_WORKING_MODULE
+  include 'mpif.h'
+#endif
+
   private
   public :: co_reduce
   public :: co_broadcast
@@ -726,7 +730,9 @@ contains
 
   ! Return the image number (MPI rank + 1)
   function this_image()  result(image_num)
+#ifdef MPI_WORKING_MODULE
     use mpi, only : MPI_Comm_rank
+#endif
     integer(c_int) :: image_num,ierr
    !image_num = opencoarrays_this_image(unused)
     call MPI_Comm_rank(CAF_COMM_WORLD,image_num,ierr)
@@ -736,7 +742,9 @@ contains
 
   ! Return the total number of images
   function num_images()  result(num_images_)
+#ifdef MPI_WORKING_MODULE
     use mpi, only : MPI_Comm_size
+#endif
     integer(c_int) :: num_images_,ierr
    !num_images_ = opencoarrays_num_images(unused_coarray,unused_scalar)
     call MPI_Comm_size(CAF_COMM_WORLD,num_images_,ierr)
