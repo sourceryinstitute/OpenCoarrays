@@ -925,8 +925,6 @@ PREFIX (sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
             }
 
 	  array_offset_dst += (i / tot_ext) * dest->dim[rank-1]._stride;
-	  
-	  extent = (dest->dim[rank-1]._ubound - dest->dim[rank-1].lower_bound + 1);
           dst_offset = offset_s + array_offset_dst*GFC_DESCRIPTOR_SIZE (dest);
 
           ptrdiff_t array_offset_sr = 0;
@@ -946,7 +944,6 @@ PREFIX (sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
 		  tot_ext *= extent;
                 }
 
-	      /* extent = (src->dim[rank-1]._ubound - src->dim[rank-1].lower_bound + 1); */
               array_offset_sr += (i / tot_ext) * src->dim[rank-1]._stride;
               array_offset_sr *= GFC_DESCRIPTOR_SIZE (src);
             }
