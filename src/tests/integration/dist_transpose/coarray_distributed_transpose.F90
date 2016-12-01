@@ -41,6 +41,7 @@ module run_size
 #  else
      implicit none
      include 'mpif.h'
+#    define WALLTIME MPI_WTIME
 #  endif
 #else
   implicit none
