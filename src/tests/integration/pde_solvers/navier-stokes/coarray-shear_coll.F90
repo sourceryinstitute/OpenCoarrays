@@ -112,9 +112,17 @@ module run_size
     use iso_fortran_env, only : int64,real64 ! 64-bit integer and real kind parameters
     use constants_module, only : one         ! 64-bit unit to ensure argument kind match
 #ifndef HAVE_WALLTIME
-    use MPI, only : WALLTIME=>MPI_WTIME
+#  ifdef MPI_WORKING_MODULE
+     use MPI, only : WALLTIME=>MPI_WTIME
+     implicit none
+#  else
+     implicit none
+     include 'mpif.h'
+#    define WALLTIME MPI_WTIME
+#  endif
+#else
+  implicit none
 #endif
-    implicit none
         real, codimension[*] ::  viscos, shear, b11, b22, b33, b12, velmax
         integer(int64), codimension[*] ::  nx, ny, nz, nsteps, output_step
         integer(int64), codimension[*] :: my, mx, first_y, last_y, first_x, last_x

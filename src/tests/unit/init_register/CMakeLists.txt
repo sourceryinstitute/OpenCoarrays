@@ -1,4 +1,4 @@
-add_executable(initialize_mpi initialize_mpi.f90)
+add_executable(initialize_mpi initialize_mpi.F90)
 target_link_libraries(initialize_mpi OpenCoarrays)
 
 add_executable(register register.f90)
