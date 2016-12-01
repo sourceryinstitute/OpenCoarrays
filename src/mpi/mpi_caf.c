@@ -124,6 +124,20 @@ int (*foo_int32_t)(void *, void *);
 float (*foo_float)(void *, void *);
 double (*foo_double)(void *, void *);
 
+#ifdef CAF_MPI_LOCK_UNLOCK
+#define CAF_Win_lock(type, img, win) MPI_Win_lock (type, img, 0, win)
+#define CAF_Win_unlock(img, win) MPI_Win_unlock (img, win)
+#define CAF_Win_lock_all(win)
+#else //CAF_MPI_LOCK_UNLOCK
+#define CAF_Win_lock(type, img, win)
+#define CAF_Win_unlock(img, win) MPI_Win_flush (img, win)
+#if MPI_VERSION >= 3
+#define CAF_Win_lock_all(win) MPI_Win_lock_all (MPI_MODE_NOCHECK, win)
+#else
+#define CAF_Win_lock_all(win)
+#endif
+#endif //CAF_MPI_LOCK_UNLOCK
+
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 
 #if defined(NONBLOCKING_PUT) && !defined(CAF_MPI_LOCK_UNLOCK)
@@ -492,25 +506,142 @@ PREFIX (num_images)(int distance __attribute__ ((unused)),
 
 
 #ifdef GCC_GE_7
-#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
 void
-  _gfortran_caf_register (size_t size, caf_register_t type, caf_token_t *token,
-                gfc_descriptor_t *desc, int *stat, char *errmsg, int errmsg_len)
-#else
-void
-  PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
-                gfc_descriptor_t *desc, int *stat, char *errmsg, int errmsg_len)
-#endif
-#else
+PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
+                   gfc_descriptor_t *desc, int *stat, char *errmsg,
+		   int errmsg_len)
+{
+  /* int ierr; */
+  void *mem;
+  size_t actual_size;
+  int l_var=0, *init_array=NULL;
+
+  if (unlikely (caf_is_finalized))
+    goto error;
+
+  /* Start GASNET if not already started.  */
+  if (caf_num_images == 0)
+    PREFIX (init) (NULL, NULL);
+
+  if(type == CAF_REGTYPE_LOCK_STATIC || type == CAF_REGTYPE_LOCK_ALLOC ||
+     type == CAF_REGTYPE_CRITICAL || type == CAF_REGTYPE_EVENT_STATIC ||
+     type == CAF_REGTYPE_EVENT_ALLOC)
+    {
+      actual_size = size * sizeof(int);
+      l_var = 1;
+    }
+  else
+    actual_size = size;
+
+  mpi_caf_token_t *mpi_token;
+  MPI_Win *p;
+  if (type != CAF_REGTYPE_COARRAY_ALLOC_ALLOCATE_ONLY)
+    *token = malloc (sizeof (mpi_caf_token_t));
+
+  mpi_token = (mpi_caf_token_t *) *token;
+  p = TOKEN(mpi_token);
+
+  if (type == CAF_REGTYPE_COARRAY_ALLOC_ALLOCATE_ONLY
+      || type == CAF_REGTYPE_COARRAY_ALLOC
+      || type == CAF_REGTYPE_COARRAY_STATIC)
+    {
+      if (GFC_DESCRIPTOR_RANK (desc) == 0)
+	mpi_token->desc = NULL;
+      else
+	{
+	  int ierr;
+	  size_t desc_size = sizeof (gfc_descriptor_t) + /*GFC_DESCRIPTOR_RANK (desc)*/
+	      GFC_MAX_DIMENSIONS * sizeof (descriptor_dimension);
+	  mpi_token->desc = (MPI_Win *)malloc (sizeof (MPI_Win));
+	  ierr = MPI_Win_create (desc, desc_size, 1, mpi_info_same_size,
+				 CAF_COMM_WORLD, mpi_token->desc);
+	  CAF_Win_lock_all (*(mpi_token->desc));
+	}
+    }
+
+#if MPI_VERSION >= 3
+  if (type != CAF_REGTYPE_COARRAY_ALLOC_REGISTER_ONLY)
+    {
+      MPI_Win_allocate (actual_size, 1, MPI_INFO_NULL, CAF_COMM_WORLD, &mem, p);
+      CAF_Win_lock_all (*p);
+    }
+  else
+    mem = NULL;
+#else // MPI_VERSION
+  MPI_Alloc_mem(actual_size, MPI_INFO_NULL, &mem);
+  MPI_Win_create(mem, actual_size, 1, MPI_INFO_NULL, CAF_COMM_WORLD, p);
+#endif // MPI_VERSION
+
+  if(l_var)
+    {
+      init_array = (int *)calloc(size, sizeof(int));
+      CAF_Win_lock (MPI_LOCK_EXCLUSIVE, caf_this_image - 1, *p);
+      MPI_Put (init_array, size, MPI_INT, caf_this_image-1,
+                      0, size, MPI_INT, *p);
+      CAF_Win_unlock (caf_this_image - 1, *p);
+      free(init_array);
+    }
+
+  if (type != CAF_REGTYPE_COARRAY_ALLOC_REGISTER_ONLY)
+    {
+//      PREFIX(sync_all) (NULL,NULL,0);
+
+      caf_static_t *tmp = malloc (sizeof (caf_static_t));
+      tmp->prev  = caf_tot;
+      tmp->token = *token;
+      caf_tot = tmp;
+    }
+
+  if (type == CAF_REGTYPE_COARRAY_STATIC)
+    {
+      caf_static_t *tmp = malloc (sizeof (caf_static_t));
+      tmp->prev  = caf_static_list;
+      tmp->token = *token;
+      caf_static_list = tmp;
+    }
+
+  if (stat)
+    *stat = 0;
+
+  /* The descriptor will be initialized only after the call to register.  */
+  mpi_token->local_memptr = mem;
+  desc->base_addr = mem;
+  return;
+
+error:
+  {
+    char *msg;
+
+    if (caf_is_finalized)
+      msg = "Failed to allocate coarray - there are stopped images";
+    else
+      msg = "Failed to allocate coarray";
+
+    if (stat)
+      {
+        *stat = caf_is_finalized ? STAT_STOPPED_IMAGE : 1;
+        if (errmsg_len > 0)
+          {
+            int len = ((int) strlen (msg) > errmsg_len) ? errmsg_len
+                                                        : (int) strlen (msg);
+            memcpy (errmsg, msg, len);
+            if (errmsg_len > len)
+              memset (&errmsg[len], ' ', errmsg_len-len);
+          }
+      }
+    else
+      caf_runtime_error (msg);
+  }
+}
+#else // GCC_GE_7
 #ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
 void *
   _gfortran_caf_register (size_t size, caf_register_t type, caf_token_t *token,
-                int *stat, char *errmsg, int errmsg_len)
+                          int *stat, char *errmsg, int errmsg_len)
 #else
 void *
   PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
-                int *stat, char *errmsg, int errmsg_len)
-#endif
+                     int *stat, char *errmsg, int errmsg_len)
 #endif
 {
   /* int ierr; */
@@ -539,36 +670,12 @@ void *
   else
     actual_size = size;
 
-#ifdef GCC_GE_7
-  *token = malloc (sizeof (mpi_caf_token_t));
-  mpi_caf_token_t *mpi_token = (mpi_caf_token_t *) *token;
-  MPI_Win *p = TOKEN(mpi_token);
-  if (GFC_DESCRIPTOR_RANK (desc) == 0)
-    mpi_token->desc = NULL;
-  else
-    {
-      int ierr;
-      size_t desc_size = sizeof (gfc_descriptor_t) + /*GFC_DESCRIPTOR_RANK (desc)*/
-	  GFC_MAX_DIMENSIONS * sizeof (descriptor_dimension);
-      mpi_token->desc = (MPI_Win *)malloc (sizeof (MPI_Win));
-      ierr = MPI_Win_create (desc, desc_size, 1, mpi_info_same_size,
-		             CAF_COMM_WORLD, mpi_token->desc);
-#if MPI_VERSION >= 3 && !defined(CAF_MPI_LOCK_UNLOCK)
-      MPI_Win_lock_all(MPI_MODE_NOCHECK, *(mpi_token->desc));
-# endif
-    }
-#else
   /* Token contains only a list of pointers.  */
   *token = malloc (sizeof(MPI_Win));
   MPI_Win *p = *token;
-#endif
 
 #if MPI_VERSION >= 3
-#ifdef GCC_GE_7
-  MPI_Win_allocate(actual_size, 1, MPI_INFO_NULL, CAF_COMM_WORLD, &mem, p);
-#else
   MPI_Win_allocate(actual_size, 1, mpi_info_same_size, CAF_COMM_WORLD, &mem, p);
-#endif
 # ifndef CAF_MPI_LOCK_UNLOCK
   MPI_Win_lock_all(MPI_MODE_NOCHECK, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
@@ -602,7 +709,7 @@ void *
 
   if (type == CAF_REGTYPE_COARRAY_STATIC)
     {
-      tmp = malloc (sizeof (caf_static_t));
+      caf_static_t *tmp = malloc (sizeof (caf_static_t));
       tmp->prev  = caf_static_list;
       tmp->token = *token;
       caf_static_list = tmp;
@@ -611,14 +718,7 @@ void *
   if (stat)
     *stat = 0;
 
-#ifdef GCC_GE_7
-  /* The descriptor will be initialized only after the call to register.  */
-  mpi_token->local_memptr = mem;
-  desc->base_addr = mem;
-  return;
-#else
   return mem;
-#endif
 
 error:
   {
@@ -644,14 +744,19 @@ error:
     else
       caf_runtime_error (msg);
   }
-#ifndef GCC_GE_7
   return NULL;
-#endif
 }
+#endif
 
 
+#ifdef GCC_GE_7
+void
+PREFIX (deregister) (caf_token_t *token, int type, int *stat, char *errmsg,
+		     int errmsg_len)
+#else
 void
 PREFIX (deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len)
+#endif
 {
   /* int ierr; */
 
@@ -691,17 +796,24 @@ PREFIX (deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len
 # ifndef CAF_MPI_LOCK_UNLOCK
           MPI_Win_unlock_all(*p);
 # endif // CAF_MPI_LOCK_UNLOCK
-          MPI_Win_free(p);
 #ifdef GCC_GE_7
-	  if ((*(mpi_caf_token_t **)token)->desc)
+	  mpi_caf_token_t *mpi_token = *(mpi_caf_token_t **)token;
+	  if (mpi_token->local_memptr)
 	    {
-	      mpi_caf_token_t *mpi_token = *(mpi_caf_token_t **)token;
+	      MPI_Win_free(p);
+	      mpi_token->local_memptr = NULL;
+	    }
+	  if ((*(mpi_caf_token_t **)token)->desc
+	      && type != CAF_DEREGTYPE_COARRAY_DEALLOCATE_ONLY)
+	    {
 # ifndef CAF_MPI_LOCK_UNLOCK
 	      MPI_Win_unlock_all(*(mpi_token->desc));
 # endif // CAF_MPI_LOCK_UNLOCK
 	      MPI_Win_free (mpi_token->desc);
 	      free (mpi_token->desc);
 	    }
+#else
+          MPI_Win_free(p);
 #endif
 
           if(prev)
@@ -1963,15 +2075,6 @@ error:
 }
 
 
-#ifdef CAF_MPI_LOCK_UNLOCK
-#define CAF_Win_lock(img, win) MPI_Win_lock (MPI_LOCK_SHARED, img, 0, win)
-#define CAF_Win_unlock(img, win) MPI_Win_unlock (img, win)
-#else //CAF_MPI_LOCK_UNLOCK
-#define CAF_Win_lock(img, win)
-#define CAF_Win_unlock(img, win) MPI_Win_flush (img, win)
-#endif //CAF_MPI_LOCK_UNLOCK
-
-
 static void
 copy_data (void *ds, mpi_caf_token_t *token, ptrdiff_t offset, int dst_type,
 	   int src_type, int dst_kind, int src_kind, size_t dst_size,
@@ -1981,7 +2084,7 @@ copy_data (void *ds, mpi_caf_token_t *token, ptrdiff_t offset, int dst_type,
   if (dst_type == src_type && dst_kind == src_kind)
     {
       size_t sz = (dst_size > src_size ? src_size : dst_size) * num;
-      CAF_Win_lock (image_index, token->memptr);
+      CAF_Win_lock (MPI_LOCK_SHARED, image_index, token->memptr);
       MPI_Get (ds, sz, MPI_BYTE, image_index, offset, sz, MPI_BYTE,
 	       token->memptr);
       CAF_Win_unlock (image_index, token->memptr);
@@ -1999,7 +2102,7 @@ copy_data (void *ds, mpi_caf_token_t *token, ptrdiff_t offset, int dst_type,
     {
       /* Get the required amount of memory on the stack.  */
       void *srh = alloca (src_size);
-      CAF_Win_lock (image_index, token->memptr);
+      CAF_Win_lock (MPI_LOCK_SHARED, image_index, token->memptr);
       MPI_Get (srh, src_size, MPI_BYTE, image_index, offset,
 	       src_size, MPI_BYTE, token->memptr);
       CAF_Win_unlock (image_index, token->memptr);
@@ -2009,7 +2112,7 @@ copy_data (void *ds, mpi_caf_token_t *token, ptrdiff_t offset, int dst_type,
     {
       /* Get the required amount of memory on the stack.  */
       void *srh = alloca (src_size);
-      CAF_Win_lock (image_index, token->memptr);
+      CAF_Win_lock (MPI_LOCK_SHARED, image_index, token->memptr);
       MPI_Get (srh, src_size, MPI_BYTE, image_index, offset,
 	       src_size, MPI_BYTE, token->memptr);
       CAF_Win_unlock (image_index, token->memptr);
@@ -2019,7 +2122,7 @@ copy_data (void *ds, mpi_caf_token_t *token, ptrdiff_t offset, int dst_type,
     {
       /* Get the required amount of memory on the stack.  */
       void *srh = alloca (src_size * num);
-      CAF_Win_lock (image_index, token->memptr);
+      CAF_Win_lock (MPI_LOCK_SHARED, image_index, token->memptr);
       MPI_Get (srh, src_size * num, MPI_BYTE, image_index, offset,
 	       src_size * num, MPI_BYTE, token->memptr);
       CAF_Win_unlock (image_index, token->memptr);
@@ -2052,7 +2155,7 @@ copy_data (void *ds, mpi_caf_token_t *token, ptrdiff_t offset, int dst_type,
       size_t desc_size = sizeof (gfc_descriptor_t) + GFC_MAX_DIMENSIONS /* rank */ \
 	* sizeof (descriptor_dimension); \
       int err; \
-      CAF_Win_lock (image_index, *(mpi_token->desc)); \
+      CAF_Win_lock (MPI_LOCK_SHARED, image_index, *(mpi_token->desc)); \
       MPI_Get (&src_desc_data, desc_size, MPI_BYTE, \
 	       image_index, 0, desc_size, MPI_BYTE, *(mpi_token->desc)); \
       err = CAF_Win_unlock (image_index, *(mpi_token->desc)); \
@@ -2866,6 +2969,14 @@ PREFIX(sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
                             bool may_require_tmp, int *dst_stat, int *src_stat)
 {
   fprintf (stderr, "COARRAY ERROR: caf_sendget_by_ref() not implemented yet ");
+  error_stop (1);
+}
+
+
+int
+PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
+{
+  fprintf (stderr, "COARRAY ERROR: caf_is_present() not implemented yet ");
   error_stop (1);
 }
 #endif
