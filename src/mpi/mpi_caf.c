@@ -760,8 +760,6 @@ PREFIX (deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len
 {
   /* int ierr; */
 
-  fprintf (stderr, "%d: deregistering token = %p, type = %d.\n", caf_this_image,
-	   *token, type);
   if (unlikely (caf_is_finalized))
     {
       const char msg[] = "Failed to deallocate coarray - "
