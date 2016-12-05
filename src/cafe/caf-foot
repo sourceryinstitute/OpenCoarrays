@@ -1,0 +1,88 @@
+# shellcheck shell=bash disable=SC2148
+cmd=$(basename "$0")
+
+usage()
+{
+    echo ""
+    echo " $cmd - Coarray Fortran (CAF)"
+    echo ""
+    echo " Usage:"
+    echo "    $cmd <caf-source-file>"
+    echo "    or"
+    echo "    $cmd [option] ..."
+    echo ""
+    echo " Options:"
+    echo "   --help, -h               Show this help message"
+    echo "   --version, -v, -V        Report version and copyright information"
+    echo ""
+    echo " Examples:"
+    echo ""
+    echo "   $cmd foo.f90"
+    echo "   $cmd -v"
+    echo "   $cmd --help"
+    echo ""
+    echo "Given a Fortran 2015 CAF source file, $cmd produces a semantically equivalent"
+    echo "program expressed in a subset of Fortran that is supported most recently released"
+    echo "compilers.  The transformed source is written to a file named with a 'cafe-' prefix"
+    echo "to connote 'coarray Fortran emulated' or 'coarray Fortran extended.' $cmd "
+    echo "supports CAF programming with non-CAF compilers and extends the capabilities of"
+    echo "CAF compilers."
+}
+
+# Print usage information if caf is invoked without arguments
+if [ $# == 0 ]; then
+  usage | less
+  exit 10
+fi
+
+# Default to "mpif90" Fortran compiler if environment variable CAFC has zero length:
+CAFC="${CAFC:-mpif90}"
+
+# TODO -- improve the syntax of the "set" command below to accepted an unlimited number of arguments
+max_arguments=100
+
+if [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
+    echo ""
+    echo "OpenCoarrays Coarray Fortran Compiler Wrapper (caf version $caf_version)"
+    echo "Copyright (C) 2015-2016 Sourcery, Inc."
+    echo ""
+    echo "OpenCoarrays comes with NO WARRANTY, to the extent permitted by law."
+    echo "You may redistribute copies of OpenCoarrays under the terms of the"
+    echo "BSD 3-Clause License.  For more information about these matters, see"
+    echo "the file named LICENSE."
+    echo ""
+elif [[ $1 == '-w' || $1 == '--wrapping' || $1 == '--wraps' ]]; then
+  echo "caf wraps CAFC=$CAFC"
+elif [[ $1 == '-h' || $1 == '--help' ]]; then
+  # Print usage information
+  usage | less
+  exit 20
+elif [[ "${transform_source}" = "true" ]]; then
+  # Verify that a file with .f90, .F90, .f, or .F extension is the first argument:
+  extension=$(echo "$1" | cut -f2 -d'.')
+
+  if [[ $extension == 'f90' || $extension == 'F90' || $extension == 'f' || $extension == 'F' ]]; then
+
+    # Translate CAF syntax to invocations of procedures in opencoarrays.f90:
+
+    "${strategoxt_dir}"/sglri -p "${transpiler_dir}"/Fortran.tbl -i "${1}" \
+      | "${transpiler_dir}"/ofp2fast \
+      | "${transpiler_dir}"/fast-to-ocaf \
+      | "${transpiler_dir}"/fast2pp \
+      | "${strategoxt_dir}"/ast2text -p "${transpiler_dir}"/Fortran.pp > "cafe-${1}"
+
+
+    # Replace command-line argument 1 with name of transformed source file
+    cafe_source="cafe-${1}"
+    set -- "${cafe_source}" "${@:2:$max_arguments}"
+
+  else
+    # Print usage information if unknown source file extension encountered:
+    usage | less
+    exit 1
+  fi
+fi
+
+# Invoke the supporting compiler
+# shellcheck disable=SC2086
+$CAFC "$@" -L "$caf_lib_dir" $link_args

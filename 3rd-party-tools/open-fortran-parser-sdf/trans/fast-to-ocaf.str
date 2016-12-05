@@ -1,0 +1,484 @@
+/*
+ * fast-to-ocaf.str
+ *
+ * -- This file contains Stratego/XT rules to transform coarray Fortran 2015
+ *    source files to Fortran 2003 with library calls.
+ *
+ * OpenCoarrays is distributed under the OSI-approved BSD 3-clause License:
+ * Copyright (c) 2016, Paradox PTF
+ * Copyright (c) 2016, Sourcery, Inc.
+ * Copyright (c) 2016, Sourcery Institute
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this
+ *    list of conditions and the following disclaimer in the documentation and/or
+ *    other materials provided with the distribution.
+ * 3. Neither the names of the copyright holders nor the names of their contributors
+ *    may be used to endorse or promote products derived from this software without
+ *    specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+// StrategoXT module
+module fast-to-ocaf
+
+
+imports
+   libstratego-lib // Standard StrategoXT library
+   FAST            // Transformations to produce the Fortran abstract syntax tree 
+   ofp-simplify    // Transformations to simply the parse tree before FAST transformations
+
+signature
+  constructors     // Declaring annotated terms ("aterms")
+
+  ALLOCATED : ALLOCATED
+  INTERNAL  : INTERNAL
+
+
+strategies //=================START OF STRATEGIES============================
+
+  io-fast-to-ocaf =
+    io-wrap(fast-to-ocaf)
+
+// set of transformations (st: symbol table, lt: local table)
+  fast-to-ocaf =
+{ st,lt
+        :  ?Program(units)
+        ;  new-hashtable => st
+        ;  new-hashtable => lt
+        ;  !Program(units)
+        ;  topdown(try(fast-get-symbols(|st)))
+        ;  topdown(try(ocaf-get-symbols(|st,lt)))
+        ;  topdown(try(remove-caf-type-decls(|lt)))
+        ;  topdown(try(replace-caf-allocs(|lt)))
+        ;  topdown(try(add-caf-decls(|lt)))
+        ;  bottomup(try(ocaf-init-finalize(|st,lt)))
+//        ;  bottomup(try(ocaf-replace-image-selector(|st,lt)))
+        ;  topdown(try(fast-flatten-scope-parts))
+        ;  bottomup(try(ocaf-lower-ast(|lt)))
+}
+
+
+rules //========================START OF RULES===============================
+
+
+// Add new declaration for emulated coarrays
+//
+add-caf-decls(|ct) =
+     ? Scope(decls,execs,funcs)
+  ;  <fast-build-use-stmt> "opencoarrays"
+  ;  ? use_stmt                                            // bind current term to use_stmt
+  ;  <map(build-caf-decls)> <hashtable-getlist> ct
+  ;  ! Scope(<concat>[[use_stmt],decls,<id>],execs,funcs)
+
+// Add "use opencoarrays" and caf_init and caf_finalize calls
+//
+ocaf-init-finalize(|st,ct) =
+     ? Scope(decls,execs,funcs)
+  ;  ? Scope(decls2, execs2, funcs2)
+  ;  <concat> [[CallStmt(no-label(), "caf_init", [])], execs2]
+  ;  <concat> [<id>, [CallStmt(no-label(), "caf_finalize", [])]]
+  ;  ! Scope(decls2, <id> ,funcs2)
+
+
+// FAST strategies (MOVE TO fortran/trans)
+// ---------------
+
+fast-var-name =
+     ?VarRef(name)        ;  !name
+ <+  ?VarDef(name)        ;  !name
+
+// Remove excess list elements inside of a Scope
+//   - occurs when a single statement is replaced by a list of statements
+fast-flatten-scope-parts =
+     ?Scope(decls,execs,funcs)
+  ;  !Scope(<flatten-list>decls, <flatten-list>execs, <flatten-list>funcs)
+
+fast-allocation-object =
+     ?Allocation(object,_,_)
+  ;  <fast-var-name> object
+
+// assume literals for now, otherwise get const from symbol table
+// TODO - use choice to use lb info
+fast-build-allocation-size(|st,obj) =
+     ?AllocateShapeSpec(no-lower-bound(),ub)
+  ;  !ub
+
+fast-dim-size =
+     ?Range(lb,ub)
+  ;  !Parens(Minus(ub,Parens(lb)))
+  ;  !Parens(Plus(<id>,"1"))
+
+// Size of a type in bytes
+// TODO - add other intrinsic types and support for kinds
+// TODO - could replace kind with size in bytes!!!!
+fast-type-size =
+     ?REAL()              ;  !"4"
+ <+  ?INTEGER()           ;  !"4"
+
+fast-mult-op =
+     ?(l,r)
+  ;  !Mult(l,r)
+
+fast-allocation-size(|st) =
+     ?symbol
+  ;  <hashtable-get(|symbol)> st
+  ;  ?(type,attrs)
+  ;  <fetch-elem(?Dimension(shape))> attrs
+  ;  <map(fast-dim-size)> shape
+  ;  <foldr(!"1",fast-mult-op)> <id>
+  ;  <fast-mult-op> (<fast-type-size>type,<id>)
+
+fast-fix-no-lower-bound =
+     ?no-lower-bound()
+  ;  !"1"
+
+fast-var-ident
+  :  Var(ident,_,_) -> ident
+
+fast-var-type =
+  ?  Var(_,type,_)
+  ;  ! type
+
+fast-subscript-start =
+     ? Triplet(start,_,_)   ;  ! start
+
+fast-subscript-stop =
+     ? Triplet(_,stop,_)    ;  ! stop
+ <+  ? stop                 ;  ! stop
+
+fast-subscript-stride =
+     ? Triplet(_,_,stride)  ;  ! stride
+
+fast-update-allocation-dim =
+     ?(Range(lb,ub),Range(_,_))
+  ;  !Range(lb,ub)
+
+fast-update-allocation-codim =
+     ?(Range(lb,ub),Range(_,_))
+  ;  !Range(lb,ub)
+
+fast-arraytype-rank =
+     ? ArrayType(_,ArraySpec(shape),_)
+  ;  <length> shape
+
+fast-arraytype-type =
+     ? ArrayType(type,_,_)
+  ;  ! type
+
+fast-arraytype-shape =
+     ? ArrayType(_,ArraySpec(shape),_)
+  ;  ! shape
+
+fast-arraytype-coshape =
+     ? ArrayType(_,_,CoarraySpec(coshape))
+  ;  ! coshape
+
+fast-arraytype-lower-bound =
+     ? Range(lb,_)
+  ;  ! lb
+
+fast-arraytype-upper-bound =
+     ? Range(_,ub)
+  ;  ! ub
+
+fast-arraytype-lower-bounds = <map(fast-arraytype-lower-bound)> <fast-arraytype-shape>
+fast-arraytype-upper-bounds = <map(fast-arraytype-upper-bound)> <fast-arraytype-shape>
+
+// Update the symbol table with information from an allocate statement
+// TODO - perform type and range checking
+// TODO - transfer Dimension and Codimension info to symbol while building symbol table
+//          , then Dimension and Codimension in attributes won't matter (remove them?)
+//          , then also symbol type should always be ArrayType
+// TODO - make this work if no codimension
+// DEAD CODE
+//  ;  <fetch-elem(?Dimension(decl_shape))> decl_attrs
+//  ;  <fetch-elem(?Codimension(decl_coshape))> decl_attrs
+//  ;  <zip(fast-update-allocation-dim)>   (alloc_shape,  decl_shape)   =>   shape
+//  ;  <zip(fast-update-allocation-codim)> (alloc_coshape,decl_coshape) => coshape
+//  ;  <filter( try(?Dimension(_)   ; !Dimension(shape))     )> decl_attrs
+//  ;  <filter( try(?Codimension(_) ; !Codimension(coshape)) )> <id>
+//
+fast-update-allocation-symbol(|st) =
+{attrs
+  :  topdown(try(fast-fix-no-lower-bound))
+  ;  ? Allocation(VarRef(obj),alloc_shape,alloc_coshape)
+  ;  <hashtable-get(|obj)> st
+  ;  ? (ArrayType(type,ArraySpec(decl_shape),CoarraySpec(decl_coshape)),decl_attrs)
+  ;  <elem> (ALLOCATABLE(),decl_attrs)   // ensure this symbol is allocatable
+  ;  <filter( try(?ALLOCATABLE()  ; !ALLOCATED()) )> <id> => attrs
+  ;  <hashtable-put(|obj,(ArrayType(type,ArraySpec(alloc_shape),CoarraySpec(alloc_coshape)),attrs))> st
+}
+
+fast-build-use-stmt =
+     ?module_name
+  ;  !UseStmt(no-label(), no-module-nature(), module_name, [])
+
+build-caf-decls =
+    ?(object_name,(ArrayType(type,dim,codim),attrs))
+  ; ! [ TypeDeclarationStmt(no-label()
+                          , DerivedType("coarray", [])
+                          , []
+                          , [Var(<conc-strings>(object_name,"_coarray_"),DerivedType("coarray",[]),no-init())]
+        ),
+        TypeDeclarationStmt(  
+            no-label()
+          , type
+          , [POINTER()]
+          , [ Var(object_name,ArrayType(type,dim,[]),PointerInit(FunctionReference("null", []))) ]
+        )
+      ]
+
+fast-build-type-decl(|type,attrs) =
+     ?object_name
+  ;  !TypeDeclarationStmt(  no-label()
+                          , type
+                          , attrs
+                          , [Var(object_name,type,no-init())]
+                         )
+
+// Utility strategies
+// ------------------
+
+cl-wrap-name =
+     is-string
+  ;  <conc-strings>("cl_", <id>, "_")
+ <+  ?VarRef(name)
+  ;  debug(!"CL_WRAP_NAME: ERROR isVarRef ------------------------------------------------")
+  ;  <conc-strings>("cl_", name, "_")
+
+cl-wrap-var =
+     ?VarRef(name)
+  ;  <conc-strings>("cl_", name, "_")
+ <+  ?VarDef(name)
+  ;  <conc-strings>("cl_", name, "_")
+ <+  is-string
+  ;  debug(!"CL_WRAP_VAR: ERROR is-string ------------------------------------------------")
+  ;  <conc-strings>("cl_", <id>, "_")
+
+// add CAF symbols to caf symbol table
+//
+ocaf-add-caf-symbol(|st,ct) =
+     ? Var(name,ArrayType(type,dims,  []  ),init)    /* not a coarray so don't add symbol */
+ <+  ? Var(name,ArrayType(type,dims,codims),init)
+  ;  <hashtable-put(|name, <hashtable-get(|name)> st)> ct /* get value from fast symbols */
+  ;  ! Var(name,ArrayType(type,dims,codims),init)
+
+// Choose between the declared type and the type given to a Var term.
+//    If the variable is an array it will be an ArrayType term rather than the declared type.
+// TODO - check to see that the var_type matches the decl_type
+fast-choose-type(|decl_type) =
+     ? ArrayType(var_type,dims,codims)
+ <+  ! decl_type
+
+// Add a symbol to the symbol table
+fast-add-symbol(|st,type,attrs) =
+     ? var
+  ;  <hashtable-put(|<fast-var-ident>var,(<fast-choose-type(|type)><fast-var-type>var,attrs))> st
+
+// Add a symbol to the OCAF symbol table
+ct-add-symbol(|ct,type,attrs) =
+     ?symbol
+  ;  <hashtable-put(|symbol,(<cl-wrap-name>symbol,type,attrs))> ct
+
+
+// Build symbol table
+// ------------------
+
+// Add declared variables to symbol table
+fast-get-symbols(|st) =
+     ? TypeDeclarationStmt(label,type,attrs,vars)
+  ;  <map(fast-add-symbol(|st,type,attrs))> vars
+  ;  ! TypeDeclarationStmt(label,type,attrs,vars)
+
+// Update symbol table with information from allocate statements
+fast-get-symbols(|st) =
+     ?AllocateStmt(label,type,alloc_list,options)
+  ;  <map(fast-update-allocation-symbol(|st))> alloc_list
+  ;  !AllocateStmt(label,type,alloc_list,options)
+
+
+// Get symbols specifically relevant to OCAF
+// -----------------------------------------
+
+// apply (map) ocaf-add-caf-symbol strategy to vars list
+// ct = coarray fortran table
+ocaf-get-symbols(|st,ct) =
+     ?TypeDeclarationStmt(label,type,attrs,vars)
+  ;  <map(ocaf-add-caf-symbol(|st,ct))> vars
+  ;  !TypeDeclarationStmt(label,type,attrs,vars)
+
+
+// Add OpenCoarray calls to the AST
+// --------------------------------
+
+// Replace assignment statements with memory transfer with read/writeBuffer
+//
+ocaf-add-calls(|st,ct) =
+     ?AssignmentStmt(label,PartRef(var,no-section-subscripts(),[VarRef(device)]),VarRef(obj))
+  ;  <fast-allocation-size(|st)> var
+  ;  ![  AssignmentStmt(no-label(),VarDef("cl_size__"),<id>)
+       , AssignmentStmt(no-label(),VarDef("cl_status__")
+         , FunctionReference("writeBuffer"
+            ,[<cl-wrap-name>var,<conc-strings>("C_LOC(",obj,")"),VarRef("cl_size__")]))
+      ]
+ <+  ?AssignmentStmt(label,VarDef(var),PartRef(obj,no-section-subscripts(),[VarRef(device)]))
+  ;  <fast-allocation-size(|st)> obj
+  ;  ![  AssignmentStmt(no-label(),VarDef("cl_size__"),<id>)
+       , AssignmentStmt(no-label(),VarDef("cl_status__")
+         , FunctionReference("readBuffer"
+            ,[<cl-wrap-name>obj,<conc-strings>("C_LOC(",var,")"),VarRef("cl_size__")]))
+      ]
+
+
+// Lower CAF components to OCAF
+// ----------------------------
+
+// drop symbols that are in the caf symbol table
+//
+remove-caf-decl(|st) =
+     ? Var(name,_,_)
+  ;  <hashtable-get(|name)> st
+  ;  ! [ ]
+ <+ id
+
+// drop allocations of symbols that are in the caf symbol table
+//
+remove-caf-alloc(|st) =
+     ? Allocation(VarRef(obj),_,_)
+  ;  <hashtable-get(|obj)> st
+  ;  ! [ ]
+ <+ id
+
+// return the OCAF data type
+//
+ocaf-data-type =
+     ? REAL()        ;  ! "BT_REAL"
+ <+  ? INTEGER()     ;  ! "BT_INTEGER"
+
+// remove coarray variables from all type declarations
+//
+remove-caf-type-decls(|lt) =
+     ? TypeDeclarationStmt(label,type,attrs,vars)
+  ;  ! TypeDeclarationStmt(label,type,attrs,<flatten-list><map(remove-caf-decl(|lt))>vars)
+
+// replace all allocations of coarray variables with a call to caf_allocate()
+//
+replace-caf-allocs(|lt) =
+     ? Scope(decls,execs,funcs)
+  ;  ! Scope(decls, <flatten-list><map(replace-and-build-caf-alloc(|lt))> execs, funcs)
+
+// replace an allocation of coarray variable with a call to caf_allocate()
+//
+replace-and-build-caf-alloc(|lt) =
+     ? AllocateStmt(label,type,alloc_list,options)
+  ;  ! AllocateStmt(label,type,<flatten-list><map(remove-caf-alloc(|lt))>alloc_list,options)
+  ;  <flatten-list> [<id>, <map(build-caf-alloc(|lt))> alloc_list]
+ <+  id
+
+// build a call to caf_allocate for allocation of symbols in the caf symbol table
+//
+build-caf-alloc(|lt) =
+     ? Allocation(VarRef(obj),_,_)
+  ;  <hashtable-get(|obj)> lt          /* fail if obj not in the caf symbol table */
+  ;  ? (arraytype,_)
+  ;  ! CallStmt(
+            no-label()
+          , "caf_allocate"
+          , [ VarRef(obj)
+            , <conc-strings>(obj,"_coarray_")
+            , VarRef(<ocaf-data-type> <fast-arraytype-type> arraytype)
+            , Arg("DIM", IntVal(<fast-arraytype-rank>arraytype))
+            , ArrayConstructor(AcSpec(no-type-spec(),<fast-arraytype-lower-bounds>arraytype))
+            , ArrayConstructor(AcSpec(no-type-spec(),<fast-arraytype-upper-bounds>arraytype))
+            ]
+          )
+ <+ ! [ ]
+
+// Replace "sync images" with a call to sync_images()
+//
+ocaf-lower-ast(|lt) =
+     ? SyncAllStmt(label, sync_stat_list)
+  ;  ! CallStmt(label, "sync_all", sync_stat_list)
+
+// Replace "sync all" with a call to sync_all()
+//
+ocaf-lower-ast(|lt) =
+     ? SyncImagesStmt(label, image_set, sync_stat_list)
+  ;  ! CallStmt(label, "sync_images", <concat>[[image_set],sync_stat_list] )
+
+// Replace "error stop" with a call to error_stop()
+//
+ocaf-lower-ast(|lt) =
+     ? ErrorStopStmt(label, code)
+  ;  ! CallStmt(label, "error_stop", [code])
+
+// Replace an image selector with a call to caf_get()
+//
+ocaf-lower-ast(|lt) =
+     ? PartRef(_,_,no-image-selector())
+ <+  ? PartRef(name,subscripts,cosubscripts)
+  ;  ! FunctionReference( "caf_get",
+         <flatten-list>
+             [ VarRef(<conc-strings>(name,"_coarray_")),
+               Arg("image",cosubscripts),
+               <ocaf-build-subscript-start>  subscripts,
+               <ocaf-build-subscript-stop>   subscripts,
+               <ocaf-build-subscript-stride> subscripts
+             ]
+          )
+
+ocaf-build-subscript-start =
+     ? subscripts
+  ;  <map(fast-subscript-start)> subscripts
+  ;  ! Arg("start", ArrayConstructor(AcSpec(no-type-spec(), <id>)))
+ <+  ! [ ]
+
+ocaf-build-subscript-stop =
+     ? subscripts
+  ;  <map(fast-subscript-stop)> subscripts
+  ;  ! Arg("stop", ArrayConstructor(AcSpec(no-type-spec(), <id>)))
+ <+  ! [ ]
+
+ocaf-build-subscript-stride =
+     ? subscripts
+  ;  <map(fast-subscript-stride)> subscripts
+  ;  ! Arg("stride", ArrayConstructor(AcSpec(no-type-spec(), <id>)))
+ <+  ! [ ]
+
+// Remove codimension from an array type declaration
+//
+caf-lower-ast =
+     ?Codimension(_)
+  ;  ![]
+
+// Remove coshape from an array type declaration
+//
+caf-lower-ast =
+     ? ArrayType(type, [], coshape)
+  ;  ! type
+ <+  ? ArrayType(type, shape, coshape)
+  ;  ! ArrayType(type, shape, [])
+
+caf-lower-ast =
+     ?EntityDecl(name,array_spec,coarray_spec,char_length,init)
+  ;  !EntityDecl(name,array_spec,          [],char_length,init)
+
+caf-lower-ast =
+     ?Allocation(var,shape,coshape)
+  ;  !Allocation(var,shape,     [])

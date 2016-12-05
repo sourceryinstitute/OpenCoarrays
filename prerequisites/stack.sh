@@ -198,13 +198,8 @@ function stack_new
         return 1
     fi
 
-    if [[ $(uname) == "Darwin" ]]; then
-      eval "declare -ag _stack_$1" >& /dev/null || true
-      eval "declare -ig _stack_$1_i" >& /dev/null || true
-    else
-      eval "declare -ag _stack_$1" >& /dev/null
-      eval "declare -ig _stack_$1_i" >& /dev/null
-    fi
+    eval "declare -ag _stack_$1" >& /dev/null || true
+    eval "declare -ig _stack_$1_i" >& /dev/null || true
 
     variableName="_stack_$1_i"
     variableVal="0"

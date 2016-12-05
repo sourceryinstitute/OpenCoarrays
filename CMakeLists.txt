@@ -7,7 +7,7 @@ set ( CMAKE_BUILD_TYPE "Release"
 set_property ( CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${CMAKE_CONFIGURATION_TYPES} )
 
 #Name project and specify source languages
-project(opencoarrays VERSION 1.7.3 LANGUAGES C Fortran)
+project(opencoarrays VERSION 2.0.0 LANGUAGES C Fortran)
 
 #Print an error message on an attempt to build inside the source directory tree:
 if ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
@@ -32,11 +32,34 @@ endif()
 #Report untested Fortran compiler unless explicitly directed to build all examples.
 if ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "GNU" )
   set(gfortran_compiler true)
-  # add_definitions(-DPREFIX_NAME=_gfortran_caf_)
   set ( CMAKE_C_FLAGS_CODECOVERAGE "-fprofile-arcs -ftest-coverage -O0"
     CACHE STRING "Code coverage C compiler flags")
   set ( CMAKE_Fortran_FLAGS_CODECOVERAGE "-fprofile-arcs -ftest-coverage -O0"
     CACHE STRING "Code coverage C compiler flags")
+# add_definitions(-DPREFIX_NAME=_gfortran_caf_)
+elseif ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "Cray" )
+  set(cray_compiler true)
+  message(WARNING
+   "\n"
+   "Support for the detected compiler (${CMAKE_Fortran_COMPILER_ID}) is experimental."
+   "Please report any failures to opencoarrays@googlegroups.com"
+  )
+  add_definitions(-DEVENTS_ONLY)
+  add_definitions(-DCOMPILER_PROVIDES_MPI)
+elseif ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "PGI" )
+  set(portland_group_compiler true)
+  message(WARNING
+   "\n"
+   "Support for the detected compiler (${CMAKE_Fortran_COMPILER_ID}) is experimental. "
+   "Please report any failures to opencoarrays@googlegroups.com"
+  )
+  add_definitions(-DCOMPILER_LACKS_C_PTRDIFF_T)
+  add_definitions(-DCOMPILER_LACKS_SAVE_BIND_C)
+  add_definitions(-DCOMPILER_LACKS_ASSUMED_RANK)
+  add_definitions(-DCOMPILER_LACKS_DO_CONCURRENT)
+  add_definitions(-DCOMPILER_LACKS_C_SIZEOF_ASSUMED_RANK)
+  add_definitions(-DCMAKE_VERBOSE_MAKEFILE)
+  add_definitions(-DCOMPILER_SUPPORTS_CAF_INTRINSICS)
 else()
   message(WARNING
     "\n"
@@ -47,44 +70,55 @@ endif()
 
 if (NOT (CMAKE_VERSION VERSION_LESS 3.3.1))
   # Detect Fortran compiler version directly
-  if(gfortran_compiler AND (CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 5.0.0))
-    set(opencoarrays_aware_compiler true)
-    add_definitions(-DPREFIX_NAME=_gfortran_caf_)
-  else()
-    set(opencoarrays_aware_compiler false)
-    add_definitions(-DPREFIX_NAME=_caf_extensions_)
-  endif()
-  if(gfortran_compiler AND (CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 5.4))
-    # GCC patch to fix issue accepted for 5.4 release
-    # See https://github.com/sourceryinstitute/opencoarrays/issues/28 and
-    # https://groups.google.com/forum/#!msg/opencoarrays/RZOwwYTqG80/46S9eL696dgJ
-    message( STATUS "Disabling optimization flags due to GCC < 5.4 bug")
-    set(CMAKE_Fortran_FLAGS_RELEASE -O0
-      CACHE STRING "Flags used by the compiler during release builds." FORCE)
-    set(CMAKE_Fortran_FLAGS_RELWITHDEBINFO "-g -DNDEBUG -O0"
-      CACHE STRING "Flags used by the compiler during release builds with debug info" FORCE)
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O0")
+  if(gfortran_compiler)
+    if (CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 5.0)
+      set(gfortran_version_gt_5_0 true)
+    else()
+      set(gfortran_version_gt_5_0 false)
+      message( STATUS "Detected GCC < 5.1.0. Enabling CAFe source translations.")
+    endif()
+    if(CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 5.4)
+      set(gfortran_version_lt_5_4 true)
+      message( STATUS "Detected GCC < 5.4.0. Disabling compiler optimizations (-O0).")
+    else()
+      set(gfortran_version_lt_5_4 false)
+    endif()
   endif()
 else()
   # Use the C compiler version as a proxy for the Fortran compiler version (won't work with NAG)
-  if(gfortran_compiler AND (CMAKE_C_COMPILER_VERSION VERSION_GREATER 5.0.0))
-    set(opencoarrays_aware_compiler true)
-    add_definitions(-DPREFIX_NAME=_gfortran_caf_)
-  else()
-    set(opencoarrays_aware_compiler false)
-    add_definitions(-DPREFIX_NAME=_caf_extensions_)
+  if(gfortran_compiler)
+    if((CMAKE_C_COMPILER_VERSION VERSION_GREATER 5.0))
+      set(gfortran_version_gt_5_0 true)
+    else()
+      set(gfortran_version_gt_5_0 false)
+    endif()
+    if(CMAKE_C_COMPILER_VERSION VERSION_LESS 5.4)
+      set(gfortran_version_lt_5_4 true)
+    else()
+      set(gfortran_version_lt_5_4 false)
+    endif()
   endif()
-  if(gfortran_compiler AND (CMAKE_C_COMPILER_VERSION VERSION_LESS 5.4))
-    # GCC patch to fix issue accepted for the 5.4 release
-    # See https://github.com/sourceryinstitute/opencoarrays/issues/28 and
-    # https://groups.google.com/forum/#!msg/opencoarrays/RZOwwYTqG80/46S9eL696dgJ
-    message( STATUS "Disabling optimization flags due to GCC < 5.4 bug")
-    set(CMAKE_Fortran_FLAGS_RELEASE -O0
-      CACHE STRING "Flags used by the compiler during release builds." FORCE)
-    set(CMAKE_Fortran_FLAGS_RELWITHDEBINFO "-g -DNDEBUG -O0"
-      CACHE STRING "Flags used by the compiler during release builds with debug info" FORCE)
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O0")
-  endif()
+endif()
+
+if(gfortran_version_gt_5_0)
+  set(opencoarrays_aware_compiler true)
+  add_definitions(-DPREFIX_NAME=_gfortran_caf_)
+else()
+  set(opencoarrays_aware_compiler false)
+  add_definitions(-DPREFIX_NAME=_caf_extensions_)
+ #add_definitions(-DCOMPILER_SUPPORTS_CAF_INTRINSICS)
+endif()
+
+if(gfortran_version_lt_5_4)
+  # GCC patch to fix issue accepted for 5.4 and 6.1.0 releases
+  # See https://github.com/sourceryinstitute/opencoarrays/issues/28 and
+  # https://groups.google.com/forum/#!msg/opencoarrays/RZOwwYTqG80/46S9eL696dgJ
+  message( STATUS "Disabling optimization flags due to GCC < 5.4 bug")
+  set(CMAKE_Fortran_FLAGS_RELEASE -O0
+    CACHE STRING "Flags used by the compiler during release builds." FORCE)
+  set(CMAKE_Fortran_FLAGS_RELWITHDEBINFO "-g -DNDEBUG -O0"
+    CACHE STRING "Flags used by the compiler during release builds with debug info" FORCE)
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O0")
 endif()
 
 if(gfortran_compiler)
@@ -102,9 +136,21 @@ if(gfortran_compiler)
   unset(CMAKE_REQUIRED_FLAGS)
 endif()
 
+#if (gfortran_compiler)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
+#elseif(portland_group_compiler)
+#  if ( DEFINED ENV{PGI_MPI} )
+#   include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src ENV{PGI_MPI}/include")
+#  else()
+#    message(FATAL_ERROR
+#      "To build with the ${CMAKE_Fortran_COMPILER_ID}, please set the PGI_MPI environment"
+#      "variable to the path of the top-level Portland Group MPI installation directory."
+#    )
+#  endif()
+#endif()
 
 add_subdirectory(src)
+add_subdirectory(3rd-party-tools/open-fortran-parser-sdf/trans)
 
 #-----------------------------------------------------
 # Publicize installed location to other CMake projects
@@ -133,7 +179,9 @@ install(
 )
 
 add_library(OpenCoarrays INTERFACE)
-target_compile_options(OpenCoarrays INTERFACE -fcoarray=lib)
+if(gfortran_compiler)
+  target_compile_options(OpenCoarrays INTERFACE -fcoarray=lib)
+endif()
 target_link_libraries(OpenCoarrays INTERFACE caf_mpi)
 
 install(DIRECTORY  ${CMAKE_BINARY_DIR}/mod DESTINATION .)

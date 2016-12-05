@@ -106,7 +106,6 @@ function cleanup_before_exit () {
 }
 trap cleanup_before_exit EXIT # The signal is specified here. Could be SIGINT, SIGTERM etc.
 
-
 ### Validation (decide what's required for running your script and error out)
 #####################################################################
 
@@ -159,10 +158,11 @@ info  "-I (--install-version):  ${arg_I}"
 info  "-j (--num-threads):      ${arg_j}"
 info  "-l (--list-packages):    ${arg_l}"
 info  "-m (--with-cmake):       ${arg_m}"
-info  "-M (--with-mpi):         ${arg_M}"
+info  "-M (--mpi-path):         ${arg_M}"
 info  "-n (--no-color):         ${arg_n}"
 info  "-p (--package):          ${arg_p}"
 info  "-P (--print-path):       ${arg_P}"
+info  "-s (--source-to-source): ${arg_s}"
 info  "-U (--print-url):        ${arg_U}"
 info  "-v (--version):          ${arg_v}"
 info  "-V (--print-version):    ${arg_V}"
@@ -223,6 +223,12 @@ stack_new script_installed
 # shellcheck source=./prerequisites/install-functions/find_or_install.sh
 source $opencoarrays_src_dir/prerequisites/install-functions/find_or_install.sh
 
+# shellcheck source=./prerequisites/install-functions/build_ofp_if_necessary.sh
+source $opencoarrays_src_dir/prerequisites/install-functions/build_ofp_if_necessary.sh
+
+# shellcheck source=./prerequisites/install-functions/install_transpiler.sh
+source $opencoarrays_src_dir/prerequisites/install-functions/install_transpiler.sh
+
 # shellcheck source=./prerequisites/install-functions/print_header.sh
 source $opencoarrays_src_dir/prerequisites/install-functions/print_header.sh
 
@@ -236,6 +242,10 @@ source $opencoarrays_src_dir/prerequisites/install-functions/report_results.sh
 
 
 # ________________________________ Start of the Main Body ___________________________________
+
+if [[ "${arg_s}" == "${__flag_present}" ]]; then
+  export translate_source="${translate_source:-"true"}"
+fi
 
 if [[ "${arg_v}" == "${__flag_present}" || "${arg_V}" == "opencoarrays" ]]; then
 

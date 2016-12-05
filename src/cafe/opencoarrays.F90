@@ -26,13 +26,11 @@
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 !
 module opencoarrays
-#ifdef COMPILER_SUPPORTS_ATOMICS
-  use iso_fortran_env, only : atomic_int_kind
-#endif
-  use iso_c_binding, only : c_int,c_char,c_ptr,c_loc,c_double,c_int32_t,c_ptrdiff_t,c_sizeof,c_bool,c_funloc
+  use iso_c_binding, only : c_int,c_char,c_ptr,c_loc,c_double,c_int32_t,c_ptrdiff_t,c_bool,c_funloc,c_float,c_size_t,c_null_ptr
   implicit none
 
   private
+#ifndef EVENTS_ONLY
   public :: co_reduce
   public :: co_broadcast
   public :: co_sum
@@ -42,16 +40,34 @@ module opencoarrays
   public :: num_images
   public :: error_stop
   public :: sync_all
-#ifdef COMPILER_SUPPORTS_ATOMICS
+  public :: accelerate
+#endif /* ifndef EVENTS_ONLY */
+  public :: caf_init
+  public :: caf_register
+  public :: caf_finalize
   public :: event_type
   public :: event_post
+  public :: event_wait
+  public :: event_query
 
   type event_type
-    private
-    integer(atomic_int_kind), allocatable :: atom[:]
+    type(c_ptr) :: token
   end type
+
+#ifdef COMPILER_LACKS_C_PTRDIFF_T
+  integer(c_int), parameter :: c_ptrdiff_t=c_long
 #endif
 
+  interface caf_register
+    module procedure register_event
+  end interface
+
+  ! Generic interface to a function analogous to c_sizeof but for assumed-rank arguments
+  interface f_sizeof
+     module procedure f_sizeof_c_int,f_sizeof_c_double,f_sizeof_c_bool,f_sizeof_c_float
+  end interface
+
+#ifndef EVENTS_ONLY
   ! Generic interface to co_broadcast with implementations for various types, kinds, and ranks
   interface co_reduce
      module procedure co_reduce_c_int,co_reduce_c_double,co_reduce_logical
@@ -76,6 +92,7 @@ module opencoarrays
   interface co_max
      module procedure co_max_c_int,co_max_c_double
   end interface
+#endif /* ifndef EVENTS_ONLY */
 
   abstract interface
      pure function c_int_operator(lhs,rhs) result(lhs_op_rhs)
@@ -184,10 +201,37 @@ module opencoarrays
     type(u_t) :: u
   end type
 
+  ! C enumeration from ../libcaf.h:
+  ! /* Describes what type of array we are registering. Keep in sync with
+  ! gcc/fortran/trans.h.  */
+  ! typedef enum caf_register_t {
+  !   CAF_REGTYPE_COARRAY_STATIC,
+  !   CAF_REGTYPE_COARRAY_ALLOC,
+  !   CAF_REGTYPE_LOCK_STATIC,
+  !   CAF_REGTYPE_LOCK_ALLOC,
+  !   CAF_REGTYPE_CRITICAL,
+  !   CAF_REGTYPE_EVENT_STATIC,
+  !   CAF_REGTYPE_EVENT_ALLOC
+  !   }
+  ! caf_register_t;
+
+  enum ,bind(C)
+    enumerator :: &
+      CAF_REGTYPE_COARRAY_STATIC, &
+      CAF_REGTYPE_COARRAY_ALLOC, &
+      CAF_REGTYPE_LOCK_STATIC, &
+      CAF_REGTYPE_LOCK_ALLOC, &
+      CAF_REGTYPE_CRITICAL, &
+      CAF_REGTYPE_EVENT_STATIC, &
+      CAF_REGTYPE_EVENT_ALLOC
+  end enum
+  integer, parameter :: caf_register_t=c_int
+
   ! --------------------
 
   integer(c_int), save, volatile, bind(C,name="CAF_COMM_WORLD") :: CAF_COMM_WORLD
   integer(c_int32_t), parameter  :: bytes_per_word=4_c_int32_t
+  integer(c_int32_t), parameter  :: bits_per_byte=8_c_int32_t
 
   interface gfc_descriptor
     module procedure gfc_descriptor_c_int,gfc_descriptor_c_double,gfc_descriptor_logical
@@ -195,6 +239,83 @@ module opencoarrays
 
   ! Bindings for OpenCoarrays C procedures
   interface
+
+    ! C function signature from ../mpi/mpi_caf.c
+    ! void _gfortran_caf_init (int *argc, char ***argv);
+
+    subroutine caf_init(argc,argv) bind(C,name="_gfortran_caf_init" )
+      import :: c_int,c_ptr
+      integer(c_int), value ::  argc
+      type(c_ptr), value ::  argv
+    end subroutine
+
+    ! C function signature from ../mpi/mpi_caf.c
+    ! void _gfortran_caf_finalize (int *argc, char ***argv);
+    subroutine caf_finalize(argc, argv) bind(C,name="_gfortran_caf_finalize")
+      import :: c_int,c_ptr
+      integer(c_int), value ::  argc
+      type(c_ptr), value ::  argv
+    end subroutine
+
+    ! C function signature from ../mpi/mpi_caf.c:
+    ! void *
+    !   PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
+    !                   int *stat, char *errmsg, int errmsg_len)
+
+    function opencoarrays_register_event(size_,type_,token,stat,errmsg,errmsg_len) result(mem) &
+      bind(C,name="_gfortran_caf_register")
+      import c_size_t, caf_register_t, c_ptr, c_int, c_char
+      integer(c_size_t), value :: size_
+      integer(caf_register_t), value :: type_
+      type(c_ptr), value :: token
+      integer(c_int) :: stat
+      character(c_char) :: errmsg
+      integer(c_int), value :: errmsg_len
+      type(c_ptr) :: mem
+    end function 
+
+    ! C function signature from ../mpi/mpi_caf.c:
+    ! void
+    ! PREFIX (event_wait) (caf_token_t token, size_t index,
+    !                      int until_count, int *stat,
+    !                      char *errmsg, int errmsg_len)
+
+    subroutine opencoarrays_event_wait(token,index_,until_count,stat,errmsg,errmsg_len) bind(C,name="_gfortran_caf_event_wait")
+      import c_size_t, c_ptr, c_int, c_char
+      type(c_ptr), value :: token
+      integer(c_size_t), value :: index_
+      integer(c_int), value :: until_count
+      integer(c_int) :: stat
+      character(c_char) :: errmsg
+      integer(c_int), value :: errmsg_len
+    end subroutine
+
+    ! C function signature from ../mpi/mpi_caf.c:
+    ! void
+    ! PREFIX (event_post) (caf_token_t token, size_t index,
+    !                      int image_index, int *stat,
+    !                      char *errmsg, int errmsg_len)
+
+    subroutine opencoarrays_event_post(token,index_,image_index,stat,errmsg,errmsg_len) bind(C,name="_gfortran_caf_event_post")
+      import c_size_t, c_ptr, c_int, c_char
+      type(c_ptr), value :: token
+      integer(c_size_t), value :: index_
+      integer(c_int), value :: image_index
+      integer(c_int) :: stat
+      character(c_char) :: errmsg
+      integer(c_int), value :: errmsg_len
+    end subroutine
+
+#ifndef EVENTS_ONLY
+    ! C function signature from ../cuda_mpi/mpi_caf.c:
+    ! void
+    ! PREFIX(registernc) (void* mem,size_t mem_size)
+
+    subroutine opencoarrays_registernc(mem,mem_size)  bind(C,name="_gfortran_caf_registernc")
+      import :: c_ptr,c_ptrdiff_t,c_int
+      type(c_ptr), intent(in), value :: mem
+      integer(c_ptrdiff_t), value, intent(in) :: mem_size
+    end subroutine
 
     ! C function signature from ../mpi/mpi_caf.c:
     ! void
@@ -345,10 +466,41 @@ module opencoarrays
       character(c_char), intent(out) :: errmsg(*)
     end subroutine
 
+#endif /* ifndef EVENTS_ONLY */
+
   end interface
 
+#ifdef COMPILER_LACKS_ASSUMED_RANK
+  ! __________ This generic name is a substitute for the Fortran 2015 RANK intrinsic ____________
+  interface rank
+     module procedure vector_c_int,vector_c_double,vector_logical
+  end interface
+#endif
 
 contains
+
+#ifdef COMPILER_LACKS_ASSUMED_RANK
+  ! __________ Specific procedures supporting the substitute "rank" generic interface ____________
+  ! ______________________________________________________________________________________________
+  pure function vector_c_int(a) result(rank_a)
+    integer(c_int), intent(in) :: a(:)
+    integer :: rank_a
+    rank_a = 0
+  end function
+
+  pure function vector_c_double(a) result(rank_a)
+    real(c_double), intent(in) :: a(:)
+    integer :: rank_a
+    rank_a = 0
+  end function
+
+  pure function vector_logical(a) result(rank_a)
+    logical, intent(in) :: a(:)
+    integer :: rank_a
+    rank_a = 0
+  end function
+
+#endif
 
   ! __________ Descriptor constructors for for each supported type and kind ____________
   ! ____________________________________________________________________________________
@@ -376,8 +528,7 @@ contains
     type(gfc_descriptor_t) :: a_descriptor
     integer(c_int), parameter :: unit_stride=1,scalar_offset=-1
     integer(c_int) :: i
-
-    a_descriptor%dtype = my_dtype(type_=BT_INTEGER,kind_=int(c_sizeof(a)/bytes_per_word,c_int32_t),rank_=rank(a))
+    a_descriptor%dtype = my_dtype(type_=BT_INTEGER,kind_=int(f_sizeof(a)/bytes_per_word,c_int32_t),rank_=rank(a))
     a_descriptor%offset = scalar_offset
     a_descriptor%base_addr = c_loc(a) ! data
     do concurrent(i=1:rank(a))
@@ -385,6 +536,7 @@ contains
       a_descriptor%dim_(i)%lower_bound = lbound(a,i)
       a_descriptor%dim_(i)%ubound_ = ubound(a,i)
     end do
+
 
   end function
 
@@ -411,7 +563,7 @@ contains
     integer(c_int), parameter :: unit_stride=1,scalar_offset=-1
     integer(c_int) :: i
 
-    a_descriptor%dtype = my_dtype(type_=BT_REAL,kind_=int(c_sizeof(a)/bytes_per_word,c_int32_t),rank_=rank(a))
+    a_descriptor%dtype = my_dtype(type_=BT_REAL,kind_=int(f_sizeof(a)/bytes_per_word,c_int32_t),rank_=rank(a))
     a_descriptor%offset = scalar_offset
     a_descriptor%base_addr = c_loc(a) ! data
     do concurrent(i=1:rank(a))
@@ -430,7 +582,7 @@ contains
  !  integer(c_int), parameter :: unit_stride=1,scalar_offset=-1
  !  integer(c_int) :: i
 
- !  a_descriptor%dtype = my_dtype(type_=BT_CHARACTER,kind_=int(c_sizeof(a)/bytes_per_word,c_int32_t),rank_=rank(a))
+ !  a_descriptor%dtype = my_dtype(type_=BT_CHARACTER,kind_=int(f_sizeof(a)/bytes_per_word,c_int32_t),rank_=rank(a))
  !  a_descriptor%offset = scalar_offset
  !  a_descriptor%base_addr = c_loc(a) ! data
  !  do concurrent(i=1:rank(a))
@@ -443,6 +595,11 @@ contains
 
   ! ______ Assumed-rank co_reduce wrappers for each supported type and kind _________
   ! _________________________________________________________________________________
+
+    subroutine accelerate(a)
+      real(c_float), intent(in), contiguous, target :: a(..)
+      call opencoarrays_registernc(c_loc(a),f_sizeof(a))
+    end subroutine
 
     subroutine co_reduce_c_int(a, opr, result_image, stat, errmsg)
       ! Dummy variables
@@ -699,7 +856,9 @@ contains
 
   ! Return the image number (MPI rank + 1)
   function this_image()  result(image_num)
+#ifndef COMPILER_PROVIDES_MPI
     use mpi, only : MPI_Comm_rank
+#endif
     integer(c_int) :: image_num,ierr
    !image_num = opencoarrays_this_image(unused)
     call MPI_Comm_rank(CAF_COMM_WORLD,image_num,ierr)
@@ -709,7 +868,9 @@ contains
 
   ! Return the total number of images
   function num_images()  result(num_images_)
+#ifndef COMPILER_PROVIDES_MPI
     use mpi, only : MPI_Comm_size
+#endif
     integer(c_int) :: num_images_,ierr
    !num_images_ = opencoarrays_num_images(unused_coarray,unused_scalar)
     call MPI_Comm_size(CAF_COMM_WORLD,num_images_,ierr)
@@ -732,13 +893,70 @@ contains
     call opencoarrays_sync_all(stat,errmsg,unused)
   end subroutine
 
-#ifdef COMPILER_SUPPORTS_ATOMICS
-   ! Proposed Fortran 2015 event_post procedure
-   subroutine event_post(this)
-     class(event_type), intent(inout) ::  this
-     if (.not.allocated(this%atom)) this%atom=0
-     call atomic_define ( this%atom, this%atom + 1_atomic_int_kind )
+
+   ! Atomically fetch an event count
+   subroutine event_query(this,count,stat) 
+     class(event_type), intent(in) ::  this
+     integer, intent(out) :: count,stat
    end subroutine
-#endif
+
+   ! Fortran equivalent of c_sizeof intrinsic for assumed-rank argument
+   ! (calling c_sizeof for assumed-rank arguments violates the Fortran standard)
+
+   function f_sizeof_c_int(a)  result(f_sizeof_a)
+     integer(c_int), intent(in), target :: a(..)
+     integer(c_ptrdiff_t) :: f_sizeof_a 
+     f_sizeof_a  = size(a)*storage_size(1._c_int)/bits_per_byte
+   end function 
+
+   function f_sizeof_c_double(a)  result(f_sizeof_a)
+     real(c_double), intent(in), target :: a(..)
+     integer(c_ptrdiff_t) :: f_sizeof_a 
+     f_sizeof_a  = size(a)*storage_size(1._c_double)/bits_per_byte
+   end function 
+
+   function f_sizeof_c_bool(a)  result(f_sizeof_a)
+     logical(c_bool), intent(in), target :: a(..)
+     integer(c_ptrdiff_t) :: f_sizeof_a 
+     f_sizeof_a  = size(a)*storage_size(.true._c_bool)/bits_per_byte
+   end function 
+
+  function f_sizeof_c_float(a)  result(f_sizeof_a)
+    real(c_float), intent(in), contiguous, target :: a(..)
+    integer(c_ptrdiff_t) :: f_sizeof_a 
+    integer, parameter :: bits_per_byte=8
+    f_sizeof_a  = size(a)*storage_size(1._c_float)/bits_per_byte
+  end function 
+
+  subroutine register_event(event,size_)
+    class(event_type), intent(out) :: event
+    integer(c_size_t) :: size_
+    type(c_ptr) :: mem
+    integer(c_int) :: int_unused=0
+    character(kind=c_char,len=1) :: char_unused=""
+    mem = opencoarrays_register_event(size_,CAF_REGTYPE_EVENT_ALLOC,event%token,int_unused,char_unused,int_unused)
+  end subroutine
+
+   ! Block and atomically decrement an event count
+  subroutine event_wait(event,index_,until_count) 
+    class(event_type), intent(inout) :: event
+    integer(c_size_t), intent(in) :: index_
+    integer(c_int), intent(in) :: until_count
+    integer(c_int) :: int_unused=0
+    character(kind=c_char,len=1) :: char_unused=""
+    error stop "check whether index_ offset is 0 or 1"
+    call opencoarrays_event_wait(event%token,index_,until_count,int_unused,char_unused,int_unused)
+  end subroutine
+
+   ! Atomically increment an event count by 1
+  subroutine event_post(event,index_,image_index) 
+    class(event_type), intent(inout) :: event
+    integer(c_size_t), intent(in) :: index_
+    integer(c_int), intent(in) :: image_index
+    integer(c_int) :: int_unused=0
+    character(kind=c_char,len=1) :: char_unused=""
+    error stop "check whether index_ offset is 0 or 1"
+    call opencoarrays_event_post(event%token,index_,image_index,int_unused,char_unused,int_unused)
+  end subroutine
 
 end module

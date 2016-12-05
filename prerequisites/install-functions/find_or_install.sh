@@ -114,14 +114,26 @@ find_or_install()
     # If the user specified a Fortran compiler, verify that mpif90 wraps the specified compiler
     if [[ ! -z "${arg_M:-}" ]]; then
 
-      echo -e "$this_script: Using the $package specified by -M or --with-mpi: ${arg_M}\n"
-      export MPIFC="${arg_M}"/bin/mpif90
-      export MPICC="${arg_M}"/bin/mpicc
-      export MPICXX="${arg_M}"/bin/mpicxx
+      echo -e "$this_script: Using the $package specified by -M or --mpi-path: ${arg_M}\n"
+      export MPIFC="${arg_M}"/mpif90
+      export MPICC="${arg_M}"/mpicc
+      export MPICXX="${arg_M}"/mpicxx
       # Halt the recursion
       stack_push dependency_pkg "none"
       stack_push dependency_exe "none"
       stack_push dependency_path "none"
+
+      if [[ ! -z "${arg_f:-}" ]]; then
+        # -f or --with-fortran argument specifies a compiler, which we use if mpif90
+        # invokes the specified compiler.  Otherwise, we halt and print an error message.
+        MPIFC_wraps=$(${MPIFC} --version)
+        compiler=$(${arg_f} --version)
+        if [[ "${MPIFC_wraps}" != "${compiler}"   ]]; then
+          emergency "Specified MPI ${MPIFC_wraps} wraps a compiler other than the specified Fortran compiler ${compiler}"
+        fi
+      fi
+
+      translate_source="${translate_source:-unknown}" # will be used by install_transpiler_if_necessary.sh
 
     elif [[ "$script_installed_package" == true ]]; then
 
@@ -134,6 +146,8 @@ find_or_install()
       stack_push dependency_exe "none"
       stack_push dependency_path "none"
 
+      translate_source="${translate_source:-false}" # will be used by install_transpiler_if_necessary.sh
+
     elif [[ "$package_in_path" == "true" ]]; then
 
       echo -e "$this_script: Checking whether $executable in PATH wraps gfortran... "
@@ -145,6 +159,9 @@ find_or_install()
         stack_push dependency_pkg "none" "$package" "gcc"
         stack_push dependency_exe "none" "$executable" "gfortran"
         stack_push dependency_path "none" "$(./build.sh -P "$package")" "$(./build.sh -P gcc)"
+
+        translate_source="${translate_source:-false}" # will be used by install_transpiler_if_necessary.sh
+
       else
         printf "yes.\n"
 
@@ -160,6 +177,8 @@ find_or_install()
           stack_push dependency_pkg "none"
           stack_push dependency_exe "none"
           stack_push dependency_path "none"
+
+          translate_source="${translate_source:-unknown}" # will be used by install_transpiler_if_necessary.sh
 
         else
 
@@ -180,12 +199,17 @@ find_or_install()
             stack_push dependency_pkg "none"
             stack_push dependency_exe "none"
             stack_push dependency_path "none"
+
+            translate_source="${translate_source:-false}" # will be used by install_transpiler_if_necessary.sh
+
           else
             printf "no\n"
             # Trigger 'find_or_install gcc' and subsequent build of $package
             stack_push dependency_pkg "none" "$package" "gcc"
             stack_push dependency_exe "none" "$executable" "gfortran"
             stack_push dependency_path "none" "$(./build.sh -P "$package")" "$(./build.sh -P gcc)"
+
+            translate_source="${translate_source:-false}" # will be used by install_transpiler_if_necessary.sh
           fi
         fi
       fi
@@ -195,6 +219,7 @@ find_or_install()
       stack_push dependency_pkg  "none" "$package" "gcc"
       stack_push dependency_exe  "none" "$executable" "gfortran"
       stack_push dependency_path "none" "$(./build.sh -P "$package")" "$(./build.sh -P gcc)"
+      translate_source="${translate_source:-unknown}" # will be used by install_transpiler_if_necessary.sh
     fi
 
     # Check consistency of MPIFC, if set, and user-specified Fortran compiler
@@ -578,9 +603,9 @@ find_or_install()
     default_package_version=$(./build.sh -V "${package}")
     package_install_prefix="${package_install_path%${package}/${arg_I:-${default_package_version}}*}"
 
-    echo -e "$this_script: Downloading, building, and installing $package \n"
-    echo "$this_script: Build command: FC=$FC CC=$CC CXX=$CXX ./build.sh -p $package -i $package_install_prefix -j $num_threads"
-    FC="$FC" CC="$CC" CXX="$CXX" ./build.sh -p "$package" -i "$package_install_prefix" -j "$num_threads"
+    info "Downloading, building, and installing $package"
+    info "Build command: FC=$FC CC=$CC CXX=$CXX ./build.sh -p $package -i $package_install_prefix -j $num_threads -y ${arg_y}"
+    FC="$FC" CC="$CC" CXX="$CXX" ./build.sh -p "$package" -i "$package_install_prefix" -j "$num_threads" -y "${arg_y}"
 
     if [[ -x "$package_install_path/bin/$executable" ]]; then
       echo -e "$this_script: Installation successful.\n"
