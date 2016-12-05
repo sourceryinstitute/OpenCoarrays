@@ -21,7 +21,6 @@ Download this file as a PDF document
      *  [libcaf_mpi]
      *  [libcaf_x]
      *  [libcaf_gasnet]
-     *  [libcaf_armci]
      *  [libcaf_single]
  *  [Known Issues](#known-issues)
      * [Library Issues](#library-issues)
@@ -98,8 +97,6 @@ Library Status
   is currently out-of-date but might exhibit higher performance than [MPI] on
   platforms for which [GASNet] provides a tuned conduit.  Contact the
   [OpenCoarrays Google Group] for further information.
-<a name="libcaf-armci">
-* **libcaf_armci**</a> (Unsupported): developed for research purposes and evaluation.
 <a name="libcaf-single">
 * **libcaf_single**</a> (Unsupported): developed to mirror the like-named library that
   is included in GNU Fortran to facilitate compiling single-image (sequential)
@@ -134,14 +131,13 @@ Known Issues
         access as in `coarray(:,:)[i]%comp`.
      * An internal compiler error (ICE) occurs with non-allocatable, polymorphic coarrays
        in `associate` or `select type` statements.
-     * `co_reduce` with GCC 5 and 6 requires patches committed on 17 July 2015 and will
-       work with the GCC 5.3.0 and 6.1.0 releases.
+     * `co_reduce` requires GCC 5.4.0 or later.
      * `co_reduce` only supports arguments of intrinsic type.
+     * Proper execution of `stop` when `this_image()>1` requires GCC 5.4.0 or later.
      * No support for type finalization or allocatable components of derived-type coarrays
        passed to the collective subroutines (e.g., `co_sum`, `co_reduce`, etc.).
-	 * Optimization levels other than `-O0` introduce correctness errors
-	   in the compiled binaries. A patch has been submitted by @afanfa
-	   to the GFortran team. See #28 for some more context.
+     * Optimization levels other than `-O0` require GCC 5.3.0 or later. 
+     * Using `stop` to halt an individual image without halting all images requires GCC 5.4.0 or later. 
 <a name="compiler-issues-intel">
 * **Intel** (ifort)</a>
      * Supported via the [opencoarrays module]  only.
@@ -186,14 +182,13 @@ To-Do List
    [libcaf_x]: #libcaf-x
    [libcaf_gasnet]:  #libcaf-gasnet
    [libcaf_single]: #libcaf-single
-   [libcaf_armci]: #libcaf-armci
   [GNU (gfortran)]: #compiler-issues-gnu
   [Cray (ftn)]: #compiler-issues-cray
   [Intel (ifort)]: #compiler-issues-intel
   [Numerical Algorithms Group (nagfor)]: #compiler-issues-nag
   [Portland Group (pgfortran)]: #compiler-issues-pg
   [IBM (xlf)]: #compiler-issues-ibm
-  [forking the OpenCoarrays repository]: https://github.com/sourceryinstitute/opencoarrays/blob/master/STATUS.md#fork-destination-box
+  [forking the OpenCoarrays repository]: https://github.com/sourceryinstitute/opencoarrays/fork
 
 [TS 18508]: http://isotc.iso.org/livelink/livelink?func=ll&objId=17181227&objAction=Open
 [opencoarrays module]: ./src/extensions/opencoarrays.F90

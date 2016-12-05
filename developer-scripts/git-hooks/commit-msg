@@ -1,25 +1,37 @@
-#!/bin/sh
+#!/bin/bash
 #
-# An example hook script to check the commit log message.
+# A hook script to check the commit log message.
 # Called by "git commit" with one argument, the name of the file
 # that has the commit message.  The hook should exit with non-zero
 # status after issuing an appropriate message if it wants to stop the
 # commit.  The hook is allowed to edit the commit message file.
 #
-# To enable this hook, rename this file to "commit-msg".
+# This hook is inteded to be used by OpenCoarrays developers to ensure
+# that they conform to project standards.
 
-# Uncomment the below to add a Signed-off-by line to the message.
-# Doing this in a hook is a bad idea in general, but the prepare-commit-msg
-# hook is more suited to it.
-#
-# SOB=$(git var GIT_AUTHOR_IDENT | sed -n 's/^\(.*>\).*$/Signed-off-by: \1/p')
-# grep -qs "^$SOB" "$1" || echo "$SOB" >> "$1"
+
+
+set -o errexit
+set -o pipefail
+set -o nounset
+set -o errtrace
+
+__file=commit-msg
+
+err_report() {
+    error_code=$?
+    echo 2>&1 "Error in $__file in function $1 on line $2"
+    exit $error_code
+}
+
+trap 'err_report "${FUNCNAME:-.}" $LINENO' ERR
 
 # error message function for writing good commit messages
+# shellcheck disable=SC2006,SC2035
 error_message () {
-    cat <<\EOF >&2
+    cat <<-EOF
 Error: bad commit message format. A copy of your commit message is in:
-`.git/COMMIT_EDITMSG`. Please fix it or write a new one according to the
+'.git/COMMIT_EDITMSG'. Please fix it or write a new one according to the
 guidlines below.
 
 The first line of a commit message should start with a capitalized imperative
@@ -27,14 +39,14 @@ verb used in a phrase to summarize the change. This first line must be less
 than 50 characters, followed by an additional blank line. Further detials are
 added after these first two lines, and may be up to 72 characters in length.
 
-This is so that `--oneline` formatted `git log`s will contain human readable,
+This is so that '--oneline' formatted 'git log's will contain human readable,
 meaningful information, and the summaries on Github.com will also contain
 this concise summary. The 72 line limit is to ensure propper formatting on
 all terminals.
 
 Here is an example of a good commit message:
 
-```
+"""
 Redirect user to the requested page after login
 
 https://github.com/sourceryinstitute/opencoarrays/Issues/29
@@ -46,11 +58,11 @@ being redirected to the login form.
 * Store requested path in a session variable
 * Redirect to the stored location after successfully logging in the user
 * Fixes #1
-```
+"""
 
 As opposed to doing something bad like this:
 
-`git commit -m "Fix login bug"`
+'git commit -m "Fix login bug"'
 
 For more information on writting good commit messages,
 and keeping a clean history, please see:
@@ -59,53 +71,51 @@ and keeping a clean history, please see:
  2. http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html
  3. https://www.reviewboard.org/docs/codebase/dev/git/clean-commits/
 
-And for funny examples of what not to do, see: http://whatthecommit.com
+And for funny examples of what not to do, see: http://whatthecommit.com and
+http://stopwritingramblingcommitmessages.com
 EOF
 
 }
 
-let status=0
-
-# This example catches duplicate Signed-off-by lines.
-
-test "" = "$(grep '^Signed-off-by: ' "$1" |
-	 sort | uniq -c | sed -e '/^[ 	]*1[ 	]/d')" || {
-	echo >&2 "Duplicate Signed-off-by lines."
-	let status=1
-}
+status=0
 
 # Check that the first line of the commit starts with a
 # capitalized letter.
-if ! (head -n 1 $1 | grep '^[A-Z]' &>/dev/null ); then
-    echo >&2 "First word of commit message must be a capitalized imperative verb.\n"
-    let status=1
+if ! (head -n 1 "$1" | grep '^[A-Z]' &>/dev/null ); then
+    echo >&2 "First word of commit message must be a capitalized imperative verb."
+    echo ""
+    status=1
 fi
 
 # Check each line for propper length
 ln=0
-cat $1 | \
-    while read line; do
-	let ln+=1
-	nchars=$(wc -c <<<$line)
-	if [[ "$ln" -eq "1" ]]; then
-	    if [[ "$nchars" -gt "51" ]]; then
-		echo >&2 "First line of commit message too long ($nchars > 50 chars)\n"
-		let status=1
-	    fi
-	elif [[ "$ln" -eq "2" ]]; then
-	    if [[ "$nchars" -gt "1" ]] && ! grep '^#' <<<"$line" >/dev/null; then
-		echo >&2 "Second line of commit message not blank\n"
-		let status=1
-	    fi
-	else
-	    if [[ "$nchars" -gt "72" ]]; then
-		echo >&2 "Line $ln of commit message too long ($nchars > 72 chars)\n"
-		let status=1
-	    fi
-	fi
-    done
+while read -r line; do
+    ln+=1
+    nchars=$(wc -c <<<"$line")
+    if [[ "$ln" -eq "1" ]]; then
+      if [[ "$nchars" -gt "51" ]]; then
+	echo >&2 "First line of commit message too long ($nchars > 50 chars)"
+	echo ""
+	status=1
+      fi
+    elif [[ "$ln" -eq "2" ]]; then
+      if [[ "$nchars" -gt "1" ]] && ! grep '^#' <<<"$line" >/dev/null; then
+	echo >&2 "Second line of commit message not blank"
+	echo ""
+	status=1
+      fi
+    else
+      if [[ "$nchars" -gt "72" ]]; then
+	echo >&2 "Line $ln of commit message too long ($nchars > 72 chars)"
+	echo ""
+	status=1
+      fi
+    fi
+done < "$1"
 
-if [[ $status != 0 ]]; then
-    error_message
-    exit 1
+if [[ $status = 0 ]]; then
+    exit 0
 fi
+
+error_message
+exit 1
