@@ -2,18 +2,18 @@
 
 [This document is formatted with GitHub-Flavored Markdown.              ]:#
 [For better viewing, including hyperlinks, read it online at            ]:#
-[https://github.com/sourceryinstitute/opencoarrays/blob/master/README.md]:#
+[https://github.com/sourceryinstitute/opencoarrays/blob/devel/README.md]:#
 
 OpenCoarrays
 ============
 
 [![CI Build Status][build img]](https://travis-ci.org/sourceryinstitute/opencoarrays)
 [![GitHub license][license img]](./LICENSE)
-[![Download as PDF][pdf img]](http://md2pdf.herokuapp.com/sourceryinstitute/opencoarrays/blob/master/README.pdf)
+[![Download as PDF][pdf img]](http://md2pdf.herokuapp.com/sourceryinstitute/opencoarrays/blob/devel/README.pdf)
 <!-- [![GitHub release][release img]](https://github.com/sourceryinstitute/opencoarrays/releases/latest) -->
 <!-- [![Release Downloads][download img]](https://github.com/sourceryinstitute/opencoarrays/releases) -->
 
-Download this file as a PDF document [here](http://md2pdf.herokuapp.com/sourceryinstitute/opencoarrays/blob/master/README.pdf).
+Download this file as a PDF document [here](http://md2pdf.herokuapp.com/sourceryinstitute/opencoarrays/blob/devel/README.pdf).
 
 * [Overview](#overview)
 * [Downloads](#downloads)
@@ -128,8 +128,8 @@ We gratefully acknowledge support from the following institutions:
 [Issues]: https://github.com/sourceryinstitute/opencoarrays/issues
 [Releases]: https://github.com/sourceryinstitute/opencoarrays/releases
 
-[build img]: https://img.shields.io/travis-ci/sourceryinstitute/opencoarrays/master.svg?style=flat-square "View Travis-CI builds"
-[CI Master Branch]: https://travis-ci.org/sourceryinstitute/opencoarrays?branch=master "View Travis-CI builds"
+[build img]: https://img.shields.io/travis-ci/sourceryinstitute/opencoarrays/devel.svg?style=flat-square "View Travis-CI builds"
+[CI Devel Branch]: https://travis-ci.org/sourceryinstitute/opencoarrays?branch=devel "View Travis-CI builds"
 [download img]: https://img.shields.io/github/downloads/sourceryinstitute/opencoarrays/total.svg?style=flat-square "Download count image source"
 [license img]: https://img.shields.io/badge/License-BSD--3-blue.svg?style=flat-square "View BSD-3 License"
 [release img]: https://img.shields.io/github/release/sourceryinstitute/opencoarrays.svg?style=flat-square "View latest release"

@@ -64,6 +64,21 @@ endif()
 file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/caf-foot FOOTER)
 file(APPEND "${compiler_wrapper}" "${FOOTER}")
 
+# Now we write the script that transforms CAF source into the OCAF dialect 
+# intended to support non-CAF compilers.
+set(exe_dir ${CMAKE_BINARY_DIR}/bin_staging)
+set(transpiler ${exe_dir}/caf2ocaf)
+install(
+    FILES "${transpiler}"
+    PERMISSIONS WORLD_EXECUTE WORLD_READ WORLD_WRITE OWNER_EXECUTE OWNER_READ OWNER_WRITE GROUP_EXECUTE GROUP_READ GROUP_WRITE
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/
+)
+file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/caf2ocaf-head.sh CAF2OCAF_HEADER)
+file(WRITE  "${transpiler}" "${CAF2OCAF_HEADER}\n")
+file(APPEND "${transpiler}"  "caf_version=${PROJECT_VERSION}\n")
+file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/caf2ocaf-foot.sh CAF2OCAF_FOOTER)
+file(APPEND "${transpiler}" "${CAF2OCAF_FOOTER}")
+
 # Now we write the script that launches executable files produced from CAF codes
 set(caf_launcher ${exe_dir}/cafrun)
 install(
