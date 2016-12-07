@@ -183,8 +183,8 @@ Advanced options (most users should not use these):
     -DUSE_EXTENSIONS             # builds the opencoarrays module for use with non-OpenCoarrays-aware compilers
     -DCOMPILER_PROVIDES_MPI      # is set automatically when building with the Cray Compiler Environment
 
-The third and fourth flags above are not portable and the fifth enables code that is incomplete as
-of release 1.0.0.  The seventh is set automatically by the CMake scripts based on the compiler
+The fourth and fifth flags above are not portable and the sixth enables code that is incomplete as
+of release 1.0.0.  The eighth is set automatically by the CMake scripts based on the compiler
 identity and version.
 
 ### Make ###
