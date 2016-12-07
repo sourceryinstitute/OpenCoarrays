@@ -39,7 +39,7 @@ cd opencoarrays
 ```
 
 Before installing OpenCoarrays, the above bash script will attempt to detect the presence
-of the default prequisite packages: [GCC], [MPICH] , and [CMake].  For additional details, see the [Prerequisites] section. If any of the
+of the default prerequisite packages: [GCC], [MPICH] , and [CMake].  For additional details, see the [Prerequisites] section. If any of the
 aforementioned packages appear to be absent from the user's PATH environment variable,
 the [install.sh] script will attempt to download, build, and install any missing packages
 after asking permission to do so.  The script has been tested on Linux and OS X.  Please
@@ -130,8 +130,19 @@ If using the advanced [CMake] or [Make] builds detailed below, please ensure tha
 
 ### CMake ###
 
+#### N.B.: ####
+
+__As of OpenCoarrays 1.7.6, passing `FC=mpi_fortran_wrapper` and
+`CC=mpi_c_wrapper` is *DEPRECATED*. Please pass `FC=/path/to/gfortran`
+and `CC=/path/to/gcc`. If you are experimenting with the source to
+source translation capabilities, then please point `FC` and `CC` to
+your Fortran and C compilers of choice. In the case of CRAY, or a
+compiler in which MPI is *built-in* to the compiler, you still pass
+the `FC` and `CC` as the Fortran and C compiler, even though MPI is
+built-in.__
+
 [CMake] is the preferred build system.   CMake is a cross-platform Makefile generator that
-includes with the testing tool CTest.  To avoid cluttering or clobbering the source tree,
+includes the testing tool CTest.  To avoid cluttering or clobbering the source tree,
 our CMake setup requires that your build directory be any directory other than the top-level
 OpenCoarrays source directory.  In a bash shell, the following steps should build
 OpenCoarrays, install OpenCoarrays, build the tests, run the tests, and report the test results:
@@ -141,27 +152,39 @@ tar xvzf opencoarrays.tar.gz
 cd opencoarrays
 mkdir opencoarrays-build
 cd opencoarrays-build
-CC=mpicc FC=mpif90 cmake .. -DCMAKE_INSTALL_PREFIX=${PWD}
+CC=gcc FC=gfortran cmake .. -DCMAKE_INSTALL_PREFIX=${HOME}/packages/
 make
 ctest
 make install
 ```
 
 where the the first part of the cmake line sets the CC and FC environment variables
-and the final part of the same line defines the installation path as the present
-working directory (`opencoarrays-build`).  Please report any test failures via the
-OpenCoarrays [Issues] page.
+and the final part of the same line defines the installation path as
+the `packages` directory in the current user's `$HOME` directory.  Please report any test failures via the
+OpenCoarrays [Issues] page. Please note that you need a recent
+GCC/GFortran, and a recent MPI-3 implementation. If CMake is having
+trouble finding the MPI implementation, or is finding the wrong MPI
+implementation, you can try setting the `MPI_HOME` environment
+variable to point to the installation you wish to use. If that fails,
+you can also try passing the
+`-DMPI_Fortran_COMPILER=/path/to/mpi/fortran/wrapper/script` and
+`-DMP_C_COMPILER=/path/to/mpi/c/wrapper/script` options to CMake.
 
 Advanced options (most users should not use these):
 
-    -DLEGACY_ARCHITECTURE=OFF enables the use of FFT libraries that employ AVX instructions
-    -DHIGH_RESOLUTION_TIMER=ON enables timers that tick once per clock cycle
-    -DCOMPILER_SUPPORTS_ATOMICS enables support for the proposed Fortran 2015 events feature
-    -DUSE_EXTENSIONS builds the [opencoarrays] module for use with non-OpenCoarrays-aware compilers
-    -DCOMPILER_PROVIDES_MPI is set automatically when building with the Cray Compiler Environment
+    -DMPI_HOME=/path/to/mpi/dir  # try to force CMake to find your preferred MPI implementation
+        # OR
+    -DMPI_C_COMPILER=/path/to/c/wrapper
+	-DMPI_Fortran_COMPILER=/path/to/fortran/wrapper
 
-The first two flags above are not portable and the third enables code that is incomplete as
-of release 1.0.0.  The fourth is set automatically by the CMake scripts based on the compiler
+    -DLEGACY_ARCHITECTURE=OFF    # enables the use of FFT libraries that employ AVX instructions
+    -DHIGH_RESOLUTION_TIMER=ON   # enables timers that tick once per clock cycle
+    -DCOMPILER_SUPPORTS_ATOMICS  # enables support for the proposed Fortran 2015 events feature
+    -DUSE_EXTENSIONS             # builds the opencoarrays module for use with non-OpenCoarrays-aware compilers
+    -DCOMPILER_PROVIDES_MPI      # is set automatically when building with the Cray Compiler Environment
+
+The third and fourth flags above are not portable and the fifth enables code that is incomplete as
+of release 1.0.0.  The seventh is set automatically by the CMake scripts based on the compiler
 identity and version.
 
 ### Make ###
@@ -225,7 +248,7 @@ where the second line builds the flex package that is required for building gcc 
 [Prerequisites]: #prerequisites
 [CMake]: #cmake
 [Make]: #make
-[Obtaining GCC]: #obtaining-gcc-mpich-and-cmake
+[Obtaining GCC, MPICH, and CMake]: #obtaining-gcc-mpich-and-cmake
 [Sourcery Store]: http://www.sourceryinstitute.org/store
 [Sourcery Institute Store]: http://www.sourceryinstitute.org/store
 [VirtualBox]: http://www.virtualbox.org
