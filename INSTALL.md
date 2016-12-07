@@ -21,7 +21,7 @@ Download this file as a PDF document
      *  [Prerequisites]
      *  [CMake]
      *  [Make]
- *  [Obtaining GCC]
+ *  [Obtaining GCC, MPICH, and CMake]
 
 End-User Installation
 ---------------------
@@ -225,7 +225,7 @@ where the second line builds the flex package that is required for building gcc 
 [Prerequisites]: #prerequisites
 [CMake]: #cmake
 [Make]: #make
-[Obtaining GCC]: #obtaining-gcc
+[Obtaining GCC]: #obtaining-gcc-mpich-and-cmake
 [Sourcery Store]: http://www.sourceryinstitute.org/store
 [Sourcery Institute Store]: http://www.sourceryinstitute.org/store
 [VirtualBox]: http://www.virtualbox.org
@@ -235,7 +235,7 @@ where the second line builds the flex package that is required for building gcc 
 [Issues]: https://github.com/sourceryinstitute/opencoarrays/issues
 [make.inc]: ./src/make.inc
 [opencoarrays]: ./src/extensions/opencoarrays.F90
-[prerequisites]: ./prerequisites
+[prerequisites]: #prerequisites
 [MPICH]: http://www.mpich.org
 [MVAPICH]:http://mvapich.cse.ohio-state.edu
 [MacPorts]: http://www.macports.org
