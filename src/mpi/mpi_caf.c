@@ -562,6 +562,7 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
 #if MPI_VERSION >= 3
   if (type != CAF_REGTYPE_COARRAY_ALLOC_REGISTER_ONLY)
     {
+      // Note, MPI_Win_allocate implicitly synchronizes.
       MPI_Win_allocate (actual_size, 1, MPI_INFO_NULL, CAF_COMM_WORLD, &mem, p);
       CAF_Win_lock_all (*p);
     }
@@ -584,8 +585,6 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
 
   if (type != CAF_REGTYPE_COARRAY_ALLOC_REGISTER_ONLY)
     {
-//      PREFIX(sync_all) (NULL,NULL,0);
-
       caf_static_t *tmp = malloc (sizeof (caf_static_t));
       tmp->prev  = caf_tot;
       tmp->token = *token;
