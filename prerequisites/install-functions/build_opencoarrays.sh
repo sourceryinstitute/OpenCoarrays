@@ -3,8 +3,6 @@
 build_opencoarrays()
 {
   print_header
-  info "Invoking find_or_install gcc"
-  find_or_install gcc
   info "Invoking find_or_install mpich"
   find_or_install mpich
   info "Invoking find_or_install cmake"
