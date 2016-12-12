@@ -93,10 +93,17 @@ detect_duplicate_stack_creation()
 verify_stack_size_changes()
 {
   stack_new foobar
+  stack_size foobar __foobar_size
+  expected_size=0
+  if [[  "${__foobar_size}" != "${expected_size}" ]]; then 
+    emergency "verify_stack_size_changes: size=${__foobar_size} (expected ${expected_size})"
+  fi
+
   stack_push foobar kernel
-  stack_size foobar foobar_size
-  if [[  "${foobar_size}" != "1" ]]; then 
-    emergency "verify_stack_size_changes: size=${foobar_size} (expected 1)"
+  stack_size foobar __foobar_new_size
+  (( expected_size += 1 ))
+  if [[  "${__foobar_new_size}" != "${expected_size}" ]]; then 
+    emergency "verify_stack_size_changes: size=${__foobar_new_size} (expected 1)"
   fi
 
   stack_peek foobar tmp
@@ -104,19 +111,20 @@ verify_stack_size_changes()
     emergency "verify_stack_size_changes: peeked item ('${tmp}') mismatch with pushed item ('kernel')"
   fi
 
-  stack_size foobar should_be_unchanged
-  if [[  "${should_be_unchanged}" != "1" ]]; then 
-    emergency "verify_stack_size_changes: size=${should_be_unchanged} (expected 1)"
+  stack_size foobar __should_be_unchanged
+  if [[  "${__should_be_unchanged}" != "${expected_size}" ]]; then 
+    emergency "verify_stack_size_changes: size=${__should_be_unchanged} (expected ${expected_size})"
   fi
 
   stack_pop foobar popped
   if [[  "${popped}" != "kernel" ]]; then 
     emergency "verify_stack_size_changes: popped item ('${popped}') mismatch with pushed item ('kernel')"
   fi
+  (( expected_size -= 1 )) || true
 
-  stack_size foobar new_foobar_size
-  if [[  "${new_foobar_size}" != "0" ]]; then 
-    emergency "verify_stack_size_changes: size=${foobar_size} (expected 0)"
+  stack_size foobar __final_size
+  if [[  "${__final_size}" != "${expected_size}" ]]; then 
+    emergency "verify_stack_size_changes: size=${__final_size} (expected ${expected_size})"
   fi
 }
 
@@ -136,7 +144,7 @@ test_stack()
 
   # Verify that each named function detects non-existent stacks:
   detect_no_such_stack \
-    stack_print stack_pop stack_push stack_size
+    stack_destroy stack_peek stack_print stack_pop stack_push stack_size
 
   # Verify that duplicate creation generates the expected error:
   detect_duplicate_stack_creation \
@@ -145,21 +153,6 @@ test_stack()
   # Verify that push, peek, and pop yield correct size changes or lack thereof:
   verify_stack_size_changes
 
-  emergency "finito but some failing tests were not run (see ${OPENCOARRAYS_SRC_DIR}/src/tests/installation/test-stack.sh)"
+  debug "test-stack.sh: All tests passed."
 
-  # Failing tests:
-
-  { # fail to detect non-existent stack
-    detect_no_such_stack \
-      stack_peek
-    detect_no_such_stack \
-      stack_exists
-    detect_no_such_stack \
-      stack_destroy
-  }
-
-  { # error on checking size of newly created 
-    stack_new foo
-    stack_size foo foo_size
-  }
 }
