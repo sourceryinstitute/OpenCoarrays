@@ -82,8 +82,8 @@
 ### Start of boilerplate -- do not edit this block #######################
 export OPENCOARRAYS_SRC_DIR="${OPENCOARRAYS_SRC_DIR:-${PWD%/}/../../..}"
 if [[ ! -f "${OPENCOARRAYS_SRC_DIR}/src/libcaf.h" ]]; then
-  echo "Please run this script inside the top-level OpenCoarrays source directory or "
-  echo "set OPENCOARRAYS_SRC_DIR to the OpenCoarrays source directory path."
+  echo "Please run this script inside the OpenCoarrays source sudirectory src/tests/instsallation"
+  echo "or set OPENCOARRAYS_SRC_DIR to the OpenCoarrays source directory path."
   exit 1
 fi
 export B3B_USE_CASE="${B3B_USE_CASE:-${OPENCOARRAYS_SRC_DIR}/prerequisites/use-case}"
