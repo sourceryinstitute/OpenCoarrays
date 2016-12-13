@@ -91,7 +91,7 @@ if [[ ! -f "${B3B_USE_CASE:-}/bootstrap.sh" ]]; then
   echo "Please set B3B_USE_CASE to the bash3boilerplate use-case directory path."
   exit 2
 else
-    # shellcheck source=./prerequisites/use-case/bootstrap.sh
+    # shellcheck source=../../../prerequisites/use-case/bootstrap.sh
     source "${B3B_USE_CASE}/bootstrap.sh" "$@"
 fi
 ### End of boilerplate -- start user edits below #########################
@@ -109,6 +109,7 @@ trap cleanup_before_exit EXIT # The signal is specified here. Could be SIGINT, S
 
 pushd "${OPENCOARRAYS_SRC_DIR}"/src/tests/installation
 
+# shellcheck source=../../../prerequisites/stack.sh
 source "${OPENCOARRAYS_SRC_DIR}"/prerequisites/stack.sh
 source test-stack.sh
 test_stack
