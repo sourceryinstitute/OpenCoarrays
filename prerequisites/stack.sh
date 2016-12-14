@@ -41,6 +41,13 @@
 function stack_destroy
 {
     : "${1?'Missing stack name'}"
+
+    if no_such_stack "$1"
+    then
+        echo "No such stack -- $1" >&2
+        return 1
+    fi
+
     eval "unset _stack_$1 _stack_$1_i"
     return 0
 }
@@ -51,7 +58,7 @@ function stack_destroy
 function stack_push
 {
     : "${1?'Missing stack name'}"
-    : "${2?'Missing item(s) to push'}"
+    : "${2?'Missing variable name in stack_push'}"
 
     if no_such_stack "$1"
     then
@@ -91,6 +98,11 @@ function stack_size
         echo "No such stack -- $1" >&2
         return 1
     fi
+    # TODO: revise the eval below to eliminate the need for this pop/push
+    # sequene, which is a workaround to prevent an error that occurs with 
+    # if the stack is new and has not been the target of a stack_push. 
+    stack_push $1 __push_junk
+    stack_pop $1 __pop_trash
     eval "$2"='$'"{#_stack_$1[*]}"
 }
 
@@ -125,15 +137,15 @@ function no_such_stack
 function stack_pop
 {
     : "${1?'Missing stack name'}"
-    : "${2?'Missing name of variable for popped result'}"
-
-    eval 'let _i=$'"_stack_$1_i"
+    : "${2?'Missing variable name in stack_pop'}"
 
     if no_such_stack "$1"
     then
         echo "No such stack -- $1" >&2
         return 1
     fi
+
+    eval 'let _i=$'"_stack_$1_i"
 
     if [[ "$_i" -eq 0 ]]
     then
@@ -247,6 +259,15 @@ function stack_exists
 #    echo "Got $top"
 function stack_peek
 {
+  : "${1?'Missing stack name'}"
+  : "${2?'Missing variable name in stack_peek'}"
+
+  if no_such_stack "$1"
+  then
+      echo "No such stack -- $1" >&2
+      return 1
+  fi
+
   stack_pop "$1" "$2"
   eval argument_name="\$$2"
   # shellcheck disable=SC2154
