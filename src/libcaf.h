@@ -73,9 +73,19 @@ typedef enum caf_register_t {
   CAF_REGTYPE_LOCK_ALLOC,
   CAF_REGTYPE_CRITICAL,
   CAF_REGTYPE_EVENT_STATIC,
-  CAF_REGTYPE_EVENT_ALLOC
+  CAF_REGTYPE_EVENT_ALLOC,
+  CAF_REGTYPE_COARRAY_ALLOC_REGISTER_ONLY,
+  CAF_REGTYPE_COARRAY_ALLOC_ALLOCATE_ONLY
 }
 caf_register_t;
+
+/* Describes the action to take on _caf_deregister. Keep in sync with
+   gcc/fortran/trans.h.  */
+typedef enum caf_deregister_t {
+  CAF_DEREGTYPE_COARRAY_DEREGISTER,
+  CAF_DEREGTYPE_COARRAY_DEALLOCATE_ONLY
+}
+caf_deregister_t;
 
 typedef void* caf_token_t;
 
@@ -203,11 +213,12 @@ int PREFIX (num_images) (int, int);
 #ifdef GCC_GE_7
 void PREFIX (register) (size_t, caf_register_t, caf_token_t *,
 						gfc_descriptor_t *, int *, char *, int);
+void PREFIX (deregister) (caf_token_t *, int, int *, char *, int);
 #else
 void * PREFIX (register) (size_t, caf_register_t, caf_token_t *,
 						  int *, char *, int);
-#endif
 void PREFIX (deregister) (caf_token_t *, int *, char *, int);
+#endif
 
 void PREFIX (caf_get) (caf_token_t, size_t, int, gfc_descriptor_t *,
 		       caf_vector_t *, gfc_descriptor_t *, int, int, int);
@@ -231,9 +242,10 @@ void PREFIX(sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
 		caf_reference_t *dst_refs, caf_token_t src_token, int src_image_index,
 		caf_reference_t *src_refs, int dst_kind, int src_kind,
 		bool may_require_tmp, int *dst_stat, int *src_stat);
+int PREFIX(is_present) (caf_token_t, int, caf_reference_t *refs);
 #endif
 
-void PREFIX (co_broadcast) (gfc_descriptor_t *, int, int *, char *, int);			    
+void PREFIX (co_broadcast) (gfc_descriptor_t *, int, int *, char *, int);
 void PREFIX (co_max) (gfc_descriptor_t *, int, int *, char *, int, int);
 void PREFIX (co_min) (gfc_descriptor_t *, int, int *, char *, int, int);
 void PREFIX (co_reduce) (gfc_descriptor_t *, void *(*opr) (void *, void *),
