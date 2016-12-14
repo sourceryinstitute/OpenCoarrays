@@ -153,6 +153,6 @@ test_stack()
   # Verify that push, peek, and pop yield correct size changes or lack thereof:
   verify_stack_size_changes
 
-  debug "test-stack.sh: All tests passed."
+  info "test-stack.sh: All tests passed."
 
 }
