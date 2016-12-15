@@ -84,7 +84,7 @@ else()
 endif()
 
 if ( DEFINED ENV{FC} )
-  file(APPEND "${compiler_wrapper}"  "CAFC=$ENV{FC}\n")
+  file(APPEND "${compiler_wrapper}"  "CAFC=${MPI_Fortran_COMPILER}\n")
 endif ()
 
 if ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
@@ -103,6 +103,7 @@ install(
 file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/cafrun-head CAFRUN_HEADER)
 file(WRITE  "${caf_launcher}" "${CAFRUN_HEADER}\n")
 file(APPEND "${caf_launcher}"  "caf_version=${PROJECT_VERSION}\n")
+file(APPEND "${caf_launcher}"  "CAFRUN=${MPIEXEC}\n")
 
 file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/cafrun-foot FOOTER)
 file(APPEND "${caf_launcher}" "${FOOTER}")
