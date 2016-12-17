@@ -17,8 +17,8 @@ add_executable(allocate_as_barrier_proc allocate_as_barrier_proc.f90)
 target_link_libraries(allocate_as_barrier_proc OpenCoarrays)
 
 if (gfortran_compiler AND (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7))
-  add_executable(check_remote_alloced_comp_1 check_remote_alloced_comp_1.f90)
-  target_link_libraries(check_remote_alloced_comp_1 OpenCoarrays)
+  add_executable(async_comp_alloc async_comp_alloc.f90)
+  target_link_libraries(async_comp_alloc OpenCoarrays)
 
   add_executable(register_alloc_comp_1 register_alloc_comp_1.f90)
   target_link_libraries(register_alloc_comp_1 OpenCoarrays)
