@@ -163,14 +163,17 @@ find_or_install()
 
         else
 
-          echo -e "$this_script: Checking whether $executable in PATH wraps gfortran version $(./build.sh -V gcc) or later... "
-          $executable acceptable_compiler.f90 -o acceptable_compiler
-          $executable print_true.f90 -o print_true
-          acceptable=$(./acceptable_compiler)
-          is_true=$(./print_true)
-          rm acceptable_compiler print_true
-
-          if [[ "$acceptable" == "$is_true" ]]; then
+          info "$this_script: Checking whether $executable in PATH wraps gfortran version >= $(./build.sh -V gcc) and < 7.0.0 ... "
+          $executable acceptable_compiler.f90 -o acceptable_compiler || true;
+          $executable print_true.f90 -o print_true || true;
+          if [[ -f ./acceptable_compiler && -f ./print_true ]]; then
+            acceptable=$(./acceptable_compiler)
+            is_true=$(./print_true)
+            rm acceptable_compiler print_true
+          else
+            acceptable=false
+          fi
+          if [[ "$acceptable" == "${is_true:-}" ]]; then
             printf "yes.\n %s: Using the $executable found in the PATH.\n" "$this_script"
             export MPIFC=mpif90
             export MPICC=mpicc
@@ -260,13 +263,17 @@ find_or_install()
       stack_push dependency_path "none"
 
     elif [[ "$package_in_path" == "true" ]]; then
-      echo -e "$this_script: Checking whether $executable in PATH is version $(./build.sh -V gcc) or later..."
-      $executable -o acceptable_compiler acceptable_compiler.f90
-      $executable -o print_true print_true.f90
-      is_true=$(./print_true)
-      acceptable=$(./acceptable_compiler)
-      rm acceptable_compiler print_true
-      if [[ "$acceptable" == "$is_true" ]]; then
+      info "$this_script: Checking whether $executable in PATH is version $(./build.sh -V gcc) or later..."
+      $executable -o acceptable_compiler acceptable_compiler.f90 || true;
+      $executable -o print_true print_true.f90 || true;
+      if [[ -f ./accepatable_compiler && -f ./print_true ]]; then
+        is_true=$(./print_true)
+        acceptable=$(./acceptable_compiler)
+        rm acceptable_compiler print_true
+      else
+        acceptable=false
+      fi
+      if [[ "$acceptable" == "${is_true:-}" ]]; then
         printf "yes.\n"
         echo -e "$this_script: Using the $executable found in the PATH.\n"
         export FC=gfortran
@@ -578,9 +585,13 @@ find_or_install()
     default_package_version=$(./build.sh -V "${package}")
     package_install_prefix="${package_install_path%${package}/${arg_I:-${default_package_version}}*}"
 
+    if [[ "${arg_y}" == "${__flag_present}" ]]; then
+      yes_to_all="-y"
+    fi
+
     echo -e "$this_script: Downloading, building, and installing $package \n"
-    echo "$this_script: Build command: FC=$FC CC=$CC CXX=$CXX ./build.sh -p $package -i $package_install_prefix -j $num_threads"
-    FC="$FC" CC="$CC" CXX="$CXX" ./build.sh -p "$package" -i "$package_install_prefix" -j "$num_threads"
+    echo "$this_script: Build command: FC=$FC CC=$CC CXX=$CXX ./build.sh -p $package -i $package_install_prefix -j $num_threads ${yes_to_all:-}"
+    FC="$FC" CC="$CC" CXX="$CXX" ./build.sh -p "$package" -i "$package_install_prefix" -j "$num_threads" "${yes_to_all:-}"
 
     if [[ -x "$package_install_path/bin/$executable" ]]; then
       echo -e "$this_script: Installation successful.\n"

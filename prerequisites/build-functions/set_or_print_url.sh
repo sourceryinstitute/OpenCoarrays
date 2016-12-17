@@ -14,20 +14,20 @@ set_or_print_url()
     major_minor="${version_to_build%.*}"
   elif [[ "${package_to_build}" == "gcc" ]]; then
     if [[ -z "${arg_b:-${arg_B}}" ]]; then
-      gcc_url_head="ftp.gnu.org:/gnu/gcc/gcc-${version_to_build}/"
+      gcc_url_head="ftp://ftp.gnu.org:/gnu/gcc/gcc-${version_to_build}/"
     else
       gcc_url_head="svn://gcc.gnu.org/svn/gcc/"
     fi
   fi
   package_url_head=(
     "gcc;${gcc_url_head-}"
-    "wget;ftp.gnu.org:/gnu/wget/"
-    "m4;ftp.gnu.org:/gnu/m4/"
+    "wget;ftp://ftp.gnu.org:/gnu/wget/"
+    "m4;ftp://ftp.gnu.org:/gnu/m4/"
     "pkg-config;http://pkgconfig.freedesktop.org/releases/"
     "mpich;http://www.mpich.org/static/downloads/${version_to_build-}/"
     "flex;http://sourceforge.net/projects/flex/files/"
     "make;ftp://ftp.gnu.org/gnu/make/"
-    "bison;ftp.gnu.org:/gnu/bison/"
+    "bison;ftp://ftp.gnu.org:/gnu/bison/"
     "cmake;http://www.cmake.org/files/v${major_minor-}/"
     "subversion;http://www.eu.apache.org/dist/subversion/"
   )

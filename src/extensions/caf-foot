@@ -63,7 +63,7 @@ fi
 # Default to "mpif90" Fortran compiler if environment variable CAFC is empty or unset:
 CAFC=${CAFC:-mpif90}
 
-# TODO -- improve the syntax of the "set" command below to accepted an unlimited number of arguments
+# TODO -- refactor this script to use the bash3boilerplate use case
 max_arguments=100
 link_args="-fcoarray=lib -lcaf_mpi"
 
@@ -77,8 +77,10 @@ if [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
     echo "BSD 3-Clause License.  For more information about these matters, see"
     echo "the file named LICENSE."
     echo ""
-elif [[ $1 == '-w' || $1 == '--wrapping' || $1 == '--wraps' ]]; then
+elif [[ $1 == '-w' || $1 == '--wraps' ]]; then
   echo "caf wraps CAFC=$CAFC"
+elif [[ $1 == '-s' || $1 == '--show' ]]; then
+  $CAFC -show
 elif [[ $1 == '-h' || $1 == '--help' ]]; then
   # Print usage information
   usage | less

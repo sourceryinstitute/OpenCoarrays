@@ -1,17 +1,31 @@
-add_executable(initialize_mpi initialize_mpi.f90)
+add_executable(initialize_mpi initialize_mpi.F90)
 target_link_libraries(initialize_mpi OpenCoarrays)
 
 add_executable(register register.f90)
 target_link_libraries(register OpenCoarrays)
 
-add_executable(register_rename_me register_rename_me.f90)
-target_link_libraries(register_rename_me OpenCoarrays)
+add_executable(register_vector register_vector.f90)
+target_link_libraries(register_vector OpenCoarrays)
 
-add_executable(register_rename_me_too register_rename_me_too.f90)
-target_link_libraries(register_rename_me_too OpenCoarrays)
+add_executable(register_alloc_vector register_alloc_vector.f90)
+target_link_libraries(register_alloc_vector OpenCoarrays)
 
 add_executable(allocate_as_barrier allocate_as_barrier.f90)
 target_link_libraries(allocate_as_barrier OpenCoarrays)
 
 add_executable(allocate_as_barrier_proc allocate_as_barrier_proc.f90)
 target_link_libraries(allocate_as_barrier_proc OpenCoarrays)
+
+if (gfortran_compiler AND (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7))
+  add_executable(check_remote_alloced_comp_1 check_remote_alloced_comp_1.f90)
+  target_link_libraries(check_remote_alloced_comp_1 OpenCoarrays)
+
+  add_executable(register_alloc_comp_1 register_alloc_comp_1.f90)
+  target_link_libraries(register_alloc_comp_1 OpenCoarrays)
+
+  add_executable(register_alloc_comp_2 register_alloc_comp_2.f90)
+  target_link_libraries(register_alloc_comp_2 OpenCoarrays)
+
+  add_executable(register_alloc_comp_3 register_alloc_comp_3.f90)
+  target_link_libraries(register_alloc_comp_3 OpenCoarrays)
+endif()

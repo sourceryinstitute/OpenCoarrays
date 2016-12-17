@@ -18,3 +18,6 @@ target_link_libraries(whole_get_array OpenCoarrays)
 
 add_executable(strided_get strided_get.f90)
 target_link_libraries(strided_get OpenCoarrays)
+
+add_executable(strided_sendget strided_sendget.f90)
+target_link_libraries(strided_sendget OpenCoarrays)

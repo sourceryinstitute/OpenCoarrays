@@ -1,6 +1,9 @@
 if ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
   option(HIGH_RESOLUTION_TIMER "use the walltime.o wallclock timer" FALSE)
   option(LEGACY_ARCHITECTURE "use the SSE-enabled FFT library" FALSE)
+
+  # Let package maintainers disable fft library written in assembly
+  option ( SKIP_ASSEMBLY_DEPS "Skip buidling/running tests that depend on files written in assembly" FALSE )
 endif()
 
 if (HIGH_RESOLUTION_TIMER)
@@ -14,4 +17,4 @@ endif()
 
 add_subdirectory(integration)
 add_subdirectory(unit)
-#add_subdirectory(performance)
+add_subdirectory(installation)

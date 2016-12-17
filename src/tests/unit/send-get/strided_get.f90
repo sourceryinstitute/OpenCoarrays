@@ -18,8 +18,10 @@ program strided_get
 
   if(me == 2) then
     bc(1:2,:,:,:) = ac(0:1,:,:,:)[me-1]
-    if(any(bc(1:2,:,:,:) /= 1)) call abort()
-    write(*,*) 'Test passed.'
+    if(any(bc(1:2,:,:,:) /= 1)) error stop "strided get test failed"
   endif
 
+  sync all
+
+  if (me == 2) write(*,*) 'Test passed.'
 end program

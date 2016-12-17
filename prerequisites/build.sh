@@ -88,7 +88,7 @@ info "__os: ${__os}"
 info "__usage: ${__usage}"
 info "LOG_LEVEL: ${LOG_LEVEL}"
 
-info "-b (--branch):           ${arg_b} "
+info "-b (--install-branch):   ${arg_b} "
 info "-B (--list-branches):    ${arg_B} "
 info "-c (--with-c):           ${arg_c} "
 info "-C (--with-cxx):         ${arg_C} "
@@ -124,7 +124,7 @@ fi
 # shellcheck source=./build-functions/set_or_print_downloader.sh
 source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/set_or_print_downloader.sh"
 # shellcheck disable=SC2119
-set_or_print_downloader
+set_or_print_downloader $@
 
 # shellcheck source=./build-functions/set_or_print_url.sh
 source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/set_or_print_url.sh"
@@ -149,7 +149,7 @@ if [[ -z "${arg_B}" ]]; then
   # shellcheck source=./build-functions/set_compilers.sh
   source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/set_compilers.sh"
   set_compilers
-
+ 
   # shellcheck source=./build-functions/build_and_install.sh
   source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/build_and_install.sh"
   build_and_install
