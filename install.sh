@@ -297,7 +297,11 @@ elif [[ "${arg_p:-}" == "opencoarrays" ]]; then
   source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/set_SUDO_if_needed_to_write_to_directory.sh"
   version="$("${opencoarrays_src_dir}/install.sh" -V opencoarrays)"
   set_SUDO_if_needed_to_write_to_directory "${install_path}"
-  build_opencoarrays 2>&1 | tee ../"${installation_record}"
+
+  # Using process substitution "> >(...) -" instead of piping to tee via "2>&1 |" ensures that
+  # report_results gets the FC value set in build_opencoarrays
+  # Source: http://stackoverflow.com/questions/8221227/bash-variable-losing-its-value-strange
+  build_opencoarrays > >( tee ../"${installation_record}" ) -
   report_results 2>&1 | tee -a ../"${installation_record}"
 
 elif [[ "${arg_p:-}" == "ofp" ]]; then
@@ -314,3 +318,4 @@ elif [[ ! -z "${arg_p:-}" ]]; then
 
 fi
 # ____________________________________ End of Main Body ____________________________________________
+
