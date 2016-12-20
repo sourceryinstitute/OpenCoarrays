@@ -372,6 +372,7 @@ if(opencoarrays_aware_compiler)
     add_mpi_test(async_comp_alloc 6 ${tests_root}/unit/init_register/async_comp_alloc)
     # Timeout async_comp_alloc test after 3 seconds to progess past the known failure
     set_property(TEST async_comp_alloc PROPERTY TIMEOUT_AFTER_MATCH 3 "known failure")
+    set_property(TEST async_comp_alloc PROPERTY TIMEOUT 6) # in the event old CMake is being used
   endif()
   add_mpi_test(get_array 2 ${tests_root}/unit/send-get/get_array)
   add_mpi_test(get_self 2 ${tests_root}/unit/send-get/get_self)
