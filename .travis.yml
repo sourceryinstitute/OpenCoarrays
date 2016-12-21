@@ -27,18 +27,20 @@ matrix:
       env:
        - BUILD_TYPE="InstallScript"
          OSX_PACKAGES="gcc"
-    - os: linux
+    - &ubuntu
+      os: linux
       sudo: false
       env:
         - BUILD_TYPE="CodeCoverage"
       cache:
+        apt: false
         directories:
           - "$CACHE"
       addons:
         apt:
           sources:
-            - george-edison55-precise-backports
             - ubuntu-toolchain-r-test
+            - george-edison55-precise-backports
           packages:
             - gcc-6
             - gfortran-6
@@ -46,29 +48,15 @@ matrix:
             - binutils
             - cmake-data
             - cmake
-    - os: linux
-      sudo: false
+    -
+      <<: *ubuntu
       env:
         - BUILD_TYPE="Release"
-      cache:
-        directories:
-          - "$CACHE"
-      addons:
-        apt:
-          sources:
-            - george-edison55-precise-backports
-            - ubuntu-toolchain-r-test
-          packages:
-            - gcc-6
-            - gfortran-6
-            - g++-6
-            - binutils
-            - cmake-data
-            - cmake
-    - os: linux
-      sudo: false
+    -
+      <<: *ubuntu
       env:
         - BUILD_TYPE="InstallScript"
+      cache: false
       addons:
         apt:
           sources:
