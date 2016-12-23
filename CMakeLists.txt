@@ -409,6 +409,7 @@ if(opencoarrays_aware_compiler)
 
   # Regression tests based on reported issues
   add_mpi_test(convert-before-put 3 ${tests_root}/regression/reported/convert-before-put)
+  add_mpi_test(event-post 3 ${tests_root}/regression/reported/event-post)
 else()
   add_test(co_sum_extension ${tests_root}/unit/extensions/test-co_sum-extension.sh)
   set_property(TEST co_sum_extension PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
