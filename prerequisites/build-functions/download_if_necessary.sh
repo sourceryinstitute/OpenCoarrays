@@ -38,7 +38,7 @@ download_if_necessary()
       first_three_characters=$(echo "${package_url}" | cut -c1-3)
       case "${first_three_characters}" in
         "ftp"  )
-           args=("-LO" "-u" "anonymous:")
+           args=("-LO" "-u" "anonymous: ")
         ;; 
         "htt"  )
            args=("-LO")
@@ -61,7 +61,7 @@ download_if_necessary()
       gcc_prereqs_fetch_args=("-n")
       ;;
     "curl" )
-      gcc_prereqs_fetch_args=("-LO" "-u" "anonymous:")
+      gcc_prereqs_fetch_args=("-LO" "-u" "anonymous: ")
       ;; 
     *)
       emergency "download_if_necessary.sh: Unrecognized \${gcc_prereqs_fetch_args}=${gcc_prereqs_fetch_args}."
