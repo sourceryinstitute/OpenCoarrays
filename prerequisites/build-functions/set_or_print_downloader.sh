@@ -28,7 +28,7 @@ set_or_print_downloader()
   elif type ftp &> /dev/null; then
     if [[ "${package_name}" == "gcc"   || "${package_name}" == "wget" || "${package_name}" == "make" ||
           "${package_name}" == "bison" || "${package_name}" == "m4"   ]]; then
-      gcc_prereqs_fetch=wget
+      gcc_prereqs_fetch=ftp_url
     fi
   else
     tried="curl, wget, and ftp"
