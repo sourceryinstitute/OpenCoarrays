@@ -4,9 +4,9 @@
 edit_GCC_download_prereqs_file_if_necessary()
 {
   # Only modify download_prerequisites if wget is unavailable
-  if type wget &> /dev/null; then
-    info "wget available. Invoking unmodified GCC script contrib/download_prerequisites."
-  else 
+   if type wget &> /dev/null; then
+     info "wget available. Invoking unmodified GCC script contrib/download_prerequisites."
+   else 
     info "wget unavailable. Editing GCC contrib/download_prerequisites to replace it with ${gcc_prereqs_fetch}"
 
     download_prereqs_file="${PWD}/contrib/download_prerequisites"
@@ -14,10 +14,6 @@ edit_GCC_download_prereqs_file_if_necessary()
     # Define a file extension for the download_prerequisites backup
     backup_extension=".original"
     backup_file="${download_prereqs_file}${backup_extension}"
-    if [[ "$(uname)" != "Linux" ]]; then
-      # Adjust for POSIX OS (e.g., OSX/macOS):
-      backup_extension=" ${backup_extension}"
-    fi
     if [[ -f ${backup_file}  ]]; then
       # Prevent overwriting an existing backup:
       backup_extension=""
@@ -43,24 +39,29 @@ edit_GCC_download_prereqs_file_if_necessary()
       # Check for wget format used before GCC 7
       if [[ "${wget_line}" == *"ftp"* ]]; then
         gcc7_format="false"
-        wget_command="${wget_line%%ftp*}" # grab everything before "ftp"
+        wget_command="${wget_line%%ftp*}" # grab everything before ftp
 
       # Check for wget format adopted in GCC 7
       elif [[  "${wget_line}" == *"base_url"* ]]; then 
         gcc7_format="true"
-        if [[ "${gcc_prereqs_fetch}" == "ftp_url" ]]; then
-          # Insert a new line after line 2 to include ftp_url.sh as a download option
-          sed -i${backup_extension} -e '2 a\'$'\n'". ${OPENCOARRAYS_SRC_DIR}/prerequisites/build-functions/ftp_url.sh"$'\n' "${download_prereqs_file}"
-          wget_command='wget --no-verbose -O "${directory}\/${ar}"'
-        else
-          wget_command="${wget_line%%\"\$\{base_url\}*}" # grab everything before "${base_url}
-          wget_command="wget${wget_command#*wget}" # keep everything from wget forward
-        fi
+        case "${gcc_prereqs_fetch}" in
+          "ftp_url")
+            # Insert a new line after line 2 to include ftp_url.sh as a download option
+            sed -i${backup_extension} -e '2 a\'$'\n'". ${OPENCOARRAYS_SRC_DIR}/prerequisites/build-functions/ftp_url.sh"$'\n' "${download_prereqs_file}"
+            wget_command='wget --no-verbose -O "${directory}\/${ar}"'
+          ;;
+          "curl")
+            wget_command="${wget_line%%\"\$\{directory\}*}" # grab everything before "${base_url}
+            wget_command="wget${wget_command#*wget}" # keep everything from wget forward
+          ;;
+          *)
+            emergency "Unknown download program ${gcc_prereqs_fetch} in edit_GCC_download_prereqs_file_if_necessary.sh"
+          ;;
+        esac
 
       else
         emergency "gcc contrib/download_prerequisites does not use a known URL format"
       fi
-      info "GCC contrib/download_prerequisites wget command is ${wget_command}"
 
       arg_string="${gcc_prereqs_fetch_args[@]:-} "
 
@@ -73,17 +74,25 @@ edit_GCC_download_prereqs_file_if_necessary()
             debug "if problem downloading, ensure that the gcc download_prerequisites edits are compatible with ${gcc_prereqs_fetch}"  
           ;;
         esac
-        # Protect against missing sha512sum command adopted in GCC 7 (not available by on a default on all Linux platforms)
+        # Protect against missing sha512sum command adopted in GCC 7 (not available by default on Lubuntu Linux)
         if ! type sha512sum &> /dev/null; then
           info "sha512sum unavailable. Turning off file integrity verification in GCC contrib/download_prerequisites."
-          sed -i${backup_extension} s/"verify=1"/"verify=0"/ "${download_prereqs_file}"
+          if [[ "$(uname)" == "Linux" ]]; then
+            # Adjust for non-POSIX OS
+            sed -i"${backup_extension}" s/"verify=1"/"verify=0"/ "${download_prereqs_file}"
+          else
+            sed -i "${backup_extension}" s/"verify=1"/"verify=0"/ "${download_prereqs_file}"
+          fi
         fi
       fi
-
       info "Using the following command to replacing wget in the GCC download_prerequisites file:"
       info "sed -i${backup_extension} s/\"${wget_command}\"/\"${gcc_prereqs_fetch} ${arg_string} \"/ \"${download_prereqs_file}\""
-      sed -i${backup_extension} s/"${wget_command}"/"${gcc_prereqs_fetch} ${arg_string} "/ "${download_prereqs_file}"
+      if [[ "$(uname)" == "Linux" ]]; then
+        sed -i"${backup_extension}" s/"${wget_command}"/"${gcc_prereqs_fetch} ${arg_string} "/ "${download_prereqs_file}"
+      else
+        sed -i "${backup_extension}" s/"${wget_command}"/"${gcc_prereqs_fetch} ${arg_string} "/ "${download_prereqs_file}"
+      fi
 
     fi # end if [[ ${already_modified_downloader:-} != "true"  ]];
-  fi # end if ! type wget &> /dev/null; 
+   fi # end if ! type wget &> /dev/null; 
 }
