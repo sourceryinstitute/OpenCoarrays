@@ -426,5 +426,5 @@ else()
   set_property(TEST co_reduce_extension PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
 endif()
 
-include(AddInstallationScriptTest.cmake )
+include(cmake/AddInstallationScriptTest.cmake )
 add_installation_script_test(installation-scripts.sh src/tests/installation/)
