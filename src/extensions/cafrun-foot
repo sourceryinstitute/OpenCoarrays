@@ -1,4 +1,4 @@
-Usage()
+usage()
 {
     cmd=$(basename "$0")
     echo ""

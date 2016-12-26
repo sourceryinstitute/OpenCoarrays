@@ -7,7 +7,7 @@ set ( CMAKE_BUILD_TYPE "Release"
 set_property ( CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${CMAKE_CONFIGURATION_TYPES} )
 
 #Name project and specify source languages
-project(opencoarrays VERSION 1.7.5 LANGUAGES C Fortran)
+project(opencoarrays VERSION 1.8.1 LANGUAGES C Fortran)
 
 #Print an error message on an attempt to build inside the source directory tree:
 if ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
@@ -406,6 +406,9 @@ if(opencoarrays_aware_compiler)
       set_property(TEST coarray_navier_stokes PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
     endif()
   endif()
+
+  # Regression tests based on reported issues
+  add_mpi_test(convert-before-put 3 ${tests_root}/regression/reported/convert-before-put)
 else()
   add_test(co_sum_extension ${tests_root}/unit/extensions/test-co_sum-extension.sh)
   set_property(TEST co_sum_extension PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
