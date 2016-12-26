@@ -34,7 +34,7 @@ program main
   !! date: 2016-12-21
   !! category: regression
   !! Test whether implicit type conversion occurs before coarray put
-  !! OpenCoarrays issue #280
+  !! OpenCoarrays issue #292
   use iso_fortran_env, only : error_unit
   implicit none
   real :: a[*]
