@@ -41,10 +41,6 @@ program main
 
   if (num_images()<3) error stop "exposing issue 293 requires num_images()>=3"
   event post(test_post)
-! Hardwire failure with GCC 7 (remove this preprocessor conditional after the silent failure with GCC 7 has been eliminated)
-#if __GNUC__ >= 7
-#else
-    if (this_image()==1) print *,"Test passed."
-#endif
+  if (this_image()==1) print *,"Test passed."
 
 end program
