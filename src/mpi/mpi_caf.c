@@ -421,6 +421,11 @@ PREFIX (init) (int *argc, char ***argv)
   /* MPI_Barrier(CAF_COMM_WORLD); */
 }
 
+/* Forward declaration of sync_images.  */
+
+void
+sync_images_internal (int count, int images[], int *stat, char *errmsg,
+                      int errmsg_len, bool internal);
 
 /* Finalize coarray program.   */
 
@@ -431,10 +436,11 @@ _gfortran_caf_finalize (void)
 PREFIX (finalize) (void)
 #endif
 {
+  int empty[0];
   *img_status = STAT_STOPPED_IMAGE; /* GFC_STAT_STOPPED_IMAGE = 6000 */
   MPI_Win_sync(*stat_tok);
 
-  MPI_Barrier(CAF_COMM_WORLD);
+  sync_images_internal (-1, empty, NULL, NULL, 0, true);
 
   while (caf_static_list != NULL)
     {
@@ -2988,6 +2994,13 @@ void
 PREFIX (sync_images) (int count, int images[], int *stat, char *errmsg,
                      int errmsg_len)
 {
+  sync_images_internal (count, images, stat, errmsg, errmsg_len, false);
+}
+
+void
+sync_images_internal (int count, int images[], int *stat, char *errmsg,
+                      int errmsg_len, bool internal)
+{
   int ierr = 0, i = 0, remote_stat = 0, j = 0;
   MPI_Status s;
 
@@ -3049,16 +3062,10 @@ PREFIX (sync_images) (int count, int images[], int *stat, char *errmsg,
 	    CAF_COMM_WORLD, &handlers[i]);
       for(i = 0; i < count; ++i)
 	{
-# ifdef CAF_MPI_LOCK_UNLOCK
-	  MPI_Win_lock (MPI_LOCK_SHARED, images[i] - 1, 0, *stat_tok);
-# endif // CAF_MPI_LOCK_UNLOCK
+	  CAF_Win_lock (MPI_LOCK_SHARED, images[i] - 1, *stat_tok);
 	  ierr = MPI_Get (&remote_stat, 1, MPI_INT,
 			  images[i] - 1, 0, 1, MPI_INT, *stat_tok);
-# ifdef CAF_MPI_LOCK_UNLOCK
-	  MPI_Win_unlock (images[i] - 1, *stat_tok);
-# else // CAF_MPI_LOCK_UNLOCK
-	  MPI_Win_flush (images[i] - 1, *stat_tok);
-# endif // CAF_MPI_LOCK_UNLOCK
+	  CAF_Win_unlock (images[i] - 1, *stat_tok);
 	  if(remote_stat != 0)
 	    {
 	      ierr = STAT_STOPPED_IMAGE;
@@ -3071,12 +3078,15 @@ PREFIX (sync_images) (int count, int images[], int *stat, char *errmsg,
 	}
       if (ierr == 0)
 	{
+	  int zero = 0;
 	  int done_count = 0;
 	  for(i = 0; i < count; ++i)
 	    {
 	      if (arrived[images[i] - 1] != STAT_STOPPED_IMAGE)
-		/* Only send, when no stopped images have been found.  */
-		ierr = MPI_Send (&caf_this_image, 1, MPI_INT, images[i] - 1, 0,
+		/* Only send, when no stopped images have been found.
+		   Do not send our id, because on very large clusters one id
+		   and he STAT_STOPPED_IMAGE code may be the same.  */
+		ierr = MPI_Send (&zero, 1, MPI_INT, images[i] - 1, 0,
 				 CAF_COMM_WORLD);
 	      else
 		ierr = STAT_STOPPED_IMAGE;
@@ -3089,6 +3099,17 @@ PREFIX (sync_images) (int count, int images[], int *stat, char *errmsg,
 		++done_count;
 	      if (i != MPI_UNDEFINED && arrived[i] == STAT_STOPPED_IMAGE)
 		ierr = STAT_STOPPED_IMAGE;
+	      else if (i != MPI_UNDEFINED)
+		{
+		  /* Check that after a late stopped image has set its status
+		     that status is not stopped.  */
+		  CAF_Win_lock (MPI_LOCK_SHARED, images[i] - 1, *stat_tok);
+		  ierr = MPI_Get (&remote_stat, 1, MPI_INT,
+				  images[i] - 1, 0, 1, MPI_INT, *stat_tok);
+		  CAF_Win_unlock (images[i] - 1, *stat_tok);
+		  if (remote_stat != 0)
+		    ierr = STAT_STOPPED_IMAGE;
+		}
 	      else if (ierr != MPI_SUCCESS)
 		break;
 	    }
@@ -3117,7 +3138,7 @@ sync_images_err_chk:
           if (errmsg_len > len)
             memset (&errmsg[len], ' ', errmsg_len-len);
         }
-      else
+      else if (!internal)
         caf_runtime_error (msg);
     }
 }
