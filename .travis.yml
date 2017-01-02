@@ -147,7 +147,7 @@ script:
     else
       mkdir cmake-build
       cd cmake-build
-      cmake -DCMAKE_INSTALL_PREFIX:PATH="$HOME/OpenCoarrays" -DCMAKE_BUILD_TYPE="$BUILD_TYPE" -DCMAKE_VERBOSE_MAKEFILE="ON" ..
+      cmake -DCMAKE_INSTALL_PREFIX:PATH="$HOME/OpenCoarrays" -DCMAKE_BUILD_TYPE="$BUILD_TYPE" ..
       make -j 4
       ctest --output-on-failure
       make install
