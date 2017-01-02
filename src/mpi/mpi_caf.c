@@ -430,8 +430,9 @@ PREFIX (finalize) (void)
 #endif
 {
   int empty[0];
+  CAF_Win_lock (MPI_LOCK_EXCLUSIVE, caf_this_image - 1, *stat_tok);
   *img_status = STAT_STOPPED_IMAGE; /* GFC_STAT_STOPPED_IMAGE = 6000 */
-  MPI_Win_sync(*stat_tok);
+  CAF_Win_unlock (caf_this_image - 1, *stat_tok);
 
   sync_images_internal (-1, empty, NULL, NULL, 0, true);
 
