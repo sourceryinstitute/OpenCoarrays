@@ -451,16 +451,16 @@ PREFIX (finalize) (void)
       prev = tmp_tot->prev;
       p = TOKEN(tmp_tot->token);
 #ifdef GCC_GE_7
-      CAF_Win_unlock_all(*p);
+      CAF_Win_unlock_all (*p);
       if (((mpi_caf_token_t *)tmp_tot->token)->desc)
 	{
 	  mpi_caf_token_t *mpi_token = (mpi_caf_token_t *)tmp_tot->token;
-	  CAF_Win_unlock_all(*(mpi_token->desc));
+	  CAF_Win_unlock_all (*(mpi_token->desc));
 	  MPI_Win_free (mpi_token->desc);
 	  free (mpi_token->desc);
 	}
 #else // GCC_GE_7
-      CAF_Win_unlock_all(*p);
+      CAF_Win_unlock_all (*p);
 #endif // GCC_GE_7
       MPI_Win_free(p);
       free(tmp_tot);
@@ -675,10 +675,10 @@ void *
   if(l_var)
     {
       init_array = (int *)calloc(size, sizeof(int));
-      CAF_Win_lock(MPI_LOCK_EXCLUSIVE, caf_this_image-1, *p);
+      CAF_Win_lock (MPI_LOCK_EXCLUSIVE, caf_this_image - 1, *p);
       MPI_Put (init_array, size, MPI_INT, caf_this_image-1,
                       0, size, MPI_INT, *p);
-      CAF_Win_unlock(caf_this_image-1, *p);
+      CAF_Win_unlock (caf_this_image - 1, *p);
       free(init_array);
     }
 
@@ -786,7 +786,7 @@ PREFIX (deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len
 	  if ((*(mpi_caf_token_t **)token)->desc
 	      && type != CAF_DEREGTYPE_COARRAY_DEALLOCATE_ONLY)
 	    {
-	      CAF_Win_unlock_all(*(mpi_token->desc));
+	      CAF_Win_unlock_all (*(mpi_token->desc));
 	      MPI_Win_free (mpi_token->desc);
 	      free (mpi_token->desc);
 	    }
@@ -961,7 +961,7 @@ PREFIX (sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
       if (pad_str)
         memcpy ((char *) tmp + src_size, pad_str,
                 dst_size-src_size);
-      CAF_Win_unlock (image_index_g-1, *p_g);
+      CAF_Win_unlock (image_index_g - 1, *p_g);
 
       CAF_Win_lock (MPI_LOCK_EXCLUSIVE, image_index_s - 1, *p_s);
       if (GFC_DESCRIPTOR_TYPE (dest) == GFC_DESCRIPTOR_TYPE (src)
@@ -1128,7 +1128,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
 			      newoff, dst_size - src_size, MPI_BYTE, *p);
 	    }
 #ifdef CAF_MPI_LOCK_UNLOCK
-          MPI_Win_unlock (image_index-1, *p);
+          MPI_Win_unlock (image_index - 1, *p);
 #elif NONBLOCKING_PUT
 	  /* Pending puts init */
 	  if(pending_puts == NULL)
@@ -1149,7 +1149,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
 	      last_elem->next = NULL;
 	    }
 #else
-	  MPI_Win_flush (image_index-1, *p);
+	  MPI_Win_flush (image_index - 1, *p);
 #endif // CAF_MPI_LOCK_UNLOCK
         }
 
