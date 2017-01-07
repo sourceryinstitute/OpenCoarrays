@@ -464,12 +464,12 @@ PREFIX (finalize) (void)
 	  MPI_Win_free (mpi_token->desc);
 	  free (mpi_token->desc);
 	}
-#else
+#else // GCC_GE_7
 # ifndef CAF_MPI_LOCK_UNLOCK
       MPI_Win_unlock_all(*p);
 # endif // CAF_MPI_LOCK_UNLOCK
+#endif // GCC_GE_7
       MPI_Win_free(p);
-#endif
       free(tmp_tot);
       tmp_tot = prev;
     }
@@ -541,23 +541,21 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
   mpi_token = (mpi_caf_token_t *) *token;
   p = TOKEN(mpi_token);
 
-  if (type == CAF_REGTYPE_COARRAY_ALLOC_ALLOCATE_ONLY
-      || type == CAF_REGTYPE_COARRAY_ALLOC
-      || type == CAF_REGTYPE_COARRAY_STATIC)
+  if ((type == CAF_REGTYPE_COARRAY_ALLOC_ALLOCATE_ONLY
+       || type == CAF_REGTYPE_COARRAY_ALLOC
+       || type == CAF_REGTYPE_COARRAY_STATIC)
+      && GFC_DESCRIPTOR_RANK (desc) != 0)
     {
-      if (GFC_DESCRIPTOR_RANK (desc) == 0)
-	mpi_token->desc = NULL;
-      else
-	{
-	  int ierr;
-	  size_t desc_size = sizeof (gfc_descriptor_t) + /*GFC_DESCRIPTOR_RANK (desc)*/
-	      GFC_MAX_DIMENSIONS * sizeof (descriptor_dimension);
-	  mpi_token->desc = (MPI_Win *)malloc (sizeof (MPI_Win));
-	  ierr = MPI_Win_create (desc, desc_size, 1, mpi_info_same_size,
-				 CAF_COMM_WORLD, mpi_token->desc);
-	  CAF_Win_lock_all (*(mpi_token->desc));
-	}
+      int ierr;
+      size_t desc_size = sizeof (gfc_descriptor_t) + /*GFC_DESCRIPTOR_RANK (desc)*/
+	  GFC_MAX_DIMENSIONS * sizeof (descriptor_dimension);
+      mpi_token->desc = (MPI_Win *)malloc (sizeof (MPI_Win));
+      ierr = MPI_Win_create (desc, desc_size, 1, mpi_info_same_size,
+			     CAF_COMM_WORLD, mpi_token->desc);
+      CAF_Win_lock_all (*(mpi_token->desc));
     }
+  else
+    mpi_token->desc = NULL;
 
 #if MPI_VERSION >= 3
   if (type != CAF_REGTYPE_COARRAY_ALLOC_REGISTER_ONLY)
