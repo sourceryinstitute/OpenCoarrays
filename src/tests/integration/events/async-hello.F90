@@ -69,11 +69,7 @@ program main
     end do
 
     sync all
-! Hardwire failure with GCC 7 (remove this preprocessor conditional after the silent failure with GCC 7 has been eliminated)
-#if __GNUC__ >= 7
-#else
     if (me==1) print *,"Test passed."
-#endif
 
   end associate
 
