@@ -189,7 +189,7 @@ set(OLD_INCLUDES ${CMAKE_REQUIRED_INCLUDES})
 set(CMAKE_REQUIRED_INCLUDES ${MPI_Fortran_INCLUDE_PATH})
 set(OLD_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES})
 set(CMAKE_REQUIRED_LIBRARIES ${MPI_Fortran_LIBRARIES})
-include (CheckCSourceCompiles)
+include (CheckFortranSourceCompiles)
 CHECK_Fortran_SOURCE_COMPILES("
 program mpi_hello
 use mpi
@@ -221,7 +221,7 @@ set(OLD_INCLUDES ${CMAKE_REQUIRED_INCLUDES})
 set(CMAKE_REQUIRED_INCLUDES ${MPI_Fortran_INCLUDE_PATH})
 set(OLD_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES})
 set(CMAKE_REQUIRED_LIBRARIES ${MPI_Fortran_LIBRARIES})
-include (CheckCSourceCompiles)
+include (CheckFortranSourceCompiles)
 CHECK_Fortran_SOURCE_COMPILES("
 program mpi_hello
 implicit none
