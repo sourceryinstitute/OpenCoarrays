@@ -34,17 +34,13 @@ program main
   !! date: 2016-12-22
   !! category: regression
   !! Test posting a static event_type coarray
-  !! OpenCoarrays issue #293
+  !! OpenCoarrays issue [#293](https://github.com/sourceryinstitute/opencoarrays/issues/293)
   use iso_fortran_env, only : event_type
   implicit none
   type(event_type) :: test_post[*]
 
   if (num_images()<3) error stop "exposing issue 293 requires num_images()>=3"
   event post(test_post)
-! Hardwire failure with GCC 7 (remove this preprocessor conditional after the silent failure with GCC 7 has been eliminated)
-#if __GNUC__ >= 7
-#else
-    if (this_image()==1) print *,"Test passed."
-#endif
+  if (this_image()==1) print *,"Test passed."
 
 end program
