@@ -12,3 +12,6 @@ target_link_libraries(duplicate_syncimages OpenCoarrays)
 
 add_executable(syncimages_status syncimages_status.f90)
 target_link_libraries(syncimages_status OpenCoarrays)
+
+add_executable(sync_image_ring_abort_on_stopped_image sync_image_ring_abort_on_stopped_image.f90)
+target_link_libraries(sync_image_ring_abort_on_stopped_image OpenCoarrays)
