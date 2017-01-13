@@ -10,7 +10,6 @@ program sync_images_stat
   me = this_image()
 
   if (me /= 1 ) then
-     call sleep(1)
      sync images(*,STAT=stat_var)
      if ( stat_var /= STAT_STOPPED_IMAGE) then
         print *, "Error:stat_var /= STAT_STOPPED_IMAGE: ", me
