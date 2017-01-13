@@ -34,7 +34,7 @@ program main
   !! date: 2016-12-22
   !! category: regression
   !! Test posting a static event_type coarray
-  !! OpenCoarrays issue #293
+  !! OpenCoarrays issue [#293](https://github.com/sourceryinstitute/opencoarrays/issues/293)
   use iso_fortran_env, only : event_type
   implicit none
   type(event_type) :: test_post[*]
