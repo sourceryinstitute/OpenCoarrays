@@ -21,7 +21,7 @@ build_opencoarrays()
   # Set FC to the MPI implementation's gfortran command with any preceding path but without any subsequent arguments:
   FC="${MPIFC_show%%gfortran*}"gfortran
   # Set CC to the MPI implementation's gcc command...
-  CC="${MPICC_show%%gcc*}"gcc
+  CC="${MPICC_show%%gcc *}"gcc
   info "Configuring OpenCoarrays in ${PWD} with the command:"
   info "CC=\"${CC}\" FC=\"${FC}\" $CMAKE \"${opencoarrays_src_dir}\" -DCMAKE_INSTALL_PREFIX=\"${install_path}\" -DMPI_C_COMPILER=\"${MPICC}\" -DMPI_Fortran_COMPILER=\"${MPIFC}\""
   CC="${CC}" FC="${FC}" $CMAKE "${opencoarrays_src_dir}" -DCMAKE_INSTALL_PREFIX="${install_path}" -DMPI_C_COMPILER="${MPICC}" -DMPI_Fortran_COMPILER="${MPIFC}"
