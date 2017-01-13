@@ -266,7 +266,7 @@ find_or_install()
       info "$this_script: Checking whether $executable in PATH is version $(./build.sh -V gcc) or later..."
       $executable -o acceptable_compiler acceptable_compiler.f90 || true;
       $executable -o print_true print_true.f90 || true;
-      if [[ -f ./accepatable_compiler && -f ./print_true ]]; then
+      if [[ -f ./acceptable_compiler && -f ./print_true ]]; then
         is_true=$(./print_true)
         acceptable=$(./acceptable_compiler)
         rm acceptable_compiler print_true
