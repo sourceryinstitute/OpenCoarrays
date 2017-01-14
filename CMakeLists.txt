@@ -392,6 +392,7 @@ if(opencoarrays_aware_compiler)
   add_mpi_test(co_reduce 4 ${tests_root}/unit/collectives/co_reduce_test)
   add_mpi_test(syncimages_status 32 ${tests_root}/unit/sync/syncimages_status)
   add_mpi_test(simpleatomics 32 ${tests_root}/unit/simple/atomics)
+  add_mpi_test(host-associated-event 2 ${tests_root}/unit/host-associated-alloc-comp)
   # possible logic error in the following test
 #  add_mpi_test(increment_my_neighbor 32 ${tests_root}/unit/simple/increment_my_neighbor)
 
