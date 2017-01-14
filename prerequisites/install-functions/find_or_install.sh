@@ -222,6 +222,15 @@ find_or_install()
       translate_source="${translate_source:-unknown}" # will be used by install_transpiler_if_necessary.sh
     fi
 
+    # Check consistency of MPIFC, if set, and user-specified Fortran compiler
+    if [[ ! -z ${MPIFC:-} && ! -z "${arg_f:-}" ]]; then
+      MPIFC_wraps=$(${MPIFC} --version)
+      compiler=$(${arg_f} --version)
+      if [[ "${MPIFC_wraps}" != "${compiler}"   ]]; then
+        emergency "Specified MPI ${MPIFC_wraps} wraps a compiler other than the specified Fortran compiler ${compiler}"
+      fi
+    fi
+
   elif [[ $package == "gcc" ]]; then
 
     # We arrive here when the 'elif [[ $package == "mpich" ]]' block pushes "gcc" onto the
