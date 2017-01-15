@@ -75,8 +75,8 @@ static int caf_is_finalized = 0;
 /*Sync image part*/
 
 static int *orders;
-MPI_Request *handlers;
 static int *images_full;
+MPI_Request *sync_handles;
 static int *arrived;
 
 /* Pending puts */
@@ -96,8 +96,8 @@ caf_static_t *caf_tot = NULL;
 
 /* Image status variable */
 
-static int *img_status = NULL;
-MPI_Win *stat_tok;
+static int img_status = 0;
+static MPI_Win *stat_tok;
 
 /* Active messages variables */
 
@@ -400,7 +400,7 @@ PREFIX (init) (int *argc, char ***argv)
       orders = calloc (caf_num_images, sizeof (int));
       arrived = calloc (caf_num_images, sizeof (int));
 
-      handlers = malloc(caf_num_images * sizeof(MPI_Request));
+      sync_handles = malloc(caf_num_images * sizeof(MPI_Request));
 
       stat_tok = malloc (sizeof(MPI_Win));
 
@@ -408,7 +408,7 @@ PREFIX (init) (int *argc, char ***argv)
       MPI_Info_create (&mpi_info_same_size);
       MPI_Info_set (mpi_info_same_size, "same_size", "true");
       /* Setting img_status */
-      MPI_Win_allocate(sizeof(int), 1, mpi_info_same_size, CAF_COMM_WORLD, &img_status, stat_tok);
+      MPI_Win_create(&img_status, sizeof(int), 1, mpi_info_same_size, CAF_COMM_WORLD, stat_tok);
 # ifndef CAF_MPI_LOCK_UNLOCK
       MPI_Win_lock_all(MPI_MODE_NOCHECK, *stat_tok);
 # endif // CAF_MPI_LOCK_UNLOCK
@@ -416,11 +416,15 @@ PREFIX (init) (int *argc, char ***argv)
       MPI_Alloc_mem(sizeof(int), MPI_INFO_NULL, &img_status, stat_tok);
       MPI_Win_create(img_status, sizeof(int), 1, MPI_INFO_NULL, CAF_COMM_WORLD, stat_tok);
 #endif // MPI_VERSION
-      *img_status = 0;
     }
   /* MPI_Barrier(CAF_COMM_WORLD); */
 }
 
+/* Forward declaration of sync_images.  */
+
+void
+sync_images_internal (int count, int images[], int *stat, char *errmsg,
+                      int errmsg_len, bool internal);
 
 /* Finalize coarray program.   */
 
@@ -431,10 +435,17 @@ _gfortran_caf_finalize (void)
 PREFIX (finalize) (void)
 #endif
 {
-  *img_status = STAT_STOPPED_IMAGE; /* GFC_STAT_STOPPED_IMAGE = 6000 */
-  MPI_Win_sync(*stat_tok);
+  /* For future security enclose setting img_status in a lock.  */
+  CAF_Win_lock (MPI_LOCK_EXCLUSIVE, caf_this_image - 1, *stat_tok);
+  img_status = STAT_STOPPED_IMAGE; /* GFC_STAT_STOPPED_IMAGE = 6000 */
+  CAF_Win_unlock (caf_this_image - 1, *stat_tok);
 
-  MPI_Barrier(CAF_COMM_WORLD);
+  /* Announce to all other images, that this one is stopped.  */
+  for (int i = 0; i < caf_num_images - 1; ++i)
+    MPI_Send (&img_status, 1, MPI_INT, images_full[i] - 1, 0, CAF_COMM_WORLD);
+
+  /* Add a conventional barrier to prevent images from quitting to early.  */
+  MPI_Barrier (CAF_COMM_WORLD);
 
   while (caf_static_list != NULL)
     {
@@ -464,12 +475,12 @@ PREFIX (finalize) (void)
 	  MPI_Win_free (mpi_token->desc);
 	  free (mpi_token->desc);
 	}
-#else
+#else // GCC_GE_7
 # ifndef CAF_MPI_LOCK_UNLOCK
       MPI_Win_unlock_all(*p);
 # endif // CAF_MPI_LOCK_UNLOCK
+#endif // GCC_GE_7
       MPI_Win_free(p);
-#endif
       free(tmp_tot);
       tmp_tot = prev;
     }
@@ -477,6 +488,10 @@ PREFIX (finalize) (void)
   MPI_Info_free (&mpi_info_same_size);
 #endif // MPI_VERSION
 
+# ifndef CAF_MPI_LOCK_UNLOCK
+  MPI_Win_unlock_all (*stat_tok);
+# endif // CAF_MPI_LOCK_UNLOCK
+  MPI_Win_free (stat_tok);
   MPI_Comm_free(&CAF_COMM_WORLD);
 
   /* Only call Finalize if CAF runtime Initialized MPI. */
@@ -486,7 +501,7 @@ PREFIX (finalize) (void)
   pthread_mutex_lock(&lock_am);
   caf_is_finalized = 1;
   pthread_mutex_unlock(&lock_am);
-  exit(0);
+  free (sync_handles);
 }
 
 
@@ -541,23 +556,21 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
   mpi_token = (mpi_caf_token_t *) *token;
   p = TOKEN(mpi_token);
 
-  if (type == CAF_REGTYPE_COARRAY_ALLOC_ALLOCATE_ONLY
-      || type == CAF_REGTYPE_COARRAY_ALLOC
-      || type == CAF_REGTYPE_COARRAY_STATIC)
+  if ((type == CAF_REGTYPE_COARRAY_ALLOC_ALLOCATE_ONLY
+       || type == CAF_REGTYPE_COARRAY_ALLOC
+       || type == CAF_REGTYPE_COARRAY_STATIC)
+      && GFC_DESCRIPTOR_RANK (desc) != 0)
     {
-      if (GFC_DESCRIPTOR_RANK (desc) == 0)
-	mpi_token->desc = NULL;
-      else
-	{
-	  int ierr;
-	  size_t desc_size = sizeof (gfc_descriptor_t) + /*GFC_DESCRIPTOR_RANK (desc)*/
-	      GFC_MAX_DIMENSIONS * sizeof (descriptor_dimension);
-	  mpi_token->desc = (MPI_Win *)malloc (sizeof (MPI_Win));
-	  ierr = MPI_Win_create (desc, desc_size, 1, mpi_info_same_size,
-				 CAF_COMM_WORLD, mpi_token->desc);
-	  CAF_Win_lock_all (*(mpi_token->desc));
-	}
+      int ierr;
+      size_t desc_size = sizeof (gfc_descriptor_t) + /*GFC_DESCRIPTOR_RANK (desc)*/
+	  GFC_MAX_DIMENSIONS * sizeof (descriptor_dimension);
+      mpi_token->desc = (MPI_Win *)malloc (sizeof (MPI_Win));
+      ierr = MPI_Win_create (desc, desc_size, 1, mpi_info_same_size,
+			     CAF_COMM_WORLD, mpi_token->desc);
+      CAF_Win_lock_all (*(mpi_token->desc));
     }
+  else
+    mpi_token->desc = NULL;
 
 #if MPI_VERSION >= 3
   if (type != CAF_REGTYPE_COARRAY_ALLOC_REGISTER_ONLY)
@@ -2990,7 +3003,14 @@ void
 PREFIX (sync_images) (int count, int images[], int *stat, char *errmsg,
                      int errmsg_len)
 {
-  int ierr = 0, i = 0, remote_stat = 0, j = 0;
+  sync_images_internal (count, images, stat, errmsg, errmsg_len, false);
+}
+
+void
+sync_images_internal (int count, int images[], int *stat, char *errmsg,
+                      int errmsg_len, bool internal)
+{
+  int ierr = 0, i = 0, j = 0, int_zero = 0, done_count = 0;
   MPI_Status s;
 
   if (count == 0 || (count == 1 && images[0] == caf_this_image))
@@ -3044,59 +3064,54 @@ PREFIX (sync_images) (int count, int images[], int *stat, char *errmsg,
       explicit_flush();
 #endif
 
+      /* A rather simple way to synchronice:
+	 - expect all images to sync with receiving an int,
+	 - on the other side, send all processes to sync with an int,
+	 - when the int received is STAT_STOPPED_IMAGE the return immediately,
+	   else wait until all images in the current set of images have send
+	   some data, i.e., synced.
+
+	 This approach as best as possible implements the syncing of different
+	 sets of images and figuring that an image has stopped.  MPI does not
+	 provide any direct means of syncing non-coherent sets of images.
+	 The groups/communicators of MPI always need to be consistent, i.e.,
+	 have the same members on all images participating.  This is
+	 contradictiory to the sync images statement, where syncing, e.g., in a
+	 ring pattern is possible.
+
+	 This implementation guarantees, that as long as no image is stopped
+	 an image only is allowed to continue, when all its images to sync to
+	 also have reached a sync images statement.  This implementation makes
+	 no assumption when the image continues or in which order synced
+	 images continue.  */
       for(i = 0; i < count; ++i)
 	/* Need to have the request handlers contigously in the handlers
 	   array or waitany below will trip about the handler as illegal.  */
 	ierr = MPI_Irecv (&arrived[images[i] - 1], 1, MPI_INT, images[i] - 1, 0,
-	    CAF_COMM_WORLD, &handlers[i]);
+			  CAF_COMM_WORLD, &sync_handles[i]);
       for(i = 0; i < count; ++i)
+	MPI_Send (&int_zero, 1, MPI_INT, images[i] - 1, 0, CAF_COMM_WORLD);
+      done_count = 0;
+      while (done_count < count)
 	{
-# ifdef CAF_MPI_LOCK_UNLOCK
-	  MPI_Win_lock (MPI_LOCK_SHARED, images[i] - 1, 0, *stat_tok);
-# endif // CAF_MPI_LOCK_UNLOCK
-	  ierr = MPI_Get (&remote_stat, 1, MPI_INT,
-			  images[i] - 1, 0, 1, MPI_INT, *stat_tok);
-# ifdef CAF_MPI_LOCK_UNLOCK
-	  MPI_Win_unlock (images[i] - 1, *stat_tok);
-# else // CAF_MPI_LOCK_UNLOCK
-	  MPI_Win_flush (images[i] - 1, *stat_tok);
-# endif // CAF_MPI_LOCK_UNLOCK
-	  if(remote_stat != 0)
+	  ierr = MPI_Waitany (count, sync_handles, &i, &s);
+	  if (i != MPI_UNDEFINED)
 	    {
-	      ierr = STAT_STOPPED_IMAGE;
-	      /* Let the other images know, that at least one image is
-		  stopped by sending STAT_STOPPED_IMAGE instead of our id.  */
-	      for(i = 0; i < count; ++i)
-		MPI_Send (&ierr, 1, MPI_INT, images[i] - 1, 0, CAF_COMM_WORLD);
-	      break;
+	      ++done_count;
+	      if (ierr == MPI_SUCCESS && arrived[i] == STAT_STOPPED_IMAGE)
+		{
+		  /* Possible future extension: Abort pending receives.  At the
+		     moment the receives are discarded by the program
+		     termination.  For the tested mpi-implementation this is ok.
+		   */
+		  ierr = STAT_STOPPED_IMAGE;
+		  break;
+		}
 	    }
+	  else if (ierr != MPI_SUCCESS)
+	    /* Abort receives here, too, when implemented above.  */
+	    break;
 	}
-      if (ierr == 0)
-	{
-	  int done_count = 0;
-	  for(i = 0; i < count; ++i)
-	    {
-	      if (arrived[images[i] - 1] != STAT_STOPPED_IMAGE)
-		/* Only send, when no stopped images have been found.  */
-		ierr = MPI_Send (&caf_this_image, 1, MPI_INT, images[i] - 1, 0,
-				 CAF_COMM_WORLD);
-	      else
-		ierr = STAT_STOPPED_IMAGE;
-	    }
-
-	  while (ierr != STAT_STOPPED_IMAGE && done_count < count)
-	    {
-	      ierr = MPI_Waitany (count, handlers, &i, &s);
-	      if (i != MPI_UNDEFINED)
-		++done_count;
-	      if (i != MPI_UNDEFINED && arrived[i] == STAT_STOPPED_IMAGE)
-		ierr = STAT_STOPPED_IMAGE;
-	      else if (ierr != MPI_SUCCESS)
-		break;
-	    }
-	}
-
-      memset(arrived, 0, sizeof(int) * caf_num_images);
     }
 
 sync_images_err_chk:
@@ -3119,8 +3134,8 @@ sync_images_err_chk:
           if (errmsg_len > len)
             memset (&errmsg[len], ' ', errmsg_len-len);
         }
-      else
-        caf_runtime_error (msg);
+      else if (!internal)
+	caf_runtime_error (msg);
     }
 }
 

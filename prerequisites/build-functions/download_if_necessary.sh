@@ -1,6 +1,6 @@
 # shellcheck shell=bash disable=SC2148
-# shellcheck source=./ftp-url.sh
-source "${OPENCOARRAYS_SRC_DIR}/prerequisites/build-functions/ftp-url.sh"
+# shellcheck source=./ftp_url.sh
+source "${OPENCOARRAYS_SRC_DIR}/prerequisites/build-functions/ftp_url.sh"
 # shellcheck source=./set_SUDO_if_needed_to_write_to_directory.sh
 source "${OPENCOARRAYS_SRC_DIR}/prerequisites/build-functions/set_SUDO_if_needed_to_write_to_directory.sh"
 
@@ -18,7 +18,7 @@ download_if_necessary()
     "wget" )
       args=("--no-check-certificate")
       ;;
-    "ftp-url" )
+    "ftp_url" )
       args=("-n")
       ;;
     "git" )
@@ -38,7 +38,7 @@ download_if_necessary()
       first_three_characters=$(echo "${package_url}" | cut -c1-3)
       case "${first_three_characters}" in
         "ftp"  )
-           args=("-LO" "-u" "anonymous:")
+           args=("-LO" "-u" "anonymous: ")
         ;; 
         "htt"  )
            args=("-LO")
@@ -57,14 +57,14 @@ download_if_necessary()
     "wget" )
       gcc_prereqs_fetch_args=("--no-check-certificate")
       ;;
-    "ftp-url" )
+    "ftp_url" )
       gcc_prereqs_fetch_args=("-n")
       ;;
     "curl" )
-      gcc_prereqs_fetch_args=("-LO" "-u" "anonymous:")
+      gcc_prereqs_fetch_args=("-LO" "-u" "anonymous: ")
       ;; 
     *)
-      emergency "download_if_necessary.sh: Unrecognized \${gcc_prereqs_fetch_args}=${gcc_prereqs_fetch_args}."
+      emergency "download_if_necessary.sh: Unrecognized \${gcc_prereqs_fetch}=${gcc_prereqs_fetch}."
       ;;
    esac
   

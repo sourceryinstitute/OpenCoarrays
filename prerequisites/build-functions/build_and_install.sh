@@ -1,5 +1,8 @@
 # Make the build directory, configure, and build
 # shellcheck disable=SC2154
+
+source ${OPENCOARRAYS_SRC_DIR}/prerequisites/build-functions/edit_GCC_download_prereqs_file_if_necessary.sh
+
 build_and_install()
 {
   num_threads=${arg_j}
@@ -14,31 +17,9 @@ build_and_install()
   mkdir -p "${build_path}"
   info "pushd ${build_path}"
   pushd "${build_path}"
-  if [[ "${package_to_build}" == "gcc" ]]; then
-    info "pushd ${download_path}/${package_source_directory} "
-    pushd "${download_path}/${package_source_directory}"
-    arg_string="${gcc_prereqs_fetch_args[@]:-}"
-    if [[ "$(uname)" == "Linux" ]]; then
-      sed -i'' s/"wget --no-verbose -O \"\${directory}\/\${ar}\""/"${gcc_prereqs_fetch} ${arg_string}"/ "${PWD}/contrib/download_prerequisites"
-    else
-      # This works on OS X and other POSIX-compliant operating systems:
-      sed -i '' s/"wget --no-verbose -O \"\${directory}\/\${ar}\""/"${gcc_prereqs_fetch} ${arg_string}"/ "${PWD}/contrib/download_prerequisites"
-    fi 
-    "${PWD}"/contrib/download_prerequisites
-    info "popd"
-    popd
-    info "Configuring gcc/g++/gfortran builds with the following command:"
-    info "${download_path}/${package_source_directory}/configure --prefix=${install_path} --enable-languages=c,c++,fortran,lto --disable-multilib --disable-werror"
-    "${download_path}/${package_source_directory}/configure" --prefix="${install_path}" --enable-languages=c,c++,fortran,lto --disable-multilib --disable-werror
-    info "Building with the following command: 'make -j${num_threads} bootstrap'"
-    make "-j${num_threads}" bootstrap
-    if [[ ! -z "${SUDO:-}" ]]; then
-      info "You do not have write permissions to the installation path ${install_path}"
-      info "If you have administrative privileges, enter your password to install ${package_to_build}"
-    fi
-    info "Installing with the following command: ${SUDO:-} make install"
-    ${SUDO:-} make install
-  else
+
+  if [[ "${package_to_build}" != "gcc" ]]; then
+
     info "Configuring ${package_to_build} ${version_to_build} with the following command:"
     info "FC=\"${FC:-'gfortran'}\" CC=\"${CC:-'gcc'}\" CXX=\"${CXX:-'g++'}\" \"${download_path}/${package_source_directory}\"/configure --prefix=\"${install_path}\""
     FC="${FC:-'gfortran'}" CC="${CC:-'gcc'}" CXX="${CXX:-'g++'}" "${download_path}/${package_source_directory}"/configure --prefix="${install_path}"
@@ -52,7 +33,37 @@ build_and_install()
     fi
     info "Installing with the following command: ${SUDO:-} make install"
     ${SUDO:-} make install
-  fi
+
+  else # ${package_to_build} == "gcc"
+
+    # Use GCC's contrib/download_prerequisites script after modifying it, if necessary, to use the
+    # the preferred download mechanism set in prerequisites/build-functions/set_or_print_downloader.sh
+
+    info "pushd ${download_path}/${package_source_directory} "
+    pushd "${download_path}/${package_source_directory}"
+
+    # Switch download mechanism, if wget is not available
+    edit_GCC_download_prereqs_file_if_necessary
+   
+    # Download GCC prerequisities
+    "${PWD}"/contrib/download_prerequisites
+
+    info "popd"
+    popd
+    info "Configuring gcc/g++/gfortran builds with the following command:"
+    info "${download_path}/${package_source_directory}/configure --prefix=${install_path} --enable-languages=c,c++,fortran,lto --disable-multilib --disable-werror"
+    "${download_path}/${package_source_directory}/configure" --prefix="${install_path}" --enable-languages=c,c++,fortran,lto --disable-multilib --disable-werror
+    info "Building with the following command: 'make -j${num_threads} bootstrap'"
+    make "-j${num_threads}" bootstrap
+    if [[ ! -z "${SUDO:-}" ]]; then
+      info "You do not have write permissions to the installation path ${install_path}"
+      info "If you have administrative privileges, enter your password to install ${package_to_build}"
+    fi
+    info "Installing with the following command: ${SUDO:-} make install"
+    ${SUDO:-} make install
+
+  fi # end if [[ "${package_to_build}" != "gcc" ]]; then
+  
   info "popd"
   popd
 }
