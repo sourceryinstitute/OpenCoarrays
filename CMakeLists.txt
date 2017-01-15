@@ -429,6 +429,10 @@ if(opencoarrays_aware_compiler)
   endif()
 
   # Regression tests based on reported issues
+  if(gfortran_compiler AND (CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER_EQUAL 7.0.0))
+    # GFortran PR 78505 only fixed on trunk/gcc 7
+    add_mpi_test(source-alloc-no-sync 8 ${tests_root}/regression/reported/source-alloc-sync)
+  endif()
   add_mpi_test(convert-before-put 3 ${tests_root}/regression/reported/convert-before-put)
   add_mpi_test(event-post 3 ${tests_root}/regression/reported/event-post)
 else()
