@@ -142,14 +142,14 @@ script:
       export PATH="$PATH:$HOME/bin"
       ./install.sh --yes-to-all -i "$HOME/opt/opencoarrays" -j 4 -f "$HOME/bin/gfortran" -c "$HOME/bin/gcc" -C "$HOME/bin/g++"
       cd prerequisites/builds/opencoarrays/*
-      ../../../installations/cmake/*/bin/ctest --output-on-failure
+      ../../../installations/cmake/*/bin/ctest --output-on-failure --schedule-random --repeat-until-fail 7
       cd -
     else
       mkdir cmake-build
       cd cmake-build
       cmake -DCMAKE_INSTALL_PREFIX:PATH="$HOME/OpenCoarrays" -DCMAKE_BUILD_TYPE="$BUILD_TYPE" ..
       make -j 4
-      ctest --output-on-failure
+      ctest --output-on-failure --schedule-random --repeat-until-fail 7
       make install
       cd ..
     fi
