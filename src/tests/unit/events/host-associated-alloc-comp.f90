@@ -32,24 +32,12 @@
 ! CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 ! OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ! OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-module  foo_module
-  implicit none
-  type foo
-    integer, allocatable :: array(:)
-  end type
-end module
 
-module bar_module
-  use foo_module, only : foo
-  implicit none
-  type(foo) :: x[*]
+  use iso_fortran_env
+  type(event_type) :: x[*] 
 contains
-  subroutine do_something()
-    x%array = [0,1] 
+  subroutine exchange
+    event post(x[1])
   end subroutine
-end module
-
-program main
-  
-end program
+end 
 
