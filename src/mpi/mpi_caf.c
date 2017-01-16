@@ -3098,7 +3098,7 @@ sync_images_internal (int count, int images[], int *stat, char *errmsg,
 	  if (i != MPI_UNDEFINED)
 	    {
 	      ++done_count;
-	      if (ierr == MPI_SUCCESS && arrived[i] == STAT_STOPPED_IMAGE)
+	      if (ierr == MPI_SUCCESS && arrived[s.MPI_SOURCE] == STAT_STOPPED_IMAGE)
 		{
 		  /* Possible future extension: Abort pending receives.  At the
 		     moment the receives are discarded by the program
