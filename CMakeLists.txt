@@ -290,6 +290,11 @@ set(CMAKE_Fortran_COMPILE_FLAGS ${CMAKE_Fortran_COMPILE_FLAGS} ${MPI_Fortran_COM
 set(CMAKE_Fortran_LINK_FLAGS ${CMAKE_Fortran_LINK_FLAGS} ${MPI_Fortran_LINK_FLAGS})
 include_directories(BEFORE ${MPI_C_INCLUDE_PATH} ${MPI_Fortran_INCLUDE_PATH})
 
+#---------------------------------------------------
+# Use standardized GNU install directory conventions
+#---------------------------------------------------
+include(GNUInstallDirs)
+
 #-------------------------------
 # Recurse into the src directory
 #-------------------------------
@@ -304,7 +309,7 @@ install(EXPORT OpenCoarraysTargets
   NAMESPACE
     OpenCoarrays::
   DESTINATION
-    lib/cmake/opencoarrays
+    "${CMAKE_INSTALL_LIBDIR}/cmake/opencoarrays"
 )
 include(CMakePackageConfigHelpers) # standard CMake module
 write_basic_package_version_file(
@@ -320,14 +325,12 @@ install(
     "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/OpenCoarraysConfig.cmake"
     "${CMAKE_CURRENT_BINARY_DIR}/OpenCoarraysConfigVersion.cmake"
   DESTINATION
-    lib/cmake/opencoarrays
+    "${CMAKE_INSTALL_LIBDIR}/cmake/opencoarrays"
 )
 
 add_library(OpenCoarrays INTERFACE)
 target_compile_options(OpenCoarrays INTERFACE -fcoarray=lib)
 target_link_libraries(OpenCoarrays INTERFACE caf_mpi)
-
-install(DIRECTORY  ${CMAKE_BINARY_DIR}/mod DESTINATION .)
 
 #------------------------------------------
 # Add portable unistall command to makefile
