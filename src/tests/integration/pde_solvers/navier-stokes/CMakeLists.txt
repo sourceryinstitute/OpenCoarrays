@@ -11,6 +11,7 @@ if ( ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "x86_64") AND ("${CMAKE_SYSTEM_NAME}" 
     add_executable( coarray_navier_stokes
       coarray-shear_coll.F90
       ${walltime_o}
+      EXCLUDE_FROM_ALL
     )
     target_link_libraries(coarray_navier_stokes OpenCoarrays ${fft_library})
   endif()
