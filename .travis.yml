@@ -69,6 +69,16 @@ matrix:
 before_install:
   - |
     set -o errexit
+    if [[ "$TRAVIS_TAG" ]] && [[ "X$TRAVIS_OS_NAME" = "Xlinux" ]] && $TRAVIS_SECURE_ENV_VARS ; then
+      openssl aes-256-cbc -K $encrypted_ef4535c39461_key -iv $encrypted_ef4535c39461_iv -in subkey-328B3A0E-secret.asc.enc -out ./subkey-328B3A0E-secret.asc -d
+      gpg --allow-secret-key-import --import ./subkey-328B3A0E-secret.asc && rm subkey-328B3A0E-secret.asc
+    fi
+    set +o errexit
+  - unset encrypted_ef4535c39461_key || true
+  - unset encrypted_ef4535c39461_iv || true
+  - rm subkey-328B3A0E-secret.asc{,.enc} || true
+  - |
+    set -o errexit
     if [[ $TRAVIS ]] && [[ "X$TRAVIS_OS_NAME" = "Xosx" ]]; then
       export PATH="$PATH:$HOME/Library/Python/2.7/bin"
     else
