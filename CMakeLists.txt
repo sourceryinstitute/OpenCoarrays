@@ -105,6 +105,9 @@ endif()
       CACHE STRING "Flags used by the compiler during release builds with debug info" FORCE)
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O0")
   endif()
+  if ( gfortran_compiler AND CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER_EQUAL 7.0.0 )
+    add_definitions(-DGCC_GE_7) # Tell library to build against GFortran 7.x bindings b/c we might be using clang for C
+  endif()
 
 if(gfortran_compiler)
   set(OLD_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
