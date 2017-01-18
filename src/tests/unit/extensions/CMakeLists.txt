@@ -16,11 +16,6 @@ function(generate_test_script base_name num_images)
   )
   # Now we write the script that compiles and runs the test
   set(harness "${CMAKE_BINARY_DIR}/bin_staging/test-${base_name}-extension.sh")
-  install(
-      FILES "${harness}"
-      PERMISSIONS WORLD_EXECUTE WORLD_READ WORLD_WRITE OWNER_EXECUTE OWNER_READ OWNER_WRITE GROUP_EXECUTE GROUP_READ GROUP_WRITE
-      DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
-  )
   file(WRITE  "${harness}" "#!/bin/bash\n")
   file(APPEND "${harness}" "cd ${CMAKE_CURRENT_BINARY_DIR}\n")
   set(executable "${base_name}_extension")
@@ -35,6 +30,11 @@ function(generate_test_script base_name num_images)
     file(APPEND "${harness}" "FC=mpif90 ${CMAKE_INSTALL_PREFIX}/bin/caf ${source} -o ${executable} -DUSE_EXTENSIONS\n")
   endif()
   file(APPEND "${harness}" "${CMAKE_INSTALL_PREFIX}/bin/cafrun -np ${num_images} ./${executable}\n")
+  file( INSTALL "${harness}"
+    PERMISSIONS WORLD_EXECUTE WORLD_READ W OWNER_EXECUTE OWNER_READ OWNER_WRITE GROUP_EXECUTE GROUP_READ
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+  )
+
 endfunction(generate_test_script)
 
 generate_test_script(co_sum 4)
