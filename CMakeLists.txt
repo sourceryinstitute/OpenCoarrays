@@ -45,8 +45,48 @@ else()
   )
 endif()
 
-if (NOT (CMAKE_VERSION VERSION_LESS 3.3.1))
-  # Detect Fortran compiler version directly
+#-----------------------------------------------------------------
+# Set CMAKE_Fortran_COMPILER_VERSION if CMake doesn't do it for us
+#-----------------------------------------------------------------
+if (  NOT CMAKE_Fortran_COMPILER_VERSION )
+  if ( CMAKE_VERSION VERSION_GREATER_EQUAL 3.3.1 )
+    message( AUTHOR_WARNING
+     "CMake ${CMAKE_VERSION} should know about Fortran compiler versions but is missing CMAKE_Fortran_COMPILER_VERSION variable."
+    )
+  endif()
+  # No CMAKE_Fortran_COMPILER_VERSION set, build our own
+  # Try extracting it directly from ISO_FORTRAN_ENV's compiler_version
+  # Write program for introspection
+  file( WRITE "${CMAKE_BINARY_DIR}/get_compiler_ver.f90"
+    "program main
+     use iso_fortran_env, only: compiler_version, output_unit
+     write(output_unit,'(a)') compiler_version()
+end program"
+  )
+  try_run( PROG_RAN COMPILE_SUCCESS
+    "${CMAKE_BINARY_DIR}" "${CMAKE_BINARY_DIR}/get_compiler_ver.f90"
+    RUN_OUTPUT_VARIABLE VER_STRING
+  )
+  if ( COMPILE_SUCCESS )
+    string( REGEX MATCH "[0-9]+\\.[0-9]+(\\.[0-9]+)?"
+      DETECTED_VER "${VER_STRING}"
+    )
+    message( STATUS "Detected Fortran compiler as ${VER_STRING}" )
+    message( STATUS "Extracted version number: ${DETECTED_VER}" )
+  endif()
+  if( ( NOT COMPILE_SUCCESS ) OR ( NOT DETECTED_VER ) )
+    message( WARNING "Could not reliably detect Fortran compiler version. We'll infer it from
+the C compiler if it matches the Fortran compiler ID." )
+  endif()
+  if( "${CMAKE_C_COMPILER_ID}" MATCHES "${CMAKE_Fortran_COMPILER_ID}" )
+    set( DETECTED_VER "${CMAKE_C_COMPILER_VERSION}" )
+  else()
+    message( FATAL_ERROR "Exhausted all possible means of detecting the Fortran compiler version, cannot proceed!" )
+  endif()
+  set( CMAKE_Fortran_COMPILER_VERSION "${DETECTED_VER}" )
+endif()
+  
+  # We have populated CMAKE_Fortran_COMPILER_VERSION if it was missing
   if(gfortran_compiler AND (CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 5.0.0))
     set(opencoarrays_aware_compiler true)
     add_definitions(-DPREFIX_NAME=_gfortran_caf_)
@@ -65,27 +105,6 @@ if (NOT (CMAKE_VERSION VERSION_LESS 3.3.1))
       CACHE STRING "Flags used by the compiler during release builds with debug info" FORCE)
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O0")
   endif()
-else()
-  # Use the C compiler version as a proxy for the Fortran compiler version (won't work with NAG)
-  if(gfortran_compiler AND (CMAKE_C_COMPILER_VERSION VERSION_GREATER 5.0.0))
-    set(opencoarrays_aware_compiler true)
-    add_definitions(-DPREFIX_NAME=_gfortran_caf_)
-  else()
-    set(opencoarrays_aware_compiler false)
-    add_definitions(-DPREFIX_NAME=_caf_extensions_)
-  endif()
-  if(gfortran_compiler AND (CMAKE_C_COMPILER_VERSION VERSION_LESS 5.4))
-    # GCC patch to fix issue accepted for the 5.4 release
-    # See https://github.com/sourceryinstitute/opencoarrays/issues/28 and
-    # https://groups.google.com/forum/#!msg/opencoarrays/RZOwwYTqG80/46S9eL696dgJ
-    message( STATUS "Disabling optimization flags due to GCC < 5.4 bug")
-    set(CMAKE_Fortran_FLAGS_RELEASE -O0
-      CACHE STRING "Flags used by the compiler during release builds." FORCE)
-    set(CMAKE_Fortran_FLAGS_RELWITHDEBINFO "-g -DNDEBUG -O0"
-      CACHE STRING "Flags used by the compiler during release builds with debug info" FORCE)
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O0")
-  endif()
-endif()
 
 if(gfortran_compiler)
   set(OLD_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
