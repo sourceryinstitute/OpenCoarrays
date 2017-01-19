@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#/usr/bin/env bash
 #
 # windows-install.sh
 #
@@ -78,8 +78,6 @@
 # (2) Set several variables describing the current file and its usage page.
 # (3) Parse the usage information (default usage file name: current file's name with -usage appended).
 # (4) Parse the command line using the usage information.
-
-starting_directory=${PWD}
 
 ### Start of boilerplate -- do not edit this block #######################
 export OPENCOARRAYS_SRC_DIR="${OPENCOARRAYS_SRC_DIR:-${PWD%/}}"
@@ -246,34 +244,33 @@ else
     sudo apt-get install mpich
   fi
 
-  # Install OpenCoarrays
-
- 
-set_SUDO_if_needed_to_write_to_install_dir()
-{
-  info "Checking whether the directory ${install_prefix} exists... "
-  if [[ -d "${install_prefix}" ]]; then
-    info "yes"
-    info "Checking whether I have write permissions to ${install_prefix} ... "
-    if [[ -w "${install_prefix}" ]]; then
+  set_SUDO_if_needed_to_write_to_install_dir()
+  {
+    info "Checking whether the directory ${install_prefix} exists... "
+    if [[ -d "${install_prefix}" ]]; then
       info "yes"
+      info "Checking whether I have write permissions to ${install_prefix} ... "
+      if [[ -w "${install_prefix}" ]]; then
+        info "yes"
+      else
+        info "no"
+        SUDO="sudo"
+      fi
     else
       info "no"
-      SUDO="sudo"
+      info "Checking whether I can create ${install_prefix} ... "
+      if mkdir -p "${install_prefix}" >& /dev/null; then
+        info "yes."
+      else
+        info "no."
+        SUDO="sudo"
+      fi
     fi
-  else
-    info "no"
-    info "Checking whether I can create ${install_prefix} ... "
-    if mkdir -p "${install_prefix}" >& /dev/null; then
-      info "yes."
-    else
-      info "no."
-      SUDO="sudo"
-    fi
-  fi
-}
-set_SUDO_if_needed_to_write_to_install_dir
+  }
+  set_SUDO_if_needed_to_write_to_install_dir
   
+  # Install OpenCoarrays
+
   if [[ -d "$build_path" ]]; then
     rm -rf "$build_path"
   fi
