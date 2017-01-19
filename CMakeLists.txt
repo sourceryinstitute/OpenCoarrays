@@ -49,7 +49,7 @@ endif()
 # Set CMAKE_Fortran_COMPILER_VERSION if CMake doesn't do it for us
 #-----------------------------------------------------------------
 if (  NOT CMAKE_Fortran_COMPILER_VERSION )
-  if ( CMAKE_VERSION VERSION_GREATER_EQUAL 3.3.1 )
+  if ( NOT (CMAKE_VERSION VERSION_LESS 3.3.1) )
     message( AUTHOR_WARNING
      "CMake ${CMAKE_VERSION} should know about Fortran compiler versions but is missing CMAKE_Fortran_COMPILER_VERSION variable."
     )
@@ -105,7 +105,7 @@ endif()
       CACHE STRING "Flags used by the compiler during release builds with debug info" FORCE)
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O0")
   endif()
-  if ( gfortran_compiler AND CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER_EQUAL 7.0.0 )
+  if ( gfortran_compiler AND ( NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0 ) )
     add_definitions(-DGCC_GE_7) # Tell library to build against GFortran 7.x bindings b/c we might be using clang for C
   endif()
 
@@ -430,7 +430,7 @@ if(opencoarrays_aware_compiler)
   add_mpi_test(asynchronous_hello_world 3 ${tests_root}/integration/events/asynchronous_hello_world)
 
   # Regression tests based on reported issues
-  if(gfortran_compiler AND (CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER_EQUAL 7.0.0))
+  if(gfortran_compiler AND (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0))
     # GFortran PR 78505 only fixed on trunk/gcc 7
     add_mpi_test(source-alloc-no-sync 8 ${tests_root}/regression/reported/source-alloc-sync)
   endif()
