@@ -49,11 +49,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 
 
 #ifdef GCC_GE_7
+/* This data structure is owned by the library and is treated
+   as a black box by the compiler.
+*/
 typedef struct mpi_caf_token_t
-{
-  void *local_memptr;
-  MPI_Win memptr;
-  MPI_Win *desc;
+{ 
+  void *local_memptr;  /* local data. not stored by the compiler -- useful for freeing the memory in deregister */
+  MPI_Win memptr; /* holds the data -- used to be the token returned by register (which now returns nothing)  */
+  MPI_Win *desc; /* useful for checking dimensions, etc. */
 } mpi_caf_token_t;
 #define TOKEN(X) &(((mpi_caf_token_t *) (X))->memptr)
 #else
