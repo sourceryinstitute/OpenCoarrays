@@ -108,7 +108,6 @@ function cleanup_before_exit () {
 }
 trap cleanup_before_exit EXIT # The signal is specified here. Could be SIGINT, SIGTERM etc.
 
-
 ### Validation (decide what's required for running your script and error out)
 #####################################################################
 
@@ -145,7 +144,6 @@ info  "-v (--version):          ${arg_v}"
 info  "-V (--version-number):   ${arg_V}"
 }
 
-
 # __________ Process command-line arguments and environment variables _____________
 
 export this_script="$(basename "$0")"
@@ -174,6 +172,9 @@ export CMAKE="${arg_m:-cmake}"
 
 verify_this_is_ubuntu()
 {
+  if [[ ${__os} != "Linux"  ]]; then
+    emergency "${__os} not supported: this script is intended for use in Windows Subsystem for Linux "
+  fi
   linux_standard_base_i=`lsb_release -i`
   untrimmed_name=${linux_standard_base_i##*Distributor ID:}
   linux_distribution="${untrimmed_name//[[:space:]]/}"
@@ -205,10 +206,6 @@ verify_acceptable_release_number()
 }
 verify_acceptable_release_number
 
-export FC=${arg_f:-gfortran}
-export CC=${arg_f:-gcc}
-export CXX=${arg_f:-g++}
-
 if [[ "${arg_V}" == "${__flag_present}" ]]; then
     # Print just the version number
     info "$opencoarrays_version"
@@ -228,6 +225,10 @@ elif [[ "${arg_v}" == "${__flag_present}" ]]; then
     info "http://www.sourceryinstitute.org/license.html"
     info ""
 else
+
+  export FC=${arg_f:-gfortran}
+  export CC=${arg_c:-gcc}
+  export CXX=${arg_C:-g++}
  
   # Check for and, if necessary, install OpenCoarrays prerequisites
 
@@ -255,8 +256,8 @@ else
   mkdir -p "$build_path"
   cd "$build_path"
   info "Configuring OpenCoarrays with the following command:"
-  info "\"$CMAKE\" \"$OPENCOARRAYS_SRC_DIR\" -DCMAKE_INSTALL_PREFIX=\"$install_prefix\""
-  "$CMAKE" "$OPENCOARRAYS_SRC_DIR" -DCMAKE_INSTALL_PREFIX="$install_prefix"
+  info "FC=\"$FC\" CC=\"$CC\"  \"$CMAKE\" \"$OPENCOARRAYS_SRC_DIR\" -DCMAKE_INSTALL_PREFIX=\"$install_prefix\""
+  FC="$FC" CC="$CC" "$CMAKE" "$OPENCOARRAYS_SRC_DIR" -DCMAKE_INSTALL_PREFIX="$install_prefix"
   info "Building OpenCoarrays with the following command:"
   info "make -j $arg_j"
   make -j $arg_j
