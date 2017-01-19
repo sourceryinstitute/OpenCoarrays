@@ -248,9 +248,33 @@ else
 
   # Install OpenCoarrays
 
-  source prerequisites/build-functions/set_SUDO_if_needed_to_write_to_directory.sh "$install_prefix"
+ 
+set_SUDO_if_needed_to_write_to_install_dir()
+{
+  info "Checking whether the directory ${install_prefix} exists... "
+  if [[ -d "${install_prefix}" ]]; then
+    info "yes"
+    info "Checking whether I have write permissions to ${install_prefix} ... "
+    if [[ -w "${install_prefix}" ]]; then
+      info "yes"
+    else
+      info "no"
+      SUDO="sudo"
+    fi
+  else
+    info "no"
+    info "Checking whether I can create ${install_prefix} ... "
+    if mkdir -p "${install_prefix}" >& /dev/null; then
+      info "yes."
+    else
+      info "no."
+      SUDO="sudo"
+    fi
+  fi
+}
+set_SUDO_if_needed_to_write_to_install_dir
   
-  if [[ -d build ]]; then
+  if [[ -d "$build_path" ]]; then
     rm -rf "$build_path"
   fi
   mkdir -p "$build_path"
@@ -264,4 +288,17 @@ else
   info "Installing OpenCoarrays with the following command:"
   info "${SUDO:-} make install"
   ${SUDO:-} make install
+  if [[ -f "$install_prefix"/lib/libcaf_mpi.a && -f "${install_prefix}/bin/caf"  && -f "${install_prefix}/bin/cafrun"  ]]; then
+    info "OpenCoarrays has been installed in"
+    info "$install_prefix"
+  else
+    info "Something went wrong. OpenCoarrays is not in the expected location:"
+    emergency "$install_prefix"
+  fi
+  # See http://stackoverflow.com/questions/31057694/gethostbyname-fail-after-switching-internet-connections/31222970
+  loopback_line=`grep $NAME /etc/hosts`
+  if [[ -z "${loopback_line:-}" ]]; then
+    info "To ensure the correct functioning of MPI, please add the following line to your /etc/hosts file:"
+    info "127.0.0.1 $NAME"
+  fi
 fi
