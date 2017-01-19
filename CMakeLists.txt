@@ -7,7 +7,7 @@ set ( CMAKE_BUILD_TYPE "Release"
 set_property ( CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${CMAKE_CONFIGURATION_TYPES} )
 
 #Name project and specify source languages
-project(opencoarrays VERSION 1.8.1 LANGUAGES C Fortran)
+project(opencoarrays VERSION 1.8.3 LANGUAGES C Fortran)
 
 #Print an error message on an attempt to build inside the source directory tree:
 if ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
@@ -189,7 +189,7 @@ set(OLD_INCLUDES ${CMAKE_REQUIRED_INCLUDES})
 set(CMAKE_REQUIRED_INCLUDES ${MPI_Fortran_INCLUDE_PATH})
 set(OLD_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES})
 set(CMAKE_REQUIRED_LIBRARIES ${MPI_Fortran_LIBRARIES})
-include (CheckCSourceCompiles)
+include (CheckFortranSourceCompiles)
 CHECK_Fortran_SOURCE_COMPILES("
 program mpi_hello
 use mpi
@@ -221,7 +221,7 @@ set(OLD_INCLUDES ${CMAKE_REQUIRED_INCLUDES})
 set(CMAKE_REQUIRED_INCLUDES ${MPI_Fortran_INCLUDE_PATH})
 set(OLD_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES})
 set(CMAKE_REQUIRED_LIBRARIES ${MPI_Fortran_LIBRARIES})
-include (CheckCSourceCompiles)
+include (CheckFortranSourceCompiles)
 CHECK_Fortran_SOURCE_COMPILES("
 program mpi_hello
 implicit none
@@ -391,6 +391,8 @@ if(opencoarrays_aware_compiler)
   add_mpi_test(duplicate_syncimages 8 ${tests_root}/unit/sync/duplicate_syncimages)
   add_mpi_test(co_reduce 4 ${tests_root}/unit/collectives/co_reduce_test)
   add_mpi_test(syncimages_status 32 ${tests_root}/unit/sync/syncimages_status)
+  add_mpi_test(sync_ring_abort_np3 3 ${tests_root}/unit/sync/sync_image_ring_abort_on_stopped_image)
+  add_mpi_test(sync_ring_abort_np7 7 ${tests_root}/unit/sync/sync_image_ring_abort_on_stopped_image)
   add_mpi_test(simpleatomics 32 ${tests_root}/unit/simple/atomics)
   # possible logic error in the following test
 #  add_mpi_test(increment_my_neighbor 32 ${tests_root}/unit/simple/increment_my_neighbor)
@@ -399,7 +401,7 @@ if(opencoarrays_aware_compiler)
   add_mpi_test(hello_multiverse 2 ${tests_root}/integration/coarrayHelloWorld/hello_multiverse)
   add_mpi_test(coarray_burgers_pde 2 ${tests_root}/integration/pde_solvers/coarrayBurgers/coarray_burgers_pde)
   add_mpi_test(co_heat 2 ${tests_root}/integration/pde_solvers/coarrayHeatSimplified/co_heat)
-  add_mpi_test(asynchronous_hello_world 2 ${tests_root}/integration/events/asynchronous_hello_world)
+  add_mpi_test(asynchronous_hello_world 3 ${tests_root}/integration/events/asynchronous_hello_world)
   if ( ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "x86_64") AND ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux") )
     if ( (NOT (DEFINED ENV{TRAVIS})) AND (NOT SKIP_ASSEMBLY_DEPS) )
       add_mpi_test(coarray_navier_stokes 2 ${tests_root}/integration/pde_solvers/navier-stokes/coarray_navier_stokes)
@@ -409,6 +411,7 @@ if(opencoarrays_aware_compiler)
 
   # Regression tests based on reported issues
   add_mpi_test(convert-before-put 3 ${tests_root}/regression/reported/convert-before-put)
+  add_mpi_test(event-post 3 ${tests_root}/regression/reported/event-post)
 else()
   add_test(co_sum_extension ${tests_root}/unit/extensions/test-co_sum-extension.sh)
   set_property(TEST co_sum_extension PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
@@ -426,5 +429,5 @@ else()
   set_property(TEST co_reduce_extension PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
 endif()
 
-include(AddInstallationScriptTest.cmake )
+include(cmake/AddInstallationScriptTest.cmake )
 add_installation_script_test(installation-scripts.sh src/tests/installation/)
