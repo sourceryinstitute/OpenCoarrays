@@ -240,10 +240,7 @@ source $opencoarrays_src_dir/prerequisites/install-functions/report_results.sh
 if [[ "${arg_v}" == "${__flag_present}" || "${arg_V}" == "opencoarrays" ]]; then
 
   # Print script copyright if invoked with -v, -V, or --version argument
-  cmake_project_line="$(grep project "${opencoarrays_src_dir}/CMakeLists.txt" | grep VERSION)"
-  text_after_version_keyword="${cmake_project_line##*VERSION}"
-  text_before_language_keyword="${text_after_version_keyword%%LANGUAGES*}"
-  opencoarrays_version=$text_before_language_keyword
+  opencoarrays_version=$(sed -n 's/\([0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}\)/\1/p' "${opencoarrays_src_dir%/}/.VERSION")
   if [[ "${arg_v}" == "${__flag_present}" ]]; then
     echo "OpenCoarrays ${opencoarrays_version}"
     echo ""

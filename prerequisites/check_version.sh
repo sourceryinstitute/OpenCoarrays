@@ -82,10 +82,7 @@ elif [[ $1 == '--list' || $1 == '-l' ]]; then
 
 elif [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
   # Print script copyright if invoked with -v, -V, or --version argument
-  cmake_project_line=$(grep project ../CMakeLists.txt | grep VERSION)
-  text_after_version_keyword="${cmake_project_line##*VERSION}"
-  text_before_language_keyword="${text_after_version_keyword%%LANGUAGES*}"
-  opencoarrays_version=$text_before_language_keyword
+  opencoarrays_version=$(sed -n 's/\([0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}\)/\1/p' ../.VERSION)
   echo "opencoarrays $opencoarrays_version"
   echo ""
   echo "OpenCoarrays prerequisite version verifier"

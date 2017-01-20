@@ -165,6 +165,15 @@ script:
     fi
     set +o errexit
 
+after_script:
+  - |
+    if [ "$TRAVIS_TAG" ]; then
+      if [[ "v$TRAVIS_TAG" != "v$(sed -n 's/\([0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}\)/\1/p' .VERSION)" ]]; then
+        echo "ERROR: You are trying to tag a new release but have a version missmatch in \`.VERSION\`"
+        false # throw an error
+      fi
+    fi
+
 after_success:
   - find . -name '*.gcno' -print
   - gcov-6 --version

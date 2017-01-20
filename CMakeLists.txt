@@ -6,8 +6,13 @@ set ( CMAKE_BUILD_TYPE "Release"
   CACHE STRING "Select which configuration to build." )
 set_property ( CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${CMAKE_CONFIGURATION_TYPES} )
 
-#Name project and specify source languages
-project(opencoarrays VERSION 1.8.3 LANGUAGES C Fortran)
+# Name project and specify source languages
+# Parse version from .VERSION file so that more info can be added and easier to get from scripts
+file( STRINGS ".VERSION" OpenCoarraysVersion
+  REGEX "[0-9]+\\.[0-9]+\\.[0-9]+"
+)
+project(opencoarrays VERSION "${OpenCoarraysVersion}" LANGUAGES C Fortran)
+message( STATUS "Building OpenCoarrays version: ${OpenCoarraysVersion}" )
 
 #Print an error message on an attempt to build inside the source directory tree:
 if ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
