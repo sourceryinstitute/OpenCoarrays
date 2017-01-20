@@ -146,10 +146,10 @@ get_filename_component( FTN_COMPILER_DIR "${CMAKE_Fortran_COMPILER}"
 get_filename_component( C_COMPILER_DIR "${CMAKE_C_COMPILER}"
   REALPATH )
 
-if (FTN_COMPILER_NAME MATCHES '^[mM][pP][iI]')
+if (FTN_COMPILER_NAME MATCHES "^[mM][pP][iI]")
   set (MPI_Fortran_COMPILER "${CMAKE_Fortran_COMPILER}")
 endif()
-if (C_COMPILER_NAME MATCHES '^[mM][pP][iI]')
+if (C_COMPILER_NAME MATCHES "^[mM][pP][iI]")
   set (MPI_C_COMPILER "${CMAKE_C_COMPILER}")
 endif()
 
