@@ -81,6 +81,10 @@ before_install:
       rm subkey-328B3A0E-secret.asc{,.enc} || true
 
     fi
+    if [[ "$TRAVIS_TAG" ]] ; then
+      curl https://izaakbeekman.com/izaak.pubkey.txt | gpg --import
+      git tag -v ${TRAVIS_TAG}
+    fi
     set +o errexit
   - 
   - 
