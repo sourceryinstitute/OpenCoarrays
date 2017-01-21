@@ -49,10 +49,32 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 
 
 #ifdef GCC_GE_7
+/** The caf-token of the mpi-library.
+
+Objects of this data structure are owned by the library and are treated as a
+black box by the compiler.  In the coarray-program the tokens are opaque
+pointers, i.e. black boxes.
+
+For each coarray (allocatable|save|pointer) (scalar|array|event|lock) a token
+needs to be present.  For components of derived type coarrays a token is
+needed only when the component has the allocatable or pointer attribute.
+*/
 typedef struct mpi_caf_token_t
 {
+  /** The pointer to memory associated to this token's data on the local image.
+  The compiler uses the address for direct access to the memory of the object
+  this token is assocated to, i.e., the memory pointed to be local_memptr is
+  the scalar or array.
+  When the library is responsible for deleting the memory, then this is the one
+  to free.  */
   void *local_memptr;
+  /** The MPI window to associated to the object's data.
+  The window is used to access the data on other images. In pre GCC_GE_7
+  installations this was the token.  */
   MPI_Win memptr;
+  /** When the object this token is associated to is an array, than this
+  window gives access to the descriptor on remote images. When the object is
+  scalar, then this is NULL.  */
   MPI_Win *desc;
 } mpi_caf_token_t;
 #define TOKEN(X) &(((mpi_caf_token_t *) (X))->memptr)
@@ -456,6 +478,7 @@ PREFIX (finalize) (void)
       p = TOKEN(tmp_tot->token);
       CAF_Win_unlock_all (*p);
 #ifdef GCC_GE_7
+      /* Unregister the window to the descriptors when freeing the token.  */
       if (((mpi_caf_token_t *)tmp_tot->token)->desc)
 	{
 	  mpi_caf_token_t *mpi_token = (mpi_caf_token_t *)tmp_tot->token;
@@ -503,6 +526,17 @@ PREFIX (num_images)(int distance __attribute__ ((unused)),
 
 
 #ifdef GCC_GE_7
+/** Register an object with the coarray library creating a token where
+    necessary/requested.
+
+    See the ABI-documentation of gfortran for the expected behavior.
+    Contrary to this expected behavior is this routine not registering memory
+    in the descriptor, that is already present.  I.e., when the compiler
+    expects the library to allocate the memory for an object in desc, then
+    its data_ptr is NULL. This is still missing here.  At the moment the
+    compiler also does not make use of it, but it is contrary to the
+    documentation.
+    */
 void
 PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
                    gfc_descriptor_t *desc, int *stat, char *errmsg,
@@ -532,6 +566,8 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
 
   mpi_caf_token_t *mpi_token;
   MPI_Win *p;
+  /* The token has to be present, when COARRAY_ALLOC_ALLOCATE_ONLY is
+     specified.  */
   if (type != CAF_REGTYPE_COARRAY_ALLOC_ALLOCATE_ONLY)
     *token = malloc (sizeof (mpi_caf_token_t));
 
@@ -543,6 +579,7 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
        || type == CAF_REGTYPE_COARRAY_STATIC)
       && GFC_DESCRIPTOR_RANK (desc) != 0)
     {
+      /* Add a window for the descriptor when an array is registered.  */
       int ierr;
       size_t desc_size = sizeof (gfc_descriptor_t) + /*GFC_DESCRIPTOR_RANK (desc)*/
 	  GFC_MAX_DIMENSIONS * sizeof (descriptor_dimension);
@@ -1710,6 +1747,9 @@ PREFIX (get) (caf_token_t token, size_t offset,
 /* Emitted when a theorectically unreachable part is reached.  */
 const char unreachable[] = "Fatal error: unreachable alternative found.\n";
 
+/** Convert kind 4 characters into kind 1 one.
+    Copied from the gcc:libgfortran/caf/single.c.
+*/
 static void
 assign_char4_from_char1 (size_t dst_size, size_t src_size, uint32_t *dst,
 			 unsigned char *src)
@@ -1723,6 +1763,9 @@ assign_char4_from_char1 (size_t dst_size, size_t src_size, uint32_t *dst,
 }
 
 
+/** Convert kind 1 characters into kind 4 one.
+    Copied from the gcc:libgfortran/caf/single.c.
+*/
 static void
 assign_char1_from_char4 (size_t dst_size, size_t src_size, unsigned char *dst,
 			 uint32_t *src)
@@ -1735,6 +1778,10 @@ assign_char1_from_char4 (size_t dst_size, size_t src_size, unsigned char *dst,
     memset (&dst[n], ' ', dst_size - n);
 }
 
+
+/** Convert convertable types.
+    Copied from the gcc:libgfortran/caf/single.c. Can't say much about it.
+*/
 static void
 convert_type (void *dst, int dst_type, int dst_kind, void *src, int src_type,
 	      int src_kind, int *stat)
@@ -1997,6 +2044,11 @@ error:
 }
 
 
+/** Copy a chunk of data from one image to the current one, with type
+    conversion.
+
+    Copied from the gcc:libgfortran/caf/single.c. Can't say much about it.
+*/
 static void
 copy_data (void *ds, mpi_caf_token_t *token, ptrdiff_t offset, int dst_type,
 	   int src_type, int dst_kind, int src_kind, size_t dst_size,
@@ -2058,6 +2110,10 @@ copy_data (void *ds, mpi_caf_token_t *token, ptrdiff_t offset, int dst_type,
 }
 
 
+/** Compute the number of items referenced.
+
+    Computes the number of items between lower bound (lb) and upper bound (ub)
+    with respect to the stride taking corner cases into account.  */
 #define COMPUTE_NUM_ITEMS(num, stride, lb, ub) \
   do { \
     ptrdiff_t abs_stride = (stride) > 0 ? (stride) : -(stride); \
@@ -2067,10 +2123,17 @@ copy_data (void *ds, mpi_caf_token_t *token, ptrdiff_t offset, int dst_type,
   } while (0)
 
 
+/** Convenience macro to get the extent of a descriptor in a certain dimension.
+
+    Copied from gcc:libgfortran/libgfortran.h. */
 #define GFC_DESCRIPTOR_EXTENT(desc,i) ((desc)->dim[i]._ubound + 1 \
 				      - (desc)->dim[i].lower_bound)
 
 
+/** Get a copy of the remote descriptor.
+
+    The copy of the remote descriptor is placed into memory which has to be
+    provided in src_desc_data. The pointer to the descriptor is set in src.  */
 #define GET_REMOTE_DESC(mpi_token, src, src_desc_data, image_index) \
   if (mpi_token->desc) \
     { \
@@ -2087,6 +2150,10 @@ copy_data (void *ds, mpi_caf_token_t *token, ptrdiff_t offset, int dst_type,
     src = NULL
 
 
+/** Define the descriptor of max rank.
+
+    This typedef is made to allow storing a copy of a remote descriptor on the
+    stack without having to care about the rank.  */
 typedef struct gfc_max_dim_descriptor_t {
   void *base_addr;
   size_t offset;
