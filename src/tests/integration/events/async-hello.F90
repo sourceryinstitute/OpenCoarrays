@@ -48,7 +48,7 @@ program main
                 work_if_ready: select case(ready_count-previous_count(image))
                   case(0) ! keep spinning until greeting is ready
                   case(1) ! event posted so get and print greeting
-                    write(greeting,"(2(a,i2))") greeting[image]
+                    write(greeting,"(a)") greeting[image]
                     associate(expected_location=>23)
                       ! Verify that the greetings of images 1-9 have their image number at the expected location:
                       if (scan(greeting,set="123456789")/=expected_location) error stop "Test failed."

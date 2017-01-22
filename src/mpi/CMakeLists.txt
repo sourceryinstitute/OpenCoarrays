@@ -53,10 +53,22 @@ endif()
 include_directories(${CMAKE_BINARY_DIR}/mod)
 
 install(TARGETS caf_mpi EXPORT OpenCoarraysTargets
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
 )
-install(DIRECTORY  ${CMAKE_BINARY_DIR}/mod DESTINATION .)
+
+# Install modules to standard include dir, but namespace them with compiler/version
+set (mod_install "${CMAKE_INSTALL_FULL_INCLUDEDIR}/OpenCoarrays/${CMAKE_Fortran_COMPILER_ID}/${CMAKE_Fortran_COMPILER_VERSION}")
+install(DIRECTORY  "${CMAKE_BINARY_DIR}/mod/"
+  DESTINATION "${mod_install}"
+  FILES_MATCHING PATTERN "*.mod"
+)
+
+# Now add a link in standard include dir so that compilers will find by default... this may or may not actually be a good idea...
+if ( "${CMAKE_Fortran_COMPILER_ID}" MATCHES "GNU" )
+  INSTALL(CODE "execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink ${mod_install}/opencoarrays.mod ${CMAKE_INSTALL_FULL_INCLUDEDIR}/opencoarrays.mod )"
+  )
+endif ()
 
 # Now we write the script that passes CAF source to the compiler with the necessary arguments
 # and, if necessary, performs some code transformations prior to invoking the compiler.
@@ -65,12 +77,12 @@ set(compiler_wrapper ${exe_dir}/caf)
 install(
     FILES "${compiler_wrapper}"
     PERMISSIONS WORLD_EXECUTE WORLD_READ WORLD_WRITE OWNER_EXECUTE OWNER_READ OWNER_WRITE GROUP_EXECUTE GROUP_READ GROUP_WRITE
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/
+    DESTINATION "${CMAKE_INSTALL_BINDIR}"
 )
 file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/caf-head CAF_HEADER)
 file(WRITE  "${compiler_wrapper}" "${CAF_HEADER}\n")
-file(APPEND "${compiler_wrapper}"  "caf_mod_dir=${CMAKE_INSTALL_PREFIX}/mod\n")
-file(APPEND "${compiler_wrapper}"  "caf_lib_dir=${CMAKE_INSTALL_PREFIX}/lib\n")
+file(APPEND "${compiler_wrapper}"  "caf_mod_dir=\"${CMAKE_INSTALL_INCLUDEDIR}/mod\"\n")
+file(APPEND "${compiler_wrapper}"  "caf_lib_dir=\"${CMAKE_INSTALL_LIBDIR}\"\n")
 file(APPEND "${compiler_wrapper}"  "caf_version=${PROJECT_VERSION}\n")
 if(gfortran_compiler)
   file(APPEND "${compiler_wrapper}"  "link_args='-fcoarray=lib -lcaf_mpi'\n")
@@ -98,7 +110,7 @@ set(caf_launcher ${exe_dir}/cafrun)
 install(
     FILES "${caf_launcher}"
     PERMISSIONS WORLD_EXECUTE WORLD_READ WORLD_WRITE OWNER_EXECUTE OWNER_READ OWNER_WRITE GROUP_EXECUTE GROUP_READ GROUP_WRITE
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
+    DESTINATION "${CMAKE_INSTALL_BINDIR}"
 )
 file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/cafrun-head CAFRUN_HEADER)
 file(WRITE  "${caf_launcher}" "${CAFRUN_HEADER}\n")

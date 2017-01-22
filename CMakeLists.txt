@@ -6,8 +6,13 @@ set ( CMAKE_BUILD_TYPE "Release"
   CACHE STRING "Select which configuration to build." )
 set_property ( CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${CMAKE_CONFIGURATION_TYPES} )
 
-#Name project and specify source languages
-project(opencoarrays VERSION 1.8.3 LANGUAGES C Fortran)
+# Name project and specify source languages
+# Parse version from .VERSION file so that more info can be added and easier to get from scripts
+file( STRINGS ".VERSION" OpenCoarraysVersion
+  REGEX "[0-9]+\\.[0-9]+\\.[0-9]+"
+)
+project(opencoarrays VERSION "${OpenCoarraysVersion}" LANGUAGES C Fortran)
+message( STATUS "Building OpenCoarrays version: ${OpenCoarraysVersion}" )
 
 #Print an error message on an attempt to build inside the source directory tree:
 if ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
@@ -45,8 +50,48 @@ else()
   )
 endif()
 
-if (NOT (CMAKE_VERSION VERSION_LESS 3.3.1))
-  # Detect Fortran compiler version directly
+#-----------------------------------------------------------------
+# Set CMAKE_Fortran_COMPILER_VERSION if CMake doesn't do it for us
+#-----------------------------------------------------------------
+if (  NOT CMAKE_Fortran_COMPILER_VERSION )
+  if ( NOT (CMAKE_VERSION VERSION_LESS 3.3.1) )
+    message( AUTHOR_WARNING
+     "CMake ${CMAKE_VERSION} should know about Fortran compiler versions but is missing CMAKE_Fortran_COMPILER_VERSION variable."
+    )
+  endif()
+  # No CMAKE_Fortran_COMPILER_VERSION set, build our own
+  # Try extracting it directly from ISO_FORTRAN_ENV's compiler_version
+  # Write program for introspection
+  file( WRITE "${CMAKE_BINARY_DIR}/get_compiler_ver.f90"
+    "program main
+     use iso_fortran_env, only: compiler_version, output_unit
+     write(output_unit,'(a)') compiler_version()
+end program"
+  )
+  try_run( PROG_RAN COMPILE_SUCCESS
+    "${CMAKE_BINARY_DIR}" "${CMAKE_BINARY_DIR}/get_compiler_ver.f90"
+    RUN_OUTPUT_VARIABLE VER_STRING
+  )
+  if ( COMPILE_SUCCESS )
+    string( REGEX MATCH "[0-9]+\\.[0-9]+(\\.[0-9]+)?"
+      DETECTED_VER "${VER_STRING}"
+    )
+    message( STATUS "Detected Fortran compiler as ${VER_STRING}" )
+    message( STATUS "Extracted version number: ${DETECTED_VER}" )
+  endif()
+  if( ( NOT COMPILE_SUCCESS ) OR ( NOT DETECTED_VER ) )
+    message( WARNING "Could not reliably detect Fortran compiler version. We'll infer it from
+the C compiler if it matches the Fortran compiler ID." )
+  endif()
+  if( "${CMAKE_C_COMPILER_ID}" MATCHES "${CMAKE_Fortran_COMPILER_ID}" )
+    set( DETECTED_VER "${CMAKE_C_COMPILER_VERSION}" )
+  else()
+    message( FATAL_ERROR "Exhausted all possible means of detecting the Fortran compiler version, cannot proceed!" )
+  endif()
+  set( CMAKE_Fortran_COMPILER_VERSION "${DETECTED_VER}" )
+endif()
+  
+  # We have populated CMAKE_Fortran_COMPILER_VERSION if it was missing
   if(gfortran_compiler AND (CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 5.0.0))
     set(opencoarrays_aware_compiler true)
     add_definitions(-DPREFIX_NAME=_gfortran_caf_)
@@ -65,27 +110,9 @@ if (NOT (CMAKE_VERSION VERSION_LESS 3.3.1))
       CACHE STRING "Flags used by the compiler during release builds with debug info" FORCE)
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O0")
   endif()
-else()
-  # Use the C compiler version as a proxy for the Fortran compiler version (won't work with NAG)
-  if(gfortran_compiler AND (CMAKE_C_COMPILER_VERSION VERSION_GREATER 5.0.0))
-    set(opencoarrays_aware_compiler true)
-    add_definitions(-DPREFIX_NAME=_gfortran_caf_)
-  else()
-    set(opencoarrays_aware_compiler false)
-    add_definitions(-DPREFIX_NAME=_caf_extensions_)
+  if ( gfortran_compiler AND ( NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0 ) )
+    add_definitions(-DGCC_GE_7) # Tell library to build against GFortran 7.x bindings b/c we might be using clang for C
   endif()
-  if(gfortran_compiler AND (CMAKE_C_COMPILER_VERSION VERSION_LESS 5.4))
-    # GCC patch to fix issue accepted for the 5.4 release
-    # See https://github.com/sourceryinstitute/opencoarrays/issues/28 and
-    # https://groups.google.com/forum/#!msg/opencoarrays/RZOwwYTqG80/46S9eL696dgJ
-    message( STATUS "Disabling optimization flags due to GCC < 5.4 bug")
-    set(CMAKE_Fortran_FLAGS_RELEASE -O0
-      CACHE STRING "Flags used by the compiler during release builds." FORCE)
-    set(CMAKE_Fortran_FLAGS_RELWITHDEBINFO "-g -DNDEBUG -O0"
-      CACHE STRING "Flags used by the compiler during release builds with debug info" FORCE)
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O0")
-  endif()
-endif()
 
 if(gfortran_compiler)
   set(OLD_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
@@ -119,10 +146,10 @@ get_filename_component( FTN_COMPILER_DIR "${CMAKE_Fortran_COMPILER}"
 get_filename_component( C_COMPILER_DIR "${CMAKE_C_COMPILER}"
   REALPATH )
 
-if (FTN_COMPILER_NAME MATCHES '^[mM][pP][iI]')
+if (FTN_COMPILER_NAME MATCHES "^[mM][pP][iI]")
   set (MPI_Fortran_COMPILER "${CMAKE_Fortran_COMPILER}")
 endif()
-if (C_COMPILER_NAME MATCHES '^[mM][pP][iI]')
+if (C_COMPILER_NAME MATCHES "^[mM][pP][iI]")
   set (MPI_C_COMPILER "${CMAKE_C_COMPILER}")
 endif()
 
@@ -271,6 +298,11 @@ set(CMAKE_Fortran_COMPILE_FLAGS ${CMAKE_Fortran_COMPILE_FLAGS} ${MPI_Fortran_COM
 set(CMAKE_Fortran_LINK_FLAGS ${CMAKE_Fortran_LINK_FLAGS} ${MPI_Fortran_LINK_FLAGS})
 include_directories(BEFORE ${MPI_C_INCLUDE_PATH} ${MPI_Fortran_INCLUDE_PATH})
 
+#---------------------------------------------------
+# Use standardized GNU install directory conventions
+#---------------------------------------------------
+include(GNUInstallDirs)
+
 #-------------------------------
 # Recurse into the src directory
 #-------------------------------
@@ -285,7 +317,7 @@ install(EXPORT OpenCoarraysTargets
   NAMESPACE
     OpenCoarrays::
   DESTINATION
-    lib/cmake/opencoarrays
+    "${CMAKE_INSTALL_LIBDIR}/cmake/opencoarrays"
 )
 include(CMakePackageConfigHelpers) # standard CMake module
 write_basic_package_version_file(
@@ -301,14 +333,12 @@ install(
     "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/OpenCoarraysConfig.cmake"
     "${CMAKE_CURRENT_BINARY_DIR}/OpenCoarraysConfigVersion.cmake"
   DESTINATION
-    lib/cmake/opencoarrays
+    "${CMAKE_INSTALL_LIBDIR}/cmake/opencoarrays"
 )
 
 add_library(OpenCoarrays INTERFACE)
 target_compile_options(OpenCoarrays INTERFACE -fcoarray=lib)
 target_link_libraries(OpenCoarrays INTERFACE caf_mpi)
-
-install(DIRECTORY  ${CMAKE_BINARY_DIR}/mod DESTINATION .)
 
 #------------------------------------------
 # Add portable unistall command to makefile
@@ -390,6 +420,7 @@ if(opencoarrays_aware_compiler)
   add_mpi_test(syncimages2 32 ${tests_root}/unit/sync/syncimages2)
   add_mpi_test(duplicate_syncimages 8 ${tests_root}/unit/sync/duplicate_syncimages)
   add_mpi_test(co_reduce 4 ${tests_root}/unit/collectives/co_reduce_test)
+  add_mpi_test(co_reduce_res_im 4 ${tests_root}/unit/collectives/co_reduce_res_im)
   add_mpi_test(syncimages_status 32 ${tests_root}/unit/sync/syncimages_status)
   add_mpi_test(sync_ring_abort_np3 3 ${tests_root}/unit/sync/sync_image_ring_abort_on_stopped_image)
   add_mpi_test(sync_ring_abort_np7 7 ${tests_root}/unit/sync/sync_image_ring_abort_on_stopped_image)
@@ -402,16 +433,17 @@ if(opencoarrays_aware_compiler)
   add_mpi_test(coarray_burgers_pde 2 ${tests_root}/integration/pde_solvers/coarrayBurgers/coarray_burgers_pde)
   add_mpi_test(co_heat 2 ${tests_root}/integration/pde_solvers/coarrayHeatSimplified/co_heat)
   add_mpi_test(asynchronous_hello_world 3 ${tests_root}/integration/events/asynchronous_hello_world)
-  if ( ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "x86_64") AND ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux") )
-    if ( (NOT (DEFINED ENV{TRAVIS})) AND (NOT SKIP_ASSEMBLY_DEPS) )
-      add_mpi_test(coarray_navier_stokes 2 ${tests_root}/integration/pde_solvers/navier-stokes/coarray_navier_stokes)
-      set_property(TEST coarray_navier_stokes PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
-    endif()
-  endif()
 
   # Regression tests based on reported issues
+  if(gfortran_compiler AND (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0))
+    # GFortran PR 78505 only fixed on trunk/gcc 7
+    add_mpi_test(source-alloc-no-sync 8 ${tests_root}/regression/reported/source-alloc-sync)
+  endif()
   add_mpi_test(convert-before-put 3 ${tests_root}/regression/reported/convert-before-put)
   add_mpi_test(event-post 3 ${tests_root}/regression/reported/event-post)
+  add_mpi_test(co_reduce-factorial 4 ${tests_root}/regression/reported/co_reduce-factorial)
+  # remove this before merging into master
+  set_property(TEST co_reduce-factorial PROPERTY WILL_FAIL TRUE)
 else()
   add_test(co_sum_extension ${tests_root}/unit/extensions/test-co_sum-extension.sh)
   set_property(TEST co_sum_extension PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
