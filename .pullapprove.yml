@@ -11,19 +11,20 @@ groups:
         - master
         - devel
         - caffeinate-opencoarrays
-      files:
-        exclude:
-          - "*.md"
-    users:
-      - afanfa
-      - rouson
-      - zbeekman
+    teams:
+      - team-opencoarrays
         # https://github.com/orgs/sourceryinstitute/teams/team-opencoarrays
   OpenCoarrays:
     # Whenever someone has a PR, on any branch require at least 1 
     # collaborator to explicitly review it
     required: 1
     users: all
+    conditions:
+      branches:
+        exclude:
+          - master
+          - devel
+          - caffeinate-opencoarrays
   ConfigManagers:
     required: 1
     conditions:
