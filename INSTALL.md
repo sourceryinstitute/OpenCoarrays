@@ -61,10 +61,9 @@ uses in proposals for research grants and development contracts.
 Windows users may run the windows-install.sh script inside the Windows Subsystem for Linux (WSL).
 
 Requirements:
-* WSL release 14936 or later, which provides Ubuntu 16.04.
-* Ubuntu 16.04 requirements:
-   - Windows Insider Preview and 
-   - "Fast" updates option.
+* WSL release 14936 or later,
+* Windows Insider Preview, and 
+* "Fast" updates option.
 
 Steps:
 ```
@@ -260,19 +259,30 @@ export gcc_install_path=/desired/installation/destination
    --with-cxx     "${gcc_install_path}"/bin/g++
 ```
 
-[Links]: #
+[Internal document links]: #
 
 [End-User Installation]: #end-user-installation
-[Installation Script]: #installation-script
-[install.sh]: ./install.sh
 [macOS]: #macos
 [Windows]: #windows
 [Linux]: #linux
+[Virtual machine]: #virtual-machine
+[Installation Script]: #installation-script
+
 [Advanced Installation from Source]: #advanced-installation-from-source
 [Prerequisites]: #prerequisites
 [CMake]: #cmake
 [Make]: #make
+
 [Obtaining GCC, MPICH, and CMake]: #obtaining-gcc-mpich-and-cmake
+
+
+[Links to source]: #
+
+[install.sh]: ./install.sh
+
+
+[URLs]: #
+
 [Sourcery Store]: http://www.sourceryinstitute.org/store
 [Sourcery Institute Store]: http://www.sourceryinstitute.org/store
 [VirtualBox]: http://www.virtualbox.org
