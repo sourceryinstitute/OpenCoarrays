@@ -10,7 +10,6 @@
 OpenCoarrays
 ============
 
-[![Maintenance](https://img.shields.io/maintenance/yes/2017.svg?style=flat-square)](https://github.com/sourceryinstitute/opencoarrays/commits/master)
 [![CI Build Status][build img]](https://travis-ci.org/sourceryinstitute/opencoarrays)
 [![Gitter](https://img.shields.io/gitter/room/nwjs/nw.js.svg?style=flat-square)](https://gitter.im/sourceryinstitute/opencoarrays)
 [![GitHub license][license img]](./LICENSE)
