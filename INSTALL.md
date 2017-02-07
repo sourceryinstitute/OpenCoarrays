@@ -265,8 +265,7 @@ export gcc_install_path=/desired/installation/destination
 [End-User Installation]: #end-user-installation
 [Installation Script]: #installation-script
 [install.sh]: ./install.sh
-[OS X]: #os-x
-[ticket]: https://trac.macports.org/ticket/47806
+[macOS]: #macos
 [Windows]: #windows
 [Linux]: #linux
 [Advanced Installation from Source]: #advanced-installation-from-source
