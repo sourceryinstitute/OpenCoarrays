@@ -20,7 +20,7 @@ Download this file as a PDF document
      * [Installation Script]
  *  [Advanced Installation from Source]
      *  [Prerequisites]
-     *  [CMake]
+     *  [CMake scripts]
      *  [Make]
  *  [Obtaining GCC, MPICH, and CMake]
 
@@ -151,7 +151,7 @@ opencoarrays
 
 If using the advanced [CMake] or [Make] builds detailed below, please ensure that these dependencies are met before attempting to build and install OpenCoarrays.
 
-### CMake ###
+### CMake scripts ###
 
 #### N.B.: ####
 
@@ -270,7 +270,7 @@ export gcc_install_path=/desired/installation/destination
 
 [Advanced Installation from Source]: #advanced-installation-from-source
 [Prerequisites]: #prerequisites
-[CMake]: #cmake
+[CMake scripts]: #cmake-scripts
 [Make]: #make
 
 [Obtaining GCC, MPICH, and CMake]: #obtaining-gcc-mpich-and-cmake
@@ -283,6 +283,7 @@ export gcc_install_path=/desired/installation/destination
 
 [URLs]: #
 
+[CMake]: http://www.cmake.org
 [Sourcery Store]: http://www.sourceryinstitute.org/store
 [Sourcery Institute Store]: http://www.sourceryinstitute.org/store
 [VirtualBox]: http://www.virtualbox.org
