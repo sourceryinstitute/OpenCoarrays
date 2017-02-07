@@ -7,8 +7,7 @@
 Installing OpenCoarrays
 =======================
 
-[The following link is commented until it can be updated. To uncomment delete the backslashes, the ourtermost square brackets, and the trailing colon and hash mark]:#
-[\[\!\[Download as PDF]\][pdf img]](http://md2pdf.herokuapp.com/sourceryinstitute/opencoarrays/blob/master/INSTALL.pdf)]:#
+[![Download as PDF][pdf img]](http://md2pdf.herokuapp.com/sourceryinstitute/opencoarrays/blob/master/INSTALL.pdf)
 
 Download this file as a PDF document
 [here](http://md2pdf.herokuapp.com/sourceryinstitute/opencoarrays/blob/master/INSTALL.pdf).
