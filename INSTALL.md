@@ -13,10 +13,11 @@ Download this file as a PDF document
 [here](http://md2pdf.herokuapp.com/sourceryinstitute/opencoarrays/blob/master/INSTALL.pdf).
 
  *  [End-User Installation]
-     * [Installation Script]
-     * [OS X]
+     * [macOS]
      * [Windows]
      * [Linux]
+     * [Virtual machine]
+     * [Installation Script]
  *  [Advanced Installation from Source]
      *  [Prerequisites]
      *  [CMake]
@@ -28,8 +29,8 @@ End-User Installation
 
 Most users will find it easiest and fastest to use package management software to install OpenCoarrays.
 Package management options for macOS (formerly known as OS X), Windows, and Linux are described first 
-below. Also described below are options for installing via an OpenCoarrays installation script or
-via the Sourcery Institute virtual machine.
+below. Also described below are options for installing via the Sourcery Institute virtual machine or
+the OpenCoarrays installation script.
 
 ### macOS ###
 
@@ -80,15 +81,12 @@ upgrade methods are described in the discussion thread starting with [commit com
 
 ### Linux ###
 
-The [Arch Linux] distribution provides an [aur package] for installing OpenCoarrays.
-Users of other Linux distributions who prefer not to build OpenCoarrays from source might
-access OpenCoarrays via the the Lubuntu Linux virtual machine from the
-[Sourcery Institute Store] after installing the version of [VirtualBox] that is suitable
-for the relevant Linux distribution.  Alternatively, if you desire to install using other
-Linux package management software such as [dnf] or [apt-get], please submit a feature
-request via our [Issues] page.
+The [Arch Linux] distribution provides an [aur package] for installing OpenCoarrays.  Users of
+other Linux distributions may install the [Virtual machine] or use the [Installation Script].
+Alternatively, if you desire to install using other Linux package Linux package management 
+software such as [dnf] or [apt-get], please submit a feature request via our [Issues] page.
 
-## Virtual machine
+## Virtual machine ##
 
 Users of macOS, Windows, or Linux have the option to use OpenCoarrays by installing the Lubuntu
 Linux virtual machine from the [Sourcery Institute Store].  The virtual machine boots inside
@@ -97,11 +95,12 @@ and OpenCoarrays, the virtual machine contains dozens of other open-source softw
 that support modern Fortran software development.  See the [download and installation instructions]
 for a partial list of the included packages.
 
-### Installation Script###
+## Installation Script ##
 
+If the above package management or virtualization options are infeasible or unavailable,
 Linux and macOS users may also install OpenCoarrays by downloading and uncompressing our 
-[latest release] and running the installation script in the top-level source directory
-(see above for the corresponding [Windows] script):
+[latest release] and running our installation script in the top-level OpenCoarrays source 
+directory (see above for the corresponding [Windows] script):
 ```
 tar xvzf OpenCoarrays-x.y.z.tar.gz
 cd OpenCoarrays-x.y.z
