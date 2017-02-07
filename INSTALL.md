@@ -35,6 +35,7 @@ the OpenCoarrays installation script.
 ### macOS ###
 
 OS X users may use the [Homebrew] or [MacPorts] package management systems to install OpenCoarrays.
+We recommend [Homebrew]. 
 
 Homebrew installation steps:
 ```
