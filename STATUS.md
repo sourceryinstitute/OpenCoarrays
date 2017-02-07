@@ -7,6 +7,7 @@
 OpenCoarrays Status
 ===================
 
+[![Maintenance](https://img.shields.io/maintenance/yes/2017.svg?style=flat-square)](https://github.com/sourceryinstitute/opencoarrays/commits/master)
 [![Download as PDF][pdf img]](http://md2pdf.herokuapp.com/sourceryinstitute/opencoarrays/blob/master/STATUS.pdf)
 
 Download this file as a PDF document
