@@ -58,6 +58,8 @@ program co_reduce_strings
       end if
     end do
   end associate
+  sync all
+  if (this_image() == 1) print *, "Test passed."
 contains
 
   !! Compare two strings and return the maximum one. In a co_reduce no deferred-

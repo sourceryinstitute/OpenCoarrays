@@ -3436,7 +3436,7 @@ PREFIX (co_broadcast) (gfc_descriptor_t *a, int source_image, int *stat, char *e
 
       if (ierr)
         goto error;
-      return;
+      goto co_broadcast_exit;
     }
     else if (datatype == MPI_CHARACTER) /* rank !=0  */
     {
@@ -3467,6 +3467,11 @@ PREFIX (co_broadcast) (gfc_descriptor_t *a, int source_image, int *stat, char *e
         goto error;
     }
 
+co_broadcast_exit:
+  if (stat)
+    *stat = 0;
+  if (GFC_DESCRIPTOR_TYPE(a) == BT_CHARACTER)
+    MPI_Type_free(&datatype);
   return;
 
 error:
