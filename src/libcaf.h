@@ -197,6 +197,13 @@ typedef struct caf_reference_t {
 #endif
 
 
+/* The following defines give the bits in the opr_flags argument to CO_REDUCE.
+  Keep in sync with the libgfortran.h file of gcc/fortran.  */
+#define GFC_CAF_BYREF      (1<<0)
+#define GFC_CAF_HIDDENLEN  (1<<1)
+#define GFC_CAF_ARG_VALUE  (1<<2)
+#define GFC_CAF_ARG_DESC   (1<<3)
+
 /* Common auxiliary functions: caf_auxiliary.c.  */
 
 bool PREFIX (is_contiguous) (gfc_descriptor_t *);

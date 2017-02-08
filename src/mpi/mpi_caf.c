@@ -141,10 +141,17 @@ MPI_Comm CAF_COMM_WORLD;
    (and thus finalization) of MPI. */
 bool caf_owns_mpi = false;
 
-/* Foo function pointers for coreduce */
-int (*foo_int32_t)(void *, void *);
-float (*foo_float)(void *, void *);
-double (*foo_double)(void *, void *);
+/* Foo function pointers for coreduce.
+  The handles when arguments are passed by reference.  */
+int (*int32_t_by_reference)(void *, void *);
+float (*float_by_reference)(void *, void *);
+double (*double_by_reference)(void *, void *);
+/* Strings are always passed by reference.  */
+void (*char_by_reference)(void *, int, void *, void *, int, int);
+/* The handles when arguments are passed by value.  */
+int (*int32_t_by_value)(int32_t, int32_t);
+float (*float_by_value)(float, float);
+double (*double_by_value)(double, double);
 
 /* Define shortcuts for Win_lock and _unlock depending on whether the primitives
    are available in the MPI implementation.  When they are not available the
@@ -3125,17 +3132,29 @@ name (datatype *invec, datatype *inoutvec, int *len, \
     operator; \
 }
 
-#define FOOFUNC(TYPE) foo_ ## TYPE
+#define REFERENCE_FUNC(TYPE) TYPE ## _by_reference
+#define VALUE_FUNC(TYPE) TYPE ## _by_value
 
 #define GEN_COREDUCE(name, dt)			\
 static void \
-name (void *invec, void *inoutvec, int *len, \
+name##_by_reference_adapter (void *invec, void *inoutvec, int *len, \
       MPI_Datatype *datatype)		     \
 { \
   int i;	     \
   for(i=0;i<*len;i++)				\
     {								\
-      *((dt*)inoutvec) = (dt)(FOOFUNC(dt)((dt *)invec,(dt *)inoutvec));	\
+      *((dt*)inoutvec) = (dt)(REFERENCE_FUNC(dt)((dt *)invec, (dt *)inoutvec));	\
+     invec+=sizeof(dt); inoutvec+=sizeof(dt);	\
+   } \
+} \
+static void \
+name##_by_value_adapter (void *invec, void *inoutvec, int *len, \
+      MPI_Datatype *datatype)		     \
+{ \
+  int i;	     \
+  for(i=0;i<*len;i++)				\
+    {								\
+      *((dt*)inoutvec) = (dt)(VALUE_FUNC(dt)(*(dt *)invec, *(dt *)inoutvec));	\
      invec+=sizeof(dt); inoutvec+=sizeof(dt);	\
    } \
 }
@@ -3143,6 +3162,22 @@ name (void *invec, void *inoutvec, int *len, \
 GEN_COREDUCE (redux_int32, int32_t)
 GEN_COREDUCE (redux_real32, float)
 GEN_COREDUCE (redux_real64, double)
+
+static void \
+redux_char_by_reference_adapter (void *invec, void *inoutvec, int *len,
+      MPI_Datatype *datatype)
+{
+  long int string_len;
+  MPI_Type_extent(*datatype, &string_len);
+  for(int i = 0; i < *len; i++)
+    {
+      /* The length of the result is fixed, i.e., no deferred string length is
+       * allowed there.  */
+      REFERENCE_FUNC(char)((char *)inoutvec, string_len, (char *)invec, (char *)inoutvec, string_len, string_len);
+      invec += sizeof(char) * string_len;
+      inoutvec += sizeof(char) * string_len;
+    }
+}
 
 #ifndef MPI_INTEGER1
 GEN_REDUCTION (do_sum_int1, int8_t, inoutvec[i] += invec[i])
@@ -3198,7 +3233,7 @@ GEN_REDUCTION (do_max_complex10, _Complex __float128,
 
 
 static MPI_Datatype
-get_MPI_datatype (gfc_descriptor_t *desc)
+get_MPI_datatype (gfc_descriptor_t *desc, int char_len)
 {
   /* FIXME: Better check whether the sizes are okay and supported;
      MPI3 adds more types, e.g. MPI_INTEGER1.  */
@@ -3255,7 +3290,14 @@ get_MPI_datatype (gfc_descriptor_t *desc)
    GFC_DTYPE_TYPE_SIZE == GFC_TYPE_CHARACTER + 64*strlen
 */
   if ( (GFC_DTYPE_TYPE_SIZE(desc)-GFC_DTYPE_CHARACTER)%64==0 )
-      return MPI_CHARACTER;
+    {
+      MPI_Datatype string;
+      if (char_len == 0)
+	char_len = GFC_DESCRIPTOR_SIZE (desc);
+      MPI_Type_contiguous(char_len, MPI_CHARACTER, &string);
+      MPI_Type_commit(&string);
+      return string;
+    }
 
   caf_runtime_error ("Unsupported data type in collective: %ld\n",GFC_DTYPE_TYPE_SIZE (desc));
   return 0;
@@ -3263,14 +3305,14 @@ get_MPI_datatype (gfc_descriptor_t *desc)
 
 
 static void
-co_reduce_1 (MPI_Op op, gfc_descriptor_t *source, int result_image, int *stat,
-             char *errmsg, int src_len __attribute__ ((unused)), int errmsg_len)
+internal_co_reduce (MPI_Op op, gfc_descriptor_t *source, int result_image, int *stat,
+	     char *errmsg, int src_len, int errmsg_len)
 {
   size_t i, size;
   int j, ierr;
   int rank = GFC_DESCRIPTOR_RANK (source);
 
-  MPI_Datatype datatype = get_MPI_datatype (source);
+  MPI_Datatype datatype = get_MPI_datatype (source, src_len);
 
   size = 1;
   for (j = 0; j < rank; j++)
@@ -3285,17 +3327,17 @@ co_reduce_1 (MPI_Op op, gfc_descriptor_t *source, int result_image, int *stat,
   if (rank == 0 || PREFIX (is_contiguous) (source))
     {
       if (result_image == 0)
-        ierr = MPI_Allreduce (MPI_IN_PLACE, source->base_addr, size, datatype,
+	ierr = MPI_Allreduce (MPI_IN_PLACE, source->base_addr, size, datatype,
                               op, CAF_COMM_WORLD);
       else if (result_image == caf_this_image)
-        ierr = MPI_Reduce (MPI_IN_PLACE, source->base_addr, size, datatype, op,
+	ierr = MPI_Reduce (MPI_IN_PLACE, source->base_addr, size, datatype, op,
                            result_image-1, CAF_COMM_WORLD);
       else
-        ierr = MPI_Reduce (source->base_addr, NULL, size, datatype, op,
+	ierr = MPI_Reduce (source->base_addr, NULL, size, datatype, op,
                            result_image-1, CAF_COMM_WORLD);
       if (ierr)
         goto error;
-      return;
+      goto co_reduce_cleanup;
     }
 
   for (i = 0; i < size; i++)
@@ -3316,18 +3358,21 @@ co_reduce_1 (MPI_Op op, gfc_descriptor_t *source, int result_image, int *stat,
       void *sr = (void *)((char *) source->base_addr
                           + array_offset_sr*GFC_DESCRIPTOR_SIZE (source));
       if (result_image == 0)
-        ierr = MPI_Allreduce (MPI_IN_PLACE, sr, 1, datatype, op,
+	ierr = MPI_Allreduce (MPI_IN_PLACE, sr, 1, datatype, op,
                               CAF_COMM_WORLD);
       else if (result_image == caf_this_image)
-        ierr = MPI_Reduce (MPI_IN_PLACE, sr, 1, datatype, op,
+	ierr = MPI_Reduce (MPI_IN_PLACE, sr, 1, datatype, op,
                            result_image-1, CAF_COMM_WORLD);
       else
-        ierr = MPI_Reduce (sr, NULL, 1, datatype, op, result_image-1,
+	ierr = MPI_Reduce (sr, NULL, 1, datatype, op, result_image-1,
                            CAF_COMM_WORLD);
       if (ierr)
         goto error;
     }
 
+co_reduce_cleanup:
+  if (GFC_DESCRIPTOR_TYPE (source) == BT_CHARACTER)
+    MPI_Type_free (&datatype);
   if (stat)
     *stat = 0;
   return;
@@ -3360,7 +3405,7 @@ PREFIX (co_broadcast) (gfc_descriptor_t *a, int source_image, int *stat, char *e
   int j, ierr;
   int rank = GFC_DESCRIPTOR_RANK (a);
 
-  MPI_Datatype datatype = get_MPI_datatype (a);
+  MPI_Datatype datatype = get_MPI_datatype (a, 0);
 
   size = 1;
   for (j = 0; j < rank; j++)
@@ -3375,7 +3420,7 @@ PREFIX (co_broadcast) (gfc_descriptor_t *a, int source_image, int *stat, char *e
   if (rank == 0)
     {
       if (datatype != MPI_CHARACTER)
-        ierr = MPI_Bcast(a->base_addr, size, datatype, source_image-1, CAF_COMM_WORLD);
+	ierr = MPI_Bcast(a->base_addr, size, datatype, source_image-1, CAF_COMM_WORLD);
       else
       {
         int a_length;
@@ -3386,12 +3431,12 @@ PREFIX (co_broadcast) (gfc_descriptor_t *a, int source_image, int *stat, char *e
         if (ierr)
           goto error;
         /* Broadcast the string itself */
-        ierr = MPI_Bcast(a->base_addr, a_length, datatype, source_image-1, CAF_COMM_WORLD);
+	ierr = MPI_Bcast(a->base_addr, a_length, datatype, source_image-1, CAF_COMM_WORLD);
       }
 
       if (ierr)
         goto error;
-      return;
+      goto co_broadcast_exit;
     }
     else if (datatype == MPI_CHARACTER) /* rank !=0  */
     {
@@ -3422,6 +3467,11 @@ PREFIX (co_broadcast) (gfc_descriptor_t *a, int source_image, int *stat, char *e
         goto error;
     }
 
+co_broadcast_exit:
+  if (stat)
+    *stat = 0;
+  if (GFC_DESCRIPTOR_TYPE(a) == BT_CHARACTER)
+    MPI_Type_free(&datatype);
   return;
 
 error:
@@ -3445,47 +3495,83 @@ error:
     memset (&errmsg[len], '\0', errmsg_len - len);
 }
 
+/** The front-end function for co_reduce functionality.  It sets up the MPI_Op
+ * for use in MPI_*Reduce functions. */
 void
 PREFIX (co_reduce) (gfc_descriptor_t *a, void *(*opr) (void *, void *), int opr_flags,
 		    int result_image, int *stat, char *errmsg, int a_len, int errmsg_len)
 {
   MPI_Op op;
-  if(GFC_DESCRIPTOR_TYPE(a) == BT_INTEGER)
+  /* Integers and logicals can be treated the same. */
+  if(GFC_DESCRIPTOR_TYPE(a) == BT_INTEGER
+     || GFC_DESCRIPTOR_TYPE(a) == BT_LOGICAL)
     {
-      foo_int32_t = (typeof(foo_int32_t))opr;
-      MPI_Op_create(redux_int32, 1, &op);
+      /* When the ARG_VALUE opr_flag is set, then the user-function expects its
+       * arguments to be passed by value. */
+      if ((opr_flags & GFC_CAF_ARG_VALUE) > 0)
+	{
+	  int32_t_by_value = (typeof (VALUE_FUNC(int32_t)))opr;
+	  MPI_Op_create(redux_int32_by_value_adapter, 1, &op);
+	}
+      else
+	{
+	  int32_t_by_reference = (typeof (REFERENCE_FUNC(int32_t)))opr;
+	  MPI_Op_create(redux_int32_by_reference_adapter, 1, &op);
+	}
     }
+  /* Treat reals/doubles. */
   else if(GFC_DESCRIPTOR_TYPE(a) == BT_REAL)
     {
+      /* When the ARG_VALUE opr_flag is set, then the user-function expects its
+       * arguments to be passed by value. */
       if(GFC_DESCRIPTOR_SIZE(a) == sizeof(float))
   	{
-  	  foo_float = (typeof(foo_float))opr;
-  	  MPI_Op_create(redux_real32, 1, &op);
+	  if ((opr_flags & GFC_CAF_ARG_VALUE) > 0)
+	    {
+	      float_by_value = (typeof (VALUE_FUNC(float)))opr;
+	      MPI_Op_create(redux_real32_by_value_adapter, 1, &op);
+	    }
+	  else
+	    {
+	      float_by_reference = (typeof (REFERENCE_FUNC(float)))opr;
+	      MPI_Op_create(redux_real32_by_reference_adapter, 1, &op);
+	    }
   	}
       else
-  	{
-  	  foo_double = (typeof(foo_double))opr;
-  	  MPI_Op_create(redux_real64, 1, &op);
+	{
+	  /* When the ARG_VALUE opr_flag is set, then the user-function expects its
+	   * arguments to be passed by value. */
+	  if ((opr_flags & GFC_CAF_ARG_VALUE) > 0)
+	    {
+	      double_by_value = (typeof (VALUE_FUNC(double)))opr;
+	      MPI_Op_create(redux_real64_by_value_adapter, 1, &op);
+	    }
+	  else
+	    {
+	      double_by_reference = (typeof (REFERENCE_FUNC(double)))opr;
+	      MPI_Op_create(redux_real64_by_reference_adapter, 1, &op);
+	    }
   	}
     }
-  else if(GFC_DESCRIPTOR_TYPE(a) == BT_LOGICAL)
+  else if (GFC_DESCRIPTOR_TYPE(a) == BT_CHARACTER)
     {
-      foo_int32_t = (typeof(foo_int32_t))opr;
-      MPI_Op_create(redux_int32, 1, &op);
+      /* Char array functions always pass by reference. */
+      char_by_reference = (typeof (REFERENCE_FUNC(char)))opr;
+      MPI_Op_create(redux_char_by_reference_adapter, 1, &op);
     }
   else
     {
       caf_runtime_error ("Data type not yet supported for co_reduce\n");
     }
 
-  co_reduce_1 (op, a, result_image, stat, errmsg, 0, errmsg_len);
+  internal_co_reduce (op, a, result_image, stat, errmsg, a_len, errmsg_len);
 }
 
 void
 PREFIX (co_sum) (gfc_descriptor_t *a, int result_image, int *stat, char *errmsg,
                  int errmsg_len)
 {
-  co_reduce_1 (MPI_SUM, a, result_image, stat, errmsg, 0, errmsg_len);
+  internal_co_reduce (MPI_SUM, a, result_image, stat, errmsg, 0, errmsg_len);
 }
 
 
@@ -3493,7 +3579,7 @@ void
 PREFIX (co_min) (gfc_descriptor_t *a, int result_image, int *stat, char *errmsg,
                  int src_len, int errmsg_len)
 {
-  co_reduce_1 (MPI_MIN, a, result_image, stat, errmsg, src_len, errmsg_len);
+  internal_co_reduce (MPI_MIN, a, result_image, stat, errmsg, src_len, errmsg_len);
 }
 
 
@@ -3501,7 +3587,7 @@ void
 PREFIX (co_max) (gfc_descriptor_t *a, int result_image, int *stat,
                  char *errmsg, int src_len, int errmsg_len)
 {
-  co_reduce_1 (MPI_MAX, a, result_image, stat, errmsg, src_len, errmsg_len);
+  internal_co_reduce (MPI_MAX, a, result_image, stat, errmsg, src_len, errmsg_len);
 }
 
 
