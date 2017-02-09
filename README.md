@@ -4,10 +4,12 @@
 [For better viewing, including hyperlinks, read it online at            ]:#
 [https://github.com/sourceryinstitute/opencoarrays/blob/master/README.md]:#
 
+
+[![Sourcery Institute][sourcery-institute logo]](https://www.sourceryinstitute.org)
+
 OpenCoarrays
 ============
 
-[![Maintenance](https://img.shields.io/maintenance/yes/2017.svg?style=flat-square)](https://github.com/sourceryinstitute/opencoarrays/commits/master)
 [![CI Build Status][build img]](https://travis-ci.org/sourceryinstitute/opencoarrays)
 [![Gitter](https://img.shields.io/gitter/room/nwjs/nw.js.svg?style=flat-square)](https://gitter.im/sourceryinstitute/opencoarrays)
 [![GitHub license][license img]](./LICENSE)
@@ -108,7 +110,7 @@ We gratefully acknowledge support from the following institutions:
 [Contributing]: #contributing
 [Acknowledgements]: #acknowledgements
 
-
+[sourcery-institute logo]: http://www.sourceryinstitute.org/uploads/4/9/9/6/49967347/sourcery-logo-rgb-hi-rez-1.png
 [OpenCoarrays]: http://www.opencoarrays.org
 [ABI]: https://gcc.gnu.org/onlinedocs/gfortran/Coarray-Programming.html#Coarray-Programming
 [TS 18508]: http://isotc.iso.org/livelink/livelink?func=ll&objId=16769292&objAction=Open
