@@ -7,6 +7,8 @@
 Installing OpenCoarrays
 =======================
 
+[![GitHub release](https://img.shields.io/github/release/sourceryinstitute/opencoarrays.svg?style=flat-square)](https://github.com/sourceryinstitute/opencoarrays/releases/latest)
+[![Github All Releases](https://img.shields.io/github/downloads/sourceryinstitute/opencoarrays/total.svg?style=flat-square)](https://github.com/sourceryinstitute/opencoarrays/releases/latest)
 [![Download as PDF][pdf img]](http://md2pdf.herokuapp.com/sourceryinstitute/opencoarrays/blob/master/INSTALL.pdf)
 
 Download this file as a PDF document
@@ -28,14 +30,18 @@ End-User Installation
 ---------------------
 
 Most users will find it easiest and fastest to use package management software to install OpenCoarrays.
-Package management options for macOS (formerly known as OS X), Windows, and Linux are described first 
+Package management options for macOS (formerly known as OS X), Windows, and Linux are described first
 below. Also described below are options for installing via the Sourcery Institute virtual machine or
 the OpenCoarrays installation script.
 
+[top]
+
 ### macOS ###
 
+[![homebrew](https://img.shields.io/homebrew/v/opencoarrays.svg?style=flat-square)](http://braumeister.org/formula/opencoarrays)
+
 OS X users may use the [Homebrew] or [MacPorts] package management systems to install OpenCoarrays.
-We recommend [Homebrew]. 
+We recommend [Homebrew].
 
 Homebrew installation steps:
 ```
@@ -49,7 +55,7 @@ sudo port selfupdate
 sudo port upgrade outdated
 sudo port install opencoarrays
 ```
-where the `sudo` command requires administrator privileges.  If you install using MacPorts, please 
+where the `sudo` command requires administrator privileges.  If you install using MacPorts, please
 also install the `mpstats` port as follows:
 ```
 sudo port install mpstats
@@ -57,34 +63,40 @@ sudo port install mpstats
 which supports future OpenCoarrays development by providing download data the OpenCoarrays team
 uses in proposals for research grants and development contracts.
 
+[top]
+
 ### Windows ###
 
 Windows users may run the windows-install.sh script inside the Windows Subsystem for Linux (WSL).
 
 Requirements:
 * WSL release 14936 or later,
-* Windows Insider Preview, and 
+* Windows Insider Preview, and
 * "Fast" updates option.
 
 Steps:
 ```
  do-release-upgrade
-./windows-install.sh 
+./windows-install.sh
 ```
 where the first command above updates the default Ubuntu 14.04 to 16.04 and the second command must
 be executed with the present working directory set to the top level of the OpenCoarrays source tree.
 
-The `windows-install.sh` installation script uses Ubuntu's `apt-get` package manager to build 
-[GCC] 5.4.0, [CMake], and [MPICH].  Windows users who desire a newer version of GCC are welcome to 
-submit a request via our [Issues] page and suggest a method for updating.  Previously attempted 
+The `windows-install.sh` installation script uses Ubuntu's `apt-get` package manager to build
+[GCC] 5.4.0, [CMake], and [MPICH].  Windows users who desire a newer version of GCC are welcome to
+submit a request via our [Issues] page and suggest a method for updating.  Previously attempted
 upgrade methods are described in the discussion thread starting with [commit comment 20539810].
+
+[top]
 
 ### Linux ###
 
 The [Arch Linux] distribution provides an [aur package] for installing OpenCoarrays.  Users of
 other Linux distributions may install the [Virtual machine] or use the [Installation Script].
-Alternatively, if you desire to install using other Linux package Linux package management 
+Alternatively, if you desire to install using other Linux package Linux package management
 software such as [dnf] or [apt-get], please submit a feature request via our [Issues] page.
+
+[top]
 
 ## Virtual machine ##
 
@@ -95,11 +107,13 @@ and OpenCoarrays, the virtual machine contains dozens of other open-source softw
 that support modern Fortran software development.  See the [download and installation instructions]
 for a partial list of the included packages.
 
+[top]
+
 ## Installation Script ##
 
 If the above package management or virtualization options are infeasible or unavailable,
-Linux and macOS users may also install OpenCoarrays by downloading and uncompressing our 
-[latest release] and running our installation script in the top-level OpenCoarrays source 
+Linux and macOS users may also install OpenCoarrays by downloading and uncompressing our
+[latest release] and running our installation script in the top-level OpenCoarrays source
 directory (see above for the corresponding [Windows] script):
 ```
 tar xvzf OpenCoarrays-x.y.z.tar.gz
@@ -125,16 +139,17 @@ inside the installation path (.e.g, inside `build` in the above example):
 * `mod`: contains the `opencoarrays.mod` module file for use with non-OpenCoarrays-aware compilers
 * `lib`: contains the `libcaf_mpi.a` static library to which codes link for CAF support
 
+[top]
 
 Advanced Installation from Source
 ---------------------------------
 
 ### Prerequisites: ###
 
-The prerequisites below and their dependencies are recommended for the broadest coverage of CAF features. 
-If a prerequisite is missing or outdated, the [install.sh] script will prompt the user for permission to 
-download, compile, and install it. Before doing so, [install.sh] will verify whether that prerequisite's 
-prerequisites are present and will recursively traverse the dependency tree until reaching an acceptable 
+The prerequisites below and their dependencies are recommended for the broadest coverage of CAF features.
+If a prerequisite is missing or outdated, the [install.sh] script will prompt the user for permission to
+download, compile, and install it. Before doing so, [install.sh] will verify whether that prerequisite's
+prerequisites are present and will recursively traverse the dependency tree until reaching an acceptable
 prerequisite or reaching the end of a branch.
 
 ```
@@ -151,6 +166,8 @@ opencoarrays
 ```
 
 If using the advanced [CMake] or [Make] builds detailed below, please ensure that these dependencies are met before attempting to build and install OpenCoarrays.
+
+[top]
 
 ### CMake scripts ###
 
@@ -199,7 +216,7 @@ Advanced options (most users should not use these):
     -DMPI_HOME=/path/to/mpi/dir  # try to force CMake to find your preferred MPI implementation
         # OR
     -DMPI_C_COMPILER=/path/to/c/wrapper
-	-DMPI_Fortran_COMPILER=/path/to/fortran/wrapper
+    -DMPI_Fortran_COMPILER=/path/to/fortran/wrapper
 
     -DLEGACY_ARCHITECTURE=OFF    # enables the use of FFT libraries that employ AVX instructions
     -DHIGH_RESOLUTION_TIMER=ON   # enables timers that tick once per clock cycle
@@ -210,6 +227,8 @@ Advanced options (most users should not use these):
 The fourth and fifth flags above are not portable and the sixth enables code that is incomplete as
 of release 1.0.0.  The eighth is set automatically by the CMake scripts based on the compiler
 identity and version.
+
+[top]
 
 ### Make ###
 
@@ -237,10 +256,12 @@ system settings.  For example, you might need to remove the `-Werror` option fro
 compiler flags or name a different compiler.  In order to activate efficient strided-array
 transfer support, uncomment the `-DSTRIDED` flag inside the [make.inc] file.
 
+[top]
+
 Obtaining GCC, MPICH, and CMake
 -------------------------------
 
-[GFortran Binaries] binary builds are available at <https://gcc.gnu.org/wiki/GFortranBinaries>.  
+[GFortran Binaries] binary builds are available at <https://gcc.gnu.org/wiki/GFortranBinaries>.
 
 To build all prerequisites from source, including the current development branch of GCC,
 you might first try the running the provided [install.sh] script as described above in
@@ -260,8 +281,19 @@ export gcc_install_path=/desired/installation/destination
    --with-cxx     "${gcc_install_path}"/bin/g++
 ```
 
+[top]
+
+---
+
+[![GitHub forks](https://img.shields.io/github/forks/sourceryinstitute/opencoarrays.svg?style=social&label=Fork)](https://github.com/sourceryinstitute/opencoarrays/fork)
+[![GitHub stars](https://img.shields.io/github/stars/sourceryinstitute/opencoarrays.svg?style=social&label=Star)](https://github.com/sourceryinstitute/opencoarrays)
+[![GitHub watchers](https://img.shields.io/github/watchers/sourceryinstitute/opencoarrays.svg?style=social&label=Watch)](https://github.com/sourceryinstitute/opencoarrays)
+[![Twitter URL](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?hashtags=HPC,Fortran,PGAS&related=zbeekman,gnutools,HPCwire,HPC_Guru,hpcprogrammer,SciNetHPC,DegenerateConic,jeffdotscience,travisci&text=Stop%20programming%20w%2F%20the%20%23MPI%20docs%20in%20your%20lap%2C%20try%20Coarray%20Fortran%20w%2F%20OpenCoarrays%20%26%20GFortran!&url=https%3A//github.com/sourceryinstitute/opencoarrays)
+
+
 [Internal document links]: #
 
+[top]: #top
 [End-User Installation]: #end-user-installation
 [macOS]: #macos
 [Windows]: #windows
