@@ -59,7 +59,7 @@ the use of an OCA compiler (e.g., gfortran 5.1.0 or later) in a Linux bash shell
 with the `bin` directory of the chosen installation path in the user's PATH
 environment variable:
 
-```
+```fortran
 $ cat tally.f90
       program main
         use iso_c_binding, only : c_int
@@ -106,15 +106,22 @@ name clashes with the compiler's or programs existing capabilities.
 If the `caf` compiler wrapper cannot process the source code in question, invoke
 the underlying communication library directly:
 
-```
+```bash
 mpif90 -fcoarray=lib -L/opt/opencoarrays/ tally.f90 \ -lcaf_mpi -o htally-I<OpenCoarrays-install-path>/mod
 ```
 
 and also run the program with the lower-level communication library:
 
-```
+```bash
 mpirun -np <number-of-images> ./tally
 ```
+
+---
+
+[![GitHub forks](https://img.shields.io/github/forks/sourceryinstitute/opencoarrays.svg?style=social&label=Fork)](https://github.com/sourceryinstitute/opencoarrays/fork)
+[![GitHub stars](https://img.shields.io/github/stars/sourceryinstitute/opencoarrays.svg?style=social&label=Star)](https://github.com/sourceryinstitute/opencoarrays)
+[![GitHub watchers](https://img.shields.io/github/watchers/sourceryinstitute/opencoarrays.svg?style=social&label=Watch)](https://github.com/sourceryinstitute/opencoarrays)
+[![Twitter URL](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?hashtags=HPC,Fortran,PGAS&related=zbeekman,gnutools,HPCwire,HPC_Guru,hpcprogrammer,SciNetHPC,DegenerateConic,jeffdotscience,travisci&text=Stop%20programming%20w%2F%20the%20%23MPI%20docs%20in%20your%20lap%2C%20try%20Coarray%20Fortran%20w%2F%20OpenCoarrays%20%26%20GFortran!&url=https%3A//github.com/sourceryinstitute/opencoarrays)
 
 [Hyperlinks]:#
 
