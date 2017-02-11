@@ -124,8 +124,24 @@ Known Issues
 
 ### Compiler Issues ###
 
+For the most up-to-date list of issues, defects, and requested
+enhancements, please visit
+https://github.com/sourceryinstitute/opencoarrays/issues
+
 <a name="compiler-issues-gnu">
 * **GNU** (gfortran)</a>
+     * `co_reduce` with a pure binary operator function that has dummy
+       arguments with the `value` attribute requires GFortran >= 7
+	 * `co_reduce` may not be thread safe
+     * `co_reduce` causes problems when used in combination with the
+       `-Wl,-z,noexecstack` linker flags required by some newer Linux
+       OSes
+	 * GFortran 7 regression: no type conversion occurs before coarray
+       put operations, obligation shifted to library
+	 * Correct implicit synchronizations of sourced allocations
+       require GFortran >= 7. Prior versions synchronize after the
+       allocation but before the assignment.
+	 * `stop` with numeric or string arguments not yet handled correctly
      * Derived-type coarrays with allocatable/pointer components are not yet handled
        properly.
      * Problems exist with combining array access to a corray with a scalar component
@@ -165,6 +181,14 @@ To-Do List
 * [ ] Better integration with the test cases of GCC.  For more information,
       see the GCC source code files in `gcc/testsuite/gfortran.dg/`,
       in particular, the `dg-do run` tests in `coarray*f90` and `coarray/`).
+
+---
+
+[![GitHub forks](https://img.shields.io/github/forks/sourceryinstitute/opencoarrays.svg?style=social&label=Fork)](https://github.com/sourceryinstitute/opencoarrays/fork)
+[![GitHub stars](https://img.shields.io/github/stars/sourceryinstitute/opencoarrays.svg?style=social&label=Star)](https://github.com/sourceryinstitute/opencoarrays)
+[![GitHub watchers](https://img.shields.io/github/watchers/sourceryinstitute/opencoarrays.svg?style=social&label=Watch)](https://github.com/sourceryinstitute/opencoarrays)
+[![Twitter URL](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?hashtags=HPC,Fortran,PGAS&related=zbeekman,gnutools,HPCwire,HPC_Guru,hpcprogrammer,SciNetHPC,DegenerateConic,jeffdotscience,travisci&text=Stop%20programming%20w%2F%20the%20%23MPI%20docs%20in%20your%20lap%2C%20try%20Coarray%20Fortran%20w%2F%20OpenCoarrays%20%26%20GFortran!&url=https%3A//github.com/sourceryinstitute/opencoarrays)
+
 
 
 [Hyperlinks]:#
