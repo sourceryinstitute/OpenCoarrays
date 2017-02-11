@@ -10,12 +10,11 @@
 # Once Homebrew/Linuxbrew is installed, execute the following commands to install the required prerequisites:
 # `brew tap homebrew/bundle && brew bundle`
 #
-# NOTE: Until Linuxbrew upgrades to GCC 6.1 or later, you will have to edit the `mpich` line to:
-#    `brew 'mpich', args: ['cc=gcc-5', 'cxx=g++-5']`
 
 brew 'cmake'
 brew 'gcc'
 brew 'mpich', args: ['cc=gcc-6', 'cxx=g++-6']
+brew 'opencoarrays'
 
 # [Homebrew]: http://brew.sh
 # [Linuxbrew]: http://linuxbrew.sh

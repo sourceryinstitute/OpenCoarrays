@@ -43,10 +43,23 @@ the OpenCoarrays installation script.
 OS X users may use the [Homebrew] or [MacPorts] package management systems to install OpenCoarrays.
 We recommend [Homebrew].
 
-Homebrew installation steps:
+Basic Homebrew installation steps:
 ```
 brew update
 brew install opencoarrays
+```
+
+OpenCoarrays also ships with a
+[`Brewfile`](https://github.com/sourceryinstitute/opencoarrays/blob/master/Brewfile)
+that will make it easier to install opencoarrays using MPICH built
+with GCC. To install using the
+[`Brewfile`](https://github.com/sourceryinstitute/opencoarrays/blob/master/Brewfile)
+with MPICH wrapping GCC, follow these steps:
+
+```
+brew tap homebrew/bundle
+brew update
+brew bundle
 ```
 
 MacPorts installation steps:
