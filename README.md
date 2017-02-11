@@ -29,6 +29,7 @@ OpenCoarrays
 * [Status](#status)
 * [Support](#support)
 * [Acknowledgements](#acknowledgements)
+* [Donate](#donate)
 
 Overview
 --------
@@ -92,6 +93,13 @@ We gratefully acknowledge support from the following institutions:
 * The National Energy Research Scientific Computing Center ([NERSC]), which is supported by the Office of Science of the U.S. Department of Energy under Contract No. DE-AC02-05CH11231, for access to the Hopper and Edison supercomputers under the OpenCoarrays project start allocation.
 * [Sourcery, Inc.], for financial support for the domain registration, web hosting, advanced development, and conference travel.
 
+Donate
+------
+If you find this software useful, please consider donating
+[your time](CONTRIBUTING.md) or
+[your money](http://www.sourceryinstitute.org/store/p5/Donation.html)
+to aid in development efforts.
+
 ---
 
 [![GitHub forks](https://img.shields.io/github/forks/sourceryinstitute/opencoarrays.svg?style=social&label=Fork)](https://github.com/sourceryinstitute/opencoarrays/fork)
@@ -119,7 +127,7 @@ We gratefully acknowledge support from the following institutions:
 [gfortran]: https://gcc.gnu.org/wiki/GFortran
 [opencoarrays module]: ./src/extensions/opencoarrays.F90
 [MPICH]: http://www.mpich.org
-[MVAPICH]: http://mvapich.cse.ohio-state.edu/)
+[MVAPICH]: http://mvapich.cse.ohio-state.edu
 [OpenMPI]: http://www.open-mpi.org
 [Sourcery, Inc.]: http://www.sourceryinstitute.org
 [Google]: http://google.com
@@ -135,7 +143,11 @@ We gratefully acknowledge support from the following institutions:
 [Google Group]: https://groups.google.com/forum/#!forum/opencoarrays
 [subscribing]: https://groups.google.com/forum/#!forum/opencoarrays/join
 [opencoarrays@googlegroups.com]: mailto:opencoarrays@googlegroups.com
-[Google Summer of Code]: https://www.google-melange.com/gsoc/org2/google/gsoc2014/gcc
+[Google Summer of Code]: https://www.google-melange.com/archive/gsoc/2014/orgs/gcc/projects/afanfa.html
+
+[try this GSoC link? https://www.google-melange.com/archive/gsoc/2014/orgs/gcc]:#
+[old GSoC link: https://www.google-melange.com/gsoc/org2/google/gsoc2014/gcc]:#
+
 [OpenCoarrays Google Group]: https://groups.google.com/forum/#!forum/opencoarrays)
 [Issues]: https://github.com/sourceryinstitute/opencoarrays/issues
 [Releases]: https://github.com/sourceryinstitute/opencoarrays/releases
