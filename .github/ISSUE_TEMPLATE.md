@@ -86,10 +86,10 @@ Please replace `[ ]` with `[X]` to indicate you have taken the requested action
  - [ ] Build/install was attempted with manual/advanced
        [CMake install]
        - [ ] Name and version of the C compiler being used
-	   - [ ] Name and version of the Fortran compiler being used
-	   - [ ] Attached/included the output of the configure step with
+       - [ ] Name and version of the Fortran compiler being used
+       - [ ] Attached/included the output of the configure step with
              CMake. (Usually something like `cd build && cmake ..`)
-	   - [ ] Attached/included the output of `make VERBOSE=1`
+       - [ ] Attached/included the output of `make VERBOSE=1`
        - [ ] Attached/included the output of `ctest --verbose`
  - [ ] Other build/install was attempted (please describe)
 
