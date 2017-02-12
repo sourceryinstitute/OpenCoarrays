@@ -4,6 +4,10 @@
 <!-- Fill out all portions of this template that apply. Please delete -->
 <!-- any unnecessary sections. -->
 
+| Avg response time                 | coverage on master         |
+| --------------------------------- | ---------------------------|
+| ![Issue Stats][PR response img]   | ![Codecov branch][coverage]|
+
 This pull request (PR) is a:
  - [ ] Bug fix
  - [ ] Feature addition
@@ -40,6 +44,7 @@ I certify that:
  - [ ] I have signed  [Contributor License Agreement (CLA)] by
        clicking the "details" link to the right of the `licence/cla`
        check and following the directions on the CLA assistant webpage
+ - [ ] I have ensured that the test coverage hasn't gone down and added new [unit tests] to cover an new code added to the library
 
 ## Summary of changes ##
 
@@ -63,3 +68,6 @@ Why did you make these changes?
 [pullapprove comment]: https://pullapprove.com/sourceryinstitute/opencoarrays/settings/
 [Github code review]: https://help.github.com/articles/about-pull-request-reviews/
 [Github keywords]: https://help.github.com/articles/closing-issues-via-commit-messages/
+[unit tests]: https://github.com/sourceryinstitute/OpenCoarrays/tree/master/src/tests/unit
+[PR response img]: https://img.shields.io/issuestats/p/github/sourceryinstitute/OpenCoarrays.svg?style=flat-square
+[coverage]: https://img.shields.io/codecov/c/github/sourceryinstitute/OpenCoarrays/master.svg?style=flat-square

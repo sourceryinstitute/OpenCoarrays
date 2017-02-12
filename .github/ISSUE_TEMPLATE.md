@@ -4,6 +4,12 @@
 <!-- Fill out all portions of this template that apply. Please delete -->
 <!-- any unnecessary sections. -->
 
+| Avg response time              |
+| ------------------------------ |
+| ![Issue Stats][issue stat img] |
+
+Please replace `[ ]` with `[X]` to indicate you have taken the requested action
+
  - [ ] I have surrounded any code, or log output in codeblock fences
        (` ``` `) if it occupies more than one line, or in single
        backticks if it is short `short code`
@@ -40,8 +46,6 @@ willing to help out please also read the [Helping Out] section of
 The title of the issue should start with `Defect:` followed by a
 succinct title.
 
-Please replace `[ ]` with `[X]` to indicate you have taken the requested action
-
  - [ ] I have searched the [issues page] and [mailing list] and did
        not find any issue matching the one I would like to report
  - [ ] I have included a succinct description of the problem,
@@ -75,7 +79,8 @@ Please replace `[ ]` with `[X]` to indicate you have taken the requested action
        changing the extension to `.txt` and uploaded it to this issue
  - [ ] I have indicated if previous versions of OpenCoarrays are or
        were installed on the machine in question
-<!-- please select one from the top level-->
+
+**Please select one from the following top level items** (please be sure to fill out all sub-items)**:**
  - [ ] Build/install was attempted with [install.sh]
     - [ ] I have attached the `install-opencoarrays.log` file
           after re-running the script with the debug flags `-d` and
@@ -100,18 +105,19 @@ us, the faster, and more easily we can help you
 
 <!-- delete this section if it does not apply -->
 
-<!-- pick one of the first two -->
+**Please choose one of the first two items**
  - [ ] I am experiencing a compile time error (all gfortran ICEs
        should be reported to the [GFortran bug tracker]... You can post
        the ICE here too for tracking purposes, with a link to the
        GFortran problem report)
  - [ ] I am experiencing a runtime issue
+
+**:sparkles: Optional, but you will receive infinite karma for including this: :sparkles:**
  - [ ] I have included a minimally complete verifiable example (MCVE)
        that exhibits the problem and suitable for adding to regression
-       tests (optional, but you receive infinite karma
-       for including this)
+       tests
 
-Description with as many details as possible to reproduce the problem.
+Don't forget a description with as many details as possible to reproduce the problem.
 
 
 [links]:#
@@ -129,3 +135,4 @@ Description with as many details as possible to reproduce the problem.
 [issues page]: https://github.com/sourceryinstitute/opencoarrays/issues
 [mailing list]: https://groups.google.com/forum/#!forum/opencoarrays
 [install.sh]: https://github.com/sourceryinstitute/opencoarrays/blob/master/install.sh
+[issue stat img]:https://img.shields.io/issuestats/i/github/sourceryinstitute/OpenCoarrays.svg?style=flat-square
