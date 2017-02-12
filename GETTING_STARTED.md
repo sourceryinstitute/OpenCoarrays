@@ -2,15 +2,15 @@
 
 [This document is formatted with GitHub-Flavored Markdown.                       ]:#
 [For better viewing, including hyperlinks, read it online at                     ]:#
-[https://github.com/sourceryinstitute/opencoarrays/blob/master/GETTING_STARTED.md]:#
+[https://github.com/sourceryinstitute/OpenCoarrays/blob/master/GETTING_STARTED.md]:#
 
 Getting Started
 ===============
 
-[![Download as PDF][pdf img]](http://md2pdf.herokuapp.com/sourceryinstitute/opencoarrays/blob/master/GETTING_STARTED.pdf)
+[![Download as PDF][pdf img]](http://md2pdf.herokuapp.com/sourceryinstitute/OpenCoarrays/blob/master/GETTING_STARTED.pdf)
 
 Download this file as a PDF document
-[here](http://md2pdf.herokuapp.com/sourceryinstitute/opencoarrays/blob/master/GETTING_STARTED.pdf).
+[here](http://md2pdf.herokuapp.com/sourceryinstitute/OpenCoarrays/blob/master/GETTING_STARTED.pdf).
 
 * [The caf compiler wrapper]
 * [A sample basic workflow]
@@ -118,10 +118,10 @@ mpirun -np <number-of-images> ./tally
 
 ---
 
-[![GitHub forks](https://img.shields.io/github/forks/sourceryinstitute/opencoarrays.svg?style=social&label=Fork)](https://github.com/sourceryinstitute/opencoarrays/fork)
-[![GitHub stars](https://img.shields.io/github/stars/sourceryinstitute/opencoarrays.svg?style=social&label=Star)](https://github.com/sourceryinstitute/opencoarrays)
-[![GitHub watchers](https://img.shields.io/github/watchers/sourceryinstitute/opencoarrays.svg?style=social&label=Watch)](https://github.com/sourceryinstitute/opencoarrays)
-[![Twitter URL](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?hashtags=HPC,Fortran,PGAS&related=zbeekman,gnutools,HPCwire,HPC_Guru,hpcprogrammer,SciNetHPC,DegenerateConic,jeffdotscience,travisci&text=Stop%20programming%20w%2F%20the%20%23MPI%20docs%20in%20your%20lap%2C%20try%20Coarray%20Fortran%20w%2F%20OpenCoarrays%20%26%20GFortran!&url=https%3A//github.com/sourceryinstitute/opencoarrays)
+[![GitHub forks](https://img.shields.io/github/forks/sourceryinstitute/OpenCoarrays.svg?style=social&label=Fork)](https://github.com/sourceryinstitute/OpenCoarrays/fork)
+[![GitHub stars](https://img.shields.io/github/stars/sourceryinstitute/OpenCoarrays.svg?style=social&label=Star)](https://github.com/sourceryinstitute/OpenCoarrays)
+[![GitHub watchers](https://img.shields.io/github/watchers/sourceryinstitute/OpenCoarrays.svg?style=social&label=Watch)](https://github.com/sourceryinstitute/OpenCoarrays)
+[![Twitter URL](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?hashtags=HPC,Fortran,PGAS&related=zbeekman,gnutools,HPCwire,HPC_Guru,hpcprogrammer,SciNetHPC,DegenerateConic,jeffdotscience,travisci&text=Stop%20programming%20w%2F%20the%20%23MPI%20docs%20in%20your%20lap%2C%20try%20Coarray%20Fortran%20w%2F%20OpenCoarrays%20%26%20GFortran!&url=https%3A//github.com/sourceryinstitute/OpenCoarrays)
 
 [Hyperlinks]:#
 
@@ -130,7 +130,7 @@ mpirun -np <number-of-images> ./tally
 [An advanced workflow]:  #an-advanced-workflow
 
 [Sourcery Store]: http://www.sourceryinstitute.org/store
-[Issues]: https://github.com/sourceryinstitute/opencoarrays/issues
+[Issues]: https://github.com/sourceryinstitute/OpenCoarrays/issues
 [opencoarrays module]: ./src/extensions/opencoarrays.F90
 [GCC]: http://gcc.gnu.org
 [TS 18508]: http://isotc.iso.org/livelink/livelink?func=ll&objId=17181227&objAction=Open

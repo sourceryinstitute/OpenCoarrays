@@ -127,12 +127,12 @@ Don't forget a description with as many details as possible to reproduce the pro
 [MVAPICH]: http://mvapich.cse.ohio-state.edu
 [MPICH]: https://www.mpich.org
 [Open-MPI]: https://www.open-mpi.org
-[CONTRIBUTING.md]: https://github.com/sourceryinstitute/opencoarrays/blob/master/CONTRIBUTING.md
-[Helping Out]: https://github.com/sourceryinstitute/opencoarrays/blob/master/CONTRIBUTING.md#helping-out
-[official release]: https://github.com/sourceryinstitute/opencoarrays/releases
-[CMake install]: https://github.com/sourceryinstitute/opencoarrays/blob/master/INSTALL.md#cmake-scripts
+[CONTRIBUTING.md]: https://github.com/sourceryinstitute/OpenCoarrays/blob/master/CONTRIBUTING.md
+[Helping Out]: https://github.com/sourceryinstitute/OpenCoarrays/blob/master/CONTRIBUTING.md#helping-out
+[official release]: https://github.com/sourceryinstitute/OpenCoarrays/releases
+[CMake install]: https://github.com/sourceryinstitute/OpenCoarrays/blob/master/INSTALL.md#cmake-scripts
 [homebrew]: http://brew.sh
-[issues page]: https://github.com/sourceryinstitute/opencoarrays/issues
+[issues page]: https://github.com/sourceryinstitute/OpenCoarrays/issues
 [mailing list]: https://groups.google.com/forum/#!forum/opencoarrays
-[install.sh]: https://github.com/sourceryinstitute/opencoarrays/blob/master/install.sh
+[install.sh]: https://github.com/sourceryinstitute/OpenCoarrays/blob/master/install.sh
 [issue stat img]:https://img.shields.io/issuestats/i/github/sourceryinstitute/OpenCoarrays.svg?style=flat-square

@@ -61,11 +61,11 @@ Why did you make these changes?
        else has the chance to review my proposed changes
 
 [links]:#
-[contributing guidelines]: https://github.com/sourceryinstitute/opencoarrays/blob/master/CONTRIBUTING.md
+[contributing guidelines]: https://github.com/sourceryinstitute/OpenCoarrays/blob/master/CONTRIBUTING.md
 [commit message]: https://robots.thoughtbot.com/5-useful-tips-for-a-better-commit-message
 [these guidelines]: http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html
-[Contributor License Agreement (CLA)]: https://cla-assistant.io/sourceryinstitute/opencoarrays
-[pullapprove comment]: https://pullapprove.com/sourceryinstitute/opencoarrays/settings/
+[Contributor License Agreement (CLA)]: https://cla-assistant.io/sourceryinstitute/OpenCoarrays
+[pullapprove comment]: https://pullapprove.com/sourceryinstitute/OpenCoarrays/settings/
 [Github code review]: https://help.github.com/articles/about-pull-request-reviews/
 [Github keywords]: https://help.github.com/articles/closing-issues-via-commit-messages/
 [unit tests]: https://github.com/sourceryinstitute/OpenCoarrays/tree/master/src/tests/unit
