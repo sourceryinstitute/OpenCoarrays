@@ -2,17 +2,17 @@
 
 [This document is formatted with GitHub-Flavored Markdown.               ]:#
 [For better viewing, including hyperlinks, read it online at             ]:#
-[https://github.com/sourceryinstitute/opencoarrays/blob/master/INSTALL.md]:#
+[https://github.com/sourceryinstitute/OpenCoarrays/blob/master/INSTALL.md]:#
 
 Installing OpenCoarrays
 =======================
 
-[![GitHub release](https://img.shields.io/github/release/sourceryinstitute/opencoarrays.svg?style=flat-square)](https://github.com/sourceryinstitute/opencoarrays/releases/latest)
-[![Github All Releases](https://img.shields.io/github/downloads/sourceryinstitute/opencoarrays/total.svg?style=flat-square)](https://github.com/sourceryinstitute/opencoarrays/releases/latest)
-[![Download as PDF][pdf img]](http://md2pdf.herokuapp.com/sourceryinstitute/opencoarrays/blob/master/INSTALL.pdf)
+[![GitHub release](https://img.shields.io/github/release/sourceryinstitute/OpenCoarrays.svg?style=flat-square)](https://github.com/sourceryinstitute/OpenCoarrays/releases/latest)
+[![Github All Releases](https://img.shields.io/github/downloads/sourceryinstitute/OpenCoarrays/total.svg?style=flat-square)](https://github.com/sourceryinstitute/OpenCoarrays/releases/latest)
+[![Download as PDF][pdf img]](http://md2pdf.herokuapp.com/sourceryinstitute/OpenCoarrays/blob/master/INSTALL.pdf)
 
 Download this file as a PDF document
-[here](http://md2pdf.herokuapp.com/sourceryinstitute/opencoarrays/blob/master/INSTALL.pdf).
+[here](http://md2pdf.herokuapp.com/sourceryinstitute/OpenCoarrays/blob/master/INSTALL.pdf).
 
  *  [End-User Installation]
      * [macOS]
@@ -50,10 +50,10 @@ brew install opencoarrays
 ```
 
 OpenCoarrays also ships with a
-[`Brewfile`](https://github.com/sourceryinstitute/opencoarrays/blob/master/Brewfile)
+[`Brewfile`](https://github.com/sourceryinstitute/OpenCoarrays/blob/master/Brewfile)
 that will make it easier to install opencoarrays using MPICH built
 with GCC. To install using the
-[`Brewfile`](https://github.com/sourceryinstitute/opencoarrays/blob/master/Brewfile)
+[`Brewfile`](https://github.com/sourceryinstitute/OpenCoarrays/blob/master/Brewfile)
 with MPICH wrapping GCC, follow these steps:
 
 ```
@@ -298,10 +298,10 @@ export gcc_install_path=/desired/installation/destination
 
 ---
 
-[![GitHub forks](https://img.shields.io/github/forks/sourceryinstitute/opencoarrays.svg?style=social&label=Fork)](https://github.com/sourceryinstitute/opencoarrays/fork)
-[![GitHub stars](https://img.shields.io/github/stars/sourceryinstitute/opencoarrays.svg?style=social&label=Star)](https://github.com/sourceryinstitute/opencoarrays)
-[![GitHub watchers](https://img.shields.io/github/watchers/sourceryinstitute/opencoarrays.svg?style=social&label=Watch)](https://github.com/sourceryinstitute/opencoarrays)
-[![Twitter URL](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?hashtags=HPC,Fortran,PGAS&related=zbeekman,gnutools,HPCwire,HPC_Guru,hpcprogrammer,SciNetHPC,DegenerateConic,jeffdotscience,travisci&text=Stop%20programming%20w%2F%20the%20%23MPI%20docs%20in%20your%20lap%2C%20try%20Coarray%20Fortran%20w%2F%20OpenCoarrays%20%26%20GFortran!&url=https%3A//github.com/sourceryinstitute/opencoarrays)
+[![GitHub forks](https://img.shields.io/github/forks/sourceryinstitute/OpenCoarrays.svg?style=social&label=Fork)](https://github.com/sourceryinstitute/OpenCoarrays/fork)
+[![GitHub stars](https://img.shields.io/github/stars/sourceryinstitute/OpenCoarrays.svg?style=social&label=Star)](https://github.com/sourceryinstitute/OpenCoarrays)
+[![GitHub watchers](https://img.shields.io/github/watchers/sourceryinstitute/OpenCoarrays.svg?style=social&label=Watch)](https://github.com/sourceryinstitute/OpenCoarrays)
+[![Twitter URL](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?hashtags=HPC,Fortran,PGAS&related=zbeekman,gnutools,HPCwire,HPC_Guru,hpcprogrammer,SciNetHPC,DegenerateConic,jeffdotscience,travisci&text=Stop%20programming%20w%2F%20the%20%23MPI%20docs%20in%20your%20lap%2C%20try%20Coarray%20Fortran%20w%2F%20OpenCoarrays%20%26%20GFortran!&url=https%3A//github.com/sourceryinstitute/OpenCoarrays)
 
 
 [Internal document links]: #
@@ -336,7 +336,7 @@ export gcc_install_path=/desired/installation/destination
 [download and installation instructions]: http://www.sourceryinstitute.org/uploads/4/9/9/6/49967347/overview.pdf
 [yum]: http://yum.baseurl.org
 [apt-get]: https://en.wikipedia.org/wiki/Advanced_Packaging_Tool
-[Issues]: https://github.com/sourceryinstitute/opencoarrays/issues
+[Issues]: https://github.com/sourceryinstitute/OpenCoarrays/issues
 [make.inc]: ./src/make.inc
 [opencoarrays]: ./src/extensions/opencoarrays.F90
 [prerequisites]: #prerequisites
@@ -349,8 +349,8 @@ export gcc_install_path=/desired/installation/destination
 [Installing GCC]: https://gcc.gnu.org/install/
 [Arch Linux]: https://www.archlinux.org
 [aur package]: https://aur.archlinux.org/packages/opencoarrays/
-[latest release]: https://github.com/sourceryinstitute/opencoarrays/releases/latest
+[latest release]: https://github.com/sourceryinstitute/OpenCoarrays/releases/latest
 [pdf img]: https://img.shields.io/badge/PDF-INSTALL.md-6C2DC7.svg?style=flat-square "Download as PDF"
-[commit comment 20539810]: https://github.com/sourceryinstitute/opencoarrays/commit/26e99919fe732576f7277a0e1b83f43cc7c9d749#commitcomment-20539810
+[commit comment 20539810]: https://github.com/sourceryinstitute/OpenCoarrays/commit/26e99919fe732576f7277a0e1b83f43cc7c9d749#commitcomment-20539810
 [Homebrew]: http://brew.sh
 [dnf]: https://github.com/rpm-software-management/dnf

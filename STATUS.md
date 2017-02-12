@@ -2,16 +2,16 @@
 
 [This document is formatted with GitHub-Flavored Markdown.              ]:#
 [For better viewing, including hyperlinks, read it online at            ]:#
-[https://github.com/sourceryinstitute/opencoarrays/blob/master/STATUS.md]:#
+[https://github.com/sourceryinstitute/OpenCoarrays/blob/master/STATUS.md]:#
 
 OpenCoarrays Status
 ===================
 
-[![Maintenance](https://img.shields.io/maintenance/yes/2017.svg?style=flat-square)](https://github.com/sourceryinstitute/opencoarrays/commits/master)
-[![Download as PDF][pdf img]](http://md2pdf.herokuapp.com/sourceryinstitute/opencoarrays/blob/master/STATUS.pdf)
+[![Maintenance](https://img.shields.io/maintenance/yes/2017.svg?style=flat-square)](https://github.com/sourceryinstitute/OpenCoarrays/commits/master)
+[![Download as PDF][pdf img]](http://md2pdf.herokuapp.com/sourceryinstitute/OpenCoarrays/blob/master/STATUS.pdf)
 
 Download this file as a PDF document
-[here](http://md2pdf.herokuapp.com/sourceryinstitute/opencoarrays/blob/master/STATUS.pdf).
+[here](http://md2pdf.herokuapp.com/sourceryinstitute/OpenCoarrays/blob/master/STATUS.pdf).
 
  *  [Feature Coverage](#feature-coverage)
  *  [Compiler Status](#compiler-status)
@@ -126,7 +126,7 @@ Known Issues
 
 For the most up-to-date list of issues, defects, and requested
 enhancements, please visit
-https://github.com/sourceryinstitute/opencoarrays/issues
+https://github.com/sourceryinstitute/OpenCoarrays/issues
 
 <a name="compiler-issues-gnu">
 * **GNU** (gfortran)</a>
@@ -184,10 +184,10 @@ To-Do List
 
 ---
 
-[![GitHub forks](https://img.shields.io/github/forks/sourceryinstitute/opencoarrays.svg?style=social&label=Fork)](https://github.com/sourceryinstitute/opencoarrays/fork)
-[![GitHub stars](https://img.shields.io/github/stars/sourceryinstitute/opencoarrays.svg?style=social&label=Star)](https://github.com/sourceryinstitute/opencoarrays)
-[![GitHub watchers](https://img.shields.io/github/watchers/sourceryinstitute/opencoarrays.svg?style=social&label=Watch)](https://github.com/sourceryinstitute/opencoarrays)
-[![Twitter URL](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?hashtags=HPC,Fortran,PGAS&related=zbeekman,gnutools,HPCwire,HPC_Guru,hpcprogrammer,SciNetHPC,DegenerateConic,jeffdotscience,travisci&text=Stop%20programming%20w%2F%20the%20%23MPI%20docs%20in%20your%20lap%2C%20try%20Coarray%20Fortran%20w%2F%20OpenCoarrays%20%26%20GFortran!&url=https%3A//github.com/sourceryinstitute/opencoarrays)
+[![GitHub forks](https://img.shields.io/github/forks/sourceryinstitute/OpenCoarrays.svg?style=social&label=Fork)](https://github.com/sourceryinstitute/OpenCoarrays/fork)
+[![GitHub stars](https://img.shields.io/github/stars/sourceryinstitute/OpenCoarrays.svg?style=social&label=Star)](https://github.com/sourceryinstitute/OpenCoarrays)
+[![GitHub watchers](https://img.shields.io/github/watchers/sourceryinstitute/OpenCoarrays.svg?style=social&label=Watch)](https://github.com/sourceryinstitute/OpenCoarrays)
+[![Twitter URL](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?hashtags=HPC,Fortran,PGAS&related=zbeekman,gnutools,HPCwire,HPC_Guru,hpcprogrammer,SciNetHPC,DegenerateConic,jeffdotscience,travisci&text=Stop%20programming%20w%2F%20the%20%23MPI%20docs%20in%20your%20lap%2C%20try%20Coarray%20Fortran%20w%2F%20OpenCoarrays%20%26%20GFortran!&url=https%3A//github.com/sourceryinstitute/OpenCoarrays)
 
 
 
@@ -213,14 +213,14 @@ To-Do List
   [Numerical Algorithms Group (nagfor)]: #compiler-issues-nag
   [Portland Group (pgfortran)]: #compiler-issues-pg
   [IBM (xlf)]: #compiler-issues-ibm
-  [forking the OpenCoarrays repository]: https://github.com/sourceryinstitute/opencoarrays/fork
+  [forking the OpenCoarrays repository]: https://github.com/sourceryinstitute/OpenCoarrays/fork
 
 [TS 18508]: http://isotc.iso.org/livelink/livelink?func=ll&objId=17181227&objAction=Open
 [opencoarrays module]: ./src/extensions/opencoarrays.F90
 [ABI]: https://gcc.gnu.org/onlinedocs/gfortran/Function-ABI-Documentation.html#Function-ABI-Documentation
-[pull requests via GitHub]: https://github.com/sourceryinstitute/opencoarrays/compare
-[pull request via GitHub]: https://github.com/sourceryinstitute/opencoarrays/compare
+[pull requests via GitHub]: https://github.com/sourceryinstitute/OpenCoarrays/compare
+[pull request via GitHub]: https://github.com/sourceryinstitute/OpenCoarrays/compare
 [OpenCoarrays Google Group]: https://groups.google.com/forum/#!forum/opencoarrays
 [Sourcery Store]: http://www.sourceryinstitute.org/store
-[Issues]: https://github.com/sourceryinstitute/opencoarrays/issues
+[Issues]: https://github.com/sourceryinstitute/OpenCoarrays/issues
 [pdf img]: https://img.shields.io/badge/PDF-STATUS.md-6C2DC7.svg?style=flat-square "Download as PDF"
