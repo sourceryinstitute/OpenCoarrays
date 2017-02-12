@@ -85,12 +85,12 @@ Please replace `[ ]` with `[X]` to indicate you have taken the requested action
        [homebrew] (which one?)
  - [ ] Build/install was attempted with manual/advanced
        [CMake install]
-       - [ ] Name and version of the C compiler being used
-       - [ ] Name and version of the Fortran compiler being used
-       - [ ] Attached/included the output of the configure step with
-             CMake. (Usually something like `cd build && cmake ..`)
-       - [ ] Attached/included the output of `make VERBOSE=1`
-       - [ ] Attached/included the output of `ctest --verbose`
+   - [ ] Name and version of the C compiler being used
+     - [ ] Name and version of the Fortran compiler being used
+     - [ ] Attached/included the output of the configure step with
+           CMake. (Usually something like `cd build && cmake ..`)
+     - [ ] Attached/included the output of `make VERBOSE=1`
+     - [ ] Attached/included the output of `ctest --verbose`
  - [ ] Other build/install was attempted (please describe)
 
 Don't forget the description of the problem. The more details you give
@@ -108,7 +108,7 @@ us, the faster, and more easily we can help you
  - [ ] I am experiencing a runtime issue
  - [ ] I have included a minimally complete verifiable example (MCVE)
        that exhibits the problem and suitable for adding to regression
-       tests (option, but you receive infinite karma
+       tests (optional, but you receive infinite karma
        for including this)
 
 Description with as many details as possible to reproduce the problem.
