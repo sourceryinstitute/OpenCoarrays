@@ -31,3 +31,4 @@ prerequisites/build text
 developer-scripts export-ignore
 codecov.yml export-ignore
 *.enc export-ignore
+.github
