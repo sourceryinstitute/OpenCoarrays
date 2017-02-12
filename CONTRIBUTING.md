@@ -3,6 +3,10 @@
 Contributing to OpenCoarrays
 ============================
 
+[![](https://img.shields.io/github/issues-closed-raw/sourceryinstitute/OpenCoarrays.svg?style=flat-square)](https://github.com/sourceryinstitute/OpenCoarrays)
+[![Issue Stats](https://img.shields.io/issuestats/i/github/sourceryinstitute/OpenCoarrays.svg?style=flat-square)](https://github.com/sourceryinstitute/OpenCoarrays/issues)
+[![](https://img.shields.io/github/issues-pr-closed-raw/sourceryinstitute/OpenCoarrays.svg?style=flat-square)](https://github.com/sourceryinstitute/OpenCoarrays/pulls)
+[![Issue Stats](https://img.shields.io/issuestats/p/github/sourceryinstitute/OpenCoarrays.svg?style=flat-square)](https://github.com/sourceryinstitute/opencoarrays/pulls)
 [![Download as PDF][pdf img]](http://md2pdf.herokuapp.com/sourceryinstitute/opencoarrays/blob/master/CONTRIBUTING.pdf)
 
 Download this file as a PDF document
@@ -91,6 +95,21 @@ The `master` branch should remain in pristine, stable condition all of the time.
 
 This is the development branch, akin to GCC's `trunk`. Both of `devel` and `master` branches are protected, but `devel` will eventually be merged into `master` when the next major release happens, but until then it is a stable, forward looking branch where experimental features and major changes or enhancements may be applied and tested. Just as with `master` all changes are applied atomically as pull requests.
 
+## Through put ##
+
+[![Waffle.io](https://img.shields.io/waffle/label/sourceryinstitute/opencoarrays/blocked.svg?style=flat-square)](https://github.com/sourceryinstitute/OpenCoarrays/labels/blocked)
+[![Waffle.io](https://img.shields.io/waffle/label/sourceryinstitute/opencoarrays/ready.svg?style=flat-square)](https://github.com/sourceryinstitute/OpenCoarrays/labels/ready)
+[![Waffle.io](https://img.shields.io/waffle/label/sourceryinstitute/opencoarrays/in-progress.svg?style=flat-square)](https://github.com/sourceryinstitute/OpenCoarrays/labels/in-progress)
+[![Waffle.io](https://img.shields.io/waffle/label/sourceryinstitute/opencoarrays/needs%20review.svg?style=flat-square)](https://github.com/sourceryinstitute/OpenCoarrays/labels/needs-review)
+
+[![Throughput Graph](https://graphs.waffle.io/sourceryinstitute/opencoarrays/throughput.svg)](https://waffle.io/sourceryinstitute/opencoarrays/metrics/throughput)
+
+## Coverage ##
+
+[![Codecov branch](https://img.shields.io/codecov/c/github/sourceryinstitute/OpenCoarrays/master.svg?style=flat-square)](https://codecov.io/gh/sourceryinstitute/OpenCoarrays)
+
+[![coverage history](https://codecov.io/gh/sourceryinstitute/opencoarrays/branch/master/graphs/commits.svg)](https://codecov.io/gh/sourceryinstitute/OpenCoarrays)
+
 ---
 
 [![GitHub forks](https://img.shields.io/github/forks/sourceryinstitute/opencoarrays.svg?style=social&label=Fork)](https://github.com/sourceryinstitute/opencoarrays/fork)
@@ -100,6 +119,7 @@ This is the development branch, akin to GCC's `trunk`. Both of `devel` and `mast
 
 
 [Links]: #
+[issue template]: https://github.com/sourceryinstitute/OpenCoarrays/blob/master/.github/ISSUE_TEMPLATE.md
 [video]: https://youtu.be/EwWZbyjDs9c?list=PLg7s6cbtAD17uAwaZwiykDci_q3te3CTY
 [a number of resources]: http://scottchacon.com/2011/08/31/github-flow.html
 [Github flow]: https://guides.github.com/introduction/flow/
