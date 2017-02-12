@@ -14,20 +14,19 @@ Contributors to OpenCoarrays
 Download this file as a PDF document
 [here][pdfloc].
 
- - [X] Alessandro Fanfarillo  <elfanfa@ucar.edu>
- - [X] Damian Rouson  <damian@sourceryinstitute.org>
- - [X] Izaak "Zaak" Beekman  <https://izaakbeekman.com> [@zbeekman](https://twitter.com/zbeekman)
- - [X] Tobias Burnus  <burnus@net-b.de>
- - [X] Andre Vehreschild <vehre@gmx.de>
- - [X] Craig Rasmussen <rasmus@uoregon.edu>
- - [X] Jeff Hammond  <jeff.science@gmail.com>
- - [ ] Salvatore Filippone <Salvatore.Filippone@cranfield.ac.uk>
- - [ ] Raul Laasner <raullaasner@gmail.com>
- - [X] Naveen Ravi <nravi@cray.com>
- - [X] Soren Rasmussen <s.c.rasmussen@gmail.com>
- - [X] LaHaine <LaHaine@users.noreply.github.com>
+ - [X] Alessandro Fanfarillo  <elfanfa@ucar.edu> @afanfa
+ - [X] Damian Rouson  <damian@sourceryinstitute.org> @rouson
+ - [X] Izaak "Zaak" Beekman  <https://izaakbeekman.com> @zbeekman
+ - [X] Tobias Burnus  <burnus@net-b.de> @tob2
+ - [X] Andre Vehreschild <vehre@gmx.de> @vehre
+ - [X] Craig Rasmussen <rasmus@uoregon.edu> @rasmussn
+ - [X] Jeff Hammond  <jeff.science@gmail.com> @jeffhammond
+ - [ ] Salvatore Filippone <Salvatore.Filippone@cranfield.ac.uk> @sfilippone
+ - [ ] Raul Laasner <raullaasner@gmail.com> @raullaasner
+ - [X] Naveen Ravi <nravi@cray.com> @naveen-rn
+ - [X] Soren Rasmussen <s.c.rasmussen@gmail.com> @scrasmussen
+ - [X] Götz Waschk <goetz.waschk@desy.de> @LaHaine
  - [ ] John C. Linford <jlinford@paratools.com>
- - [ ] Götz Waschk <goetz.waschk@desy.de>
  - [ ] Daniel Carrera  <dcarrera@gmail.com>
 
 [top]
