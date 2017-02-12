@@ -71,7 +71,7 @@ Here is a checklist to help you get started contributing to OpenCoarrays and wal
      - [ ] Next line, if necessary is blank
      - [ ] Following lines are all wrapped at 72 characters and can include additional paragraphs, bulleted lists, etc.
      - [ ] Use [Github keywords] where appropriate, to indicate the commit resolves an open issue.
- - [ ] Please do you best to keep a [clean and coherent history]. `git add -p ...`, `git commit --amend` and `git rebase --interactive <root-ref>` can be helpful to rework your commits into a cleaner, clearer state.
+ - [ ] Please do your best to keep a [clean and coherent history]. `git add -p ...`, `git commit --amend` and `git rebase --interactive <root-ref>` can be helpful to rework your commits into a cleaner, clearer state.
  - [ ] Next, [open up a pull request] where the base branch is [`master`] or [`devel`] as appropriate
  - [ ] Please be patient and responsive to requests and comments from SourceryInstitute (SI) team members. You may be asked to amend or otherwise alter commits, or push new commits to your branch.
  - [ ] Make sure that all the automated [Travis-CI tests] pass
