@@ -33,7 +33,12 @@ If you encounter problems during the course of [Installing] OpenCoarrays or [usi
      - Number of MPI ranks/processing elements/coarray images being run on
      - How the code was compiled, including all flags and commands
      - Minimal reproducer code (a few lines) required to trigger the bug
-  4. Any help you can provide diagnosing, isolating and fixing the problem is appreciated! Please see the [helping out] section for more information.
+ 4. Any help you can provide diagnosing, isolating and fixing the
+    problem is appreciated! Please see the [helping out] section for
+    more information.
+
+An [issue template] is in the `.github` folder to help ensure
+compliance, and adequate information is provided.
 
 Requesting Enhancements
 -----------------------
@@ -66,7 +71,7 @@ Here is a checklist to help you get started contributing to OpenCoarrays and wal
      - [ ] Next line, if necessary is blank
      - [ ] Following lines are all wrapped at 72 characters and can include additional paragraphs, bulleted lists, etc.
      - [ ] Use [Github keywords] where appropriate, to indicate the commit resolves an open issue.
- - [ ] Please do you best to keep a [clean and coherent history]. `git add -p ...`, `git commit --amend` and `git rebase --interactive <root-ref>` can be helpful to rework your commits into a cleaner, clearer state.
+ - [ ] Please do your best to keep a [clean and coherent history]. `git add -p ...`, `git commit --amend` and `git rebase --interactive <root-ref>` can be helpful to rework your commits into a cleaner, clearer state.
  - [ ] Next, [open up a pull request] where the base branch is [`master`] or [`devel`] as appropriate
  - [ ] Please be patient and responsive to requests and comments from SourceryInstitute (SI) team members. You may be asked to amend or otherwise alter commits, or push new commits to your branch.
  - [ ] Make sure that all the automated [Travis-CI tests] pass
@@ -85,6 +90,14 @@ The `master` branch should remain in pristine, stable condition all of the time.
 ### Devel ###
 
 This is the development branch, akin to GCC's `trunk`. Both of `devel` and `master` branches are protected, but `devel` will eventually be merged into `master` when the next major release happens, but until then it is a stable, forward looking branch where experimental features and major changes or enhancements may be applied and tested. Just as with `master` all changes are applied atomically as pull requests.
+
+---
+
+[![GitHub forks](https://img.shields.io/github/forks/sourceryinstitute/opencoarrays.svg?style=social&label=Fork)](https://github.com/sourceryinstitute/opencoarrays/fork)
+[![GitHub stars](https://img.shields.io/github/stars/sourceryinstitute/opencoarrays.svg?style=social&label=Star)](https://github.com/sourceryinstitute/opencoarrays)
+[![GitHub watchers](https://img.shields.io/github/watchers/sourceryinstitute/opencoarrays.svg?style=social&label=Watch)](https://github.com/sourceryinstitute/opencoarrays)
+[![Twitter URL](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?hashtags=HPC,Fortran,PGAS&related=zbeekman,gnutools,HPCwire,HPC_Guru,hpcprogrammer,SciNetHPC,DegenerateConic,jeffdotscience,travisci&text=Stop%20programming%20w%2F%20the%20%23MPI%20docs%20in%20your%20lap%2C%20try%20Coarray%20Fortran%20w%2F%20OpenCoarrays%20%26%20GFortran!&url=https%3A//github.com/sourceryinstitute/opencoarrays)
+
 
 [Links]: #
 [video]: https://youtu.be/EwWZbyjDs9c?list=PLg7s6cbtAD17uAwaZwiykDci_q3te3CTY

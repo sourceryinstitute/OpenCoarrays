@@ -24,6 +24,10 @@ standard-conforming Fortran 2008 or 2015 and compile their code with the OpenCoa
 The actual function names in this document have a PREFIX in the source code to avoid
 name clashes.  The prefix can be vendor-specific.
 
+### Warning ###
+
+*This document may be out of date.*
+
 To Do
 -----
 
@@ -559,6 +563,14 @@ __GCC__:
 
 __TODO__:
    Change `errmsg_len` to `size_t`
+
+---
+
+[![GitHub forks](https://img.shields.io/github/forks/sourceryinstitute/opencoarrays.svg?style=social&label=Fork)](https://github.com/sourceryinstitute/opencoarrays/fork)
+[![GitHub stars](https://img.shields.io/github/stars/sourceryinstitute/opencoarrays.svg?style=social&label=Star)](https://github.com/sourceryinstitute/opencoarrays)
+[![GitHub watchers](https://img.shields.io/github/watchers/sourceryinstitute/opencoarrays.svg?style=social&label=Watch)](https://github.com/sourceryinstitute/opencoarrays)
+[![Twitter URL](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?hashtags=HPC,Fortran,PGAS&related=zbeekman,gnutools,HPCwire,HPC_Guru,hpcprogrammer,SciNetHPC,DegenerateConic,jeffdotscience,travisci&text=Stop%20programming%20w%2F%20the%20%23MPI%20docs%20in%20your%20lap%2C%20try%20Coarray%20Fortran%20w%2F%20OpenCoarrays%20%26%20GFortran!&url=https%3A//github.com/sourceryinstitute/opencoarrays)
+
 
 [Hyperlinks]:#
 
