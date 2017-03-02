@@ -439,6 +439,7 @@ _gfortran_caf_init (int *argc, char ***argv)
 PREFIX (init) (int *argc, char ***argv)
 #endif
 {
+  int rc,flag;
   if (caf_num_images == 0)
     {
       int ierr = 0, i = 0, j = 0;
@@ -475,7 +476,12 @@ PREFIX (init) (int *argc, char ***argv)
 
       /* Duplicate MPI_COMM_WORLD so that no CAF internal functions
          use it - this is critical for MPI-interoperability. */
-      MPI_Comm_dup(MPI_COMM_WORLD, &CAF_COMM_WORLD);
+      rc = MPI_Comm_dup(MPI_COMM_WORLD, &CAF_COMM_WORLD);
+      flag = (MPI_SUCCESS == rc);
+      flag = MPIX_Comm_agree(MPI_COMM_WORLD,&flag);
+      if(flag != MPI_SUCCESS)
+	MPI_Abort(MPI_COMM_WORLD,10000);
+      MPI_Barrier(MPI_COMM_WORLD);
 
       MPI_Comm_size(CAF_COMM_WORLD, &caf_num_images);
       MPI_Comm_rank(CAF_COMM_WORLD, &caf_this_image);
@@ -562,7 +568,7 @@ PREFIX (finalize) (void)
 	    failed = 1;
 	    break;
 	  }
-      if (!failed)
+      if (!failed && i != caf_this_image-1)
 	{
 	  MPI_Accumulate (&one, 1, MPI_INT, i, (caf_this_image-1)*sizeof(int), 1, MPI_INT, MPI_REPLACE, *stat_tok);
 	}
@@ -676,28 +682,31 @@ void *
 {
   /* int ierr; */
   void *mem;
+  MPI_Win *p;
   size_t actual_size;
   int l_var=0, *init_array=NULL,ierr=0,flag=0;
   MPI_Win *stopped_win;
-
+  
   if (unlikely (caf_is_finalized))
     goto error;
-
+  
   /* Start GASNET if not already started.  */
   if (caf_num_images == 0)
 #ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
     _gfortran_caf_init (NULL, NULL);
 #else
-    PREFIX (init) (NULL, NULL);
+  PREFIX (init) (NULL, NULL);
 #endif
-
+  
   /* Token contains only a list of pointers.  */
-
-  *token = malloc (sizeof(MPI_Win));
+  
+  /* *token = malloc (sizeof(MPI_Win)); */
+  p = malloc(sizeof(MPI_Win));
+  *token = p;
   stopped_win = (MPI_Win *)malloc(sizeof(MPI_Win));
-
-  MPI_Win *p = *token;
-
+  
+  /* MPI_Win *p = *token; */
+  
   if(type == CAF_REGTYPE_LOCK_STATIC || type == CAF_REGTYPE_LOCK_ALLOC ||
      type == CAF_REGTYPE_CRITICAL || type == CAF_REGTYPE_EVENT_STATIC ||
      type == CAF_REGTYPE_EVENT_ALLOC)
@@ -717,9 +726,9 @@ void *
     }
 
 #if MPI_VERSION >= 3
-  MPI_Win_allocate(actual_size, 1, mpi_info_same_size, CAF_COMM_WORLD, &mem, *token);
+  MPI_Win_allocate(actual_size, 1, MPI_INFO_NULL, CAF_COMM_WORLD, &mem, p);
 # ifndef CAF_MPI_LOCK_UNLOCK
-  MPI_Win_lock_all(MPI_MODE_NOCHECK, *p);
+  MPI_Win_lock_all(0, *p);
 # endif // CAF_MPI_LOCK_UNLOCK
 #else // MPI_VERSION
   MPI_Alloc_mem(actual_size, MPI_INFO_NULL, &mem);
@@ -728,7 +737,7 @@ void *
 
   p = *token;
 
-  MPI_Win_set_errhandler(*p,errh_w);
+  /* MPI_Win_set_errhandler(*p,errh_w); */
 
   if(error_called == 1)
     {
@@ -897,13 +906,13 @@ PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
 {
   int ierr=0,flag=0;
 
-  if(error_called == 1)
-    {
-      communicator_shrink(&CAF_COMM_WORLD);
-      error_called = 0;
-      ierr = STAT_FAILED_IMAGE;
-      /* MPI_Barrier(CAF_COMM_WORLD); */
-    }
+  /* if(error_called == 1) */
+  /*   { */
+  /*     communicator_shrink(&CAF_COMM_WORLD); */
+  /*     error_called = 0; */
+  /*     ierr = STAT_FAILED_IMAGE; */
+  /*     /\* MPI_Barrier(CAF_COMM_WORLD); *\/ */
+  /*   } */
   
   if (unlikely (caf_is_finalized))
     ierr = STAT_STOPPED_IMAGE;
@@ -1195,6 +1204,20 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
 
   if (size == 0)
     return;
+
+  for(j=0;j<n_failed_imgs;j++)
+    {
+      if(image_index == failed_images_array[j])
+	{
+	  if(!stat)
+	    error_stop (STAT_FAILED_IMAGE);
+	  
+	  if(stat)
+	    *stat = STAT_FAILED_IMAGE;
+	  
+	  return;
+	}
+    }
 
   if (GFC_DESCRIPTOR_TYPE (dest) == BT_CHARACTER && dst_size > src_size)
     {
@@ -1570,6 +1593,20 @@ PREFIX (get) (caf_token_t token, size_t offset,
 
   if (size == 0)
     return;
+
+  for(j=0;j<n_failed_imgs;j++)
+    {
+      if(image_index == failed_images_array[j])
+	{
+	  if(!stat)
+	    error_stop (STAT_FAILED_IMAGE);
+	  
+	  if(stat)
+	    *stat = STAT_FAILED_IMAGE;
+	  
+	  return;
+	}
+    }
 
   if (GFC_DESCRIPTOR_TYPE (dest) == BT_CHARACTER && dst_size > src_size)
     {
