@@ -2877,7 +2877,7 @@ PREFIX (fail_image) (void)
 int
 PREFIX (image_status) (int image)
 {
-  int i,res=0, ierr;
+  int i,res=0, ierr=0;
 
   for(i=0;i<n_failed_imgs;i++)
     if(image == failed_images_array[i])
