@@ -639,10 +639,9 @@ PREFIX (num_images)(int distance __attribute__ ((unused)),
 int communicator_shrink(MPI_Comm *comm)
 {
   int ns,srank,crank,rc,flag,i,drank,nc,nd;
-  MPI_Comm shrunk, *newcomm;
+  MPI_Comm shrunk, newcomm;
   MPI_Group cgrp, sgrp, dgrp;
 
-  newcomm = (MPI_Comm *)calloc(1,sizeof(MPI_Comm));
  redo:
   MPIX_Comm_shrink(*comm, &shrunk);
   MPI_Comm_set_errhandler( shrunk, errh );
@@ -654,7 +653,7 @@ int communicator_shrink(MPI_Comm *comm)
    * so that all surviving processes remain at their former place */
   if (img_status == STAT_STOPPED_IMAGE)
     crank = -1;
-  rc = MPI_Comm_split(shrunk, crank<0?MPI_UNDEFINED:1, crank, newcomm);
+  rc = MPI_Comm_split(shrunk, crank<0?MPI_UNDEFINED:1, crank, &newcomm);
   flag = (rc == MPI_SUCCESS); 
   /* Split or some of the communications above may have failed if
    * new failures have disrupted the process: we need to
@@ -663,10 +662,10 @@ int communicator_shrink(MPI_Comm *comm)
   
   MPI_Comm_free(&shrunk);
   if( MPI_SUCCESS != flag ) {
-    if( MPI_SUCCESS == rc ) MPI_Comm_free(*newcomm);
+    if( MPI_SUCCESS == rc ) MPI_Comm_free(newcomm);
     goto redo;
   }
-  *comm = *newcomm;
+  *comm = newcomm;
   return MPI_SUCCESS;
 }
 
