@@ -117,8 +117,8 @@ void PREFIX (finalize) (void);
 int PREFIX (this_image) (int);
 int PREFIX (num_images) (int, int);
 
-void *PREFIX (register) (size_t, caf_register_t, caf_token_t *, int *, char *,
-			int);
+void PREFIX (register) (size_t, caf_register_t, caf_token_t *, gfc_descriptor_t *,
+			int *, char *, int);
 void PREFIX (deregister) (caf_token_t *, int *, char *, int);
 
 void PREFIX (caf_get) (caf_token_t, size_t, int, gfc_descriptor_t *,

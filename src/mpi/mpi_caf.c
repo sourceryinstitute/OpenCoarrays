@@ -674,9 +674,10 @@ void *
   _gfortran_caf_register (size_t size, caf_register_t type, caf_token_t *token,
                   int *stat, char *errmsg, int errmsg_len)
 #else
-void *
+void
   PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
-                  int *stat, char *errmsg, int errmsg_len)
+		     gfc_descriptor_t *desc, int *stat, char *errmsg,
+		     int errmsg_len)
 #endif
 {
   /* int ierr; */
@@ -787,7 +788,9 @@ void *
   else if (ierr == STAT_FAILED_IMAGE)
     error_stop (ierr);
 
-  return mem;
+  desc->base_addr = mem;
+
+  return;
 
 error:
   {
