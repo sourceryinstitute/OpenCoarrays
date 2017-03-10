@@ -31,12 +31,12 @@
 # (4) Parse the command line using the usage information.
 
 export OPENCOARRAYS_SRC_DIR="${OPENCOARRAYS_SRC_DIR:-${PWD}/..}"
-export __usage="${OPENCOARRAYS_SRC_DIR}/prerequisites/install-ofp.sh-usage"
 if [[ ! -f "${OPENCOARRAYS_SRC_DIR}/src/libcaf.h" ]]; then
   echo "Please run this script inside the OpenCoarrays source \"prerequisites\" subdirectory"
   echo "or set OPENCOARRAYS_SRC_DIR to the top-level OpenCoarrays source directory path."
   exit 1
 fi
+export __usage="${OPENCOARRAYS_SRC_DIR}/prerequisites/install-ofp.sh-usage"
 export B3B_USE_CASE="${B3B_USE_CASE:-${OPENCOARRAYS_SRC_DIR}/prerequisites/use-case}"
 if [[ ! -f "${B3B_USE_CASE:-}/bootstrap.sh" ]]; then
   echo "Please set B3B_USE_CASE to the bash3boilerplate use-case directory path."
@@ -60,11 +60,19 @@ export __flag_present=1
 
 # shellcheck disable=SC2154
 if [[ "${__os}" != "OSX" ]]; then
-   info      "${__base} currently installs binaries that work only on OS X"
-   emergency "To request other platforms, please submit an issue at http://github.com/sourceryinstitute/opencoarrays/issues"
+   echo "Source tranlsation via OFP is currently supported only on OS X."
+   echo "Please submit an issue at http://github.com/sourceryinstitute/opencoarrays/issues."
+   emergency "${PWD}/install-ofp.sh: Aborting."
 fi
 
-default_ofp_downloader=wget
+if [[ $(uname) == "Darwin"  ]]; then
+  default_ofp_downloader=curl
+  args="-LO"
+else
+  default_ofp_downloader=wget
+  args="--no-check-certificate"
+fi
+
 # If -D is passed, print the download programs used for OFP and its prerequisites.
 # Then exit with normal status.
 # shellcheck  disable=SC2154
@@ -76,13 +84,13 @@ fi
 
 # If -P is passed, print the default installation paths for OFP and its prerequisites.
 # Then exit with normal status.
-default_ofp_install_path="${OPENCOARRAYS_SRC_DIR}/prerequisites/installations"
-install_path="${arg_i:-"${default_ofp_install_path}"}"
-strategoxt_superbundle_install_path="/opt"
+# shellcheck disable=SC2154
+install_path="${arg_i}"
+strategoxt_superbundle_install_path=$("${OPENCOARRAYS_SRC_DIR}/prerequisites/install-binary.sh" -P strategoxt-superbundle)
 # shellcheck disable=SC2154
 if [[ "${arg_P}" == "${__flag_present}" ]]; then
   echo "strategoxt-superbundle default installation path: ${strategoxt_superbundle_install_path}"
-  echo "ofp default installation path: ${default_ofp_install_path}"
+  echo "ofp default installation path: ${install_path}"
   exit 0
 fi
 
@@ -98,11 +106,12 @@ fi
 
 # If -U is passed, print the URLs for OFP and its prerequisites.
 # Then exit with normal status.
-ofp_URL="https://github.com/sourceryinstitute/opencoarrays/files/213108/ofp-sdf.tar.gz"
+ofp_url_head="https://github.com/sourceryinstitute/opencoarrays/files/213108/"
+ofp_url_tail="ofp-sdf.tar.gz"
 # shellcheck disable=SC2154
 if [[ "${arg_U}" == "${__flag_present}" ]]; then
   echo "strategoxt-superbundle URL: $("${OPENCOARRAYS_SRC_DIR}/prerequisites/install-binary.sh" -U strategoxt-superbundle)"
-  echo "ofp URL: ${ofp_URL}"
+  echo "ofp URL: ${ofp_url_head}${ofp_url_tail}"
   exit 0
 fi
 
@@ -147,11 +156,16 @@ if [[ ! -d "${install_path}" ]]; then
   set_SUDO_if_needed_to_write_to_directory "${install_path}"
   ${SUDO:-} mkdir -p "${install_path}"
 fi
+
 # Install OFP prerequisites to /opt (currently the only option)
 "${opencoarrays_prerequisites_dir}"/install-binary.sh -p strategoxt-superbundle -i "${strategoxt_superbundle_install_path}"
+
 # Downlaod OFP
 pushd "${install_path}"
-${default_ofp_downloader} "${ofp_URL}"
+info "OFP Download command: ${default_ofp_downloader} ${args:-} \"${ofp_url_head}${ofp_url_tail}\""
+${default_ofp_downloader} ${args:-} "${ofp_url_head}${ofp_url_tail}" 
+
+
 # Uncompress OFP
 tar xf ofp-sdf.tar.gz
 # Return to the original working directory

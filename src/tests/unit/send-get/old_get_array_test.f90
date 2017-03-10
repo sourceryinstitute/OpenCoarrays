@@ -45,7 +45,7 @@ contains
       if (any (a /= b(lb1,lb2))) then
 ! FIXME: ABORTS UNLESS THERE IS SOME OTHER CODE
 print *, 'HELLO!!!!!!!!!!!!!!!!!'
-        call abort()
+        error stop
       end if
     end if
 
@@ -63,7 +63,7 @@ print *, 'HELLO!!!!!!!!!!!!!!!!!'
         print *, a
         print *, b
         print *, 'WRONG:', any (a /= b)
-        call abort()
+        error stop
       end if
     end if
 
@@ -114,7 +114,7 @@ print *, 'HELLO!!!!!!!!!!!!!!!!!'
  !                       print *, a
  !                       print *, caf
  !                       print *, a-caf
- !                       call abort()
+ !                       error stop
  !                     endif
                     end if
                   end do
@@ -152,7 +152,7 @@ print *, 'HELLO!!!!!!!!!!!!!!!!!'
     sync all
     if (this_image() == 1) then
       if (any (a /= b)) &
-           call abort()
+           error stop
     end if
 
     ! Whole array: ARRAY = ARRAY
@@ -170,7 +170,7 @@ print *, 'HELLO!!!!!!!!!!!!!!!!!'
     sync all
     if (this_image() == 1) then
       if (any (a /= b)) &
-           call abort()
+           error stop
     end if
 
     ! Array sections with different ranges and pos/neg strides
@@ -221,7 +221,7 @@ print *, 'HELLO!!!!!!!!!!!!!!!!!'
  !                       print *, a
  !                       print *, caf
  !                       print *, a-caf
- !                       call abort()
+ !                       error stop
  !                     endif
                     end if
                   end do
@@ -259,7 +259,7 @@ print *, 'HELLO!!!!!!!!!!!!!!!!!'
     sync all
     if (this_image() == 1) then
       if (any (a /= b)) &
-           call abort()
+           error stop
     end if
 
     ! Whole array: ARRAY = ARRAY
@@ -277,7 +277,7 @@ print *, 'HELLO!!!!!!!!!!!!!!!!!'
     sync all
     if (this_image() == 1) then
       if (any (a /= b)) &
-           call abort()
+           error stop
     end if
 
     ! Array sections with different ranges and pos/neg strides
@@ -329,7 +329,7 @@ print *, 'HELLO!!!!!!!!!!!!!!!!!'
 !                        print *, a
 !                        print *, caf
 !                        print *, a-caf
-!                        call abort()
+!                        error stop
 !                      endif
                     end if
                   end do

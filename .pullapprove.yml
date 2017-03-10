@@ -1,11 +1,38 @@
-approve_by_comment: true
-approve_regex: '^([Aa]pproved|:\+1:|:shipit:|:ship: it|LGTM|[Ll]ooks good to me|:zap:|:boom:|:clap:|:bow:)'
-reject_regex: '^([Nn]ope|[Nn]ope\.jpg|[Dd]enied|[Rr]ejected|:\-1:)'
-reset_on_push: true
-author_approval: default
-reviewers:
+version: 2
+extends: Default # see https://pullapprove.com/sourceryinstitute/  
+groups:
+  # These have all the group_defaults
+  Maintainers:
+    # When merging non-documentation changes into protected branches,
+    # require core team approval
     required: 1
-    members:
-        - afanfa
-        - rouson
-        - zbeekman
+    conditions:
+      branches:
+        - master
+        - devel
+        - caffeinate-opencoarrays
+    teams:
+      - team-opencoarrays
+        # https://github.com/orgs/sourceryinstitute/teams/team-opencoarrays
+  OpenCoarrays:
+    # Whenever someone has a PR, on any branch require at least 1 
+    # collaborator to explicitly review it
+    required: 1
+    users: all
+    conditions:
+      branches:
+        exclude:
+          - master
+          - devel
+          - caffeinate-opencoarrays
+  ConfigManagers:
+    required: 1
+    conditions:
+      files:
+        - .travis.yml
+        - .pullapprove.yml
+        - codecov.yml
+        - .gitattributes
+        - "*.enc"
+    users:
+      - zbeekman

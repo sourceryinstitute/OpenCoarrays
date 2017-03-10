@@ -12,3 +12,9 @@ target_link_libraries(co_max_test OpenCoarrays)
 
 add_executable(co_reduce_test co_reduce.F90)
 target_link_libraries(co_reduce_test OpenCoarrays)
+
+add_executable(co_reduce_res_im co_reduce_res_im.f90)
+target_link_libraries(co_reduce_res_im OpenCoarrays)
+
+add_executable(co_reduce_string co_reduce_string.f90)
+target_link_libraries(co_reduce_string OpenCoarrays)

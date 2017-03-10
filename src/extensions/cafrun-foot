@@ -1,4 +1,4 @@
-Usage()
+usage()
 {
     cmd=$(basename "$0")
     echo ""
@@ -39,9 +39,9 @@ elif [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
   echo "the file named LICENSE."
   echo ""
 elif [[ $1 == '-w' || $1 == '--wraps' ]]; then
-  mpirun -v
+  "${CAFRUN}"-v
 elif [[ $1 == '-h' || $1 == '--help' ]]; then
   usage
 else
-  mpirun "$@"
+  "${CAFRUN}" "$@"
 fi

@@ -1,7 +1,7 @@
 # checking whether the machine is of type 64-bit before proceeding further
-if ( ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "x86_64") AND ("${CMAKE_SYSTEM_NAME}" MATCHES "LINUX") )
+if ( ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "x86_64") AND ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux") )
   # Default to older SSE-instruction-based FFT library
-  if (NOT (DEFINED ENV{TRAVIS}))
+  if (NOT (DEFINED ENV{TRAVIS}) AND (NOT SKIP_ASSEMBLY_DEPS) )
     if (LEGACY_ARCHITECTURE OR (NOT DEFINED(LEGACY_ARCHITECTURE)))
       set(fft_library ${CMAKE_CURRENT_SOURCE_DIR}/libfft_sse.a )
     else()
@@ -9,6 +9,7 @@ if ( ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "x86_64") AND ("${CMAKE_SYSTEM_NAME}" 
       set(fft_library ${CMAKE_CURRENT_SOURCE_DIR}/libfft_avx.a )
     endif()
     add_executable( coarray_navier_stokes
+      EXCLUDE_FROM_ALL
       coarray-shear_coll.F90
       ${walltime_o}
     )

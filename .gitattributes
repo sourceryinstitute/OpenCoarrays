@@ -21,6 +21,7 @@ prerequisites/build text
 *.tar binary
 *.gz binary
 *.tgz binary
+*.enc binary
 
 # Prevent dev-ops files from making it into the release archives
 .travis.yml export-ignore
@@ -29,3 +30,5 @@ prerequisites/build text
 .gitignore export-ignore
 developer-scripts export-ignore
 codecov.yml export-ignore
+*.enc export-ignore
+.github

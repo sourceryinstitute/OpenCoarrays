@@ -1,6 +1,6 @@
 [This document is formatted with GitHub-Flavored Markdown.   ]:#
 [For better viewing, including hyperlinks, read it online at ]:#
-[https://github.com/sourceryinstitute/opencoarrays/edit/master/src/tests/integration/pde_solvers/README.txt]:#
+[https://github.com/sourceryinstitute/OpenCoarrays/edit/master/src/tests/integration/pde_solvers/README.txt]:#
 
 Partial Differential Equation (PDE) Solvers
 ===========================================

@@ -1,17 +1,16 @@
-# shellcheck disable=SC2154
+# shellcheck shell=bash disable=SC2154,SC2148
 print_header()
 {
   clear
   echo ""
-  echo "*** A default build of OpenCoarrays requires CMake 3.4.0 or later     ***"
-  echo "*** and MPICH 3.1.4 wrapping GCC Fortran (gfortran) 5.3.0 or later.   ***"
-  echo "*** Additionally, CMake, MPICH, and GCC have their own prerequisites. ***"
-  echo "*** This script will check for most known requirements in your PATH   ***"
-  echo "*** environment variable and in the default installation directory    ***"
-  echo "*** to which this script installs each missing prerequisite.  The     ***"
-  echo "*** script will recursively traverse the following dependency tree    ***"
-  echo "*** and ask permission to download, build, and install any missing    ***"
-  echo "*** prerequisites:                                                    ***"
+  echo "*** By default, building OpenCoarrays requires CMake 3.4.0 or later,      ***"
+  echo "*** MPICH 3.1.4, and GCC Fortran (gfortran) 6.1.0 or later.  To see       ***"
+  echo "*** options for forcing the use of older or alternative packages, execute ***"
+  echo "*** this script with the -h flag.  This script will recursively traverse  ***"
+  echo "*** the following dependency tree, asking permission to download, build,  ***"
+  echo "*** and install any packages that are required for building another       ***"
+  echo "*** package and are neither in your PATH nor in                           ***"
+  echo "*** opencoarrays/prerequisites/installations:                             ***"
   echo ""
   # Move to a directory tree whose structure mirrors the dependency tree
   pushd "$opencoarrays_src_dir/doc/dependency_tree/" > /dev/null
@@ -24,13 +23,16 @@ print_header()
   fi
   popd > /dev/null
   echo ""
-  printf "*** OpenCoarrays and all prerequisites will be downloaded, built, and installed in ***\n"
-  echo -e "${build_path}\n"
-  echo -e "${install_path}\n"
-  printf "Ready to rock and roll? (Y/n)"
-  read -r install_now
-  echo -e " $install_now\n"
-  if [[ "$install_now" == "n" || "$install_now" == "no" ]]; then
-    emergency "$this_script: Aborting. [exit 85]\n"
+  printf "%s will be installed in %s\n" "${arg_p}" "${install_path}"
+  echo ""
+  if [[ "${arg_y}" == "${__flag_present}" ]]; then
+    info "-y or --yes-to-all flag present. Proceeding with non-interactive build."
+  else
+    printf "Ready to rock and roll? (Y/n)"
+    read -r install_now
+    echo -e " $install_now\n"
+    if [[ "$install_now" == "n" || "$install_now" == "no" ]]; then
+      emergency "$this_script: Aborting. [exit 85]\n"
+    fi
   fi
 }

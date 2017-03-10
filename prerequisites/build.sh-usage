@@ -1,4 +1,5 @@
-  -b --branch [arg]           Repository branch to download. Default="trunk"
+  -b --install-branch [arg]   Install the specified repository development branch.
+  -B --list-branches [arg]    List the available branches in the specified package's repository.
   -c --with-c [arg]           Use the specified C compiler. Default="gcc"
   -C --with-cxx [arg]         Use the specified C++ compiler. Default="g++"
   -d --debug                  Enable debug mode.
@@ -6,18 +7,18 @@
   -e --verbose                Enable verbose mode, print script as it is executed.
   -f --with-fortran [arg]     Specify Fortran compiler location. Default="gfortran"
   -h --help                   This page.
-  -i --install-dir [arg]      Install package in specified path. Default="${OPENCOARRAYS_SRC_DIR}/prerequisites/installations/${package_name:-}/"
-  -j --num-threads [arg]      Number of threads to use when invoking make. Default="1"
+  -i --install-prefix [arg]   Install package in specified path. Default="${OPENCOARRAYS_SRC_DIR%/}/prerequisites/installations/"
   -I --install-version [arg]  Package version to install. (To see default, use -V or --print-version)
+  -j --num-threads [arg]      Number of threads to use when invoking make. Default="1"
   -l --list-packages          List the packages this script can install.
-  -L --list-branches          List the repository branches this script can download.
-  -m --with-cmake [arg]       Specify CMake location. Default="'`which cmake`'"
-  -M --with-mpi [arg]         Specify MPI location. Default="'`which mpif90`'"
+  -m --with-cmake [arg]       Use the specified CMake installation. Default="cmake"
+  -M --with-mpi [arg]         Use the specified MPI installation. 
   -n --no-color               Disable color output.
   -p --package [arg]          Package to install. 
   -P --print-path [arg]       Print installation path for package specified in argument.
-  -t --with-tau [arg]         Use the specified TAU parallel performance utilities installation. Default="'`which tauf90`'"
+  -t --with-tau [arg]         Use the specified TAU parallel performance utilities installation. Default="tauf90"
   -T --install-tau [arg]      Install TAU in specified path. Default="${OPENCOARRAYS_SRC_DIR}/prerequisites/installations/${package_name:-}/${version_to_build:-}/"
   -U --print-url [arg]        Print URL for package specified in argument. 
   -v --version                Print OpenCoarrays version number.
   -V --print-version [arg]    Print installation version for package specified in argument.
+  -y --yes-to-all             Build non-interactively by assuming affirmative user responses.

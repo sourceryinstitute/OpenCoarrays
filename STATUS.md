@@ -2,15 +2,16 @@
 
 [This document is formatted with GitHub-Flavored Markdown.              ]:#
 [For better viewing, including hyperlinks, read it online at            ]:#
-[https://github.com/sourceryinstitute/opencoarrays/blob/master/STATUS.md]:#
+[https://github.com/sourceryinstitute/OpenCoarrays/blob/master/STATUS.md]:#
 
 OpenCoarrays Status
 ===================
 
-[![Download as PDF][pdf img]](http://md2pdf.herokuapp.com/sourceryinstitute/opencoarrays/blob/master/STATUS.pdf)
+[![Maintenance](https://img.shields.io/maintenance/yes/2017.svg?style=flat-square)](https://github.com/sourceryinstitute/OpenCoarrays/commits/master)
+[![Download as PDF][pdf img]](http://md2pdf.herokuapp.com/sourceryinstitute/OpenCoarrays/blob/master/STATUS.pdf)
 
 Download this file as a PDF document
-[here](http://md2pdf.herokuapp.com/sourceryinstitute/opencoarrays/blob/master/STATUS.pdf).
+[here](http://md2pdf.herokuapp.com/sourceryinstitute/OpenCoarrays/blob/master/STATUS.pdf).
 
  *  [Feature Coverage](#feature-coverage)
  *  [Compiler Status](#compiler-status)
@@ -21,7 +22,6 @@ Download this file as a PDF document
      *  [libcaf_mpi]
      *  [libcaf_x]
      *  [libcaf_gasnet]
-     *  [libcaf_armci]
      *  [libcaf_single]
  *  [Known Issues](#known-issues)
      * [Library Issues](#library-issues)
@@ -98,8 +98,6 @@ Library Status
   is currently out-of-date but might exhibit higher performance than [MPI] on
   platforms for which [GASNet] provides a tuned conduit.  Contact the
   [OpenCoarrays Google Group] for further information.
-<a name="libcaf-armci">
-* **libcaf_armci**</a> (Unsupported): developed for research purposes and evaluation.
 <a name="libcaf-single">
 * **libcaf_single**</a> (Unsupported): developed to mirror the like-named library that
   is included in GNU Fortran to facilitate compiling single-image (sequential)
@@ -126,22 +124,37 @@ Known Issues
 
 ### Compiler Issues ###
 
+For the most up-to-date list of issues, defects, and requested
+enhancements, please visit
+https://github.com/sourceryinstitute/OpenCoarrays/issues
+
 <a name="compiler-issues-gnu">
 * **GNU** (gfortran)</a>
+     * `co_reduce` with a pure binary operator function that has dummy
+       arguments with the `value` attribute requires GFortran >= 7
+	 * `co_reduce` may not be thread safe
+     * `co_reduce` causes problems when used in combination with the
+       `-Wl,-z,noexecstack` linker flags required by some newer Linux
+       OSes
+	 * GFortran 7 regression: no type conversion occurs before coarray
+       put operations, obligation shifted to library
+	 * Correct implicit synchronizations of sourced allocations
+       require GFortran >= 7. Prior versions synchronize after the
+       allocation but before the assignment.
+	 * `stop` with numeric or string arguments not yet handled correctly
      * Derived-type coarrays with allocatable/pointer components are not yet handled
        properly.
      * Problems exist with combining array access to a corray with a scalar component
         access as in `coarray(:,:)[i]%comp`.
      * An internal compiler error (ICE) occurs with non-allocatable, polymorphic coarrays
        in `associate` or `select type` statements.
-     * `co_reduce` with GCC 5 and 6 requires patches committed on 17 July 2015 and will
-       work with the GCC 5.3.0 and 6.1.0 releases.
+     * `co_reduce` requires GCC 5.4.0 or later.
      * `co_reduce` only supports arguments of intrinsic type.
+     * Proper execution of `stop` when `this_image()>1` requires GCC 5.4.0 or later.
      * No support for type finalization or allocatable components of derived-type coarrays
        passed to the collective subroutines (e.g., `co_sum`, `co_reduce`, etc.).
-	 * Optimization levels other than `-O0` introduce correctness errors
-	   in the compiled binaries. A patch has been submitted by @afanfa
-	   to the GFortran team. See #28 for some more context.
+     * Optimization levels other than `-O0` require GCC 5.3.0 or later. 
+     * Using `stop` to halt an individual image without halting all images requires GCC 5.4.0 or later. 
 <a name="compiler-issues-intel">
 * **Intel** (ifort)</a>
      * Supported via the [opencoarrays module]  only.
@@ -169,6 +182,14 @@ To-Do List
       see the GCC source code files in `gcc/testsuite/gfortran.dg/`,
       in particular, the `dg-do run` tests in `coarray*f90` and `coarray/`).
 
+---
+
+[![GitHub forks](https://img.shields.io/github/forks/sourceryinstitute/OpenCoarrays.svg?style=social&label=Fork)](https://github.com/sourceryinstitute/OpenCoarrays/fork)
+[![GitHub stars](https://img.shields.io/github/stars/sourceryinstitute/OpenCoarrays.svg?style=social&label=Star)](https://github.com/sourceryinstitute/OpenCoarrays)
+[![GitHub watchers](https://img.shields.io/github/watchers/sourceryinstitute/OpenCoarrays.svg?style=social&label=Watch)](https://github.com/sourceryinstitute/OpenCoarrays)
+[![Twitter URL](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?hashtags=HPC,Fortran,PGAS&related=zbeekman,gnutools,HPCwire,HPC_Guru,hpcprogrammer,SciNetHPC,DegenerateConic,jeffdotscience,travisci&text=Stop%20programming%20w%2F%20the%20%23MPI%20docs%20in%20your%20lap%2C%20try%20Coarray%20Fortran%20w%2F%20OpenCoarrays%20%26%20GFortran!&url=https%3A//github.com/sourceryinstitute/OpenCoarrays)
+
+
 
 [Hyperlinks]:#
    [OpenMP]: http://openmp.org
@@ -186,21 +207,20 @@ To-Do List
    [libcaf_x]: #libcaf-x
    [libcaf_gasnet]:  #libcaf-gasnet
    [libcaf_single]: #libcaf-single
-   [libcaf_armci]: #libcaf-armci
   [GNU (gfortran)]: #compiler-issues-gnu
   [Cray (ftn)]: #compiler-issues-cray
   [Intel (ifort)]: #compiler-issues-intel
   [Numerical Algorithms Group (nagfor)]: #compiler-issues-nag
   [Portland Group (pgfortran)]: #compiler-issues-pg
   [IBM (xlf)]: #compiler-issues-ibm
-  [forking the OpenCoarrays repository]: https://github.com/sourceryinstitute/opencoarrays/blob/master/STATUS.md#fork-destination-box
+  [forking the OpenCoarrays repository]: https://github.com/sourceryinstitute/OpenCoarrays/fork
 
 [TS 18508]: http://isotc.iso.org/livelink/livelink?func=ll&objId=17181227&objAction=Open
 [opencoarrays module]: ./src/extensions/opencoarrays.F90
 [ABI]: https://gcc.gnu.org/onlinedocs/gfortran/Function-ABI-Documentation.html#Function-ABI-Documentation
-[pull requests via GitHub]: https://github.com/sourceryinstitute/opencoarrays/compare
-[pull request via GitHub]: https://github.com/sourceryinstitute/opencoarrays/compare
+[pull requests via GitHub]: https://github.com/sourceryinstitute/OpenCoarrays/compare
+[pull request via GitHub]: https://github.com/sourceryinstitute/OpenCoarrays/compare
 [OpenCoarrays Google Group]: https://groups.google.com/forum/#!forum/opencoarrays
 [Sourcery Store]: http://www.sourceryinstitute.org/store
-[Issues]: https://github.com/sourceryinstitute/opencoarrays/issues
+[Issues]: https://github.com/sourceryinstitute/OpenCoarrays/issues
 [pdf img]: https://img.shields.io/badge/PDF-STATUS.md-6C2DC7.svg?style=flat-square "Download as PDF"

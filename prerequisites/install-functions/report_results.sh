@@ -1,17 +1,33 @@
-# shellcheck disable=SC2154,SC2129
+# shellcheck shell=bash disable=SC2154,SC2129,SC2148
 report_results()
 {
-  # Report installation success or failure:
-  if [[ -x "$install_path/bin/caf" && -x "$install_path/bin/cafrun" ]]; then
+  type_FC=`type ${FC}`
+  fully_qualified_FC="/${type_FC#*/}"
+  if [[ ${fully_qualified_FC} != *gfortran* ]]; then
+    emergency "report_results.sh: non-gfortran compiler: \${fully_qualified_FC}=${fully_qualified_FC}"
+  fi  
+  # Set path_to_FC fully-qualified gfortran location
+  compiler_install_root="${fully_qualified_FC%%bin/gfortran*}"
+
+  type_MPIFC=`type ${MPIFC}`
+  fully_qualified_MPIFC="/${type_MPIFC#*/}"
+  mpi_install_root="${fully_qualified_MPIFC%%bin/mpif90*}"
+
+  type_CMAKE=`type ${CMAKE}`
+  fully_qualified_CMAKE="/${type_CMAKE#*/}"
+  cmake_install_path="${fully_qualified_CMAKE%%/cmake*}"
+
+  # Report installation success or failure and record locations for software stack:
+  if [[ -x "${install_path%/}/bin/caf" && -x "${install_path%/}/bin/cafrun" ]]; then
 
     # Installation succeeded
-    echo "$this_script: Done."
-    echo ""
-    echo "*** The OpenCoarrays compiler wrapper (caf) and program  ***"
-    echo "*** launcher (cafrun) are in the following directory:    ***"
-    echo ""
-    echo "$install_path/bin."
-    echo ""
+    info "$this_script: Done."
+    info ""
+    info "*** The OpenCoarrays compiler wrapper (caf) and program  ***"
+    info "*** launcher (cafrun) are in the following directory:    ***"
+    info ""
+    info "${install_path%/}/bin."
+    info ""
     if [[ -f setup.sh ]]; then
       ${SUDO:-} rm setup.sh
     fi
@@ -25,54 +41,58 @@ report_results()
     while IFS='' read -r line || [[ -n "$line" ]]; do
         echo "# $line" >> setup.csh
     done < "${opencoarrays_src_dir}/LICENSE"
-    echo "#                                                                      " | tee -a setup.csh setup.sh
-    echo "# Execute this script via the following command:                       " | tee -a setup.csh setup.sh
-    echo "# source $install_path/setup.sh                                        " | tee -a setup.csh setup.sh
-    echo "                                                                       " | tee -a setup.csh setup.sh
-    gcc_install_path=$("${build_script}" -P gcc)
-    if [[ -x "$gcc_install_path/bin/gfortran" ]]; then
-      echo "if [[ -z \"\$PATH\" ]]; then                                         " >> setup.sh
-      echo "  export PATH=\"$gcc_install_path/bin\"                              " >> setup.sh
-      echo "else                                                                 " >> setup.sh
-      echo "  export PATH=\"$gcc_install_path/bin:\$PATH\"                       " >> setup.sh
-      echo "fi                                                                   " >> setup.sh
-      echo "set path = (\"$gcc_install_path\"/bin "\$path")                      " >> setup.csh
+    echo "#                                                                               " | tee -a setup.csh setup.sh
+    echo "# Execute this script via the following command:                                " | tee -a setup.csh setup.sh
+    echo "# source ${install_path%/}/setup.sh                                             " | tee -a setup.csh setup.sh
+    echo "                                                                                " | tee -a setup.csh setup.sh
+    if [[ -x "$fully_qualified_FC" ]]; then
+      echo "if [[ -z \"\$PATH\" ]]; then                                                  " >> setup.sh
+      echo "  export PATH=\"${compiler_install_root%/}/bin\"                              " >> setup.sh
+      echo "else                                                                          " >> setup.sh
+      echo "  export PATH=\"${compiler_install_root%/}/bin:\$PATH\"                       " >> setup.sh
+      echo "fi                                                                            " >> setup.sh
+      echo "set path = (\"${compiler_install_root%/}\"/bin \"\$path\")                    " >> setup.csh
     fi
-    if [[ -d "$gcc_install_path/lib" || -d "$gcc_install_path/lib64" ]]; then
-      gfortran_lib_paths="$gcc_install_path/lib64/:$gcc_install_path/lib"
-      echo "if [[ -z \"\$LD_LIBRARY_PATH\" ]]; then                              " >> setup.sh
-      echo "  export LD_LIBRARY_PATH=\"$gfortran_lib_paths\"                     " >> setup.sh
-      echo "else                                                                 " >> setup.sh
-      echo "  export LD_LIBRARY_PATH=\"$gfortran_lib_paths:\$LD_LIBRARY_PATH\"   " >> setup.sh
-      echo "fi                                                                   " >> setup.sh
-      echo "set LD_LIBRARY_PATH = (\"$gfortran_lib_paths\"/bin "\$LD_LIBRARY_PATH")                      " >> setup.csh
+    if [[ -d "${compiler_install_root%/}/lib" || -d "${compiler_install_root%/}/lib64" ]]; then
+      compiler_lib_paths="${compiler_install_root%/}/lib64/:${compiler_install_root%/}/lib"
+      echo "if [[ -z \"\$LD_LIBRARY_PATH\" ]]; then                                       " >> setup.sh
+      echo "  export LD_LIBRARY_PATH=\"${compiler_lib_paths%/}\"                          " >> setup.sh
+      echo "else                                                                          " >> setup.sh
+      echo "  export LD_LIBRARY_PATH=\"${compiler_lib_paths%/}:\$LD_LIBRARY_PATH\"        " >> setup.sh
+      echo "fi                                                                            " >> setup.sh
+      echo "set LD_LIBRARY_PATH = (\"${compiler_lib_paths%/}\"/bin \"\$LD_LIBRARY_PATH\") " >> setup.csh
     fi
     echo "                                                                       " >> setup.sh
-    mpich_install_path=$("${build_script}" -P mpich)
-    if [[ -x "$mpich_install_path/bin/mpif90" ]]; then
+    if [[ -x "$mpi_install_root/bin/mpif90" ]]; then
       echo "if [[ -z \"\$PATH\" ]]; then                                         " >> setup.sh
-      echo "  export PATH=\"$mpich_install_path/bin\"                            " >> setup.sh
+      echo "  export PATH=\"${mpi_install_root%/}/bin\"                        " >> setup.sh
       echo "else                                                                 " >> setup.sh
-      echo "  export PATH=\"$mpich_install_path/bin\":\$PATH                     " >> setup.sh
+      echo "  export PATH=\"${mpi_install_root%/}/bin\":\$PATH                 " >> setup.sh
       echo "fi                                                                   " >> setup.sh
-      echo "set path = (\"$mpich_install_path\"/bin "\$path")                      " >> setup.csh
+      echo "set path = (\"${mpi_install_root%/}\"/bin \"\$path\")              " >> setup.csh
     fi
-    cmake_install_path=$("${build_script}" -P cmake)
-    if [[ -x "$cmake_install_path/bin/cmake" ]]; then
+    if [[ -x "$cmake_install_path/cmake" ]]; then
       echo "if [[ -z \"\$PATH\" ]]; then                                         " >> setup.sh
-      echo "  export PATH=\"$cmake_install_path/bin\"                            " >> setup.sh
+      echo "  export PATH=\"${cmake_install_path%/}/\"                            " >> setup.sh
       echo "else                                                                 " >> setup.sh
-      echo "  export PATH=\"$cmake_install_path/bin\":\$PATH                     " >> setup.sh
+      echo "  export PATH=\"${cmake_install_path%/}/\":\$PATH                     " >> setup.sh
       echo "fi                                                                   " >> setup.sh
-      echo "set path = (\"$cmake_install_path\"/bin "\$path")                      " >> setup.csh
+      echo "set path = (\"${cmake_install_path%/}\"/\"\$path\")                      " >> setup.csh
     fi
+    # In all likelihood, the following paths are only needed if OpenCoarrays built them,
+    # In by far the most common such use case, they would have been built in a recursive
+    # build of all the OpenCoarrays dependency tree (rather than built indvidually via
+    # ./install --package) so we only need check the default location in which OpenCoarrays
+    # would install them.  If they are not there, then it is very likely the case that the 
+    # the system versions of these packages are present and in the user's path or that the
+    # user doesn't need them at all (e.g. there was no need to build gfortran from source).
     flex_install_path=$("${build_script}" -P flex)
     if [[ -x "$flex_install_path/bin/flex" ]]; then
       echo "if [[ -z \"\$PATH\" ]]; then                                         " >> setup.sh
       echo "  export PATH=\"$flex_install_path/bin\"                             " >> setup.sh
       echo "else                                                                 " >> setup.sh
       echo "  export PATH=\"$flex_install_path/bin\":\$PATH                      " >> setup.sh
-      echo "set path = (\"$flex_install_path\"/bin "\$path")                      " >> setup.csh
+      echo "set path = (\"$flex_install_path\"/bin \"\$path\")                      " >> setup.csh
       echo "fi                                                                   " >> setup.sh
     fi
     bison_install_path=$("${build_script}" -P bison)
@@ -82,7 +102,7 @@ report_results()
       echo "else                                                                 " >> setup.sh
       echo "  export PATH=\"$bison_install_path/bin\":\$PATH                     " >> setup.sh
       echo "fi                                                                   " >> setup.sh
-      echo "set path = (\"$bison_install_path\"/bin "\$path")                      " >> setup.csh
+      echo "set path = (\"$bison_install_path\"/bin \"\$path\")                      " >> setup.csh
     fi
     m4_install_path=$("${build_script}" -P m4)
     if [[ -x "$m4_install_path/bin/m4" ]]; then
@@ -91,16 +111,16 @@ report_results()
       echo "else                                                                 " >> setup.sh
       echo "  export PATH=\"$m4_install_path/bin\":\$PATH                        " >> setup.sh
       echo "fi                                                                   " >> setup.sh
-      echo "set path = (\"$m4_install_path\"/bin "\$path")                      " >> setup.csh
+      echo "set path = (\"$m4_install_path\"/bin \"\$path\")                      " >> setup.csh
     fi
     opencoarrays_install_path="${install_path}"
     if [[ -x "$opencoarrays_install_path/bin/caf" ]]; then
       echo "if [[ -z \"\$PATH\" ]]; then                                         " >> setup.sh
-      echo "  export PATH=\"$opencoarrays_install_path/bin\"                     " >> setup.sh
+      echo "  export PATH=\"${opencoarrays_install_path%/}/bin\"                     " >> setup.sh
       echo "else                                                                 " >> setup.sh
-      echo "  export PATH=\"$opencoarrays_install_path/bin\":\$PATH              " >> setup.sh
+      echo "  export PATH=\"${opencoarrays_install_path%/}/bin\":\$PATH              " >> setup.sh
       echo "fi                                                                   " >> setup.sh
-      echo "set path = (\"$opencoarrays_install_path\"/bin "\$path")                      " >> setup.csh
+      echo "set path = (\"${opencoarrays_install_path%/}\"/bin \"\$path\")                      " >> setup.csh
     fi
     if ${SUDO:-} mv setup.sh "$opencoarrays_install_path"; then
        setup_sh_location=$opencoarrays_install_path
@@ -113,14 +133,14 @@ report_results()
        setup_csh_location=${PWD}
     fi
     echo "*** To set up your environment for using caf and cafrun, please   ***"
-    echo "*** source the installed setup.sh file in a bash shell  setup.csh ***"
-    echo "*** if you use a C-shell as follows (or add one of the following  ***"
-    echo "*** statements to your login file:                                 ***"
+    echo "*** source the installed setup.sh file in a bash shell or source  ***"
+    echo "*** setup.csh in a C-shell or add one of the following statements ***"
+    echo "*** to your login file:                                           ***"
     echo ""
-    echo " source $setup_sh_location/setup.sh"
-    echo " source $setup_csh_location/setup.csh"
+    echo " source ${setup_sh_location%/}/setup.sh"
+    echo " source ${setup_csh_location%/}/setup.csh"
     echo ""
-    echo "*** Installation complete.                                                   ***"
+    echo "*** Installation complete.                                        ***"
 
   else # Installation failed
 

@@ -2,18 +2,22 @@
 
 [This document is formatted with GitHub-Flavored Markdown.              ]:#
 [For better viewing, including hyperlinks, read it online at            ]:#
-[https://github.com/sourceryinstitute/opencoarrays/blob/master/README.md]:#
+[https://github.com/sourceryinstitute/OpenCoarrays/blob/master/README.md]:#
+
+
+[![Sourcery Institute][sourcery-institute logo]](https://www.sourceryinstitute.org)
 
 OpenCoarrays
 ============
 
-[![CI Build Status][build img]](https://travis-ci.org/sourceryinstitute/opencoarrays)
+[![CI Build Status][build img]](https://travis-ci.org/sourceryinstitute/OpenCoarrays)
+[![Gitter](https://img.shields.io/gitter/room/sourceryinstitute/opencoarrays.svg?style=flat-square)](https://gitter.im/sourceryinstitute/opencoarrays)
 [![GitHub license][license img]](./LICENSE)
-[![Download as PDF][pdf img]](http://md2pdf.herokuapp.com/sourceryinstitute/opencoarrays/blob/master/README.pdf)
-<!-- [![GitHub release][release img]](https://github.com/sourceryinstitute/opencoarrays/releases/latest) -->
-<!-- [![Release Downloads][download img]](https://github.com/sourceryinstitute/opencoarrays/releases) -->
-
-Download this file as a PDF document [here](http://md2pdf.herokuapp.com/sourceryinstitute/opencoarrays/blob/master/README.pdf).
+[![GitHub release][release img]](https://github.com/sourceryinstitute/OpenCoarrays/releases/latest)
+[![homebrew](https://img.shields.io/homebrew/v/opencoarrays.svg?style=flat-square)](http://braumeister.org/formula/opencoarrays)
+[![Download as PDF][pdf img]](http://md2pdf.herokuapp.com/sourceryinstitute/OpenCoarrays/blob/master/README.pdf)
+[![Twitter URL](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?hashtags=HPC,Fortran,PGAS&related=zbeekman,gnutools,HPCwire,HPC_Guru,hpcprogrammer,SciNetHPC,DegenerateConic,jeffdotscience,travisci&text=Stop%20programming%20w%2F%20the%20%23MPI%20docs%20in%20your%20lap%2C%20try%20Coarray%20Fortran%20w%2F%20OpenCoarrays%20%26%20GFortran!&url=https%3A//github.com/sourceryinstitute/OpenCoarrays)
+<!-- [![Release Downloads][download img]](https://github.com/sourceryinstitute/OpenCoarrays/releases) -->
 
 * [Overview](#overview)
 * [Downloads](#downloads)
@@ -25,6 +29,7 @@ Download this file as a PDF document [here](http://md2pdf.herokuapp.com/sourcery
 * [Status](#status)
 * [Support](#support)
 * [Acknowledgements](#acknowledgements)
+* [Donate](#donate)
 
 Overview
 --------
@@ -38,7 +43,7 @@ OpenCoarrays enables CAF application developers to express parallel algorithms w
 
 Downloads
 ---------
-<!--[![Release Downloads][download img]](https://github.com/sourceryinstitute/opencoarrays/releases/latest)-->
+<!--[![Release Downloads][download img]](https://github.com/sourceryinstitute/OpenCoarrays/releases/latest)-->
 
 Please see our [Releases] page.
 
@@ -88,6 +93,21 @@ We gratefully acknowledge support from the following institutions:
 * The National Energy Research Scientific Computing Center ([NERSC]), which is supported by the Office of Science of the U.S. Department of Energy under Contract No. DE-AC02-05CH11231, for access to the Hopper and Edison supercomputers under the OpenCoarrays project start allocation.
 * [Sourcery, Inc.], for financial support for the domain registration, web hosting, advanced development, and conference travel.
 
+Donate
+------
+If you find this software useful, please consider donating
+[your time](CONTRIBUTING.md) or
+[your money](http://www.sourceryinstitute.org/store/p5/Donation.html)
+to aid in development efforts.
+
+---
+
+[![GitHub forks](https://img.shields.io/github/forks/sourceryinstitute/OpenCoarrays.svg?style=social&label=Fork)](https://github.com/sourceryinstitute/OpenCoarrays/fork)
+[![GitHub stars](https://img.shields.io/github/stars/sourceryinstitute/OpenCoarrays.svg?style=social&label=Star)](https://github.com/sourceryinstitute/OpenCoarrays)
+[![GitHub watchers](https://img.shields.io/github/watchers/sourceryinstitute/OpenCoarrays.svg?style=social&label=Watch)](https://github.com/sourceryinstitute/OpenCoarrays)
+[![Twitter URL](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?hashtags=HPC,Fortran,PGAS&related=zbeekman,gnutools,HPCwire,HPC_Guru,hpcprogrammer,SciNetHPC,DegenerateConic,jeffdotscience,travisci&text=Stop%20programming%20w%2F%20the%20%23MPI%20docs%20in%20your%20lap%2C%20try%20Coarray%20Fortran%20w%2F%20OpenCoarrays%20%26%20GFortran!&url=https%3A//github.com/sourceryinstitute/OpenCoarrays)
+
+
 [Hyperlinks]:#
 
 [Overview]: #overview
@@ -98,7 +118,7 @@ We gratefully acknowledge support from the following institutions:
 [Contributing]: #contributing
 [Acknowledgements]: #acknowledgements
 
-
+[sourcery-institute logo]: http://www.sourceryinstitute.org/uploads/4/9/9/6/49967347/sourcery-logo-rgb-hi-rez-1.png
 [OpenCoarrays]: http://www.opencoarrays.org
 [ABI]: https://gcc.gnu.org/onlinedocs/gfortran/Coarray-Programming.html#Coarray-Programming
 [TS 18508]: http://isotc.iso.org/livelink/livelink?func=ll&objId=16769292&objAction=Open
@@ -107,7 +127,7 @@ We gratefully acknowledge support from the following institutions:
 [gfortran]: https://gcc.gnu.org/wiki/GFortran
 [opencoarrays module]: ./src/extensions/opencoarrays.F90
 [MPICH]: http://www.mpich.org
-[MVAPICH]: http://mvapich.cse.ohio-state.edu/)
+[MVAPICH]: http://mvapich.cse.ohio-state.edu
 [OpenMPI]: http://www.open-mpi.org
 [Sourcery, Inc.]: http://www.sourceryinstitute.org
 [Google]: http://google.com
@@ -123,14 +143,18 @@ We gratefully acknowledge support from the following institutions:
 [Google Group]: https://groups.google.com/forum/#!forum/opencoarrays
 [subscribing]: https://groups.google.com/forum/#!forum/opencoarrays/join
 [opencoarrays@googlegroups.com]: mailto:opencoarrays@googlegroups.com
-[Google Summer of Code]: https://www.google-melange.com/gsoc/org2/google/gsoc2014/gcc
-[OpenCoarrays Google Group]: https://groups.google.com/forum/#!forum/opencoarrays)
-[Issues]: https://github.com/sourceryinstitute/opencoarrays/issues
-[Releases]: https://github.com/sourceryinstitute/opencoarrays/releases
+[Google Summer of Code]: https://www.google-melange.com/archive/gsoc/2014/orgs/gcc/projects/afanfa.html
 
-[build img]: https://img.shields.io/travis-ci/sourceryinstitute/opencoarrays/master.svg?style=flat-square "View Travis-CI builds"
-[CI Master Branch]: https://travis-ci.org/sourceryinstitute/opencoarrays?branch=master "View Travis-CI builds"
-[download img]: https://img.shields.io/github/downloads/sourceryinstitute/opencoarrays/total.svg?style=flat-square "Download count image source"
-[license img]: https://img.shields.io/badge/License-BSD--3-blue.svg?style=flat-square "View BSD-3 License"
-[release img]: https://img.shields.io/github/release/sourceryinstitute/opencoarrays.svg?style=flat-square "View latest release"
+[try this GSoC link? https://www.google-melange.com/archive/gsoc/2014/orgs/gcc]:#
+[old GSoC link: https://www.google-melange.com/gsoc/org2/google/gsoc2014/gcc]:#
+
+[OpenCoarrays Google Group]: https://groups.google.com/forum/#!forum/opencoarrays)
+[Issues]: https://github.com/sourceryinstitute/OpenCoarrays/issues
+[Releases]: https://github.com/sourceryinstitute/OpenCoarrays/releases
+
+[build img]: https://img.shields.io/travis-ci/sourceryinstitute/OpenCoarrays/master.svg?style=flat-square "View Travis-CI builds"
+[CI Master Branch]: https://travis-ci.org/sourceryinstitute/OpenCoarrays?branch=master "View Travis-CI builds"
+[download img]: https://img.shields.io/github/downloads/sourceryinstitute/OpenCoarrays/total.svg?style=flat-square "Download count image source"
+[license img]: https://img.shields.io/badge/license-BSD--3-blue.svg?style=flat-square "View BSD-3 License"
+[release img]: https://img.shields.io/github/release/sourceryinstitute/OpenCoarrays.svg?style=flat-square "View latest release"
 [pdf img]: https://img.shields.io/badge/PDF-README.md-6C2DC7.svg?style=flat-square "Download as PDF"

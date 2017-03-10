@@ -3,10 +3,14 @@
 Contributing to OpenCoarrays
 ============================
 
-[![Download as PDF][pdf img]](http://md2pdf.herokuapp.com/sourceryinstitute/opencoarrays/blob/master/CONTRIBUTING.pdf)
+[![](https://img.shields.io/github/issues-closed-raw/sourceryinstitute/OpenCoarrays.svg?style=flat-square)](https://github.com/sourceryinstitute/OpenCoarrays)
+[![Issue Stats](https://img.shields.io/issuestats/i/github/sourceryinstitute/OpenCoarrays.svg?style=flat-square)](https://github.com/sourceryinstitute/OpenCoarrays/issues)
+[![](https://img.shields.io/github/issues-pr-closed-raw/sourceryinstitute/OpenCoarrays.svg?style=flat-square)](https://github.com/sourceryinstitute/OpenCoarrays/pulls)
+[![Issue Stats](https://img.shields.io/issuestats/p/github/sourceryinstitute/OpenCoarrays.svg?style=flat-square)](https://github.com/sourceryinstitute/OpenCoarrays/pulls)
+[![Download as PDF][pdf img]](http://md2pdf.herokuapp.com/sourceryinstitute/OpenCoarrays/blob/master/CONTRIBUTING.pdf)
 
 Download this file as a PDF document
-[here](http://md2pdf.herokuapp.com/sourceryinstitute/opencoarrays/blob/master/CONTRIBUTING.pdf).
+[here](http://md2pdf.herokuapp.com/sourceryinstitute/OpenCoarrays/blob/master/CONTRIBUTING.pdf).
 
 - [Reporting Defects](#reporting-defects)
 - [Requesting Enhancements](#requesting-enhancements)
@@ -33,7 +37,12 @@ If you encounter problems during the course of [Installing] OpenCoarrays or [usi
      - Number of MPI ranks/processing elements/coarray images being run on
      - How the code was compiled, including all flags and commands
      - Minimal reproducer code (a few lines) required to trigger the bug
-  4. Any help you can provide diagnosing, isolating and fixing the problem is appreciated! Please see the [helping out] section for more information.
+ 4. Any help you can provide diagnosing, isolating and fixing the
+    problem is appreciated! Please see the [helping out] section for
+    more information.
+
+An [issue template] is in the `.github` folder to help ensure
+compliance, and adequate information is provided.
 
 Requesting Enhancements
 -----------------------
@@ -66,7 +75,7 @@ Here is a checklist to help you get started contributing to OpenCoarrays and wal
      - [ ] Next line, if necessary is blank
      - [ ] Following lines are all wrapped at 72 characters and can include additional paragraphs, bulleted lists, etc.
      - [ ] Use [Github keywords] where appropriate, to indicate the commit resolves an open issue.
- - [ ] Please do you best to keep a [clean and coherent history]. `git add -p ...`, `git commit --amend` and `git rebase --interactive <root-ref>` can be helpful to rework your commits into a cleaner, clearer state.
+ - [ ] Please do your best to keep a [clean and coherent history]. `git add -p ...`, `git commit --amend` and `git rebase --interactive <root-ref>` can be helpful to rework your commits into a cleaner, clearer state.
  - [ ] Next, [open up a pull request] where the base branch is [`master`] or [`devel`] as appropriate
  - [ ] Please be patient and responsive to requests and comments from SourceryInstitute (SI) team members. You may be asked to amend or otherwise alter commits, or push new commits to your branch.
  - [ ] Make sure that all the automated [Travis-CI tests] pass
@@ -86,29 +95,53 @@ The `master` branch should remain in pristine, stable condition all of the time.
 
 This is the development branch, akin to GCC's `trunk`. Both of `devel` and `master` branches are protected, but `devel` will eventually be merged into `master` when the next major release happens, but until then it is a stable, forward looking branch where experimental features and major changes or enhancements may be applied and tested. Just as with `master` all changes are applied atomically as pull requests.
 
+## Through put ##
+
+[![Waffle.io](https://img.shields.io/waffle/label/sourceryinstitute/OpenCoarrays/blocked.svg?style=flat-square)](https://github.com/sourceryinstitute/OpenCoarrays/labels/blocked)
+[![Waffle.io](https://img.shields.io/waffle/label/sourceryinstitute/OpenCoarrays/ready.svg?style=flat-square)](https://github.com/sourceryinstitute/OpenCoarrays/labels/ready)
+[![Waffle.io](https://img.shields.io/waffle/label/sourceryinstitute/OpenCoarrays/in-progress.svg?style=flat-square)](https://github.com/sourceryinstitute/OpenCoarrays/labels/in-progress)
+[![Waffle.io](https://img.shields.io/waffle/label/sourceryinstitute/OpenCoarrays/needs%20review.svg?style=flat-square)](https://github.com/sourceryinstitute/OpenCoarrays/labels/needs-review)
+
+[![Throughput Graph](https://graphs.waffle.io/sourceryinstitute/OpenCoarrays/throughput.svg)](https://waffle.io/sourceryinstitute/OpenCoarrays/metrics/throughput)
+
+## Coverage ##
+
+[![Codecov branch](https://img.shields.io/codecov/c/github/sourceryinstitute/OpenCoarrays/master.svg?style=flat-square)](https://codecov.io/gh/sourceryinstitute/OpenCoarrays)
+
+[![coverage history](https://codecov.io/gh/sourceryinstitute/OpenCoarrays/branch/master/graphs/commits.svg)](https://codecov.io/gh/sourceryinstitute/OpenCoarrays)
+
+---
+
+[![GitHub forks](https://img.shields.io/github/forks/sourceryinstitute/OpenCoarrays.svg?style=social&label=Fork)](https://github.com/sourceryinstitute/OpenCoarrays/fork)
+[![GitHub stars](https://img.shields.io/github/stars/sourceryinstitute/OpenCoarrays.svg?style=social&label=Star)](https://github.com/sourceryinstitute/OpenCoarrays)
+[![GitHub watchers](https://img.shields.io/github/watchers/sourceryinstitute/OpenCoarrays.svg?style=social&label=Watch)](https://github.com/sourceryinstitute/OpenCoarrays)
+[![Twitter URL](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?hashtags=HPC,Fortran,PGAS&related=zbeekman,gnutools,HPCwire,HPC_Guru,hpcprogrammer,SciNetHPC,DegenerateConic,jeffdotscience,travisci&text=Stop%20programming%20w%2F%20the%20%23MPI%20docs%20in%20your%20lap%2C%20try%20Coarray%20Fortran%20w%2F%20OpenCoarrays%20%26%20GFortran!&url=https%3A//github.com/sourceryinstitute/OpenCoarrays)
+
+
 [Links]: #
+[issue template]: https://github.com/sourceryinstitute/OpenCoarrays/blob/master/.github/ISSUE_TEMPLATE.md
 [video]: https://youtu.be/EwWZbyjDs9c?list=PLg7s6cbtAD17uAwaZwiykDci_q3te3CTY
 [a number of resources]: http://scottchacon.com/2011/08/31/github-flow.html
 [Github flow]: https://guides.github.com/introduction/flow/
-[Travis-CI tests]: https://travis-ci.org/sourceryinstitute/opencoarrays/pull_requests
-[Contributor License Agreement (CLA)]: https://cla-assistant.io/sourceryinstitute/opencoarrays
-[`master`]: https://github.com/sourceryinstitute/opencoarrays
-[`devel`]: https://github.com/sourceryinstitute/opencoarrays/tree/devel
-[open up a pull request]: https://github.com/sourceryinstitute/opencoarrays/compare
+[Travis-CI tests]: https://travis-ci.org/sourceryinstitute/OpenCoarrays/pull_requests
+[Contributor License Agreement (CLA)]: https://cla-assistant.io/sourceryinstitute/OpenCoarrays
+[`master`]: https://github.com/sourceryinstitute/OpenCoarrays
+[`devel`]: https://github.com/sourceryinstitute/OpenCoarrays/tree/devel
+[open up a pull request]: https://github.com/sourceryinstitute/OpenCoarrays/compare
 [clean and coherent history]: https://www.reviewboard.org/docs/codebase/dev/git/clean-commits/
 [Github keywords]: https://help.github.com/articles/closing-issues-via-commit-messages/#closing-an-issue-in-a-different-repository
 [commit message]: https://robots.thoughtbot.com/5-useful-tips-for-a-better-commit-message
 [these guidelines]: http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html
-[an open issue]: https://github.com/sourceryinstitute/opencoarrays/issues
+[an open issue]: https://github.com/sourceryinstitute/OpenCoarrays/issues
 [Create a branch]: https://help.github.com/articles/creating-and-deleting-branches-within-your-repository/
-[OpenCoarrays repo]: https://github.com/sourceryinstitute/opencoarrays#fork-destination-box
+[OpenCoarrays repo]: https://github.com/sourceryinstitute/OpenCoarrays/fork
 [Pull Request]: https://help.github.com/articles/using-pull-requests/
 [Fork]: https://help.github.com/articles/fork-a-repo/
 [helping out]: #helping-out
-[closed issues]: https://github.com/sourceryinstitute/opencoarrays/issues?q=is%3Aissue+is%3Aclosed
+[closed issues]: https://github.com/sourceryinstitute/OpenCoarrays/issues?q=is%3Aissue+is%3Aclosed
 [Installing]: ./INSTALLING.md
-[issues]: https://github.com/sourceryinstitute/opencoarrays/issues
+[issues]: https://github.com/sourceryinstitute/OpenCoarrays/issues
 [mailing list]: https://groups.google.com/forum/#!forum/opencoarrays
 [using OpenCoarrays]: ./GETTING_STARTED.md
-[new issue]: https://github.com/sourceryinstitute/opencoarrays/issues/new
+[new issue]: https://github.com/sourceryinstitute/OpenCoarrays/issues/new
 [pdf img]: https://img.shields.io/badge/PDF-CONTRIBUTING.md-6C2DC7.svg?style=flat-square "Download as PDF"
