@@ -1,0 +1,3 @@
+add_executable(image_status_test_1 image_status_test_1.f90)
+target_link_libraries(image_status_test_1 OpenCoarrays)
+
