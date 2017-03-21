@@ -75,7 +75,8 @@ Please see the [CONTRIBUTING.md] file.
 Status
 ------
 
-Please see the [STATUS.md] file.
+A list of open issues can be viewed on the
+[issues page](https://github.com/sourcery institute/opencoarrays/issues).
 
 Support
 -------
@@ -137,7 +138,6 @@ to aid in development efforts.
 [INSTALL.md]: ./INSTALL.md
 [GASNet]: http://gasnet.lbl.gov
 [CONTRIBUTING.md]: ./CONTRIBUTING.md
-[STATUS.md]: ./STATUS.md
 [GETTING_STARTED.md]: ./GETTING_STARTED.md
 [Google Groups]: https://groups.google.com
 [Google Group]: https://groups.google.com/forum/#!forum/opencoarrays
