@@ -8,6 +8,16 @@
 | --------------------------------- | ---------------------------|
 | ![Issue Stats][PR response img]   | ![Codecov branch][coverage]|
 
+## Summary of changes ##
+
+Summarize what you changed
+
+## Rationale for changes ##
+
+Why did you make these changes?
+
+## Additional info and certifications ##
+
 This pull request (PR) is a:
  - [ ] Bug fix
  - [ ] Feature addition
@@ -46,13 +56,6 @@ I certify that:
        check and following the directions on the CLA assistant webpage
  - [ ] I have ensured that the test coverage hasn't gone down and added new [unit tests] to cover an new code added to the library
 
-## Summary of changes ##
-
-Summarize what you changed
-
-## Rationale for changes ##
-
-Why did you make these changes?
 
 ## For contributors and SI team members with code review priviledges ##
 
