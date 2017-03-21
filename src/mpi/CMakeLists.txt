@@ -58,15 +58,15 @@ install(TARGETS caf_mpi EXPORT OpenCoarraysTargets
 )
 
 # Install modules to standard include dir, but namespace them with compiler/version
-set (mod_install "${CMAKE_INSTALL_FULL_INCLUDEDIR}/OpenCoarrays/${CMAKE_Fortran_COMPILER_ID}/${CMAKE_Fortran_COMPILER_VERSION}")
+set (mod_install "OpenCoarrays/${CMAKE_Fortran_COMPILER_ID}/${CMAKE_Fortran_COMPILER_VERSION}")
 install(DIRECTORY  "${CMAKE_BINARY_DIR}/mod/"
-  DESTINATION "${mod_install}"
+  DESTINATION "${CMAKE_INSTALL_FULL_INCLUDEDIR}/${mod_install}"
   FILES_MATCHING PATTERN "*.mod"
 )
 
 # Now add a link in standard include dir so that compilers will find by default... this may or may not actually be a good idea...
 if ( "${CMAKE_Fortran_COMPILER_ID}" MATCHES "GNU" )
-  INSTALL(CODE "execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink ${mod_install}/opencoarrays.mod ${CMAKE_INSTALL_FULL_INCLUDEDIR}/opencoarrays.mod )"
+  INSTALL(CODE "execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink ${mod_install}/opencoarrays.mod \$ENV{DESTDIR}${CMAKE_INSTALL_FULL_INCLUDEDIR}/opencoarrays.mod )"
   )
 endif ()
 
