@@ -79,6 +79,18 @@
 # (3) Parse the usage information (default usage file name: current file's name with -usage appended).
 # (4) Parse the command line using the usage information.
 
+set -o errtrace
+
+# requires `set -o errtrace`
+__b3bp_err_report() {
+    local error_code
+    error_code=${?}
+    error "Error in ${__file} in function ${1} on line ${2}"
+    exit ${error_code}
+}
+# Uncomment the following line for always providing an error backtrace
+trap '__b3bp_err_report "${FUNCNAME:-.}" ${LINENO}' ERR
+
 ### Start of boilerplate -- do not edit this block #######################
 export OPENCOARRAYS_SRC_DIR="${OPENCOARRAYS_SRC_DIR:-${PWD%/}/../../..}"
 if [[ ! -f "${OPENCOARRAYS_SRC_DIR}/src/libcaf.h" ]]; then
