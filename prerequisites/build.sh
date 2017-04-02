@@ -141,6 +141,12 @@ fi
 source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/download_if_necessary.sh"
 download_if_necessary
 
+# Exit if -o or --only-download was specified when invoking this script
+if [[ ${arg_o:-} == "${__flag_present}" ]]; then
+   info "No installation to perform: -o or --only-download specified.  Exiting."
+   exit 0
+fi
+
 if [[ -z "${arg_B}" ]]; then
   # shellcheck source=./build-functions/unpack_if_necessary.sh
   source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/unpack_if_necessary.sh"

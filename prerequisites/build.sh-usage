@@ -14,6 +14,7 @@
   -m --with-cmake [arg]       Use the specified CMake installation. Default="cmake"
   -M --with-mpi [arg]         Use the specified MPI installation. 
   -n --no-color               Disable color output.
+  -o --only-download          Download (without building) the package source specified by -p or --package.
   -p --package [arg]          Package to install. 
   -P --print-path [arg]       Print installation path for package specified in argument.
   -t --with-tau [arg]         Use the specified TAU parallel performance utilities installation. Default="tauf90"
