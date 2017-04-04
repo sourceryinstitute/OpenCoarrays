@@ -15,6 +15,20 @@ function usage()
 
 patch_file="${1}"
 
+function set_absolute_path()
+{
+  : "${1?'set_absolute_path: no argument provided'}"
+
+  arg=${1}
+  first_character=$(echo "${arg}" | cut -c1-1)
+  if [[ "${first_character}" == "/" ]]; then
+    absolute_path="${arg}"
+  else
+    absolute_path="${PWD%%/}${arg}"
+  fi
+}
+set_absolute_path "${patch_file}"
+
 # Exit on error or use of an unset variable: 
 set -o errexit
 set -o nounset
@@ -106,12 +120,13 @@ install_if_missing flex
 ### Install the prerequisites that must be built from source ###
 
 # Download and build the GCC trunk:
-./install.sh --package gcc --install-branch trunk --only-download
+echo "Downloading the GCC trunk."
+./install.sh --only-download --package gcc --install-branch trunk 
  
 # Patch the GCC trunk and rebuild
-echo "Patching the GCC source."
+echo "Patching the GCC source using ${absolute_path}."
 pushd prerequisites/downloads/trunk 
-  patch -p0 < "${patch_file}"
+  patch -p0 < "${absolute_path}"
 popd
 
 # Build the patched GCC trunk
