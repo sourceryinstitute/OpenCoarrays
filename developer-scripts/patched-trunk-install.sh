@@ -106,7 +106,7 @@ install_if_missing flex
 ### Install the prerequisites that must be built from source ###
 
 # Download and build the GCC trunk:
-./install.sh --package gcc --install-branch trunk --yes-to-all 
+./install.sh --package gcc --install-branch trunk --only-download
  
 # Patch the GCC trunk and rebuild
 echo "Patching the GCC source."
