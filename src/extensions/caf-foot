@@ -77,7 +77,7 @@ if [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
     echo "BSD 3-Clause License.  For more information about these matters, see"
     echo "the file named LICENSE."
     echo ""
-elif [[ $1 == '-w' || $1 == '--wraps' ]]; then
+elif [[ $1 == '-w' || $1 == '--wraps' || $1 == '--wrapping' ]]; then
   echo "caf wraps CAFC=$CAFC"
 elif [[ $1 == '-s' || $1 == '--show' ]]; then
   $CAFC -show
