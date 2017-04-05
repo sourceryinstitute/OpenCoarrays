@@ -8,7 +8,7 @@ function usage()
 {
   echo "Usage:"
   echo "  cd <opencoarrays-source-directory>"
-  echo "  ./developer_scripts/patched-trunk-install.sh <absolute-path>/patch-file.diff"
+  echo "  ./developer_scripts/patched-trunk-install.sh <patch-file>"
   exit 1
 }
 [[ $# -eq 0 || "${1}" == "-h" || "${1}" == "--help"  || ! -f src/libcaf.h ]] && usage
@@ -24,7 +24,7 @@ function set_absolute_path()
   if [[ "${first_character}" == "/" ]]; then
     absolute_path="${arg}"
   else
-    absolute_path="${PWD%%/}${arg}"
+    absolute_path="${PWD%%/}/${arg}"
   fi
 }
 set_absolute_path "${patch_file}"
