@@ -72,11 +72,9 @@ info "__os: ${__os}"
 info "__usage: ${__usage}"
 info "LOG_LEVEL: ${LOG_LEVEL}"
 
-info "-b (--install-branch):   ${arg_b} "
 info "-d (--debug):            ${arg_d} "
 info "-e (--verbose):          ${arg_e} "
 info "-h (--help):             ${arg_h} "
-info "-l (--list-branches):    ${arg_l} "
 }
 
 download_list=( "m4" "bison" "flex" "mpich" "cmake" )
@@ -89,7 +87,7 @@ for package_to_download in "${download_list[@]}" ; do
   fi
 done
   
-if [[ ! -z ${install_branch:-}  ]]; then
+if [[ ! -z ${arg_b:-}  ]]; then
   ./install.sh --package gcc  --only-download --install-branch "${arg_b}"
 else  # Download default version
   ./install.sh --package gcc  --only-download
