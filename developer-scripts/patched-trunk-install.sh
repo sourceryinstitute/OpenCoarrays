@@ -142,14 +142,33 @@ fi
 
 # Ensure that the just-installed GCC libraries are used when linking
 echo "Setting and exporting LD_LIBRARY_PATH"
-if [[ -d "${PWD}/prerequisites/installations/gcc/trunk/lib64" ]]; then 
+
+function prepend_to_LD_LIBRARY_PATH() {
+  : ${1?'set_LD_LIBRARY_PATH: missing path'}
+  new_path="${1}"
   if [[ -z "${LD_LIBRARY_PATH:-}" ]]; then 
-    export LD_LIBRARY_PATH="${patched_GCC_install_path}/lib64/"
+    export LD_LIBRARY_PATH="${new_path}"
   else
-    export LD_LIBRARY_PATH="${patched_GCC_install_path}/lib64/:${LD_LIBRARY_PATH}"
+    export LD_LIBRARY_PATH="${new_path}:${LD_LIBRARY_PATH}"
   fi
+}
+
+old_path="${LD_LIBRARY_PATH:-}"
+
+if [[ -d "${PWD}/prerequisites/installations/gcc/trunk/lib"   ]]; then 
+  prepend_to_LD_LIBRARY_PATH "${patched_GCC_install_path}/lib/"
 fi
-echo "\${LD_LIBRARY_PATH}=${LD_LIBRARY_PATH:-}"
+
+if [[ -d "${PWD}/prerequisites/installations/gcc/trunk/lib64" ]]; then 
+  prepend_to_LD_LIBRARY_PATH "${patched_GCC_install_path}/lib64/"
+fi
+
+echo "\${LD_LIBRARY_PATH}=${LD_LIBRARY_PATH:=}"
+
+if [[ "${LD_LIBRARY_PATH}" == "${old_path}" ]]; then
+  echo "gfortran libraries did not install where expected: ${patched_GCC_install_path}/lib64 or ${patched_GCC_install_path}/lib"
+  exit 1
+fi
 
 # Build MPICH with the patched compilers.
 echo "Building MPICH with the patched compilers."
@@ -160,7 +179,7 @@ echo "Building MPICH with the patched compilers."
 
 # Verify that MPICH installed where expected
 mpich_install_path=$(./install.sh -P mpich)
-if type ! "${mpich_install_path}"/bin/mpif90; then
+if ! type "${mpich_install_path}"/bin/mpif90; then
   echo "MPICH is not installed in the expected location ${mpich_install_path}." 
   exit 1
 fi
@@ -171,5 +190,5 @@ echo "Building OpenCoarrays with the patched compilers"
 ./install.sh --yes-to-all \
   --with-fortran "${patched_GCC_install_path}/bin/gfortran" \
   --with-c "${patched_GCC_install_path}/bin/gcc" \
-  --with-C "${patched_GCC_install_path}/bin/g++" 
+  --with-C "${patched_GCC_install_path}/bin/g++" \
   --with-mpi "${mpich_install_path}"
