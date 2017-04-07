@@ -175,7 +175,7 @@ echo "Building MPICH with the patched compilers."
 ./install.sh --package mpich --yes-to-all \
   --with-fortran "${patched_GCC_install_path}/bin/gfortran" \
   --with-c "${patched_GCC_install_path}/bin/gcc" \
-  --with-C "${patched_GCC_install_path}/bin/g++" 
+  --with-cxx "${patched_GCC_install_path}/bin/g++" 
 
 # Verify that MPICH installed where expected
 mpich_install_path=$(./install.sh -P mpich)
@@ -190,5 +190,5 @@ echo "Building OpenCoarrays with the patched compilers"
 ./install.sh --yes-to-all \
   --with-fortran "${patched_GCC_install_path}/bin/gfortran" \
   --with-c "${patched_GCC_install_path}/bin/gcc" \
-  --with-C "${patched_GCC_install_path}/bin/g++" \
+  --with-cxx "${patched_GCC_install_path}/bin/g++" \
   --with-mpi "${mpich_install_path}"
