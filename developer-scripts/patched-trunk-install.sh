@@ -43,10 +43,10 @@ function choose_package_manager()
   case "${OS}" in
 
     "Darwin" )
-      if type port >& /dev/null; then
-        package_manager="port"
-      elif type brew >& /dev/null; then
+      if type brew >& /dev/null; then
         package_manager="brew"
+      elif type port >& /dev/null; then
+        package_manager="port"
       fi
       ;;
 
