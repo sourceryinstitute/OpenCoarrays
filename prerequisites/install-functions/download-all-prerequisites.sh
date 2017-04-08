@@ -4,7 +4,7 @@ function download_all_prerequisites()
 
   download_list=( "m4" "bison" "flex" "mpich" "cmake" )
 
-  for package_to_download in "${download_list[@]}" ; 
+  for package_to_download in "${download_list[@]}" ;
   do
     ./install.sh --package ${package_to_download} --only-download
   done

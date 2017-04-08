@@ -29,14 +29,14 @@ function set_absolute_path()
 }
 set_absolute_path "${patch_file}"
 
-# Exit on error or use of an unset variable: 
+# Exit on error or use of an unset variable:
 set -o errexit
 set -o nounset
 
 # Return the highest exit code in a chain of pipes:
 set -o pipefail
 
-### Define functions 
+### Define functions
 function choose_package_manager()
 {
   OS=$(uname)
@@ -48,7 +48,7 @@ function choose_package_manager()
       elif type brew >& /dev/null; then
         package_manager="brew"
       fi
-      ;;  
+      ;;
 
     "Linux" )
       if [[ ! -f /etc/lsb-release ]]; then
@@ -64,17 +64,17 @@ function choose_package_manager()
         "Debian" )
            package_manager="dnf"
         ;;
-        *)  
+        *)
           echo "I don't recognize the Linux distribution ${DISTRIB_ID:-}"
           exit 1
         ;;
       esac
-      ;;  
+      ;;
 
-    *)  
+    *)
       echo "I don't recognize the operating system \${OS}"
       exit 1
-      ;;  
+      ;;
   esac
 }
 choose_package_manager
@@ -121,22 +121,22 @@ install_if_missing flex
 
 # Download and build the GCC trunk:
 echo "Downloading the GCC trunk."
-./install.sh --only-download --package gcc --install-branch trunk 
+./install.sh --only-download --package gcc --install-branch trunk
  
 # Patch the GCC trunk and rebuild
 echo "Patching the GCC source using ${absolute_path}."
-pushd prerequisites/downloads/trunk 
+pushd prerequisites/downloads/trunk
   patch -p0 < "${absolute_path}"
 popd
 
 # Build the patched GCC trunk
 echo "Rebuilding the patched GCC source."
-./install.sh --package gcc --install-branch trunk --yes-to-all 
+./install.sh --package gcc --install-branch trunk --yes-to-all
 
 # Verify that GCC installed in the expected path
 patched_GCC_install_path=${PWD}/prerequisites/installations/gcc/trunk
 if ! type "${patched_GCC_install_path}"/bin/gfortran >& /dev/null; then
-  echo "gfortran is not installed in the expected location ${patched_GCC_install_path}." 
+  echo "gfortran is not installed in the expected location ${patched_GCC_install_path}."
   exit 1
 fi
 
@@ -146,7 +146,7 @@ echo "Setting and exporting LD_LIBRARY_PATH"
 function prepend_to_LD_LIBRARY_PATH() {
   : ${1?'set_LD_LIBRARY_PATH: missing path'}
   new_path="${1}"
-  if [[ -z "${LD_LIBRARY_PATH:-}" ]]; then 
+  if [[ -z "${LD_LIBRARY_PATH:-}" ]]; then
     export LD_LIBRARY_PATH="${new_path}"
   else
     export LD_LIBRARY_PATH="${new_path}:${LD_LIBRARY_PATH}"
@@ -155,7 +155,7 @@ function prepend_to_LD_LIBRARY_PATH() {
 
 old_path="${LD_LIBRARY_PATH:-}"
 
-if [[ -d "${PWD}/prerequisites/installations/gcc/trunk/lib"   ]]; then 
+if [[ -d "${PWD}/prerequisites/installations/gcc/trunk/lib"   ]]; then
   prepend_to_LD_LIBRARY_PATH "${patched_GCC_install_path}/lib/"
 fi
 
@@ -175,12 +175,12 @@ echo "Building MPICH with the patched compilers."
 ./install.sh --package mpich --yes-to-all \
   --with-fortran "${patched_GCC_install_path}/bin/gfortran" \
   --with-c "${patched_GCC_install_path}/bin/gcc" \
-  --with-cxx "${patched_GCC_install_path}/bin/g++" 
+  --with-cxx "${patched_GCC_install_path}/bin/g++"
 
 # Verify that MPICH installed where expected
 mpich_install_path=$(./install.sh -P mpich)
 if ! type "${mpich_install_path}"/bin/mpif90; then
-  echo "MPICH is not installed in the expected location ${mpich_install_path}." 
+  echo "MPICH is not installed in the expected location ${mpich_install_path}."
   exit 1
 fi
 
