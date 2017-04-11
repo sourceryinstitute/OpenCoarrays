@@ -1,6 +1,4 @@
-
 # shellcheck disable=SC2154
-
 replace_wget()
 {
   # Define a file extension for the download_prerequisites backup
@@ -16,7 +14,7 @@ replace_wget()
     sed -i${backup_extension} -e '2 a\'$'\n'". ${OPENCOARRAYS_SRC_DIR}/prerequisites/build-functions/ftp_url.sh"$'\n' "${download_prereqs_file}"
   fi
 
-  arg_string="${gcc_prereqs_fetch_args[@]:-} "
+  arg_string="${gcc_prereqs_fetch_args[@]:-}"
 
   info "Using the following command to replace wget in the GCC download_prerequisites file:"
   info "sed -i${backup_extension} s/\"${wget_command}\"/\"${gcc_prereqs_fetch} ${arg_string} \"/ \"${download_prereqs_file}\""
@@ -39,7 +37,7 @@ edit_GCC_download_prereqs_file_if_necessary()
   # Check for wget format used before GCC 7
   if [[ ! -z "${wget_command}" ]]; then
     # Check whether wget is available on this system
-    if ! type wget &> /dev/null; then 
+    if ! type wget &> /dev/null; then
       replace_wget
     fi
   fi
