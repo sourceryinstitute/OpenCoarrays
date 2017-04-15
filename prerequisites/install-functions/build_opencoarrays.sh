@@ -2,7 +2,7 @@ work_around_cmake_issue()
 {
   # This function ensures that the desired mpiexec is appears before any other mpiexec in the PATH of the process that runs
   # cmake in the build_opencoarrays function below.
-   
+
   # This is a (hopefully temporary) workaround for CMake issue 16804 (https://gitlab.kitware.com/cmake/cmake/issues/16804):
   # even when MPI_C_COMPILER and MPI_Fortran_COMPILER are set as they are in the $CMAKE invocation below, cmake finds the
   # mpiexec program that is first in the PATH or fails to find any mpiexec if it's not in the PATH.
