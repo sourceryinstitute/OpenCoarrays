@@ -46,7 +46,11 @@ set_or_print_url()
   # Set differing tails for GCC release downloads versus development branch checkouts
   if [[ "${package_to_build}" == 'gcc' ]]; then
     if [[ "${fetch}" == 'svn' ]]; then
-      gcc_tail=${version_to_build-branches}
+      if [[ "${version_to_build}" == "trunk" ]]; then
+        gcc_tail="${version_to_build}"
+      else
+        gcc_tail="branches/${version_to_build}"
+      fi
     else
       gcc_tail="gcc-${version_to_build}.tar.bz2"
     fi
