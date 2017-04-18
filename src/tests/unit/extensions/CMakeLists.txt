@@ -31,7 +31,7 @@ function(generate_test_script base_name num_images)
   endif()
   file(APPEND "${harness}" "${CMAKE_INSTALL_PREFIX}/bin/cafrun -np ${num_images} ./${executable}\n")
   file( INSTALL "${harness}"
-    PERMISSIONS WORLD_EXECUTE WORLD_READ W OWNER_EXECUTE OWNER_READ OWNER_WRITE GROUP_EXECUTE GROUP_READ
+    PERMISSIONS WORLD_EXECUTE WORLD_READ OWNER_EXECUTE OWNER_READ GROUP_EXECUTE GROUP_READ
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
   )
 
