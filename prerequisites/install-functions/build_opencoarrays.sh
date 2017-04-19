@@ -22,9 +22,16 @@ build_opencoarrays()
   FC="${MPIFC_show[0]}"
   # Set CC to the MPI implementation's gcc command...
   CC="${MPICC_show[0]}"
+  # try to find mpiexec
+  MPIEXEC_CANDIDATES=($(find "${MPICC%/*}" -name 'mpiexec' -o -name 'mpirun'))
+  if ! ((${#MPIEXEC_CANDIDATES[@]} >= 1)); then
+    emergency "Could not find a suitable \`mpiexec\` in directory containing mpi wrappers (${MPICC%/*})"
+  else
+    MPIEXEC="${MPIEXEC_CANDIDATES[0]}"
+  fi
   info "Configuring OpenCoarrays in ${PWD} with the command:"
-  info "CC=\"${CC}\" FC=\"${FC}\" $CMAKE \"${opencoarrays_src_dir}\" -DCMAKE_INSTALL_PREFIX=\"${install_path}\" -DMPI_C_COMPILER=\"${MPICC}\" -DMPI_Fortran_COMPILER=\"${MPIFC}\""
-  CC="${CC}" FC="${FC}" $CMAKE "${opencoarrays_src_dir}" -DCMAKE_INSTALL_PREFIX="${install_path}" -DMPI_C_COMPILER="${MPICC}" -DMPI_Fortran_COMPILER="${MPIFC}"
+  info "CC=\"${CC}\" FC=\"${FC}\" $CMAKE \"${opencoarrays_src_dir}\" -DCMAKE_INSTALL_PREFIX=\"${install_path}\" -DMPIEXEC=\"${MPIEXEC}\" -DMPI_C_COMPILER=\"${MPICC}\" -DMPI_Fortran_COMPILER=\"${MPIFC}\""
+  CC="${CC}" FC="${FC}" $CMAKE "${opencoarrays_src_dir}" -DCMAKE_INSTALL_PREFIX="${install_path}" -DMPIEXEC="${MPIEXEC}" -DMPI_C_COMPILER="${MPICC}" -DMPI_Fortran_COMPILER="${MPIFC}"
   info "Building OpenCoarrays in ${PWD} with the command make -j${num_threads}"
   make "-j${num_threads}"
   if [[ ! -z ${SUDO:-} ]]; then
@@ -33,4 +40,3 @@ build_opencoarrays()
   info "Installing OpenCoarrays in ${install_path} with the command ${SUDO:-} make install"
   ${SUDO:-} make install
 }
-
