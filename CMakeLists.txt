@@ -90,7 +90,7 @@ the C compiler if it matches the Fortran compiler ID." )
   endif()
   set( CMAKE_Fortran_COMPILER_VERSION "${DETECTED_VER}" )
 endif()
-  
+
   # We have populated CMAKE_Fortran_COMPILER_VERSION if it was missing
   if(gfortran_compiler AND (CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 5.0.0))
     set(opencoarrays_aware_compiler true)
@@ -155,13 +155,53 @@ endif()
 
 find_package( MPI )
 
-if ( (NOT MPI_C_FOUND) OR (NOT MPI_Fortran_FOUND) )
+if ( (NOT MPI_C_FOUND) OR (NOT MPI_Fortran_FOUND) OR (NOT MPIEXEC))
   find_program (MY_MPI_EXEC NAMES mpirun mpiexec lamexec srun
     PATHS "${CMAKE_SOURCE_DIR/prerequisites/installations/mpich/3.1.4}" "${CMAKE_SOURCE_DIR}/prerequisites/installations/mpich/*" ENV PATH
     HINTS "${FTN_COMPILER_DIR}" "${C_COMPILER_DIR}"
     PATH_SUFFIXES bin)
   set ( MPI_HOME "${MPI_HOME}" "${MY_MPI_EXEC}" "${MY_MPI_EXEC}/.." )
   find_package( MPI REQUIRED )
+endif()
+
+# Test for consistent MPI environment
+if (NOT MPIEXEC)
+  message ( ERROR "CMake failed to find `mpiexec` or similar. If building with `./install.sh` please
+report this bug to the OpenCoarrays developers at
+https://github.com/sourceryinstitute/opencoarrays/issues, otherwise use point CMake
+to the desired MPI runtime.")
+endif()
+
+get_filename_component(MPIEXEC_RELATIVE_LOC "${MPIEXEC}"
+  PROGRAM)
+get_filename_component(MPIEXEC_ABS_LOC "${MPIEXEC_RELATIVE_LOC}"
+  REALPATH)
+get_filename_component(MPIEXEC_DIR "${MPIEXEC_ABS_LOC}"
+  DIRECTORY)
+
+get_filename_component(MPICC_RELATIVE_LOC "${MPI_C_COMPILER}"
+  PROGRAM)
+get_filename_component(MPICC_ABS_LOC "${MPICC_RELATIVE_LOC}"
+  REALPATH)
+get_filename_component(MPICC_DIR "${MPICC_ABS_LOC}"
+  DIRECTORY)
+
+get_filename_component(MPIFC_RELATIVE_LOC "${MPI_Fortran_COMPILER}"
+  PROGRAM)
+get_filename_component(MPIFC_ABS_LOC "${MPIFC_RELATIVE_LOC}"
+  REALPATH)
+get_filename_component(MPIFC_DIR "${MPIFC_ABS_LOC}"
+  DIRECTORY)
+
+if ((MPIEXEC_DIR STREQUAL MPICC_DIR) AND (MPIEXEC_DIR STREQUAL MPIFC_DIR))
+  message ( STATUS "MPI runtime and compile time environments appear to be consistent")
+else()
+  message ( WARNING "MPIEXEC is in \"${MPIEXEC_DIR},\"
+which differs from the location of MPICC and/or MPIFC which are in
+\"${MPICC_DIR}\" and \"${MPIFC_DIR},\" respectively.
+This is likely indicative of a problem. If building with `./install.sh` please report
+this to the OpenCoarrays developers by filing a new issue at:
+https://github.com/sourceryinstitute/OpenCoarrays/issues/new")
 endif()
 
 #--------------------------------------------------------
