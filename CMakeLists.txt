@@ -204,6 +204,28 @@ this to the OpenCoarrays developers by filing a new issue at:
 https://github.com/sourceryinstitute/OpenCoarrays/issues/new")
 endif()
 
+#-----------------------------------------------
+# Work around bug #317 present on fedora systems
+#-----------------------------------------------
+if( (MPI_C_LINK_FLAGS MATCHES "noexecstack") OR (MPI_Fortran_LINK_FLAGS MATCHES "noexecstack") )
+  message ( WARNING
+"The `noexecstack` linker flag was found in the MPI_<lang>_LINK_FLAGS variable. This is
+known to cause segmentation faults for some Fortran codes. See, e.g.,
+https://gcc.gnu.org/bugzilla/show_bug.cgi?id=71729 or
+https://github.com/sourceryinstitute/OpenCoarrays/issues/317.
+
+`noexecstack` is being replaced with `execstack`"
+    )
+  string(REPLACE "noexecstack"
+    "execstack" MPI_C_LINK_FLAGS_FIXED ${MPI_C_LINK_FLAGS})
+  string(REPLACE "noexecstack"
+    "execstack" MPI_Fortran_LINK_FLAGS_FIXED ${MPI_Fortran_LINK_FLAGS})
+  set(MPI_C_LINK_FLAGS "${MPI_C_LINK_FLAGS_FIXED}" CACHE STRING
+    "MPI C linking flags" FORCE)
+  set(MPI_Fortran_LINK_FLAGS "${MPI_Fortran_LINK_FLAGS_FIXED}" CACHE STRING
+    "MPI Fortran linking flags" FORCE)
+endif()
+
 #--------------------------------------------------------
 # Make sure a simple "hello world" C mpi program compiles
 #--------------------------------------------------------
