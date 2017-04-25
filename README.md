@@ -148,7 +148,7 @@ to aid in development efforts.
 [try this GSoC link? https://www.google-melange.com/archive/gsoc/2014/orgs/gcc]:#
 [old GSoC link: https://www.google-melange.com/gsoc/org2/google/gsoc2014/gcc]:#
 
-[OpenCoarrays Google Group]: https://groups.google.com/forum/#!forum/opencoarrays)
+[OpenCoarrays Google Group]: https://groups.google.com/forum/#!forum/opencoarrays
 [Issues]: https://github.com/sourceryinstitute/OpenCoarrays/issues
 [Releases]: https://github.com/sourceryinstitute/OpenCoarrays/releases
 
