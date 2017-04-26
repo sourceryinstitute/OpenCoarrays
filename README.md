@@ -3,7 +3,7 @@
 [This document is formatted with GitHub-Flavored Markdown.              ]:#
 [For better viewing, including hyperlinks, read it online at            ]:#
 [https://github.com/sourceryinstitute/OpenCoarrays/blob/master/README.md]:#
-
+<div align="center">
 
 [![Sourcery Institute][sourcery-institute logo]](https://www.sourceryinstitute.org)
 
@@ -19,17 +19,19 @@ OpenCoarrays
 [![Twitter URL](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?hashtags=HPC,Fortran,PGAS&related=zbeekman,gnutools,HPCwire,HPC_Guru,hpcprogrammer,SciNetHPC,DegenerateConic,jeffdotscience,travisci&text=Stop%20programming%20w%2F%20the%20%23MPI%20docs%20in%20your%20lap%2C%20try%20Coarray%20Fortran%20w%2F%20OpenCoarrays%20%26%20GFortran!&url=https%3A//github.com/sourceryinstitute/OpenCoarrays)
 <!-- [![Release Downloads][download img]](https://github.com/sourceryinstitute/OpenCoarrays/releases) -->
 
-* [Overview](#overview)
-* [Downloads](#downloads)
-* [Compatibility](#compatibility)
-* [Prerequisites](#prerequisites)
-* [Installation](#installation)
-* [Getting Started](#getting-started)
-* [Contributing](#contributing)
-* [Status](#status)
-* [Support](#support)
-* [Acknowledgements](#acknowledgements)
-* [Donate](#donate)
+[Overview](#overview) &middot;
+[Downloads](#downloads) &middot;
+[Compatibility](#compatibility) &middot;
+[Prerequisites](#prerequisites) &middot;
+[Installation](#installation) &middot;
+[Getting Started](#getting-started) &middot;
+[Contributing](#contributing) &middot;
+[Status](#status) &middot;
+[Support](#support) &middot;
+[Acknowledgements](#acknowledgements) &middot;
+[Donate](#donate)
+
+</div>
 
 Overview
 --------
@@ -76,7 +78,7 @@ Status
 ------
 
 A list of open issues can be viewed on the
-[issues page](https://github.com/sourcery institute/opencoarrays/issues).
+[issues page](https://github.com/sourceryinstitute/opencoarrays/issues).
 
 Support
 -------
