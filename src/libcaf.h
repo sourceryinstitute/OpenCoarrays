@@ -240,7 +240,8 @@ void PREFIX (caf_send) (caf_token_t, size_t, int, gfc_descriptor_t *,
 
 void PREFIX (caf_sendget) (caf_token_t, size_t, int, gfc_descriptor_t *,
 			   caf_vector_t *, caf_token_t, size_t, int,
-			   gfc_descriptor_t *, caf_vector_t *, int, int, bool);
+			   gfc_descriptor_t *, caf_vector_t *, int, int, bool,
+			   int *);
 
 #ifdef GCC_GE_7
 void PREFIX(get_by_ref) (caf_token_t, int,
@@ -269,9 +270,16 @@ void PREFIX (sync_all) (int *, char *, int);
 void PREFIX (sync_images) (int, int[], int *, char *, int);
 void PREFIX (sync_memory) (int *, char *, int);
 
+void PREFIX (stop_str) (const char *, int32_t) __attribute__ ((noreturn));
+void PREFIX (stop) (int32_t) __attribute__ ((noreturn));
 void PREFIX (error_stop_str) (const char *, int32_t)
      __attribute__ ((noreturn));
 void PREFIX (error_stop) (int32_t) __attribute__ ((noreturn));
+void PREFIX (fail_image) (void) __attribute__ ((noreturn));
+
+int PREFIX (image_status) (int);
+void PREFIX (failed_images) (gfc_descriptor_t *, int, int *);
+void PREFIX (stopped_images) (gfc_descriptor_t *, int, int *);
 
 void PREFIX (atomic_define) (caf_token_t, size_t, int, void *, int *, int, int);
 void PREFIX (atomic_ref) (caf_token_t, size_t, int, void *, int *, int, int);

@@ -1,3 +1,5 @@
+! Check the status of all images. Error only, when one unexpectedly failed.
+
 program test_image_status_1
   use iso_fortran_env , only : STAT_STOPPED_IMAGE
   implicit none

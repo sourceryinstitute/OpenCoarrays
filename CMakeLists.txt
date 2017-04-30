@@ -384,6 +384,24 @@ function(add_mpi_test name num_mpi_proc path)
    set_property(TEST ${name} PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
 endfunction(add_mpi_test)
 
+function(add_mpi_failable_test name num_mpi_proc path)
+   if ( ((N LESS num_mpi_proc) OR (N EQUAL 0)) )
+     message(STATUS "Test ${name} is oversubscribed: ${num_mpi_proc} ranks requested with ${N} system processor available.")
+     if ( openmpi )
+       if ( N LESS 2 )
+	 set( num_mpi_proc 2 )
+	 set (test_parameters --oversubscribe)
+       else()
+	 set ( num_mpi_proc ${N} )
+       endif()
+       message( STATUS "Open-MPI detected, over-riding oversubscribed test, ${name}, with ${num_mpi_proc} ranks." )
+     endif()
+   endif()
+   set(test_parameters ${test_parameters} ${MPIEXEC_NUMPROC_FLAG} ${num_mpi_proc} -disable-auto-cleanup )
+   add_test(NAME ${name} COMMAND ${MPIEXEC} ${test_parameters} "${path}")
+   set_property(TEST ${name} PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
+endfunction(add_mpi_failable_test)
+
 set(tests_root ${CMAKE_CURRENT_BINARY_DIR}/src/tests)
 
 
@@ -447,7 +465,20 @@ if(opencoarrays_aware_compiler)
   add_mpi_test(co_reduce_string 4 ${tests_root}/unit/collectives/co_reduce_string)
 
   # IMAGE FAIL tests
-  add_mpi_test(image_status_test_1 4 ${tests_root}/unit/image_states/image_status_test_1)
+  add_mpi_test(image_status_test_1 4 ${tests_root}/unit/fail_images/image_status_test_1)
+#ifdef WITH_FAIL_IMAGES
+# No other way to check that image_fail_test_1 passes.
+  add_mpi_failable_test(image_fail_test_1 4 ${tests_root}/unit/fail_images/image_fail_test_1)
+  set_property(TEST image_fail_test_1 PROPERTY FAIL_REGULAR_EXPRESSION "Test failed")
+  set_property(TEST image_fail_test_1 PROPERTY PASS_REGULAR_EXPRESSION "Test passed")
+  add_mpi_failable_test(image_fail_and_sync_test_1 4 ${tests_root}/unit/fail_images/image_fail_and_sync_test_1)
+  add_mpi_failable_test(image_fail_and_sync_test_2 4 ${tests_root}/unit/fail_images/image_fail_and_sync_test_2)
+  add_mpi_failable_test(image_fail_and_sync_test_3 4 ${tests_root}/unit/fail_images/image_fail_and_sync_test_3)
+  add_mpi_failable_test(image_fail_and_status_test_1 4 ${tests_root}/unit/fail_images/image_fail_and_status_test_1)
+  add_mpi_failable_test(image_fail_and_failed_images_test_1 4 ${tests_root}/unit/fail_images/image_fail_and_failed_images_test_1)
+  add_mpi_failable_test(image_fail_and_stopped_images_test_1 4 ${tests_root}/unit/fail_images/image_fail_and_stopped_images_test_1)
+  add_mpi_failable_test(image_fail_and_get_test_1 4 ${tests_root}/unit/fail_images/image_fail_and_get_test_1)
+#endif
 else()
   add_test(co_sum_extension ${tests_root}/unit/extensions/test-co_sum-extension.sh)
   set_property(TEST co_sum_extension PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
