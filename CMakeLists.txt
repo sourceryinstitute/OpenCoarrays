@@ -156,8 +156,15 @@ endif()
 find_package( MPI )
 
 if ( (NOT MPI_C_FOUND) OR (NOT MPI_Fortran_FOUND) OR (NOT MPIEXEC))
+  # Get default install location of MPICH from install.sh
+  execute_process( COMMAND "./install.sh" -P mpich
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    OUTPUT_VARIABLE DEFAULT_MPICH_INSTALL_LOC
+    OUTPUT_QUIET
+    OUTPUT_STRIP_TRAILING_WHITES_SPACE
+  )
   find_program (MY_MPI_EXEC NAMES mpirun mpiexec lamexec srun
-    PATHS "${CMAKE_SOURCE_DIR}/prerequisites/installations/mpich/3.1.4" "${CMAKE_SOURCE_DIR}/prerequisites/installations/mpich/*" ENV PATH
+    PATHS "${DEFAULT_MPICH_INSTALL_LOC}" ENV PATH
     HINTS "${FTN_COMPILER_DIR}" "${C_COMPILER_DIR}"
     PATH_SUFFIXES bin)
   set ( MPI_HOME "${MPI_HOME}" "${MY_MPI_EXEC}" "${MY_MPI_EXEC}/.." )
