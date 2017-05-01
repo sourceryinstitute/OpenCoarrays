@@ -157,7 +157,7 @@ find_package( MPI )
 
 if ( (NOT MPI_C_FOUND) OR (NOT MPI_Fortran_FOUND) OR (NOT MPIEXEC))
   find_program (MY_MPI_EXEC NAMES mpirun mpiexec lamexec srun
-    PATHS "${CMAKE_SOURCE_DIR/prerequisites/installations/mpich/3.1.4}" "${CMAKE_SOURCE_DIR}/prerequisites/installations/mpich/*" ENV PATH
+    PATHS "${CMAKE_SOURCE_DIR}/prerequisites/installations/mpich/3.1.4" "${CMAKE_SOURCE_DIR}/prerequisites/installations/mpich/*" ENV PATH
     HINTS "${FTN_COMPILER_DIR}" "${C_COMPILER_DIR}"
     PATH_SUFFIXES bin)
   set ( MPI_HOME "${MPI_HOME}" "${MY_MPI_EXEC}" "${MY_MPI_EXEC}/.." )
