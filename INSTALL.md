@@ -17,6 +17,7 @@ Download this file as a PDF document
   * [macOS]
   * [Windows]
   * [Linux]
+  * [FreeBSD]
   * [Virtual machine]
   * [Installation Script]
 * [Advanced Installation from Source]
@@ -124,6 +125,14 @@ OpenCoarrays.  Users of other Linux distributions may install the
 you desire to install using other Linux package Linux package
 management software such as [dnf] or [apt-get], please submit a
 feature request via our [Issues] page.
+
+[top]
+
+### FreeBSD ###
+
+A FreeBSD Port is available for installing OpenCoarrays and can be
+located via [port search].  See the FreeBSD OpenCoarrays [port details] 
+page for installation instructions.
 
 [top]
 
@@ -402,3 +411,5 @@ export gcc_install_path=/desired/installation/destination
 [commit comment 20539810]: https://github.com/sourceryinstitute/OpenCoarrays/commit/26e99919fe732576f7277a0e1b83f43cc7c9d749#commitcomment-20539810
 [Homebrew]: https://brew.sh
 [dnf]: https://github.com/rpm-software-management/dnf
+[port details]: http://www.freshports.org/lang/opencoarrays
+[port search]: https://www.freebsd.org/cgi/ports.cgi?query=opencoarrays
