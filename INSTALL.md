@@ -369,6 +369,7 @@ export gcc_install_path=/desired/installation/destination
 [macOS]: #macos
 [Windows]: #windows
 [Linux]: #linux
+[FreeBSD]: #freebsd
 [Virtual machine]: #virtual-machine
 [Installation Script]: #installation-script
 
