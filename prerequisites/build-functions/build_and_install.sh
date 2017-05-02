@@ -1,7 +1,8 @@
 # Make the build directory, configure, and build
 # shellcheck disable=SC2154
 
-source ${OPENCOARRAYS_SRC_DIR}/prerequisites/build-functions/edit_GCC_download_prereqs_file_if_necessary.sh
+# shellcheck source=prerequisites/build-functions/edit_GCC_download_prereqs_file_if_necessary.sh
+source "${OPENCOARRAYS_SRC_DIR}/prerequisites/build-functions/edit_GCC_download_prereqs_file_if_necessary.sh"
 
 build_and_install()
 {
