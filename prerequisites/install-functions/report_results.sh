@@ -45,7 +45,17 @@ report_results()
     echo "# Execute this script via the following command:                                " | tee -a setup.csh setup.sh
     echo "# source ${install_path%/}/setup.sh                                             " | tee -a setup.csh setup.sh
     echo "                                                                                " | tee -a setup.csh setup.sh
+    if [[ -x "$cmake_install_path/cmake" ]]; then
+      echo "# Prepend the CMake path to the PATH environment variable:" | tee -a setup.sh setup.csh
+      echo "if [[ -z \"\$PATH\" ]]; then                                         " >> setup.sh
+      echo "  export PATH=\"${cmake_install_path%/}/\"                            " >> setup.sh
+      echo "else                                                                 " >> setup.sh
+      echo "  export PATH=\"${cmake_install_path%/}/\":\$PATH                     " >> setup.sh
+      echo "fi                                                                   " >> setup.sh
+      echo "set path = (\"${cmake_install_path%/}\"/\"\$path\")                      " >> setup.csh
+    fi
     if [[ -x "$fully_qualified_FC" ]]; then
+      echo "# Prepend the compiler path to the PATH environment variable:" | tee -a setup.sh setup.csh
       echo "if [[ -z \"\$PATH\" ]]; then                                                  " >> setup.sh
       echo "  export PATH=\"${compiler_install_root%/}/bin\"                              " >> setup.sh
       echo "else                                                                          " >> setup.sh
@@ -54,6 +64,7 @@ report_results()
       echo "set path = (\"${compiler_install_root%/}\"/bin \"\$path\")                    " >> setup.csh
     fi
     if [[ -d "${compiler_install_root%/}/lib" || -d "${compiler_install_root%/}/lib64" ]]; then
+      echo "# Prepend the compiler library paths to the LD_LIBRARY_PATH environment variable:" | tee -a setup.sh setup.csh
       compiler_lib_paths="${compiler_install_root%/}/lib64/:${compiler_install_root%/}/lib"
       echo "if [[ -z \"\$LD_LIBRARY_PATH\" ]]; then                                       " >> setup.sh
       echo "  export LD_LIBRARY_PATH=\"${compiler_lib_paths%/}\"                          " >> setup.sh
@@ -63,13 +74,14 @@ report_results()
       echo "set LD_LIBRARY_PATH = (\"${compiler_lib_paths%/}\"/bin \"\$LD_LIBRARY_PATH\") " >> setup.csh
     fi
     echo "                                                                       " >> setup.sh
-    if [[ -x "$cmake_install_path/cmake" ]]; then
+    if [[ -x "$mpi_install_root/bin/mpif90" ]]; then
+      echo "# Prepend the MPI path to the PATH environment variable:" | tee -a setup.sh setup.csh
       echo "if [[ -z \"\$PATH\" ]]; then                                         " >> setup.sh
-      echo "  export PATH=\"${cmake_install_path%/}/\"                            " >> setup.sh
+      echo "  export PATH=\"${mpi_install_root%/}/bin\"                        " >> setup.sh
       echo "else                                                                 " >> setup.sh
-      echo "  export PATH=\"${cmake_install_path%/}/\":\$PATH                     " >> setup.sh
+      echo "  export PATH=\"${mpi_install_root%/}/bin\":\$PATH                 " >> setup.sh
       echo "fi                                                                   " >> setup.sh
-      echo "set path = (\"${cmake_install_path%/}\"/\"\$path\")                      " >> setup.csh
+      echo "set path = (\"${mpi_install_root%/}\"/bin \"\$path\")              " >> setup.csh
     fi
     # In all likelihood, the following paths are only needed if OpenCoarrays built them,
     # In by far the most common such use case, they would have been built in a recursive
@@ -80,6 +92,7 @@ report_results()
     # user doesn't need them at all (e.g. there was no need to build gfortran from source).
     flex_install_path=$("${build_script}" -P flex)
     if [[ -x "$flex_install_path/bin/flex" ]]; then
+      echo "# Prepend the flex path to the PATH environment variable:" | tee -a setup.sh setup.csh
       echo "if [[ -z \"\$PATH\" ]]; then                                         " >> setup.sh
       echo "  export PATH=\"$flex_install_path/bin\"                             " >> setup.sh
       echo "else                                                                 " >> setup.sh
@@ -89,6 +102,7 @@ report_results()
     fi
     bison_install_path=$("${build_script}" -P bison)
     if [[ -x "$bison_install_path/bin/yacc" ]]; then
+      echo "# Prepend the bison path to the PATH environment variable:" | tee -a setup.sh setup.csh
       echo "if [[ -z \"\$PATH\" ]]; then                                         " >> setup.sh
       echo "  export PATH=\"$bison_install_path/bin\"                            " >> setup.sh
       echo "else                                                                 " >> setup.sh
@@ -98,6 +112,7 @@ report_results()
     fi
     m4_install_path=$("${build_script}" -P m4)
     if [[ -x "$m4_install_path/bin/m4" ]]; then
+      echo "# Prepend the m4 path to the PATH environment variable:" | tee -a setup.sh setup.csh
       echo "if [[ -z \"\$PATH\" ]]; then                                         " >> setup.sh
       echo "  export PATH=\"$m4_install_path/bin\"                               " >> setup.sh
       echo "else                                                                 " >> setup.sh
@@ -105,16 +120,9 @@ report_results()
       echo "fi                                                                   " >> setup.sh
       echo "set path = (\"$m4_install_path\"/bin \"\$path\")                      " >> setup.csh
     fi
-    if [[ -x "$mpi_install_root/bin/mpif90" ]]; then
-      echo "if [[ -z \"\$PATH\" ]]; then                                         " >> setup.sh
-      echo "  export PATH=\"${mpi_install_root%/}/bin\"                        " >> setup.sh
-      echo "else                                                                 " >> setup.sh
-      echo "  export PATH=\"${mpi_install_root%/}/bin\":\$PATH                 " >> setup.sh
-      echo "fi                                                                   " >> setup.sh
-      echo "set path = (\"${mpi_install_root%/}\"/bin \"\$path\")              " >> setup.csh
-    fi
     opencoarrays_install_path="${install_path}"
     if [[ -x "$opencoarrays_install_path/bin/caf" ]]; then
+      echo "# Prepend the OpenCoarrays path to the PATH environment variable:" | tee -a setup.sh setup.csh
       echo "if [[ -z \"\$PATH\" ]]; then                                         " >> setup.sh
       echo "  export PATH=\"${opencoarrays_install_path%/}/bin\"                     " >> setup.sh
       echo "else                                                                 " >> setup.sh
