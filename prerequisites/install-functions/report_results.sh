@@ -63,14 +63,6 @@ report_results()
       echo "set LD_LIBRARY_PATH = (\"${compiler_lib_paths%/}\"/bin \"\$LD_LIBRARY_PATH\") " >> setup.csh
     fi
     echo "                                                                       " >> setup.sh
-    if [[ -x "$mpi_install_root/bin/mpif90" ]]; then
-      echo "if [[ -z \"\$PATH\" ]]; then                                         " >> setup.sh
-      echo "  export PATH=\"${mpi_install_root%/}/bin\"                        " >> setup.sh
-      echo "else                                                                 " >> setup.sh
-      echo "  export PATH=\"${mpi_install_root%/}/bin\":\$PATH                 " >> setup.sh
-      echo "fi                                                                   " >> setup.sh
-      echo "set path = (\"${mpi_install_root%/}\"/bin \"\$path\")              " >> setup.csh
-    fi
     if [[ -x "$cmake_install_path/cmake" ]]; then
       echo "if [[ -z \"\$PATH\" ]]; then                                         " >> setup.sh
       echo "  export PATH=\"${cmake_install_path%/}/\"                            " >> setup.sh
@@ -112,6 +104,14 @@ report_results()
       echo "  export PATH=\"$m4_install_path/bin\":\$PATH                        " >> setup.sh
       echo "fi                                                                   " >> setup.sh
       echo "set path = (\"$m4_install_path\"/bin \"\$path\")                      " >> setup.csh
+    fi
+    if [[ -x "$mpi_install_root/bin/mpif90" ]]; then
+      echo "if [[ -z \"\$PATH\" ]]; then                                         " >> setup.sh
+      echo "  export PATH=\"${mpi_install_root%/}/bin\"                        " >> setup.sh
+      echo "else                                                                 " >> setup.sh
+      echo "  export PATH=\"${mpi_install_root%/}/bin\":\$PATH                 " >> setup.sh
+      echo "fi                                                                   " >> setup.sh
+      echo "set path = (\"${mpi_install_root%/}\"/bin \"\$path\")              " >> setup.csh
     fi
     opencoarrays_install_path="${install_path}"
     if [[ -x "$opencoarrays_install_path/bin/caf" ]]; then
