@@ -8,12 +8,11 @@ if ( ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "x86_64") AND ("${CMAKE_SYSTEM_NAME}" 
       message(WARNING "Attempting to use libfft_avx.a, which only works on recent x86 architectures.")
       set(fft_library ${CMAKE_CURRENT_SOURCE_DIR}/libfft_avx.a )
     endif()
-    add_executable( coarray_navier_stokes
-      EXCLUDE_FROM_ALL
+    caf_compile_executable( coarray_navier_stokes
       coarray-shear_coll.F90
       ${walltime_o}
+      ${fft_library}
     )
-    target_link_libraries(coarray_navier_stokes OpenCoarrays ${fft_library})
   endif()
 else()
   # Skip Navier-Stokes build until an appropriate FFT has been found.
