@@ -4,7 +4,7 @@ print_header()
   clear
   echo ""
   echo "*** By default, building OpenCoarrays requires CMake 3.4.0 or later,      ***"
-  echo "*** MPICH 3.1.4, and GCC Fortran (gfortran) 6.1.0 or later.  To see       ***"
+  echo "*** MPICH 3.2, and GCC Fortran (gfortran) 6.1.0 or later.  To see         ***"
   echo "*** options for forcing the use of older or alternative packages, execute ***"
   echo "*** this script with the -h flag.  This script will recursively traverse  ***"
   echo "*** the following dependency tree, asking permission to download, build,  ***"

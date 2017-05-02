@@ -199,7 +199,7 @@ acceptable prerequisite or reaching the end of a branch.
 ```text
 opencoarrays
 ├── cmake-3.4.0
-└── mpich-3.1.4
+└── mpich-3.2
     └── gcc-6.1.0
         ├── flex-2.6.0
         │   └── bison-3.0.4

@@ -1,7 +1,8 @@
 # Make the build directory, configure, and build
 # shellcheck disable=SC2154
 
-source ${OPENCOARRAYS_SRC_DIR}/prerequisites/build-functions/edit_GCC_download_prereqs_file_if_necessary.sh
+# shellcheck source=prerequisites/build-functions/edit_GCC_download_prereqs_file_if_necessary.sh
+source "${OPENCOARRAYS_SRC_DIR}/prerequisites/build-functions/edit_GCC_download_prereqs_file_if_necessary.sh"
 
 build_and_install()
 {
@@ -19,6 +20,12 @@ build_and_install()
   pushd "${build_path}"
 
   if [[ "${package_to_build}" != "gcc" ]]; then
+
+    if [[ "${package_to_build}" == "mpich" && "${version_to_build}" == "3.2" ]]; then
+      info "Patching MPICH 3.2 on Mac OS due to segfault bug (see http://lists.mpich.org/pipermail/discuss/2016-May/004764.html)."
+      sed 's/} MPID_Request ATTRIBUTE((__aligned__(32)));/} ATTRIBUTE((__aligned__(32))) MPID_Request;/g' \
+        "${download_path}/${package_source_directory}/src/include/mpiimpl.h"
+    fi
 
     info "Configuring ${package_to_build} ${version_to_build} with the following command:"
     info "FC=\"${FC:-'gfortran'}\" CC=\"${CC:-'gcc'}\" CXX=\"${CXX:-'g++'}\" \"${download_path}/${package_source_directory}\"/configure --prefix=\"${install_path}\""
