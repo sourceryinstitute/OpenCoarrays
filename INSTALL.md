@@ -41,7 +41,7 @@ script.
 
 [![homebrew](https://img.shields.io/homebrew/v/opencoarrays.svg?style=flat-square)](http://braumeister.org/formula/opencoarrays)
 
-OS X users may use the [Homebrew] or [MacPorts] package management
+macOS users may use the [Homebrew] or [MacPorts] package management
 systems to install OpenCoarrays.  We recommend [Homebrew].
 
 Basic Homebrew installation steps:
@@ -119,12 +119,14 @@ thread starting with [commit comment 20539810].
 
 ### Linux ###
 
-The [Arch Linux] distribution provides an [aur package] for installing
-OpenCoarrays.  Users of other Linux distributions may install the
-[Virtual machine] or use the [Installation Script].  Alternatively, if
-you desire to install using other Linux package Linux package
-management software such as [dnf] or [apt-get], please submit a
-feature request via our [Issues] page.
+Acces OpenCoarrays on Linux via any of the following package manaters or pre-installed copies:
+
+* The [linuxbrew] package manager installs OpenCoarrays on all Linux distributions.
+* Debian-based distributions such as Ubuntu provide an "open-coarrays" [APT package].
+* [Arch Linux] provides an [aur package]. 
+* [HPCLinux] includes a pre-installed copy of OpenCoarrays.
+
+[linuxbrew] does not require `sudo` privileges and will generally provide the most up-to-date OpenCoarrays release because linxubrew pulls directly from macOS homebrew, which updates automatically.
 
 [top]
 
@@ -386,6 +388,8 @@ export gcc_install_path=/desired/installation/destination
 
 [URLs]: #
 
+[APT package]: https://qa.debian.org/popcon.php?package=open-coarrays
+[HPCLinux]: http://www.paratools.com/hpclinux/
 [Brewfile]: https://github.com/sourceryinstitute/OpenCoarrays/blob/master/Brewfile
 [INSTALL.pdf]: https://md2pdf.herokuapp.com/sourceryinstitute/OpenCoarrays/blob/master/INSTALL.pdf
 [CMake]: https://cmake.org
