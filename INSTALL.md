@@ -119,7 +119,7 @@ thread starting with [commit comment 20539810].
 
 ### Linux ###
 
-Acces OpenCoarrays on Linux via any of the following package manaters or pre-installed copies:
+Acces OpenCoarrays on Linux via any of the following package managers or pre-installed copies:
 
 * The [linuxbrew] package manager installs OpenCoarrays on all Linux distributions.
 * Debian-based distributions such as Ubuntu provide an "open-coarrays" [APT package].
