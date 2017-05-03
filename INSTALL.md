@@ -119,21 +119,24 @@ thread starting with [commit comment 20539810].
 
 ### Linux ###
 
-Acces OpenCoarrays on Linux via any of the following package managers or pre-installed copies:
+Acces OpenCoarrays on Linux via any of the following package managers
+or pre-installed copies:
 
 * The [linuxbrew] package manager installs OpenCoarrays on all Linux distributions.
 * Debian-based distributions such as Ubuntu provide an "open-coarrays" [APT package].
-* [Arch Linux] provides an [aur package]. 
+* [Arch Linux] provides an [aur package].
 * [HPCLinux] includes a pre-installed copy of OpenCoarrays.
 
-[linuxbrew] does not require `sudo` privileges and will generally provide the most up-to-date OpenCoarrays release because linxubrew pulls directly from macOS homebrew, which updates automatically.
+[linuxbrew] does not require `sudo` privileges and will generally
+provide the most up-to-date OpenCoarrays release because linxubrew
+pulls directly from macOS homebrew, which updates automatically.
 
 [top]
 
 ### FreeBSD ###
 
 A FreeBSD Port is available for installing OpenCoarrays and can be
-located via [port search].  See the FreeBSD OpenCoarrays [port details] 
+located via [port search].  See the FreeBSD OpenCoarrays [port details]
 page for installation instructions.
 
 [top]
