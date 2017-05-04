@@ -18,15 +18,15 @@ matrix:
     - os: osx
       env:
         - BUILD_TYPE="CodeCoverage"
-          OSX_PACKAGES="gcc cmake"
+          OSX_PACKAGES="gcc@6 cmake"
     - os: osx
       env:
        - BUILD_TYPE="Release"
-         OSX_PACKAGES="gcc cmake"
+         OSX_PACKAGES="gcc@6 cmake"
     - os: osx
       env:
        - BUILD_TYPE="InstallScript"
-         OSX_PACKAGES="gcc"
+         OSX_PACKAGES="gcc@6"
     - &ubuntu
       os: linux
       sudo: false
