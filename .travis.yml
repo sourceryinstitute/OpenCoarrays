@@ -7,8 +7,8 @@ env:
     - MPICH_URL_HEAD="http://www.mpich.org/static/downloads/$MPICH_VER"
     - MPICH_URL_TAIL="mpich-${MPICH_VER}.tar.gz"
     - MPICH_DIR="$HOME/.local/usr/mpich"
-    - MPICH_BOT_URL_HEAD="https://github.com/sourceryinstitute/opencoarrays/files/452136/"
-    - MPICH_BOT_URL_TAIL="mpich-3.2_2.yosemite.bottle.1.tar.gz"
+    - MPICH_BOT_URL_HEAD="https://github.com/sourceryinstitute/OpenCoarrays/files/976766/"
+    - MPICH_BOT_URL_TAIL="mpich-3.2_3.yosemite.bottle.1.tar.gz"
     - FC=gfortran-6
     - CC=gcc-6
     - CXX=g++-6
