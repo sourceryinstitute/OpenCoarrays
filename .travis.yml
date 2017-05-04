@@ -7,8 +7,8 @@ env:
     - MPICH_URL_HEAD="http://www.mpich.org/static/downloads/$MPICH_VER"
     - MPICH_URL_TAIL="mpich-${MPICH_VER}.tar.gz"
     - MPICH_DIR="$HOME/.local/usr/mpich"
-    - MPICH_BOT_URL_HEAD="https://github.com/sourceryinstitute/opencoarrays/files/452136/"
-    - MPICH_BOT_URL_TAIL="mpich-3.2_2.yosemite.bottle.1.tar.gz"
+    - MPICH_BOT_URL_HEAD="https://github.com/sourceryinstitute/OpenCoarrays/files/976766/"
+    - MPICH_BOT_URL_TAIL="mpich-3.2_3.yosemite.bottle.1.tar.gz"
     - FC=gfortran-6
     - CC=gcc-6
     - CXX=g++-6
@@ -18,15 +18,15 @@ matrix:
     - os: osx
       env:
         - BUILD_TYPE="CodeCoverage"
-          OSX_PACKAGES="gcc cmake"
+          OSX_PACKAGES="gcc@6 cmake"
     - os: osx
       env:
        - BUILD_TYPE="Release"
-         OSX_PACKAGES="gcc cmake"
+         OSX_PACKAGES="gcc@6 cmake"
     - os: osx
       env:
        - BUILD_TYPE="InstallScript"
-         OSX_PACKAGES="gcc"
+         OSX_PACKAGES="gcc@6"
     - &ubuntu
       os: linux
       sudo: false
@@ -119,8 +119,10 @@ install:
         if ! [[ "$(brew ls --versions mpich)" ]]; then
           brew install --force-bottle mpich
         fi
-        mpif90 --version
-        mpicc --version
+        rm -rf /usr/local/opt/gcc || true
+        ln -s /usr/local/opt/gcc@6 /usr/local/opt/gcc # hack to get dynamic linker to find gcc 6 stuff
+        mpif90 --version || mpif90 -show
+        mpicc --version || mpicc -show
         cmake --version
       elif [[ "X$BUILD_TYPE" = "XInstallScript" ]]; then # uninstall some stuff if present
         [[ "$(brew ls --versions cmake)" ]] && brew rm cmake || true
