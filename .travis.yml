@@ -119,8 +119,12 @@ install:
         if ! [[ "$(brew ls --versions mpich)" ]]; then
           brew install --force-bottle mpich
         fi
-        mpif90 --version
-        mpicc --version
+        which gfortran || true
+        which gfortran-6 || true
+        which gcc || true
+        which gcc-6 || true
+        mpif90 --version || mpif90 -show
+        mpicc --version || mpicc -show
         cmake --version
       elif [[ "X$BUILD_TYPE" = "XInstallScript" ]]; then # uninstall some stuff if present
         [[ "$(brew ls --versions cmake)" ]] && brew rm cmake || true
