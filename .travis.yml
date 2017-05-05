@@ -1,5 +1,24 @@
 language: generic
 
+os: linux
+sudo: false
+cache:
+  apt: false
+  directories:
+    - "$CACHE"
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+      - george-edison55-precise-backports
+    packages:
+      - gcc-6
+      - gfortran-6
+      - g++-6
+      - binutils
+      - cmake-data
+      - cmake
+
 env:
   global:
     - CACHE="$HOME/.local"
@@ -12,6 +31,9 @@ env:
     - FC=gfortran-6
     - CC=gcc-6
     - CXX=g++-6
+  matrix:
+    - BUILD_TYPE="Release"
+    - BUILD_TYPE="CodeCoverage"
 
 matrix:
   include:
@@ -27,33 +49,8 @@ matrix:
       env:
        - BUILD_TYPE="InstallScript"
          OSX_PACKAGES="gcc@6"
-    - &ubuntu
-      os: linux
+    - os: linux
       sudo: false
-      env:
-        - BUILD_TYPE="CodeCoverage"
-      cache:
-        apt: false
-        directories:
-          - "$CACHE"
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - george-edison55-precise-backports
-          packages:
-            - gcc-6
-            - gfortran-6
-            - g++-6
-            - binutils
-            - cmake-data
-            - cmake
-    -
-      <<: *ubuntu
-      env:
-        - BUILD_TYPE="Release"
-    -
-      <<: *ubuntu
       env:
         - BUILD_TYPE="InstallScript"
       cache: false
