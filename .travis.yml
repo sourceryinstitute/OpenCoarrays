@@ -1,6 +1,8 @@
 language: generic
 
-os: linux
+os:
+  - osx
+  - linux
 sudo: false
 cache:
   apt: false
@@ -32,19 +34,11 @@ env:
     - CC=gcc-6
     - CXX=g++-6
   matrix:
-    - BUILD_TYPE="Release"
-    - BUILD_TYPE="CodeCoverage"
+    - BUILD_TYPE="Release" OSX_PACKAGES="gcc@6 cmake"
+    - BUILD_TYPE="CodeCoverage" OSX_PACKAGES="gcc@6 cmake"
 
 matrix:
   include:
-    - os: osx
-      env:
-        - BUILD_TYPE="CodeCoverage"
-          OSX_PACKAGES="gcc@6 cmake"
-    - os: osx
-      env:
-       - BUILD_TYPE="Release"
-         OSX_PACKAGES="gcc@6 cmake"
     - os: osx
       env:
        - BUILD_TYPE="InstallScript"
