@@ -7,7 +7,7 @@ env:
     - MPICH_URL_HEAD="http://www.mpich.org/static/downloads/$MPICH_VER"
     - MPICH_URL_TAIL="mpich-${MPICH_VER}.tar.gz"
     - MPICH_DIR="$HOME/.local/usr/mpich"
-    - MPICH_BOT_URL_HEAD="https://github.com/sourceryinstitute/OpenCoarrays/files/976766/"
+    - MPICH_BOT_URL_HEAD="https://github.com/sourceryinstitute/OpenCoarrays/files/979804/"
     - MPICH_BOT_URL_TAIL="mpich-3.2_3.yosemite.bottle.1.tar.gz"
     - FC=gfortran-6
     - CC=gcc-6
@@ -119,8 +119,6 @@ install:
         if ! [[ "$(brew ls --versions mpich)" ]]; then
           brew install --force-bottle mpich
         fi
-        rm -rf /usr/local/opt/gcc || true
-        ln -s /usr/local/opt/gcc@6 /usr/local/opt/gcc # hack to get dynamic linker to find gcc 6 stuff
         mpif90 --version || mpif90 -show
         mpicc --version || mpicc -show
         cmake --version
@@ -161,8 +159,8 @@ script:
       [[ -d "$HOME/opt" ]] || mkdir "$HOME/opt"
       [[ -d "$HOME/bin" ]] || mkdir "$HOME/bin"
       ln -fs "$(which gfortran-6)" "$HOME/bin/gfortran"
-      ln -fs "$(which gcc-6)" "$HOME/bin/gcc"
-      ln -fs "$(which g++-6)" "$HOME/bin/g++"
+      ln -fs "$(which ${CC})" "$HOME/bin/gcc"
+      ln -fs "$(which ${CXX})" "$HOME/bin/g++"
       export PATH="$PATH:$HOME/bin"
       ./install.sh --yes-to-all -i "$HOME/opt/opencoarrays" -j 4 -f "$HOME/bin/gfortran" -c "$HOME/bin/gcc" -C "$HOME/bin/g++"
       cd prerequisites/builds/opencoarrays/*
