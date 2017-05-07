@@ -7,7 +7,7 @@ set ( CMAKE_BUILD_TYPE "Release"
 set_property ( CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${CMAKE_CONFIGURATION_TYPES} )
 
 # Add option and check environment to determine if developer tests should be run
-if(ENV{OPENCOARRAYS_DEVELOPER})
+if(DEFINED ENV{OPENCOARRAYS_DEVELOPER})
   option(RUN_DEVELOPER_TESTS "Run tests intended only for developers" ON)
 else()
   option(RUN_DEVELOPER_TESTS "Run tests intended only for developers" OFF)
