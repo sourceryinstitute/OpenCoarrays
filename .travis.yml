@@ -25,6 +25,11 @@ matrix:
         - BUILD_TYPE="InstallScript"
           OSX_PACKAGES="gcc@6"
           GCC=6
+    - os: osx
+      env:
+        - OSX_PACKAGES="gcc cmake"
+          GCC=7
+          OPENCOARRAYS_DEVELOPER=ON
     - &ubuntu
       os: linux
       sudo: false
@@ -76,6 +81,12 @@ matrix:
             - gcc-6
             - gfortran-6
             - g++-6
+  allow_failures:
+    - os: osx
+      env:
+        - OSX_PACKAGES="gcc cmake"
+          GCC=7
+          OPENCOARRAYS_DEVELOPER=ON
 
 before_install:
   - export FC=gfortran-${GCC}
