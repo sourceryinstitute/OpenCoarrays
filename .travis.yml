@@ -19,6 +19,7 @@ env:
     - GCC=7 OSX_PACKAGES="gcc cmake"
 
 matrix:
+  fast_finish: true
   include:
     - os: osx
       env:
