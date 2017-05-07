@@ -83,7 +83,7 @@ set -o errtrace
 
 if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
   # shellcheck disable=SC2154
-  if [[ -v __usage ]]; then
+  if [[ "${__usage+x}" ]]; then
     __b3bp_tmp_source_idx=1
   fi
 fi
