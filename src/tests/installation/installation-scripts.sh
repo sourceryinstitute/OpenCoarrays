@@ -81,12 +81,23 @@
 
 set -o errtrace
 
+if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
+  # shellcheck disable=SC2154
+  if [[ -v __usage ]]; then
+    __b3bp_tmp_source_idx=1
+  fi
+fi
+
+# Set magic variables for current file, directory, os, etc.
+__dir="$(cd "$(dirname "${BASH_SOURCE[${__b3bp_tmp_source_idx:-0}]}")" && pwd)"
+__file="${__dir}/$(basename "${BASH_SOURCE[${__b3bp_tmp_source_idx:-0}]}")"
+
 # requires `set -o errtrace`
 __b3bp_err_report() {
-    local error_code
-    error_code=${?}
-    error "Error in ${__file} in function ${1} on line ${2}"
-    exit ${error_code}
+  local error_code
+  error_code=${?}
+  error "Error in ${__file} in function ${1} on line ${2}"
+  exit ${error_code}
 }
 # Uncomment the following line for always providing an error backtrace
 trap '__b3bp_err_report "${FUNCNAME:-.}" ${LINENO}' ERR
@@ -103,8 +114,8 @@ if [[ ! -f "${B3B_USE_CASE:-}/bootstrap.sh" ]]; then
   echo "Please set B3B_USE_CASE to the bash3boilerplate use-case directory path."
   exit 2
 else
-    # shellcheck source=../../../prerequisites/use-case/bootstrap.sh
-    source "${B3B_USE_CASE}/bootstrap.sh" "$@"
+  # shellcheck source=../../../prerequisites/use-case/bootstrap.sh
+  source "${B3B_USE_CASE}/bootstrap.sh" "$@"
 fi
 ### End of boilerplate -- start user edits below #########################
 
@@ -113,11 +124,10 @@ export __flag_present=1
 
 # Set up a function to call when receiving an EXIT signal to do some cleanup. Remove if
 # not needed. Other signals can be trapped too, like SIGINT and SIGTERM.
-function cleanup_before_exit () {
+function cleanup_before_exit() {
   info "Cleaning up. Done"
 }
 trap cleanup_before_exit EXIT # The signal is specified here. Could be SIGINT, SIGTERM etc.
-
 
 pushd "${OPENCOARRAYS_SRC_DIR}"/src/tests/installation
 
