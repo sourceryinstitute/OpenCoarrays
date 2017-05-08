@@ -1,37 +1,41 @@
+---
 language: generic
+
+os: osx
 
 env:
   global:
-    - CACHE="$HOME/.local"
+    - CACHE="${HOME}/.local"
     - MPICH_VER="3.2"
-    - MPICH_URL_HEAD="http://www.mpich.org/static/downloads/$MPICH_VER"
+    - MPICH_URL_HEAD="http://www.mpich.org/static/downloads/${MPICH_VER}"
     - MPICH_URL_TAIL="mpich-${MPICH_VER}.tar.gz"
-    - MPICH_DIR="$HOME/.local/usr/mpich"
-    - MPICH_BOT_URL_HEAD="https://github.com/sourceryinstitute/OpenCoarrays/files/976766/"
+    - MPICH_DIR="${HOME}/.local/usr/mpich"
+    - MPICH_GCC6_BOT_URL_HEAD="https://github.com/sourceryinstitute/OpenCoarrays/files/979804/"
+    - MPICH_GCC7_BOT_URL_HEAD="https://github.com/sourceryinstitute/OpenCoarrays/files/976779/"
     - MPICH_BOT_URL_TAIL="mpich-3.2_3.yosemite.bottle.1.tar.gz"
-    - FC=gfortran-6
-    - CC=gcc-6
-    - CXX=g++-6
+    - BUILD_TYPES="Release Debug RelWithDebInfo CodeCoverage"
+  matrix:
+    - GCC=6 OSX_PACKAGES="gcc@6 cmake"
+    - GCC=7 OSX_PACKAGES="gcc cmake"
 
 matrix:
+  fast_finish: true
   include:
     - os: osx
       env:
-        - BUILD_TYPE="CodeCoverage"
-          OSX_PACKAGES="gcc@6 cmake"
+        - BUILD_TYPE="InstallScript"
+          OSX_PACKAGES="gcc@6"
+          GCC=6
     - os: osx
       env:
-       - BUILD_TYPE="Release"
-         OSX_PACKAGES="gcc@6 cmake"
-    - os: osx
-      env:
-       - BUILD_TYPE="InstallScript"
-         OSX_PACKAGES="gcc@6"
+        - OSX_PACKAGES="gcc cmake"
+          GCC=7
+          OPENCOARRAYS_DEVELOPER=ON
     - &ubuntu
       os: linux
       sudo: false
       env:
-        - BUILD_TYPE="CodeCoverage"
+        - GCC=6
       cache:
         apt: false
         directories:
@@ -48,14 +52,27 @@ matrix:
             - binutils
             - cmake-data
             - cmake
-    -
-      <<: *ubuntu
-      env:
-        - BUILD_TYPE="Release"
+    # -
+    #   <<: *ubuntu
+    #   env:
+    #     - GCC=7
+    #   addons:
+    #     apt:
+    #       sources:
+    #         - ubuntu-toolchain-r-test
+    #         - george-edison55-precise-backports
+    #       packages:
+    #         - gcc-7
+    #         - gfortran-7
+    #         - g++-7
+    #         - binutils
+    #         - cmake-data
+    #         - cmake
     -
       <<: *ubuntu
       env:
         - BUILD_TYPE="InstallScript"
+          GCC=6
       cache: false
       addons:
         apt:
@@ -65,86 +82,92 @@ matrix:
             - gcc-6
             - gfortran-6
             - g++-6
+  allow_failures:
+    - os: osx
+      env:
+        - OSX_PACKAGES="gcc cmake"
+          GCC=7
+          OPENCOARRAYS_DEVELOPER=ON
 
 before_install:
+  - export FC=gfortran-${GCC}
+  - export CC=gcc-${GCC}
+  - export CXX=g++-${GCC}
+  - export MPICH_BOT_URL_HEAD=MPICH_GCC${GCC}_BOT_URL_HEAD
   - |
     set -o errexit
-    if [[ "$TRAVIS_TAG" ]] && [[ "X$TRAVIS_OS_NAME" = "Xosx" ]] && $TRAVIS_SECURE_ENV_VARS ; then
+    if [[ (-n ${TRAVIS_TAG}) && (${TRAVIS_OS_NAME} == osx) ]] && ${TRAVIS_SECURE_ENV_VARS} ; then
       brew update > /dev/null
       [[ "$(brew ls --versions gpg2)" ]] || brew install gpg2
       brew outdated gpg2 || brew upgrade gpg2
-      which openssl || brew install openssl
+      type -P openssl || brew install openssl
     fi
-    if ! [[ "$TRAVIS_TAG" ]] || ! $TRAVIS_SECURE_ENV_VARS ; then
+    if ! [[ "${TRAVIS_TAG}" ]] || ! ${TRAVIS_SECURE_ENV_VARS} ; then
       unset encrypted_ef4535c39461_key || true
       unset encrypted_ef4535c39461_iv || true
       rm subkey-328B3A0E-secret.asc{,.enc} || true
 
     fi
-    if [[ "$TRAVIS_TAG" ]] ; then
+    if [[ "${TRAVIS_TAG}" ]] ; then
       curl https://izaakbeekman.com/izaak.pubkey.txt | gpg --import
       git tag -v ${TRAVIS_TAG}
     fi
     set +o errexit
-  -
-  -
-  -
   - |
     set -o errexit
-    if [[ $TRAVIS ]] && [[ "X$TRAVIS_OS_NAME" = "Xosx" ]]; then
-      export PATH="$PATH:$HOME/Library/Python/2.7/bin"
+    if [[ (-n ${TRAVIS}) && (${TRAVIS_OS_NAME} == osx) ]]; then
+      export PATH="${PATH}:${HOME}/Library/Python/2.7/bin"
     else
-      [[ -d "$CACHE/bin" ]] || mkdir -p "$CACHE/bin"
-      [[ -d "$MPICH_DIR" ]] || mkdir -p "$MPICH_DIR"
-      export PATH="$CACHE/bin:$PATH"
-      $FC --version
-      $CC --version
-      $CXX --version
+      [[ -d "${CACHE}/bin" ]] || mkdir -p "${CACHE}/bin"
+      [[ -d "${MPICH_DIR}" ]] || mkdir -p "${MPICH_DIR}"
+      export PATH="${CACHE}/bin:${PATH}"
+      ${FC} --version
+      ${CC} --version
+      ${CXX} --version
     fi
     set +o errexit
 
 install:
   - |
     set -o errexit
-    if [[ $TRAVIS ]] && [[ "X$TRAVIS_OS_NAME" = "Xosx" ]]; then
+    if [[ (-n ${TRAVIS}) && (${TRAVIS_OS_NAME} == osx) ]]; then
       brew update > /dev/null
 
-      for pkg in $OSX_PACKAGES; do
-        [[ "$(brew ls --versions $pkg)" ]] || brew install --force-bottle $pkg
-        brew outdated $pkg || brew upgrade --force-bottle $pkg
+      for pkg in ${OSX_PACKAGES}; do
+        [[ "$(brew ls --versions ${pkg})" ]] || brew install --force-bottle ${pkg}
+        brew outdated ${pkg} || brew upgrade --force-bottle ${pkg}
       done
-      if ! [[ "$(brew ls --versions mpich)" ]] && [[ "X$BUILD_TYPE" != "XInstallScript" ]]; then
-        wget ${MPICH_BOT_URL_HEAD}${MPICH_BOT_URL_TAIL}
+      if [[ ${BUILD_TYPE} == InstallScript ]]; then # uninstall some stuff if present
+        brew uninstall --force --ignore-dependencies cmake || true
+        brew uninstall --force --ignore-dependencies mpich || true
+        brew uninstall --force --ignore-dependencies openmpi || true
+      else
+        wget "${!MPICH_BOT_URL_HEAD}${MPICH_BOT_URL_TAIL}"
         brew install --force-bottle ${MPICH_BOT_URL_TAIL}
         if ! [[ "$(brew ls --versions mpich)" ]]; then
           brew install --force-bottle mpich
         fi
-        rm -rf /usr/local/opt/gcc || true
-        ln -s /usr/local/opt/gcc@6 /usr/local/opt/gcc # hack to get dynamic linker to find gcc 6 stuff
-        mpif90 --version || mpif90 -show
-        mpicc --version || mpicc -show
-        cmake --version
-      elif [[ "X$BUILD_TYPE" = "XInstallScript" ]]; then # uninstall some stuff if present
-        [[ "$(brew ls --versions cmake)" ]] && brew rm cmake || true
-        [[ "$(brew ls --versions mpich)" ]] && brew rm mpich || true
-        [[ "$(brew ls --versions openmpi)" ]] && brew rm openmpi || true
       fi
-    elif [[ "X$BUILD_TYPE" != "XInstallScript" ]]; then # Ubuntu on Travis-CI, NOT testing install.sh
-      if ! ( [[ -x "$HOME/.local/bin/mpif90" ]] && [[ -x "$HOME/.local/bin/mpicc" ]] ); then
+      mpif90 --version || mpif90 -show || true
+      mpicc --version || mpicc -show || true
+      cmake --version || true
+
+    elif [[ ${BUILD_TYPE} != InstallScript ]]; then # Ubuntu on Travis-CI, NOT testing install.sh
+      if ! [[ -x "${HOME}/.local/bin/mpif90" && -x "${HOME}/.local/bin/mpicc" ]]; then
         # mpich install not cached
         # could use prerequisites/build instead...
         wget "${MPICH_URL_HEAD}/${MPICH_URL_TAIL}"
-        mv "$MPICH_URL_TAIL" "$MPICH_DIR/.."
-        pushd "$MPICH_DIR/.."
-        tar -xzvf "$MPICH_URL_TAIL"
+        mv "${MPICH_URL_TAIL}" "${MPICH_DIR}/.."
+        pushd "${MPICH_DIR}/.."
+        tar -xzvf "${MPICH_URL_TAIL}"
         cd "${MPICH_URL_TAIL%.tar.gz}"
-        ./configure --prefix="$MPICH_DIR"
+        ./configure --prefix="${MPICH_DIR}"
         make -j 4
         make install
         popd
-        for f in "$MPICH_DIR/bin/"*; do
-          if [[ -x "$f" ]]; then
-            ln -fs "$f" "$HOME/.local/bin/${f##*/}"
+        for f in "${MPICH_DIR}/bin/"*; do
+          if [[ -x "${f}" ]]; then
+            ln -fs "${f}" "${HOME}/.local/bin/${f##*/}"
           fi
         done
       fi
@@ -157,55 +180,55 @@ install:
 script:
   - |
     set -o errexit
-    if [[ "X$BUILD_TYPE" = "XInstallScript" ]]; then
-      [[ -d "$HOME/opt" ]] || mkdir "$HOME/opt"
-      [[ -d "$HOME/bin" ]] || mkdir "$HOME/bin"
-      ln -fs "$(which gfortran-6)" "$HOME/bin/gfortran"
-      ln -fs "$(which gcc-6)" "$HOME/bin/gcc"
-      ln -fs "$(which g++-6)" "$HOME/bin/g++"
-      export PATH="$PATH:$HOME/bin"
-      ./install.sh --yes-to-all -i "$HOME/opt/opencoarrays" -j 4 -f "$HOME/bin/gfortran" -c "$HOME/bin/gcc" -C "$HOME/bin/g++"
+    if [[ ${BUILD_TYPE} == InstallScript ]]; then
+      ./install.sh --yes-to-all -i "${HOME}/opencoarrays" -j 4 -f "$(type -P "${FC}")" -c "$(type -P "${CC}")" -C "$(type -P "${CXX}")"
       cd prerequisites/builds/opencoarrays/*
       ../../../installations/cmake/*/bin/ctest --output-on-failure --schedule-random --repeat-until-fail 7
       cd -
     else
       mkdir cmake-build
-      cd cmake-build
-      cmake -DCMAKE_INSTALL_PREFIX:PATH="$HOME/OpenCoarrays" -DCMAKE_BUILD_TYPE="$BUILD_TYPE" ..
-      make -j 4
-      ctest --output-on-failure --schedule-random --repeat-until-fail 7
-      make install
-      cd ..
+      for BUILD_TYPE in ${BUILD_TYPES}; do
+        rm -rf cmake-build/* || true
+        cd cmake-build
+        cmake -DCMAKE_INSTALL_PREFIX:PATH="${HOME}/OpenCoarrays" -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" ..
+        make -j 4
+        ctest --output-on-failure --schedule-random --repeat-until-fail 7
+        make install
+        make uninstall
+        cd ..
+      done
     fi
     set +o errexit
 
 after_script:
   - |
-    if [ "$TRAVIS_TAG" ]; then
-      if [[ "v$TRAVIS_TAG" != "v$(sed -n 's/\([0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}\)/\1/p' .VERSION)" ]]; then
+    set -o errexit
+    if [[ "${TRAVIS_TAG}" ]]; then
+      if [[ "v${TRAVIS_TAG}" != "v$(sed -n 's/\([0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}\)/\1/p' .VERSION)" ]]; then
         echo "ERROR: You are trying to tag a new release but have a version missmatch in \`.VERSION\`"
         false # throw an error
       fi
     fi
+    set +o errexit
 
 after_success:
   - find . -name '*.gcno' -print
-  - gcov-6 --version
-  - bash <(curl -s https://codecov.io/bash) -x $(which gcov-6)
+  - gcov-${GCC} --version
+  - bash <(curl -s https://codecov.io/bash) -x $(type -P gcov-${GCC})
 
 # before_deploy:
 #   - git archive -v --prefix "OpenCoarrays-${TRAVIS_TAG}/" -o "OpenCoarrays-${TRAVIS_TAG}.tar.gz" ${TRAVIS_TAG}
 #   - |
 #     echo '# To verify cryptographic checksums `shasum -c opencoarrays-'"${TRAVIS_TAG}"'-SHA256.txt` on Mac OS X,' > "opencoarrays-${TRAVIS_TAG}-SHA256.txt
 #     echo '# `sha256sum -c  opencoarrays-'"${TRAVIS_TAG}"'-SHA256.txt` on Linux.' >> "opencoarrays-${TRAVIS_TAG}-SHA256.txt
-#     if [[ "X$(uname -s)" == "XDarwin" ]]; then
+#     if [[ $(uname -s) == Darwin ]]; then
 #       shasum -a 256 "OpenCoarrays-${TRAVIS_TAG}.tar.gz" >> "opencoarrays-${TRAVIS_TAG}-SHA256.txt
 #     else
 #       sha256sum  "OpenCoarrays-${TRAVIS_TAG}.tar.gz" >> "opencoarrays-${TRAVIS_TAG}-SHA256.txt
 #     fi
 #   - |
 #     set -o errexit
-#     openssl aes-256-cbc -K $encrypted_ef4535c39461_key -iv $encrypted_ef4535c39461_iv -in subkey-328B3A0E-secret.asc.enc -out ./subkey-328B3A0E-secret.asc -d
+#     openssl aes-256-cbc -K ${encrypted_ef4535c39461_key} -iv ${encrypted_ef4535c39461_iv} -in subkey-328B3A0E-secret.asc.enc -out ./subkey-328B3A0E-secret.asc -d
 #     gpg --allow-secret-key-import --import ./subkey-328B3A0E-secret.asc && rm subkey-328B3A0E-secret.asc
 #     rm subkey-328B3A0E-secret.* || true
 #     unset encrypted_ef4535c39461_key || true
