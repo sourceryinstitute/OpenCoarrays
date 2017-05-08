@@ -64,7 +64,7 @@ program async_comp_alloc
 
     block 
       integer :: allocating_image, test_image
-      character(len=8) :: image_number
+      character(len=20) :: image_number
 
       loop_over_all_image_numbers: do allocating_image = 1, np
         !! Check that all allocations have been performed up to allocating_image and

@@ -599,14 +599,26 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
     mpi_token->desc = NULL;
 
 #if MPI_VERSION >= 3
-  if (type != CAF_REGTYPE_COARRAY_ALLOC_REGISTER_ONLY)
+  if (type == CAF_REGTYPE_COARRAY_ALLOC_REGISTER_ONLY)
     {
-      // Note, MPI_Win_allocate implicitly synchronizes.
-      MPI_Win_allocate (actual_size, 1, MPI_INFO_NULL, CAF_COMM_WORLD, &mem, p);
+      MPI_Win_create_dynamic (MPI_INFO_NULL, CAF_COMM_WORLD, p);
+      fprintf(stderr, "%d/%d: Register win = %p\n", caf_this_image, caf_num_images,
+              *p);
+//      CAF_Win_lock_all (*p);
+    }
+  else if (type == CAF_REGTYPE_COARRAY_ALLOC_ALLOCATE_ONLY)
+    {
+      mem = malloc (actual_size);
+      MPI_Win_attach (*p, mem, actual_size);
+      fprintf(stderr, "%d/%d: Attach mem to win = %p\n", caf_this_image, caf_num_images,
+              *p);
       CAF_Win_lock_all (*p);
     }
   else
-    mem = NULL;
+    {
+      MPI_Win_allocate (actual_size, 1, MPI_INFO_NULL, CAF_COMM_WORLD, &mem, p);
+      CAF_Win_lock_all (*p);
+    }
 #else // MPI_VERSION
   MPI_Alloc_mem(actual_size, MPI_INFO_NULL, &mem);
   MPI_Win_create(mem, actual_size, 1, MPI_INFO_NULL, CAF_COMM_WORLD, p);
@@ -825,19 +837,22 @@ PREFIX (deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len
           p = TOKEN(*token);
           CAF_Win_unlock_all(*p);
 #ifdef GCC_GE_7
-	  mpi_caf_token_t *mpi_token = *(mpi_caf_token_t **)token;
-	  if (mpi_token->local_memptr)
-	    {
-	      MPI_Win_free(p);
-	      mpi_token->local_memptr = NULL;
-	    }
-	  if ((*(mpi_caf_token_t **)token)->desc
-	      && type != CAF_DEREGTYPE_COARRAY_DEALLOCATE_ONLY)
-	    {
-	      CAF_Win_unlock_all(*(mpi_token->desc));
-	      MPI_Win_free (mpi_token->desc);
-	      free (mpi_token->desc);
-	    }
+          mpi_caf_token_t *mpi_token = *(mpi_caf_token_t **)token;
+          if (mpi_token->local_memptr)
+            {
+              if (type != CAF_DEREGTYPE_COARRAY_DEALLOCATE_ONLY)
+                MPI_Win_free (p);
+              else
+                MPI_Win_detach (*p, mpi_token->local_memptr);
+              mpi_token->local_memptr = NULL;
+            }
+          if ((*(mpi_caf_token_t **)token)->desc
+              && type != CAF_DEREGTYPE_COARRAY_DEALLOCATE_ONLY)
+            {
+              CAF_Win_unlock_all(*(mpi_token->desc));
+              MPI_Win_free (mpi_token->desc);
+              free (mpi_token->desc);
+            }
 #else
           MPI_Win_free(p);
 #endif
@@ -2968,12 +2983,125 @@ PREFIX(sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
   error_stop (1);
 }
 
-
 int
 PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
 {
-  fprintf (stderr, "COARRAY ERROR: caf_is_present() not implemented yet ");
-  error_stop (1);
+  const char unsupportedRefType[] = "Unsupported ref-type in caf_is_present().";
+  MPI_Errhandler oldErr;
+  mpi_caf_token_t *mpi_token = (mpi_caf_token_t *)token;
+  size_t i;
+  ptrdiff_t offset = 0;
+  void *local_memptr = mpi_token->local_memptr;
+  gfc_descriptor_t *src;
+  gfc_max_dim_descriptor_t src_desc_data, primary_src_desc_data;
+  caf_reference_t *riter = refs;
+  enum { COMP_REF, ARR_REF } last_ref;
+
+  GET_REMOTE_DESC (mpi_token, src, primary_src_desc_data, image_index - 1);
+  while (riter)
+    {
+      switch (riter->type)
+	{
+	case CAF_REF_COMPONENT:
+	  if (riter->u.c.caf_token_offset)
+	    {
+	      mpi_token = *(mpi_caf_token_t**)
+				   (local_memptr + riter->u.c.caf_token_offset);
+	      local_memptr = mpi_token->local_memptr;
+	      GET_REMOTE_DESC (mpi_token, src, src_desc_data, image_index - 1);
+              offset = 0;
+	    }
+	  else
+	    {
+	      local_memptr += riter->u.c.offset;
+	      src = (gfc_descriptor_t *)local_memptr;
+              offset += riter->u.c.offset;
+	    }
+          last_ref = COMP_REF;
+	  break;
+	case CAF_REF_ARRAY:
+	  for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
+	    {
+	      switch (riter->u.a.mode[i])
+		{
+		case CAF_ARR_REF_FULL:
+		  /* The memptr stays unchanged when ref'ing the first element
+		     in a dimension.  */
+		  break;
+		case CAF_ARR_REF_SINGLE:
+                  local_memptr += (riter->u.a.dim[i].s.start
+                                   - src->dim[i].lower_bound)
+                                  * src->dim[i]._stride
+                                  * riter->item_size;
+		  break;
+                case CAF_ARR_REF_VECTOR:
+                case CAF_ARR_REF_RANGE:
+		case CAF_ARR_REF_OPEN_END:
+		case CAF_ARR_REF_OPEN_START:
+                  /* Intentionally fall through, because these are not suported
+                   * here. */
+		default:
+		  caf_runtime_error (unsupportedRefType, NULL, NULL, 0);
+		  return false;
+		}
+	    }
+          last_ref = ARR_REF;
+	  break;
+	case CAF_REF_STATIC_ARRAY:
+	  for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
+	    {
+	      switch (riter->u.a.mode[i])
+		{
+		case CAF_ARR_REF_FULL:
+		  /* The memptr stays unchanged when ref'ing the first element
+		     in a dimension.  */
+		  break;
+		case CAF_ARR_REF_SINGLE:
+		  local_memptr += riter->u.a.dim[i].s.start
+		      * riter->u.a.dim[i].s.stride
+		      * riter->item_size;
+		  break;
+                case CAF_ARR_REF_VECTOR:
+                case CAF_ARR_REF_RANGE:
+		case CAF_ARR_REF_OPEN_END:
+		case CAF_ARR_REF_OPEN_START:
+		default:
+		  caf_runtime_error (unsupportedRefType, NULL, NULL, 0);
+		  return false;
+		}
+            }
+          last_ref = COMP_REF;
+	  break;
+	default:
+	  caf_runtime_error (unsupportedRefType, NULL, NULL, 0);
+	  return false;
+	}
+      riter = riter->next;
+    }
+
+  if (last_ref == COMP_REF)
+    {
+      MPI_Win win = *TOKEN (mpi_token);
+      char dummy;
+      char errmsg[200];
+      int ierr, len;
+      len = 200;
+
+      MPI_Win_get_errhandler (win, &oldErr);
+      MPI_Win_set_errhandler (win, MPI_ERRORS_RETURN);
+
+      ierr = MPI_Get (&dummy, 1, MPI_BYTE, image_index - 1, offset, 1, MPI_BYTE,
+                      win);
+      MPI_Error_string(ierr, errmsg, &len);
+      fprintf(stderr, "%d/%d: caf_is_present(): offset = %d, ierr =%d, %s\n", caf_this_image,
+              caf_num_images, offset, ierr, errmsg);
+      MPI_Win_set_errhandler (win, oldErr);
+      return ierr == MPI_SUCCESS;
+    }
+  else
+    {
+      return src->base_addr != NULL;
+    }
 }
 #endif
 
