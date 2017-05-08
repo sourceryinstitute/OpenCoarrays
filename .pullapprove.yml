@@ -1,5 +1,6 @@
+---
 version: 2
-extends: Default # see https://pullapprove.com/sourceryinstitute/  
+extends: Default  # see https://pullapprove.com/sourceryinstitute/
 groups:
   # These have all the group_defaults
   Maintainers:
@@ -13,9 +14,9 @@ groups:
         - caffeinate-opencoarrays
     teams:
       - team-opencoarrays
-        # https://github.com/orgs/sourceryinstitute/teams/team-opencoarrays
+      # https://github.com/orgs/sourceryinstitute/teams/team-opencoarrays
   OpenCoarrays:
-    # Whenever someone has a PR, on any branch require at least 1 
+    # Whenever someone has a PR, on any branch require at least 1
     # collaborator to explicitly review it
     required: 1
     users: all
