@@ -14,6 +14,10 @@ else()
 endif()
 mark_as_advanced(RUN_DEVELOPER_TESTS)
 
+if( NOT DEFINED ENV{OPENCOARRAYS_DEVELOPER})
+  set ( ENV{OPENCOARRAYS_DEVELOPER} FALSE )
+endif()
+
 # Name project and specify source languages
 # Parse version from .VERSION file so that more info can be added and easier to get from scripts
 file( STRINGS ".VERSION" OpenCoarraysVersion
@@ -476,7 +480,7 @@ if(opencoarrays_aware_compiler)
     add_mpi_test(register_alloc_comp_1 2 ${tests_root}/unit/init_register/register_alloc_comp_1)
     add_mpi_test(register_alloc_comp_2 2 ${tests_root}/unit/init_register/register_alloc_comp_2)
     add_mpi_test(register_alloc_comp_3 2 ${tests_root}/unit/init_register/register_alloc_comp_3)
-    if (RUN_DEVELOPER_TESTS)
+    if (RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER})
       message ( STATUS "Running Developer tests is enabled." )
       add_mpi_test(async_comp_alloc 6 ${tests_root}/unit/init_register/async_comp_alloc)
       # Timeout async_comp_alloc test after 3 seconds to progess past the known failure
@@ -519,7 +523,7 @@ if(opencoarrays_aware_compiler)
     # GFortran PR 78505 only fixed on trunk/gcc 7
     add_mpi_test(source-alloc-no-sync 8 ${tests_root}/regression/reported/source-alloc-sync)
   endif()
-  if (RUN_DEVELOPER_TESTS)
+  if (RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER})
     add_mpi_test(convert-before-put 3 ${tests_root}/regression/reported/convert-before-put)
   endif()
   add_mpi_test(event-post 3 ${tests_root}/regression/reported/event-post)
