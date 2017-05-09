@@ -29,7 +29,7 @@ usage()
     echo "      * be the only Fortran source file in the argument list,"
     echo "      * have a name of the form *.f90, *.F90, *.f, or *.F. "
     echo "   c. The environment variable 'CAFC' must be empty or point to a Fortran compiler/linker. "
-    echo "   d. If 'CAFC' is empty, a default value of 'mpif90' is used. "
+    echo "   d. If 'CAFC' is empty, a default value of 'mpifort' is used. "
     echo ""
     echo " 2. With non-OCA CAF compilers (Intel or Cray),"
     echo "   a. Observe restrictions 1a-d above."
@@ -60,8 +60,8 @@ if [ $# == 0 ]; then
   exit 1
 fi
 
-# Default to "mpif90" Fortran compiler if environment variable CAFC is empty or unset:
-CAFC=${CAFC:-mpif90}
+# Default to "mpifort" Fortran compiler if environment variable CAFC is empty or unset:
+CAFC=${CAFC:-mpifort}
 
 # TODO -- refactor this script to use the bash3boilerplate use case
 max_arguments=100
