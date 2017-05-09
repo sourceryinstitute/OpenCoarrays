@@ -11,7 +11,7 @@ report_results()
 
   type_MPIFC=`type ${MPIFC}`
   fully_qualified_MPIFC="/${type_MPIFC#*/}"
-  mpi_install_root="${fully_qualified_MPIFC%%bin/mpif90*}"
+  mpi_install_root="${fully_qualified_MPIFC%%bin/mpifort*}"
 
   type_CMAKE=`type ${CMAKE}`
   fully_qualified_CMAKE="/${type_CMAKE#*/}"
@@ -63,7 +63,7 @@ report_results()
       echo "set LD_LIBRARY_PATH = (\"${compiler_lib_paths%/}\"/bin \"\$LD_LIBRARY_PATH\") " >> setup.csh
     fi
     echo "                                                                       " >> setup.sh
-    if [[ -x "$mpi_install_root/bin/mpif90" ]]; then
+    if [[ -x "$mpi_install_root/bin/mpifort" ]]; then
       echo "if [[ -z \"\$PATH\" ]]; then                                         " >> setup.sh
       echo "  export PATH=\"${mpi_install_root%/}/bin\"                        " >> setup.sh
       echo "else                                                                 " >> setup.sh

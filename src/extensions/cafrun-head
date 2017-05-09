@@ -32,4 +32,4 @@
 #    1. The only argument is either an informational flag or a CAF executable
 #       file.
 #    2. The environment variable "FC" is used to determine the identity fo the Fortran compiler/linker.
-#    3. If "FC" is empty, a default value of "mpif90" is used.
+#    3. If "FC" is empty, a default value of "mpifort" is used.

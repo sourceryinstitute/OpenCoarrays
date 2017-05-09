@@ -29,7 +29,7 @@ if ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
     "in a manner such as\n"
     "  $ mkdir build-opencarrays\n"
     "  $ cd build-opencoarrays\n"
-    "  $ CC=mpicc FC=mpif90 cmake <path-to-opencoarrays-source-directory> -DCMAKE_INSTALL_PREFIX=<path-to-install-directory>\n"
+    "  $ CC=mpicc FC=mpifort cmake <path-to-opencoarrays-source-directory> -DCMAKE_INSTALL_PREFIX=<path-to-install-directory>\n"
     "\nsubstituting the appropriate syntax for your shell (the above line assumes the bash shell)."
     )
 endif()
@@ -136,7 +136,7 @@ endif()
 # Find MPI and set some flags so that FC and CC can point to gfortran and gcc
 #----------------------------------------------------------------------------
 
-# If the user passes FC=mpif90 etc. check and prefer that location
+# If the user passes FC=mpifort etc. check and prefer that location
 get_filename_component( FTN_COMPILER_NAME "${CMAKE_Fortran_COMPILER}"
   NAME )
 get_filename_component( C_COMPILER_NAME "${CMAKE_C_COMPILER}"
@@ -156,7 +156,7 @@ endif()
 find_package( MPI )
 
 if ( (NOT MPI_C_FOUND) OR (NOT MPI_Fortran_FOUND) )
-  find_program (MY_MPI_EXEC NAMES mpirun mpiexec lamexec srun
+  find_program (MY_MPI_EXEC NAMES mpiexec mpiexec lamexec srun
     PATHS "${CMAKE_SOURCE_DIR/prerequisites/installations/mpich/3.1.4}" "${CMAKE_SOURCE_DIR}/prerequisites/installations/mpich/*" ENV PATH
     HINTS "${FTN_COMPILER_DIR}" "${C_COMPILER_DIR}"
     PATH_SUFFIXES bin)

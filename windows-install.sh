@@ -240,7 +240,7 @@ else
     sudo apt-get install gfortran
   fi
   
-  if ! type mpif90 >& /dev/null; then
+  if ! type mpifort >& /dev/null; then
     sudo apt-get install mpich
   fi
 

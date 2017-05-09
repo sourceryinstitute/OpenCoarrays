@@ -24,10 +24,10 @@ function(generate_test_script base_name num_images)
     # automatically when the script wraps an OpenCoarrays-aware compiler
     file(APPEND
       "${harness}"
-      "FC=mpif90 ${CMAKE_INSTALL_PREFIX}/bin/caf ${source} -o ${executable} -I${CMAKE_BINARY_DIR}/mod -DUSE_EXTENSIONS\n"
+      "FC=mpifort ${CMAKE_INSTALL_PREFIX}/bin/caf ${source} -o ${executable} -I${CMAKE_BINARY_DIR}/mod -DUSE_EXTENSIONS\n"
     )
   else()
-    file(APPEND "${harness}" "FC=mpif90 ${CMAKE_INSTALL_PREFIX}/bin/caf ${source} -o ${executable} -DUSE_EXTENSIONS\n")
+    file(APPEND "${harness}" "FC=mpifort ${CMAKE_INSTALL_PREFIX}/bin/caf ${source} -o ${executable} -DUSE_EXTENSIONS\n")
   endif()
   file(APPEND "${harness}" "${CMAKE_INSTALL_PREFIX}/bin/cafrun -np ${num_images} ./${executable}\n")
   file( INSTALL "${harness}"

@@ -119,7 +119,7 @@ install:
         if ! [[ "$(brew ls --versions mpich)" ]]; then
           brew install --force-bottle mpich
         fi
-        mpif90 --version
+        mpifort --version
         mpicc --version
         cmake --version
       elif [[ "X$BUILD_TYPE" = "XInstallScript" ]]; then # uninstall some stuff if present
@@ -128,7 +128,7 @@ install:
         [[ "$(brew ls --versions openmpi)" ]] && brew rm openmpi || true
       fi
     elif [[ "X$BUILD_TYPE" != "XInstallScript" ]]; then # Ubuntu on Travis-CI, NOT testing install.sh
-      if ! ( [[ -x "$HOME/.local/bin/mpif90" ]] && [[ -x "$HOME/.local/bin/mpicc" ]] ); then
+      if ! ( [[ -x "$HOME/.local/bin/mpifort" ]] && [[ -x "$HOME/.local/bin/mpicc" ]] ); then
         # mpich install not cached
         # could use prerequisites/build instead...
         wget "${MPICH_URL_HEAD}/${MPICH_URL_TAIL}"
@@ -146,7 +146,7 @@ install:
           fi
         done
       fi
-      mpif90 --version
+      mpifort --version
       mpicc --version
       cmake --version
     fi

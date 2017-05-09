@@ -11,7 +11,7 @@ export TAU_CALLPATH_DEPTH=100
 #export TAU_SAMPLING=1
 
 echo "Running the code:"
-mpirun -np 4 ./burgers
+mpiexec -np 4 ./burgers
 
 echo "Running the pprof command:"
 pprof

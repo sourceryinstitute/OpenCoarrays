@@ -38,11 +38,11 @@ compiler=gnu
 ifeq ($(compiler),gnu)
   FC=gfortran
   CC=gcc
-  MPFC = mpif90
+  MPFC = mpifort
   MPICC = mpicc
   FFLAGS_EXTRA = -fcoarray=lib
   MPI_EXTRA_FLAGS = -Wall -Wextra -Wno-error=cpp -Wno-error=unused-parameter -DSTRIDED#-DNONBLOCKING_PUT -DCAF_MPI_LOCK_UNLOCK
-  MPI_RUN = mpirun -np 2
+  MPI_EXEC = mpiexec -np 2
 else
   ifeq ($(compiler),cray)
     FC=ftn
@@ -71,4 +71,4 @@ GASNET_CFLAGS += # -DSTRIDED
 GASNET_PATH =
 GASNET_MAK = $(GASNET_PATH)/GASNet-1.22.4/smp-conduit/smp-par.mak
 GASNET_LDFLAGS +=$(GASNET_LIBS)
-GASNET_RUN = mpirun -np 2
+GASNET_RUN = mpiexec -np 2
