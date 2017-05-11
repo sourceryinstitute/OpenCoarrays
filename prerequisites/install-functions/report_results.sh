@@ -15,7 +15,7 @@ report_results()
 
   type_CMAKE=`type ${CMAKE}`
   fully_qualified_CMAKE="/${type_CMAKE#*/}"
-  cmake_install_path="${fully_qualified_CMAKE%%/cmake*}"
+  cmake_install_path="${fully_qualified_CMAKE%%bin/cmake*}"
 
   # Report installation success or failure and record locations for software stack:
   if [[ -x "${install_path%/}/bin/caf" && -x "${install_path%/}/bin/cafrun" ]]; then
@@ -45,14 +45,14 @@ report_results()
     echo "# Execute this script via the following command:                                " | tee -a setup.csh setup.sh
     echo "# source ${install_path%/}/setup.sh                                             " | tee -a setup.csh setup.sh
     echo "                                                                                " | tee -a setup.csh setup.sh
-    if [[ -x "$cmake_install_path/cmake" ]]; then
+    if [[ -x "${cmake_install_path}/bin/cmake" ]]; then
       echo "# Prepend the CMake path to the PATH environment variable:" | tee -a setup.sh setup.csh
       echo "if [[ -z \"\$PATH\" ]]; then                                         " >> setup.sh
-      echo "  export PATH=\"${cmake_install_path%/}/\"                            " >> setup.sh
+      echo "  export PATH=\"${cmake_install_path%/}/bin\"                        " >> setup.sh
       echo "else                                                                 " >> setup.sh
-      echo "  export PATH=\"${cmake_install_path%/}/\":\$PATH                     " >> setup.sh
+      echo "  export PATH=\"${cmake_install_path%/}/bin\":\$PATH                 " >> setup.sh
       echo "fi                                                                   " >> setup.sh
-      echo "set path = (\"${cmake_install_path%/}\"/\"\$path\")                      " >> setup.csh
+      echo "set path = (\"${cmake_install_path%/}\"/bin \"\$path\")              " >> setup.csh
     fi
     if [[ -x "$fully_qualified_FC" ]]; then
       echo "# Prepend the compiler path to the PATH environment variable:" | tee -a setup.sh setup.csh
