@@ -391,6 +391,7 @@ export gcc_install_path=/desired/installation/destination
 
 [URLs]: #
 
+[linuxbrew]: http://linuxbrew.sh
 [APT package]: https://qa.debian.org/popcon.php?package=open-coarrays
 [HPCLinux]: http://www.paratools.com/hpclinux/
 [Brewfile]: https://github.com/sourceryinstitute/OpenCoarrays/blob/master/Brewfile
