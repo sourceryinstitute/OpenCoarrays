@@ -17,6 +17,7 @@ Download this file as a PDF document
   * [macOS]
   * [Windows]
   * [Linux]
+  * [FreeBSD]
   * [Virtual machine]
   * [Installation Script]
 * [Advanced Installation from Source]
@@ -40,7 +41,7 @@ script.
 
 [![homebrew](https://img.shields.io/homebrew/v/opencoarrays.svg?style=flat-square)](http://braumeister.org/formula/opencoarrays)
 
-OS X users may use the [Homebrew] or [MacPorts] package management
+macOS users may use the [Homebrew] or [MacPorts] package management
 systems to install OpenCoarrays.  We recommend [Homebrew].
 
 Basic Homebrew installation steps:
@@ -118,12 +119,25 @@ thread starting with [commit comment 20539810].
 
 ### Linux ###
 
-The [Arch Linux] distribution provides an [aur package] for installing
-OpenCoarrays.  Users of other Linux distributions may install the
-[Virtual machine] or use the [Installation Script].  Alternatively, if
-you desire to install using other Linux package Linux package
-management software such as [dnf] or [apt-get], please submit a
-feature request via our [Issues] page.
+Acces OpenCoarrays on Linux via any of the following package managers
+or pre-installed copies:
+
+* The [linuxbrew] package manager installs OpenCoarrays on all Linux distributions.
+* Debian-based distributions such as Ubuntu provide an "open-coarrays" [APT package].
+* [Arch Linux] provides an [aur package].
+* [HPCLinux] includes a pre-installed copy of OpenCoarrays.
+
+[linuxbrew] does not require `sudo` privileges and will generally
+provide the most up-to-date OpenCoarrays release because linxubrew
+pulls directly from macOS homebrew, which updates automatically.
+
+[top]
+
+### FreeBSD ###
+
+A FreeBSD Port is available for installing OpenCoarrays and can be
+located via [port search].  See the FreeBSD OpenCoarrays [port details]
+page for installation instructions.
 
 [top]
 
@@ -199,7 +213,7 @@ acceptable prerequisite or reaching the end of a branch.
 ```text
 opencoarrays
 ├── cmake-3.4.0
-└── mpich-3.1.4
+└── mpich-3.2
     └── gcc-6.1.0
         ├── flex-2.6.0
         │   └── bison-3.0.4
@@ -360,6 +374,7 @@ export gcc_install_path=/desired/installation/destination
 [macOS]: #macos
 [Windows]: #windows
 [Linux]: #linux
+[FreeBSD]: #freebsd
 [Virtual machine]: #virtual-machine
 [Installation Script]: #installation-script
 
@@ -376,6 +391,9 @@ export gcc_install_path=/desired/installation/destination
 
 [URLs]: #
 
+[linuxbrew]: http://linuxbrew.sh
+[APT package]: https://qa.debian.org/popcon.php?package=open-coarrays
+[HPCLinux]: http://www.paratools.com/hpclinux/
 [Brewfile]: https://github.com/sourceryinstitute/OpenCoarrays/blob/master/Brewfile
 [INSTALL.pdf]: https://md2pdf.herokuapp.com/sourceryinstitute/OpenCoarrays/blob/master/INSTALL.pdf
 [CMake]: https://cmake.org
@@ -402,3 +420,5 @@ export gcc_install_path=/desired/installation/destination
 [commit comment 20539810]: https://github.com/sourceryinstitute/OpenCoarrays/commit/26e99919fe732576f7277a0e1b83f43cc7c9d749#commitcomment-20539810
 [Homebrew]: https://brew.sh
 [dnf]: https://github.com/rpm-software-management/dnf
+[port details]: http://www.freshports.org/lang/opencoarrays
+[port search]: https://www.freebsd.org/cgi/ports.cgi?query=opencoarrays

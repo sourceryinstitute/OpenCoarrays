@@ -23,7 +23,8 @@ build_opencoarrays()
   # Set CC to the MPI implementation's gcc command...
   CC="${MPICC_show[0]}"
   # try to find mpiexec
-  MPIEXEC_CANDIDATES=($(find "${MPICC%/*}" -name 'mpiexec' -o -name 'mpirun' -o -name 'lamexec' -o -name 'srun'))
+  MPI_BIN_DIR="$(type -P "${MPICC}")"
+  MPIEXEC_CANDIDATES=($(find "${MPI_BIN_DIR%/*}" -name 'mpiexec' -o -name 'mpirun' -o -name 'lamexec' -o -name 'srun'))
   if ! ((${#MPIEXEC_CANDIDATES[@]} >= 1)); then
     emergency "Could not find a suitable \`mpiexec\` in directory containing mpi wrappers (${MPICC%/*})"
   else

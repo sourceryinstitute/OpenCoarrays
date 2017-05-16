@@ -1,15 +1,12 @@
 macro(add_installation_script_test name path)
 
   # Copy the source to the binary tree
-  configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/${path}/${name}
-    ${CMAKE_CURRENT_BINARY_DIR}/${path}/${name}
-    COPYONLY
+  file( COPY "${CMAKE_CURRENT_SOURCE_DIR}/${path}/${name}" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/${path}"
+    FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+    DIRECTORY_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
   )
-  configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/${path}/${name}-usage
-    ${CMAKE_CURRENT_BINARY_DIR}/${path}/${name}-usage
-    COPYONLY
+  file( COPY "${CMAKE_CURRENT_SOURCE_DIR}/${path}/${name}-usage" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/${path}"
+    FILE_PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
   )
   add_test(NAME test-${name} COMMAND "${CMAKE_BINARY_DIR}/${path}/${name}")
   set_property(TEST test-${name} PROPERTY WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/${path}")

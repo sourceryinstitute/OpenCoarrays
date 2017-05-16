@@ -14,7 +14,7 @@ replace_wget()
     sed -i${backup_extension} -e '2 a\'$'\n'". ${OPENCOARRAYS_SRC_DIR}/prerequisites/build-functions/ftp_url.sh"$'\n' "${download_prereqs_file}"
   fi
 
-  arg_string="${gcc_prereqs_fetch_args[@]:-}"
+  arg_string="${gcc_prereqs_fetch_args[*]:-}"
 
   info "Using the following command to replace wget in the GCC download_prerequisites file:"
   info "sed -i${backup_extension} s/\"${wget_command}\"/\"${gcc_prereqs_fetch} ${arg_string} \"/ \"${download_prereqs_file}\""
@@ -31,7 +31,7 @@ edit_GCC_download_prereqs_file_if_necessary()
   download_prereqs_file="${PWD}/contrib/download_prerequisites"
 
   # Grab the line with the first occurence of 'wget'
-  wget_line=`grep wget "${download_prereqs_file}" | head -1` || true
+  wget_line=$(grep wget "${download_prereqs_file}" | head -1) || true
   wget_command="${wget_line%%ftp*}" # grab everything before ftp
 
   # Check for wget format used before GCC 7

@@ -6,6 +6,18 @@ set ( CMAKE_BUILD_TYPE "Release"
   CACHE STRING "Select which configuration to build." )
 set_property ( CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${CMAKE_CONFIGURATION_TYPES} )
 
+# Add option and check environment to determine if developer tests should be run
+if($ENV{OPENCOARRAYS_DEVELOPER})
+  option(RUN_DEVELOPER_TESTS "Run tests intended only for developers" ON)
+else()
+  option(RUN_DEVELOPER_TESTS "Run tests intended only for developers" OFF)
+endif()
+mark_as_advanced(RUN_DEVELOPER_TESTS)
+
+if( NOT DEFINED ENV{OPENCOARRAYS_DEVELOPER})
+  set ( ENV{OPENCOARRAYS_DEVELOPER} FALSE )
+endif()
+
 # Name project and specify source languages
 # Parse version from .VERSION file so that more info can be added and easier to get from scripts
 file( STRINGS ".VERSION" OpenCoarraysVersion
@@ -156,8 +168,15 @@ endif()
 find_package( MPI )
 
 if ( (NOT MPI_C_FOUND) OR (NOT MPI_Fortran_FOUND) OR (NOT MPIEXEC))
+  # Get default install location of MPICH from install.sh
+  execute_process( COMMAND "./install.sh" -P mpich
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    OUTPUT_VARIABLE DEFAULT_MPICH_INSTALL_LOC
+    OUTPUT_QUIET
+    OUTPUT_STRIP_TRAILING_WHITES_SPACE
+  )
   find_program (MY_MPI_EXEC NAMES mpirun mpiexec lamexec srun
-    PATHS "${CMAKE_SOURCE_DIR/prerequisites/installations/mpich/3.1.4}" "${CMAKE_SOURCE_DIR}/prerequisites/installations/mpich/*" ENV PATH
+    PATHS "${DEFAULT_MPICH_INSTALL_LOC}" ENV PATH
     HINTS "${FTN_COMPILER_DIR}" "${C_COMPILER_DIR}"
     PATH_SUFFIXES bin)
   set ( MPI_HOME "${MPI_HOME}" "${MY_MPI_EXEC}" "${MY_MPI_EXEC}/.." )
@@ -479,10 +498,13 @@ if(opencoarrays_aware_compiler)
     add_mpi_test(register_alloc_comp_1 2 ${tests_root}/unit/init_register/register_alloc_comp_1)
     add_mpi_test(register_alloc_comp_2 2 ${tests_root}/unit/init_register/register_alloc_comp_2)
     add_mpi_test(register_alloc_comp_3 2 ${tests_root}/unit/init_register/register_alloc_comp_3)
-    add_mpi_test(async_comp_alloc 6 ${tests_root}/unit/init_register/async_comp_alloc)
-    # Timeout async_comp_alloc test after 3 seconds to progess past the known failure
-    set_property(TEST async_comp_alloc PROPERTY TIMEOUT_AFTER_MATCH 3 "known failure")
-    set_property(TEST async_comp_alloc PROPERTY TIMEOUT 6) # in the event old CMake is being used
+    if (RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER})
+      message ( STATUS "Running Developer tests is enabled." )
+      add_mpi_test(async_comp_alloc 6 ${tests_root}/unit/init_register/async_comp_alloc)
+      # Timeout async_comp_alloc test after 3 seconds to progess past the known failure
+      set_property(TEST async_comp_alloc PROPERTY TIMEOUT_AFTER_MATCH 3 "known failure")
+      set_property(TEST async_comp_alloc PROPERTY TIMEOUT 6) # in the event old CMake is being used
+    endif()
   endif()
   add_mpi_test(get_array 2 ${tests_root}/unit/send-get/get_array)
   add_mpi_test(get_self 2 ${tests_root}/unit/send-get/get_self)
@@ -519,7 +541,9 @@ if(opencoarrays_aware_compiler)
     # GFortran PR 78505 only fixed on trunk/gcc 7
     add_mpi_test(source-alloc-no-sync 8 ${tests_root}/regression/reported/source-alloc-sync)
   endif()
-  add_mpi_test(convert-before-put 3 ${tests_root}/regression/reported/convert-before-put)
+  if (RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER})
+    add_mpi_test(convert-before-put 3 ${tests_root}/regression/reported/convert-before-put)
+  endif()
   add_mpi_test(event-post 3 ${tests_root}/regression/reported/event-post)
   add_mpi_test(co_reduce-factorial 4 ${tests_root}/regression/reported/co_reduce-factorial)
   add_mpi_test(co_reduce-factorial-int8 4 ${tests_root}/regression/reported/co_reduce-factorial-int8)
