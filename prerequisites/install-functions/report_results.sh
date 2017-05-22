@@ -1,21 +1,18 @@
 # shellcheck shell=bash disable=SC2154,SC2129,SC2148
 report_results()
 {
-  type_FC=`type ${FC}`
-  fully_qualified_FC="/${type_FC#*/}"
+  fully_qualified_FC="$(type -P "${FC}")"
   if [[ ${fully_qualified_FC} != *gfortran* ]]; then
     emergency "report_results.sh: non-gfortran compiler: \${fully_qualified_FC}=${fully_qualified_FC}"
   fi  
   # Set path_to_FC fully-qualified gfortran location
-  compiler_install_root="${fully_qualified_FC%%bin/gfortran*}"
+  compiler_install_root="${fully_qualified_FC%bin/gfortran*}"
 
-  type_MPIFC=`type ${MPIFC}`
-  fully_qualified_MPIFC="/${type_MPIFC#*/}"
-  mpi_install_root="${fully_qualified_MPIFC%%bin/mpif90*}"
+  fully_qualified_MPIFC="$(type -P "${MPIFC}")"
+  mpi_install_root="${fully_qualified_MPIFC%bin/mpif90*}"
 
-  type_CMAKE=`type ${CMAKE}`
-  fully_qualified_CMAKE="/${type_CMAKE#*/}"
-  cmake_install_path="${fully_qualified_CMAKE%%/cmake*}"
+  fully_qualified_CMAKE="$(type -P "${CMAKE}")"
+  cmake_install_path="${fully_qualified_CMAKE%/cmake*}"
 
   # Report installation success or failure and record locations for software stack:
   if [[ -x "${install_path%/}/bin/caf" && -x "${install_path%/}/bin/cafrun" ]]; then
