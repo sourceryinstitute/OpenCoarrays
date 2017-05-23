@@ -387,7 +387,7 @@ include(GNUInstallDirs)
 #-------------------------------
 # Recurse into the src directory
 #-------------------------------
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
+include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 add_subdirectory(src)
 
