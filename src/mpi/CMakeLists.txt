@@ -28,6 +28,13 @@ if(CAF_EXPOSE_INIT_FINALIZE)
   add_definitions(-DEXPOSE_INIT_FINALIZE)
 endif()
 
+include(CheckIncludeFile)
+CHECK_INCLUDE_FILE("alloca.h" HAVE_ALLOCA)
+if(NOT HAVE_ALLOCA)
+  add_definitions(-DALLOCA_MISSING)
+  message(WARNING "Could not find <alloca.h>. Assuming functionality is provided elsewhere.")
+endif()
+
 #----------------------------------------------------------------------
 # Test if MPI implementation provides features needed for failed images
 #----------------------------------------------------------------------

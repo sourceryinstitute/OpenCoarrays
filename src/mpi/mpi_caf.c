@@ -37,7 +37,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 #include <stdlib.h>
 #include <string.h>        /* For memcpy.  */
 #include <stdarg.h>        /* For variadic arguments.  */
-#include <alloca.h>
+#ifndef ALLOCA_MISSING
+#include <alloca.h>        /* Assume functionality provided elsewhere if missing */
+#endif
 #include <unistd.h>
 #include <mpi.h>
 #include <pthread.h>
