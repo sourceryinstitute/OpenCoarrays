@@ -552,3 +552,6 @@ endif()
 
 include(cmake/AddInstallationScriptTest.cmake )
 add_installation_script_test(installation-scripts.sh src/tests/installation/)
+
+include(AddCompileTimeTest.cmake)
+add_compile_time_test(host-associated-event src/tests/unit/events/ host-associated-alloc-comp f90)
