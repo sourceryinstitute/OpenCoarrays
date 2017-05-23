@@ -43,7 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 #include <pthread.h>
 #include <signal.h>        /* For raise */
 
-#ifdef MPI_NEEDS_MPI_EXT
+#ifdef HAVE_MPI_EXT_H
 #include <mpi-ext.h>
 #endif
 #ifdef USE_FAILED_IMAGES
