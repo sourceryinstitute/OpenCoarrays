@@ -37,13 +37,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 #include <stdlib.h>
 #include <string.h>        /* For memcpy.  */
 #include <stdarg.h>        /* For variadic arguments.  */
-#include <alloca.h>
+#ifndef ALLOCA_MISSING
+#include <alloca.h>        /* Assume functionality provided elsewhere if missing */
+#endif
 #include <unistd.h>
 #include <mpi.h>
 #include <pthread.h>
 #include <signal.h>        /* For raise */
 
-#ifdef MPI_NEEDS_MPI_EXT
+#ifdef HAVE_MPI_EXT_H
 #include <mpi-ext.h>
 #endif
 #ifdef USE_FAILED_IMAGES

@@ -28,6 +28,67 @@ if(CAF_EXPOSE_INIT_FINALIZE)
   add_definitions(-DEXPOSE_INIT_FINALIZE)
 endif()
 
+include(CheckIncludeFile)
+CHECK_INCLUDE_FILE("alloca.h" HAVE_ALLOCA)
+if(NOT HAVE_ALLOCA)
+  add_definitions(-DALLOCA_MISSING)
+  message(WARNING "Could not find <alloca.h>. Assuming functionality is provided elsewhere.")
+endif()
+
+#----------------------------------------------------------------------
+# Test if MPI implementation provides features needed for failed images
+#----------------------------------------------------------------------
+set(NEEDED_SYMBOLS MPIX_ERR_PROC_FAILED;MPIX_ERR_REVOKED;MPIX_Comm_failure_ack;MPIX_Comm_failure_get_acked;MPIX_Comm_shrink;MPIX_Comm_agree)
+set(MPI_HAS_FAULT_TOL_EXT YES)
+set(old_cmake_required_includes "${CMAKE_REQUIRED_INCLUDES}")
+if(CMAKE_REQUIRED_INCLUDES)
+  set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES};${MPI_C_INCLUDE_PATH})
+else()
+  set(CMAKE_REQUIRED_INCLUDES ${MPI_C_INCLUDE_PATH})
+endif()
+set(old_cmake_required_flags "${CMAKE_REQUIRED_FLAGS}")
+if(CMAKE_REQUIRED_FLAGS)
+  set(CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS};${MPI_C_COMPILE_FLAGS};${MPI_C_LINK_FLAGS})
+else()
+  set(CMAKE_REQUIRED_FLAGS ${MPI_C_COMPILE_FLAGS};${MPI_C_LINK_FLAGS})
+endif()
+set(old_cmake_required_libraries "${CMAKE_REQUIRED_LIBRARIES}")
+if(CMAKE_REQUIRED_LIBRARIES)
+  set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES};${MPI_C_LIBRARIES})
+else()
+  set(CMAKE_REQUIRED_LIBRARIES ${MPI_C_LIBRARIES})
+endif()
+
+set(MPI_HEADERS mpi.h)
+CHECK_INCLUDE_FILE("mpi-ext.h" HAVE_MPI_EXT)
+if(HAVE_MPI_EXT)
+  add_definitions(-DHAVE_MPI_EXT_H)
+  set(MPI_HEADERS ${MPI_HEADERS};mpi-ext.h)
+endif()
+include(CheckSymbolExists)
+foreach(symbol ${NEEDED_SYMBOLS})
+  CHECK_SYMBOL_EXISTS(${symbol} ${MPI_HEADERS} HAVE_${symbol})
+  if(NOT HAVE_${symbol})
+    message( STATUS "\${HAVE_${symbol}} = ${HAVE_${symbol}}")
+    message( WARNING "Disabling Failed Image support due to lack of support in the current MPI implementation.")
+    set(MPI_HAS_FAULT_TOL_EXT NO)
+    break() # no need to keep looking
+  endif()
+endforeach(symbol)
+set(CMAKE_REQUIRED_INCLUDES ${old_cmake_required_includes})
+set(CMAKE_REQUIRED_FLAGS ${old_cmake_required_flags})
+set(CMAKE_REQUIRED_LIBRARIES ${old_cmake_required_libraries})
+
+if(MPI_HAS_FAULT_TOL_EXT)
+  option(CAF_ENABLE_FAILED_IMAGES "Enable failed images support" TRUE)
+else()
+  set(CAF_ENABLE_FAILED_IMAGES FALSE CACHE BOOL "Enable failed images support" FORCE)
+endif()
+
+if(CAF_ENABLE_FAILED_IMAGES)
+  add_definitions(-DUSE_FAILED_IMAGES)
+endif()
+
 # Determine whether and how to include OpenCoarrays module based on if the Fortran MPI compiler:
 #   - workds
 #   - is compatible with the fortran compiler used to build the MPI implementation
@@ -76,7 +137,7 @@ set(exe_dir ${CMAKE_BINARY_DIR}/bin_staging)
 set(compiler_wrapper ${exe_dir}/caf)
 install(
     FILES "${compiler_wrapper}"
-    PERMISSIONS WORLD_EXECUTE WORLD_READ OWNER_EXECUTE OWNER_READ GROUP_EXECUTE GROUP_READ
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
     DESTINATION "${CMAKE_INSTALL_BINDIR}"
 )
 file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/caf-head CAF_HEADER)
@@ -109,7 +170,7 @@ file(APPEND "${compiler_wrapper}" "${FOOTER}")
 set(caf_launcher ${exe_dir}/cafrun)
 install(
     FILES "${caf_launcher}"
-    PERMISSIONS WORLD_EXECUTE WORLD_READ OWNER_EXECUTE OWNER_READ GROUP_EXECUTE GROUP_READ
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
     DESTINATION "${CMAKE_INSTALL_BINDIR}"
 )
 file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/cafrun-head CAFRUN_HEADER)
