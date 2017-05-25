@@ -9,6 +9,7 @@ set_property ( CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${CMAKE_CONFIGURATION_TYP
 # Add option and check environment to determine if developer tests should be run
 if($ENV{OPENCOARRAYS_DEVELOPER})
   option(CAF_RUN_DEVELOPER_TESTS "Run tests intended only for developers" ON)
+  message( STATUS "OpenCoarrays developer tests turned on")
 else()
   option(CAF_RUN_DEVELOPER_TESTS "Run tests intended only for developers" OFF)
 endif()
@@ -20,9 +21,47 @@ endif()
 
 # Name project and specify source languages
 # Parse version from .VERSION file so that more info can be added and easier to get from scripts
-file( STRINGS ".VERSION" OpenCoarraysVersion
+file(STRINGS ".VERSION" first_line
+  LIMIT_COUNT 1
+  )
+
+string(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+"
+  OpenCoarraysVersion "${first_line}")
+
+if((NOT (OpenCoarraysVersion MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+")) AND (EXISTS "${CMAKE_SOURCE_DIR}/.git"))
+  message( STATUS "Build from git repository detected")
+  find_package(Git)
+  if(GIT_FOUND)
+    execute_process(COMMAND "${GIT_EXECUTABLE}" describe --abbrev=0
+      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+      RESULT_VARIABLE git_status
+      OUTPUT_VARIABLE git_output
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if((git_status STREQUAL "0") AND (git_output MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+"))
+      set(OpenCoarraysVersion "${git_output}")
+      execute_process(COMMAND "${GIT_EXECUTABLE}" describe --always --dirty
+      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+      RESULT_VARIABLE git_status
+      OUTPUT_VARIABLE full_git_describe
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    endif()
+  else()
+    message( WARNING "Could not find git executable!")
+  endif()
+endif()
+
+if(NOT (OpenCoarraysVersion MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+"))
+  message( WARNING "Could not extract version from git, falling back on .VERSION, line 3.")
+  file(STRINGS ".VERSION" OpenCoarraysVersion
   REGEX "[0-9]+\\.[0-9]+\\.[0-9]+"
-)
+  )
+endif()
+
+if(NOT full_git_describe)
+  set(full_git_describe ${OpenCoarraysVersion})
+  message( STATUS "Full `git describe`: ${full_git_describe}")
+endif()
+
 project(opencoarrays VERSION "${OpenCoarraysVersion}" LANGUAGES C Fortran)
 message( STATUS "Building OpenCoarrays version: ${OpenCoarraysVersion}" )
 

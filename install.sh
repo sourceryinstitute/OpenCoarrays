@@ -240,8 +240,11 @@ source $opencoarrays_src_dir/prerequisites/install-functions/report_results.sh
 
 if [[ "${arg_v}" == "${__flag_present}" || "${arg_V}" == "opencoarrays" ]]; then
 
-  # Print script copyright if invoked with -v, -V, or --version argument
-  opencoarrays_version=$(sed -n 's/\([0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}\)/\1/p' "${opencoarrays_src_dir%/}/.VERSION")
+  # Print script copyright & version if invoked with -v, -V, or
+  # --version argument git attributes handle .VERSION, making it more
+  # robust, but fallback version is still manually included. Search
+  # for the first version string we encounter and extract it using sed:
+  opencoarrays_version=$(sed -n '/[0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}/{s/^\([^.]*\)\([0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}\)\(.*\)/\2/p;q;}' "${opencoarrays_src_dir%/}/.VERSION")
   if [[ "${arg_v}" == "${__flag_present}" ]]; then
     echo "OpenCoarrays ${opencoarrays_version}"
     echo ""
