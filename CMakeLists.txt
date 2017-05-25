@@ -59,11 +59,10 @@ endif()
 
 if(NOT full_git_describe)
   set(full_git_describe ${OpenCoarraysVersion})
-  message( STATUS "Full `git describe`: ${full_git_describe}")
 endif()
 
 project(opencoarrays VERSION "${OpenCoarraysVersion}" LANGUAGES C Fortran)
-message( STATUS "Building OpenCoarrays version: ${OpenCoarraysVersion}" )
+message( STATUS "Building OpenCoarrays version: ${full_git_describe}" )
 
 #Print an error message on an attempt to build inside the source directory tree:
 if ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
