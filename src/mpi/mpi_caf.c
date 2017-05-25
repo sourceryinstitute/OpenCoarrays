@@ -49,6 +49,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 
 
 #ifdef GCC_GE_7
+enum flags_t {
+  /** Set when this token has memory associated to it. */
+  FLAG_ASSOCIATED = 1,
+  /** Set when the memory associated to this token is not owned by the
+  mpi-library, i.e., the mpi-library does not free the memory. This happens for
+  asynchronously allocated memory, which is attached using MPI_Win_attach. */
+  FLAG_MEM_NOT_OWNED = 2,
+};
+
 /** The caf-token of the mpi-library.
 
 Objects of this data structure are owned by the library and are treated as a
@@ -76,11 +85,12 @@ typedef struct mpi_caf_token_t
   window gives access to the descriptor on remote images. When the object is
   scalar, then this is NULL.  */
   MPI_Win *desc;
-  /** This window allows access the local_memptr member of the associated token.
-  With async allocation the token may be registered, but the memory not yet. To
-  be able to check (using is_present()), that the memory on a remote image is
-  present, this win can be used. */
-  MPI_Win local_memptr_win;
+  /** Flags specifying the state of this token. For a description of available
+  flags see the flags_t. */
+  unsigned *flags;
+  /** This window allows access the local flags member of the associated
+  token. */
+  MPI_Win flags_win;
 } mpi_caf_token_t;
 #define TOKEN(X) &(((mpi_caf_token_t *) (X))->memptr)
 #else
@@ -498,10 +508,17 @@ PREFIX (finalize) (void)
           MPI_Win_free (mpi_token->desc);
           free (mpi_token->desc);
         }
-      CAF_Win_unlock_all (mpi_token->local_memptr_win);
-      MPI_Win_free (&mpi_token->local_memptr_win);
-#endif // GCC_GE_7
       MPI_Win_free(p);
+      /* Free the memory only, when it was allocated by the caf-library. */
+      if ((*(mpi_token->flags) & FLAG_MEM_NOT_OWNED) > 0)
+        free (mpi_token->local_memptr);
+      /* Free the flags window only after accessing. */
+      CAF_Win_unlock_all (mpi_token->flags_win);
+      MPI_Win_free (&mpi_token->flags_win);
+      free (tmp_tot->token);
+#else // GCC_GE_7
+      MPI_Win_free(p);
+#endif // GCC_GE_7
       free(tmp_tot);
       tmp_tot = prev;
     }
@@ -583,7 +600,14 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
   /* The token has to be present, when COARRAY_ALLOC_ALLOCATE_ONLY is
      specified.  */
   if (type != CAF_REGTYPE_COARRAY_ALLOC_ALLOCATE_ONLY)
-    *token = malloc (sizeof (mpi_caf_token_t));
+    {
+      *token = malloc (sizeof (mpi_caf_token_t));
+      MPI_Win_allocate (sizeof(unsigned), 1, mpi_info_same_size, CAF_COMM_WORLD,
+                        &((mpi_caf_token_t *)*token)->flags,
+                        &((mpi_caf_token_t *)*token)->flags_win);
+      CAF_Win_lock_all (((mpi_caf_token_t *)*token)->flags_win);
+      *((mpi_caf_token_t *)*token)->flags = 0;
+    }
 
   mpi_token = (mpi_caf_token_t *) *token;
   p = TOKEN(mpi_token);
@@ -617,28 +641,18 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
     {
       int ierr;
       mem = malloc (actual_size);
+      CAF_Win_unlock_all (*p);
       ierr = MPI_Win_attach (*p, mem, actual_size);
-      fprintf(stderr, "%d/%d: Attach mem %p to win = %p, ierr: %d\n", caf_this_image, caf_num_images,
-              mem, *p, ierr);
+      CAF_Win_lock_all (*p);
+      *(mpi_token->flags) |= (FLAG_ASSOCIATED | FLAG_MEM_NOT_OWNED);
+      fprintf(stderr, "%d/%d: Attach mem %p to win = %p, ierr: %d, flags: %u\n",
+              caf_this_image, caf_num_images, mem, *p, ierr, *mpi_token->flags);
     }
   else
     {
       MPI_Win_allocate (actual_size, 1, MPI_INFO_NULL, CAF_COMM_WORLD, &mem, p);
       CAF_Win_lock_all (*p);
-    }
-
-  /* When doing a allocate only, the token is initialized already, and the
-   * window for the local_memptr exists already. Any time else create a window
-   * to monitor whether the data-pointer of this token is associated or not. */
-  if (type != CAF_REGTYPE_COARRAY_ALLOC_ALLOCATE_ONLY)
-    {
-      int ierr;
-      ierr = MPI_Win_create (&mpi_token->local_memptr, sizeof (void *), 1,
-                      mpi_info_same_size, CAF_COMM_WORLD,
-                      &mpi_token->local_memptr_win);
-      fprintf(stderr, "%d/%d: Creating win return error code: %d\n", caf_this_image,
-              caf_num_images, ierr);
-      CAF_Win_lock_all (mpi_token->local_memptr_win);
+      *(mpi_token->flags) = FLAG_ASSOCIATED;
     }
 #else // MPI_VERSION
   MPI_Alloc_mem(actual_size, MPI_INFO_NULL, &mem);
@@ -872,10 +886,20 @@ PREFIX (deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len
                   /* Unlock only, when removing the window. */
                   CAF_Win_unlock_all(*p);
                   MPI_Win_free (p);
+                  if ((*(mpi_token->flags) & FLAG_MEM_NOT_OWNED) > 0)
+                    free (mpi_token->local_memptr);
                 }
               else
-                MPI_Win_detach (*p, mpi_token->local_memptr);
+                {
+                  MPI_Win_detach (*p, mpi_token->local_memptr);
+                  /* Free the memory, when we have allocated it. */
+                  if ((*(mpi_token->flags) & FLAG_MEM_NOT_OWNED) > 0)
+                    free (mpi_token->local_memptr);
+                  *(mpi_token->flags) = (*(mpi_token->flags) & ~FLAG_MEM_NOT_OWNED);
+                }
               mpi_token->local_memptr = NULL;
+              /* Clear the flag, that memory is associated. */
+              *(mpi_token->flags) = (*(mpi_token->flags) & ~FLAG_ASSOCIATED);
             }
           if ((*(mpi_caf_token_t **)token)->desc
               && type != CAF_DEREGTYPE_COARRAY_DEALLOCATE_ONLY)
@@ -886,8 +910,8 @@ PREFIX (deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len
             }
           if (type != CAF_DEREGTYPE_COARRAY_DEALLOCATE_ONLY)
             {
-              CAF_Win_unlock_all (mpi_token->local_memptr_win);
-              MPI_Win_free (&mpi_token->local_memptr_win);
+              CAF_Win_unlock_all (mpi_token->flags_win);
+              MPI_Win_free (&mpi_token->flags_win);
             }
 #else
           CAF_Win_unlock_all(*p);
@@ -934,6 +958,7 @@ PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
 {
   int ierr=0;
 
+  fprintf (stderr, "%d/%d: Entering sync all.\n", caf_this_image, caf_num_images);
   if (unlikely (caf_is_finalized))
     ierr = STAT_STOPPED_IMAGE;
   else
@@ -967,6 +992,7 @@ PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
       else
         caf_runtime_error (msg);
     }
+  fprintf (stderr, "%d/%d: Leaving sync all.\n", caf_this_image, caf_num_images);
 }
 
 /* token: The token of the array to be written to. */
@@ -3108,14 +3134,14 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
       riter = riter->next;
     }
 
-  void *remote_local_memory = NULL;
-  MPI_Datatype dtype = sizeof (void *) == 8 ? MPI_INTEGER8: MPI_INTEGER4;
-  int ierr = MPI_Get (&remote_local_memory, 1, dtype, image_index - 1, 0, 1, dtype,
-           mpi_token->local_memptr_win);
-  fprintf(stderr, "%d/%d: Got remote_local_memory[%d] for win %p to be: %p, ierr = %d\n",
-          caf_this_image, caf_num_images, image_index, mpi_token->memptr,
-          remote_local_memory, ierr);
-  return remote_local_memory != NULL;
+  unsigned remote_flags = 0U;
+  int ierr = MPI_Get (&remote_flags, sizeof (unsigned), MPI_BYTE,
+                      image_index - 1, 0, sizeof (unsigned), MPI_BYTE,
+                      mpi_token->flags_win);
+  fprintf(stderr, "%d/%d: Got remote_flags[%d] for win %p to be: %u, ierr = %d\n",
+          caf_this_image, caf_num_images, image_index, mpi_token->flags_win,
+          remote_flags, ierr);
+  return (remote_flags & FLAG_ASSOCIATED) > 0;
 }
 #endif
 

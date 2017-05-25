@@ -60,8 +60,6 @@ program async_comp_alloc
     call assert(allocation_status == success, "allocated(obj)")
     call assert(.not. allocated(obj%i)      , ".not. allocated(obj%i)")
 
-    if (me==1) print *,"known failure -- ctest will timeout (see https://github.com/sourceryinstitute/opencoarrays/issues/260)."
-
     block 
       integer :: allocating_image, test_image
       character(len=20) :: image_number
@@ -98,8 +96,10 @@ program async_comp_alloc
           call assert( obj%i == me     , "obj%i == this_image()")
           sync all
         end if
+        sync all
       end do loop_over_all_image_numbers
     end block
+    if (me == 1) print *, "Test passed."
   end associate
 contains
   subroutine assert(assertion,description,stat)

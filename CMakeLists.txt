@@ -465,6 +465,9 @@ set(tests_root ${CMAKE_CURRENT_BINARY_DIR}/src/tests)
 
 
 if(opencoarrays_aware_compiler)
+  if (RUN_DEVELOPER_TESTS)
+    message ( STATUS "Running Developer tests is enabled." )
+  endif()
   # Unit tests targeting each libcaf_mpi function, argument, and branch of code
   add_mpi_test(initialize_mpi 2 ${tests_root}/unit/init_register/initialize_mpi)
   add_mpi_test(register 2 ${tests_root}/unit/init_register/register)
@@ -476,13 +479,7 @@ if(opencoarrays_aware_compiler)
     add_mpi_test(register_alloc_comp_1 2 ${tests_root}/unit/init_register/register_alloc_comp_1)
     add_mpi_test(register_alloc_comp_2 2 ${tests_root}/unit/init_register/register_alloc_comp_2)
     add_mpi_test(register_alloc_comp_3 2 ${tests_root}/unit/init_register/register_alloc_comp_3)
-    if (RUN_DEVELOPER_TESTS)
-      message ( STATUS "Running Developer tests is enabled." )
-      add_mpi_test(async_comp_alloc 6 ${tests_root}/unit/init_register/async_comp_alloc)
-      # Timeout async_comp_alloc test after 3 seconds to progess past the known failure
-      set_property(TEST async_comp_alloc PROPERTY TIMEOUT_AFTER_MATCH 3 "known failure")
-      set_property(TEST async_comp_alloc PROPERTY TIMEOUT 6) # in the event old CMake is being used
-    endif()
+    add_mpi_test(async_comp_alloc 6 ${tests_root}/unit/init_register/async_comp_alloc)
   endif()
   add_mpi_test(get_array 2 ${tests_root}/unit/send-get/get_array)
   add_mpi_test(get_self 2 ${tests_root}/unit/send-get/get_self)
