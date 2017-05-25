@@ -37,16 +37,32 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 #include <stdlib.h>
 #include <string.h>        /* For memcpy.  */
 #include <stdarg.h>        /* For variadic arguments.  */
-#include <alloca.h>
+#ifndef ALLOCA_MISSING
+#include <alloca.h>        /* Assume functionality provided elsewhere if missing */
+#endif
 #include <unistd.h>
 #include <mpi.h>
 #include <pthread.h>
+#include <signal.h>        /* For raise */
+
+#ifdef HAVE_MPI_EXT_H
+#include <mpi-ext.h>
+#endif
+#ifdef USE_FAILED_IMAGES
+  #define WITH_FAILED_IMAGES 1
+#endif
 
 #include "libcaf.h"
 
 /* Define GFC_CAF_CHECK to enable run-time checking.  */
 /* #define GFC_CAF_CHECK  1  */
 
+
+#ifdef NDEBUG
+#define dprint(...)
+#else
+#define dprint(args...) fprintf (stderr, args)
+#endif
 
 #ifdef GCC_GE_7
 /** The caf-token of the mpi-library.
@@ -83,7 +99,12 @@ typedef MPI_Win *mpi_caf_token_t;
 #define TOKEN(X) ((mpi_caf_token_t) (X))
 #endif
 
-static void error_stop (int error) __attribute__ ((noreturn));
+/* Forward declaration of prototype.  */
+
+static void terminate_internal (int stat_code, int exit_code)
+            __attribute__ ((noreturn));
+static void sync_images_internal (int count, int images[], int *stat,
+                                  char *errmsg, int errmsg_len, bool internal);
 
 /* Global variables.  */
 static int caf_this_image;
@@ -94,12 +115,12 @@ static int caf_is_finalized = 0;
   MPI_Info mpi_info_same_size;
 #endif // MPI_VERSION
 
-/*Sync image part*/
+/* Variables needed for syncing images. */
 
-static int *orders;
 static int *images_full;
 MPI_Request *sync_handles;
 static int *arrived;
+static const int MPI_TAG_CAF_SYNC_IMAGES = 424242;
 
 /* Pending puts */
 #if defined(NONBLOCKING_PUT) && !defined(CAF_MPI_LOCK_UNLOCK)
@@ -136,6 +157,39 @@ char err_buffer[MPI_MAX_ERROR_STRING];
 /* All CAF runtime calls should use this comm instead of
    MPI_COMM_WORLD for interoperability purposes. */
 MPI_Comm CAF_COMM_WORLD;
+
+#ifdef WITH_FAILED_IMAGES
+/* The stati of the other images.  image_stati is an array of size
+ * caf_num_images at the beginning the status of each image is noted here
+ * where the index is the image number minus one.  */
+int *image_stati;
+
+/* This gives the number of all images that are known to have failed.  */
+int num_images_failed = 0;
+
+/* This is the number of all images that are known to have stopped.  */
+int num_images_stopped = 0;
+
+/* The async. request-handle to all participating images.  */
+MPI_Request alive_request;
+
+/* This dummy is used for the alive request.  Its content is arbitrary and
+ * never read.  Its just a memory location where one could put something,
+ * which is never done.  */
+int alive_dummy;
+
+/* The mpi error-handler object associate to CAF_COMM_WORLD.  */
+MPI_Errhandler failed_stopped_CAF_COMM_WORLD_mpi_errorhandler;
+
+/* The monitor comm for detecting failed images. We can not attach the monitor
+ * to CAF_COMM_WORLD or the messages send by sync images would be caught by
+ * the monitor. */
+MPI_Comm alive_comm;
+
+/* Set when entering a sync_images_internal, to prevent the error handler from
+ * eating our messages. */
+bool no_stopped_images_check_in_errhandler = 0;
+#endif
 
 /* For MPI interoperability, allow external initialization
    (and thus finalization) of MPI. */
@@ -243,7 +297,10 @@ void helperFunction()
     }
 }
 #endif
+
+
 /* Keep in sync with single.c.  */
+
 static void
 caf_runtime_error (const char *message, ...)
 {
@@ -262,31 +319,244 @@ caf_runtime_error (const char *message, ...)
   exit (EXIT_FAILURE);
 }
 
-/* FIXME: CMake chokes on the "inline" keyword below.  If we can detect that CMake is  */
-/*        being used, we could add something of the form "#ifdef _CMAKE" to remove the */
-/*        keyword only when building with CMake */
-/* inline */ void locking_atomic_op(MPI_Win win, int *value, int newval,
-			      int compare, int image_index, int index)
+/* Forward declaration of the feature unsupported message for failed images
+ * functions. */
+static void
+unsupported_fail_images_message(const char * functionname);
+
+/* Forward declaration of the feature unimplemented message for allocatable
+ * components. */
+static void
+unimplemented_alloc_comps_message(const char * functionname);
+
+static void
+locking_atomic_op(MPI_Win win, int *value, int newval,
+                  int compare, int image_index, int index)
 {
-      CAF_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, win);
-      MPI_Compare_and_swap (&newval,&compare,value, MPI_INT,image_index-1,
-                            index*sizeof(int), win);
-      CAF_Win_unlock (image_index-1, win);
+  CAF_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, win);
+  MPI_Compare_and_swap (&newval,&compare,value, MPI_INT,image_index-1,
+                        index*sizeof(int), win);
+  CAF_Win_unlock (image_index-1, win);
 }
+
+
+/* Define a helper to check whether the image at the given index is healthy,
+ * i.e., it hasn't failed.  */
+#ifdef WITH_FAILED_IMAGES
+#define check_image_health(image_index, stat) \
+  if (image_stati[image_index - 1] == STAT_FAILED_IMAGE) \
+    { \
+      if (stat == NULL) terminate_internal (STAT_FAILED_IMAGE, 0); \
+      *stat = STAT_FAILED_IMAGE; \
+      return; \
+    }
+#else
+#define check_image_health(image_index, stat)
+#endif
+
+#ifdef WITH_FAILED_IMAGES
+/** Handle failed image's errors and try to recover the remaining process to
+ * allow the user to detect an image fail and exit gracefully. */
+static void
+failed_stopped_errorhandler_function (MPI_Comm* pcomm, int* perr, ...)
+{
+  MPI_Comm comm, shrunk, newcomm;
+  int num_failed_in_group, i, err;
+  MPI_Group comm_world_group, failed_group;
+  int *ranks_of_failed_in_comm_world, *ranks_failed;
+  int ns, srank, crank, rc, flag, drank, ierr, newrank;
+  bool stopped = false;
+
+  comm = *pcomm;
+
+  MPI_Error_class (*perr, &err);
+  if (err != MPIX_ERR_PROC_FAILED && err != MPIX_ERR_REVOKED)
+    {
+      /* We can handle PROC_FAILED and REVOKED ones only. */
+      char errstr[MPI_MAX_ERROR_STRING];
+      int errlen;
+      MPI_Error_string (err, errstr, &errlen);
+      /* We can't use caf_runtime_error here, because that would exit, which
+       * means only the one process will stop, but we need to stop MPI
+       * completely, which can be done by calling MPI_Abort(). */
+      fprintf (stderr, "Fortran runtime error on image #%d:\nMPI error: '%s'.\n",
+               caf_this_image, errstr);
+      MPI_Abort (*pcomm, err);
+    }
+
+  dprint ("%d/%d: %s (error = %d)\n", caf_this_image, caf_num_images, __FUNCTION__, err);
+
+  MPIX_Comm_failure_ack (comm);
+  MPIX_Comm_failure_get_acked (comm, &failed_group);
+  MPI_Group_size (failed_group, &num_failed_in_group);
+
+  dprint ("%d/%d: %s: %d images failed.\n", caf_this_image, caf_num_images, __FUNCTION__, num_failed_in_group);
+  if (num_failed_in_group <= 0)
+    {
+      *perr = MPI_SUCCESS;
+      return;
+    }
+  if (num_failed_in_group > caf_num_images)
+    {
+      *perr = MPI_SUCCESS;
+      return;
+    }
+
+  MPI_Comm_group (comm, &comm_world_group);
+  ranks_of_failed_in_comm_world = (int *) alloca (sizeof (int)
+						  * num_failed_in_group);
+  ranks_failed = (int *) alloca (sizeof (int) * num_failed_in_group);
+  for (i = 0; i < num_failed_in_group; ++i)
+    ranks_failed[i] = i;
+  /* Now translate the ranks of the failed images into communicator world. */
+  MPI_Group_translate_ranks (failed_group, num_failed_in_group, ranks_failed,
+			     comm_world_group, ranks_of_failed_in_comm_world);
+
+  num_images_failed += num_failed_in_group;
+
+  if (!no_stopped_images_check_in_errhandler)
+    {
+      int buffer, flag;
+      MPI_Request req;
+      MPI_Status request_status;
+      dprint ("%d/%d: Checking for stopped images.\n", caf_this_image,
+              caf_num_images);
+      ierr = MPI_Irecv (&buffer, 1, MPI_INT, MPI_ANY_SOURCE, MPI_TAG_CAF_SYNC_IMAGES,
+                        CAF_COMM_WORLD, &req);
+      if (ierr == MPI_SUCCESS)
+        {
+          ierr = MPI_Test (&req, &flag, &request_status);
+          if (flag)
+            {
+              // Received a result
+              if (buffer == STAT_STOPPED_IMAGE)
+                {
+                  dprint ("%d/%d: Image #%d found stopped.\n",
+                          caf_this_image, caf_num_images, request_status.MPI_SOURCE);
+                  stopped = true;
+                  if (image_stati[request_status.MPI_SOURCE] == 0)
+                    ++num_images_stopped;
+                  image_stati[request_status.MPI_SOURCE] = STAT_STOPPED_IMAGE;
+                }
+            }
+          else
+            {
+              dprint ("%d/%d: No stopped images found.\n",
+                      caf_this_image, caf_num_images);
+              MPI_Cancel (&req);
+            }
+        }
+      else
+        {
+          int err;
+          MPI_Error_class (ierr, &err);
+          dprint ("%d/%d: Error on checking for stopped images %d.\n",
+                  caf_this_image, caf_num_images, err);
+        }
+    }
+
+  /* TODO: Consider whether removing the failed image from images_full will be
+   * necessary. This is more or less politics. */
+  for (i = 0; i < num_failed_in_group; ++i)
+    {
+      if (ranks_of_failed_in_comm_world[i] >= 0
+          && ranks_of_failed_in_comm_world[i] < caf_num_images)
+        {
+          if (image_stati[ranks_of_failed_in_comm_world[i]] == 0)
+            image_stati[ranks_of_failed_in_comm_world[i]] = STAT_FAILED_IMAGE;
+        }
+      else
+        {
+          dprint ("%d/%d: Rank of failed image %d out of range of images 0..%d.\n",
+                  caf_this_image, caf_num_images, ranks_of_failed_in_comm_world[i],
+                  caf_num_images);
+        }
+    }
+
+redo:
+  dprint ("%d/%d: %s: Before shrink. \n", caf_this_image, caf_num_images, __FUNCTION__);
+  ierr = MPIX_Comm_shrink (*pcomm, &shrunk);
+  dprint ("%d/%d: %s: After shrink, rc = %d.\n", caf_this_image, caf_num_images, __FUNCTION__, ierr);
+  MPI_Comm_set_errhandler (shrunk, failed_stopped_CAF_COMM_WORLD_mpi_errorhandler);
+  MPI_Comm_size (shrunk, &ns);
+  MPI_Comm_rank (shrunk, &srank);
+
+  MPI_Comm_rank (*pcomm, &crank);
+
+  dprint ("%d/%d: %s: After getting ranks, ns = %d, srank = %d, crank = %d.\n",
+	  caf_this_image, caf_num_images, __FUNCTION__, ns, srank, crank);
+
+  /* Split does the magic: removing spare processes and reordering ranks
+   * so that all surviving processes remain at their former place */
+  rc = MPI_Comm_split (shrunk, crank < 0 ? MPI_UNDEFINED : 1, crank, &newcomm);
+  MPI_Comm_rank (newcomm, &newrank);
+  dprint ("%d/%d: %s: After split, rc = %d, rank = %d.\n", caf_this_image, caf_num_images, __FUNCTION__, rc, newrank);
+  flag = (rc == MPI_SUCCESS);
+  /* Split or some of the communications above may have failed if
+   * new failures have disrupted the process: we need to
+   * make sure we succeeded at all ranks, or retry until it works. */
+  flag = MPIX_Comm_agree (newcomm, &flag);
+  dprint ("%d/%d: %s: After agree, flag = %d.\n", caf_this_image, caf_num_images, __FUNCTION__, flag);
+
+  MPI_Comm_rank (newcomm, &drank);
+  dprint ("%d/%d: %s: After rank, drank = %d.\n", caf_this_image, caf_num_images, __FUNCTION__, drank);
+
+  MPI_Comm_free (&shrunk);
+  if (MPI_SUCCESS != flag) {
+    if (MPI_SUCCESS == rc)
+      MPI_Comm_free (&newcomm);
+    goto redo;
+  }
+
+  {
+    int cmpres;
+    ierr = MPI_Comm_compare (*pcomm, CAF_COMM_WORLD, &cmpres);
+    dprint ("%d/%d: %s: Comm_compare(*comm, CAF_COMM_WORLD, res = %d) = %d.\n", caf_this_image,
+	   caf_num_images, __FUNCTION__, cmpres, ierr);
+    ierr = MPI_Comm_compare (*pcomm, alive_comm, &cmpres);
+    dprint ("%d/%d: %s: Comm_compare(*comm, alive_comm, res = %d) = %d.\n", caf_this_image,
+           caf_num_images, __FUNCTION__, cmpres, ierr);
+    if (cmpres == MPI_CONGRUENT)
+      {
+        MPI_Win_detach (*stat_tok, &img_status);
+        dprint ("%d/%d: %s: detached win img_status.\n", caf_this_image, caf_num_images, __FUNCTION__);
+        MPI_Win_free (stat_tok);
+        dprint ("%d/%d: %s: freed win img_status.\n", caf_this_image, caf_num_images, __FUNCTION__);
+        MPI_Win_create (&img_status, sizeof (int), 1, mpi_info_same_size, newcomm,
+                        stat_tok);
+        dprint ("%d/%d: %s: (re-)created win img_status.\n", caf_this_image, caf_num_images, __FUNCTION__);
+        CAF_Win_lock_all (*stat_tok);
+        dprint ("%d/%d: %s: Win_lock_all on img_status.\n", caf_this_image, caf_num_images, __FUNCTION__);
+      }
+  }
+  /* Also free the old communicator before replacing it. */
+  MPI_Comm_free (pcomm);
+  *pcomm = newcomm;
+
+  *perr = stopped ? STAT_STOPPED_IMAGE : STAT_FAILED_IMAGE;
+}
+#endif
 
 void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
 		int *acquired_lock, char *errmsg, int errmsg_len)
 {
   const char msg[] = "Already locked";
 #if MPI_VERSION >= 3
-  int value=1, compare = 0, newval = caf_this_image, i = 1;
+  int value = 0, compare = 0, newval = caf_this_image, ierr = 0, i = 0;
+#ifdef WITH_FAILED_IMAGES
+  int flag, check_failure = 100, zero = 0;
+#endif
 
   if(stat != NULL)
     *stat = 0;
 
-  locking_atomic_op(win, &value, newval, compare, image_index, index);
+#ifdef WITH_FAILED_IMAGES
+  MPI_Test(&alive_request, &flag, MPI_STATUS_IGNORE);
+#endif
 
-  if(value == caf_this_image && image_index == caf_this_image)
+  locking_atomic_op (win, &value, newval, compare, image_index, index);
+
+  if (value == caf_this_image && image_index == caf_this_image)
     goto stat_error;
 
   if(acquired_lock != NULL)
@@ -298,25 +568,50 @@ void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
       return;
     }
 
-  while(value != 0)
+  while (value != 0)
     {
+      ++i;
+#ifdef WITH_FAILED_IMAGES
+      if (i == check_failure)
+        {
+          i = 1;
+          MPI_Test (&alive_request, &flag, MPI_STATUS_IGNORE);
+        }
+#endif
+
       locking_atomic_op(win, &value, newval, compare, image_index, index);
-      usleep(caf_this_image*i);
-      i++;
+#ifdef WITH_FAILED_IMAGES      
+      if (image_stati[value] == STAT_FAILED_IMAGE)
+        {
+          CAF_Win_lock (MPI_LOCK_EXCLUSIVE, image_index - 1, win);
+          /* MPI_Fetch_and_op(&zero, &newval, MPI_INT, image_index - 1, index * sizeof(int), MPI_REPLACE, win); */
+          MPI_Compare_and_swap (&zero, &value, &newval, MPI_INT, image_index - 1, index * sizeof (int), win);
+          CAF_Win_unlock (image_index - 1, win);
+          break;
+        }
+#else
+      usleep(caf_this_image * i);
+#endif
     }
 
+  if (stat)
+    *stat = ierr;
+  else if (ierr == STAT_FAILED_IMAGE)
+    terminate_internal (ierr, 0);
+  
   return;
 
 stat_error:
-  if(errmsg != NULL)
+  if (errmsg != NULL)
     {
       memset(errmsg,' ',errmsg_len);
       memcpy(errmsg, msg, MIN(errmsg_len,strlen(msg)));
     }
+
   if(stat != NULL)
     *stat = 99;
   else
-    error_stop(99);
+    terminate_internal(99, 1);
 #else // MPI_VERSION
 #warning Locking for MPI-2 is not implemented
   printf ("Locking for MPI-2 is not supported, please update your MPI implementation\n");
@@ -330,17 +625,26 @@ void mutex_unlock(MPI_Win win, int image_index, int index, int *stat,
   if(stat != NULL)
     *stat = 0;
 #if MPI_VERSION >= 3
-  int value=1, compare = 1, newval = 0;
+  int value=1, ierr = 0, newval = 0;
+#ifdef WITH_FAILED_IMAGES
+  int flag;
 
-  /* locking_atomic_op(win, &value, newval, compare, image_index, index); */
+  MPI_Test(&alive_request, &flag, MPI_STATUS_IGNORE);
+#endif
 
   CAF_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, win);
   MPI_Fetch_and_op(&newval, &value, MPI_INT, image_index-1, index*sizeof(int), MPI_REPLACE, win);
   CAF_Win_unlock (image_index-1, win);
 
-  if(value == 0)
-    goto stat_error;
+  /* Temporarily commented */
+  /* if(value == 0) */
+  /*   goto stat_error; */
 
+  if(stat)
+    *stat = ierr;
+  else if(ierr == STAT_FAILED_IMAGE)
+    terminate_internal (ierr, 0);
+      
   return;
 
 stat_error:
@@ -352,7 +656,7 @@ stat_error:
   if(stat != NULL)
     *stat = 99;
   else
-    error_stop(99);
+    terminate_internal(99, 1);
 #else // MPI_VERSION
 #warning Locking for MPI-2 is not implemented
   printf ("Locking for MPI-2 is not supported, please update your MPI implementation\n");
@@ -363,21 +667,20 @@ stat_error:
    GASNet initialization happened before. */
 
 void
-#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
-_gfortran_caf_init (int *argc, char ***argv)
-#else
 PREFIX (init) (int *argc, char ***argv)
-#endif
 {
+#ifdef WITH_FAILED_IMAGES
+  int flag;
+#endif
   if (caf_num_images == 0)
     {
-      int ierr = 0, i = 0, j = 0;
+      int ierr = 0, i = 0, j = 0, rc;
 
       int is_init = 0, prior_thread_level = MPI_THREAD_SINGLE;
-      MPI_Initialized(&is_init);
+      MPI_Initialized (&is_init);
 
       if (is_init) {
-          MPI_Query_thread(&prior_thread_level);
+          MPI_Query_thread (&prior_thread_level);
       }
 #ifdef HELPER
       int prov_lev=0;
@@ -385,17 +688,17 @@ PREFIX (init) (int *argc, char ***argv)
           prov_lev = prior_thread_level;
           caf_owns_mpi = false;
       } else {
-          MPI_Init_thread(argc, argv, MPI_THREAD_MULTIPLE, &prov_lev);
+          MPI_Init_thread (argc, argv, MPI_THREAD_MULTIPLE, &prov_lev);
           caf_owns_mpi = true;
       }
 
-      if(caf_this_image == 0 && MPI_THREAD_MULTIPLE != prov_lev)
+      if (caf_this_image == 0 && MPI_THREAD_MULTIPLE != prov_lev)
         caf_runtime_error ("MPI_THREAD_MULTIPLE is not supported: %d", prov_lev);
 #else
       if (is_init) {
           caf_owns_mpi = false;
       } else {
-          MPI_Init(argc, argv);
+          MPI_Init (argc, argv);
           caf_owns_mpi = true;
       }
 #endif
@@ -404,69 +707,138 @@ PREFIX (init) (int *argc, char ***argv)
 
       /* Duplicate MPI_COMM_WORLD so that no CAF internal functions
          use it - this is critical for MPI-interoperability. */
-      MPI_Comm_dup(MPI_COMM_WORLD, &CAF_COMM_WORLD);
+      rc = MPI_Comm_dup (MPI_COMM_WORLD, &CAF_COMM_WORLD);
+#ifdef WITH_FAILED_IMAGES
+      flag = (MPI_SUCCESS == rc);
+      rc = MPIX_Comm_agree (MPI_COMM_WORLD, &flag);
+      if (rc != MPI_SUCCESS) {
+          dprint ("%d/%d: %s: MPIX_Comm_agree(flag = %d) = %d.\n",
+                   caf_this_image, caf_num_images, __FUNCTION__, flag, rc);
+          fflush (stderr);
+        MPI_Abort (MPI_COMM_WORLD, 10000);
+        }
+      MPI_Barrier (MPI_COMM_WORLD);
+#endif
 
-      MPI_Comm_size(CAF_COMM_WORLD, &caf_num_images);
-      MPI_Comm_rank(CAF_COMM_WORLD, &caf_this_image);
+      MPI_Comm_size (CAF_COMM_WORLD, &caf_num_images);
+      MPI_Comm_rank (CAF_COMM_WORLD, &caf_this_image);
 
-      caf_this_image++;
+      ++caf_this_image;
       caf_is_finalized = 0;
 
+      /* BEGIN SYNC IMAGE preparation
+       * Prepare memory for syncing images.  */
       images_full = (int *) calloc (caf_num_images-1, sizeof (int));
-
-      for (i = 1; i <= caf_num_images; ++i)
+      for (i = 1, j = 0; i <= caf_num_images; ++i)
         if (i != caf_this_image)
-          {
-            images_full[j] = i;
-            j++;
-          }
+          images_full[j++] = i;
 
-      orders = calloc (caf_num_images, sizeof (int));
       arrived = calloc (caf_num_images, sizeof (int));
+      sync_handles = malloc (caf_num_images * sizeof (MPI_Request));
+      /* END SYNC IMAGE preparation.  */
 
-      sync_handles = malloc(caf_num_images * sizeof(MPI_Request));
+      stat_tok = malloc (sizeof (MPI_Win));
 
-      stat_tok = malloc (sizeof(MPI_Win));
+#ifdef WITH_FAILED_IMAGES
+      MPI_Comm_dup (MPI_COMM_WORLD, &alive_comm);
+      /* Handling of failed/stopped images is done by setting an error handler
+       * on a asynchronous request to each other image.  For a failing image
+       * the request will trigger the call of the error handler thus allowing
+       * each other image to handle the failed/stopped image.  */
+      MPI_Comm_create_errhandler (failed_stopped_errorhandler_function,
+                               &failed_stopped_CAF_COMM_WORLD_mpi_errorhandler);
+      MPI_Comm_set_errhandler (CAF_COMM_WORLD,
+                               failed_stopped_CAF_COMM_WORLD_mpi_errorhandler);
+      MPI_Comm_set_errhandler (alive_comm,
+                               failed_stopped_CAF_COMM_WORLD_mpi_errorhandler);
+      MPI_Comm_set_errhandler (MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+
+      MPI_Irecv (&alive_dummy, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG,
+                 alive_comm, &alive_request);
+
+      image_stati = (int *) calloc (caf_num_images, sizeof (int));
+#endif
 
 #if MPI_VERSION >= 3
       MPI_Info_create (&mpi_info_same_size);
       MPI_Info_set (mpi_info_same_size, "same_size", "true");
+
       /* Setting img_status */
-      MPI_Win_create(&img_status, sizeof(int), 1, mpi_info_same_size, CAF_COMM_WORLD, stat_tok);
+      MPI_Win_create (&img_status, sizeof(int), 1, mpi_info_same_size, CAF_COMM_WORLD, stat_tok);
       CAF_Win_lock_all (*stat_tok);
 #else
-      MPI_Win_create(&img_status, sizeof(int), 1, MPI_INFO_NULL, CAF_COMM_WORLD, stat_tok);
+      MPI_Win_create (&img_status, sizeof(int), 1, MPI_INFO_NULL, CAF_COMM_WORLD, stat_tok);
 #endif // MPI_VERSION
     }
-  /* MPI_Barrier(CAF_COMM_WORLD); */
 }
 
-/* Forward declaration of sync_images.  */
+
+/* Internal finalize of coarray program.   */
 
 void
-sync_images_internal (int count, int images[], int *stat, char *errmsg,
-                      int errmsg_len, bool internal);
-
-/* Finalize coarray program.   */
-
-void
-#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
-_gfortran_caf_finalize (void)
-#else
-PREFIX (finalize) (void)
-#endif
+finalize_internal (int status_code)
 {
+  dprint ("%d/%d: %s(status_code = %d)\n",
+	  caf_this_image, caf_num_images, __FUNCTION__, status_code);
+
+#ifdef WITH_FAILED_IMAGES
+  no_stopped_images_check_in_errhandler = true;
+  MPI_Win_flush_all (*stat_tok);
+#endif
   /* For future security enclose setting img_status in a lock.  */
   CAF_Win_lock (MPI_LOCK_EXCLUSIVE, caf_this_image - 1, *stat_tok);
-  img_status = STAT_STOPPED_IMAGE; /* GFC_STAT_STOPPED_IMAGE = 6000 */
+  if (status_code == 0)
+    {
+      img_status = STAT_STOPPED_IMAGE;
+#ifdef WITH_FAILED_IMAGES
+      image_stati[caf_this_image - 1] = STAT_STOPPED_IMAGE;
+#endif
+    }
+  else
+    {
+      img_status = status_code;
+#ifdef WITH_FAILED_IMAGES
+      image_stati[caf_this_image - 1] = status_code;
+#endif
+    }
   CAF_Win_unlock (caf_this_image - 1, *stat_tok);
 
-  /* Announce to all other images, that this one is stopped.  */
+  /* Announce to all other images, that this one has changed its execution
+   * status.  */
   for (int i = 0; i < caf_num_images - 1; ++i)
-    MPI_Send (&img_status, 1, MPI_INT, images_full[i] - 1, 0, CAF_COMM_WORLD);
+      MPI_Send (&img_status, 1, MPI_INT, images_full[i] - 1,
+                MPI_TAG_CAF_SYNC_IMAGES, CAF_COMM_WORLD);
 
+#ifdef WITH_FAILED_IMAGES
+  /* Terminate the async request before revoking the comm, or we will get
+   * triggered by the errorhandler, which we don't want here anymore.  */
+  MPI_Cancel (&alive_request);
+
+  if (status_code == 0) {
+      /* In finalization don't stopped or failed images any more. */
+      MPI_Errhandler_set (CAF_COMM_WORLD, MPI_ERRORS_RETURN);
+//      MPI_Errhandler_set (lock_comm, MPI_ERRORS_RETURN);
+      MPI_Errhandler_set (alive_comm, MPI_ERRORS_RETURN);
+      /* Only add a conventional barrier to prevent images from quitting to early,
+       * when this images is not failing.  */
+      dprint ("%d/%d: %s: Before MPI_Barrier (CAF_COMM_WORLD)\n",
+	      caf_this_image, caf_num_images, __FUNCTION__);
+      int ierr = MPI_Barrier (CAF_COMM_WORLD);
+      dprint ("%d/%d: %s: After MPI_Barrier (CAF_COMM_WORLD) = %d\n",
+	      caf_this_image, caf_num_images, __FUNCTION__, ierr);
+    }
+  else
+    return;
+#else
   /* Add a conventional barrier to prevent images from quitting to early.  */
-  MPI_Barrier (CAF_COMM_WORLD);
+  if (status_code == 0)
+    MPI_Barrier (CAF_COMM_WORLD);
+  else
+    /* Without failed images support, but a given status_code, we need to return
+     * to the caller, or we will hang in the following instead of terminating the
+     * program. */
+    return;
+#endif
 
   while (caf_static_list != NULL)
     {
@@ -483,54 +855,95 @@ PREFIX (finalize) (void)
     {
       prev = tmp_tot->prev;
       p = TOKEN(tmp_tot->token);
+      dprint ("%d/%d: %s: Before CAF_Win_unlock_all (*p)\n",
+	      caf_this_image, caf_num_images, __FUNCTION__);
       CAF_Win_unlock_all (*p);
+      dprint ("%d/%d: %s: After CAF_Win_unlock_all (*p)\n",
+	      caf_this_image, caf_num_images, __FUNCTION__);
 #ifdef GCC_GE_7
       /* Unregister the window to the descriptors when freeing the token.  */
       if (((mpi_caf_token_t *)tmp_tot->token)->desc)
 	{
 	  mpi_caf_token_t *mpi_token = (mpi_caf_token_t *)tmp_tot->token;
-	  CAF_Win_unlock_all(*(mpi_token->desc));
+	  CAF_Win_unlock_all (*(mpi_token->desc));
 	  MPI_Win_free (mpi_token->desc);
 	  free (mpi_token->desc);
 	}
 #endif // GCC_GE_7
-      MPI_Win_free(p);
-      free(tmp_tot);
+      MPI_Win_free (p);
+      free (tmp_tot);
       tmp_tot = prev;
     }
 #if MPI_VERSION >= 3
   MPI_Info_free (&mpi_info_same_size);
 #endif // MPI_VERSION
 
-  CAF_Win_unlock_all (*stat_tok);
-  MPI_Win_free (stat_tok);
-  MPI_Comm_free(&CAF_COMM_WORLD);
+#ifdef WITH_FAILED_IMAGES
+  if (status_code == 0)
+    {
+      dprint ("%d/%d: %s: before Win_unlock_all.\n",
+              caf_this_image, caf_num_images, __FUNCTION__);
+      CAF_Win_unlock_all (*stat_tok);
+      dprint ("%d/%d: %s: before Win_free(stat_tok)\n",
+              caf_this_image, caf_num_images, __FUNCTION__);
+      MPI_Win_free (stat_tok);
+      dprint ("%d/%d: %s: before Comm_free(CAF_COMM_WORLD)\n",
+              caf_this_image, caf_num_images, __FUNCTION__);
+      MPI_Comm_free (&CAF_COMM_WORLD);
+      MPI_Comm_free (&alive_comm);
+      dprint ("%d/%d: %s: after Comm_free(CAF_COMM_WORLD)\n",
+              caf_this_image, caf_num_images, __FUNCTION__);
+    }
+
+  MPI_Errhandler_free (&failed_stopped_CAF_COMM_WORLD_mpi_errorhandler);
 
   /* Only call Finalize if CAF runtime Initialized MPI. */
-  if (caf_owns_mpi) {
-      MPI_Finalize();
-  }
-  pthread_mutex_lock(&lock_am);
+  if (caf_owns_mpi)
+    MPI_Finalize ();
+#else
+  MPI_Comm_free (&CAF_COMM_WORLD);
+
+  CAF_Win_unlock_all (*stat_tok);
+  MPI_Win_free (stat_tok);
+
+  /* Only call Finalize if CAF runtime Initialized MPI. */
+  if (caf_owns_mpi)
+    MPI_Finalize ();
+#endif
+
+  pthread_mutex_lock (&lock_am);
   caf_is_finalized = 1;
-  pthread_mutex_unlock(&lock_am);
+  pthread_mutex_unlock (&lock_am);
   free (sync_handles);
+  dprint ("%d/%d: %s: Finalisation done!!!\n", caf_this_image, caf_num_images,
+         __FUNCTION__);
 }
 
 
+/* Finalize coarray program.  */
+
+void
+PREFIX (finalize) (void)
+{
+  finalize_internal (0);
+}
+
+/* TODO: This is interface is violating the F2015 standard, but not the gfortran
+ * API. Fix it (the fortran API). */
 int
-PREFIX (this_image)(int distance __attribute__ ((unused)))
+PREFIX (this_image) (int distance __attribute__ ((unused)))
 {
   return caf_this_image;
 }
 
-
+/* TODO: This is interface is violating the F2015 standard, but not the gfortran
+ * API. Fix it (the fortran API). */
 int
-PREFIX (num_images)(int distance __attribute__ ((unused)),
-                         int failed __attribute__ ((unused)))
+PREFIX (num_images) (int distance __attribute__ ((unused)),
+                     int failed __attribute__ ((unused)))
 {
   return caf_num_images;
 }
-
 
 #ifdef GCC_GE_7
 /** Register an object with the coarray library creating a token where
@@ -579,7 +992,7 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
     *token = malloc (sizeof (mpi_caf_token_t));
 
   mpi_token = (mpi_caf_token_t *) *token;
-  p = TOKEN(mpi_token);
+  p = TOKEN (mpi_token);
 
   if ((type == CAF_REGTYPE_COARRAY_ALLOC_ALLOCATE_ONLY
        || type == CAF_REGTYPE_COARRAY_ALLOC
@@ -672,20 +1085,14 @@ error:
   }
 }
 #else // GCC_GE_7
-#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
 void *
-  _gfortran_caf_register (size_t size, caf_register_t type, caf_token_t *token,
-                          int *stat, char *errmsg, int errmsg_len)
-#else
-void *
-  PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
-                     int *stat, char *errmsg, int errmsg_len)
-#endif
+PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
+                   int *stat, char *errmsg, int errmsg_len)
 {
   /* int ierr; */
   void *mem;
   size_t actual_size;
-  int l_var=0, *init_array=NULL;
+  int l_var=0, *init_array = NULL;
 
   if (unlikely (caf_is_finalized))
     goto error;
@@ -698,6 +1105,10 @@ void *
     PREFIX (init) (NULL, NULL);
 #endif
 
+  /* Token contains only a list of pointers.  */
+  *token = malloc (sizeof(MPI_Win));
+  MPI_Win *p = *token;
+
   if(type == CAF_REGTYPE_LOCK_STATIC || type == CAF_REGTYPE_LOCK_ALLOC ||
      type == CAF_REGTYPE_CRITICAL || type == CAF_REGTYPE_EVENT_STATIC ||
      type == CAF_REGTYPE_EVENT_ALLOC)
@@ -707,10 +1118,6 @@ void *
     }
   else
     actual_size = size;
-
-  /* Token contains only a list of pointers.  */
-  *token = malloc (sizeof(MPI_Win));
-  MPI_Win *p = *token;
 
 #if MPI_VERSION >= 3
   MPI_Win_allocate(actual_size, 1, mpi_info_same_size, CAF_COMM_WORLD, &mem, p);
@@ -725,8 +1132,8 @@ void *
       init_array = (int *)calloc(size, sizeof(int));
       CAF_Win_lock(MPI_LOCK_EXCLUSIVE, caf_this_image-1, *p);
       MPI_Put (init_array, size, MPI_INT, caf_this_image-1,
-                      0, size, MPI_INT, *p);
-      CAF_Win_unlock(caf_this_image-1, *p);
+               0, size, MPI_INT, *p);
+      CAF_Win_unlock(caf_this_image - 1, *p);
       free(init_array);
     }
 
@@ -747,7 +1154,6 @@ void *
 
   if (stat)
     *stat = 0;
-
   return mem;
 
 error:
@@ -788,8 +1194,6 @@ void
 PREFIX (deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len)
 #endif
 {
-  /* int ierr; */
-
   if (unlikely (caf_is_finalized))
     {
       const char msg[] = "Failed to deallocate coarray - "
@@ -811,46 +1215,50 @@ PREFIX (deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len
       caf_runtime_error (msg);
     }
 
+#ifdef WITH_FAILED_IMAGES
+  MPI_Barrier (CAF_COMM_WORLD);
+#else
   PREFIX (sync_all) (NULL, NULL, 0);
+#endif
 
   caf_static_t *tmp = caf_tot, *prev = caf_tot, *next=caf_tot;
   MPI_Win *p;
 
-  while(tmp)
+  while (tmp)
     {
       prev = tmp->prev;
 
-      if(tmp->token == *token)
+      if (tmp->token == *token)
         {
-          p = TOKEN(*token);
-          CAF_Win_unlock_all(*p);
+          p = TOKEN (*token);
+          CAF_Win_unlock_all (*p);
 #ifdef GCC_GE_7
 	  mpi_caf_token_t *mpi_token = *(mpi_caf_token_t **)token;
 	  if (mpi_token->local_memptr)
 	    {
-	      MPI_Win_free(p);
+	      MPI_Win_free (p);
 	      mpi_token->local_memptr = NULL;
 	    }
 	  if ((*(mpi_caf_token_t **)token)->desc
 	      && type != CAF_DEREGTYPE_COARRAY_DEALLOCATE_ONLY)
 	    {
-	      CAF_Win_unlock_all(*(mpi_token->desc));
+	      CAF_Win_unlock_all (*(mpi_token->desc));
 	      MPI_Win_free (mpi_token->desc);
 	      free (mpi_token->desc);
 	    }
 #else
-          MPI_Win_free(p);
+          MPI_Win_free (p);
 #endif
 
-          if(prev)
+          if (prev)
             next->prev = prev->prev;
           else
             next->prev = NULL;
 
-          if(tmp == caf_tot)
+          if (tmp == caf_tot)
             caf_tot = prev;
 
-          free(tmp);
+          free (tmp);
           break;
         }
 
@@ -861,18 +1269,16 @@ PREFIX (deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len
   if (stat)
     *stat = 0;
 
-  /* if (unlikely (ierr = ARMCI_Free ((*token)[caf_this_image-1]))) */
-  /*   caf_runtime_error ("ARMCI memory freeing failed: Error code %d", ierr); */
-  //gasnet_exit(0);
-
   free (*token);
 }
 
 void
-PREFIX (sync_memory) (int *stat, char *errmsg, int errmsg_len)
+PREFIX (sync_memory) (int *stat __attribute__ ((unused)),
+                      char *errmsg __attribute__ ((unused)),
+                      int errmsg_len __attribute__ ((unused)))
 {
 #if defined(NONBLOCKING_PUT) && !defined(CAF_MPI_LOCK_UNLOCK)
-  explicit_flush();
+  explicit_flush ();
 #endif
 }
 
@@ -880,23 +1286,39 @@ PREFIX (sync_memory) (int *stat, char *errmsg, int errmsg_len)
 void
 PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
 {
-  int ierr=0;
+  int ierr = 0;
 
   if (unlikely (caf_is_finalized))
     ierr = STAT_STOPPED_IMAGE;
   else
     {
+      int mpi_err;
 #if defined(NONBLOCKING_PUT) && !defined(CAF_MPI_LOCK_UNLOCK)
       explicit_flush();
 #endif
-      MPI_Barrier(CAF_COMM_WORLD);
-      ierr = 0;
+
+#ifdef WITH_FAILED_IMAGES
+      mpi_err = MPI_Barrier (alive_comm);
+#else
+      mpi_err = MPI_Barrier (CAF_COMM_WORLD);
+#endif
+      dprint ("%d/%d: %s: MPI_Barrier = %d.\n", caf_this_image, caf_num_images,
+             __FUNCTION__, mpi_err);
+      if (mpi_err == STAT_FAILED_IMAGE)
+        ierr = STAT_FAILED_IMAGE;
+      else if (mpi_err != 0)
+        MPI_Error_class (mpi_err, &ierr);
     }
 
-  if (stat)
+  if (stat != NULL)
     *stat = ierr;
+#ifdef WITH_FAILED_IMAGES
+  else if (ierr == STAT_FAILED_IMAGE)
+    /* F2015 requests stat to be set for FAILED IMAGES, else error out. */
+    terminate_internal (ierr, 0);
+#endif
 
-  if (ierr)
+  if (ierr != 0 && ierr != STAT_FAILED_IMAGE)
     {
       char *msg;
       if (caf_is_finalized)
@@ -912,7 +1334,7 @@ PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
           if (errmsg_len > len)
             memset (&errmsg[len], ' ', errmsg_len-len);
         }
-      else
+      else if (stat == NULL)
         caf_runtime_error (msg);
     }
 }
@@ -924,42 +1346,41 @@ PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
 /* size: The number of bytes to be transferred. */
 /* asynchronous: Return before the data transfer has been complete  */
 
-void selectType(int size, MPI_Datatype *dt)
+void selectType (int size, MPI_Datatype *dt)
 {
   int t_s;
 
-  MPI_Type_size(MPI_INT, &t_s);
+  MPI_Type_size (MPI_INT, &t_s);
 
-  if(t_s==size)
+  if (t_s == size)
     {
-      *dt=MPI_INT;
+      *dt = MPI_INT;
       return;
     }
 
-  MPI_Type_size(MPI_DOUBLE, &t_s);
+  MPI_Type_size (MPI_DOUBLE, &t_s);
 
-  if(t_s==size)
+  if (t_s == size)
     {
-      *dt=MPI_DOUBLE;
+      *dt = MPI_DOUBLE;
       return;
     }
 
-  MPI_Type_size(MPI_COMPLEX, &t_s);
+  MPI_Type_size (MPI_COMPLEX, &t_s);
 
-  if(t_s==size)
+  if (t_s == size)
     {
-      *dt=MPI_COMPLEX;
+      *dt = MPI_COMPLEX;
       return;
     }
 
-  MPI_Type_size(MPI_DOUBLE_COMPLEX, &t_s);
+  MPI_Type_size (MPI_DOUBLE_COMPLEX, &t_s);
 
-  if(t_s==size)
+  if (t_s == size)
     {
-      *dt=MPI_DOUBLE_COMPLEX;
+      *dt = MPI_DOUBLE_COMPLEX;
       return;
     }
-
 }
 
 void
@@ -969,7 +1390,7 @@ PREFIX (sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
                   caf_token_t token_g, size_t offset_g,
                   int image_index_g, gfc_descriptor_t *src ,
                   caf_vector_t *src_vector __attribute__ ((unused)),
-                  int src_kind, int dst_kind, bool mrt)
+                  int src_kind, int dst_kind, bool mrt, int *stat)
 {
   int ierr = 0;
   size_t i, size;
@@ -994,6 +1415,9 @@ PREFIX (sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
 
   if (size == 0)
     return;
+
+  check_image_health (image_index_s, stat);
+  check_image_health (image_index_g, stat);
 
   if (rank == 0
       || (GFC_DESCRIPTOR_TYPE (dest) == GFC_DESCRIPTOR_TYPE (src)
@@ -1024,7 +1448,7 @@ PREFIX (sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
       CAF_Win_unlock (image_index_s - 1, *p_s);
 
       if (ierr != 0)
-        error_stop (ierr);
+        terminate_internal (ierr, 0);
       return;
 
       free(tmp);
@@ -1090,7 +1514,7 @@ PREFIX (sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
 
           if (ierr != 0)
             {
-              error_stop (ierr);
+              terminate_internal (ierr, 0);
               return;
             }
         }
@@ -1098,6 +1522,7 @@ PREFIX (sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
     }
 
 }
+
 
 /* Send array data from src to dest on a remote image.  */
 /* The last argument means may_require_temporary */
@@ -1107,12 +1532,12 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
                gfc_descriptor_t *dest,
                caf_vector_t *dst_vector __attribute__ ((unused)),
                gfc_descriptor_t *src, int dst_kind, int src_kind,
-               bool mrt)
+               bool mrt, int *stat)
 {
   /* FIXME: Implement vector subscripts, type conversion and check whether
      string-kind conversions are permitted.
      FIXME: Implement sendget as well.  */
-  int ierr = 0;
+  int ierr = 0, flag = 0;
   size_t i, size;
   int j;
   /* int position, msg = 0;  */
@@ -1136,6 +1561,8 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
 
   if (size == 0)
     return;
+
+  check_image_health(image_index, stat);
 
   if (GFC_DESCRIPTOR_TYPE (dest) == BT_CHARACTER && dst_size > src_size)
     {
@@ -1201,8 +1628,12 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
 #endif // CAF_MPI_LOCK_UNLOCK
         }
 
+#ifdef WITH_FAILED_IMAGES
+      check_image_health (image_index , stat);
+#else
       if (ierr != 0)
-        error_stop (ierr);
+        terminate_internal (ierr, 0);
+#endif
       return;
     }
   else
@@ -1261,7 +1692,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
                   ptrdiff_t array_offset_sr = 0;
                   stride = 1;
                   extent = 1;
-		  tot_ext = 1;
+                  tot_ext = 1;
                   for (j = 0; j < GFC_DESCRIPTOR_RANK (src)-1; j++)
                     {
                       array_offset_sr += ((i / tot_ext)
@@ -1270,7 +1701,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
                         * src->dim[j]._stride;
                       extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1);
                       stride = src->dim[j]._stride;
-		      tot_ext *= extent;
+                      tot_ext *= extent;
                     }
 
                   array_offset_sr += (i / tot_ext) * src->dim[rank-1]._stride;
@@ -1297,65 +1728,23 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
       ierr = MPI_Put (sr, 1, dt_s, image_index-1, dst_offset, 1, dt_d, *p);
       CAF_Win_unlock (image_index - 1, *p);
 
-      if (ierr != 0)
-        {
-          error_stop (ierr);
-          return;
-        }
+#ifdef WITH_FAILED_IMAGES
+      check_image_health (image_index, stat);
 
+      if(!stat && ierr == STAT_FAILED_IMAGE)
+        error_stop (ierr);
+
+      if(stat)
+        *stat = ierr;
+#else
+      if (ierr != 0)
+         {
+           error_stop (ierr);
+           return;
+         }
+#endif
       MPI_Type_free (&dt_s);
       MPI_Type_free (&dt_d);
-
-      /* msg = 2; */
-      /* MPI_Pack(&msg, 1, MPI_INT, buff_am[caf_this_image], 1000, &position, CAF_COMM_WORLD); */
-      /* MPI_Pack(&rank, 1, MPI_INT, buff_am[caf_this_image], 1000, &position, CAF_COMM_WORLD); */
-
-      /* for(j=0;j<rank;j++) */
-      /*   { */
-      /*     MPI_Pack(&(dest->dim[j]._stride), 1, MPI_INT, buff_am[caf_this_image], 1000, &position, CAF_COMM_WORLD); */
-      /*     MPI_Pack(&(dest->dim[j].lower_bound), 1, MPI_INT, buff_am[caf_this_image], 1000, &position, CAF_COMM_WORLD); */
-      /*     MPI_Pack(&(dest->dim[j]._ubound), 1, MPI_INT, buff_am[caf_this_image], 1000, &position, CAF_COMM_WORLD); */
-      /*   } */
-
-      /* MPI_Pack(&size, 1, MPI_INT, buff_am[caf_this_image], 1000, &position, CAF_COMM_WORLD); */
-
-      /* /\* non-blocking send *\/ */
-
-      /* MPI_Issend(buff_am[caf_this_image], position, MPI_PACKED, image_index-1, 1, CAF_COMM_WORLD, &reqdt); */
-
-      /* msgbody = calloc(size, sizeof(char)); */
-
-      /* ptrdiff_t array_offset_sr = 0; */
-      /* ptrdiff_t stride = 1; */
-      /* ptrdiff_t extent = 1; */
-
-      /* for(i = 0; i < size; i++) */
-      /*   { */
-      /*     for (j = 0; j < GFC_DESCRIPTOR_RANK (src)-1; j++) */
-      /*         { */
-      /*           array_offset_sr += ((i / (extent*stride)) */
-      /*                               % (src->dim[j]._ubound */
-      /*                                  - src->dim[j].lower_bound + 1)) */
-      /*             * src->dim[j]._stride; */
-      /*           extent = (src->dim[j]._ubound - src->dim[j].lower_bound + 1); */
-      /*         stride = src->dim[j]._stride; */
-      /*         } */
-
-      /*     array_offset_sr += (i / extent) * src->dim[rank-1]._stride; */
-
-      /*     void *sr = (void *)((char *) src->base_addr */
-      /*                           + array_offset_sr*GFC_DESCRIPTOR_SIZE (src)); */
-
-      /*     memmove (msgbody+p_mb, sr, GFC_DESCRIPTOR_SIZE (src)); */
-
-      /*     p_mb += GFC_DESCRIPTOR_SIZE (src); */
-      /*   } */
-
-      /* MPI_Wait(&reqdt, &stadt); */
-
-      /* MPI_Ssend(msgbody, size, MPI_BYTE, image_index-1, 1, CAF_COMM_WORLD); */
-
-      /* free(msgbody); */
 
 #else
       if(caf_this_image == image_index && mrt)
@@ -1429,11 +1818,13 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
                                 dst_offset, dst_size - src_size, MPI_BYTE, *p);
             }
 
+#ifndef WITH_FAILED_IMAGES
           if (ierr != 0)
             {
-              error_stop (ierr);
+              caf_runtime_error ("MPI Error: %d", ierr);
               return;
             }
+#endif
         }
 
       if(caf_this_image == image_index && mrt)
@@ -1468,6 +1859,8 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
         }
       CAF_Win_unlock (image_index - 1, *p);
 #endif
+
+      check_image_health (image_index, stat);
     }
 }
 
@@ -1477,14 +1870,13 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
 void
 PREFIX (get) (caf_token_t token, size_t offset,
               int image_index,
-              gfc_descriptor_t *src ,
+              gfc_descriptor_t *src,
               caf_vector_t *src_vector __attribute__ ((unused)),
               gfc_descriptor_t *dest, int src_kind, int dst_kind,
-              bool mrt)
+              bool mrt, int *stat)
 {
   size_t i, size;
-  int ierr = 0;
-  int j;
+  int ierr = 0, j;
   MPI_Win *p = TOKEN(token);
   int rank = GFC_DESCRIPTOR_RANK (src);
   size_t src_size = GFC_DESCRIPTOR_SIZE (src);
@@ -1505,6 +1897,8 @@ PREFIX (get) (caf_token_t token, size_t offset,
 
   if (size == 0)
     return;
+
+  check_image_health (image_index, stat);
 
   if (GFC_DESCRIPTOR_TYPE (dest) == BT_CHARACTER && dst_size > src_size)
     {
@@ -1540,9 +1934,11 @@ PREFIX (get) (caf_token_t token, size_t offset,
             memcpy ((char *) dest->base_addr + src_size, pad_str,
                     dst_size-src_size);
           CAF_Win_unlock (image_index - 1, *p);
+
+          check_image_health (image_index, stat);
         }
       if (ierr != 0)
-        error_stop (ierr);
+        terminate_internal (ierr, 0);
       return;
     }
 
@@ -1633,10 +2029,21 @@ PREFIX (get) (caf_token_t token, size_t offset,
 
   CAF_Win_lock (MPI_LOCK_SHARED, image_index - 1, *p);
   ierr = MPI_Get (dst, 1, dt_d, image_index-1, offset, 1, dt_s, *p);
+#ifdef WITH_FAILED_IMAGES
+  check_image_health (image_index, stat);
+
+  if(stat)
+    *stat = ierr;
+  else if(ierr == STAT_FAILED_IMAGE)
+    error_stop (ierr);
+#else
   CAF_Win_unlock (image_index - 1, *p);
 
-  if (ierr != 0)
+  if(stat)
+    *stat = ierr;
+  else if (ierr != 0)
     error_stop (ierr);
+#endif
 
   MPI_Type_free(&dt_s);
   MPI_Type_free(&dt_d);
@@ -1710,7 +2117,7 @@ PREFIX (get) (caf_token_t token, size_t offset,
             memcpy ((char *) dst + src_size, pad_str, dst_size-src_size);
         }
       if (ierr != 0)
-        error_stop (ierr);
+        terminate_internal (ierr, 0);
     }
 
   if(caf_this_image == image_index && mrt)
@@ -2540,6 +2947,8 @@ _gfortran_caf_get_by_ref (caf_token_t token, int image_index,
   if (stat)
     *stat = 0;
 
+  check_image_health (image_index, stat);
+
   GET_REMOTE_DESC (mpi_token, src, primary_src_desc_data, image_index - 1);
   /* Compute the size of the result.  In the beginning size just counts the
      number of elements.  */
@@ -2952,8 +3361,9 @@ PREFIX(send_by_ref) (caf_token_t token, int image_index,
                          int dst_kind, int src_kind, bool may_require_tmp,
                          bool dst_reallocatable, int *stat)
 {
-  fprintf (stderr, "COARRAY ERROR: caf_send_by_ref() not implemented yet ");
-  error_stop (1);
+  unimplemented_alloc_comps_message("caf_send_by_ref()");
+  // Make sure we exit
+  terminate_internal (1, 1);
 }
 
 
@@ -2964,23 +3374,26 @@ PREFIX(sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
                             int dst_kind, int src_kind,
                             bool may_require_tmp, int *dst_stat, int *src_stat)
 {
-  fprintf (stderr, "COARRAY ERROR: caf_sendget_by_ref() not implemented yet ");
-  error_stop (1);
+  unimplemented_alloc_comps_message("caf_sendget_by_ref()");
+  // Make sure we exit
+  terminate_internal (1, 1);
 }
 
 
 int
 PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
 {
-  fprintf (stderr, "COARRAY ERROR: caf_is_present() not implemented yet ");
-  error_stop (1);
+  unimplemented_alloc_comps_message("caf_is_present()");
+  // Make sure we exit
+  terminate_internal (1, 1);
 }
 #endif
 
 
 /* SYNC IMAGES. Note: SYNC IMAGES(*) is passed as count == -1 while
    SYNC IMAGES([]) has count == 0. Note further that SYNC IMAGES(*)
-   is not equivalent to SYNC ALL. */
+   is not semantically equivalent to SYNC ALL. */
+
 void
 PREFIX (sync_images) (int count, int images[], int *stat, char *errmsg,
                      int errmsg_len)
@@ -2988,17 +3401,25 @@ PREFIX (sync_images) (int count, int images[], int *stat, char *errmsg,
   sync_images_internal (count, images, stat, errmsg, errmsg_len, false);
 }
 
-void
+static void
 sync_images_internal (int count, int images[], int *stat, char *errmsg,
                       int errmsg_len, bool internal)
 {
   int ierr = 0, i = 0, j = 0, int_zero = 0, done_count = 0;
   MPI_Status s;
 
+#ifdef WITH_FAILED_IMAGES
+  no_stopped_images_check_in_errhandler = true;
+#endif
+  dprint ("%d/%d: Entering %s.\n", caf_this_image, caf_num_images, __FUNCTION__);
   if (count == 0 || (count == 1 && images[0] == caf_this_image))
     {
       if (stat)
         *stat = 0;
+#ifdef WITH_FAILED_IMAGES
+      no_stopped_images_check_in_errhandler = false;
+#endif
+      dprint ("%d/%d: Leaving %s early.\n", caf_this_image, caf_num_images, __FUNCTION__);
       return;
     }
 
@@ -3031,76 +3452,101 @@ sync_images_internal (int count, int images[], int *stat, char *errmsg,
     {
        if(count == -1)
         {
-          for (i = 0; i < caf_num_images - 1; ++i)
-            ++orders[images_full[i] - 1];
           count = caf_num_images - 1;
           images = images_full;
-        }
-      else
-        {
-          for (i = 0; i < count; ++i)
-            ++orders[images[i] - 1];
         }
 
 #if defined(NONBLOCKING_PUT) && !defined(CAF_MPI_LOCK_UNLOCK)
       explicit_flush();
 #endif
 
+#ifdef WITH_FAILED_IMAGES
+      {
+        int flag;
+        /* Provoke detecting process fails. */
+        MPI_Test (&alive_request, &flag, MPI_STATUS_IGNORE);
+      }
+#endif
       /* A rather simple way to synchronice:
-	 - expect all images to sync with receiving an int,
-	 - on the other side, send all processes to sync with an int,
-	 - when the int received is STAT_STOPPED_IMAGE the return immediately,
-	   else wait until all images in the current set of images have send
-	   some data, i.e., synced.
+         - expect all images to sync with receiving an int,
+         - on the other side, send all processes to sync with an int,
+         - when the int received is STAT_STOPPED_IMAGE the return immediately,
+           else wait until all images in the current set of images have send
+           some data, i.e., synced.
 
-	 This approach as best as possible implements the syncing of different
-	 sets of images and figuring that an image has stopped.  MPI does not
-	 provide any direct means of syncing non-coherent sets of images.
-	 The groups/communicators of MPI always need to be consistent, i.e.,
-	 have the same members on all images participating.  This is
-	 contradictiory to the sync images statement, where syncing, e.g., in a
-	 ring pattern is possible.
+         This approach as best as possible implements the syncing of different
+         sets of images and figuring that an image has stopped.  MPI does not
+         provide any direct means of syncing non-coherent sets of images.
+         The groups/communicators of MPI always need to be consistent, i.e.,
+         have the same members on all images participating.  This is
+         contradictiory to the sync images statement, where syncing, e.g., in a
+         ring pattern is possible.
 
-	 This implementation guarantees, that as long as no image is stopped
-	 an image only is allowed to continue, when all its images to sync to
-	 also have reached a sync images statement.  This implementation makes
-	 no assumption when the image continues or in which order synced
-	 images continue.  */
-      for(i = 0; i < count; ++i)
-	/* Need to have the request handlers contigously in the handlers
-	   array or waitany below will trip about the handler as illegal.  */
-	ierr = MPI_Irecv (&arrived[images[i] - 1], 1, MPI_INT, images[i] - 1, 0,
-			  CAF_COMM_WORLD, &sync_handles[i]);
-      for(i = 0; i < count; ++i)
-	MPI_Send (&int_zero, 1, MPI_INT, images[i] - 1, 0, CAF_COMM_WORLD);
+         This implementation guarantees, that as long as no image is stopped
+         an image only is allowed to continue, when all its images to sync to
+         also have reached a sync images statement.  This implementation makes
+         no assumption when the image continues or in which order synced
+         images continue.  */
+      for (i = 0; i < count; ++i)
+        /* Need to have the request handlers contigously in the handlers
+           array or waitany below will trip about the handler as illegal.  */
+        ierr = MPI_Irecv (&arrived[images[i] - 1], 1, MPI_INT, images[i] - 1,
+            MPI_TAG_CAF_SYNC_IMAGES, CAF_COMM_WORLD, &sync_handles[i]);
+      for (i = 0; i < count; ++i)
+        MPI_Send (&int_zero, 1, MPI_INT, images[i] - 1, MPI_TAG_CAF_SYNC_IMAGES,
+                  CAF_COMM_WORLD);
       done_count = 0;
       while (done_count < count)
-	{
-	  ierr = MPI_Waitany (count, sync_handles, &i, &s);
-	  if (i != MPI_UNDEFINED)
-	    {
-	      ++done_count;
-	      if (ierr == MPI_SUCCESS && arrived[s.MPI_SOURCE] == STAT_STOPPED_IMAGE)
-		{
-		  /* Possible future extension: Abort pending receives.  At the
-		     moment the receives are discarded by the program
-		     termination.  For the tested mpi-implementation this is ok.
-		   */
-		  ierr = STAT_STOPPED_IMAGE;
-		  break;
-		}
-	    }
-	  else if (ierr != MPI_SUCCESS)
-	    /* Abort receives here, too, when implemented above.  */
-	    break;
-	}
+        {
+          ierr = MPI_Waitany (count, sync_handles, &i, &s);
+          if (ierr == MPI_SUCCESS && i != MPI_UNDEFINED)
+            {
+              ++done_count;
+              if (ierr == MPI_SUCCESS && arrived[s.MPI_SOURCE] == STAT_STOPPED_IMAGE)
+                {
+                  /* Possible future extension: Abort pending receives.  At the
+                     moment the receives are discarded by the program
+                     termination.  For the tested mpi-implementation this is ok.
+                   */
+                  ierr = STAT_STOPPED_IMAGE;
+                  break;
+                }
+            }
+          else if (ierr != MPI_SUCCESS)
+#ifdef WITH_FAILED_IMAGES
+            {
+              int err;
+              MPI_Error_class (ierr, &err);
+              if (err == MPIX_ERR_PROC_FAILED)
+                {
+                  int flag;
+                  dprint ("%d/%d: Image failed, provoking error handling.\n",
+                         caf_this_image, caf_num_images);
+                  ierr = STAT_FAILED_IMAGE;
+                  /* Provoke detecting process fails. */
+                  MPI_Test (&alive_request, &flag, MPI_STATUS_IGNORE);
+                }
+              break;
+            }
+#else
+            break;
+#endif
+        }
     }
 
 sync_images_err_chk:
+#ifdef WITH_FAILED_IMAGES
+  no_stopped_images_check_in_errhandler = false;
+#endif
+  dprint ("%d/%d: Leaving %s.\n", caf_this_image, caf_num_images, __FUNCTION__);
   if (stat)
     *stat = ierr;
+#ifdef WITH_FAILED_IMAGES
+  else if (ierr == STAT_FAILED_IMAGE)
+    terminate_internal (ierr, 0);
+#endif
 
-  if (ierr && stat == NULL)
+  if (ierr != 0 && ierr != STAT_FAILED_IMAGE)
     {
       char *msg;
       if (caf_is_finalized)
@@ -3116,7 +3562,7 @@ sync_images_err_chk:
           if (errmsg_len > len)
             memset (&errmsg[len], ' ', errmsg_len-len);
         }
-      else if (!internal)
+      else if (!internal && stat == NULL)
         caf_runtime_error (msg);
     }
 }
@@ -3657,7 +4103,7 @@ PREFIX (atomic_define) (caf_token_t token, size_t offset,
   if (stat)
     *stat = ierr;
   else if (ierr != 0)
-    error_stop (ierr);
+    terminate_internal (ierr, 0);
 
   return;
 }
@@ -3693,7 +4139,7 @@ PREFIX(atomic_ref) (caf_token_t token, size_t offset,
   if (stat)
     *stat = ierr;
   else if (ierr != 0)
-    error_stop (ierr);
+    terminate_internal (ierr, 0);
 
   return;
 }
@@ -3731,7 +4177,7 @@ PREFIX(atomic_cas) (caf_token_t token, size_t offset,
   if (stat)
     *stat = ierr;
   else if (ierr != 0)
-    error_stop (ierr);
+    terminate_internal (ierr, 0);
 
   return;
 }
@@ -3787,7 +4233,7 @@ PREFIX (atomic_op) (int op, caf_token_t token ,
   if (stat)
     *stat = ierr;
   else if (ierr != 0)
-    error_stop (ierr);
+    terminate_internal (ierr, 0);
 
   return;
 }
@@ -3799,7 +4245,7 @@ PREFIX (event_post) (caf_token_t token, size_t index,
 		     int image_index, int *stat,
 		     char *errmsg, int errmsg_len)
 {
-  int image, value=1, ierr=0;
+  int image, value = 1, ierr = 0,flag;
   MPI_Win *p = TOKEN(token);
   const char msg[] = "Error on event post";
 
@@ -3819,6 +4265,12 @@ PREFIX (event_post) (caf_token_t token, size_t index,
   #warning Events for MPI-2 are not implemented
   printf ("Events for MPI-2 are not supported, please update your MPI implementation\n");
 #endif // MPI_VERSION
+
+  check_image_health (image_index, stat);
+
+  if(!stat && ierr == STAT_FAILED_IMAGE)
+    terminate_internal (ierr, 0);
+  
   if(ierr != MPI_SUCCESS)
     {
       if(stat != NULL)
@@ -3873,6 +4325,12 @@ PREFIX (event_wait) (caf_token_t token, size_t index,
   CAF_Win_lock (MPI_LOCK_EXCLUSIVE, image, *p);
   ierr = MPI_Fetch_and_op(&newval, &old, MPI_INT, image, index*sizeof(int), MPI_SUM, *p);
   CAF_Win_unlock (image, *p);
+
+  check_image_health (image, stat);
+
+  if(!stat && ierr == STAT_FAILED_IMAGE)
+    terminate_internal (ierr, 0);
+  
   if(ierr != MPI_SUCCESS)
     {
       if(stat != NULL)
@@ -3912,28 +4370,39 @@ PREFIX (event_query) (caf_token_t token, size_t index,
     *stat = ierr;
 }
 
-/* ERROR STOP the other images.  */
+
+/* Internal function to execute the part that is common to all (error) stop
+ * functions.  */
 
 static void
-error_stop (int error)
+terminate_internal (int stat_code, int exit_code)
 {
-  /* FIXME: Shutdown the Fortran RTL to flush the buffer.  PR 43849.  */
-  /* FIXME: Do some more effort than just gasnet_exit().  */
-  MPI_Abort(CAF_COMM_WORLD, error);
+  dprint ("%d/%d: terminate_internal (stat_code = %d, exit_code = %d).\n",
+          caf_this_image, caf_num_images, stat_code, exit_code);
+  finalize_internal (stat_code);
 
-  /* Should be unreachable, but to make sure also call exit.  */
-  exit (error);
+#ifndef WITH_FAILED_IMAGES
+  MPI_Abort(MPI_COMM_WORLD, exit_code);
+#endif
+  exit (exit_code);
 }
 
+
 /* STOP function for integer arguments.  */
+
 void
 PREFIX (stop_numeric) (int32_t stop_code)
 {
   fprintf (stderr, "STOP %d\n", stop_code);
-  PREFIX (finalize) ();
+
+  /* Stopping includes taking down the runtime regularly and returning the
+   * stop_code. */
+  terminate_internal (STAT_STOPPED_IMAGE, stop_code);
 }
 
+
 /* STOP function for string arguments.  */
+
 void
 PREFIX (stop_str) (const char *string, int32_t len)
 {
@@ -3942,8 +4411,10 @@ PREFIX (stop_str) (const char *string, int32_t len)
     fputc (*(string++), stderr);
   fputs ("\n", stderr);
 
-  PREFIX (finalize) ();
+  /* Stopping includes taking down the runtime regularly. */
+  terminate_internal (STAT_STOPPED_IMAGE, 0);
 }
+
 
 /* ERROR STOP function for string arguments.  */
 
@@ -3955,7 +4426,7 @@ PREFIX (error_stop_str) (const char *string, int32_t len)
     fputc (*(string++), stderr);
   fputs ("\n", stderr);
 
-  error_stop (1);
+  terminate_internal (STAT_STOPPED_IMAGE, 1);
 }
 
 
@@ -3965,5 +4436,203 @@ void
 PREFIX (error_stop) (int32_t error)
 {
   fprintf (stderr, "ERROR STOP %d\n", error);
-  error_stop (error);
+
+  terminate_internal (STAT_STOPPED_IMAGE, error);
+}
+
+
+/* FAIL IMAGE statement.  */
+
+void
+PREFIX (fail_image) (void)
+{
+  fputs ("IMAGE FAILED!\n", stderr);
+
+  raise(SIGKILL);
+  /* A failing image is expected to take down the runtime regularly. */
+  terminate_internal (STAT_FAILED_IMAGE, 0);
+}
+
+int
+PREFIX (image_status) (int image)
+{
+#ifdef GFC_CAF_CHECK
+  if (image < 1 || image > caf_num_images)
+    {
+      char errmsg[60];
+      sprintf (errmsg, "Image #%d out of bounds of images 1..%d.", image,
+               caf_num_images);
+      caf_runtime_error (errmsg);
+    }
+#endif
+#ifdef WITH_FAILED_IMAGES
+  if (image_stati[image - 1] == 0)
+    {
+      int status, ierr;
+      /* Check that we are fine before doing anything.
+       *
+       * Do an MPI-operation to learn about failed/stopped images, that have
+       * not been detected yet.  */
+      ierr = MPI_Test (&alive_request, &status, MPI_STATUSES_IGNORE);
+      MPI_Error_class (ierr, &status);
+      if (ierr == MPI_SUCCESS)
+        {
+          CAF_Win_lock (MPI_LOCK_SHARED, image - 1, *stat_tok);
+          ierr = MPI_Get (&status, 1, MPI_INT, image - 1, 0, 1, MPI_INT, *stat_tok);
+          dprint ("%d/%d: Image status of image #%d is: %d\n", caf_this_image,
+                 caf_num_images, image, status);
+          CAF_Win_unlock (image - 1, *stat_tok);
+          image_stati[image - 1] = status;
+        }
+      else if (status == MPIX_ERR_PROC_FAILED)
+        image_stati[image - 1] = STAT_FAILED_IMAGE;
+      else
+        {
+          const int strcap = 200;
+          char errmsg[strcap];
+          int slen, supplied_len;
+          sprintf (errmsg, "Image status for image #%d returned mpi error: ",
+                   image);
+          slen = strlen (errmsg);
+          supplied_len = strcap - slen;
+          MPI_Error_string (status, &errmsg[slen], &supplied_len);
+          caf_runtime_error (errmsg);
+        }
+    }
+  return image_stati[image - 1];
+#else
+  unsupported_fail_images_message ("IMAGE_STATUS()");
+#endif
+
+  return 0;
+}
+
+void
+PREFIX (failed_images) (gfc_descriptor_t *array, int team __attribute__ ((unused)),
+			int * kind)
+{
+  int local_kind = kind ? *kind : 4; /* GFC_DEFAULT_INTEGER_KIND = 4*/
+
+#ifdef WITH_FAILED_IMAGES
+  void *mem = calloc (num_images_failed, local_kind);
+  array->base_addr = mem;
+  for (int i = 0; i < caf_num_images; ++i)
+    {
+      if (image_stati[i] == STAT_FAILED_IMAGE)
+	{
+	  switch (local_kind)
+	    {
+	    case 1:
+	      *(int8_t *)mem = i + 1;
+	      break;
+	    case 2:
+	      *(int16_t *)mem = i + 1;
+	      break;
+	    case 4:
+	      *(int32_t *)mem = i + 1;
+	      break;
+	    case 8:
+	      *(int64_t *)mem = i + 1;
+	      break;
+#ifdef HAVE_GFC_INTEGER_16
+	    case 16:
+	      *(int128t *)mem = i + 1;
+	      break;
+#endif
+	    default:
+	      caf_runtime_error("Unsupported integer kind %1 in caf_failed_images.", local_kind);
+	    }
+	  mem += local_kind;
+	}
+    }
+  array->dim[0]._ubound = num_images_failed-1;
+#else
+  unsupported_fail_images_message ("FAILED_IMAGES()");
+  array->dim[0]._ubound = -1;
+  array->base_addr = NULL;
+#endif
+  array->dtype = ((BT_INTEGER << GFC_DTYPE_TYPE_SHIFT)
+		  | (local_kind << GFC_DTYPE_SIZE_SHIFT));
+  array->dim[0].lower_bound = 0;
+  array->dim[0]._stride = 1;
+  array->offset = 0;
+}
+
+void
+PREFIX (stopped_images) (gfc_descriptor_t *array, int team __attribute__ ((unused)),
+			 int * kind)
+{
+  int local_kind = kind ? *kind : 4; /* GFC_DEFAULT_INTEGER_KIND = 4*/
+
+#ifdef WITH_FAILED_IMAGES
+  void *mem = calloc (num_images_stopped, local_kind);
+  array->base_addr = mem;
+  for (int i = 0; i < caf_num_images; ++i)
+    {
+      if (image_stati[i])
+	{
+	  switch (local_kind)
+	    {
+	    case 1:
+	      *(int8_t *)mem = i + 1;
+	      break;
+	    case 2:
+	      *(int16_t *)mem = i + 1;
+	      break;
+	    case 4:
+	      *(int32_t *)mem = i + 1;
+	      break;
+	    case 8:
+	      *(int64_t *)mem = i + 1;
+	      break;
+#ifdef HAVE_GFC_INTEGER_16
+	    case 16:
+	      *(int128t *)mem = i + 1;
+	      break;
+#endif
+	    default:
+	      caf_runtime_error("Unsupported integer kind %1 in caf_stopped_images.", local_kind);
+	    }
+	  mem += local_kind;
+	}
+    }
+  array->dim[0]._ubound = num_images_stopped - 1;
+#else
+  unsupported_fail_images_message ("STOPPED_IMAGES()");
+  array->dim[0]._ubound = -1;
+  array->base_addr = NULL;
+#endif
+  array->dtype = ((BT_INTEGER << GFC_DTYPE_TYPE_SHIFT)
+		  | (local_kind << GFC_DTYPE_SIZE_SHIFT));
+  array->dim[0].lower_bound = 0;
+  array->dim[0]._stride = 1;
+  array->offset = 0;
+}
+
+/* Give a descriptive message when failed images support is not available. */
+void
+unsupported_fail_images_message (const char * functionname)
+{
+  fprintf (stderr, "*** caf_mpi-lib runtime message on image %d:\n"
+           "*** The failed images feature '%s' of Fortran 2015 standard\n"
+           "*** is not available in this build. You need a compiler with failed images\n"
+           "*** support activated and compile OpenCoarrays with failed images support.\n",
+           caf_this_image, functionname);
+#ifdef STOP_ON_UNSUPPORTED
+  exit (EXIT_FAILURE);
+#endif
+}
+
+/* Give a descriptive message when support for an allocatable components feature
+ * is not available. */
+void
+unimplemented_alloc_comps_message (const char * functionname)
+{
+  fprintf (stderr, "*** caf_mpi-lib runtime message on image %d:\n"
+           "*** The allocatable components feature '%s' of Fortran 2008 standard\n"
+           "*** is not yet supported by OpenCoarrays.\n",
+           caf_this_image, functionname);
+#ifdef STOP_ON_UNSUPPORTED
+  exit (EXIT_FAILURE);
+#endif
 }

@@ -18,4 +18,5 @@ program sync_images_stat
      if(me == 2) print *, 'Test passed.'
   end if
 
+  ! Image 1 implicitly synchronizes as part of normal termination
 end program sync_images_stat

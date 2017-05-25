@@ -63,6 +63,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 #define STAT_LOCKED_OTHER_IMAGE	2
 #define STAT_DUP_SYNC_IMAGES    3
 #define STAT_STOPPED_IMAGE 	6000
+#define STAT_FAILED_IMAGE       6001
 
 /* Describes what type of array we are registerring. Keep in sync with
    gcc/fortran/trans.h.  */
@@ -88,11 +89,15 @@ typedef enum caf_deregister_t {
 caf_deregister_t;
 
 typedef void* caf_token_t;
-
+#ifdef GCC_GE_7
+/** Add a dummy type representing teams in coarrays. */
+typedef void * caf_team_t;
+#endif
 
 /* Linked list of static coarrays registered.  */
 typedef struct caf_static_t {
   caf_token_t token;
+  caf_token_t stopped_token;
   struct caf_static_t *prev;
 }
 caf_static_t;
@@ -228,13 +233,15 @@ void PREFIX (deregister) (caf_token_t *, int *, char *, int);
 #endif
 
 void PREFIX (caf_get) (caf_token_t, size_t, int, gfc_descriptor_t *,
-		       caf_vector_t *, gfc_descriptor_t *, int, int, int);
+               caf_vector_t *, gfc_descriptor_t *, int, int, bool, int *);
 void PREFIX (caf_send) (caf_token_t, size_t, int, gfc_descriptor_t *,
-                        caf_vector_t *, gfc_descriptor_t *, int, int);
+                        caf_vector_t *, gfc_descriptor_t *, int, int, bool,
+                        int *);
 
 void PREFIX (caf_sendget) (caf_token_t, size_t, int, gfc_descriptor_t *,
 			   caf_vector_t *, caf_token_t, size_t, int,
-			   gfc_descriptor_t *, caf_vector_t *, int, int);
+			   gfc_descriptor_t *, caf_vector_t *, int, int, bool,
+			   int *);
 
 #ifdef GCC_GE_7
 void PREFIX(get_by_ref) (caf_token_t, int,
@@ -263,9 +270,16 @@ void PREFIX (sync_all) (int *, char *, int);
 void PREFIX (sync_images) (int, int[], int *, char *, int);
 void PREFIX (sync_memory) (int *, char *, int);
 
+void PREFIX (stop_str) (const char *, int32_t) __attribute__ ((noreturn));
+void PREFIX (stop) (int32_t) __attribute__ ((noreturn));
 void PREFIX (error_stop_str) (const char *, int32_t)
      __attribute__ ((noreturn));
 void PREFIX (error_stop) (int32_t) __attribute__ ((noreturn));
+void PREFIX (fail_image) (void) __attribute__ ((noreturn));
+
+int PREFIX (image_status) (int);
+void PREFIX (failed_images) (gfc_descriptor_t *, int, int *);
+void PREFIX (stopped_images) (gfc_descriptor_t *, int, int *);
 
 void PREFIX (atomic_define) (caf_token_t, size_t, int, void *, int *, int, int);
 void PREFIX (atomic_ref) (caf_token_t, size_t, int, void *, int *, int, int);
