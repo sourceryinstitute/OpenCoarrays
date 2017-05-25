@@ -28,7 +28,7 @@ set_or_print_default_version()
   package_version=(
     "cmake:3.4.0"
     "gcc:6.1.0"
-    "mpich:3.1.4"
+    "mpich:3.2"
     "wget:1.16.3"
     "flex:2.6.0"
     "bison:3.0.4"
