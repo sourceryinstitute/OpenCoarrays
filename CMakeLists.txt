@@ -8,11 +8,11 @@ set_property ( CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${CMAKE_CONFIGURATION_TYP
 
 # Add option and check environment to determine if developer tests should be run
 if($ENV{OPENCOARRAYS_DEVELOPER})
-  option(RUN_DEVELOPER_TESTS "Run tests intended only for developers" ON)
+  option(CAF_RUN_DEVELOPER_TESTS "Run tests intended only for developers" ON)
 else()
-  option(RUN_DEVELOPER_TESTS "Run tests intended only for developers" OFF)
+  option(CAF_RUN_DEVELOPER_TESTS "Run tests intended only for developers" OFF)
 endif()
-mark_as_advanced(RUN_DEVELOPER_TESTS)
+mark_as_advanced(CAF_RUN_DEVELOPER_TESTS)
 
 if( NOT DEFINED ENV{OPENCOARRAYS_DEVELOPER})
   set ( ENV{OPENCOARRAYS_DEVELOPER} FALSE )
@@ -387,7 +387,7 @@ include(GNUInstallDirs)
 #-------------------------------
 # Recurse into the src directory
 #-------------------------------
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
+include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 add_subdirectory(src)
 
@@ -465,6 +465,24 @@ function(add_mpi_test name num_mpi_proc path)
    set_property(TEST ${name} PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
 endfunction(add_mpi_test)
 
+function(add_fault_tolerant_mpi_test name num_mpi_proc path)
+   if ( ((N LESS num_mpi_proc) OR (N EQUAL 0)) )
+     message(STATUS "Test ${name} is oversubscribed: ${num_mpi_proc} ranks requested with ${N} system processor available.")
+     if ( openmpi )
+       if ( N LESS 2 )
+	 set( num_mpi_proc 2 )
+	 set (test_parameters --oversubscribe)
+       else()
+	 set ( num_mpi_proc ${N} )
+       endif()
+       message( STATUS "Open-MPI detected, over-riding oversubscribed test, ${name}, with ${num_mpi_proc} ranks." )
+     endif()
+   endif()
+   set(test_parameters ${test_parameters} ${MPIEXEC_NUMPROC_FLAG} ${num_mpi_proc} -disable-auto-cleanup )
+   add_test(NAME ${name} COMMAND ${MPIEXEC} ${test_parameters} "${path}")
+   set_property(TEST ${name} PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
+endfunction(add_fault_tolerant_mpi_test)
+
 set(tests_root ${CMAKE_CURRENT_BINARY_DIR}/src/tests)
 
 
@@ -480,7 +498,7 @@ if(opencoarrays_aware_compiler)
     add_mpi_test(register_alloc_comp_1 2 ${tests_root}/unit/init_register/register_alloc_comp_1)
     add_mpi_test(register_alloc_comp_2 2 ${tests_root}/unit/init_register/register_alloc_comp_2)
     add_mpi_test(register_alloc_comp_3 2 ${tests_root}/unit/init_register/register_alloc_comp_3)
-    if (RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER})
+    if (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER})
       message ( STATUS "Running Developer tests is enabled." )
       add_mpi_test(async_comp_alloc 6 ${tests_root}/unit/init_register/async_comp_alloc)
       # Timeout async_comp_alloc test after 3 seconds to progess past the known failure
@@ -523,7 +541,7 @@ if(opencoarrays_aware_compiler)
     # GFortran PR 78505 only fixed on trunk/gcc 7
     add_mpi_test(source-alloc-no-sync 8 ${tests_root}/regression/reported/source-alloc-sync)
   endif()
-  if (RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER})
+  if (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER})
     add_mpi_test(convert-before-put 3 ${tests_root}/regression/reported/convert-before-put)
   endif()
   add_mpi_test(event-post 3 ${tests_root}/regression/reported/event-post)
@@ -531,8 +549,26 @@ if(opencoarrays_aware_compiler)
   add_mpi_test(co_reduce-factorial-int8 4 ${tests_root}/regression/reported/co_reduce-factorial-int8)
   add_mpi_test(co_reduce-factorial-int64 4 ${tests_root}/regression/reported/co_reduce-factorial-int64)
   add_mpi_test(co_reduce_string 4 ${tests_root}/unit/collectives/co_reduce_string)
-  # remove this before merging into master
-#  set_property(TEST co_reduce-factorial PROPERTY WILL_FAIL TRUE)
+
+  # IMAGE FAIL tests
+  if(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7)
+    add_mpi_test(image_status_test_1 4 ${tests_root}/unit/fail_images/image_status_test_1)
+    if(CAF_ENABLE_FAILED_IMAGES)
+      # No other way to check that image_fail_test_1 passes.
+      add_fault_tolerant_mpi_test(image_fail_test_1 4 ${tests_root}/unit/fail_images/image_fail_test_1)
+      set_property(TEST image_fail_test_1 PROPERTY FAIL_REGULAR_EXPRESSION "Test failed")
+      set_property(TEST image_fail_test_1 PROPERTY PASS_REGULAR_EXPRESSION "Test passed")
+      add_fault_tolerant_mpi_test(image_fail_and_sync_test_1 4 ${tests_root}/unit/fail_images/image_fail_and_sync_test_1)
+      if (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER})
+        add_fault_tolerant_mpi_test(image_fail_and_sync_test_2 4 ${tests_root}/unit/fail_images/image_fail_and_sync_test_2)
+      endif()
+      add_fault_tolerant_mpi_test(image_fail_and_sync_test_3 4 ${tests_root}/unit/fail_images/image_fail_and_sync_test_3)
+      add_fault_tolerant_mpi_test(image_fail_and_status_test_1 4 ${tests_root}/unit/fail_images/image_fail_and_status_test_1)
+      add_fault_tolerant_mpi_test(image_fail_and_failed_images_test_1 4 ${tests_root}/unit/fail_images/image_fail_and_failed_images_test_1)
+      add_fault_tolerant_mpi_test(image_fail_and_stopped_images_test_1 4 ${tests_root}/unit/fail_images/image_fail_and_stopped_images_test_1)
+      add_fault_tolerant_mpi_test(image_fail_and_get_test_1 4 ${tests_root}/unit/fail_images/image_fail_and_get_test_1)
+    endif()
+  endif()
 else()
   add_test(co_sum_extension ${tests_root}/unit/extensions/test-co_sum-extension.sh)
   set_property(TEST co_sum_extension PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
