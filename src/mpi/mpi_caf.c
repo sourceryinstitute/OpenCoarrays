@@ -394,6 +394,11 @@ failed_stopped_errorhandler_function (MPI_Comm* pcomm, int* perr, ...)
       *perr = MPI_SUCCESS;
       return;
     }
+  if (num_failed_in_group > caf_num_images)
+    {
+      *perr = MPI_SUCCESS;
+      return;
+    }
 
   MPI_Comm_group (comm, &comm_world_group);
   ranks_of_failed_in_comm_world = (int *) alloca (sizeof (int)
@@ -451,8 +456,20 @@ failed_stopped_errorhandler_function (MPI_Comm* pcomm, int* perr, ...)
   /* TODO: Consider whether removing the failed image from images_full will be
    * necessary. This is more or less politics. */
   for (i = 0; i < num_failed_in_group; ++i)
-    if (image_stati[ranks_of_failed_in_comm_world[i]] == 0)
-      image_stati[ranks_of_failed_in_comm_world[i]] = STAT_FAILED_IMAGE;
+    {
+      if (ranks_of_failed_in_comm_world[i] >= 0
+          && ranks_of_failed_in_comm_world[i] < caf_num_images)
+        {
+          if (image_stati[ranks_of_failed_in_comm_world[i]] == 0)
+            image_stati[ranks_of_failed_in_comm_world[i]] = STAT_FAILED_IMAGE;
+        }
+      else
+        {
+          dprint ("%d/%d: Rank of failed image %d out of range of images 0..%d.\n",
+                  caf_this_image, caf_num_images, ranks_of_failed_in_comm_world[i],
+                  caf_num_images);
+        }
+    }
 
 redo:
   dprint ("%d/%d: %s: Before shrink. \n", caf_this_image, caf_num_images, __FUNCTION__);
