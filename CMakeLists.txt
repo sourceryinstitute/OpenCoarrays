@@ -39,11 +39,14 @@ if((NOT (OpenCoarraysVersion MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+")) AND (EXISTS "$
       OUTPUT_STRIP_TRAILING_WHITESPACE)
     if((git_status STREQUAL "0") AND (git_output MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+"))
       set(OpenCoarraysVersion "${git_output}")
-      execute_process(COMMAND "${GIT_EXECUTABLE}" describe --always --dirty
+    endif()
+    execute_process(COMMAND "${GIT_EXECUTABLE}" describe --always --dirty
       WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
       RESULT_VARIABLE git_status
       OUTPUT_VARIABLE full_git_describe
       OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(NOT (git_status STREQUAL "0"))
+      set(full_git_describe NOTFOUND)
     endif()
   else()
     message( WARNING "Could not find git executable!")
