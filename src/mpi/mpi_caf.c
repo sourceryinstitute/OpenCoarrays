@@ -830,17 +830,16 @@ finalize_internal (int status_code)
   MPI_Cancel (&alive_request);
 
   if (status_code == 0) {
-      /* In finalization don't stopped or failed images any more. */
+      /* In finalization do not report stopped or failed images any more. */
       MPI_Errhandler_set (CAF_COMM_WORLD, MPI_ERRORS_RETURN);
-//      MPI_Errhandler_set (lock_comm, MPI_ERRORS_RETURN);
       MPI_Errhandler_set (alive_comm, MPI_ERRORS_RETURN);
       /* Only add a conventional barrier to prevent images from quitting to early,
        * when this images is not failing.  */
       dprint ("%d/%d: %s: Before MPI_Barrier (CAF_COMM_WORLD)\n",
-	      caf_this_image, caf_num_images, __FUNCTION__);
+              caf_this_image, caf_num_images, __FUNCTION__);
       int ierr = MPI_Barrier (CAF_COMM_WORLD);
       dprint ("%d/%d: %s: After MPI_Barrier (CAF_COMM_WORLD) = %d\n",
-	      caf_this_image, caf_num_images, __FUNCTION__, ierr);
+              caf_this_image, caf_num_images, __FUNCTION__, ierr);
     }
   else
     return;
@@ -871,18 +870,18 @@ finalize_internal (int status_code)
       prev = tmp_tot->prev;
       p = TOKEN(tmp_tot->token);
       dprint ("%d/%d: %s: Before CAF_Win_unlock_all (*p)\n",
-	      caf_this_image, caf_num_images, __FUNCTION__);
+              caf_this_image, caf_num_images, __FUNCTION__);
       CAF_Win_unlock_all (*p);
       dprint ("%d/%d: %s: After CAF_Win_unlock_all (*p)\n",
-	      caf_this_image, caf_num_images, __FUNCTION__);
+              caf_this_image, caf_num_images, __FUNCTION__);
 #ifdef GCC_GE_7
       /* Unregister the window to the descriptors when freeing the token.  */
       mpi_caf_token_t *mpi_token = (mpi_caf_token_t *)tmp_tot->token;
       if (mpi_token->desc)
         {
           CAF_Win_unlock_all (*(mpi_token->desc));
-	  MPI_Win_free (mpi_token->desc);
-	  free (mpi_token->desc);
+          MPI_Win_free (mpi_token->desc);
+          free (mpi_token->desc);
         }
       MPI_Win_free (p);
       /* Free the memory only, when it was allocated by the caf-library. */
@@ -1046,7 +1045,7 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
   if (type == CAF_REGTYPE_COARRAY_ALLOC_REGISTER_ONLY)
     {
       int ierr = MPI_Win_create_dynamic (MPI_INFO_NULL, CAF_COMM_WORLD, p);
-      fprintf(stderr, "%d/%d: Register win = %p, ierr= %d\n", caf_this_image, caf_num_images,
+      dprint ("%d/%d: Register win = %p, ierr= %d\n", caf_this_image, caf_num_images,
               *p, ierr);
       CAF_Win_lock_all (*p);
     }
@@ -1058,7 +1057,7 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
       ierr = MPI_Win_attach (*p, mem, actual_size);
       CAF_Win_lock_all (*p);
       *(mpi_token->flags) |= (FLAG_ASSOCIATED | FLAG_MEM_NOT_OWNED);
-      fprintf(stderr, "%d/%d: Attach mem %p to win = %p, ierr: %d, flags: %u\n",
+      dprint ("%d/%d: Attach mem %p to win = %p, ierr: %d, flags: %u\n",
               caf_this_image, caf_num_images, mem, *p, ierr, *mpi_token->flags);
     }
   else
@@ -1184,7 +1183,7 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
       free(init_array);
     }
 
-  PREFIX(sync_all) (NULL,NULL,0);
+  PREFIX(sync_all) (NULL, NULL, 0);
 
   caf_static_t *tmp = malloc (sizeof (caf_static_t));
   tmp->prev  = caf_tot;
@@ -1364,7 +1363,7 @@ PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
 {
   int ierr = 0;
 
-  fprintf (stderr, "%d/%d: Entering sync all.\n", caf_this_image, caf_num_images);
+  dprint ("%d/%d: Entering sync all.\n", caf_this_image, caf_num_images);
   if (unlikely (caf_is_finalized))
     ierr = STAT_STOPPED_IMAGE;
   else
@@ -1414,7 +1413,7 @@ PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
       else if (stat == NULL)
         caf_runtime_error (msg);
     }
-  fprintf (stderr, "%d/%d: Leaving sync all.\n", caf_this_image, caf_num_images);
+  dprint ("%d/%d: Leaving sync all.\n", caf_this_image, caf_num_images);
 }
 
 /* token: The token of the array to be written to. */
@@ -2527,7 +2526,7 @@ convert_type (void *dst, int dst_type, int dst_kind, void *src, int src_type,
     }
 
 error:
-  fprintf (stderr, "libcaf_single RUNTIME ERROR: Cannot convert type %d kind "
+  fprintf (stderr, "libcaf_mpi RUNTIME ERROR: Cannot convert type %d kind "
 	   "%d to type %d kind %d\n", src_type, src_kind, dst_type, dst_kind);
   if (stat)
     *stat = 1;
@@ -3549,7 +3548,7 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
   int ierr = MPI_Get (&remote_flags, sizeof (unsigned), MPI_BYTE,
                       image_index - 1, 0, sizeof (unsigned), MPI_BYTE,
                       mpi_token->flags_win);
-  fprintf(stderr, "%d/%d: Got remote_flags[%d] for win %p to be: %u, ierr = %d\n",
+  dprint ("%d/%d: Got remote_flags[%d] for win %p to be: %u, ierr = %d\n",
           caf_this_image, caf_num_images, image_index, mpi_token->flags_win,
           remote_flags, ierr);
   return (remote_flags & FLAG_ASSOCIATED) > 0;
