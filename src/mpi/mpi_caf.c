@@ -58,7 +58,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 /* #define GFC_CAF_CHECK  1  */
 
 
-#ifdef NDEBUG
+#ifndef EXTRA_DEBUG_OUTPUT
 #define dprint(...)
 #else
 #define dprint(args...) fprintf (stderr, args)
