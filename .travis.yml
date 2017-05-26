@@ -204,7 +204,7 @@ after_script:
   - |
     set -o errexit
     if [[ "${TRAVIS_TAG}" ]]; then
-      if [[ "v${TRAVIS_TAG}" != "v$(sed -n 's/\([0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}\)/\1/p' .VERSION)" ]]; then
+      if [[ "v${TRAVIS_TAG}" != "v$(sed -n '/[0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}/{s/^\([^.]*\)\([0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}\)\(.*\)/\2/p;q;}' .VERSION)" ]]; then
         echo "ERROR: You are trying to tag a new release but have a version missmatch in \`.VERSION\`"
         false # throw an error
       fi

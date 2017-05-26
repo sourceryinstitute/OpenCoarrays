@@ -31,4 +31,7 @@ prerequisites/build text
 developer-scripts export-ignore
 codecov.yml export-ignore
 *.enc export-ignore
-.github
+.github export-ignore
+
+# Perform substitutions when `git export`ing these files
+.VERSION export-subst

@@ -1,5 +1,13 @@
-# OpenCoarrays version file. Odd patch levels indicate inter-release
-# version, i.e., code is from SCM/git. This project uses semantic
-# versioning. For details see http://semver.org
+$Format:%d%n%n$
+# Fall back version, probably last release:
+1.8.12
 
-1.8.11
+# OpenCoarrays version file. This project uses semantic
+# versioning. For details see http://semver.org
+#
+# Release archive created from commit:
+# $Format:%H %d$
+# $Format:Created on %ci by %cN, and$
+# $Format:signed by %GS using %GK.$
+# $Format:Signature status: %G?$
+$Format:%GG$
