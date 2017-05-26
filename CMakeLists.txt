@@ -9,7 +9,6 @@ set_property ( CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${CMAKE_CONFIGURATION_TYP
 # Add option and check environment to determine if developer tests should be run
 if($ENV{OPENCOARRAYS_DEVELOPER})
   option(CAF_RUN_DEVELOPER_TESTS "Run tests intended only for developers" ON)
-  message( STATUS "OpenCoarrays developer tests turned on")
 else()
   option(CAF_RUN_DEVELOPER_TESTS "Run tests intended only for developers" OFF)
 endif()
@@ -528,7 +527,7 @@ set(tests_root ${CMAKE_CURRENT_BINARY_DIR}/src/tests)
 
 
 if(opencoarrays_aware_compiler)
-  if (RUN_DEVELOPER_TESTS)
+  if (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER})
     message ( STATUS "Running Developer tests is enabled." )
   endif()
   # Unit tests targeting each libcaf_mpi function, argument, and branch of code
