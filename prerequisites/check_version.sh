@@ -81,8 +81,11 @@ elif [[ $1 == '--list' || $1 == '-l' ]]; then
  exit 40
 
 elif [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
-  # Print script copyright if invoked with -v, -V, or --version argument
-  opencoarrays_version=$(sed -n 's/\([0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}\)/\1/p' ../.VERSION)
+  # Print script copyright if invoked with -v, -V, or --version
+  # argument Extract version from .VERSION file. Git automatically
+  # inserts various things when performing git archive, so ensure we
+  # extract just the first version string
+  opencoarrays_version=$(sed -n '/[0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}/{s/^\([^.]*\)\([0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}\)\(.*\)/\2/p;q;}' ../.VERSION)
   echo "opencoarrays $opencoarrays_version"
   echo ""
   echo "OpenCoarrays prerequisite version verifier"
