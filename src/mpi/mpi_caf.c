@@ -1809,14 +1809,14 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
       check_image_health (image_index, stat);
 
       if(!stat && ierr == STAT_FAILED_IMAGE)
-        error_stop (ierr);
+        terminate_internal (ierr, 1);
 
       if(stat)
         *stat = ierr;
 #else
       if (ierr != 0)
          {
-           error_stop (ierr);
+           terminate_internal (ierr, 1);
            return;
          }
 #endif
@@ -2112,14 +2112,14 @@ PREFIX (get) (caf_token_t token, size_t offset,
   if(stat)
     *stat = ierr;
   else if(ierr == STAT_FAILED_IMAGE)
-    error_stop (ierr);
+    terminate_internal (STAT_FAILED_IMAGE, 1);
 #else
   CAF_Win_unlock (image_index - 1, *p);
 
   if(stat)
     *stat = ierr;
   else if (ierr != 0)
-    error_stop (ierr);
+    terminate_internal (ierr, 1);
 #endif
 
   MPI_Type_free(&dt_s);
@@ -3607,7 +3607,7 @@ sync_images_internal (int count, int images[], int *stat, char *errmsg,
         {
           fprintf (stderr, "COARRAY ERROR: Invalid image index %d to SYNC "
                    "IMAGES", images[i]);
-          error_stop (1);
+          terminate_internal (1, 1);
         }
   }
 #endif
