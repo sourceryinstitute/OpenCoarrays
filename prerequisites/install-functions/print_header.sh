@@ -1,10 +1,18 @@
 # shellcheck shell=bash disable=SC2154,SC2148
-print_header()
-{
+print_header() {
+  pushd "${__dir}" >/dev/null
+  local gccver mpichver cmakever flexver bisonver m4ver
+  gccver="$("${__file}" -V gcc)"
+  mpichver="$("${__file}" -V mpich)"
+  cmakever="$("${__file}" -V cmake)"
+  flexver="$("${__file}" -V flex)"
+  bisonver="$("${__file}" -V bison)"
+  m4ver="$("${__file}" -V m4)"
+  popd >/dev/null
   clear
   echo ""
-  echo "*** By default, building OpenCoarrays requires CMake 3.4.0 or later,      ***"
-  echo "*** MPICH 3.2, and GCC Fortran (gfortran) 6.1.0 or later.  To see         ***"
+  echo "*** By default, building OpenCoarrays requires CMake ${cmakever} or later,      ***"
+  echo "*** MPICH ${mpichver}, and GCC Fortran (gfortran) ${gccver} or later.  To see         ***"
   echo "*** options for forcing the use of older or alternative packages, execute ***"
   echo "*** this script with the -h flag.  This script will recursively traverse  ***"
   echo "*** the following dependency tree, asking permission to download, build,  ***"
@@ -12,16 +20,20 @@ print_header()
   echo "*** package and are neither in your PATH nor in                           ***"
   echo "*** opencoarrays/prerequisites/installations:                             ***"
   echo ""
-  # Move to a directory tree whose structure mirrors the dependency tree
-  pushd "$opencoarrays_src_dir/doc/dependency_tree/" > /dev/null
-  if type tree &> /dev/null; then
-    # dynamically compute and print the tree, suppressing the final line
-    tree opencoarrays  | sed '$d'
-  else
-    # print the most recently saved output of the above 'tree' command
-    sed '$d' < opencoarrays-tree.txt
-  fi
-  popd > /dev/null
+  # Generate the following text using the `tree` command w/ dummy directory structure
+  cat <<-EOF
+    opencoarrays
+    ├── cmake-${cmakever}
+    └── mpich-${mpichver}
+        └── gcc-${gccver}
+            ├── flex-${flexver}
+            │   └── bison-${bisonver}
+            │       └── m4-${m4ver}
+            ├── gmp
+            ├── mpc
+            └── mpfr
+
+EOF
   echo ""
   printf "%s will be installed in %s\n" "${arg_p}" "${install_path}"
   echo ""
@@ -30,9 +42,9 @@ print_header()
   else
     printf "Ready to rock and roll? (Y/n)"
     read -r install_now
-    echo -e " $install_now\n"
-    if [[ "$install_now" == "n" || "$install_now" == "no" ]]; then
-      emergency "$this_script: Aborting. [exit 85]\n"
+    printf '%s\n' "${install_now}"
+    if [[ "${install_now}" == "n" || "${install_now}" == "no" ]]; then
+      emergency "${this_script}: Aborting. [exit 85]"
     fi
   fi
 }
