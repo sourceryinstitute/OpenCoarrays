@@ -61,7 +61,7 @@ export __flag_present=1
 # shellcheck disable=SC2154
 if [[ "${__os}" != "OSX" ]]; then
    echo "Source tranlsation via OFP is currently supported only on OS X."
-   echo "Please submit an issue at http://github.com/sourceryinstitute/opencoarrays/issues."
+   echo "Please submit an issue at https://github.com/sourceryinstitute/opencoarrays/issues."
    emergency "${PWD}/install-ofp.sh: Aborting."
 fi
 
