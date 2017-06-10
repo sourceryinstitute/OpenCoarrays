@@ -28,7 +28,7 @@ set_or_print_url()
     "flex;https://sourceforge.net/projects/flex/files/"
     "make;ftp://ftp.gnu.org/gnu/make/"
     "bison;ftp://ftp.gnu.org:/gnu/bison/"
-    "cmake;https://www.cmake.org/files/v${major_minor}/"
+    "cmake;https://www.cmake.org/files/v${major_minor:-}/"
     "subversion;https://www.eu.apache.org/dist/subversion/"
   )
   for package in "${package_url_head[@]}" ; do
