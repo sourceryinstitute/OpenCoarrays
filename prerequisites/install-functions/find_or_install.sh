@@ -66,7 +66,17 @@ find_or_install()
     # Every branch that discovers an acceptable pre-existing installation must set the
     # CMAKE environment variable. Every branch must also manage the dependency stack.
 
-    if [[ "$script_installed_package" == true ]]; then
+    # If the user specified a CMake binary, use it
+    if [[ ! -z "${arg_m:-}" ]]; then
+
+      echo -e "$this_script: Using the $package specified by -m or --with-cmake: ${arg_m}\n"
+      export CMAKE="${arg_m}"
+      # Halt the recursion
+      stack_push dependency_pkg "none"
+      stack_push dependency_exe "none"
+      stack_push dependency_path "none"
+
+    elif [[ "$script_installed_package" == true ]]; then
       echo -e "$this_script: Using the $package installed by $this_script\n"
       export CMAKE=$package_install_path/bin/$executable
       stack_push dependency_pkg "none"
