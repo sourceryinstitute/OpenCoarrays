@@ -11,7 +11,7 @@
   -I --install-version [arg]  Install package version.
   -j --num-threads [arg]      Number of threads to use when invoking make. Default="1"
   -l --list-packages          Print packages this script can install.
-  -m --with-cmake [arg]       Use specified CMake installation. Default="cmake"
+  -m --with-cmake [arg]       Use specified CMake installation.
   -M --with-mpi [arg]         Use specified MPI installation.
   -n --no-color               Disable color output.
   -o --only-download          Download (without building) the source for the package specified by -p or --package.
