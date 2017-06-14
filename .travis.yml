@@ -7,7 +7,7 @@ env:
   global:
     - CACHE="${HOME}/.local"
     - MPICH_VER="3.2"
-    - MPICH_URL_HEAD="http://www.mpich.org/static/downloads/${MPICH_VER}"
+    - MPICH_URL_HEAD="https://www.mpich.org/static/downloads/${MPICH_VER}"
     - MPICH_URL_TAIL="mpich-${MPICH_VER}.tar.gz"
     - MPICH_DIR="${HOME}/.local/usr/mpich"
     - MPICH_GCC6_BOT_URL_HEAD="https://github.com/sourceryinstitute/OpenCoarrays/files/979804/"
