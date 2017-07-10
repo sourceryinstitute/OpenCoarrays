@@ -173,6 +173,9 @@ char err_buffer[MPI_MAX_ERROR_STRING];
    MPI_COMM_WORLD for interoperability purposes. */
 MPI_Comm CAF_COMM_WORLD;
 
+static caf_teams_list *teams_list = NULL;
+static MPI_Comm current_team;
+
 #ifdef WITH_FAILED_IMAGES
 /* The stati of the other images.  image_stati is an array of size
  * caf_num_images at the beginning the status of each image is noted here
@@ -753,6 +756,8 @@ PREFIX (init) (int *argc, char ***argv)
       /* END SYNC IMAGE preparation.  */
 
       stat_tok = malloc (sizeof (MPI_Win));
+
+      current_team = CAF_COMM_WORLD;
 
 #ifdef WITH_FAILED_IMAGES
       MPI_Comm_dup (MPI_COMM_WORLD, &alive_comm);
@@ -4310,7 +4315,6 @@ PREFIX(atomic_ref) (caf_token_t token, size_t offset,
   return;
 }
 
-
 void
 PREFIX(atomic_cas) (caf_token_t token, size_t offset,
                     int image_index, void *old, void *compare,
@@ -4801,4 +4805,21 @@ unimplemented_alloc_comps_message (const char * functionname)
 #ifdef STOP_ON_UNSUPPORTED
   exit (EXIT_FAILURE);
 #endif
+}
+
+void PREFIX (form_team) (int team_id, caf_team_t *team, int index __attribute__ ((unused)))
+{
+  struct caf_teams_list *tmp;
+  void * tmp_team;
+  MPI_Comm newcomm;
+  MPI_Comm *current_comm = &current_team;
+
+  MPI_Comm_split(*current_comm, team_id, caf_this_image, &newcomm);
+
+  tmp = calloc(1,sizeof(struct caf_teams_list));
+  tmp->prev = teams_list;
+  teams_list = tmp;
+  teams_list->team_id = team_id;
+  teams_list->team = &newcomm;
+  *team = &newcomm;
 }
