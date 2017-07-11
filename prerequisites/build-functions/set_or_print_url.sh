@@ -52,7 +52,7 @@ set_or_print_url()
         gcc_tail="branches/${version_to_build}"
       fi
     else
-      gcc_tail="gcc-${version_to_build}.tar.bz2"
+      gcc_tail="gcc-${version_to_build}.tar.gz"
     fi
   fi
   package_url_tail=(
