@@ -5169,15 +5169,39 @@ void PREFIX (form_team) (int team_id, caf_team_t *team, int index __attribute__ 
 {
   struct caf_teams_list *tmp;
   void * tmp_team;
-  MPI_Comm newcomm;
+  MPI_Comm *newcomm;
   MPI_Comm *current_comm = &current_team;
 
-  MPI_Comm_split(*current_comm, team_id, caf_this_image, &newcomm);
+  MPI_Barrier(CAF_COMM_WORLD);
+  newcomm = (MPI_Comm *)calloc(1,sizeof(MPI_Comm));
+  MPI_Comm_split(*current_comm, team_id, caf_this_image, newcomm);
 
   tmp = calloc(1,sizeof(struct caf_teams_list));
   tmp->prev = teams_list;
   teams_list = tmp;
   teams_list->team_id = team_id;
-  teams_list->team = &newcomm;
-  *team = &newcomm;
+  teams_list->team = newcomm;
+  *team = newcomm;
+}
+
+void PREFIX (change_team) (caf_team_t *team, int coselector __attribute__ ((unused)))
+{
+  void *tmp_team;
+  MPI_Comm *tmp_comm;
+  MPI_Barrier(CAF_COMM_WORLD);
+  tmp_team = (void *)*team;
+  tmp_comm = (MPI_Comm *)tmp_team;
+  CAF_COMM_WORLD = *tmp_comm;
+  MPI_Comm_rank(*tmp_comm,&caf_this_image);
+  caf_this_image++;
+  MPI_Comm_size(*tmp_comm,&caf_num_images);
+  
+  /* MPI_Comm_split(*current_comm, team_id, caf_this_image, &newcomm); */
+
+  /* tmp = calloc(1,sizeof(struct caf_teams_list)); */
+  /* tmp->prev = teams_list; */
+  /* teams_list = tmp; */
+  /* teams_list->team_id = team_id; */
+  /* teams_list->team = &newcomm; */
+  /* *team = &newcomm; */
 }

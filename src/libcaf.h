@@ -276,6 +276,7 @@ void PREFIX (error_stop) (int32_t) __attribute__ ((noreturn));
 void PREFIX (fail_image) (void) __attribute__ ((noreturn));
 
 void PREFIX (form_team) (int, caf_team_t *, int);
+void PREFIX (change_team) (caf_team_t *, int);
 
 int PREFIX (image_status) (int);
 void PREFIX (failed_images) (gfc_descriptor_t *, int, int *);
