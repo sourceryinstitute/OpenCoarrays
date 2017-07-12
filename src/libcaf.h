@@ -91,13 +91,22 @@ caf_deregister_t;
 typedef void* caf_token_t;
 #ifdef GCC_GE_7
 /** Add a dummy type representing teams in coarrays. */
+
 typedef void * caf_team_t;
+
 typedef struct caf_teams_list {
   caf_team_t team;
   int team_id;
   struct caf_teams_list *prev;
 }
 caf_teams_list;
+
+typedef struct caf_used_teams_list {
+  struct caf_teams_list *team_list_elem;
+  struct caf_used_teams_list *prev;
+}
+caf_used_teams_list;
+
 #endif
 
 /* When there is a vector subscript in this dimension, nvec == 0, otherwise,
@@ -277,6 +286,7 @@ void PREFIX (fail_image) (void) __attribute__ ((noreturn));
 
 void PREFIX (form_team) (int, caf_team_t *, int);
 void PREFIX (change_team) (caf_team_t *, int);
+void PREFIX (end_team) (caf_team_t *);
 
 int PREFIX (image_status) (int);
 void PREFIX (failed_images) (gfc_descriptor_t *, int, int *);
