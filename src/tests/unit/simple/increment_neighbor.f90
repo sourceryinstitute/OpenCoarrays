@@ -34,6 +34,8 @@ program test1caf
   me = this_image()
   np = num_images()
 
+  sync all
+
   left  = merge(np,me-1,me==1)
   right = merge(1,me+1,me==np)
 

@@ -32,7 +32,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
  *   This program implements the LIBCAF_MPI transport layer.
 ******
 */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>        /* For memcpy.  */
@@ -41,9 +40,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 #include <alloca.h>        /* Assume functionality provided elsewhere if missing */
 #endif
 #include <unistd.h>
-#include <mpi.h>
 #include <pthread.h>
 #include <signal.h>        /* For raise */
+#include "libcaf.h"
 
 #ifdef HAVE_MPI_EXT_H
 #include <mpi-ext.h>
@@ -52,11 +51,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
   #define WITH_FAILED_IMAGES 1
 #endif
 
-#include "libcaf.h"
+
+#ifdef HAVE_MPICH_X86_64_MPI_H
+#include <mpich-x86_64/mpi.h>
+#else
+#include <mpi.h>
+#endif
 
 /* Define GFC_CAF_CHECK to enable run-time checking.  */
 /* #define GFC_CAF_CHECK  1  */
-
 
 #ifndef EXTRA_DEBUG_OUTPUT
 #define dprint(...)
