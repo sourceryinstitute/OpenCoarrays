@@ -21,3 +21,4 @@
   -v --version                Print OpenCoarrays version number.
   -V --print-version [arg]    Print version number for specified package.
   -y --yes-to-all             Build non-interactively by assuming affirmative user responses.
+  -z --disable-bootstrap      Disabling bootstrap build of GCC for speed when a recent GCC is already installed.

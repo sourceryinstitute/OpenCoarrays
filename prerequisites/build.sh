@@ -111,6 +111,7 @@ info "-U (--print-url):        ${arg_U} "
 info "-v (--version):          ${arg_v} "
 info "-V (--print-version):    ${arg_V} "
 info "-y (--yes-to-all):       ${arg_y} "
+info "-z (--disable-bootstrap):${arg_z} "
 }
 
 if [[ -z "${arg_B}" ]]; then
@@ -147,6 +148,15 @@ if [[ ${arg_o:-} == "${__flag_present}" ]]; then
    exit 0
 fi
 
+# If -z or --disable-bootstrap was specified, disable bootstrap configure & build
+if [[ ${arg_z:-} == "${__flag_present}" ]]; then
+   export bootstrap_configure="--disable-bootstrap"
+   export bootstrap_build=""
+else
+   export bootstrap_configure=""
+   export bootstrap_build="bootstrap"
+fi
+
 if [[ -z "${arg_B}" ]]; then
   # shellcheck source=./build-functions/unpack_if_necessary.sh
   source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/unpack_if_necessary.sh"
@@ -155,7 +165,7 @@ if [[ -z "${arg_B}" ]]; then
   # shellcheck source=./build-functions/set_compilers.sh
   source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/set_compilers.sh"
   set_compilers
- 
+
   # shellcheck source=./build-functions/build_and_install.sh
   source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/build_and_install.sh"
   build_and_install

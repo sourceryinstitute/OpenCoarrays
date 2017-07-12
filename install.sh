@@ -168,6 +168,7 @@ info  "-U (--print-url):        ${arg_U}"
 info  "-v (--version):          ${arg_v}"
 info  "-V (--print-version):    ${arg_V}"
 info  "-y (--yes-to-all):       ${arg_y}"
+info  "-z (--disable-bootstrap):${arg_z}"
 }
 # This file is organized into three sections:
 # 1. Command-line argument and environment variable processing.
@@ -293,14 +294,14 @@ elif [[ ! -z "${arg_D:-${arg_P:-${arg_U:-${arg_V:-${arg_B}}}}}" ||  "${arg_l}" =
 elif [[ "${arg_p:-}" == "opencoarrays" ]]; then
 
   if [[ "${arg_o}" == "${__flag_present}" ]]; then
-    
+
     # Download all prerequisites and exit
     info "source ${OPENCOARRAYS_SRC_DIR}/prerequisites/install-functions/download-all-prerequisites.sh"
     source "${OPENCOARRAYS_SRC_DIR}/prerequisites/install-functions/download-all-prerequisites.sh"
     info "download_all_prerequisites"
     download_all_prerequisites
 
-  else 
+  else
 
     # Install OpenCoarrays
     cd prerequisites || exit 1
@@ -309,7 +310,7 @@ elif [[ "${arg_p:-}" == "opencoarrays" ]]; then
     source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/set_SUDO_if_needed_to_write_to_directory.sh"
     version="$("${opencoarrays_src_dir}/install.sh" -V opencoarrays)"
     set_SUDO_if_needed_to_write_to_directory "${install_path}"
-  
+
     # Using process substitution "> >(...) -" instead of piping to tee via "2>&1 |" ensures that
     # report_results gets the FC value set in build_opencoarrays
     # Source: http://stackoverflow.com/questions/8221227/bash-variable-losing-its-value-strange
