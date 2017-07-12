@@ -23,13 +23,13 @@ set_or_print_url()
     "gcc;${gcc_url_head-}"
     "wget;ftp://ftp.gnu.org:/gnu/wget/"
     "m4;ftp://ftp.gnu.org:/gnu/m4/"
-    "pkg-config;http://pkgconfig.freedesktop.org/releases/"
-    "mpich;http://www.mpich.org/static/downloads/${version_to_build-}/"
-    "flex;http://sourceforge.net/projects/flex/files/"
+    "pkg-config;https://pkgconfig.freedesktop.org/releases/"
+    "mpich;https://www.mpich.org/static/downloads/${version_to_build-}/"
+    "flex;https://sourceforge.net/projects/flex/files/"
     "make;ftp://ftp.gnu.org/gnu/make/"
     "bison;ftp://ftp.gnu.org:/gnu/bison/"
-    "cmake;http://www.cmake.org/files/v${major_minor-}/"
-    "subversion;http://www.eu.apache.org/dist/subversion/"
+    "cmake;https://www.cmake.org/files/v${major_minor:-}/"
+    "subversion;https://www.eu.apache.org/dist/subversion/"
   )
   for package in "${package_url_head[@]}" ; do
      KEY="${package%%;*}"
@@ -52,7 +52,7 @@ set_or_print_url()
         gcc_tail="branches/${version_to_build}"
       fi
     else
-      gcc_tail="gcc-${version_to_build}.tar.bz2"
+      gcc_tail="gcc-${version_to_build}.tar.gz"
     fi
   fi
   package_url_tail=(

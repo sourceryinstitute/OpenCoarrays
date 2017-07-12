@@ -18,4 +18,3 @@ program image_fail_test_1
   end associate
 
 end program image_fail_test_1
-

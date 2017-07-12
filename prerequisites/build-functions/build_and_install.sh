@@ -6,6 +6,7 @@ source "${OPENCOARRAYS_SRC_DIR}/prerequisites/build-functions/edit_GCC_download_
 
 build_and_install()
 {
+
   num_threads=${arg_j}
   build_path="${OPENCOARRAYS_SRC_DIR}/prerequisites/builds/${package_to_build}-${version_to_build}"
 
@@ -52,17 +53,17 @@ build_and_install()
 
     # Switch download mechanism, if wget is not available
     edit_GCC_download_prereqs_file_if_necessary
-   
+
     # Download GCC prerequisities
     "${PWD}"/contrib/download_prerequisites
 
     info "popd"
     popd
     info "Configuring gcc/g++/gfortran builds with the following command:"
-    info "${download_path}/${package_source_directory}/configure --prefix=${install_path} --enable-languages=c,c++,fortran,lto --disable-multilib --disable-werror"
-    "${download_path}/${package_source_directory}/configure" --prefix="${install_path}" --enable-languages=c,c++,fortran,lto --disable-multilib --disable-werror
-    info "Building with the following command: 'make -j${num_threads} bootstrap'"
-    make "-j${num_threads}" bootstrap
+    info "${download_path}/${package_source_directory}/configure --prefix=${install_path} --enable-languages=c,c++,fortran,lto --disable-multilib --disable-werror ${bootstrap_configure}"
+    "${download_path}/${package_source_directory}/configure" --prefix="${install_path}" --enable-languages=c,c++,fortran,lto --disable-multilib --disable-werror ${bootstrap_configure}
+    info "Building with the following command: 'make -j${num_threads} ${bootstrap_build}'"
+    make "-j${num_threads}" ${bootstrap_build}
     if [[ ! -z "${SUDO:-}" ]]; then
       info "You do not have write permissions to the installation path ${install_path}"
       info "If you have administrative privileges, enter your password to install ${package_to_build}"
@@ -71,7 +72,7 @@ build_and_install()
     ${SUDO:-} make install
 
   fi # end if [[ "${package_to_build}" != "gcc" ]]; then
-  
+
   info "popd"
   popd
 }

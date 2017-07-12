@@ -594,8 +594,7 @@ if(opencoarrays_aware_compiler)
       # No other way to check that image_fail_test_1 passes.
       if ((NOT $ENV{TRAVIS}) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
 	add_fault_tolerant_mpi_test(image_fail_test_1 4 ${tests_root}/unit/fail_images/image_fail_test_1)
-	set_property(TEST image_fail_test_1 PROPERTY FAIL_REGULAR_EXPRESSION "Test failed")
-	set_property(TEST image_fail_test_1 PROPERTY PASS_REGULAR_EXPRESSION "Test passed")
+	set_property(TEST image_fail_test_1 PROPERTY FAIL_REGULAR_EXPRESSION "Test failed.")
 	add_fault_tolerant_mpi_test(image_fail_and_sync_test_1 4 ${tests_root}/unit/fail_images/image_fail_and_sync_test_1)
         add_fault_tolerant_mpi_test(image_fail_and_sync_test_2 4 ${tests_root}/unit/fail_images/image_fail_and_sync_test_2)
 
