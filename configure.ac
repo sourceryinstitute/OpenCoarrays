@@ -6,6 +6,8 @@ AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE([-Wall -Werror foreign tar-ustar])
 AC_CONFIG_SRCDIR([src/libcaf.h])
 AC_CONFIG_HEADERS([config.h])
+LT_INIT
+AC_SUBST([LIBTOOL_DEPS])
 
 # Checks for programs.
 AC_PROG_CXX

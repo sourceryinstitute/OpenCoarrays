@@ -169,6 +169,7 @@ LEXLIB = @LEXLIB@
 LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
+LIBTOOL_DEPS = @LIBTOOL_DEPS@
 LTLIBOBJS = @LTLIBOBJS@
 MAKEINFO = @MAKEINFO@
 MKDIR_P = @MKDIR_P@
@@ -756,6 +757,8 @@ uninstall-am:
 	mostlyclean-generic pdf pdf-am ps ps-am tags tags-recursive \
 	uninstall uninstall-am
 
+libtool: $(LIBTOOL_DEPS)
+	$(SHELL) ./config.status libtool
 #dist_doc_DATA = README
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
