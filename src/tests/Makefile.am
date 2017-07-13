@@ -184,47 +184,47 @@ test_msg.sh:
 
 if COND_OPT
 test_32.sh:
-	echo '../cafrun -disable-auto-cleanup -np 4  unit/fail_images/image_fail_and_failed_images_test_1 1>$@.out 2>errorlog' 1>$@
+	echo '../cafrun -np 4 -disable-auto-cleanup unit/fail_images/image_fail_and_failed_images_test_1 1>$@.out 2>errorlog' 1>$@
 	echo 'printf "image_fail_and_failed_images_test_1 .... " ' 1>>$@
 	$(check-results)
 
 test_33.sh:
-	echo '../cafrun -disable-auto-cleanup -np 4 unit/fail_images/image_fail_and_get_test_1 1>$@.out 2>errorlog' 1>$@	
+	echo '../cafrun -np 4 -disable-auto-cleanup unit/fail_images/image_fail_and_get_test_1 1>$@.out 2>errorlog' 1>$@	
 	echo 'printf "image_fail_and_get_test_1 .............. " ' 1>>$@
 	$(check-results)
 
 test_34.sh:
-	echo '../cafrun -disable-auto-cleanup -np 4 unit/fail_images/image_fail_and_status_test_1 1>$@.out 2>errorlog' 1>$@	
+	echo '../cafrun -np 4 -disable-auto-cleanup unit/fail_images/image_fail_and_status_test_1 1>$@.out 2>errorlog' 1>$@	
 	echo 'printf "image_fail_and_status_test_1 ........... " ' 1>>$@
 	$(check-results)
 
 test_35.sh:
-	echo '../cafrun -disable-auto-cleanup -np 4 unit/fail_images/image_fail_and_stopped_images_test_1 1>$@.out 2>errorlog' 1>$@	
+	echo '../cafrun -np 4 -disable-auto-cleanup unit/fail_images/image_fail_and_stopped_images_test_1 1>$@.out 2>errorlog' 1>$@	
 	echo 'printf "image_fail_and_stopped_images_test_1 ... " ' 1>>$@
 	$(check-results)
 
 test_36.sh:
-	echo '../cafrun -disable-auto-cleanup -np 4 unit/fail_images/image_fail_and_sync_test_1 1>$@.out 2>errorlog' 1>$@	
+	echo '../cafrun -np 4 -disable-auto-cleanup unit/fail_images/image_fail_and_sync_test_1 1>$@.out 2>errorlog' 1>$@	
 	echo 'printf "image_fail_and_sync_test_1 ............. " ' 1>>$@
 	$(check-results)
 
 test_37.sh:
-	echo '../cafrun -disable-auto-cleanup -np 4 unit/fail_images/image_fail_and_sync_test_2 1>$@.out 2>errorlog' 1>$@
+	echo '../cafrun -np 4 -disable-auto-cleanup unit/fail_images/image_fail_and_sync_test_2 1>$@.out 2>errorlog' 1>$@
 	echo 'printf "image_fail_and_sync_test_2 ............. " ' 1>>$@
 	$(check-results)
 
 test_38.sh:
-	echo '~/opt/usr/bin/cafrun -disable-auto-cleanup -np 4 unit/fail_images/image_fail_and_sync_test_3 1>$@.out 2>errorlog' 1>$@
+	echo '../cafrun -np 4 -disable-auto-cleanup unit/fail_images/image_fail_and_sync_test_3 1>$@.out 2>errorlog' 1>$@
 	echo 'printf "image_fail_and_sync_test_3 ............. " ' 1>>$@
 	$(check-results)
 
 test_39.sh:
-	echo '../cafrun -disable-auto-cleanup -np 4 unit/fail_images/image_fail_test_1 1>$@.out 2>errorlog' 1>$@
+	echo '../cafrun -np 4 -disable-auto-cleanup unit/fail_images/image_fail_test_1 1>$@.out 2>errorlog' 1>$@
 	echo 'printf "image_fail_test_1 ...................... " ' 1>>$@
 	$(check-results)
 
 test_40.sh:
-	echo '../cafrun -disable-auto-cleanup -np 4 unit/fail_images/image_status_test_1 1>$@.out 2>errorlog' 1>$@
+	echo '../cafrun -np 4 -disable-auto-cleanup unit/fail_images/image_status_test_1 1>$@.out 2>errorlog' 1>$@
 	echo 'printf "image_status_test_1 .................... " ' 1>>$@
 	$(check-results)
 
