@@ -1623,7 +1623,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
                gfc_descriptor_t *dest,
                caf_vector_t *dst_vector __attribute__ ((unused)),
                gfc_descriptor_t *src, int dst_kind, int src_kind,
-               bool mrt, int *stat)
+               bool mrt, int *stat, void* team)
 {
   /* FIXME: Implement vector subscripts, type conversion and check whether
      string-kind conversions are permitted.
@@ -4832,7 +4832,7 @@ void PREFIX (form_team) (int team_id, caf_team_t *team, int index __attribute__ 
   teams_list = tmp;
   teams_list->team_id = team_id;
   teams_list->team = newcomm;
-  *team = newcomm;
+  *team = tmp;
 }
 
 void PREFIX (change_team) (caf_team_t *team, int coselector __attribute__ ((unused)))
@@ -4843,25 +4843,26 @@ void PREFIX (change_team) (caf_team_t *team, int coselector __attribute__ ((unus
   MPI_Comm *tmp_comm;
 
   MPI_Barrier(CAF_COMM_WORLD);
-  tmp_team = (void *)*team;
+  tmp_list = (struct caf_teams_list *)*team;
+  tmp_team = (void *)tmp_list->team;
   tmp_comm = (MPI_Comm *)tmp_team;
 
   tmp_used = (caf_used_teams_list *)calloc(1,sizeof(caf_used_teams_list));
   tmp_used->prev = used_teams;
 
-  /* We need to look in the teams_list and find the appropriate element.
-   * This is not efficient but can be easily fixed in the future. 
-   * Instead of keeping track of the communicator in the compiler 
-   * we should keep track of the caf_teams_list element associated with it. */
+  /* /\* We need to look in the teams_list and find the appropriate element. */
+  /*  * This is not efficient but can be easily fixed in the future.  */
+  /*  * Instead of keeping track of the communicator in the compiler  */
+  /*  * we should keep track of the caf_teams_list element associated with it. *\/ */
 
-  tmp_list = teams_list;
+  /* tmp_list = teams_list; */
 
-  while(tmp_list)
-    {
-      if(tmp_list->team == tmp_team)
-	break;
-      tmp_list = tmp_list->prev;
-    }
+  /* while(tmp_list) */
+  /*   { */
+  /*     if(tmp_list->team == tmp_team) */
+  /* 	break; */
+  /*     tmp_list = tmp_list->prev; */
+  /*   } */
 
   if(tmp_list == NULL)
     caf_runtime_error("CHANGE TEAM called on a non-existing team");
