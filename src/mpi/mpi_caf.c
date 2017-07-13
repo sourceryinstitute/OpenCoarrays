@@ -4899,3 +4899,31 @@ void PREFIX (end_team) (caf_team_t *team __attribute__ ((unused)))
   caf_this_image++;
   MPI_Comm_size(CAF_COMM_WORLD,&caf_num_images);
 }
+
+void PREFIX (sync_team) (caf_team_t *team , int unused __attribute__ ((unused)))
+{
+  caf_teams_list *tmp_list = NULL;
+  caf_used_teams_list *tmp_used = NULL;
+  void *tmp_team;
+  MPI_Comm *tmp_comm;
+
+  /* Check if the team is the current, and ancestor or a descendant. To be implemented. */
+
+  tmp_used = used_teams;
+  tmp_list = (struct caf_teams_list *)*team;
+  tmp_team = (void *)tmp_list->team;
+  tmp_comm = (MPI_Comm *)tmp_team;
+
+  while(tmp_used)
+    {
+      if(tmp_used->team_list_elem == tmp_list)
+	break;
+      tmp_used = tmp_used->prev;
+    }
+
+  if(tmp_used == NULL)
+    caf_runtime_error("SYNC TEAM called on team different from current or ancestor or descendant");
+
+  MPI_Barrier(*tmp_comm);
+
+}
