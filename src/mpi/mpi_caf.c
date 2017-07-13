@@ -44,7 +44,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 #include <mpi.h>
 #include <pthread.h>
 #include <signal.h>        /* For raise */
-#include <limits.h>
 
 #ifdef HAVE_MPI_EXT_H
 #include <mpi-ext.h>
@@ -759,7 +758,7 @@ PREFIX (init) (int *argc, char ***argv)
       stat_tok = malloc (sizeof (MPI_Win));
 
       teams_list = (caf_teams_list *)calloc(1,sizeof(caf_teams_list));
-      teams_list->team_id = INT_MIN;
+      teams_list->team_id = -1;
       MPI_Comm *tmp_comm = (MPI_Comm *)calloc(1,sizeof(MPI_Comm));
       *tmp_comm = CAF_COMM_WORLD;
       teams_list->team = tmp_comm;
