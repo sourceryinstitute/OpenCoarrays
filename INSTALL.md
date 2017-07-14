@@ -119,17 +119,61 @@ thread starting with [commit comment 20539810].
 
 ### Linux ###
 
-Acces OpenCoarrays on Linux via any of the following package managers
+Access OpenCoarrays on Linux via any of the following package managers
 or pre-installed copies:
 
 * The [linuxbrew] package manager installs OpenCoarrays on all Linux distributions.
 * Debian-based distributions such as Ubuntu provide an "open-coarrays" [APT package].
 * [Arch Linux] provides an [aur package].
 * [HPCLinux] includes a pre-installed copy of OpenCoarrays.
+* [EasyBuild], a software build and installation framework, can install
+  OpenCoarrays on Linux distributions
+* [Spack], a multiplatform package manager, can also install OpenCoarrays on Linux distributions
+
 
 [linuxbrew] does not require `sudo` privileges and will generally
 provide the most up-to-date OpenCoarrays release because linxubrew
 pulls directly from macOS homebrew, which updates automatically.
+
+
+<a name="easybuild"></a>
+[EasyBuild] can be used to install OpenCoarrays with the following bash commands:
+```bash
+# Search available specification files (also known as easyconfigs) for OpenCoarrays
+eb --search OpenCoarrays
+
+# Automatically download prerequisites (with the --robot flag) and install OpenCoarrays
+# with the desired easyconfig, e.g., OpenCoarrays-1.9.0-gompi-2017a.eb
+eb OpenCoarrays-1.9.0-gompi-2017a.eb --robot
+```
+Once installed, OpenCoarrays can be used by loading the newly created environment
+module `OpenCoarrays/1.9.0-gompi-2017a`.
+```bash
+module load OpenCoarrays/1.9.0-gompi-2017a
+```
+
+
+<a name="spack"></a>
+[Spack] can be used to install OpenCoarrays with the following bash commands:
+```bash
+# Check build information for OpenCoarrays in the default specification file
+spack spec opencoarrays
+
+# To automatically download prerequisites and install OpenCoarrays with the default specification.
+# (Note: In addition to its own prerequisites, Spack requires gfortran compiler
+# to be installed to compile OpenMPI)
+spack install opencoarrays
+
+# Or, To install with customisations (e.g., to install OpenCoarrays [version 1.9.0]
+# with MPICH [version default] and GCC [version 7.1.0]).
+spack install opencoarrays@1.9.0 ^mpich %gcc@7.1.0
+```
+In the previous example, it was assumed that GCC [version 7.1.0] is already installed, and is available as
+a compiler to Spack. Otherwise, [add a new compiler to Spack].
+Once installed, OpenCoarrays can be used by [loading the environment modules with Spack], e.g.
+```bash
+spack module loads --dependencies opencoarrays
+```
 
 [top]
 
@@ -422,3 +466,7 @@ export gcc_install_path=/desired/installation/destination
 [dnf]: https://github.com/rpm-software-management/dnf
 [port details]: http://www.freshports.org/lang/opencoarrays
 [port search]: https://www.freebsd.org/cgi/ports.cgi?query=opencoarrays
+[EasyBuild]: https://github.com/easybuilders/easybuild
+[Spack]: https://github.com/LLNL/spack
+[add a new compiler to Spack]: http://spack.readthedocs.io/en/latest/tutorial_modules.html#add-a-new-compiler
+[loading the environment modules with Spack]: http://spack.readthedocs.io/en/latest/module_file_support.html#cmd-spack-module-loads
