@@ -103,7 +103,7 @@ opencoarrays_aware_compiler="true"
 # Checks for header files.
 AC_CHECK_HEADERS([stddef.h stdint.h stdlib.h string.h sys/time.h unistd.h pthread.h])
 AC_CHECK_HEADERS([mpi.h], [],
-  [AC_CHECK_HEADERS([mpich-x86_64/mpi.h],
+  [AC_CHECK_HEADERS([mpich-x86_64/mpi.h mpich/mpi.h],
   [echo Do something here])
   ])
 

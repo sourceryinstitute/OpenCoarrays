@@ -5672,12 +5672,14 @@ if test "x$ac_cv_header_mpi_h" = x""yes; then :
 _ACEOF
 
 else
-  for ac_header in mpich-x86_64/mpi.h
+  for ac_header in mpich-x86_64/mpi.h mpich/mpi.h
 do :
-  ac_fn_c_check_header_mongrel "$LINENO" "mpich-x86_64/mpi.h" "ac_cv_header_mpich_x86_64_mpi_h" "$ac_includes_default"
-if test "x$ac_cv_header_mpich_x86_64_mpi_h" = x""yes; then :
+  as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
+eval as_val=\$$as_ac_Header
+   if test "x$as_val" = x""yes; then :
   cat >>confdefs.h <<_ACEOF
-#define HAVE_MPICH_X86_64_MPI_H 1
+#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
 _ACEOF
  echo Do something here
 fi

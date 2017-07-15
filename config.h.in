@@ -21,6 +21,9 @@
 /* Define to 1 if you have the `memset' function. */
 #undef HAVE_MEMSET
 
+/* Define to 1 if you have the <mpich/mpi.h> header file. */
+#undef HAVE_MPICH_MPI_H
+
 /* Define to 1 if you have the <mpich-x86_64/mpi.h> header file. */
 #undef HAVE_MPICH_X86_64_MPI_H
 
