@@ -89,6 +89,7 @@ AC_SUBST(MPI_Fortran_COMPILE_FLAGS)
 AC_SUBST(MPI_LIBS)
 AC_SUBST(MPI_INCLUDE)
 AC_SUBST(FAILED_IMAGES)
+AC_SUBST(CPPFLAGS)
 
 PROJECT_VERSION=$PACKAGE_VERSION
 Fortran_COMPILER=$(which $FC)
@@ -150,22 +151,24 @@ AC_CONFIG_FILES([
 ])
 AC_OUTPUT
 
-#echo "Variables *********************************"
-#echo $PROJECT_VERSION
-#echo $FC
-#echo $CC
-#echo $CFLAGS
-#echo $LDFLAGS
-#echo "*******************************************"
-#echo $opencoarrays_aware_compiler
-#echo $Fortran_COMPILER
-#echo $CAF_MODDIR
-#echo $MOD_DIR_FLAG
-#echo $CAF_LIBS
-#echo "*******************************************"
-#echo $MPI_Fortran_LINK_FLAGS
-#echo $MPI_Fortran_COMPILE_FLAGS
-#echo $MPI_LIBS
-#echo $libdir
-#echo $prefix
-#echo "End Variables *****************************"
+echo "Variables *********************************"
+echo $PROJECT_VERSION
+echo $FC
+echo $CC
+echo $CFLAGS
+echo "*******************************************"
+echo $LDFLAGS
+echo $CPPFLAGS
+echo "*******************************************"
+echo $opencoarrays_aware_compiler
+echo $Fortran_COMPILER
+echo $CAF_MODDIR
+echo $MOD_DIR_FLAG
+echo $CAF_LIBS
+echo "*******************************************"
+echo $MPI_Fortran_LINK_FLAGS
+echo $MPI_Fortran_COMPILE_FLAGS
+echo $MPI_LIBS
+echo $libdir
+echo $prefix
+echo "End Variables *****************************"
