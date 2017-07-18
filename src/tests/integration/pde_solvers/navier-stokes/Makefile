@@ -6,7 +6,7 @@ opencoarrays_dir=/opt/opencoarrays/lib
 ifeq ($(compiler),gnu)
   opt=-L $(opencoarrays_dir) -fcoarray=lib -Ofast
   libcaf_dir = $(opencoarrays_dir)
-  compile=mpif90
+  compile=mpifort
   lib=-lcaf_mpi
 else
   ifeq ($(compiler),intel)

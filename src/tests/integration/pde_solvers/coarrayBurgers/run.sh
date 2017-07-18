@@ -13,7 +13,7 @@ export TAU_CALLPATH_DEPTH=100
 for i in 1 2 4
 do
   echo "Running the code:"
-  mpirun -np ${i} ./burgers
+  mpiexec -np ${i} ./burgers
   paraprof --pack ${i}p.ppk
   taudb_loadtrial -a fireworks -x experiment -n ${i} ${i}p.ppk
 done
