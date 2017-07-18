@@ -6,8 +6,6 @@ AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE([-Wall -Werror foreign tar-ustar])
 AC_CONFIG_SRCDIR([src/libcaf.h])
 AC_CONFIG_HEADERS([config.h])
-LT_INIT
-AC_SUBST([LIBTOOL_DEPS])
 
 # Checks for programs.
 AC_PROG_CXX
@@ -67,13 +65,15 @@ LIBGFOR_GFORTRAN_UP
 FCFLAGS=""
 
 # Checks for libraries.
-#if pkg-config --atleast-version=3.2 mpich; then
-   #MPI_Fortran_LINK_FLAGS=`pkg-config --libs-only-other --libs-only-L mpich`
-   #MPI_LIBS=`pkg-config --libs-only-l mpich`
-   #MPI_INCLUDE=`pkg-config --cflags-only-I mpich`
-#else
-   #AC_MSG_ERROR(pkg-config has no mpich package, try module load mpi?)
-#fi
+if pkg-config --atleast-version=3.2 mpich; then
+   MPI_Fortran_LINK_FLAGS=`pkg-config --libs-only-other --libs-only-L mpich`
+   MPI_LIBS=`pkg-config --libs-only-l mpich`
+   MPI_INCLUDE=`pkg-config --cflags-only-I mpich`
+   echo MPI_INCLUDE = $MPI_INCLUDE
+else
+   MPI_Fortran_LINK_FLAGS=$LDFLAGS" -Wl,-rpath"
+   MPI_LIBS="-lmpi"
+fi
 
 AC_SEARCH_LIBS(MPI_Init, mpi, [], AC_MSG_ERROR([Unable to find mpi library - make sure LD path to the library is set]), [])
 
@@ -90,6 +90,7 @@ AC_SUBST(MPI_LIBS)
 AC_SUBST(MPI_INCLUDE)
 AC_SUBST(FAILED_IMAGES)
 AC_SUBST(CPPFLAGS)
+AC_SUBST([LIBTOOL_DEPS])
 
 PROJECT_VERSION=$PACKAGE_VERSION
 Fortran_COMPILER=$(which $FC)
@@ -97,8 +98,6 @@ CAF_MODDIR="."
 MOD_DIR_FLAG=-I
 CAF_LIBS=$libdir/libcaf_mpi.a
 MPI_Fortran_COMPILE_FLAGS="-fPIC"
-MPI_Fortran_LINK_FLAGS=$LDFLAGS" -Wl,-rpath"
-MPI_LIBS="-lmpi"
 opencoarrays_aware_compiler="true"
 
 # Checks for header files.
@@ -151,24 +150,24 @@ AC_CONFIG_FILES([
 ])
 AC_OUTPUT
 
-echo "Variables *********************************"
-echo $PROJECT_VERSION
-echo $FC
-echo $CC
-echo $CFLAGS
-echo "*******************************************"
-echo $LDFLAGS
-echo $CPPFLAGS
-echo "*******************************************"
-echo $opencoarrays_aware_compiler
-echo $Fortran_COMPILER
-echo $CAF_MODDIR
-echo $MOD_DIR_FLAG
-echo $CAF_LIBS
-echo "*******************************************"
-echo $MPI_Fortran_LINK_FLAGS
-echo $MPI_Fortran_COMPILE_FLAGS
-echo $MPI_LIBS
-echo $libdir
-echo $prefix
-echo "End Variables *****************************"
+#echo "Variables *********************************"
+#echo $PROJECT_VERSION
+#echo $FC
+#echo $CC
+#echo $CFLAGS
+#echo "*******************************************"
+#echo $LDFLAGS
+#echo $CPPFLAGS
+#echo "*******************************************"
+#echo $opencoarrays_aware_compiler
+#echo $Fortran_COMPILER
+#echo $CAF_MODDIR
+#echo $MOD_DIR_FLAG
+#echo $CAF_LIBS
+#echo "*******************************************"
+#echo $MPI_Fortran_LINK_FLAGS
+#echo $MPI_Fortran_COMPILE_FLAGS
+#echo $MPI_LIBS
+#echo $libdir
+#echo $prefix
+#echo "End Variables *****************************"
