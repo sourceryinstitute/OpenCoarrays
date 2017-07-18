@@ -234,6 +234,9 @@ source $opencoarrays_src_dir/prerequisites/install-functions/build_opencoarrays.
 # shellcheck source=./prerequisites/install-functions/report_results.sh
 source $opencoarrays_src_dir/prerequisites/install-functions/report_results.sh
 
+# shellcheck source=./prerequisites/install-functions/install-xcode-clt.sh
+source "${opencoarrays_src_dir}/prerequisites/install-functions/install-xcode-clt.sh"
+
 # ___________________ End of function definitions for use in the Main Body __________________
 
 
@@ -303,6 +306,8 @@ elif [[ "${arg_p:-}" == "opencoarrays" ]]; then
 
   else
 
+    # Install Xcode command line tools (CLT) if on macOS and if needed
+    maybe_install_xcodeCLT
     # Install OpenCoarrays
     cd prerequisites || exit 1
     installation_record=install-opencoarrays.log
@@ -320,11 +325,17 @@ elif [[ "${arg_p:-}" == "opencoarrays" ]]; then
 
 elif [[ "${arg_p:-}" == "ofp" ]]; then
 
+  # Install Xcode command line tools (CLT) if on macOS and if needed
+  maybe_install_xcodeCLT
+
   info "Invoking Open Fortran Parser build script with the following command:"
   info "\"${opencoarrays_src_dir}\"/prerequisites/install-ofp.sh"
   "${opencoarrays_src_dir}"/prerequisites/install-ofp.sh
 
 elif [[ ! -z "${arg_p:-}" ]]; then
+
+  # Install Xcode command line tools (CLT) if on macOS and if needed
+  maybe_install_xcodeCLT
 
   info "Invoking build script with the following command:"
   info "\"${opencoarrays_src_dir}\"/prerequisites/build.sh ${*:-}"
