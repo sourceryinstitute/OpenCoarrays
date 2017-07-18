@@ -179,9 +179,11 @@ spack module loads --dependencies opencoarrays
 
 ### FreeBSD ###
 
-A FreeBSD Port is available for installing OpenCoarrays and can be
-located via [port search].  See the FreeBSD OpenCoarrays [port details]
-page for installation instructions.
+A FreeBSD Port is available for installing OpenCoarrays.  FreeBSD users can now simply do the following as root:
+```bash
+pkg install opencoarrays
+```
+For more information, please review the [FreeBSD ports/packages installation information](https://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/ports.html).
 
 [top]
 
