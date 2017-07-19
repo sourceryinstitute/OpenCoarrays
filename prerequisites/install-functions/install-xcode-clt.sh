@@ -59,8 +59,9 @@ headless_xcode_clt_install () {
 
 maybe_install_xcodeCLT () {
   if [[ "$(need_xcodeCLT)" == "true" ]]; then
-    info "It appears that you are on Mac OS and do not have the Xcode command line tools (CLT) installed, or they need to be upgraded."
-    info "install.sh will now attempt to install/upgrade the Xcode-CLT using \`softwareupdate\`"
+    info "It appears that you are on Mac OS and do not have the Xcode command line tools (CLT) installed,"
+    info "or they need to be upgraded.install.sh will now attempt to install/upgrade the Xcode-CLT using \`softwareupdate\`"
+    info "This may take some time, please be patient."
     xcode_clt_install || true # This usually fails since `softwareupdate -i` doesn't return CLTs needing update
   fi
   if [[ "$(need_xcodeCLT)" == "true" ]]; then
