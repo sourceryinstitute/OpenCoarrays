@@ -137,7 +137,7 @@ CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CPP = @CPP@
-CPPFLAGS = @CPPFLAGS@
+CPPFLAGS = $(MPI_INCLUDE)
 CXX = @CXX@
 CXXDEPMODE = @CXXDEPMODE@
 CXXFLAGS = @CXXFLAGS@
@@ -644,6 +644,7 @@ uninstall-am: uninstall-binSCRIPTS uninstall-includeHEADERS \
 
 
 caf: Makefile
+	echo $(MPI_INCLUDE)
 	cp ./extensions/caf ./caf
 	chmod +x ./caf
 
