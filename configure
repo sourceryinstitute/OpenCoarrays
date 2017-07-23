@@ -526,6 +526,7 @@ as_tr_cpp="eval sed 'y%*$as_cr_letters%P$as_cr_LETTERS%;s%[^_$as_cr_alnum]%_%g'"
 # Sed expression to map a string onto a valid variable name.
 as_tr_sh="eval sed 'y%*+%pp%;s%[^_$as_cr_alnum]%_%g'"
 
+enable_option_checking=no
 
 exec 7<&0 </dev/null 6>&1
 
@@ -5163,7 +5164,7 @@ if pkg-config --atleast-version=3.2 mpich; then
    MPI_LIBS=`pkg-config --libs-only-l mpich`
    MPI_INCLUDE=`pkg-config --cflags-only-I mpich`
    MPI_LDFLAGS=`pkg-config --libs-only-L mpich`
-   LDFLAGS=$MPI_LDFLAGS
+   LDFLAGS="$LDFLAGS $MPI_LDFLAGS"
 else
    MPI_Fortran_LINK_FLAGS=$LDFLAGS" -Wl,-rpath"
    MPI_LIBS="-lmpi"

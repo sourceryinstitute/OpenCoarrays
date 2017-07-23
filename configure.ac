@@ -1,6 +1,9 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
+m4_include([libtool.m4])
+
 AC_PREREQ([2.64])
+AC_DISABLE_OPTION_CHECKING
 AC_INIT([OpenCoarrays], [1.9.0], [opencoarrays@googlegroups.com])
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE([-Wall -Werror foreign tar-ustar])
@@ -70,7 +73,7 @@ if pkg-config --atleast-version=3.2 mpich; then
    MPI_LIBS=`pkg-config --libs-only-l mpich`
    MPI_INCLUDE=`pkg-config --cflags-only-I mpich`
    MPI_LDFLAGS=`pkg-config --libs-only-L mpich`
-   LDFLAGS=$MPI_LDFLAGS
+   LDFLAGS="$LDFLAGS $MPI_LDFLAGS"
 else
    MPI_Fortran_LINK_FLAGS=$LDFLAGS" -Wl,-rpath"
    MPI_LIBS="-lmpi"
