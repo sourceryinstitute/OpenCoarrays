@@ -69,7 +69,8 @@ if pkg-config --atleast-version=3.2 mpich; then
    MPI_Fortran_LINK_FLAGS=`pkg-config --libs-only-other --libs-only-L mpich`
    MPI_LIBS=`pkg-config --libs-only-l mpich`
    MPI_INCLUDE=`pkg-config --cflags-only-I mpich`
-   echo MPI_INCLUDE = $MPI_INCLUDE
+   MPI_LDFLAGS=`pkg-config --libs-only-L mpich`
+   LDFLAGS=$MPI_LDFLAGS
 else
    MPI_Fortran_LINK_FLAGS=$LDFLAGS" -Wl,-rpath"
    MPI_LIBS="-lmpi"
@@ -105,7 +106,7 @@ opencoarrays_aware_compiler="true"
 AC_CHECK_HEADERS([stddef.h stdint.h stdlib.h string.h sys/time.h unistd.h pthread.h])
 AC_CHECK_HEADERS([mpi.h], [],
   [AC_CHECK_HEADERS([mpich-x86_64/mpi.h mpich/mpi.h],
-  [echo Do something here])
+  [])
   ])
 
 # Checks for typedefs, structures, and compiler characteristics.

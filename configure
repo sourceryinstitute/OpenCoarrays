@@ -5162,7 +5162,8 @@ if pkg-config --atleast-version=3.2 mpich; then
    MPI_Fortran_LINK_FLAGS=`pkg-config --libs-only-other --libs-only-L mpich`
    MPI_LIBS=`pkg-config --libs-only-l mpich`
    MPI_INCLUDE=`pkg-config --cflags-only-I mpich`
-   echo MPI_INCLUDE = $MPI_INCLUDE
+   MPI_LDFLAGS=`pkg-config --libs-only-L mpich`
+   LDFLAGS=$MPI_LDFLAGS
 else
    MPI_Fortran_LINK_FLAGS=$LDFLAGS" -Wl,-rpath"
    MPI_LIBS="-lmpi"
@@ -5682,7 +5683,7 @@ eval as_val=\$$as_ac_Header
   cat >>confdefs.h <<_ACEOF
 #define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
 _ACEOF
- echo Do something here
+
 fi
 
 done
