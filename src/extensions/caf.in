@@ -51,7 +51,7 @@ set -o pipefail
 #
 # @PROJECT_VERSION@ @opencoarrays_aware_compiler@ @Fortran_COMPILER@ @CAF_MODDIR@
 # @MOD_DIR_FLAG@ @MPI_Fortran_LINK_FLAGS@ @MPI_Fortran_COMPILE_FLAGS@
-# @CAF_LIBS@ @MPI_LIBS@ @MPI_INCLUDES@ @prefix@
+# @CAF_LIBS@ @MPI_LIBS@ @MPI_INCLUDES@
 #
 
 caf_version='@PROJECT_VERSION@' # fetched from `git describe` and/or
@@ -89,7 +89,6 @@ mpi_link_flags=(@MPI_Fortran_LINK_FLAGS@) # e.g. `pkg-config
 # __*AND*__ `pkg-config
 # --libs-only-L`
 mpi_compile_flags=(@MPI_Fortran_COMPILE_FLAGS@)
-prefix=@prefix@
 caf_libs=(@CAF_LIBS@) # e.g. "libcaf_mpi" "libcaf_extensions",
 # preferably full paths, but could be
 # combination of -L... and -lcaf_mpi...
@@ -122,6 +121,35 @@ __file="${__dir}/$(basename "${BASH_SOURCE[${__caf_tmp_source_idx:-0}]}")"
 __base="$(basename "${__file}")"
 cmd="${__base}"
 
+# Set installation prefix. Compute this dynamically assuming this script is in a bin/ subdir
+# Dereference symbolic links and canonicalize (i.e., abs path) prefix in case stow, homebrew, etc being used
+# mac OS doesn't have readlink -f, so need to crawl symlinks manually.
+# See: https://stackoverflow.com/questions/1055671/how-can-i-get-the-behavior-of-gnus-readlink-f-on-a-mac
+(cd "${__dir}"
+  target_file="${__file}"
+  max_iter=1000
+  iter=0
+  while [[ -L "${target_file}" ]]; do
+    target_file="$(readlink "${target_file}")"
+    cd "$(dirname "${target_file}")"
+    target_file="$(basename "${target_file}")"
+    if ((++iter >= max_iter)); then
+      echo "Failed to compute OpenCoarrays instalation prefix!" >&2
+      echo "Likely cause: circular symlink cycles." >&2
+      echo "Aborting!" >&2
+      exit 200
+    fi
+  done
+  true_dir="$(pwd -P)"
+  true_dir="${true_dir%/}"
+  # shellcheck disable=SC2034
+  prefix="${true_dir%/bin}"
+  # echo "Install prefix is ${prefix}" # for debugging
+)
+# echo "Current directory is $(pwd)"
+# echo "This script is in ${__dir}"
+
+# Error tracing
 # requires `set -o errtrace`
 __caf_err_report() {
   local error_code
@@ -268,11 +296,11 @@ if [[ "${caf_pre_flags[*]:-}" ]]; then
   compiler_args=("${caf_pre_flags[@]}")
 fi
 if [[ "${*:-}" ]]; then
-  fompiler_args+=("${@}")
+  compiler_args+=("${@}")
 fi
 if [[ "${caf_added_libs[*]:-}" ]]; then
   compiler_args+=("${caf_added_libs[@]}")
 fi
-#set -o verbose # Show what we're doing
-"${cafc}" "${@}" "${compiler_args[@]}"
+set -o verbose # Show what we're doing
+"${cafc}" "${compiler_args[@]}"
 set +o verbose
