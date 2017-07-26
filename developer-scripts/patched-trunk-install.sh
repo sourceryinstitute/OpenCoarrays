@@ -179,7 +179,7 @@ echo "Building MPICH with the patched compilers."
 
 # Verify that MPICH installed where expected
 mpich_install_path=$(./install.sh -P mpich)
-if ! type "${mpich_install_path}"/bin/mpif90; then
+if ! type "${mpich_install_path}"/bin/mpifort; then
   echo "MPICH is not installed in the expected location ${mpich_install_path}."
   exit 1
 fi

@@ -81,7 +81,7 @@ if ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
     "in a manner such as\n"
     "  $ mkdir build-opencarrays\n"
     "  $ cd build-opencoarrays\n"
-    "  $ CC=mpicc FC=mpif90 cmake <path-to-opencoarrays-source-directory> -DCMAKE_INSTALL_PREFIX=<path-to-install-directory>\n"
+    "  $ CC=gcc FC=gfortran cmake -DBUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/path/to/install/dir /path/to/opencoarrays/src/dir \n"
     "\nsubstituting the appropriate syntax for your shell (the above line assumes the bash shell)."
     )
 endif()
@@ -188,7 +188,7 @@ endif()
 # Find MPI and set some flags so that FC and CC can point to gfortran and gcc
 #----------------------------------------------------------------------------
 
-# If the user passes FC=mpif90 etc. check and prefer that location
+# If the user passes FC=mpifort etc. check and prefer that location
 get_filename_component( FTN_COMPILER_NAME "${CMAKE_Fortran_COMPILER}"
   NAME )
 get_filename_component( C_COMPILER_NAME "${CMAKE_C_COMPILER}"

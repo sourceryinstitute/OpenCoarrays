@@ -10,7 +10,7 @@ include_path=./include-files
 
 ifeq ($(compiler),gnu)
   lib=-lcaf_mpi
-  compile=mpif90 -fcoarray=lib
+  compile=mpifort -fcoarray=lib
   ifeq ($(machine),virtual)
     libpath=-L /opt/opencoarrays/lib
   else

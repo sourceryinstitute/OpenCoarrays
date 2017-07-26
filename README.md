@@ -46,14 +46,14 @@ OpenCoarrays provides a compiler wrapper (named `caf`), a runtime
 library (named `libcaf_mpi.a` by default), and an executable file
 launcher (named `cafrun`).  With OpenCoarrays-aware compilers, the
 compiler wrapper passes the provided source code to the chosen
-compiler (`mpif90` by default).  For non-OpenCoarrays-aware compilers,
+compiler (`mpifort` by default).  For non-OpenCoarrays-aware compilers,
 the wrapper transforms CAF syntax into OpenCoarrays procedure calls
 before invoking the chosen compiler on the transformed code.  The
 runtime library supports compiler communication and synchronization
 requests by invoking a lower-level communication library--the Message
 Passing Interface ([MPI]) by default.  The launcher passes execution
 to the chosen communication library's parallel program launcher
-(`mpirun` by default).
+(`mpiexec` by default).
 
 OpenCoarrays defines an application binary interface ([ABI]) that
 translates high-level communication and synchronization requests into

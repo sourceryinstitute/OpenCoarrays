@@ -2,7 +2,7 @@
 opencoarrays=/opt/opencoarrays
 executable=hello_multiverse
 opt=-L $(opencoarrays)/lib
-compile=mpif90 -fcoarray=lib
+compile=mpifort -fcoarray=lib
 lib=-lcaf_mpi
 
 $(executable): hello_multiverse.o  Makefile
