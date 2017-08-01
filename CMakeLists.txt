@@ -585,6 +585,8 @@ if(opencoarrays_aware_compiler)
   add_mpi_test(co_reduce-factorial 4 ${tests_root}/regression/reported/co_reduce-factorial)
   add_mpi_test(co_reduce-factorial-int8 4 ${tests_root}/regression/reported/co_reduce-factorial-int8)
   add_mpi_test(co_reduce-factorial-int64 4 ${tests_root}/regression/reported/co_reduce-factorial-int64)
+  add_mpi_test(put-alloc-comp 2 ${tests_root}/regression/reported/issue-422-send)
+  add_mpi_test(get-put-alloc-comp 3 ${tests_root}/regression/reported/issue-422-send-get)
   add_mpi_test(co_reduce_string 4 ${tests_root}/unit/collectives/co_reduce_string)
 
   # IMAGE FAIL tests
