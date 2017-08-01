@@ -4482,8 +4482,10 @@ PREFIX (event_wait) (caf_token_t token, size_t index,
 	count = var[index];
 	/* if(count >= until_count) */
 	/*   break; */
-	usleep(5*i);
+	usleep(10*i);
 	i++;
+	/* Needed to enforce MPI progress */
+	CAF_Win_unlock (image, *p);
       }
 
   newval = -until_count;
