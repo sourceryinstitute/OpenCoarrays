@@ -581,10 +581,10 @@ if(opencoarrays_aware_compiler)
 
   # Regression tests based on reported issues
   if((gfortran_compiler AND (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0)) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
-    # GFortran PR 78505 only fixed on trunk/gcc 7, issue #243
     if( CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0 )
       message( WARNING "Developer tests requested and GFortran < 7: test source-alloc-no-sync may fail" )
     endif()
+    # GFortran PR 78505 only fixed on trunk/gcc 7, issue #243
     add_mpi_test(source-alloc-no-sync 8 ${tests_root}/regression/reported/source-alloc-sync)
   endif()
 
@@ -594,7 +594,13 @@ if(opencoarrays_aware_compiler)
     add_mpi_test(put-alloc-comp 2 ${tests_root}/regression/reported/issue-422-send)
     add_mpi_test(get-put-alloc-comp 3 ${tests_root}/regression/reported/issue-422-send-get)
   endif()
+
+  # Fixed GCC 7 regressions, should run on GCC 6 and 7
   add_mpi_test(event-post 3 ${tests_root}/regression/reported/event-post)
+
+  # These co_reduce (#172, fixed by PR #332, addl discussion in PR
+  # #331) tests are for bugs not regressions. Should be fixed in all
+  # version of GCC, I beleive
   add_mpi_test(co_reduce-factorial 4 ${tests_root}/regression/reported/co_reduce-factorial)
   add_mpi_test(co_reduce-factorial-int8 4 ${tests_root}/regression/reported/co_reduce-factorial-int8)
   add_mpi_test(co_reduce-factorial-int64 4 ${tests_root}/regression/reported/co_reduce-factorial-int64)
