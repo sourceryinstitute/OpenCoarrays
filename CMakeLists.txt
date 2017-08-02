@@ -151,7 +151,7 @@ endif()
     set(opencoarrays_aware_compiler false)
     add_definitions(-DPREFIX_NAME=_caf_extensions_)
   endif()
-  if(gfortran_compiler AND (CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 5.4))
+  if(gfortran_compiler AND (CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 5.4.0))
     # GCC patch to fix issue accepted for 5.4 release
     # See https://github.com/sourceryinstitute/opencoarrays/issues/28 and
     # https://groups.google.com/forum/#!msg/opencoarrays/RZOwwYTqG80/46S9eL696dgJ
@@ -537,7 +537,12 @@ if(opencoarrays_aware_compiler)
   add_mpi_test(register_alloc_vector 2 ${tests_root}/unit/init_register/register_alloc_vector)
   add_mpi_test(allocate_as_barrier 2 ${tests_root}/unit/init_register/allocate_as_barrier)
   add_mpi_test(allocate_as_barrier_proc 8 ${tests_root}/unit/init_register/allocate_as_barrier_proc)
-  if (gfortran_compiler AND (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7))
+  if (gfortran_compiler AND (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
+    message( STATUS "Allocatable components of coarray derived types only supported in GFortran >= 7 with OpenCoarrays > 1.8.4" )
+    message( STATUS "(but full support not anticipated until OpenCoarrays 2.0 release)" )
+    if (CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0)
+      message( WARNING "Allocatable components of coarray derived type developer tests enabled, despite lack of support in GFortran < 7\n These tests should fail." )
+    endif()
     add_mpi_test(register_alloc_comp_1 2 ${tests_root}/unit/init_register/register_alloc_comp_1)
     add_mpi_test(register_alloc_comp_2 2 ${tests_root}/unit/init_register/register_alloc_comp_2)
     add_mpi_test(register_alloc_comp_3 2 ${tests_root}/unit/init_register/register_alloc_comp_3)
@@ -575,8 +580,11 @@ if(opencoarrays_aware_compiler)
   add_mpi_test(asynchronous_hello_world 3 ${tests_root}/integration/events/asynchronous_hello_world)
 
   # Regression tests based on reported issues
-  if(gfortran_compiler AND (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0))
-    # GFortran PR 78505 only fixed on trunk/gcc 7
+  if((gfortran_compiler AND (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0)) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
+    # GFortran PR 78505 only fixed on trunk/gcc 7, issue #243
+    if( CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0 )
+      message( WARNING "Developer tests requested and GFortran < 7: test source-alloc-no-sync may fail" )
+    endif()
     add_mpi_test(source-alloc-no-sync 8 ${tests_root}/regression/reported/source-alloc-sync)
   endif()
 
@@ -592,7 +600,7 @@ if(opencoarrays_aware_compiler)
   add_mpi_test(co_reduce-factorial-int64 4 ${tests_root}/regression/reported/co_reduce-factorial-int64)
 
   # IMAGE FAIL tests
-  if(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7)
+  if(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0)
     add_mpi_test(image_status_test_1 4 ${tests_root}/unit/fail_images/image_status_test_1)
     if(CAF_ENABLE_FAILED_IMAGES)
       # No other way to check that image_fail_test_1 passes.
