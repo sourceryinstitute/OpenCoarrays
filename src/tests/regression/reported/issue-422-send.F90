@@ -45,33 +45,40 @@ program main
   type(foo) :: foobar
 
   enum, bind(C)
-    enumerator :: recipient=1, provider, getter_putter
+    enumerator :: recipient=1, provider
+    !! provider=2
   end enum
 
-  integer, parameter :: bar_size=2
+  integer, parameter :: message(*)=[3,4], required_images=2
+    !! Data for provider image to put on recipient image
 
-  associate( me=>this_image(), N_images=>num_images(), required_images=>maxval([recipient,provider,getter_putter]) )
+  associate( me=>this_image(), N_images=>num_images() )
 
     verify_num_images: if (N_images<required_images) then
-      write(error_unit,*)  "issue-422-send-get.f90 requires at least ",required_images," images"
+      write(error_unit,*)  "issue-422-send.f90 requires at least ",required_images," images"
       error stop
     end if verify_num_images
 
-    allocate(foobar%bar(bar_size)[*],source=me)
+    allocate(foobar%bar(size(message))[*],source=me)
       !! Assign each image's identifier to each element of foobar%bar
+#ifndef GCC_GE_7
+    sync all
+      !! Fix to #243 has not been backported to GCC < 7. Implicit sync
+      !! happens after allocation but before sourced assignment
+#endif
 
-    get_put_component: if (me==getter_putter) then
-      foobar%bar(:)[recipient] =  foobar%bar(:)[provider]
+    get_put_component: if (me==provider) then
+      foobar%bar(:)[recipient] =  message
         !! Get bar from provider image and put bar on recipient image
       sync images(recipient)
         !! Signal recipient that get and put have completed
     end if get_put_component
 
     wait_and_verify: if (me==recipient) then
-      sync images(getter_putter)
-        !! Wait for signal from getter-putter
+      sync images(provider)
+        !! Wait for signal from provider image
 
-      verify_result: if (any(foobar%bar/=provider)) then
+      verify_result: if (any(foobar%bar/=message)) then
         write(error_unit,*) "Recipient image ",recipient," received ",foobar%bar," but expected ",provider
         error stop
       end if verify_result
