@@ -10,6 +10,12 @@ set_or_print_url()
   # Get package name from argument passed with  -p, -D, -P, -V, or -U
   package_to_build="${arg_p:-${arg_D:-${arg_P:-${arg_U:-${arg_V:-${arg_B}}}}}}"
 
+if [[ ! -z ${arg_u:-}  ]]; then
+  # User specified a URL from which to download the package
+  url_tail=${arg_u##*/} # set url_tail to text_after_final_slash
+  url_head=${arg_u%%${url_tail}} # set url_head text before url_tail
+else
+
   if [[ "${package_to_build}" == 'cmake' ]]; then
     major_minor="${version_to_build%.*}"
   elif [[ "${package_to_build}" == "gcc" ]]; then
@@ -35,7 +41,7 @@ set_or_print_url()
      KEY="${package%%;*}"
      VALUE="${package##*;}"
      info "KEY=${KEY}  VALUE=${VALUE}"
-     
+
      if [[ "${package_to_build}" == "${KEY}" ]]; then
        # We recognize the package name so we set the URL head:
        url_head="${VALUE}"
@@ -80,6 +86,8 @@ set_or_print_url()
   if [[ -z "${url_head:-}" || -z "${url_tail}" ]]; then
     emergency "Package ${package_name:-} not recognized.  Use --l or --list-packages to list the allowable names."
   fi
+
+fi # end if [[ ! -z $arg_u  ]]; then
 
   package_url="${url_head}""${url_tail}"
 
