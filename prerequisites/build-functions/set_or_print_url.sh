@@ -1,19 +1,20 @@
+# shellcheck shell=bash
 # If -p, -D, -P, or -V specifies a package, set package_url
 # If -U specifies a package, print the package_url and exit with normal status
 # shellcheck disable=SC2154
 set_or_print_url()
 {
   # Verify requirements
-  [ ! -z "${arg_U}" ] && [ ! -z "${arg_D:-${arg_p:-${arg_P:-${arg_V:-${arg_B}}}}}" ] &&
+  [[ -n "${arg_U}" && -n "${arg_D:-${arg_p:-${arg_P:-${arg_V:-${arg_B}}}}}" ]] &&
     emergency "Please pass only one of {-B, -D, -p, -P, -U, -V} or a longer equivalent (multiple detected)."
 
   # Get package name from argument passed with  -p, -D, -P, -V, or -U
   package_to_build="${arg_p:-${arg_D:-${arg_P:-${arg_U:-${arg_V:-${arg_B}}}}}}"
 
-if [[ ! -z ${arg_u:-}  ]]; then
+if [[ -n "${arg_u:-}"  ]]; then
   # User specified a URL from which to download the package
-  url_tail=${arg_u##*/} # set url_tail to text_after_final_slash
-  url_head=${arg_u%%${url_tail}} # set url_head text before url_tail
+  url_tail="${arg_u##*/}" # set url_tail to text_after_final_slash, greedy expansion needed
+  url_head="${arg_u%${url_tail}}" # set url_head text before url_tail
 else
 
   if [[ "${package_to_build}" == 'cmake' ]]; then
@@ -87,12 +88,12 @@ else
     emergency "Package ${package_name:-} not recognized.  Use --l or --list-packages to list the allowable names."
   fi
 
-fi # end if [[ ! -z $arg_u  ]]; then
+fi # end if [[ -n "${arg_u:-}"  ]]; then
 
   package_url="${url_head}""${url_tail}"
 
   # If a printout of the package URL was requested, then print it and exit with normal status
-  if [[ ! -z "${arg_U:-}" ]]; then
+  if [[ -n "${arg_U:-}" ]]; then
     printf "%s\n" "${package_url}"
     exit 0
   fi
