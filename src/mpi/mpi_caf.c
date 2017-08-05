@@ -4454,9 +4454,9 @@ PREFIX (event_wait) (caf_token_t token, size_t index,
 		     int until_count, int *stat,
 		     char *errmsg, int errmsg_len)
 {
-  int ierr=0,count=0,i,image=caf_this_image-1;
-  int *var=NULL,flag,old=0;
-  int newval=0;
+  int ierr = 0, count = 0, i, image = caf_this_image - 1;
+  int *var = NULL, flag, old = 0;
+  int newval = 0;
   const int spin_loop_max = 20000;
   MPI_Win *p = TOKEN(token);
   const char msg[] = "Error on event wait";
@@ -4464,29 +4464,26 @@ PREFIX (event_wait) (caf_token_t token, size_t index,
   if(stat != NULL)
     *stat = 0;
 
-  MPI_Win_get_attr(*p,MPI_WIN_BASE,&var,&flag);
+  MPI_Win_get_attr (*p, MPI_WIN_BASE, &var, &flag);
 
   for(i = 0; i < spin_loop_max; ++i)
     {
-      MPI_Win_sync(*p);
+      MPI_Win_sync (*p);
       count = var[index];
       if(count >= until_count)
 	break;
     }
 
-  i=1;
+  i = 1;
   while(count < until_count)
-    /* for(i = 0; i < spin_loop_max; ++i) */
-      {
-	MPI_Win_sync(*p);
-	count = var[index];
-	/* if(count >= until_count) */
-	/*   break; */
-	usleep(10*i);
-	i++;
-	/* Needed to enforce MPI progress */
-	CAF_Win_unlock (image, *p);
-      }
+    {
+      MPI_Win_sync (*p);
+      count = var[index];
+      usleep (10 * i);
+	++i;
+      /* Needed to enforce MPI progress */
+      MPI_Win_flush (image, *p);
+    }
 
   newval = -until_count;
 
