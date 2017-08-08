@@ -934,39 +934,9 @@ finalize_internal (int status_code)
         CAF_Win_unlock_all (*p);
 #ifdef GCC_GE_7
       /* Unregister the window to the descriptors when freeing the token.  */
-//      mpi_caf_token_t *mpi_token = (mpi_caf_token_t *)cur_tok->token;
-//      if (mpi_token->desc_win)
-//        {
-//          dprint ("%d/%d: MPI_Win_free (mpi_token->desc_win);\n", caf_this_image,
-//                  caf_num_images);
-//          CAF_Win_unlock_all (*mpi_token->desc_win);
-//          MPI_Win_free (mpi_token->desc_win);
-//          free (mpi_token->desc_win);
-//        }
-//      else if (*(mpi_token->flags) & FLAG_DESC_PRESENT)
-//        MPI_Win_detach (global_dynamic_win, mpi_token->desc);
-//      if (p != NULL)
-//        {
       dprint ("%d/%d: MPI_Win_free (p);\n", caf_this_image,
               caf_num_images);
       MPI_Win_free (p);
-//    }
-//      else
-//        MPI_Win_detach (global_dynamic_win, mpi_token->memptr);
-      /* Free the memory only, when it was allocated by the caf-library. */
-//      if ((*(mpi_token->flags) & FLAG_MEM_NOT_ALLOCATED_BY_MPI) > 0)
-//        free (mpi_token->memptr);
-//      if ((*(mpi_token->flags) & FLAG_AVAIL_BY_DYNAMIC_WIN) > 0)
-//        {
-//          CAF_Win_unlock_all (global_dynamic_win);
-//          MPI_Win_detach (global_dynamic_win, mpi_token);
-//          CAF_Win_lock_all (global_dynamic_win);
-//        }
-      /* Free the flags window only after accessing. */
-//      CAF_Win_unlock_all (mpi_token->flags_win);
-//      dprint ("%d/%d: MPI_Win_free (mpi_token->flags_win);\n", caf_this_image,
-//              caf_num_images);
-//      MPI_Win_free (&mpi_token->flags_win);
       free (cur_tok->token);
 #else // GCC_GE_7
       MPI_Win_free (p);
@@ -1146,27 +1116,6 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
         *token = calloc (1, sizeof (mpi_caf_token_t));
         mpi_token = (mpi_caf_token_t *) (*token);
         p = TOKEN (mpi_token);
-//            MPI_Win_allocate (sizeof(unsigned), 1, mpi_info_same_size, CAF_COMM_WORLD,
-//                              &mpi_token->flags,
-//                              &mpi_token->flags_win);
-//            CAF_Win_lock_all (mpi_token->flags_win);
-
-//        if ((type == CAF_REGTYPE_COARRAY_ALLOC
-//             || type == CAF_REGTYPE_COARRAY_STATIC)
-//            && GFC_DESCRIPTOR_RANK (desc) != 0)
-//          {
-//            /* Add a window for the descriptor when an array is registered.  */
-//            mpi_token->desc_win = (MPI_Win *)malloc (sizeof (MPI_Win));
-//            const size_t desc_size = sizeof (gfc_descriptor_t)
-//                                     + /*GFC_DESCRIPTOR_RANK (desc)*/
-//                                     GFC_MAX_DIMENSIONS
-//                                     * sizeof (descriptor_dimension);
-//            mpi_token->desc = desc;
-//            MPI_Win_create (desc, desc_size, 1, mpi_info_same_size,
-//                            CAF_COMM_WORLD, mpi_token->desc_win);
-//            CAF_Win_lock_all (*(mpi_token->desc_win));
-//            *(mpi_token->flags) |= FLAG_DESC_PRESENT;
-//          }
 
 #if MPI_VERSION >= 3
         MPI_Win_allocate (actual_size, 1, MPI_INFO_NULL, CAF_COMM_WORLD, &mem, p);
@@ -1289,18 +1238,10 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
 
   PREFIX(sync_all) (NULL, NULL, 0);
 
-  caf_static_t *tmp = malloc (sizeof (caf_static_t));
-  tmp->prev  = caf_tot;
+  struct caf_allocated_tokens_t *tmp = malloc (sizeof (struct caf_allocated_tokens_t));
+  tmp->prev  = caf_allocated_tokens;
   tmp->token = *token;
-  caf_tot = tmp;
-
-  if (type == CAF_REGTYPE_COARRAY_STATIC)
-    {
-      caf_static_t *tmp = malloc (sizeof (caf_static_t));
-      tmp->prev  = caf_static_list;
-      tmp->token = *token;
-      caf_static_list = tmp;
-    }
+  caf_allocated_tokens = tmp;
 
   if (stat)
     *stat = 0;
@@ -1394,47 +1335,11 @@ PREFIX (deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len
 
         if (cur->token == *token)
           {
+            p = TOKEN(*token);
+#ifdef GCC_GE_7
             dprint ("%d/%d: Found regular token %p for memptr_win: %p.\n",
                     caf_this_image, caf_num_images, *token,
                     ((mpi_caf_token_t *)*token)->memptr_win);
-            p = TOKEN(*token);
-#ifdef GCC_GE_7
-//            mpi_caf_token_t *mpi_token = *(mpi_caf_token_t **)token;
-//            if (mpi_token->memptr)
-//              {
-//                /* Free the memory, when we have allocated it. */
-//                free (mpi_token->memptr);
-//                mpi_token->memptr = NULL;
-//              }
-
-            //          if (type != CAF_DEREGTYPE_COARRAY_DEALLOCATE_ONLY)
-            //            {
-            //              if (mpi_token->desc_win)
-            //                {
-            //                  CAF_Win_unlock_all(*(mpi_token->desc_win));
-            //                  MPI_Win_free (mpi_token->desc_win);
-            //                  free (mpi_token->desc_win);
-            //                  mpi_token->desc_win = NULL;
-            //                  mpi_token->desc = NULL;
-            //                  // Flags is deleted below. No needed to remove any flags here.
-            //                }
-            //             else if (mpi_token->desc)
-            //                {
-            //                  CAF_Win_unlock_all (global_dynamic_win);
-            //                  MPI_Win_detach (global_dynamic_win, mpi_token->desc);
-            //                  CAF_Win_lock_all (global_dynamic_win);
-            //                  mpi_token->desc = NULL;
-            //                  // Flags is deleted below. No needed to remove any flags here.
-            //                }
-            //              if ((*(mpi_token->flags) & FLAG_AVAIL_BY_DYNAMIC_WIN) > 0)
-            //                {
-            //                  CAF_Win_unlock_all (global_dynamic_win);
-            //                  MPI_Win_detach (global_dynamic_win, mpi_token);
-            //                  CAF_Win_lock_all (global_dynamic_win);
-            //                }
-            //              CAF_Win_unlock_all (mpi_token->flags_win);
-            //              MPI_Win_free (&mpi_token->flags_win);
-//          }
 #endif
             CAF_Win_unlock_all (*p);
             MPI_Win_free (p);
@@ -2717,6 +2622,16 @@ copy_data (void *ds, mpi_caf_token_t *token, MPI_Aint offset, int dst_type,
   if (dst_type == src_type && dst_kind == src_kind)
     {
       size_t sz = (dst_size > src_size ? src_size : dst_size) * num;
+#ifdef EXTRA_DEBUG_OUTPUT
+      if (token)
+        dprint ("%d/%d: %s() %p = win: %p -> offset: %d of size %d bytes\n",
+                caf_this_image, caf_num_images, __FUNCTION__, ds, win,
+                offset, sz);
+      else
+        dprint ("%d/%d: %s() %p = global_win offset: %d of size %d bytes\n",
+                caf_this_image, caf_num_images, __FUNCTION__, ds,
+                offset, sz);
+#endif
       MPI_Get (ds, sz, MPI_BYTE, image_index, offset, sz, MPI_BYTE,
                win);
       if ((dst_type == BT_CHARACTER || src_type == BT_CHARACTER)
