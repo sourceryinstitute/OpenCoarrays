@@ -81,7 +81,7 @@ if ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
     "in a manner such as\n"
     "  $ mkdir build-opencarrays\n"
     "  $ cd build-opencoarrays\n"
-    "  $ CC=mpicc FC=mpif90 cmake <path-to-opencoarrays-source-directory> -DCMAKE_INSTALL_PREFIX=<path-to-install-directory>\n"
+    "  $ CC=gcc FC=gfortran cmake -DBUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/path/to/install/dir /path/to/opencoarrays/src/dir \n"
     "\nsubstituting the appropriate syntax for your shell (the above line assumes the bash shell)."
     )
 endif()
@@ -151,7 +151,7 @@ endif()
     set(opencoarrays_aware_compiler false)
     add_definitions(-DPREFIX_NAME=_caf_extensions_)
   endif()
-  if(gfortran_compiler AND (CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 5.4))
+  if(gfortran_compiler AND (CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 5.4.0))
     # GCC patch to fix issue accepted for 5.4 release
     # See https://github.com/sourceryinstitute/opencoarrays/issues/28 and
     # https://groups.google.com/forum/#!msg/opencoarrays/RZOwwYTqG80/46S9eL696dgJ
@@ -188,7 +188,7 @@ endif()
 # Find MPI and set some flags so that FC and CC can point to gfortran and gcc
 #----------------------------------------------------------------------------
 
-# If the user passes FC=mpif90 etc. check and prefer that location
+# If the user passes FC=mpifort etc. check and prefer that location
 get_filename_component( FTN_COMPILER_NAME "${CMAKE_Fortran_COMPILER}"
   NAME )
 get_filename_component( C_COMPILER_NAME "${CMAKE_C_COMPILER}"
@@ -537,7 +537,12 @@ if(opencoarrays_aware_compiler)
   add_mpi_test(register_alloc_vector 2 ${tests_root}/unit/init_register/register_alloc_vector)
   add_mpi_test(allocate_as_barrier 2 ${tests_root}/unit/init_register/allocate_as_barrier)
   add_mpi_test(allocate_as_barrier_proc 8 ${tests_root}/unit/init_register/allocate_as_barrier_proc)
-  if (gfortran_compiler AND (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7))
+  if (gfortran_compiler AND (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
+    message( STATUS "Allocatable components of coarray derived types only supported in GFortran >= 7 with OpenCoarrays > 1.8.4" )
+    message( STATUS "(but full support not anticipated until OpenCoarrays 2.0 release)" )
+    if (CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0)
+      message( WARNING "Allocatable components of coarray derived type developer tests enabled, despite lack of support in GFortran < 7\n These tests should fail." )
+    endif()
     add_mpi_test(register_alloc_comp_1 2 ${tests_root}/unit/init_register/register_alloc_comp_1)
     add_mpi_test(register_alloc_comp_2 2 ${tests_root}/unit/init_register/register_alloc_comp_2)
     add_mpi_test(register_alloc_comp_3 2 ${tests_root}/unit/init_register/register_alloc_comp_3)
@@ -563,6 +568,7 @@ if(opencoarrays_aware_compiler)
   add_mpi_test(duplicate_syncimages 8 ${tests_root}/unit/sync/duplicate_syncimages)
   add_mpi_test(co_reduce 4 ${tests_root}/unit/collectives/co_reduce_test)
   add_mpi_test(co_reduce_res_im 4 ${tests_root}/unit/collectives/co_reduce_res_im)
+  add_mpi_test(co_reduce_string 4 ${tests_root}/unit/collectives/co_reduce_string)
   add_mpi_test(syncimages_status 8 ${tests_root}/unit/sync/syncimages_status)
   add_mpi_test(sync_ring_abort_np3 3 ${tests_root}/unit/sync/sync_image_ring_abort_on_stopped_image)
   add_mpi_test(sync_ring_abort_np7 7 ${tests_root}/unit/sync/sync_image_ring_abort_on_stopped_image)
@@ -577,28 +583,39 @@ if(opencoarrays_aware_compiler)
   add_mpi_test(asynchronous_hello_world 3 ${tests_root}/integration/events/asynchronous_hello_world)
 
   # Regression tests based on reported issues
-  if(gfortran_compiler AND (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0))
-    # GFortran PR 78505 only fixed on trunk/gcc 7
+  if((gfortran_compiler AND (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0)) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
+    if( CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0 )
+      message( WARNING "Developer tests requested and GFortran < 7: test source-alloc-no-sync may fail" )
+    endif()
+    # GFortran PR 78505 only fixed on trunk/gcc 7, issue #243
     add_mpi_test(source-alloc-no-sync 8 ${tests_root}/regression/reported/source-alloc-sync)
   endif()
-  if (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER})
+
+  # Open GCC 7 regressions
+  if ((CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}) OR (gfortran_compiler AND (CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0)))
     add_mpi_test(convert-before-put 3 ${tests_root}/regression/reported/convert-before-put)
+    add_mpi_test(put-alloc-comp 2 ${tests_root}/regression/reported/issue-422-send)
+    add_mpi_test(get-put-alloc-comp 3 ${tests_root}/regression/reported/issue-422-send-get)
   endif()
+
+  # Fixed GCC 7 regressions, should run on GCC 6 and 7
   add_mpi_test(event-post 3 ${tests_root}/regression/reported/event-post)
+
+  # These co_reduce (#172, fixed by PR #332, addl discussion in PR
+  # #331) tests are for bugs not regressions. Should be fixed in all
+  # version of GCC, I beleive
   add_mpi_test(co_reduce-factorial 4 ${tests_root}/regression/reported/co_reduce-factorial)
   add_mpi_test(co_reduce-factorial-int8 4 ${tests_root}/regression/reported/co_reduce-factorial-int8)
   add_mpi_test(co_reduce-factorial-int64 4 ${tests_root}/regression/reported/co_reduce-factorial-int64)
-  add_mpi_test(co_reduce_string 4 ${tests_root}/unit/collectives/co_reduce_string)
 
   # IMAGE FAIL tests
-  if(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7)
+  if(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0)
     add_mpi_test(image_status_test_1 4 ${tests_root}/unit/fail_images/image_status_test_1)
     if(CAF_ENABLE_FAILED_IMAGES)
       # No other way to check that image_fail_test_1 passes.
       if ((NOT $ENV{TRAVIS}) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
 	add_fault_tolerant_mpi_test(image_fail_test_1 4 ${tests_root}/unit/fail_images/image_fail_test_1)
-	set_property(TEST image_fail_test_1 PROPERTY FAIL_REGULAR_EXPRESSION "Test failed")
-	set_property(TEST image_fail_test_1 PROPERTY PASS_REGULAR_EXPRESSION "Test passed")
+	set_property(TEST image_fail_test_1 PROPERTY FAIL_REGULAR_EXPRESSION "Test failed.")
 	add_fault_tolerant_mpi_test(image_fail_and_sync_test_1 4 ${tests_root}/unit/fail_images/image_fail_and_sync_test_1)
         add_fault_tolerant_mpi_test(image_fail_and_sync_test_2 4 ${tests_root}/unit/fail_images/image_fail_and_sync_test_2)
 

@@ -636,7 +636,7 @@ void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
 #endif
 
       locking_atomic_op(win, &value, newval, compare, image_index, index);
-#ifdef WITH_FAILED_IMAGES      
+#ifdef WITH_FAILED_IMAGES
       if (image_stati[value] == STAT_FAILED_IMAGE)
         {
           CAF_Win_lock (MPI_LOCK_EXCLUSIVE, image_index - 1, win);
@@ -654,7 +654,7 @@ void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
     *stat = ierr;
   else if (ierr == STAT_FAILED_IMAGE)
     terminate_internal (ierr, 0);
-  
+
   return;
 
 stat_error:
@@ -700,7 +700,7 @@ void mutex_unlock(MPI_Win win, int image_index, int index, int *stat,
     *stat = ierr;
   else if(ierr == STAT_FAILED_IMAGE)
     terminate_internal (ierr, 0);
-      
+
   return;
 
 stat_error:
@@ -4793,7 +4793,7 @@ PREFIX (event_post) (caf_token_t token, size_t index,
 
   if(!stat && ierr == STAT_FAILED_IMAGE)
     terminate_internal (ierr, 0);
-  
+
   if(ierr != MPI_SUCCESS)
     {
       if(stat != NULL)
@@ -4839,8 +4839,10 @@ PREFIX (event_wait) (caf_token_t token, size_t index,
 	count = var[index];
 	/* if(count >= until_count) */
 	/*   break; */
-	usleep(5*i);
+	usleep(10*i);
 	i++;
+	/* Needed to enforce MPI progress */
+	CAF_Win_unlock (image, *p);
       }
 
   newval = -until_count;
@@ -4853,7 +4855,7 @@ PREFIX (event_wait) (caf_token_t token, size_t index,
 
   if(!stat && ierr == STAT_FAILED_IMAGE)
     terminate_internal (ierr, 0);
-  
+
   if(ierr != MPI_SUCCESS)
     {
       if(stat != NULL)
@@ -5151,10 +5153,11 @@ unsupported_fail_images_message (const char * functionname)
 void
 unimplemented_alloc_comps_message (const char * functionname)
 {
-  fprintf (stderr, "*** caf_mpi-lib runtime message on image %d:\n"
-           "*** The allocatable components feature '%s' of Fortran 2008 standard\n"
-           "*** is not yet supported by OpenCoarrays.\n",
-           caf_this_image, functionname);
+  fprintf (stderr,
+           "*** Message from libcaf_mpi runtime function '%s' on image %d:\n"
+           "*** Assigning to an allocatable coarray component of a derived type is not yet supported with GCC 7.\n"
+           "*** Either revert to GCC 6 or convert all puts (type(foo)::x; x%%y[recipient] = z) to gets (z = x%%y[provider]).\n",
+           functionname, caf_this_image );
 #ifdef STOP_ON_UNSUPPORTED
   exit (EXIT_FAILURE);
 #endif

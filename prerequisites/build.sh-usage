@@ -19,7 +19,9 @@
   -P --print-path [arg]       Print installation path for package specified in argument.
   -t --with-tau [arg]         Use the specified TAU parallel performance utilities installation. Default="tauf90"
   -T --install-tau [arg]      Install TAU in specified path. Default="${OPENCOARRAYS_SRC_DIR}/prerequisites/installations/${package_name:-}/${version_to_build:-}/"
+  -u --from-url [arg]         Specify a URL from which to download a package. 
   -U --print-url [arg]        Print URL for package specified in argument. 
   -v --version                Print OpenCoarrays version number.
   -V --print-version [arg]    Print installation version for package specified in argument.
   -y --yes-to-all             Build non-interactively by assuming affirmative user responses.
+  -z --disable-bootstrap      Disabling bootstrap build of GCC for speed when a recent GCC is already installed.

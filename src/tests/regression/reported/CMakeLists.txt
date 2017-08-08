@@ -16,3 +16,8 @@ target_link_libraries(convert-before-put OpenCoarrays)
 add_executable(event-post issue-293-silent-event-failure.F90)
 target_link_libraries(event-post OpenCoarrays)
 
+add_executable(issue-422-send issue-422-send.F90)
+target_link_libraries(issue-422-send OpenCoarrays)
+
+add_executable(issue-422-send-get issue-422-send-get.F90)
+target_link_libraries(issue-422-send-get OpenCoarrays)

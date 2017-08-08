@@ -1,14 +1,21 @@
+# shellcheck shell=bash
 # If -p, -D, -P, or -V specifies a package, set package_url
 # If -U specifies a package, print the package_url and exit with normal status
 # shellcheck disable=SC2154
 set_or_print_url()
 {
   # Verify requirements
-  [ ! -z "${arg_U}" ] && [ ! -z "${arg_D:-${arg_p:-${arg_P:-${arg_V:-${arg_B}}}}}" ] &&
+  [[ -n "${arg_U}" && -n "${arg_D:-${arg_p:-${arg_P:-${arg_V:-${arg_B}}}}}" ]] &&
     emergency "Please pass only one of {-B, -D, -p, -P, -U, -V} or a longer equivalent (multiple detected)."
 
   # Get package name from argument passed with  -p, -D, -P, -V, or -U
   package_to_build="${arg_p:-${arg_D:-${arg_P:-${arg_U:-${arg_V:-${arg_B}}}}}}"
+
+if [[ -n "${arg_u:-}"  ]]; then
+  # User specified a URL from which to download the package
+  url_tail="${arg_u##*/}" # set url_tail to text_after_final_slash, greedy expansion needed
+  url_head="${arg_u%${url_tail}}" # set url_head text before url_tail
+else
 
   if [[ "${package_to_build}" == 'cmake' ]]; then
     major_minor="${version_to_build%.*}"
@@ -23,19 +30,19 @@ set_or_print_url()
     "gcc;${gcc_url_head-}"
     "wget;ftp://ftp.gnu.org:/gnu/wget/"
     "m4;ftp://ftp.gnu.org:/gnu/m4/"
-    "pkg-config;http://pkgconfig.freedesktop.org/releases/"
-    "mpich;http://www.mpich.org/static/downloads/${version_to_build-}/"
-    "flex;http://sourceforge.net/projects/flex/files/"
+    "pkg-config;https://pkgconfig.freedesktop.org/releases/"
+    "mpich;https://www.mpich.org/static/downloads/${version_to_build-}/"
+    "flex;https://sourceforge.net/projects/flex/files/"
     "make;ftp://ftp.gnu.org/gnu/make/"
     "bison;ftp://ftp.gnu.org:/gnu/bison/"
-    "cmake;http://www.cmake.org/files/v${major_minor-}/"
-    "subversion;http://www.eu.apache.org/dist/subversion/"
+    "cmake;https://www.cmake.org/files/v${major_minor:-}/"
+    "subversion;https://www.eu.apache.org/dist/subversion/"
   )
   for package in "${package_url_head[@]}" ; do
      KEY="${package%%;*}"
      VALUE="${package##*;}"
      info "KEY=${KEY}  VALUE=${VALUE}"
-     
+
      if [[ "${package_to_build}" == "${KEY}" ]]; then
        # We recognize the package name so we set the URL head:
        url_head="${VALUE}"
@@ -52,7 +59,7 @@ set_or_print_url()
         gcc_tail="branches/${version_to_build}"
       fi
     else
-      gcc_tail="gcc-${version_to_build}.tar.bz2"
+      gcc_tail="gcc-${version_to_build}.tar.gz"
     fi
   fi
   package_url_tail=(
@@ -81,10 +88,12 @@ set_or_print_url()
     emergency "Package ${package_name:-} not recognized.  Use --l or --list-packages to list the allowable names."
   fi
 
+fi # end if [[ -n "${arg_u:-}"  ]]; then
+
   package_url="${url_head}""${url_tail}"
 
   # If a printout of the package URL was requested, then print it and exit with normal status
-  if [[ ! -z "${arg_U:-}" ]]; then
+  if [[ -n "${arg_U:-}" ]]; then
     printf "%s\n" "${package_url}"
     exit 0
   fi

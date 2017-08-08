@@ -26,10 +26,3 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-# This script invokes the chosen Fortran compiler with the received command-line
-# arguments.  Current assumptions:
-#    1. The only argument is either an informational flag or a CAF executable
-#       file.
-#    2. The environment variable "FC" is used to determine the identity fo the Fortran compiler/linker.
-#    3. If "FC" is empty, a default value of "mpif90" is used.
