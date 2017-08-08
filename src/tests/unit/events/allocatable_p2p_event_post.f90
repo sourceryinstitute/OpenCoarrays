@@ -47,11 +47,11 @@ program allocatable_p2p_event_post
     if (me == 2) print*,' I am image 2, I have posted to 4'
     if (me == 4) then
       event wait(snd_copied(2))
-      sync images(*) ! sync not required, but *may* expose cleanup issues/segfaults etc.
+      sync all ! sync not required, but *may* expose cleanup issues/segfaults etc.
       print *, 'Test passed.'
     end if
     if (me /= 4) then
-      sync images(4)
+      sync all
       print *, 'I am', me, 'and image 4 told me it received the event'
     end if
     if (allocated(snd_copied)) deallocate(snd_copied)
