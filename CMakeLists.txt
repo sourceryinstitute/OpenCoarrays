@@ -595,9 +595,9 @@ if(opencoarrays_aware_compiler)
     add_mpi_test(get-put-alloc-comp 3 ${tests_root}/regression/reported/issue-422-send-get)
   endif()
 
-  add_mpi_test(event_post_1 4 ${tests_root}/unit/events/event_post_1)
+  add_mpi_test(allocatable_p2p_event_post 4 ${tests_root}/unit/events/allocatable_p2p_event_post)
   # Fixed GCC 7 regressions, should run on GCC 6 and 7
-  add_mpi_test(event_post_2 3 ${tests_root}/unit/events/event_post_2)
+  add_mpi_test(static_event_post_issue_293 3 ${tests_root}/unit/events/static_event_post_issue_293)
 
   # These co_reduce (#172, fixed by PR #332, addl discussion in PR
   # #331) tests are for bugs not regressions. Should be fixed in all
