@@ -860,7 +860,7 @@ finalize_internal (int status_code)
 
       free (caf_static_list);
       caf_static_list = tmp;
-    }
+        }
 
   caf_static_t *tmp_tot = caf_tot, *prev = caf_tot;
   MPI_Win *p;
@@ -871,7 +871,7 @@ finalize_internal (int status_code)
       p = TOKEN(tmp_tot->token);
       dprint ("%d/%d: %s: Before CAF_Win_unlock_all (*p)\n",
               caf_this_image, caf_num_images, __FUNCTION__);
-      CAF_Win_unlock_all (*p);
+        CAF_Win_unlock_all (*p);
       dprint ("%d/%d: %s: After CAF_Win_unlock_all (*p)\n",
               caf_this_image, caf_num_images, __FUNCTION__);
 #ifdef GCC_GE_7
@@ -1028,7 +1028,7 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
        || type == CAF_REGTYPE_COARRAY_ALLOC
        || type == CAF_REGTYPE_COARRAY_STATIC)
       && GFC_DESCRIPTOR_RANK (desc) != 0)
-    {
+      {
       /* Add a window for the descriptor when an array is registered.  */
       int ierr;
       size_t desc_size = sizeof (gfc_descriptor_t) + /*GFC_DESCRIPTOR_RANK (desc)*/
@@ -1042,50 +1042,50 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
     mpi_token->desc = NULL;
 
 #if MPI_VERSION >= 3
-  if (type == CAF_REGTYPE_COARRAY_ALLOC_REGISTER_ONLY)
-    {
+        if (type == CAF_REGTYPE_COARRAY_ALLOC_REGISTER_ONLY)
+          {
       int ierr = MPI_Win_create_dynamic (MPI_INFO_NULL, CAF_COMM_WORLD, p);
       dprint ("%d/%d: Register win = %p, ierr= %d\n", caf_this_image, caf_num_images,
               *p, ierr);
       CAF_Win_lock_all (*p);
-    }
+          }
   else if (type == CAF_REGTYPE_COARRAY_ALLOC_ALLOCATE_ONLY)
-    {
-      int ierr;
-      mem = malloc (actual_size);
+          {
+            int ierr;
+            mem = malloc (actual_size);
       CAF_Win_unlock_all (*p);
       ierr = MPI_Win_attach (*p, mem, actual_size);
       CAF_Win_lock_all (*p);
       *(mpi_token->flags) |= (FLAG_ASSOCIATED | FLAG_MEM_NOT_OWNED);
       dprint ("%d/%d: Attach mem %p to win = %p, ierr: %d, flags: %u\n",
               caf_this_image, caf_num_images, mem, *p, ierr, *mpi_token->flags);
-    }
+              }
   else
-    {
-      MPI_Win_allocate (actual_size, 1, MPI_INFO_NULL, CAF_COMM_WORLD, &mem, p);
-      CAF_Win_lock_all (*p);
+      {
+        MPI_Win_allocate (actual_size, 1, MPI_INFO_NULL, CAF_COMM_WORLD, &mem, p);
+        CAF_Win_lock_all (*p);
       *(mpi_token->flags) = FLAG_ASSOCIATED;
     }
 #else // MPI_VERSION
-  MPI_Alloc_mem(actual_size, MPI_INFO_NULL, &mem);
-  MPI_Win_create(mem, actual_size, 1, MPI_INFO_NULL, CAF_COMM_WORLD, p);
+        MPI_Alloc_mem(actual_size, MPI_INFO_NULL, &mem);
+        MPI_Win_create(mem, actual_size, 1, MPI_INFO_NULL, CAF_COMM_WORLD, p);
 #endif // MPI_VERSION
 
-  if(l_var)
-    {
-      init_array = (int *)calloc(size, sizeof(int));
-      CAF_Win_lock (MPI_LOCK_EXCLUSIVE, caf_this_image - 1, *p);
-      MPI_Put (init_array, size, MPI_INT, caf_this_image-1,
-                      0, size, MPI_INT, *p);
-      CAF_Win_unlock (caf_this_image - 1, *p);
-      free(init_array);
-    }
+        if(l_var)
+          {
+            init_array = (int *)calloc(size, sizeof(int));
+            CAF_Win_lock (MPI_LOCK_EXCLUSIVE, caf_this_image - 1, *p);
+            MPI_Put (init_array, size, MPI_INT, caf_this_image-1,
+                            0, size, MPI_INT, *p);
+            CAF_Win_unlock (caf_this_image - 1, *p);
+            free(init_array);
+          }
 
   if (type != CAF_REGTYPE_COARRAY_ALLOC_REGISTER_ONLY)
     {
       caf_static_t *tmp = malloc (sizeof (caf_static_t));
       tmp->prev  = caf_tot;
-      tmp->token = *token;
+        tmp->token = *token;
       caf_tot = tmp;
     }
 
@@ -1097,10 +1097,10 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
       caf_static_list = tmp;
     }
 
-  if (stat)
-    *stat = 0;
+        if (stat)
+          *stat = 0;
 
-  /* The descriptor will be initialized only after the call to register.  */
+        /* The descriptor will be initialized only after the call to register.  */
   mpi_token->local_memptr = mem;
   desc->base_addr = mem;
   return;
@@ -1275,15 +1275,15 @@ PREFIX (deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len
 #endif
 
   caf_static_t *tmp = caf_tot, *prev = caf_tot, *next=caf_tot;
-  MPI_Win *p;
+    MPI_Win *p;
 
   while (tmp)
-    {
+      {
       prev = tmp->prev;
 
       if (tmp->token == *token)
-        {
-          p = TOKEN(*token);
+          {
+            p = TOKEN(*token);
 #ifdef GCC_GE_7
           mpi_caf_token_t *mpi_token = *(mpi_caf_token_t **)token;
           if (mpi_token->local_memptr)
@@ -1321,30 +1321,30 @@ PREFIX (deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len
               MPI_Win_free (&mpi_token->flags_win);
             }
 #else
-          CAF_Win_unlock_all (*p);
-          MPI_Win_free (p);
+            CAF_Win_unlock_all (*p);
+            MPI_Win_free (p);
 #endif
 
-          if (prev)
-            next->prev = prev->prev;
-          else
-            next->prev = NULL;
+            if (prev)
+              next->prev = prev->prev;
+            else
+              next->prev = NULL;
 
           if (tmp == caf_tot)
             caf_tot = prev;
 
           free (tmp);
           break;
-        }
+          }
 
       next = tmp;
       tmp = prev;
-    }
+  }
 
   if (stat)
     *stat = 0;
 
-  free (*token);
+            free (*token);
 }
 
 void
@@ -2542,8 +2542,8 @@ error:
 */
 static void
 copy_data (void *ds, mpi_caf_token_t *token, ptrdiff_t offset, int dst_type,
-	   int src_type, int dst_kind, int src_kind, size_t dst_size,
-	   size_t src_size, size_t num, int *stat, int image_index)
+           int src_type, int dst_kind, int src_kind, size_t dst_size,
+           size_t src_size, size_t num, int *stat, int image_index)
 {
   size_t k;
   if (dst_type == src_type && dst_kind == src_kind)
@@ -2554,14 +2554,14 @@ copy_data (void *ds, mpi_caf_token_t *token, ptrdiff_t offset, int dst_type,
 	       token->memptr);
       CAF_Win_unlock (image_index, token->memptr);
       if ((dst_type == BT_CHARACTER || src_type == BT_CHARACTER)
-	  && dst_size > src_size)
-	{
-	  if (dst_kind == 1)
-	    memset ((void*)(char*) ds + src_size, ' ', dst_size-src_size);
-	  else /* dst_kind == 4.  */
-	    for (k = src_size/4; k < dst_size/4; k++)
-	      ((int32_t*) ds)[k] = (int32_t) ' ';
-	}
+          && dst_size > src_size)
+        {
+          if (dst_kind == 1)
+            memset ((void*)(char*) ds + src_size, ' ', dst_size-src_size);
+          else /* dst_kind == 4.  */
+            for (k = src_size/4; k < dst_size/4; k++)
+              ((int32_t*) ds)[k] = (int32_t) ' ';
+        }
     }
   else if (dst_type == BT_CHARACTER && dst_kind == 1)
     {
@@ -2592,11 +2592,11 @@ copy_data (void *ds, mpi_caf_token_t *token, ptrdiff_t offset, int dst_type,
 	       src_size * num, MPI_BYTE, token->memptr);
       CAF_Win_unlock (image_index, token->memptr);
       for (k = 0; k < num; ++k)
-	{
-	  convert_type (ds, dst_type, dst_kind, srh, src_type, src_kind, stat);
-	  ds += dst_size;
-	  srh += src_size;
-	}
+        {
+          convert_type (ds, dst_type, dst_kind, srh, src_type, src_kind, stat);
+          ds += dst_size;
+          srh += src_size;
+        }
     }
 }
 
@@ -2618,7 +2618,7 @@ copy_data (void *ds, mpi_caf_token_t *token, ptrdiff_t offset, int dst_type,
 
     Copied from gcc:libgfortran/libgfortran.h. */
 #define GFC_DESCRIPTOR_EXTENT(desc,i) ((desc)->dim[i]._ubound + 1 \
-				      - (desc)->dim[i].lower_bound)
+                                      - (desc)->dim[i].lower_bound)
 
 
 /** Get a copy of the remote descriptor.
@@ -2654,10 +2654,10 @@ typedef struct gfc_max_dim_descriptor_t {
 
 static void
 get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
-	     mpi_caf_token_t *mpi_token, gfc_descriptor_t *dst,
-	     gfc_descriptor_t *src, void *ds, void *sr,
+             mpi_caf_token_t *mpi_token, gfc_descriptor_t *dst,
+             gfc_descriptor_t *src, void *ds, void *sr,
 	     ptrdiff_t sr_byte_offset,
-	     int dst_kind, int src_kind, size_t dst_dim, size_t src_dim,
+             int dst_kind, int src_kind, size_t dst_dim, size_t src_dim,
 	     size_t num, int *stat, int image_index)
 /* !!! The image_index is zero-base here.  */
 {
@@ -2677,54 +2677,54 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
       int src_type = -1;
 
       switch (ref->type)
-	{
-	case CAF_REF_COMPONENT:
+        {
+        case CAF_REF_COMPONENT:
 	  /* Because the token is always registered after the component, its
 	     offset is always greater zeor.  */
-	  if (ref->u.c.caf_token_offset > 0)
+          if (ref->u.c.caf_token_offset > 0)
 	    copy_data (ds, mpi_token, ref->u.c.offset,
-		       GFC_DESCRIPTOR_TYPE (dst), GFC_DESCRIPTOR_TYPE (dst),
-		       dst_kind, src_kind, dst_size, ref->item_size, 1, stat,
-		       image_index);
-	  else
+                       GFC_DESCRIPTOR_TYPE (dst), GFC_DESCRIPTOR_TYPE (dst),
+                       dst_kind, src_kind, dst_size, ref->item_size, 1, stat,
+                       image_index);
+          else
 	    copy_data (ds, mpi_token, ref->u.c.offset,
-		       GFC_DESCRIPTOR_TYPE (dst), GFC_DESCRIPTOR_TYPE (src),
-		       dst_kind, src_kind, dst_size, ref->item_size, 1, stat,
-		       image_index);
-	  ++(*i);
-	  return;
-	case CAF_REF_STATIC_ARRAY:
-	  src_type = ref->u.a.static_array_type;
-	  /* Intentionally fall through.  */
-	case CAF_REF_ARRAY:
-	  if (ref->u.a.mode[src_dim] == CAF_ARR_REF_NONE)
-	    {
-	      copy_data (ds + dst_index * dst_size, mpi_token,
-			 sr_byte_offset, GFC_DESCRIPTOR_TYPE (dst),
-			 src_type == -1 ? GFC_DESCRIPTOR_TYPE (src) : src_type,
-			 dst_kind, src_kind, dst_size, ref->item_size, num,
-			 stat, image_index);
-	      *i += num;
-	      return;
-	    }
-	  break;
-	default:
-	  caf_runtime_error (unreachable);
-	}
+                       GFC_DESCRIPTOR_TYPE (dst), GFC_DESCRIPTOR_TYPE (src),
+                       dst_kind, src_kind, dst_size, ref->item_size, 1, stat,
+                       image_index);
+          ++(*i);
+          return;
+        case CAF_REF_STATIC_ARRAY:
+          src_type = ref->u.a.static_array_type;
+          /* Intentionally fall through.  */
+        case CAF_REF_ARRAY:
+          if (ref->u.a.mode[src_dim] == CAF_ARR_REF_NONE)
+            {
+                  copy_data (ds + dst_index * dst_size, mpi_token,
+                             sr_byte_offset, GFC_DESCRIPTOR_TYPE (dst),
+                             src_type == -1 ? GFC_DESCRIPTOR_TYPE (src) : src_type,
+                             dst_kind, src_kind, dst_size, ref->item_size, num,
+                             stat, image_index);
+              *i += num;
+              return;
+            }
+          break;
+        default:
+          caf_runtime_error (unreachable);
+        }
     }
 
   switch (ref->type)
     {
     case CAF_REF_COMPONENT:
       if (ref->u.c.caf_token_offset > 0)
-	{
+        {
 	  mpi_token = *(mpi_caf_token_t**)(sr + ref->u.c.caf_token_offset);
 	  GET_REMOTE_DESC (mpi_token, src, src_desc_data, image_index);
 	  get_for_ref (ref->next, i, dst_index, mpi_token, dst, src,
 		       ds, sr + ref->u.c.offset, ref->u.c.offset,
 		       dst_kind, src_kind, dst_dim, 0, 1, stat, image_index);
-	}
-      else
+            }
+          else
 	get_for_ref (ref->next, i, dst_index, mpi_token, dst,
 		     (gfc_descriptor_t *)(sr + ref->u.c.offset), ds,
 		     sr + ref->u.c.offset, ref->u.c.offset, dst_kind, src_kind,
@@ -2732,249 +2732,248 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
       return;
     case CAF_REF_ARRAY:
       if (ref->u.a.mode[src_dim] == CAF_ARR_REF_NONE)
-	{
-	  get_for_ref (ref->next, i, dst_index, mpi_token, dst,
+        {
+          get_for_ref (ref->next, i, dst_index, mpi_token, dst,
 		       src, ds, sr, sr_byte_offset, dst_kind,
 		       src_kind, dst_dim, 0, 1, stat, image_index);
-	  return;
-	}
+          return;
+        }
       /* Only when on the left most index switch the data pointer to
-	 the array's data pointer.  */
+      the array's data pointer.  */
       if (src_dim == 0)
-	{
+        {
 	  sr = src->base_addr;
-	  sr_byte_offset = 0;
-	}
+          sr_byte_offset = 0;
+        }
       switch (ref->u.a.mode[src_dim])
-	{
-	case CAF_ARR_REF_VECTOR:
-	  extent_src = GFC_DESCRIPTOR_EXTENT (src, src_dim);
-	  array_offset_src = 0;
-	  for (size_t idx = 0; idx < ref->u.a.dim[src_dim].v.nvec;
-	       ++idx)
-	    {
+        {
+        case CAF_ARR_REF_VECTOR:
+          extent_src = GFC_DESCRIPTOR_EXTENT (src, src_dim);
+          array_offset_src = 0;
+          for (size_t idx = 0; idx < ref->u.a.dim[src_dim].v.nvec;
+               ++idx)
+            {
 #define KINDCASE(kind, type) case kind: \
-	      array_offset_src = (((ptrdiff_t) \
-		  ((type *)ref->u.a.dim[src_dim].v.vector)[idx]) \
-		  - src->dim[src_dim].lower_bound \
-		  * src->dim[src_dim]._stride); \
-	      break
+              array_offset_src = (((ptrdiff_t) \
+                  ((type *)ref->u.a.dim[src_dim].v.vector)[idx]) \
+                  - src->dim[src_dim].lower_bound \
+                  * src->dim[src_dim]._stride); \
+              break
 
-	      switch (ref->u.a.dim[src_dim].v.kind)
-		{
-		KINDCASE (1, int8_t);
-		KINDCASE (2, int16_t);
-		KINDCASE (4, int32_t);
-		KINDCASE (8, int64_t);
+              switch (ref->u.a.dim[src_dim].v.kind)
+                {
+                KINDCASE (1, int8_t);
+                KINDCASE (2, int16_t);
+                KINDCASE (4, int32_t);
+                KINDCASE (8, int64_t);
 #ifdef HAVE_GFC_INTEGER_16
-		KINDCASE (16, __int128);
+                KINDCASE (16, __int128);
 #endif
-		default:
-		  caf_runtime_error (unreachable);
-		  return;
-		}
+                default:
+                  caf_runtime_error (unreachable);
+                  return;
+                }
 #undef KINDCASE
 
 	      get_for_ref (ref, i, dst_index, mpi_token, dst, src, ds,
 			   sr + array_offset_src * ref->item_size,
-			   sr_byte_offset + array_offset_src * ref->item_size,
-			   dst_kind, src_kind, dst_dim + 1, src_dim + 1,
+                           sr_byte_offset + array_offset_src * ref->item_size,
+                           dst_kind, src_kind, dst_dim + 1, src_dim + 1,
 			   1, stat, image_index);
-	      dst_index += dst->dim[dst_dim]._stride;
-	    }
-	  return;
-	case CAF_ARR_REF_FULL:
-	  COMPUTE_NUM_ITEMS (extent_src,
-			     ref->u.a.dim[src_dim].s.stride,
-			     src->dim[src_dim].lower_bound,
-			     src->dim[src_dim]._ubound);
-	  stride_src = src->dim[src_dim]._stride
-	      * ref->u.a.dim[src_dim].s.stride;
-	  array_offset_src = 0;
-	  for (ptrdiff_t idx = 0; idx < extent_src;
-	       ++idx, array_offset_src += stride_src)
-	    {
+              dst_index += dst->dim[dst_dim]._stride;
+            }
+          return;
+        case CAF_ARR_REF_FULL:
+          COMPUTE_NUM_ITEMS (extent_src,
+                             ref->u.a.dim[src_dim].s.stride,
+                             src->dim[src_dim].lower_bound,
+                             src->dim[src_dim]._ubound);
+          stride_src = src->dim[src_dim]._stride
+                       * ref->u.a.dim[src_dim].s.stride;
+          array_offset_src = 0;
+          for (ptrdiff_t idx = 0; idx < extent_src;
+               ++idx, array_offset_src += stride_src)
+            {
 	      get_for_ref (ref, i, dst_index, mpi_token, dst, src, ds,
 			   sr + array_offset_src * ref->item_size,
-			   sr_byte_offset + array_offset_src * ref->item_size,
-			   dst_kind, src_kind, dst_dim + 1, src_dim + 1,
+                           sr_byte_offset + array_offset_src * ref->item_size,
+                           dst_kind, src_kind, dst_dim + 1, src_dim + 1,
 			   1, stat, image_index);
-	      dst_index += dst->dim[dst_dim]._stride;
-	    }
-	  return;
-	case CAF_ARR_REF_RANGE:
-	  COMPUTE_NUM_ITEMS (extent_src,
-			     ref->u.a.dim[src_dim].s.stride,
-			     ref->u.a.dim[src_dim].s.start,
-			     ref->u.a.dim[src_dim].s.end);
-	  array_offset_src = (ref->u.a.dim[src_dim].s.start
-			      - src->dim[src_dim].lower_bound)
-	      * src->dim[src_dim]._stride;
-	  stride_src = src->dim[src_dim]._stride
-	      * ref->u.a.dim[src_dim].s.stride;
-	  /* Increase the dst_dim only, when the src_extent is greater one
-	     or src and dst extent are both one.  Don't increase when the scalar
-	     source is not present in the dst.  */
-	  next_dst_dim = extent_src > 1
-	      || (GFC_DESCRIPTOR_EXTENT (dst, dst_dim) == 1
-		  && extent_src == 1) ? (dst_dim + 1) : dst_dim;
-	  for (ptrdiff_t idx = 0; idx < extent_src; ++idx)
-	    {
+              dst_index += dst->dim[dst_dim]._stride;
+            }
+          return;
+        case CAF_ARR_REF_RANGE:
+          COMPUTE_NUM_ITEMS (extent_src,
+                             ref->u.a.dim[src_dim].s.stride,
+                             ref->u.a.dim[src_dim].s.start,
+                             ref->u.a.dim[src_dim].s.end);
+          array_offset_src = (ref->u.a.dim[src_dim].s.start
+                              - src->dim[src_dim].lower_bound)
+                             * src->dim[src_dim]._stride;
+          stride_src = src->dim[src_dim]._stride
+                       * ref->u.a.dim[src_dim].s.stride;
+          /* Increase the dst_dim only, when the src_extent is greater one
+             or src and dst extent are both one.  Don't increase when the scalar
+             source is not present in the dst.  */
+          next_dst_dim = extent_src > 1
+                         || (GFC_DESCRIPTOR_EXTENT (dst, dst_dim) == 1
+                             && extent_src == 1) ? (dst_dim + 1) : dst_dim;
+          for (ptrdiff_t idx = 0; idx < extent_src; ++idx)
+            {
 	      get_for_ref (ref, i, dst_index, mpi_token, dst, src, ds,
 			   sr + array_offset_src * ref->item_size,
-			   sr_byte_offset + array_offset_src * ref->item_size,
-			   dst_kind, src_kind, next_dst_dim, src_dim + 1,
+                           sr_byte_offset + array_offset_src * ref->item_size,
+                           dst_kind, src_kind, next_dst_dim, src_dim + 1,
 			   1, stat, image_index);
-	      dst_index += dst->dim[dst_dim]._stride;
-	      array_offset_src += stride_src;
-	    }
-	  return;
-	case CAF_ARR_REF_SINGLE:
-	  array_offset_src = (ref->u.a.dim[src_dim].s.start
-			      - src->dim[src_dim].lower_bound)
-	      * src->dim[src_dim]._stride;
+              dst_index += dst->dim[dst_dim]._stride;
+              array_offset_src += stride_src;
+            }
+          return;
+        case CAF_ARR_REF_SINGLE:
+          array_offset_src = (ref->u.a.dim[src_dim].s.start
+                              - src->dim[src_dim].lower_bound)
+                             * src->dim[src_dim]._stride;
 	  get_for_ref (ref, i, dst_index, mpi_token, dst, src, ds,
 		       sr + array_offset_src * ref->item_size,
-		       sr_byte_offset + array_offset_src * ref->item_size,
-		       dst_kind, src_kind, dst_dim, src_dim + 1, 1,
+                       sr_byte_offset + array_offset_src * ref->item_size,
+                       dst_kind, src_kind, dst_dim, src_dim + 1, 1,
 		       stat, image_index);
-	  return;
-	case CAF_ARR_REF_OPEN_END:
-	  COMPUTE_NUM_ITEMS (extent_src,
-			     ref->u.a.dim[src_dim].s.stride,
-			     ref->u.a.dim[src_dim].s.start,
-			     src->dim[src_dim]._ubound);
-	  stride_src = src->dim[src_dim]._stride
-	      * ref->u.a.dim[src_dim].s.stride;
-	  array_offset_src = (ref->u.a.dim[src_dim].s.start
-			      - src->dim[src_dim].lower_bound)
-	      * src->dim[src_dim]._stride;
-	  for (ptrdiff_t idx = 0; idx < extent_src; ++idx)
-	    {
+          return;
+        case CAF_ARR_REF_OPEN_END:
+          COMPUTE_NUM_ITEMS (extent_src,
+                             ref->u.a.dim[src_dim].s.stride,
+                             ref->u.a.dim[src_dim].s.start,
+                             src->dim[src_dim]._ubound);
+          stride_src = src->dim[src_dim]._stride
+                       * ref->u.a.dim[src_dim].s.stride;
+          array_offset_src = (ref->u.a.dim[src_dim].s.start
+                              - src->dim[src_dim].lower_bound)
+                             * src->dim[src_dim]._stride;
+          for (ptrdiff_t idx = 0; idx < extent_src; ++idx)
+            {
 	      get_for_ref (ref, i, dst_index, mpi_token, dst, src, ds,
 			   sr + array_offset_src * ref->item_size,
-			   sr_byte_offset + array_offset_src * ref->item_size,
-			   dst_kind, src_kind, dst_dim + 1, src_dim + 1,
+                           sr_byte_offset + array_offset_src * ref->item_size,
+                           dst_kind, src_kind, dst_dim + 1, src_dim + 1,
 			   1, stat, image_index);
-	      dst_index += dst->dim[dst_dim]._stride;
-	      array_offset_src += stride_src;
-	    }
-	  return;
-	case CAF_ARR_REF_OPEN_START:
-	  COMPUTE_NUM_ITEMS (extent_src,
-			     ref->u.a.dim[src_dim].s.stride,
-			     src->dim[src_dim].lower_bound,
-			     ref->u.a.dim[src_dim].s.end);
-	  stride_src = src->dim[src_dim]._stride
-	      * ref->u.a.dim[src_dim].s.stride;
-	  array_offset_src = 0;
-	  for (ptrdiff_t idx = 0; idx < extent_src; ++idx)
-	    {
+              dst_index += dst->dim[dst_dim]._stride;
+              array_offset_src += stride_src;
+            }
+          return;
+        case CAF_ARR_REF_OPEN_START:
+          COMPUTE_NUM_ITEMS (extent_src,
+                             ref->u.a.dim[src_dim].s.stride,
+                             src->dim[src_dim].lower_bound,
+                             ref->u.a.dim[src_dim].s.end);
+          stride_src = src->dim[src_dim]._stride
+                       * ref->u.a.dim[src_dim].s.stride;
+          array_offset_src = 0;
+          for (ptrdiff_t idx = 0; idx < extent_src; ++idx)
+            {
 	      get_for_ref (ref, i, dst_index, mpi_token, dst, src, ds,
 			   sr + array_offset_src * ref->item_size,
-			   sr_byte_offset + array_offset_src * ref->item_size,
-			   dst_kind, src_kind, dst_dim + 1, src_dim + 1,
+                           sr_byte_offset + array_offset_src * ref->item_size,
+                           dst_kind, src_kind, dst_dim + 1, src_dim + 1,
 			   1, stat, image_index);
-	      dst_index += dst->dim[dst_dim]._stride;
-	      array_offset_src += stride_src;
-	    }
-	  return;
-	default:
-	  caf_runtime_error (unreachable);
-	}
+              dst_index += dst->dim[dst_dim]._stride;
+              array_offset_src += stride_src;
+            }
+          return;
+        default:
+          caf_runtime_error (unreachable);
+        }
       return;
     case CAF_REF_STATIC_ARRAY:
       if (ref->u.a.mode[src_dim] == CAF_ARR_REF_NONE)
-	{
-	  get_for_ref (ref->next, i, dst_index, mpi_token, dst, NULL, ds, sr,
+        {
+          get_for_ref (ref->next, i, dst_index, mpi_token, dst, NULL, ds, sr,
 		       sr_byte_offset, dst_kind, src_kind,
 		       dst_dim, 0, 1, stat, image_index);
-	  return;
-	}
+          return;
+        }
       switch (ref->u.a.mode[src_dim])
-	{
-	case CAF_ARR_REF_VECTOR:
-	  array_offset_src = 0;
-	  for (size_t idx = 0; idx < ref->u.a.dim[src_dim].v.nvec;
-	       ++idx)
-	    {
+        {
+        case CAF_ARR_REF_VECTOR:
+          array_offset_src = 0;
+          for (size_t idx = 0; idx < ref->u.a.dim[src_dim].v.nvec;
+               ++idx)
+            {
 #define KINDCASE(kind, type) case kind: \
-	     array_offset_src = ((type *)ref->u.a.dim[src_dim].v.vector)[idx]; \
-	      break
+             array_offset_src = ((type *)ref->u.a.dim[src_dim].v.vector)[idx]; \
+              break
 
-	      switch (ref->u.a.dim[src_dim].v.kind)
-		{
-		KINDCASE (1, int8_t);
-		KINDCASE (2, int16_t);
-		KINDCASE (4, int32_t);
-		KINDCASE (8, int64_t);
+              switch (ref->u.a.dim[src_dim].v.kind)
+                {
+                KINDCASE (1, int8_t);
+                KINDCASE (2, int16_t);
+                KINDCASE (4, int32_t);
+                KINDCASE (8, int64_t);
 #ifdef HAVE_GFC_INTEGER_16
-		KINDCASE (16, __int128);
+                KINDCASE (16, __int128);
 #endif
-		default:
-		  caf_runtime_error (unreachable);
-		  return;
-		}
+                default:
+                  caf_runtime_error (unreachable);
+                  return;
+                }
 #undef KINDCASE
 
 	      get_for_ref (ref, i, dst_index, mpi_token, dst, NULL, ds,
 			   sr + array_offset_src * ref->item_size,
-			   sr_byte_offset + array_offset_src * ref->item_size,
-			   dst_kind, src_kind, dst_dim + 1, src_dim + 1,
+                           sr_byte_offset + array_offset_src * ref->item_size,
+                           dst_kind, src_kind, dst_dim + 1, src_dim + 1,
 			   1, stat, image_index);
-	      dst_index += dst->dim[dst_dim]._stride;
-	    }
-	  return;
-	case CAF_ARR_REF_FULL:
-	  for (array_offset_src = 0 ;
-	       array_offset_src <= ref->u.a.dim[src_dim].s.end;
-	       array_offset_src += ref->u.a.dim[src_dim].s.stride)
-	    {
+              dst_index += dst->dim[dst_dim]._stride;
+            }
+          return;
+        case CAF_ARR_REF_FULL:
+          for (array_offset_src = 0 ;
+               array_offset_src <= ref->u.a.dim[src_dim].s.end;
+               array_offset_src += ref->u.a.dim[src_dim].s.stride)
+            {
 	      get_for_ref (ref, i, dst_index, mpi_token, dst, NULL, ds,
 			   sr + array_offset_src * ref->item_size,
-			   sr_byte_offset + array_offset_src * ref->item_size,
-			   dst_kind, src_kind, dst_dim + 1, src_dim + 1,
+                           sr_byte_offset + array_offset_src * ref->item_size,
+                           dst_kind, src_kind, dst_dim + 1, src_dim + 1,
 			   1, stat, image_index);
-	      dst_index += dst->dim[dst_dim]._stride;
-	    }
-	  return;
-	case CAF_ARR_REF_RANGE:
-	  COMPUTE_NUM_ITEMS (extent_src,
-			     ref->u.a.dim[src_dim].s.stride,
-			     ref->u.a.dim[src_dim].s.start,
-			     ref->u.a.dim[src_dim].s.end);
-	  array_offset_src = ref->u.a.dim[src_dim].s.start;
-	  for (ptrdiff_t idx = 0; idx < extent_src; ++idx)
-	    {
+              dst_index += dst->dim[dst_dim]._stride;
+            }
+          return;
+        case CAF_ARR_REF_RANGE:
+          COMPUTE_NUM_ITEMS (extent_src,
+                             ref->u.a.dim[src_dim].s.stride,
+                             ref->u.a.dim[src_dim].s.start,
+                             ref->u.a.dim[src_dim].s.end);
+          array_offset_src = ref->u.a.dim[src_dim].s.start;
+          for (ptrdiff_t idx = 0; idx < extent_src; ++idx)
+            {
 	      get_for_ref (ref, i, dst_index, mpi_token, dst, NULL, ds,
 			   sr + array_offset_src * ref->item_size,
-			   sr_byte_offset + array_offset_src * ref->item_size,
-			   dst_kind, src_kind, dst_dim + 1, src_dim + 1,
+                           sr_byte_offset + array_offset_src * ref->item_size,
+                           dst_kind, src_kind, dst_dim + 1, src_dim + 1,
 			   1, stat, image_index);
-	      dst_index += dst->dim[dst_dim]._stride;
-	      array_offset_src += ref->u.a.dim[src_dim].s.stride;
-	    }
-	  return;
-	case CAF_ARR_REF_SINGLE:
-	  array_offset_src = ref->u.a.dim[src_dim].s.start;
+              dst_index += dst->dim[dst_dim]._stride;
+              array_offset_src += ref->u.a.dim[src_dim].s.stride;
+            }
+          return;
+        case CAF_ARR_REF_SINGLE:
+          array_offset_src = ref->u.a.dim[src_dim].s.start;
 	  get_for_ref (ref, i, dst_index, mpi_token, dst, NULL, ds,
 		       sr + array_offset_src * ref->item_size,
-		       sr_byte_offset + array_offset_src * ref->item_size,
-		       dst_kind, src_kind, dst_dim, src_dim + 1, 1,
+                       sr_byte_offset + array_offset_src * ref->item_size,
+                       dst_kind, src_kind, dst_dim, src_dim + 1, 1,
 		       stat, image_index);
-	  return;
-	/* The OPEN_* are mapped to a RANGE and therefore can not occur.  */
-	case CAF_ARR_REF_OPEN_END:
-	case CAF_ARR_REF_OPEN_START:
-	default:
-	  caf_runtime_error (unreachable);
-	}
+          return;
+          /* The OPEN_* are mapped to a RANGE and therefore can not occur.  */
+        case CAF_ARR_REF_OPEN_END:
+        case CAF_ARR_REF_OPEN_START:
+        default:
+          caf_runtime_error (unreachable);
+        }
       return;
     default:
       caf_runtime_error (unreachable);
     }
 }
-
 
 void
 _gfortran_caf_get_by_ref (caf_token_t token, int image_index,
@@ -3033,363 +3032,363 @@ _gfortran_caf_get_by_ref (caf_token_t token, int image_index,
   while (riter)
     {
       switch (riter->type)
-	{
-	case CAF_REF_COMPONENT:
+        {
+        case CAF_REF_COMPONENT:
 	  if (riter->u.c.caf_token_offset)
-	    {
+                {
 	      mpi_token = *(mpi_caf_token_t**)
 				   (local_memptr + riter->u.c.caf_token_offset);
 	      local_memptr = mpi_token->local_memptr;
 	      GET_REMOTE_DESC (mpi_token, src, src_desc_data, image_index - 1);
-	    }
-	  else
-	    {
+            }
+          else
+            {
 	      local_memptr += riter->u.c.offset;
 	      src = (gfc_descriptor_t *)local_memptr;
-	    }
-	  break;
-	case CAF_REF_ARRAY:
-	  for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
-	    {
-	      switch (riter->u.a.mode[i])
-		{
-		case CAF_ARR_REF_VECTOR:
-		  delta = riter->u.a.dim[i].v.nvec;
+            }
+          break;
+        case CAF_REF_ARRAY:
+          for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
+            {
+              switch (riter->u.a.mode[i])
+                {
+                case CAF_ARR_REF_VECTOR:
+                  delta = riter->u.a.dim[i].v.nvec;
 #define KINDCASE(kind, type) case kind: \
 		    local_memptr += (((ptrdiff_t) \
-			((type *)riter->u.a.dim[i].v.vector)[0]) \
-			- src->dim[i].lower_bound) \
-			* src->dim[i]._stride \
-			* riter->item_size; \
-		    break
+                        ((type *)riter->u.a.dim[i].v.vector)[0]) \
+                        - src->dim[i].lower_bound) \
+                        * src->dim[i]._stride \
+                        * riter->item_size; \
+                    break
 
-		  switch (riter->u.a.dim[i].v.kind)
-		    {
-		    KINDCASE (1, int8_t);
-		    KINDCASE (2, int16_t);
-		    KINDCASE (4, int32_t);
-		    KINDCASE (8, int64_t);
+                  switch (riter->u.a.dim[i].v.kind)
+                    {
+                    KINDCASE (1, int8_t);
+                    KINDCASE (2, int16_t);
+                    KINDCASE (4, int32_t);
+                    KINDCASE (8, int64_t);
 #if HAVE_GFC_INTEGER_16
-		    KINDCASE (16, __int128);
+                    KINDCASE (16, __int128);
 #endif
-		    default:
-		      caf_runtime_error (vecrefunknownkind, stat, NULL, 0);
-		      return;
-		    }
+                    default:
+                      caf_runtime_error (vecrefunknownkind, stat, NULL, 0);
+                      return;
+                    }
 #undef KINDCASE
-		  break;
-		case CAF_ARR_REF_FULL:
-		  COMPUTE_NUM_ITEMS (delta,
-				     riter->u.a.dim[i].s.stride,
-				     src->dim[i].lower_bound,
-				     src->dim[i]._ubound);
-		  /* The memptr stays unchanged when ref'ing the first element
-		     in a dimension.  */
-		  break;
-		case CAF_ARR_REF_RANGE:
-		  COMPUTE_NUM_ITEMS (delta,
-				     riter->u.a.dim[i].s.stride,
-				     riter->u.a.dim[i].s.start,
-				     riter->u.a.dim[i].s.end);
+                  break;
+                case CAF_ARR_REF_FULL:
+                  COMPUTE_NUM_ITEMS (delta,
+                                     riter->u.a.dim[i].s.stride,
+                                     src->dim[i].lower_bound,
+                                     src->dim[i]._ubound);
+                  /* The memptr stays unchanged when ref'ing the first element
+                     in a dimension.  */
+                  break;
+                case CAF_ARR_REF_RANGE:
+                  COMPUTE_NUM_ITEMS (delta,
+                                     riter->u.a.dim[i].s.stride,
+                                     riter->u.a.dim[i].s.start,
+                                     riter->u.a.dim[i].s.end);
 		  local_memptr += (riter->u.a.dim[i].s.start
-			     - src->dim[i].lower_bound)
-		      * src->dim[i]._stride
-		      * riter->item_size;
-		  break;
-		case CAF_ARR_REF_SINGLE:
-		  delta = 1;
+                                    - src->dim[i].lower_bound)
+                                   * src->dim[i]._stride
+                                   * riter->item_size;
+                  break;
+                case CAF_ARR_REF_SINGLE:
+                  delta = 1;
 		  local_memptr += (riter->u.a.dim[i].s.start
-			     - src->dim[i].lower_bound)
-		      * src->dim[i]._stride
-		      * riter->item_size;
-		  break;
-		case CAF_ARR_REF_OPEN_END:
-		  COMPUTE_NUM_ITEMS (delta,
-				     riter->u.a.dim[i].s.stride,
-				     riter->u.a.dim[i].s.start,
-				     src->dim[i]._ubound);
+                                    - src->dim[i].lower_bound)
+                                   * src->dim[i]._stride
+                                   * riter->item_size;
+                  break;
+                case CAF_ARR_REF_OPEN_END:
+                  COMPUTE_NUM_ITEMS (delta,
+                                     riter->u.a.dim[i].s.stride,
+                                     riter->u.a.dim[i].s.start,
+                                     src->dim[i]._ubound);
 		  local_memptr += (riter->u.a.dim[i].s.start
-			     - src->dim[i].lower_bound)
-		      * src->dim[i]._stride
-		      * riter->item_size;
-		  break;
-		case CAF_ARR_REF_OPEN_START:
-		  COMPUTE_NUM_ITEMS (delta,
-				     riter->u.a.dim[i].s.stride,
-				     src->dim[i].lower_bound,
-				     riter->u.a.dim[i].s.end);
-		  /* The memptr stays unchanged when ref'ing the first element
-		     in a dimension.  */
-		  break;
-		default:
-		  caf_runtime_error (unknownarrreftype, stat, NULL, 0);
-		  return;
-		}
-	      if (delta <= 0)
-		return;
-	      /* Check the various properties of the destination array.
-		 Is an array expected and present?  */
-	      if (delta > 1 && dst_rank == 0)
-		{
-		  /* No, an array is required, but not provided.  */
-		  caf_runtime_error (extentoutofrange, stat, NULL, 0);
-		  return;
-		}
-	      /* When dst is an array.  */
-	      if (dst_rank > 0)
-		{
-		  /* Check that dst_cur_dim is valid for dst.  Can be
-		     superceeded only by scalar data.  */
-		  if (dst_cur_dim >= dst_rank && delta != 1)
-		    {
-		      caf_runtime_error (rankoutofrange, stat, NULL, 0);
-		      return;
-		    }
-		  /* Do further checks, when the source is not scalar.  */
-		  else if (delta != 1)
-		    {
-		      /* Check that the extent is not scalar and we are not in
-			 an array ref for the dst side.  */
-		      if (!in_array_ref)
-			{
-			  /* Check that this is the non-scalar extent.  */
-			  if (!array_extent_fixed)
-			    {
-			      /* In an array extent now.  */
-			      in_array_ref = true;
-			      /* Check that we haven't skipped any scalar
-				 dimensions yet and that the dst is
-				 compatible.  */
-			      if (i > 0
-				  && dst_rank == GFC_DESCRIPTOR_RANK (src))
-				{
-				  if (dst_reallocatable)
-				    {
-				      /* Dst is reallocatable, which means that
-					 the bounds are not set.  Set them.  */
-				      for (dst_cur_dim= 0; dst_cur_dim < (int)i;
-					   ++dst_cur_dim)
-					{
-					  dst->dim[dst_cur_dim].lower_bound = 1;
-					  dst->dim[dst_cur_dim]._ubound = 1;
-					  dst->dim[dst_cur_dim]._stride = 1;
-					}
-				    }
-				  else
-				    dst_cur_dim = i;
-				}
-			      /* Else press thumbs, that there are enough
-				 dimensional refs to come.  Checked below.  */
-			    }
-			  else
-			    {
-			      caf_runtime_error (doublearrayref, stat, NULL,
-						  0);
-			      return;
-			    }
-			}
-		      /* When the realloc is required, then no extent may have
-			 been set.  */
-		      extent_mismatch = realloc_required
-			  || GFC_DESCRIPTOR_EXTENT (dst, dst_cur_dim) != delta;
-		      /* When it already known, that a realloc is needed or
-			 the extent does not match the needed one.  */
-		      if (realloc_required || realloc_needed
-			  || extent_mismatch)
-			{
-			  /* Check whether dst is reallocatable.  */
-			  if (unlikely (!dst_reallocatable))
-			    {
-			      caf_runtime_error (nonallocextentmismatch, stat,
-						  NULL, 0, delta,
-						  GFC_DESCRIPTOR_EXTENT (dst,
-								  dst_cur_dim));
-			      return;
-			    }
-			  /* Only report an error, when the extent needs to be
-			     modified, which is not allowed.  */
-			  else if (!dst_reallocatable && extent_mismatch)
-			    {
-			      caf_runtime_error (extentoutofrange, stat, NULL,
-						  0);
-			      return;
-			    }
-			  realloc_needed = true;
-			}
-		      /* Only change the extent when it does not match.  This is
-			 to prevent resetting given array bounds.  */
-		      if (extent_mismatch)
-			{
-			  dst->dim[dst_cur_dim].lower_bound = 1;
-			  dst->dim[dst_cur_dim]._ubound = delta;
-			  dst->dim[dst_cur_dim]._stride = size;
-			}
-		    }
+                                    - src->dim[i].lower_bound)
+                                   * src->dim[i]._stride
+                                   * riter->item_size;
+                  break;
+                case CAF_ARR_REF_OPEN_START:
+                  COMPUTE_NUM_ITEMS (delta,
+                                     riter->u.a.dim[i].s.stride,
+                                     src->dim[i].lower_bound,
+                                     riter->u.a.dim[i].s.end);
+                  /* The memptr stays unchanged when ref'ing the first element
+                     in a dimension.  */
+                  break;
+                default:
+                  caf_runtime_error (unknownarrreftype, stat, NULL, 0);
+                  return;
+                }
+              if (delta <= 0)
+                return;
+              /* Check the various properties of the destination array.
+                 Is an array expected and present?  */
+              if (delta > 1 && dst_rank == 0)
+                {
+                  /* No, an array is required, but not provided.  */
+                  caf_runtime_error (extentoutofrange, stat, NULL, 0);
+                  return;
+                }
+              /* When dst is an array.  */
+              if (dst_rank > 0)
+                {
+                  /* Check that dst_cur_dim is valid for dst.  Can be
+                     superceeded only by scalar data.  */
+                  if (dst_cur_dim >= dst_rank && delta != 1)
+                    {
+                      caf_runtime_error (rankoutofrange, stat, NULL, 0);
+                      return;
+                    }
+                  /* Do further checks, when the source is not scalar.  */
+                  else if (delta != 1)
+                    {
+                      /* Check that the extent is not scalar and we are not in
+                         an array ref for the dst side.  */
+                      if (!in_array_ref)
+                        {
+                          /* Check that this is the non-scalar extent.  */
+                          if (!array_extent_fixed)
+                            {
+                              /* In an array extent now.  */
+                              in_array_ref = true;
+                              /* Check that we haven't skipped any scalar
+                                 dimensions yet and that the dst is
+                                 compatible.  */
+                              if (i > 0
+                                  && dst_rank == GFC_DESCRIPTOR_RANK (src))
+                                {
+                                  if (dst_reallocatable)
+                                    {
+                                      /* Dst is reallocatable, which means that
+                                         the bounds are not set.  Set them.  */
+                                      for (dst_cur_dim= 0; dst_cur_dim < (int)i;
+                                           ++dst_cur_dim)
+                                        {
+                                          dst->dim[dst_cur_dim].lower_bound = 1;
+                                          dst->dim[dst_cur_dim]._ubound = 1;
+                                          dst->dim[dst_cur_dim]._stride = 1;
+                                        }
+                                    }
+                                  else
+                                    dst_cur_dim = i;
+                                }
+                              /* Else press thumbs, that there are enough
+                                 dimensional refs to come.  Checked below.  */
+                            }
+                          else
+                            {
+                              caf_runtime_error (doublearrayref, stat, NULL,
+                                                 0);
+                              return;
+                            }
+                        }
+                      /* When the realloc is required, then no extent may have
+                         been set.  */
+                      extent_mismatch = realloc_required
+                                        || GFC_DESCRIPTOR_EXTENT (dst, dst_cur_dim) != delta;
+                      /* When it already known, that a realloc is needed or
+                         the extent does not match the needed one.  */
+                      if (realloc_required || realloc_needed
+                          || extent_mismatch)
+                        {
+                          /* Check whether dst is reallocatable.  */
+                          if (unlikely (!dst_reallocatable))
+                            {
+                              caf_runtime_error (nonallocextentmismatch, stat,
+                                                 NULL, 0, delta,
+                                                 GFC_DESCRIPTOR_EXTENT (dst,
+                                                                        dst_cur_dim));
+                              return;
+                            }
+                          /* Only report an error, when the extent needs to be
+                             modified, which is not allowed.  */
+                          else if (!dst_reallocatable && extent_mismatch)
+                            {
+                              caf_runtime_error (extentoutofrange, stat, NULL,
+                                                 0);
+                              return;
+                            }
+                          realloc_needed = true;
+                        }
+                      /* Only change the extent when it does not match.  This is
+                         to prevent resetting given array bounds.  */
+                      if (extent_mismatch)
+                        {
+                          dst->dim[dst_cur_dim].lower_bound = 1;
+                          dst->dim[dst_cur_dim]._ubound = delta;
+                          dst->dim[dst_cur_dim]._stride = size;
+                        }
+                    }
 
-		  /* Only increase the dim counter, when in an array ref.  */
-		  if (in_array_ref && dst_cur_dim < dst_rank)
-		    ++dst_cur_dim;
-		}
-	      size *= (ptrdiff_t)delta;
-	    }
-	  if (in_array_ref)
-	    {
-	      array_extent_fixed = true;
-	      in_array_ref = false;
-	    }
-	  break;
-	case CAF_REF_STATIC_ARRAY:
-	  for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
-	    {
-	      switch (riter->u.a.mode[i])
-		{
-		case CAF_ARR_REF_VECTOR:
-		  delta = riter->u.a.dim[i].v.nvec;
+                  /* Only increase the dim counter, when in an array ref.  */
+                  if (in_array_ref && dst_cur_dim < dst_rank)
+                    ++dst_cur_dim;
+                }
+              size *= (ptrdiff_t)delta;
+            }
+          if (in_array_ref)
+            {
+              array_extent_fixed = true;
+              in_array_ref = false;
+            }
+          break;
+        case CAF_REF_STATIC_ARRAY:
+          for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
+            {
+              switch (riter->u.a.mode[i])
+                {
+                case CAF_ARR_REF_VECTOR:
+                  delta = riter->u.a.dim[i].v.nvec;
 #define KINDCASE(kind, type) case kind: \
 		    local_memptr += ((type *)riter->u.a.dim[i].v.vector)[0] \
-			* riter->item_size; \
-		    break
+                        * riter->item_size; \
+                  break
 
-		  switch (riter->u.a.dim[i].v.kind)
-		    {
-		    KINDCASE (1, int8_t);
-		    KINDCASE (2, int16_t);
-		    KINDCASE (4, int32_t);
-		    KINDCASE (8, int64_t);
+                  switch (riter->u.a.dim[i].v.kind)
+                    {
+                    KINDCASE (1, int8_t);
+                    KINDCASE (2, int16_t);
+                    KINDCASE (4, int32_t);
+                    KINDCASE (8, int64_t);
 #if HAVE_GFC_INTEGER_16
-		    KINDCASE (16, __int128);
+                    KINDCASE (16, __int128);
 #endif
-		    default:
-		      caf_runtime_error (vecrefunknownkind, stat, NULL, 0);
-		      return;
-		    }
+                    default:
+                      caf_runtime_error (vecrefunknownkind, stat, NULL, 0);
+                      return;
+                    }
 #undef KINDCASE
-		  break;
-		case CAF_ARR_REF_FULL:
-		  delta = riter->u.a.dim[i].s.end / riter->u.a.dim[i].s.stride
-		      + 1;
-		  /* The memptr stays unchanged when ref'ing the first element
-		     in a dimension.  */
-		  break;
-		case CAF_ARR_REF_RANGE:
-		  COMPUTE_NUM_ITEMS (delta,
-				     riter->u.a.dim[i].s.stride,
-				     riter->u.a.dim[i].s.start,
-				     riter->u.a.dim[i].s.end);
+                  break;
+                case CAF_ARR_REF_FULL:
+                  delta = riter->u.a.dim[i].s.end / riter->u.a.dim[i].s.stride
+                          + 1;
+                  /* The memptr stays unchanged when ref'ing the first element
+                     in a dimension.  */
+                  break;
+                case CAF_ARR_REF_RANGE:
+                  COMPUTE_NUM_ITEMS (delta,
+                                     riter->u.a.dim[i].s.stride,
+                                     riter->u.a.dim[i].s.start,
+                                     riter->u.a.dim[i].s.end);
 		  local_memptr += riter->u.a.dim[i].s.start
-		      * riter->u.a.dim[i].s.stride
-		      * riter->item_size;
-		  break;
-		case CAF_ARR_REF_SINGLE:
-		  delta = 1;
+                                   * riter->u.a.dim[i].s.stride
+                                   * riter->item_size;
+                  break;
+                case CAF_ARR_REF_SINGLE:
+                  delta = 1;
 		  local_memptr += riter->u.a.dim[i].s.start
-		      * riter->u.a.dim[i].s.stride
-		      * riter->item_size;
-		  break;
-		case CAF_ARR_REF_OPEN_END:
-		  /* This and OPEN_START are mapped to a RANGE and therefore
-		     can not occur here.  */
-		case CAF_ARR_REF_OPEN_START:
-		default:
-		  caf_runtime_error (unknownarrreftype, stat, NULL, 0);
-		  return;
-		}
-	      if (delta <= 0)
-		return;
-	      /* Check the various properties of the destination array.
-		 Is an array expected and present?  */
-	      if (delta > 1 && dst_rank == 0)
-		{
-		  /* No, an array is required, but not provided.  */
-		  caf_runtime_error (extentoutofrange, stat, NULL, 0);
-		  return;
-		}
-	      /* When dst is an array.  */
-	      if (dst_rank > 0)
-		{
-		  /* Check that dst_cur_dim is valid for dst.  Can be
-		     superceeded only by scalar data.  */
-		  if (dst_cur_dim >= dst_rank && delta != 1)
-		    {
-		      caf_runtime_error (rankoutofrange, stat, NULL, 0);
-		      return;
-		    }
-		  /* Do further checks, when the source is not scalar.  */
-		  else if (delta != 1)
-		    {
-		      /* Check that the extent is not scalar and we are not in
-			 an array ref for the dst side.  */
-		      if (!in_array_ref)
-			{
-			  /* Check that this is the non-scalar extent.  */
-			  if (!array_extent_fixed)
-			    {
-			      /* In an array extent now.  */
-			      in_array_ref = true;
-			      /* The dst is not reallocatable, so nothing more
-				 to do, then correct the dim counter.  */
-			      dst_cur_dim = i;
-			    }
-			  else
-			    {
-			      caf_runtime_error (doublearrayref, stat, NULL,
-						  0);
-			      return;
-			    }
-			}
-		      /* When the realloc is required, then no extent may have
-			 been set.  */
-		      extent_mismatch = realloc_required
-			  || GFC_DESCRIPTOR_EXTENT (dst, dst_cur_dim) != delta;
-		      /* When it is already known, that a realloc is needed or
-			 the extent does not match the needed one.  */
-		      if (realloc_required || realloc_needed
-			  || extent_mismatch)
-			{
-			  /* Check whether dst is reallocatable.  */
-			  if (unlikely (!dst_reallocatable))
-			    {
-			      caf_runtime_error (nonallocextentmismatch, stat,
-						  NULL, 0, delta,
-						  GFC_DESCRIPTOR_EXTENT (dst,
-								  dst_cur_dim));
-			      return;
-			    }
-			  /* Only report an error, when the extent needs to be
-			     modified, which is not allowed.  */
-			  else if (!dst_reallocatable && extent_mismatch)
-			    {
-			      caf_runtime_error (extentoutofrange, stat, NULL,
-						  0);
-			      return;
-			    }
-			  realloc_needed = true;
-			}
-		      /* Only change the extent when it does not match.  This is
-			 to prevent resetting given array bounds.  */
-		      if (extent_mismatch)
-			{
-			  dst->dim[dst_cur_dim].lower_bound = 1;
-			  dst->dim[dst_cur_dim]._ubound = delta;
-			  dst->dim[dst_cur_dim]._stride = size;
-			}
-		    }
-		  /* Only increase the dim counter, when in an array ref.  */
-		  if (in_array_ref && dst_cur_dim < dst_rank)
-		    ++dst_cur_dim;
-		}
-	      size *= (ptrdiff_t)delta;
-	    }
-	  if (in_array_ref)
-	    {
-	      array_extent_fixed = true;
-	      in_array_ref = false;
-	    }
-	  break;
-	default:
-	  caf_runtime_error (unknownreftype, stat, NULL, 0);
-	  return;
-	}
+                                   * riter->u.a.dim[i].s.stride
+                                   * riter->item_size;
+                  break;
+                case CAF_ARR_REF_OPEN_END:
+                  /* This and OPEN_START are mapped to a RANGE and therefore
+                     can not occur here.  */
+                case CAF_ARR_REF_OPEN_START:
+                default:
+                  caf_runtime_error (unknownarrreftype, stat, NULL, 0);
+                  return;
+                }
+              if (delta <= 0)
+                return;
+              /* Check the various properties of the destination array.
+                 Is an array expected and present?  */
+              if (delta > 1 && dst_rank == 0)
+                {
+                  /* No, an array is required, but not provided.  */
+                  caf_runtime_error (extentoutofrange, stat, NULL, 0);
+                  return;
+                }
+              /* When dst is an array.  */
+              if (dst_rank > 0)
+                {
+                  /* Check that dst_cur_dim is valid for dst.  Can be
+                     superceeded only by scalar data.  */
+                  if (dst_cur_dim >= dst_rank && delta != 1)
+                    {
+                      caf_runtime_error (rankoutofrange, stat, NULL, 0);
+                      return;
+                    }
+                  /* Do further checks, when the source is not scalar.  */
+                  else if (delta != 1)
+                    {
+                      /* Check that the extent is not scalar and we are not in
+                         an array ref for the dst side.  */
+                      if (!in_array_ref)
+                        {
+                          /* Check that this is the non-scalar extent.  */
+                          if (!array_extent_fixed)
+                            {
+                              /* In an array extent now.  */
+                              in_array_ref = true;
+                              /* The dst is not reallocatable, so nothing more
+                                 to do, then correct the dim counter.  */
+                              dst_cur_dim = i;
+                            }
+                          else
+                            {
+                              caf_runtime_error (doublearrayref, stat, NULL,
+                                                 0);
+                              return;
+                            }
+                        }
+                      /* When the realloc is required, then no extent may have
+                         been set.  */
+                      extent_mismatch = realloc_required
+                                        || GFC_DESCRIPTOR_EXTENT (dst, dst_cur_dim) != delta;
+                      /* When it is already known, that a realloc is needed or
+                         the extent does not match the needed one.  */
+                      if (realloc_required || realloc_needed
+                          || extent_mismatch)
+                        {
+                          /* Check whether dst is reallocatable.  */
+                          if (unlikely (!dst_reallocatable))
+                            {
+                              caf_runtime_error (nonallocextentmismatch, stat,
+                                                 NULL, 0, delta,
+                                                 GFC_DESCRIPTOR_EXTENT (dst,
+                                                                        dst_cur_dim));
+                              return;
+                            }
+                          /* Only report an error, when the extent needs to be
+                             modified, which is not allowed.  */
+                          else if (!dst_reallocatable && extent_mismatch)
+                            {
+                              caf_runtime_error (extentoutofrange, stat, NULL,
+                                                 0);
+                              return;
+                            }
+                          realloc_needed = true;
+                        }
+                      /* Only change the extent when it does not match.  This is
+                         to prevent resetting given array bounds.  */
+                      if (extent_mismatch)
+                        {
+                          dst->dim[dst_cur_dim].lower_bound = 1;
+                          dst->dim[dst_cur_dim]._ubound = delta;
+                          dst->dim[dst_cur_dim]._stride = size;
+                        }
+                    }
+                  /* Only increase the dim counter, when in an array ref.  */
+                  if (in_array_ref && dst_cur_dim < dst_rank)
+                    ++dst_cur_dim;
+                }
+              size *= (ptrdiff_t)delta;
+            }
+          if (in_array_ref)
+            {
+              array_extent_fixed = true;
+              in_array_ref = false;
+            }
+          break;
+        default:
+          caf_runtime_error (unknownreftype, stat, NULL, 0);
+          return;
+        }
       src_size = riter->item_size;
       riter = riter->next;
     }
@@ -3403,21 +3402,21 @@ _gfortran_caf_get_by_ref (caf_token_t token, int image_index,
   if (realloc_needed)
     {
       if (!array_extent_fixed)
-	{
-	  /* This can happen only, when the result is scalar.  */
-	  for (dst_cur_dim = 0; dst_cur_dim < dst_rank; ++dst_cur_dim)
-	    {
-	      dst->dim[dst_cur_dim].lower_bound = 1;
-	      dst->dim[dst_cur_dim]._ubound = 1;
-	      dst->dim[dst_cur_dim]._stride = 1;
-	    }
-	}
+        {
+          /* This can happen only, when the result is scalar.  */
+          for (dst_cur_dim = 0; dst_cur_dim < dst_rank; ++dst_cur_dim)
+            {
+              dst->dim[dst_cur_dim].lower_bound = 1;
+              dst->dim[dst_cur_dim]._ubound = 1;
+              dst->dim[dst_cur_dim]._stride = 1;
+            }
+        }
       dst->base_addr = malloc (size * GFC_DESCRIPTOR_SIZE (dst));
       if (unlikely (dst->base_addr == NULL))
-	{
+        {
 	  caf_runtime_error (cannotallocdst, stat, NULL, 0);
-	  return;
-	}
+          return;
+        }
     }
 
   /* Reset the token.  */
@@ -3487,27 +3486,27 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
             }
           break;
         case CAF_REF_ARRAY:
-          for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
-            {
-              switch (riter->u.a.mode[i])
-                {
-                case CAF_ARR_REF_FULL:
+            for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
+              {
+                switch (riter->u.a.mode[i])
+                  {
+                  case CAF_ARR_REF_FULL:
                   /* The memptr stays unchanged when ref'ing the first element
                      in a dimension.  */
-                  break;
-                case CAF_ARR_REF_SINGLE:
+                    break;
+                  case CAF_ARR_REF_SINGLE:
                   local_memptr += (riter->u.a.dim[i].s.start
-                                   - src->dim[i].lower_bound)
-                                  * src->dim[i]._stride
-                                  * riter->item_size;
-                  break;
-                case CAF_ARR_REF_VECTOR:
-                case CAF_ARR_REF_RANGE:
-                case CAF_ARR_REF_OPEN_END:
-                case CAF_ARR_REF_OPEN_START:
-                  /* Intentionally fall through, because these are not suported
+                                     - src->dim[i].lower_bound)
+                                    * src->dim[i]._stride
+                                    * riter->item_size;
+                    break;
+                  case CAF_ARR_REF_VECTOR:
+                  case CAF_ARR_REF_RANGE:
+                  case CAF_ARR_REF_OPEN_END:
+                  case CAF_ARR_REF_OPEN_START:
+                    /* Intentionally fall through, because these are not suported
                    * here. */
-                default:
+                  default:
                   caf_runtime_error (unsupportedRefType, NULL, NULL, 0);
                   return false;
                 }
