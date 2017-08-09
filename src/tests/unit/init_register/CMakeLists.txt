@@ -20,6 +20,9 @@ if (gfortran_compiler AND (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7))
   add_executable(async_comp_alloc async_comp_alloc.f90)
   target_link_libraries(async_comp_alloc OpenCoarrays)
 
+  add_executable(async_comp_alloc_2 async_comp_alloc_2.f90)
+  target_link_libraries(async_comp_alloc_2 OpenCoarrays)
+
   add_executable(register_alloc_comp_1 register_alloc_comp_1.f90)
   target_link_libraries(register_alloc_comp_1 OpenCoarrays)
 
@@ -28,4 +31,10 @@ if (gfortran_compiler AND (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7))
 
   add_executable(register_alloc_comp_3 register_alloc_comp_3.f90)
   target_link_libraries(register_alloc_comp_3 OpenCoarrays)
+
+  add_executable(comp_allocated_1 comp_allocated_1.f90)
+  target_link_libraries(comp_allocated_1 OpenCoarrays)
+
+  add_executable(comp_allocated_2 comp_allocated_2.f90)
+  target_link_libraries(comp_allocated_2 OpenCoarrays)
 endif()
