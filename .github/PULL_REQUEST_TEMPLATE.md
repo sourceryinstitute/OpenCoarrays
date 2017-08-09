@@ -45,7 +45,8 @@ This pull request (PR) is a:
         be introduced)
       - Commenting code where it is non-obvious and non-trivial
       - Running tests locally, to ensure all of them pass
-      - Maintaining or increasing test coverage
+      - Increasing test coverage for all bug-fix or feature-addition pull
+        requests and at least maintaining test converage for all others.
       - Logically atomic, self consistent and coherent commits
       - Commit message content
       - Waiting 24 hours before self-approving the pull request to
