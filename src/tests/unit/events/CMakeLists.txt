@@ -1,0 +1,8 @@
+# Fortran tests
+
+add_executable(allocatable_p2p_event_post allocatable_p2p_event_post.f90)
+target_link_libraries(allocatable_p2p_event_post OpenCoarrays)
+
+add_executable(static_event_post_issue_293 static_event_post_issue_293.f90)
+target_link_libraries(static_event_post_issue_293 OpenCoarrays)
+
