@@ -4879,6 +4879,8 @@ void PREFIX (change_team) (caf_team_t *team, int coselector __attribute__ ((unus
 int
 PREFIX (team_number) (caf_team_t *team)
 {
+  if(team != NULL) caf_runtime_error("team_number does not yet support the optional team argument");
+
   if(used_teams->prev == NULL)
     return -1;
   return teams_list->team_id ;
