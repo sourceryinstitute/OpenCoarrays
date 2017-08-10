@@ -4877,6 +4877,16 @@ void PREFIX (change_team) (caf_team_t *team, int coselector __attribute__ ((unus
 }
 
 int
+PREFIX (get_team) (caf_team_t *team)
+{
+  if(team != NULL) caf_runtime_error("get_team does not yet support the optional team argument");
+
+  MPI_Comm* comm_ptr = teams_list->team;
+
+  return  *(int*)comm_ptr ;
+}
+
+int
 PREFIX (team_number) (caf_team_t *team)
 {
   if(team != NULL) caf_runtime_error("team_number does not yet support the optional team argument");

@@ -47,6 +47,7 @@ module opencoarrays
   public :: error_stop
   public :: sync_all
   public :: team_number
+  public :: get_team
 #ifdef COMPILER_SUPPORTS_ATOMICS
   public :: event_type
   public :: event_post
@@ -113,6 +114,17 @@ module opencoarrays
        implicit none
        type(c_ptr), optional :: team_type_ptr
        integer(c_int) :: my_team_number
+    end function
+
+#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
+    function get_team(team_type_ptr) result(my_team) bind(C,name="_caf_extensions_get_team")
+#else
+    function get_team(team_type_ptr) result(my_team) bind(C,name="_gfortran_caf_get_team")
+#endif
+       use iso_c_binding, only : c_int,c_ptr
+       implicit none
+       type(c_ptr), optional :: team_type_ptr
+       integer(c_int) :: my_team
     end function
   end interface
 
