@@ -31,29 +31,26 @@ program main
   !! summary: Test team_number intrinsic function
   use iso_fortran_env, only : team_type
   use iso_c_binding, only : c_loc
+
+  use opencoarrays, only : team_number
+    !! TODO: remove the above line below after the compiler supports team_number
+
   implicit none
 
   integer, parameter :: standard_initial_value=-1
 
   type(team_type), target :: home
 
-  interface
-    function team_number(team_type_ptr) result(my_team_number) bind(C,name="_gfortran_caf_team_number")
-       !! TODO: remove this interface block after the compiler supports team_number
-       use iso_c_binding, only : c_int,c_ptr
-       implicit none
-       type(c_ptr), optional :: team_type_ptr
-       integer(c_int) :: my_team_number
-    end function
-  end interface
-
   call assert(team_number()==standard_initial_value,"initial team number conforms with Fortran standard before 'change team'")
 
- !Uncomment the following line after implementing support team_number for the optional argument:
- !call assert(team_number(c_loc(home))==standard_initial_value,"initial team number conforms with Fortran standard before 'change team'")
+ !call assert(
+ !  team_number(c_loc(home))==standard_initial_value,"initial team number conforms with Fortran standard before 'change team'"
+ !)
+   !! TODO: uncomment the following assertion after implementing support for team_number's optional argument:
 
   after_change_team: block
     associate(my_team=>mod(this_image(),2)+1)
+      !! Prepare for forming two teams: my_team = 1 for even image numbers in the initial team; 2 for odd image numbers
       form team(my_team,home)
       change team(home)
         call assert(team_number()==my_team,"team number conforms with Fortran standard after 'change team'")
