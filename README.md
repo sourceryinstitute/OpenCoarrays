@@ -19,19 +19,23 @@ OpenCoarrays
 [![Download as PDF][pdf img]](https://md2pdf.herokuapp.com/sourceryinstitute/OpenCoarrays/blob/master/README.pdf)
 [![Twitter URL][twitter img]][default tweet]
 
-[Overview](#overview) &middot;
-[Downloads](#downloads) &middot;
-[Compatibility](#compatibility) &middot;
-[Prerequisites](#prerequisites) &middot;
-[Installation](#installation) &middot;
-[Getting Started](#getting-started) &middot;
-[Contributing](#contributing) &middot;
-[Status](#status) &middot;
-[Support](#support) &middot;
-[Acknowledgements](#acknowledgements) &middot;
-[Donate](#donate)
+[News](#news) | [Overview](#overview) | [Downloads](#downloads) |
+[Compatibility](#compatibility) | [Prerequisites](#prerequisites) |
+[Installation](#installation) | [Getting Started](#getting-started) |
+[Contributing](#contributing) | [Status](#status)  
+[Support](#support) | [Acknowledgements](#acknowledgements) | [Donate](#donate)
 
 </div>
+
+News
+----
+
+You can now [try OpenCoarrays online] as a [Jupyter] [notebook kernel]
+using [Binder]! No downloads, configuration or installation required!
+Please note: the default [index.ipynb] notebook is read only. You can
+execute it, but if you want to make changes you should create a copy
+of it or create an entirely new [CAF kernel][notebook kernel]
+notebook.
 
 Overview
 --------
@@ -178,6 +182,7 @@ to aid in development efforts.
 
 [Hyperlinks]:#
 
+[News]: #news
 [Overview]: #overview
 [Downloads]: #downloads
 [Compatibility]: #compatibility
@@ -214,6 +219,12 @@ to aid in development efforts.
 
 [Issues]: https://github.com/sourceryinstitute/OpenCoarrays/issues
 [Releases]: https://github.com/sourceryinstitute/OpenCoarrays/releases
+
+[try OpenCoarrays online]: https://bit.ly/CAF-Binder
+[notebook kernel]: https://github.com/sourceryinstitute/jupyter-CAF-kernel
+[Binder]: https://beta.mybinder.org
+[Jupyter]: https://jupyter.org
+[index.ipynb]: https://nbviewer.jupyter.org/github/sourceryinstitute/jupyter-CAF-kernel/blob/master/index.ipynb
 
 [build img]: https://img.shields.io/travis-ci/sourceryinstitute/OpenCoarrays/master.svg?style=flat-square "Travis-CI build badge"
 [CI Master Branch]: https://travis-ci.org/sourceryinstitute/OpenCoarrays?branch=master "View Travis-CI builds"
