@@ -1,9 +1,6 @@
 add_executable(get_array get_array_test.f90)
 target_link_libraries(get_array OpenCoarrays)
 
-#add_executable(get old_get_array_test.f90)
-#target_link_libraries(is_this_still_needed OpenCoarrays)
-
 add_executable(get_self sameloc.f90)
 target_link_libraries(get_self OpenCoarrays)
 
@@ -21,3 +18,6 @@ target_link_libraries(strided_get OpenCoarrays)
 
 add_executable(strided_sendget strided_sendget.f90)
 target_link_libraries(strided_sendget OpenCoarrays)
+
+add_executable(get_with_vector_index get_with_vector_index.f90)
+target_link_libraries(get_with_vector_index OpenCoarrays)
