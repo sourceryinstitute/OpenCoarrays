@@ -46,7 +46,7 @@ program main
  !call assert(
  !  team_number(c_loc(home))==standard_initial_value,"initial team number conforms with Fortran standard before 'change team'"
  !)
-   !! TODO: uncomment the following assertion after implementing support for team_number's optional argument:
+   !! TODO: uncomment the above assertion after implementing support for team_number's optional argument:
 
   after_change_team: block
     associate(my_team=>mod(this_image(),2)+1)
