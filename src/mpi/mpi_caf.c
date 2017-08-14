@@ -4897,7 +4897,7 @@ PREFIX (team_number) (caf_team_t *team)
 
   if(used_teams->prev == NULL)
     return -1;
-  return teams_list->team_id ;
+  return used_teams->team_list_elem->team_id;
 }
 
 void PREFIX (end_team) (caf_team_t *team __attribute__ ((unused)))
