@@ -297,7 +297,7 @@ void PREFIX (change_team) (caf_team_t *, int);
 void PREFIX (end_team) (caf_team_t *);
 void PREFIX (sync_team) (caf_team_t *, int);
 int PREFIX (team_number) (caf_team_t *);
-int PREFIX (get_team) (caf_team_t *);
+MPI_Fint PREFIX (get_team) (caf_team_t *);
 
 int PREFIX (image_status) (int);
 void PREFIX (failed_images) (gfc_descriptor_t *, int, int *);
