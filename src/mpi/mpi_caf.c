@@ -4876,14 +4876,18 @@ void PREFIX (change_team) (caf_team_t *team, int coselector __attribute__ ((unus
   MPI_Comm_size(*tmp_comm,&caf_num_images);
 }
 
-int
+MPI_Fint
 PREFIX (get_team) (caf_team_t *team)
 {
   if(team != NULL) caf_runtime_error("get_team does not yet support the optional team argument");
 
   MPI_Comm* comm_ptr = teams_list->team;
 
-  return  *(int*)comm_ptr ;
+  MPI_Fint ret = MPI_Comm_c2f(*comm_ptr);
+
+  return ret;
+
+  //  return  *(int*)comm_ptr;
 }
 
 int
