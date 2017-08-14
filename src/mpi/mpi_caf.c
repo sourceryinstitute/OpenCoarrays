@@ -4895,8 +4895,8 @@ PREFIX (team_number) (caf_team_t *team)
 {
   if(team != NULL) caf_runtime_error("team_number does not yet support the optional team argument");
 
-  if(used_teams->prev == NULL)
-    return -1;
+  /* if(used_teams->prev == NULL) */
+  /*   return -1; */
   return used_teams->team_list_elem->team_id;
 }
 
