@@ -34,6 +34,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 
 #include "libcaf-gfortran-descriptor.h"
 
+#include <mpi.h>
+
 #ifndef __GNUC__
 #define __attribute__(x)
 #define likely(x)       (x)
