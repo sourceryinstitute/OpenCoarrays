@@ -229,6 +229,8 @@ if (NOT MPIEXEC)
 report this bug to the OpenCoarrays developers at
 https://github.com/sourceryinstitute/opencoarrays/issues, otherwise use point CMake
 to the desired MPI runtime.")
+else()
+  add_definitions(-DHAVE_MPI)
 endif()
 
 get_filename_component(MPIEXEC_RELATIVE_LOC "${MPIEXEC}"
@@ -545,7 +547,7 @@ if(opencoarrays_aware_compiler)
       add_mpi_test(async_comp_alloc 6 ${tests_root}/unit/init_register/async_comp_alloc)
       if(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 8)
         add_mpi_test(team_number 2 ${tests_root}/unit/teams/team_number)
-        add_mpi_test(get_team 3 ${tests_root}/unit/teams/get_team)
+        add_mpi_test(get_communicator 3 ${tests_root}/unit/teams/get_communicator)
       endif()
     endif()
   endif()

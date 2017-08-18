@@ -4877,9 +4877,9 @@ void PREFIX (change_team) (caf_team_t *team, int coselector __attribute__ ((unus
 }
 
 MPI_Fint
-PREFIX (get_team) (caf_team_t *team)
+PREFIX (get_communicator) (caf_team_t *team)
 {
-  if(team != NULL) caf_runtime_error("get_team does not yet support the optional team argument");
+  if(team != NULL) caf_runtime_error("get_communicator does not yet support the optional team argument");
 
   MPI_Comm* comm_ptr = teams_list->team;
 

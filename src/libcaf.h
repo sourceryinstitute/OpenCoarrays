@@ -299,7 +299,6 @@ void PREFIX (change_team) (caf_team_t *, int);
 void PREFIX (end_team) (caf_team_t *);
 void PREFIX (sync_team) (caf_team_t *, int);
 int PREFIX (team_number) (caf_team_t *);
-MPI_Fint PREFIX (get_team) (caf_team_t *);
 
 int PREFIX (image_status) (int);
 void PREFIX (failed_images) (gfc_descriptor_t *, int, int *);
@@ -317,4 +316,10 @@ void PREFIX (unlock) (caf_token_t, size_t, int, int *, char *, int);
 void PREFIX (event_post) (caf_token_t, size_t, int, int *, char *, int);
 void PREFIX (event_wait) (caf_token_t, size_t, int, int *, char *, int);
 void PREFIX (event_query) (caf_token_t, size_t, int, int *, int *);
+
+/* Language extension */
+#ifdef HAVE_MPI
+MPI_Fint PREFIX (get_communicator) (caf_team_t *);
+#endif
+
 #endif  /* LIBCAF_H  */

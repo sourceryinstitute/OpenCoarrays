@@ -47,7 +47,9 @@ module opencoarrays
   public :: error_stop
   public :: sync_all
   public :: team_number
-  public :: get_team
+#ifdef HAVE_MPI
+  public :: get_communicator
+#endif
 #ifdef COMPILER_SUPPORTS_ATOMICS
   public :: event_type
   public :: event_post
@@ -117,9 +119,9 @@ module opencoarrays
     end function
 
 #ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
-    function get_team(team_type_ptr) result(my_team) bind(C,name="_caf_extensions_get_team")
+    function get_communicator(team_type_ptr) result(my_team) bind(C,name="_caf_extensions_get_communicator")
 #else
-    function get_team(team_type_ptr) result(my_team) bind(C,name="_gfortran_caf_get_team")
+    function get_communicator(team_type_ptr) result(my_team) bind(C,name="_gfortran_caf_get_communicator")
 #endif
        use iso_c_binding, only : c_int,c_ptr
        implicit none
