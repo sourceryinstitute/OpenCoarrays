@@ -35,7 +35,10 @@ codecov.yml export-ignore
 makefile export-ignore
 Makefile export-ignore
 make.inc* export-ignore
+
+# Experimental conduits/backends
 src/gasnet export-ignore
+src/openshmem export-ignore
 
 # Perform substitutions when `git export`ing these files
 .VERSION export-subst
