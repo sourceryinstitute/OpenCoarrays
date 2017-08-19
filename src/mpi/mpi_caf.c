@@ -4136,7 +4136,7 @@ static void \
 redux_char_by_reference_adapter (void *invec, void *inoutvec, int *len,
       MPI_Datatype *datatype)
 {
-  long int string_len;
+  MPI_Aint string_len;
   MPI_Type_extent(*datatype, &string_len);
   for(int i = 0; i < *len; i++)
     {
