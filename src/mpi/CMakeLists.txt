@@ -1,7 +1,7 @@
 set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/mod)
 
-if (CMAKE_SYSTEM_NAME MATCHES "Windows")
-  add_definitions(-D_POSIX -DUSE_GCC)
+if (MINGW)
+  add_definitions(-D_POSIX)
 endif()
 
 if (NOT MPI_C_FOUND)
