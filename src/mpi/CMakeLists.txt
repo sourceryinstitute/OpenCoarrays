@@ -1,9 +1,5 @@
 set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/mod)
 
-if (MINGW)
-  add_definitions(-D_POSIX)
-endif()
-
 if (NOT MPI_C_FOUND)
   find_package(MPI REQUIRED)
 
@@ -42,8 +38,32 @@ endif()
 #----------------------------------------------------------------------
 # Test if MPI implementation provides features needed for failed images
 #----------------------------------------------------------------------
-set(NEEDED_SYMBOLS MPIX_ERR_PROC_FAILED;MPIX_ERR_REVOKED;MPIX_Comm_failure_ack;MPIX_Comm_failure_get_acked;MPIX_Comm_shrink;MPIX_Comm_agree)
 set(MPI_HAS_FAULT_TOL_EXT YES)
+
+CHECK_INCLUDE_FILE("signal.h" HAVE_SIGNAL_H)
+if (NOT HAVE_SIGNAL_H)
+  set(MPI_HAS_FAULT_TOL_EXT NO)
+  message( FATAL_ERROR "Currently, OpenCoarrays cannot build without signal.h")
+endif()
+
+include(CheckSymbolExists)
+CHECK_SYMBOL_EXISTS(SIGKILL "signal.h" HAVE_SIGKILL)
+if(NOT HAVE_SIGKILL) # try -D_POSIX, needed for mingw-w64, maybe others, see #435
+                     # https://github.com/sourceryinstitute/OpenCoarrays/issues/435#issuecomment-323592433
+  list( APPEND CMAKE_REQUIRED_DEFINITIONS -D_POSIX)
+  CHECK_SYMBOL_EXISTS(SIGKILL "signal.h" HAVE_SIGKILL)
+  if(HAVE_SIGKILL)
+    add_definitions(-D_POSIX)
+  endif()
+endif()
+
+if (NOT HAVE_SIGKILL)
+  set(MPI_HAS_FAULT_TOL_EXT NO)
+  message (FATAL_ERROR "Currently, OpenCoarrays cannot build without SIGKILL from signal.h")
+endif()
+
+set(NEEDED_SYMBOLS MPIX_ERR_PROC_FAILED;MPIX_ERR_REVOKED;MPIX_Comm_failure_ack;MPIX_Comm_failure_get_acked;MPIX_Comm_shrink;MPIX_Comm_agree)
+
 set(old_cmake_required_includes "${CMAKE_REQUIRED_INCLUDES}")
 if(CMAKE_REQUIRED_INCLUDES)
   set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES};${MPI_C_INCLUDE_PATH})
@@ -69,7 +89,7 @@ if(HAVE_MPI_EXT)
   add_definitions(-DHAVE_MPI_EXT_H)
   set(MPI_HEADERS ${MPI_HEADERS};mpi-ext.h)
 endif()
-include(CheckSymbolExists)
+
 foreach(symbol ${NEEDED_SYMBOLS})
   CHECK_SYMBOL_EXISTS(${symbol} ${MPI_HEADERS} HAVE_${symbol})
   if(NOT HAVE_${symbol})
@@ -92,6 +112,16 @@ endif()
 if(CAF_ENABLE_FAILED_IMAGES)
   add_definitions(-DUSE_FAILED_IMAGES)
 endif()
+
+#---------------------------------------------------
+# Windows Intel MPI compatibility, see GH issue #435
+#---------------------------------------------------
+CHECK_SYMBOL_EXISTS(I_MPI_VERSION mpi.h HAVE_Intel_MPI)
+if(HAVE_Intel_MPI AND WIN32)
+  add_definitions(-DUSE_GCC)
+endif()
+
+
 
 # Determine whether and how to include OpenCoarrays module based on if the Fortran MPI compiler:
 #   - workds
