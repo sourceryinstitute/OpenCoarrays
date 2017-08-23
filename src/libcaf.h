@@ -91,7 +91,6 @@ typedef enum caf_deregister_t {
 caf_deregister_t;
 
 typedef void* caf_token_t;
-#ifdef GCC_GE_7
 /** Add a dummy type representing teams in coarrays. */
 
 typedef void * caf_team_t;
@@ -109,7 +108,6 @@ typedef struct caf_used_teams_list {
 }
 caf_used_teams_list;
 
-#endif
 
 /* Linked list of static coarrays registered.  */
 typedef struct caf_static_t {
