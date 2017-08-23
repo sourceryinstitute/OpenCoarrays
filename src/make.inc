@@ -37,7 +37,7 @@ compiler=gnu
 
 ifeq ($(compiler),gnu)
   FC=gfortran
-  CC=gcc
+  CC=mpicc
   MPFC = mpif90
   MPICC = mpicc
   FFLAGS_EXTRA = -fcoarray=lib

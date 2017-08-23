@@ -142,7 +142,7 @@ install(
 )
 file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/caf-head CAF_HEADER)
 file(WRITE  "${compiler_wrapper}" "${CAF_HEADER}\n")
-file(APPEND "${compiler_wrapper}"  "caf_mod_dir=\"${CMAKE_INSTALL_FULL_INCLUDEDIR}/mod\"\n")
+file(APPEND "${compiler_wrapper}"  "caf_mod_dir=\"${CMAKE_INSTALL_FULL_INCLUDEDIR}\"\n")
 file(APPEND "${compiler_wrapper}"  "caf_lib_dir=\"${CMAKE_INSTALL_FULL_LIBDIR}\"\n")
 file(APPEND "${compiler_wrapper}"  "caf_version=${full_git_describe}\n")
 if(gfortran_compiler)

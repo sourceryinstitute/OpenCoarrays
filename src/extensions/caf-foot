@@ -87,7 +87,7 @@ elif [[ $1 == '-h' || $1 == '--help' ]]; then
   exit 1
 elif [ "$caf_compiler" = "true" ]; then
   # Nothing to do other than invoke the compiler with all the command-line arguments:
-  $CAFC "$@" -L "$caf_lib_dir" $link_args
+  $CAFC "$@" -L "$caf_lib_dir" -I "$caf_mod_dir" $link_args
 else
   # Verify that a file with the .f90, .F90, .f, or .F extension is the first argument:
   src_extension=$(echo "$1" | cut -f2 -d'.')
