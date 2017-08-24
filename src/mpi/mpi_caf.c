@@ -588,7 +588,7 @@ redo:
   /* Also free the old communicator before replacing it. */
   MPI_Comm_free (pcomm);
   *pcomm = newcomm;
-
+  alive_comm = newcomm;
   *perr = stopped ? STAT_STOPPED_IMAGE : STAT_FAILED_IMAGE;
 }
 #endif
