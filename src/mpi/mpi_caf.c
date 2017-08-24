@@ -458,7 +458,7 @@ failed_stopped_errorhandler_function (MPI_Comm* pcomm, int* perr, ...)
       return;
     }
 
-  MPI_Comm_group (comm, &comm_world_group);
+  MPI_Comm_group (CAF_COMM_WORLD, &comm_world_group);
   ranks_of_failed_in_comm_world = (int *) alloca (sizeof (int)
 						  * num_failed_in_group);
   ranks_failed = (int *) alloca (sizeof (int) * num_failed_in_group);
@@ -588,7 +588,6 @@ redo:
   /* Also free the old communicator before replacing it. */
   MPI_Comm_free (pcomm);
   *pcomm = newcomm;
-  alive_comm = newcomm;
   *perr = stopped ? STAT_STOPPED_IMAGE : STAT_FAILED_IMAGE;
 }
 #endif
