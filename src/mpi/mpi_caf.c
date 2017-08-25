@@ -458,7 +458,7 @@ failed_stopped_errorhandler_function (MPI_Comm* pcomm, int* perr, ...)
       return;
     }
 
-  MPI_Comm_group (CAF_COMM_WORLD, &comm_world_group);
+  MPI_Comm_group (MPI_COMM_WORLD, &comm_world_group);
   ranks_of_failed_in_comm_world = (int *) alloca (sizeof (int)
 						  * num_failed_in_group);
   ranks_failed = (int *) alloca (sizeof (int) * num_failed_in_group);
