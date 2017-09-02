@@ -132,12 +132,26 @@ add_library(caf_mpi_static STATIC  mpi_caf.c ../common/caf_auxiliary.c $<TARGET_
 target_link_libraries(caf_mpi PRIVATE ${MPI_C_LIBRARIES} ${MPI_Fortran_LIBRARIES})
 target_link_libraries(caf_mpi_static PRIVATE ${MPI_C_LIBRARIES} ${MPI_Fortran_LIBRARIES})
 
+set(CAF_SO_VERSION 0)
+if(gfortran_compiler)
+  if(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0)
+    set(CAF_SO_VERSION 2)
+  elseif(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 6.0.0)
+    set(CAF_SO_VERSION 1)
+  endif()
+endif()
+
 set_target_properties ( caf_mpi
   PROPERTIES
-  SOVERSION ${PROJECT_VERSION.MAJOR}.${PROJECT_VERSION.MINOR}
-  VERSION ${PROJECT_VERSION}
-  )
+  SOVERSION ${CAF_SO_VERSION}
+#  VERSION ${PROJECT_VERSION}
+)
 
+set_target_properties( caf_mpi_static
+  PROPERTIES
+  SOVERSION ${CAF_SO_VERSION}
+#  VERSION ${PROJECT_VERSION}
+)
 
 if (gfortran_compiler)
   target_compile_options(caf_mpi INTERFACE -fcoarray=lib)
@@ -152,9 +166,6 @@ install(TARGETS caf_mpi_static EXPORT OpenCoarraysTargets
   ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
   LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
   )
-
-
-############### FIXME!!!!!   set_target_properties(caf_mpi PROPERTIES SOVERSION 1 SONAME "libcaf_mpi.so.${OpenCoarraysVersion}")
 
 
 ##############################################
