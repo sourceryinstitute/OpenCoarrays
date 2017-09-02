@@ -50,7 +50,9 @@ program initialize_mpi
   call MPI_COMM_SIZE(MPI_COMM_WORLD,np,ierr)
 
   ! Everybody verifies that they have a valid image number and rank
-  if(me < 1 .or. np < 1) error stop "Test failed."
+  if(me < 1 .or. np < 1 .or. me > np) error stop "Test failed."
+
+  sync all
 
   ! Image 1 reports test success
   if(me==1) print *,"Test passed."

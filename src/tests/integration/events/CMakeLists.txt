@@ -1,2 +1,1 @@
-add_executable(asynchronous_hello_world async-hello.F90)
-target_link_libraries(asynchronous_hello_world OpenCoarrays)
+caf_compile_executable(asynchronous_hello_world async-hello.F90)
