@@ -153,15 +153,7 @@ info "install_prefix=\"${install_prefix}\""
 export num_threads="${arg_j}"
 info "num_threads=\"${arg_j}\""
 
-set_opencoarrays_version()
-{
-  cmake_project_line="$(grep project "${OPENCOARRAYS_SRC_DIR}/CMakeLists.txt" | grep VERSION)"
-  text_after_version_keyword="${cmake_project_line##*VERSION}"
-  text_before_language_keyword="${text_after_version_keyword%%LANGUAGES*}"
-  opencoarrays_version=$text_before_language_keyword
-  export opencoarrays_version="${opencoarrays_version//[[:space:]]/}"
-}
-set_opencoarrays_version
+opencoarrays_version=$(sed -n '/[0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}/{s/^\([^.]*\)\([0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}\)\(.*\)/\2/p;q;}' "${OPENCOARRAYS_SRC_DIR%/}/.VERSION")
 
 export build_path="${OPENCOARRAYS_SRC_DIR%/}"/prerequisites/builds/opencoarrays/$opencoarrays_version
 info "build_path=\"${build_path}\""
