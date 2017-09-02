@@ -15,8 +15,8 @@ env:
     - MPICH_BOT_URL_TAIL="mpich-3.2_3.yosemite.bottle.1.tar.gz"
     - BUILD_TYPES="Release Debug RelWithDebInfo CodeCoverage"
   matrix:
-    - GCC=6 OSX_PACKAGES="gcc@6 cmake"
-    - GCC=7 OSX_PACKAGES="gcc cmake"
+    - GCC=6 OSX_PACKAGES="gcc@6 cmake shellcheck"
+    - GCC=7 OSX_PACKAGES="gcc cmake shellcheck"
 
 matrix:
   fast_finish: true
@@ -34,6 +34,7 @@ matrix:
     - &ubuntu
       os: linux
       sudo: false
+      dist: trusty
       env:
         - GCC=6
       cache:
@@ -52,22 +53,24 @@ matrix:
             - binutils
             - cmake-data
             - cmake
-    # -
-    #   <<: *ubuntu
-    #   env:
-    #     - GCC=7
-    #   addons:
-    #     apt:
-    #       sources:
-    #         - ubuntu-toolchain-r-test
-    #         - george-edison55-precise-backports
-    #       packages:
-    #         - gcc-7
-    #         - gfortran-7
-    #         - g++-7
-    #         - binutils
-    #         - cmake-data
-    #         - cmake
+#            - shellcheck
+    -
+      <<: *ubuntu
+      env:
+        - GCC=7
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - george-edison55-precise-backports
+          packages:
+            - gcc-7
+            - gfortran-7
+            - g++-7
+            - binutils
+            - cmake-data
+            - cmake
+#            - shellcheck
     -
       <<: *ubuntu
       env:
@@ -82,6 +85,7 @@ matrix:
             - gcc-6
             - gfortran-6
             - g++-6
+#            - shellcheck
   allow_failures:
     - os: osx
       env:
