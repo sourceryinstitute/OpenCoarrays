@@ -11,6 +11,8 @@ program async_comp_alloc_2
 
   sync all
 
+  if ( num_images() < 2 ) error stop "Test async_comp_alloc_2 requires at least 2 images to run"
+
   associate(me => this_image())
     if (me == 2) then
       allocate(parent_obj%arr(3))
