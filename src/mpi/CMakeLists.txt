@@ -214,3 +214,8 @@ configure_file("${CMAKE_SOURCE_DIR}/src/extensions/cafrun.in" "${CMAKE_BINARY_DI
 install(PROGRAMS "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun"
   "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf"
   DESTINATION "${CMAKE_INSTALL_FULL_BINDIR}")
+
+lint_script("${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}" caf)
+check_script_style("${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf")
+lint_script("${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}" cafrun)
+check_script_style("${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun")
