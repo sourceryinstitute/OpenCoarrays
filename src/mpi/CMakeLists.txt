@@ -126,7 +126,6 @@ set_target_properties(opencoarrays_mod
   Fortran_MODULE_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_INCLUDEDIR}/${mod_dir_tail}"
   POSITION_INDEPENDENT_CODE TRUE)
 
-
 add_library(caf_mpi SHARED mpi_caf.c ../common/caf_auxiliary.c $<TARGET_OBJECTS:opencoarrays_mod>)
 add_library(caf_mpi_static STATIC  mpi_caf.c ../common/caf_auxiliary.c $<TARGET_OBJECTS:opencoarrays_mod>)
 target_link_libraries(caf_mpi PRIVATE ${MPI_C_LIBRARIES} ${MPI_Fortran_LIBRARIES})
@@ -146,6 +145,15 @@ set_target_properties ( caf_mpi
   SOVERSION ${CAF_SO_VERSION}
 #  VERSION ${PROJECT_VERSION}
 )
+
+# Create a symlink in the include dir
+add_custom_command(TARGET caf_mpi
+  POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E create_symlink "./${mod_dir_tail}/opencoarrays.mod" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_INCLUDEDIR}/opencaorrays.mod"
+  COMMENT "Creating symlink ${CMAKE_INSTALL_INCLUDEDIR}/opencaorrays.mod --> ${CMAKE_INSTALL_INCLUDEDIR}/${mod_dir_tail}/opencoarrays.mod")
+
+install(DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_INCLUDEDIR}/" DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+  FILES_MATCHING PATTERN "*.mod")
 
 set_target_properties( caf_mpi_static
   PROPERTIES
