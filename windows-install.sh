@@ -109,12 +109,12 @@ trap cleanup_before_exit EXIT # The signal is specified here. Could be SIGINT, S
 ### Validation (decide what's required for running your script and error out)
 #####################################################################
 
-[ -z "${LOG_LEVEL:-}" ] && emergency "Cannot continue without LOG_LEVEL. "
+[[ -z "${LOG_LEVEL:-}" ]] && emergency "Cannot continue without LOG_LEVEL. "
 
 # shellcheck disable=SC2154
-if [[ "${arg_d}" == "${__flag_present}" ]]; then 
+if [[ "${arg_d}" == "${__flag_present}" ]]; then
    print_debug_only=7
-   if [ "$(( LOG_LEVEL < print_debug_only ))" -ne 0 ]; then
+   if [[ "$(( LOG_LEVEL < print_debug_only ))" -ne 0 ]]; then
      debug "Supressing info and debug messages: one of {-l, -v, -P, -U, -V, -D} present."
      suppress_info_debug_messages
    fi
@@ -145,7 +145,7 @@ info  "-V (--version-number):   ${arg_V}"
 
 # __________ Process command-line arguments and environment variables _____________
 
-this_script="$(basename "$0")"
+this_script="$(basename "${0}")"
 export this_script
 debug "this_script=\"${this_script}\""
 
@@ -157,7 +157,7 @@ info "num_threads=\"${arg_j}\""
 
 opencoarrays_version=$(sed -n '/[0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}/{s/^\([^.]*\)\([0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}\)\(.*\)/\2/p;q;}' "${OPENCOARRAYS_SRC_DIR%/}/.VERSION")
 
-export build_path="${OPENCOARRAYS_SRC_DIR%/}"/prerequisites/builds/opencoarrays/$opencoarrays_version
+export build_path="${OPENCOARRAYS_SRC_DIR%/}"/prerequisites/builds/opencoarrays/${opencoarrays_version}
 info "build_path=\"${build_path}\""
 
 export CMAKE="${arg_m:-cmake}"
@@ -188,10 +188,10 @@ verify_acceptable_release_number()
   major_release="${release_number%%.*}"
   minor_release="${release_number##*.}"
   info "Release: ${major_release}.${minor_release}"
-  if [[ $major_release -lt 16  ]]; then
+  if [[ ${major_release} -lt 16  ]]; then
     emergency "Please upgrade to Windows Subsystem for Linux (WSL) Ubuntu 16.04 or later."
-  elif [[ $major_release -eq 16  ]]; then
-    if [[ $minor_release -lt "04"  ]]; then
+  elif [[ ${major_release} -eq 16  ]]; then
+    if [[ ${minor_release} -lt "04"  ]]; then
       emergency "Please upgrade to Windows Subsystem for Linux (WSL) Ubuntu 16.04 or later."
     fi
   fi
@@ -200,7 +200,7 @@ verify_acceptable_release_number
 
 if [[ "${arg_V}" == "${__flag_present}" ]]; then
     # Print just the version number
-    info "$opencoarrays_version"
+    info "${opencoarrays_version}"
 
 elif [[ "${arg_v}" == "${__flag_present}" ]]; then
 
@@ -221,19 +221,19 @@ else
   export FC=${arg_f:-gfortran}
   export CC=${arg_c:-gcc}
   export CXX=${arg_C:-g++}
- 
+
   # Check for and, if necessary, install OpenCoarrays prerequisites
 
-  if ! type "$CMAKE" >& /dev/null; then
+  if ! type "${CMAKE}" >& /dev/null; then
     sudo apt-get install cmake
   fi
-  if ! type "$CXX" >& /dev/null; then
+  if ! type "${CXX}" >& /dev/null; then
     sudo apt-get install g++
   fi
-  if ! type "$FC" >& /dev/null; then
+  if ! type "${FC}" >& /dev/null; then
     sudo apt-get install gfortran
   fi
-  
+
   if ! type mpifort >& /dev/null; then
     sudo apt-get install mpich
   fi
@@ -265,31 +265,31 @@ else
 
   # Install OpenCoarrays
 
-  if [[ -d "$build_path" ]]; then
-    rm -rf "$build_path"
+  if [[ -d "${build_path}" ]]; then
+    rm -rf "${build_path}"
   fi
-  mkdir -p "$build_path"
-  cd "$build_path" || exit 25
+  mkdir -p "${build_path}"
+  cd "${build_path}" || exit 25
   info "Configuring OpenCoarrays with the following command:"
-  info "FC=\"$FC\" CC=\"$CC\"  \"$CMAKE\" \"$OPENCOARRAYS_SRC_DIR\" -DCMAKE_INSTALL_PREFIX=\"$install_prefix\""
-  FC="$FC" CC="$CC" "$CMAKE" "$OPENCOARRAYS_SRC_DIR" -DCMAKE_INSTALL_PREFIX="$install_prefix"
+  info "FC=\"${FC}\" CC=\"${CC}\"  \"${CMAKE}\" \"${OPENCOARRAYS_SRC_DIR}\" -DCMAKE_INSTALL_PREFIX=\"${install_prefix}\""
+  FC="${FC}" CC="${CC}" "${CMAKE}" "${OPENCOARRAYS_SRC_DIR}" -DCMAKE_INSTALL_PREFIX="${install_prefix}"
   info "Building OpenCoarrays with the following command:"
-  info "make -j $arg_j"
+  info "make -j ${arg_j}"
   make -j "${arg_j}"
   info "Installing OpenCoarrays with the following command:"
   info "${SUDO:-} make install"
   ${SUDO:-} make install
-  if [[ -f "$install_prefix"/lib/libcaf_mpi.a && -f "${install_prefix}/bin/caf"  && -f "${install_prefix}/bin/cafrun"  ]]; then
+  if [[ -f "${install_prefix}"/lib/libcaf_mpi.a && -f "${install_prefix}/bin/caf"  && -f "${install_prefix}/bin/cafrun"  ]]; then
     info "OpenCoarrays has been installed in"
-    info "$install_prefix"
+    info "${install_prefix}"
   else
     info "Something went wrong. OpenCoarrays is not in the expected location:"
-    emergency "$install_prefix"
+    emergency "${install_prefix}"
   fi
   # See http://stackoverflow.com/questions/31057694/gethostbyname-fail-after-switching-internet-connections/31222970
   loopback_line=$(grep "${NAME}" /etc/hosts)
   if [[ -z "${loopback_line:-}" ]]; then
     info "To ensure the correct functioning of MPI, please add the following line to your /etc/hosts file:"
-    info "127.0.0.1 $NAME"
+    info "127.0.0.1 ${NAME}"
   fi
 fi
