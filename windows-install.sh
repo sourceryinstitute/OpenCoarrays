@@ -1,4 +1,4 @@
-#/usr/bin/env bash
+#!/usr/bin/env bash
 #
 # windows-install.sh
 #
@@ -121,6 +121,7 @@ if [[ "${arg_d}" == "${__flag_present}" ]]; then
 fi
 
 # Get linux_distribution name
+# shellcheck disable=SC2154
 {
 info "__file: ${__file}"
 info "__dir: ${__dir}"
@@ -144,7 +145,8 @@ info  "-V (--version-number):   ${arg_V}"
 
 # __________ Process command-line arguments and environment variables _____________
 
-export this_script="$(basename "$0")"
+this_script="$(basename "$0")"
+export this_script
 debug "this_script=\"${this_script}\""
 
 export install_prefix="${arg_i%/:-${PWD}/prerequisites/installations}"
@@ -165,7 +167,7 @@ verify_this_is_ubuntu()
   if [[ ${__os} != "Linux"  ]]; then
     emergency "${__os} not supported: this script is intended for use in Windows Subsystem for Linux "
   fi
-  linux_standard_base_i=`lsb_release -i`
+  linux_standard_base_i=$(lsb_release -i)
   untrimmed_name=${linux_standard_base_i##*Distributor ID:}
   linux_distribution="${untrimmed_name//[[:space:]]/}"
   info "Linux distribution: ${linux_distribution}"
@@ -180,7 +182,7 @@ verify_this_is_ubuntu
 # Ubuntu 16.04 apt-get installs gfortran 5.4.0 or later, which is acceptable for many uses of OpenCoarrays
 verify_acceptable_release_number()
 {
-  linux_standard_base_r=`lsb_release -r`
+  linux_standard_base_r=$(lsb_release -r)
   untrimmed_name=${linux_standard_base_r##*Release:}
   release_number="${untrimmed_name//[[:space:]]/}"
   major_release="${release_number%%.*}"
@@ -260,20 +262,20 @@ else
     fi
   }
   set_SUDO_if_needed_to_write_to_install_dir
-  
+
   # Install OpenCoarrays
 
   if [[ -d "$build_path" ]]; then
     rm -rf "$build_path"
   fi
   mkdir -p "$build_path"
-  cd "$build_path"
+  cd "$build_path" || exit 25
   info "Configuring OpenCoarrays with the following command:"
   info "FC=\"$FC\" CC=\"$CC\"  \"$CMAKE\" \"$OPENCOARRAYS_SRC_DIR\" -DCMAKE_INSTALL_PREFIX=\"$install_prefix\""
   FC="$FC" CC="$CC" "$CMAKE" "$OPENCOARRAYS_SRC_DIR" -DCMAKE_INSTALL_PREFIX="$install_prefix"
   info "Building OpenCoarrays with the following command:"
   info "make -j $arg_j"
-  make -j $arg_j
+  make -j "${arg_j}"
   info "Installing OpenCoarrays with the following command:"
   info "${SUDO:-} make install"
   ${SUDO:-} make install
@@ -285,7 +287,7 @@ else
     emergency "$install_prefix"
   fi
   # See http://stackoverflow.com/questions/31057694/gethostbyname-fail-after-switching-internet-connections/31222970
-  loopback_line=`grep $NAME /etc/hosts`
+  loopback_line=$(grep "${NAME}" /etc/hosts)
   if [[ -z "${loopback_line:-}" ]]; then
     info "To ensure the correct functioning of MPI, please add the following line to your /etc/hosts file:"
     info "127.0.0.1 $NAME"
