@@ -1,17 +1,6 @@
-add_executable(syncall syncall.f90)
-target_link_libraries(syncall OpenCoarrays)
-
-add_executable(syncimages syncimages.f90)
-target_link_libraries(syncimages OpenCoarrays)
-
-add_executable(syncimages2 syncimages2.f90)
-target_link_libraries(syncimages2 OpenCoarrays)
-
-add_executable(duplicate_syncimages duplicate_syncimages.f90)
-target_link_libraries(duplicate_syncimages OpenCoarrays)
-
-add_executable(syncimages_status syncimages_status.f90)
-target_link_libraries(syncimages_status OpenCoarrays)
-
-add_executable(sync_image_ring_abort_on_stopped_image sync_image_ring_abort_on_stopped_image.f90)
-target_link_libraries(sync_image_ring_abort_on_stopped_image OpenCoarrays)
+caf_compile_executable(syncall syncall.f90)
+caf_compile_executable(syncimages syncimages.f90)
+caf_compile_executable(syncimages2 syncimages2.f90)
+caf_compile_executable(duplicate_syncimages duplicate_syncimages.f90)
+caf_compile_executable(syncimages_status syncimages_status.f90)
+caf_compile_executable(sync_image_ring_abort_on_stopped_image sync_image_ring_abort_on_stopped_image.f90)

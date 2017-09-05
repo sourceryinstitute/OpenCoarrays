@@ -18,6 +18,7 @@ else()
   message ("Unknown Fortran compiler: ${CMAKE_Fortran_COMPILER_ID}")
 endif()
 
+set(CMAKE_Fortran_COMPILER "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf")
 add_executable(coarray_burgers_pde
   main.F90
   global_field.F90
@@ -26,5 +27,5 @@ add_executable(coarray_burgers_pde
   ${library_directory}/object_interface.F90
   ${library_directory}/co_object_interface.F90
 )
-target_link_libraries(coarray_burgers_pde OpenCoarrays)
+add_dependencies(coarray_burgers_pde caf_mpi_static)
 target_include_directories(coarray_burgers_pde PRIVATE ${config_directory})

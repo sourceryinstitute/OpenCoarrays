@@ -1,2 +1,1 @@
-add_executable(hello_multiverse hello_multiverse.F90)
-target_link_libraries(hello_multiverse OpenCoarrays)
+caf_compile_executable(hello_multiverse hello_multiverse.F90)
