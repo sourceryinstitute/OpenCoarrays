@@ -452,6 +452,40 @@ function(caf_compile_executable target main_depend)
     DEPENDS "${target}")
 endfunction(caf_compile_executable)
 
+enable_testing()
+
+#--------------------------------------------------------
+# Setup shellcheck if present for testing/linting scripts
+#--------------------------------------------------------
+find_program(SHELLCHECK_EXE shellcheck
+  DOC "Path to shellcheck executable for linting scripts"
+  )
+if (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER})
+  if(NOT SHELLCHECK_EXE)
+    message( AUTHOR_WARNING "OpenCoarrays developers should install shellcheck to test/lint all shell scripts.
+    See https://github.com/koalaman/shellcheck#installing for info on obtaining shellcheck.")
+  endif()
+endif()
+
+function(lint_script script_dir script_name)
+  if (SHELLCHECK_EXE)
+    add_test(NAME "shellcheck:${script_name}"
+      COMMAND ${SHELLCHECK_EXE} -x "${script_dir}/${script_name}"
+      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+  elseif (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER})
+    message( AUTHOR_WARNING "test: shellcheck:${script_name} not run because shellcheck not installed." )
+  endif()
+endfunction()
+
+#-----------------------------------------------
+# Setup script style testing & enforcement macro
+#-----------------------------------------------
+
+function(check_script_style script_full_path)
+  add_test(NAME "style:${script_full_path}"
+    COMMAND "${CMAKE_SOURCE_DIR}/developer-scripts/style.pl" "${script_full_path}")
+endfunction()
+
 #-------------------------------
 # Recurse into the src directory
 #-------------------------------
@@ -498,8 +532,6 @@ configure_file ( "${CMAKE_SOURCE_DIR}/cmake/uninstall.cmake.in" "${CMAKE_BINARY_
 
 add_custom_target ( uninstall
   COMMAND ${CMAKE_COMMAND} -P "${CMAKE_BINARY_DIR}/uninstall.cmake" )
-
-enable_testing()
 
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure)
 # See JSON-Fortran's CMakeLists.txt file to find out how to get the check target to depend
