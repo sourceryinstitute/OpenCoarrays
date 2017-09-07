@@ -40,7 +40,7 @@ OpenCoarrays source.
 
 [![homebrew](https://img.shields.io/homebrew/v/opencoarrays.svg?style=flat-square)](http://braumeister.org/formula/opencoarrays)
 
-We recommend using [Homebrew] to install OpenCoarrays on macOS.
+* [Homebrew]: This is the recommend OpenCoarrays installation method on macOS.
 
 Basic Homebrew installation steps:
 
@@ -62,7 +62,7 @@ brew update
 brew bundle
 ```
 
-An unmaintained [OpenCoarrays Portfile] exists for the [MacPorts] package
+* [MacPorts]: An unmaintained [OpenCoarrays Portfile] exists for the [MacPorts] package
 manager.  Although the current OpenCoarrays contributors have no plans to 
 update the portfile, new contributors are welcome to asssume the port 
 maintainer role and to submit a pull request to update this [INSTALL.md] file.
@@ -284,13 +284,12 @@ specified dependencies between source files.
 
 ### Prerequisites ###
 
-The prerequisites below and their dependencies are recommended for the
-broadest coverage of CAF features.  If a prerequisite is missing or
-outdated, the [install.sh] script will prompt the user for permission
-to download, compile, and install it. Before doing so, [install.sh]
-will verify whether that prerequisite's prerequisites are present and
-will recursively traverse the dependency tree until reaching an
-acceptable prerequisite or reaching the end of a branch.
+Package managers and the [install.sh] attempt to handle the installation
+of all OpenCoarrays prerequisites automatically.  Installing with CMake
+or the provided, static Makefile burdens the person installing with the
+need to ensure that all prerequisites have been built and are in the
+expected or specified locations prior to building OpenCoarrays. The 
+prerquisite package/version dependency tree is as follows:
 
 ```text
 opencoarrays
@@ -305,22 +304,14 @@ opencoarrays
         └── mpfr
 ```
 
-If using the advanced [CMake] or [Make] builds detailed below, please
-ensure that these dependencies are met before attempting to build and
-install OpenCoarrays.
-
 [top]
 
 ### CMake scripts ###
 
-As demonstrated above. the [install.sh] script offers many options for 
-customizing the build.  The script performs numerous services that make
-it the preferred build method if package management is unavailable. 
-On most platforms, [install.sh] ultimately invokes [CMake] after performing 
-numerous checks, customizations, and installations of any missing prerequisites.
-
+On most platforms, the [install.sh] script ultimately invokes [CMake] after performing
+numerous checks, customizations, and installations of any missing prerequisites.  
 Advanced users who prefer to invoke CMake directly may do so as described here.
-CMake  is a cross-platform Makefile generator that includes the testing tool CTest.  
+CMake is a cross-platform Makefile generator that includes the testing tool CTest.  
 To avoid cluttering or clobbering the source tree, our CMake setup requires that
 your build directory be any directory other than the top-level OpenCoarays
 source directory.  In a bash shell, the following steps should build OpenCoarrays,
@@ -368,16 +359,16 @@ Advanced options (most users should not use these):
 ### Make ###
 
 Unlike the Makefiles that CMake generates automatically for the chosen
-platform, static Makefiles require a great deal more maintenance and
-are less portable.  Also, the static Makefiles provided with
-OpenCoarrays lack several important capabilities.  In particular, they
-will not build the tests; they will not generate the `caf` compiler wrapper 
-that ensures correct linking and or `cafrun` program launcher that ensures
-support for advanced features such as Fortran 2015 failed images; they will 
-not build the [opencoarrays] module that can be used to provide some Fortran
-2015 features with non-Fortran-2015 compilers; nor do the static Makefiles 
-provide a `make install` option so you will need to manually move the 
-resultant library from the build location to yoru chosen installation location.
+platform, static Makefiles require a great deal more maintenance and are
+less portable.  Also, the static Makefiles provided in [src] lack several
+several important capabilities.  In particular, they will not build the tests;
+they will not generate the `caf` compiler wrapper that ensures correct linking
+and `cafrun` program launcher that ensures support for advanced features such
+as Fortran 2015 failed images; they will not build the [opencoarrays] module 
+that can be used to provide some Fortran 2015 features with non-Fortran-2015
+compilers; nor do the static Makefiles provide a `make install` option so you 
+will need to manually move the resultant library from the build location to your chosen
+installation location.
 
 If none of the installation methods mentioned higher in this document are 
 work on your platform and if CMake is unavailable, build and install the 
@@ -473,3 +464,4 @@ file.
 [OpenCoarrays Portfile]: https://www.macports.org/ports.php?by=name&substr=opencoarrays
 [WSL]: https://blogs.msdn.microsoft.com/commandline/2017/07/10/ubuntu-now-available-from-the-windows-store/
 [developer-scripts]: https://github.com/sourceryinstitute/OpenCoarrays/tree/master/developer-scripts 
+[src]: https://github.com/sourceryinstitute/OpenCoarrays/tree/master/src
