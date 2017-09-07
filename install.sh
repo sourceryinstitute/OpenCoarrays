@@ -310,6 +310,7 @@ elif [[ "${arg_p:-}" == "opencoarrays" ]]; then
     # Install Xcode command line tools (CLT) if on macOS and if needed
     maybe_install_xcodeCLT
     # Install OpenCoarrays
+
     cd prerequisites || exit 1
     installation_record=install-opencoarrays.log
     # shellcheck source=./prerequisites/build-functions/set_SUDO_if_needed_to_write_to_directory.sh
@@ -317,11 +318,17 @@ elif [[ "${arg_p:-}" == "opencoarrays" ]]; then
     version="$("${opencoarrays_src_dir}/install.sh" -V opencoarrays)"
     set_SUDO_if_needed_to_write_to_directory "${install_path}"
 
-    # Using process substitution "> >(...) -" instead of piping to tee via "2>&1 |" ensures that
-    # report_results gets the FC value set in build_opencoarrays
-    # Source: http://stackoverflow.com/questions/8221227/bash-variable-losing-its-value-strange
-    build_opencoarrays > >( tee ../"${installation_record}" ) -
-    report_results 2>&1 | tee -a ../"${installation_record}"
+    if grep -s -q Microsoft /proc/version  ; then
+      info "Windows Subsystem for Linux detected.  Invoking windows-install.sh with the following command:"
+      info "\"${opencoarrays_src_dir}\"/prerequisites/install-functions/windows-install.sh \"$@\""
+      "${opencoarrays_src_dir}"/prerequisites/install-functions/windows-install.sh "$@"
+    else
+      # Using process substitution "> >(...) -" instead of piping to tee via "2>&1 |" ensures that
+      # report_results gets the FC value set in build_opencoarrays
+      # Source: http://stackoverflow.com/questions/8221227/bash-variable-losing-its-value-strange
+      build_opencoarrays > >( tee ../"${installation_record}" ) -
+      report_results 2>&1 | tee -a ../"${installation_record}"
+    fi
   fi
 
 elif [[ "${arg_p:-}" == "ofp" ]]; then
