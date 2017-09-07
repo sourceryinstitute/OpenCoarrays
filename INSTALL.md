@@ -24,16 +24,15 @@ Download this file as a PDF document
   * [Prerequisites]
   * [CMake scripts]
   * [Make]
-* [Obtaining GCC, MPICH, and CMake]
 
 ## End-User Installation ##
 
 Most users will find it easiest and fastest to use package management
 software to install OpenCoarrays.  Package management options for
-macOS (formerly known as OS X), Windows, and Linux are described first
-below. Also described below are options for installing via the
-Sourcery Institute virtual machine or the OpenCoarrays installation
-script.
+macOS, Windows, and Linux are described first below. Also described 
+below are options for installing via the Sourcery Institute virtual 
+machine or via the bash and/or CMake scripts included that are in the 
+OpenCoarrays source.
 
 [top]
 
@@ -41,8 +40,7 @@ script.
 
 [![homebrew](https://img.shields.io/homebrew/v/opencoarrays.svg?style=flat-square)](http://braumeister.org/formula/opencoarrays)
 
-macOS users may use the [Homebrew] or [MacPorts] package management
-systems to install OpenCoarrays.  We recommend [Homebrew].
+We recommend using [Homebrew] to install OpenCoarrays on macOS.
 
 Basic Homebrew installation steps:
 
@@ -54,7 +52,7 @@ brew install opencoarrays
 OpenCoarrays also ships with a
 [`Brewfile`][Brewfile]
 that will make it easier to install opencoarrays using MPICH built
-with GCC. To install using the
+with the GNU Compiler Collection ([GCC]). To install using the
 [`Brewfile`][Brewfile]
 with MPICH wrapping GCC, follow these steps:
 
@@ -64,56 +62,21 @@ brew update
 brew bundle
 ```
 
-MacPorts installation steps:
-
-```bash
-sudo port selfupdate
-sudo port upgrade outdated
-sudo port install opencoarrays
-```
-
-where the `sudo` command requires administrator privileges.  If you
-install using MacPorts, please also install the `mpstats` port as
-follows:
-
-```bash
-sudo port install mpstats
-```
-
-which supports future OpenCoarrays development by providing download
-data the OpenCoarrays team uses in proposals for research grants and
-development contracts.
+An unmaintained [OpenCoarrays Portfile] exists for the [MacPorts] package
+manager.  Although the current OpenCoarrays contributors have no plans to 
+update the portfile, new contributors are welcome to asssume the port 
+maintainer role and to submit a pull request to update this [INSTALL.md] file.
 
 [top]
 
 ### Windows ###
 
-Windows users may run the windows-install.sh script inside the Windows
-Subsystem for Linux (WSL).
-
-Requirements:
-
-* WSL release 14936 or later,
-* Windows Insider Preview, and
-* "Fast" updates option.
-
-Steps:
-
-```bash
- do-release-upgrade
-./windows-install.sh
-```
-
-where the first command above updates the default Ubuntu 14.04 to
-16.04 and the second command must be executed with the present working
-directory set to the top level of the OpenCoarrays source tree.
-
-The `windows-install.sh` installation script uses Ubuntu's `apt-get`
-package manager to build [GCC] 5.4.0, [CMake], and [MPICH].  Windows
-users who desire a newer version of GCC are welcome to submit a
-request via our [Issues] page and suggest a method for updating.
-Previously attempted upgrade methods are described in the discussion
-thread starting with [commit comment 20539810].
+Windows users may run the [install.sh] script inside the Windows Subsystem 
+for Linux ([WSL]). The script uses Ubuntu's [APT] package manager to build 
+[GCC] 5.4.0, [CMake], and [MPICH].  Windows users who desire a newer version 
+of GCC are welcome to submit a request via our [Issues] page and suggest a 
+method for updating. Previously attempted upgrade methods are described in 
+the discussion thread starting with [commit comment 20539810].
 
 [top]
 
@@ -125,11 +88,9 @@ or pre-installed copies:
 * The [linuxbrew] package manager installs OpenCoarrays on all Linux distributions.
 * Debian-based distributions such as Ubuntu provide an "open-coarrays" [APT package].
 * [Arch Linux] provides an [aur package].
-* [HPCLinux] includes a pre-installed copy of OpenCoarrays.
-* [EasyBuild], a software build and installation framework, can install
-  OpenCoarrays on Linux distributions
+* An [HPCLinux] installation script is in the [developer-scripts] subdirectory (available via git clone only).
+* [EasyBuild] can install OpenCoarrays on Linux distributions
 * [Spack], a multiplatform package manager, can also install OpenCoarrays on Linux distributions
-
 
 [linuxbrew] does not require `sudo` privileges and will generally
 provide the most up-to-date OpenCoarrays release because linxubrew
@@ -137,7 +98,7 @@ pulls directly from macOS homebrew, which updates automatically.
 
 
 <a name="easybuild"></a>
-[EasyBuild] can be used to install OpenCoarrays with the following bash commands:
+With [EasyBuild], the following bash commands install OpenCoarrays:
 ```bash
 # Search available specification files (also known as easyconfigs) for OpenCoarrays
 eb --search OpenCoarrays
@@ -146,15 +107,14 @@ eb --search OpenCoarrays
 # with the desired easyconfig, e.g., OpenCoarrays-1.9.0-gompi-2017a.eb
 eb OpenCoarrays-1.9.0-gompi-2017a.eb --robot
 ```
-Once installed, OpenCoarrays can be used by loading the newly created environment
-module `OpenCoarrays/1.9.0-gompi-2017a`.
+Once installed, use OpenCoarrays by loading the newly created environment
+module `OpenCoarrays/1.9.0-gompi-2017a`:
 ```bash
 module load OpenCoarrays/1.9.0-gompi-2017a
 ```
 
-
 <a name="spack"></a>
-[Spack] can be used to install OpenCoarrays with the following bash commands:
+With [Spack], the following commands install OpenCoarrays in a bash shell:
 ```bash
 # Check build information for OpenCoarrays in the default specification file
 spack spec opencoarrays
@@ -179,7 +139,7 @@ spack module loads --dependencies opencoarrays
 
 ### FreeBSD ###
 
-A FreeBSD Port is available for installing OpenCoarrays.  FreeBSD users can now simply do the following as root:
+Use the OpenCoarrays FreeBSD, Port to install OpenCoarrays by executing the following commands as root:
 ```bash
 pkg install opencoarrays
 ```
@@ -204,7 +164,7 @@ included packages.
 ## Installation Script ##
 
 If the above package management or virtualization options are
-infeasible or unavailable, Linux and macOS users may also install
+infeasible or unavailable, Linux, macOS, and [WSL] users may also install
 OpenCoarrays by downloading and uncompressing our [latest release] and
 running our installation script in the top-level OpenCoarrays source
 directory (see above for the corresponding [Windows] script):
@@ -216,21 +176,6 @@ cd OpenCoarrays-x.y.z
 ```
 
 where `x.y.z` should be replaced with the appropriate version numbers.
-For a scripted or unattended build, use `./install.sh -y` or
-equivalently `./install.sh --yes-to-all`, which will assume
-affirmative answers to all user prompts and will only prompt the user
-if an installation directory is chosen that requires `sudo`
-privelenges (by passing `-i` or equivalently `--install-prefix`).
-
-Before installing OpenCoarrays, the above bash script will attempt to
-detect the presence of the default prerequisite packages: [GCC],
-[MPICH] , and [CMake].  For additional details, see the
-[Prerequisites] section. If any of the installation script cannot find
-the prerequisite packages, the [install.sh] script will attempt to
-download, build, and install any missing packages after asking
-permission to do so.  The script has been tested on Linux and OS X.
-Please submit any related problems or questions to our [Issues] page.
-
 A complete installation should result in the creation of the following
 directories inside the installation path (.e.g, inside `build` in the
 above example):
@@ -241,6 +186,97 @@ above example):
   non-OpenCoarrays-aware compilers
 * `lib`: contains the `libcaf_mpi.a` static library to which codes
   link for CAF support
+
+
+### Example script invocations ###
+Execute `./install.sh --help` or `./install.sh -h` to see a list of flags
+that can be passed to the installer.  Below are examples of useful combinations
+of flags. Each flag also has a single-character version not shown here.
+
+1. Install after building any missing prerequisites -- all source, build,
+and installation files will be inside the OpenCoarrays source tree under
+prerequisites/installations:
+```bash
+$ ./install.sh
+```
+
+2. Install non-interactively by assuming a "yes" answer to all questions
+```bash
+$ ./install.sh --yes-to-all
+```
+
+3. Install with the specified compilers, overriding the default compilers:
+```bash
+$ ./install.sh --with-fortran <path-to-gcc-bin>/gfortran \
+               --with-cxx <path-to-gcc-bin>/g++ \
+               --with-c <path-to-gcc-bin>/gcc 
+```
+Without the latter arguments, [install.sh] will attempt to install the
+default GCC version even if a newer version is available.  This happens
+to protect users from instability in cases when known one or more
+known regressions exist in the newer compiler.
+
+4. Install only a specific prerequisite package (the default version):
+```bash
+$ ./install.sh --package mpich
+```
+
+5. Install a specific version of a prerequisite:
+```bash
+$ ./install.sh --package cmake --install-version 3.7.0
+```
+
+6. Download a prerequisite package (e.g., gcc/gfortran/g++ below) but
+don't build or install it:
+```bash
+$ ./install.sh --only-download gcc
+```
+
+7. Print the default URL, version, or download mechanism that the
+script will use for a given prerequisite package (e.g., mpich below)
+on this system:
+```bash
+$ ./install.sh --print-url mpich
+$ ./install.sh --print-version mpich
+$ ./install.sh --print-downloader mpich
+```
+
+8. Install a prerelease branch (e.g., trunk below) of the GCC repository:
+```bash
+$ ./install.sh --package gcc --install-branch trunk
+```
+
+9. Install to a specific location:
+```bash
+$ ./install.sh --install-prefix /opt/gnu/
+```
+If the path provided in the install prefix requires sudo privileges,
+the user will be prompted for a password after the package download
+and build complete and just before installing to the specified path.
+
+10. Install a prerequisite package from a non-default URL:
+```bash
+$ ./install.sh --package gcc \ 
+  --from-url https://github.com/sourceryinstitute/gcc/archive/teams-20170831.tar.gz \
+  --install-version teams-20170831
+```
+The latter command will install the Sourcery Institute GCC fork that provides 
+experimental support for the Fortran 2015 teams feature.
+
+11. Speed up a GCC build at a higher risk of a faild build:
+```bash
+./install.sh --package gcc --disable-bootstrap
+```
+If the latter command works, it could reduce GCC's build time from hours down to
+minutes.
+
+12. Speed up a GCC build with multithreading at a risk of a failed build:
+```bash
+./install.sh --package gcc --num-threads 4
+```
+The latter command sometimes fails if the GCC build system has not fully
+specified dependencies between source files.
+
 
 [top]
 
@@ -277,24 +313,18 @@ install OpenCoarrays.
 
 ### CMake scripts ###
 
-#### N.B. ####
+As demonstrated above. the [install.sh] script offers many options for 
+customizing the build.  The script performs numerous services that make
+it the preferred build method if package management is unavailable. 
+On most platforms, [install.sh] ultimately invokes [CMake] after performing 
+numerous checks, customizations, and installations of any missing prerequisites.
 
-__As of OpenCoarrays 1.7.6, passing `FC=mpi_fortran_wrapper` and
-`CC=mpi_c_wrapper` is *DEPRECATED*. Please pass `FC=/path/to/gfortran`
-and `CC=/path/to/gcc`. If you are experimenting with the source to
-source translation capabilities, then please point `FC` and `CC` to
-your Fortran and C compilers of choice. In the case of Cray, or a
-compiler in which MPI is *built-in* to the compiler, you still pass
-the `FC` and `CC` as the Fortran and C compiler, even though MPI is
-built-in.__
-
-[CMake] is the preferred build system.  CMake is a cross-platform
-Makefile generator that includes the testing tool CTest.  To avoid
-cluttering or clobbering the source tree, our CMake setup requires
-that your build directory be any directory other than the top-level
-OpenCoarrays source directory.  In a bash shell, the following steps
-should build OpenCoarrays, install OpenCoarrays, build the tests, run
-the tests, and report the test results:
+Advanced users who prefer to invoke CMake directly may do so as described here.
+CMake  is a cross-platform Makefile generator that includes the testing tool CTest.  
+To avoid cluttering or clobbering the source tree, our CMake setup requires that
+your build directory be any directory other than the top-level OpenCoarays
+source directory.  In a bash shell, the following steps should build OpenCoarrays,
+build the tests, run the tests, and report the test results:
 
 ```bash
 tar xvzf opencoarrays.tar.gz
@@ -328,20 +358,10 @@ Advanced options (most users should not use these):
 -DMPI_C_COMPILER=/path/to/c/wrapper
 -DMPI_Fortran_COMPILER=/path/to/fortran/wrapper
 
--DLEGACY_ARCHITECTURE=OFF    # enables the use of FFT libraries that employ AVX instructions
 -DHIGH_RESOLUTION_TIMER=ON   # enables timers that tick once per clock cycle
--DCOMPILER_SUPPORTS_ATOMICS  # enables support for the proposed-Fortran 2015 events
-                             # feature
--DUSE_EXTENSIONS             # builds the opencoarrays module for use-with non-
-                             # OpenCoarrays-aware compilers
 -DCOMPILER_PROVIDES_MPI      # is set automatically when building with-the Cray
                              # Compiler Environment
 ```
-
-The fourth and fifth flags above are not portable and the sixth
-enables code that is incomplete as of release 1.0.0.  The eighth is
-set automatically by the CMake scripts based on the compiler identity
-and version.
 
 [top]
 
@@ -351,22 +371,25 @@ Unlike the Makefiles that CMake generates automatically for the chosen
 platform, static Makefiles require a great deal more maintenance and
 are less portable.  Also, the static Makefiles provided with
 OpenCoarrays lack several important capabilities.  In particular, they
-will not build the tests; they will not build any of the
-infrastructure for compiling CAF source with non-OpenCoarrays-aware
-compilers (that infrastructure includes the [opencoarrays] module, the
-`caf` compiler wrapper, and the `cafrun` program launcher); nor do the
-static Makefiles provide a `make install` option so you will need to
-manually move the desired library from the corresponding source
-directory to your intended installation location as shown below.
+will not build the tests; they will not generate the `caf` compiler wrapper 
+that ensures correct linking and or `cafrun` program launcher that ensures
+support for advanced features such as Fortran 2015 failed images; they will 
+not build the [opencoarrays] module that can be used to provide some Fortran
+2015 features with non-Fortran-2015 compilers; nor do the static Makefiles 
+provide a `make install` option so you will need to manually move the 
+resultant library from the build location to yoru chosen installation location.
 
-If CMake is unavailable, build and install with Make using steps such as the following:
+If none of the installation methods mentioned higher in this document are 
+work on your platform and if CMake is unavailable, build and install the 
+OpenCoarrays parallel runtime library as follows:
 
 ```bash
 tar xvzf opencoarrays.tar.gz
 cd opencoarray/src
 make
-mv mpi/libcaf_mpi.a <installation-path>
+mv mpi/libcaf_mpi.a <insert-install-path>
 ```
+replacing the angular-bracketed text with your desired install path.
 
 For the above steps to succeed, you might need to edit the [make.inc]
 file to match your system settings.  For example, you might need to
@@ -374,31 +397,6 @@ remove the `-Werror` option from the compiler flags or name a
 different compiler.  In order to activate efficient strided-array
 transfer support, uncomment the `-DSTRIDED` flag inside the [make.inc]
 file.
-
-[top]
-
-## Obtaining GCC, MPICH, and CMake ##
-
-[GFortran Binaries] binary builds are available at <https://gcc.gnu.org/wiki/GFortranBinaries>.
-
-To build all prerequisites from source, including the current
-development branch of GCC, you might first try the running the
-provided [install.sh] script as described above in the
-[Installation Script] section or try building each prerequisite from
-source inside a bash shell as follows:
-
-```bash
-export gcc_install_path=/desired/installation/destination
-./install.sh --package gcc --install-prefix "${gcc_install_path}"
-./install.sh --package mpich \
-   --with-fortran "${gcc_install_path}"/bin/gfortran \
-   --with-c       "${gcc_install_path}"/bin/gcc      \
-   --with-cxx     "${gcc_install_path}"/bin/g++
-./install.sh --pacakge cmake \
-   --with-fortran "${gcc_install_path}"/bin/gfortran \
-   --with-c       "${gcc_install_path}"/bin/gcc      \
-   --with-cxx     "${gcc_install_path}"/bin/g++
-```
 
 [top]
 
@@ -429,8 +427,6 @@ export gcc_install_path=/desired/installation/destination
 [CMake scripts]: #cmake-scripts
 [Make]: #make
 
-[Obtaining GCC, MPICH, and CMake]: #obtaining-gcc-mpich-and-cmake
-
 [Links to source]: #
 
 [install.sh]: ./install.sh
@@ -439,9 +435,11 @@ export gcc_install_path=/desired/installation/destination
 
 [linuxbrew]: http://linuxbrew.sh
 [APT package]: https://qa.debian.org/popcon.php?package=open-coarrays
+[APT]: https://en.wikipedia.org/wiki/APT_(Debian)
 [HPCLinux]: http://www.paratools.com/hpclinux/
 [Brewfile]: https://github.com/sourceryinstitute/OpenCoarrays/blob/master/Brewfile
 [INSTALL.pdf]: https://md2pdf.herokuapp.com/sourceryinstitute/OpenCoarrays/blob/master/INSTALL.pdf
+[INSTALL.md]: https://github.com/sourceryinstitute/OpenCoarrays/blob/master/INSTALL.md
 [CMake]: https://cmake.org
 [Sourcery Institute Store]: http://www.sourceryinstitute.org/store/c1/Featured_Products.html
 [VirtualBox]: https://www.virtualbox.org
@@ -472,3 +470,6 @@ export gcc_install_path=/desired/installation/destination
 [Spack]: https://github.com/LLNL/spack
 [add a new compiler to Spack]: http://spack.readthedocs.io/en/latest/tutorial_modules.html#add-a-new-compiler
 [loading the environment modules with Spack]: http://spack.readthedocs.io/en/latest/module_file_support.html#cmd-spack-module-loads
+[OpenCoarrays Portfile]: https://www.macports.org/ports.php?by=name&substr=opencoarrays
+[WSL]: https://blogs.msdn.microsoft.com/commandline/2017/07/10/ubuntu-now-available-from-the-windows-store/
+[developer-scripts]: https://github.com/sourceryinstitute/OpenCoarrays/tree/master/developer-scripts 
