@@ -10,6 +10,12 @@ target_link_libraries(get_self OpenCoarrays)
 add_executable(send_array send_array_test.f90)
 target_link_libraries(send_array OpenCoarrays)
 
+add_executable(send_convert_char_array send_convert_char_array.f90)
+target_link_libraries(send_convert_char_array OpenCoarrays)
+
+add_executable(send_convert_nums send_convert_nums.f90)
+target_link_libraries(send_convert_nums OpenCoarrays)
+
 add_executable(get_with_offset_1d get_with_offset_1d.f90)
 target_link_libraries(get_with_offset_1d OpenCoarrays)
 
