@@ -51,6 +51,7 @@ typedef struct gfc_descriptor_t {
   void *base_addr;
   size_t offset;
   ptrdiff_t dtype;
+  ptrdiff_t span;
   descriptor_dimension dim[];
 } gfc_descriptor_t;
 
