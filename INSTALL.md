@@ -257,8 +257,8 @@ and build complete and just before installing to the specified path.
 10. Install a prerequisite package from a non-default URL:
 ```bash
 $ ./install.sh --package gcc \ 
-  --from-url https://github.com/sourceryinstitute/gcc/archive/teams-20170831.tar.gz \
-  --install-version teams-20170831
+  --from-url https://github.com/sourceryinstitute/gcc/archive/teams-20170919.tar.gz \
+  --install-version teams-20170919
 ```
 The latter command will install the Sourcery Institute GCC fork that provides 
 experimental support for the Fortran 2015 teams feature.
