@@ -34,31 +34,13 @@
 !==================  test transposes with integer x,y,z values  ===============================
 module run_size
     use iso_fortran_env
-#ifndef HAVE_WALLTIME
-#  ifdef MPI_WORKING_MODULE
-     use MPI, only : WALLTIME=>MPI_WTIME
-     implicit none
-#  else
-     implicit none
-     include 'mpif.h'
-#    define WALLTIME MPI_WTIME
-#  endif
-#else
-  implicit none
-#endif
-        integer(int64), codimension[*] :: nx, ny, nz
-        integer(int64), codimension[*] :: my, mx, first_y, last_y, first_x, last_x
-        integer(int64) :: my_node, num_nodes
-        real(real64), codimension[*] :: tran_time
+    implicit none
 
-#ifdef HAVE_WALLTIME
-interface
-   function WALLTIME() bind(C, name = "WALLTIME")
-   use iso_fortran_env
-       real(real64) :: WALLTIME
-   end function WALLTIME
-end interface
-#endif
+    integer(int64), codimension[*] :: nx, ny, nz
+    integer(int64), codimension[*] :: my, mx, first_y, last_y, first_x, last_x
+    integer(int64) :: my_node, num_nodes
+    real(real64), codimension[*] :: tran_time
+
 
 contains
 
@@ -226,9 +208,11 @@ contains
     implicit none
 
     integer(int64) :: i,stage
+    real(real64) :: tmp
 
     sync all   !--  wait for other nodes to finish compute
-    tran_time = tran_time - WALLTIME()
+    call cpu_time(tmp)
+    tran_time = tran_time - tmp
 
     call copy3 (    u(1,1,first_x,1+(my_node-1)*my) &                   !-- intra-node transpose
                 ,  ur(1,1,first_y,1+(my_node-1)*mx) &                   !-- no inter-node transpose needed
@@ -262,7 +246,8 @@ contains
 #endif
 
     sync all     !--  wait for other nodes to finish transpose
-    tran_time = tran_time + WALLTIME()
+    call cpu_time(tmp)
+    tran_time = tran_time + tmp
 
  end  subroutine transpose_X_Y
 
@@ -273,9 +258,11 @@ subroutine transpose_Y_X
     implicit none
 
     integer(int64) :: i, stage
+    real(real64) :: tmp
 
     sync all   !--  wait for other nodes to finish compute
-    tran_time = tran_time - WALLTIME()
+    call cpu_time(tmp)
+    tran_time = tran_time - tmp
 
     call copy3 (   ur(1,1,first_y,1+(my_node-1)*mx) &                   !-- intra-node transpose
                 ,   u(1,1,first_x,1+(my_node-1)*my) &                   !-- no inter-node transpose needed
@@ -309,7 +296,8 @@ subroutine transpose_Y_X
 #endif
 
     sync all     !--  wait for other nodes to finish transpose
-    tran_time = tran_time + WALLTIME()
+    call cpu_time(tmp)
+    tran_time = tran_time + tmp
 
  end  subroutine transpose_Y_X
 
