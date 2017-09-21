@@ -15,7 +15,7 @@ executable=burgers_mpi
 #Cray compiler command
 cray=ftn -ew -h caf
 #GNU compiler command
-gnu=mpif90 -fcoarray=lib -ffree-form -ffree-line-length-none
+gnu=mpifort -fcoarray=lib -ffree-form -ffree-line-length-none
 
 #Intel compiler command
 intel= tau_f90.sh -DTAU=1 -Bdynamic -standard-semantics -O3 -g -optCompInst

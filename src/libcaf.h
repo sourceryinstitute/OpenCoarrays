@@ -109,14 +109,6 @@ caf_used_teams_list;
 
 #endif
 
-/* Linked list of static coarrays registered.  */
-typedef struct caf_static_t {
-  caf_token_t token;
-  caf_token_t stopped_token;
-  struct caf_static_t *prev;
-}
-caf_static_t;
-
 /* When there is a vector subscript in this dimension, nvec == 0, otherwise,
    lower_bound, upper_bound, stride contains the bounds relative to the declared
    bounds; kind denotes the integer kind of the elements of vector[].  */
