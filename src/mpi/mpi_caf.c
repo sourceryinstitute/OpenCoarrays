@@ -2703,9 +2703,7 @@ copy_data (void *ds, mpi_caf_token_t *token, MPI_Aint offset, int dst_type,
     This typedef is made to allow storing a copy of a remote descriptor on the
     stack without having to care about the rank.  */
 typedef struct gfc_max_dim_descriptor_t {
-  void *base_addr;
-  size_t offset;
-  ptrdiff_t dtype;
+  gfc_descriptor_t base;
   descriptor_dimension dim[GFC_MAX_DIMENSIONS];
 } gfc_max_dim_descriptor_t;
 
@@ -3838,11 +3836,14 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
                        MPI_BYTE, global_dynamic_win);
             }
 #ifdef EXTRA_DEBUG_OUTPUT
-          fprintf (stderr, "%d/%d: %s() remote desc rank: %d (ref_rank: %d)\n", caf_this_image, caf_num_images,
-                   __FUNCTION__, GFC_DESCRIPTOR_RANK (&src_desc), ref_rank);
-          for (i = 0; i < GFC_DESCRIPTOR_RANK (&src_desc); ++i)
-            fprintf (stderr, "%d/%d: %s() remote desc dim[%d] = (lb = %d, ub = %d, stride = %d)\n", caf_this_image, caf_num_images,
-                     __FUNCTION__, i, src_desc.dim[i].lower_bound, src_desc.dim[i]._ubound, src_desc.dim[i]._stride);
+          {
+            gfc_descriptor_t * src = (gfc_descriptor_t *)(&src_desc);
+            fprintf (stderr, "%d/%d: %s() remote desc rank: %d (ref_rank: %d)\n", caf_this_image, caf_num_images,
+                     __FUNCTION__, GFC_DESCRIPTOR_RANK (src), ref_rank);
+            for (i = 0; i < GFC_DESCRIPTOR_RANK (src); ++i)
+              fprintf (stderr, "%d/%d: %s() remote desc dim[%d] = (lb = %d, ub = %d, stride = %d)\n", caf_this_image, caf_num_images,
+                       __FUNCTION__, i, src_desc.dim[i].lower_bound, src_desc.dim[i]._ubound, src_desc.dim[i]._stride);
+          }
 #endif
 
           for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
