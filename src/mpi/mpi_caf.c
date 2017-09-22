@@ -737,15 +737,14 @@ PREFIX (init) (int *argc, char ***argv)
   if (caf_num_images == 0)
     {
       int ierr = 0, i = 0, j = 0, rc;
-
-      int is_init = 0, prior_thread_level = MPI_THREAD_SINGLE;
+      int prov_lev = 0;
+      int is_init = 0, prior_thread_level = MPI_THREAD_FUNNELED;
       MPI_Initialized (&is_init);
 
       if (is_init) {
           MPI_Query_thread (&prior_thread_level);
       }
 #ifdef HELPER
-      int prov_lev=0;
       if (is_init) {
           prov_lev = prior_thread_level;
           caf_owns_mpi = false;
@@ -758,10 +757,12 @@ PREFIX (init) (int *argc, char ***argv)
         caf_runtime_error ("MPI_THREAD_MULTIPLE is not supported: %d", prov_lev);
 #else
       if (is_init) {
-          caf_owns_mpi = false;
+	caf_owns_mpi = false;
       } else {
-          MPI_Init (argc, argv);
-          caf_owns_mpi = true;
+	MPI_Init_thread (argc, argv, prior_thread_level, &prov_lev);
+	caf_owns_mpi = true;
+	if (caf_this_image == 0 && MPI_THREAD_FUNNELED != prov_lev)
+	  caf_runtime_error ("MPI_THREAD_FUNNELED is not supported: %d", prov_lev);
       }
 #endif
       if (unlikely ((ierr != MPI_SUCCESS)))
