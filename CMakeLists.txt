@@ -432,6 +432,14 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}")
 
+#-----------------
+# Install manpages
+#-----------------
+install(FILES "${CMAKE_SOURCE_DIR}/doc/man/man1/caf.1" "${CMAKE_SOURCE_DIR}/doc/man/man1/cafrun.1"
+  DESTINATION "${CMAKE_INSTALL_MANDIR}/man1"
+  PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
+  COMPONENT documentation)
+
 #---------------------------------------------------
 # Define macro for compiling with caf wrapper script
 #---------------------------------------------------
