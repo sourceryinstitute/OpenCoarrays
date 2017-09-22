@@ -1,6 +1,6 @@
 # Fortran tests
 
-caf_compile_executable(increment_my_neighbor test1Caf.f90)
+caf_compile_executable(increment_my_neighbor increment_neighbor.f90)
 caf_compile_executable(atomics testAtomics.f90)
 
 # C tests
