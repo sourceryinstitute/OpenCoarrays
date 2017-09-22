@@ -4158,13 +4158,13 @@ GEN_REDUCTION (do_max_int1, int8_t,
                inoutvec[i] = invec[i] <= inoutvec[i] ? inoutvec[i] : invec[i])
 #endif
 
-#ifndef MPI_INTEGER2
-GEN_REDUCTION (do_sum_int1, int16_t, inoutvec[i] += invec[i])
-GEN_REDUCTION (do_min_int1, int16_t,
-               inoutvec[i] = invec[i] >= inoutvec[i] ? inoutvec[i] : invec[i])
-GEN_REDUCTION (do_max_int1, int16_t,
-               inoutvec[i] = invec[i] <= inoutvec[i] ? inoutvec[i] : invec[i])
-#endif
+/* #ifndef MPI_INTEGER2 */
+/* GEN_REDUCTION (do_sum_int1, int16_t, inoutvec[i] += invec[i]) */
+/* GEN_REDUCTION (do_min_int1, int16_t, */
+/*                inoutvec[i] = invec[i] >= inoutvec[i] ? inoutvec[i] : invec[i]) */
+/* GEN_REDUCTION (do_max_int1, int16_t, */
+/*                inoutvec[i] = invec[i] <= inoutvec[i] ? inoutvec[i] : invec[i]) */
+/* #endif */
 
 #if defined(MPI_INTEGER16) && defined(GFC_INTEGER_16)
 GEN_REDUCTION (do_sum_int1, GFC_INTEGER_16, inoutvec[i] += invec[i])
