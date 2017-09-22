@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Coarray Fortran (CAF) Executable Launcher
+# Coarray Fortran (CAF) Executable Launcher version @CAF_VERSION@
 #
 # Copyright (c) 2015-2016, Sourcery, Inc.
 # All rights reserved.
@@ -39,11 +39,11 @@
 # Configured variables
 #---------------------
 #
-# @PROJECT_VERSION@ @MPIEXEC@ @MPIEXEC_NUMPROC_FLAG@ @MPIEXEC_PREFLAGS@ @MPIEXEC_POSTFLAGS@
-# @HAVE_FAILED_IMG@
+# CAF_VERSION, MPIEXEC, MPIEXEC_NUMPROC_FLAG, MPIEXEC_PREFLAGS, MPIEXEC_POSTFLAGS,
+# HAVE_FAILED_IMG
 #
 
-caf_version='@PROJECT_VERSION@'
+caf_version='@CAF_VERSION@'
 CAFRUN='@MPIEXEC@'
 if [[ ${CAFRUN} == @*@ ]]; then
   CAFRUN=mpiexec
@@ -58,11 +58,11 @@ if [[ ${numproc_flag} == @*@ ]]; then
 fi
 preflags='@MPIEXEC_PREFLAGS@'
 if [[ ${preflags} == @*@ ]]; then
-  preflags=''
+  unset preflags
 fi
 postflags='@MPIEXEC_POSTFLAGS@'
 if [[ ${postflags} == @*@ ]]; then
-  postflags=''
+  unset postflags
 fi
 
 usage() {
@@ -77,7 +77,13 @@ usage() {
   echo "   --version, -v, -V        Report version and copyright information"
   echo "   --wraps, -w,             Report the name of the wrapped compiler"
   echo "   -np <N>,                 Number of images, N, to execute, N must be a positive integer"
-  echo "   --enable-failed-images   Turn on failed images support, if library support is present"
+  echo "   --reenable-auto-cleanup  Turn off failed images support (if library support is present)"
+  echo "                            This option re-enables MPI auto cleanup, which is disabled by"
+  echo "                            by default if GFortran/OpenCoarrays/MPI all support failed"
+  echo "                            images through MPI ULFM. When MPI auto cleanup is disabled and"
+  echo "                            failed image support is present, OpenCoarrays triggers cleanup"
+  echo "                            explicitly when a failed/stopped image is encountered in an"
+  echo "                            image control statement without a \`stat=\` clause."
   echo ""
   echo " Example usage:"
   echo ""
@@ -86,7 +92,7 @@ usage() {
   echo "   ${cmd} --help"
   echo "   ${cmd} --show"
   echo "   ${cmd} -s -np 4 my_exe"
-  echo "   ${cmd} -np 4 --enable-failed-images ./my_exe arg1 arg2"
+  echo "   ${cmd} -np 4 --reenable-auto-cleanup ./my_exe arg1 arg2"
   echo ""
   echo " Notes:"
   echo "   [options] must be a CAF executable file, one of the above arguments,"
@@ -95,19 +101,28 @@ usage() {
 }
 
 i=0
+disable_failed_images=false
 for arg in "${@}"; do
   ((i+=1))
-  if [[ "${arg}" == "--enable-failed-images" ]]; then
-    if ${have_failed_img}; then
-      preflags=(-disable-auto-cleanup "${preflags[@]}")
-    else
-      echo "Warning, OpenCoarrays was not compiled with failed images support because" >&2
-      echo "it was not requested, or unsupported by the MPI library." >&2
-    fi
-    # Strip "--enable-failed-images" from args
+  if [[ "${arg}" == "--reenable-auto-cleanup" ]]; then
+    # Strip "--reenable-auto-cleanup" from args
     set -- "${@:1:$((i - 1))}" "${@:$((i+1)):$((${#} - i))}"
+    if ! ${have_failed_img}; then
+      echo "Library was not built with failed image support, so passing \`--reenable-auto-cleanup\` is a noop" >&2
+    fi
+    disable_failed_images=true
   fi
 done
+
+if ! ${disable_failed_images}; then
+  if ${have_failed_img}; then
+    if [[ -n "${preflags:-}" ]]; then
+      preflags+=(--disable-auto-cleanup)
+    else
+      preflags=(--disable-auto-cleanup)
+    fi
+  fi
+fi
 
 # Print useage information if caf is invoked without arguments
 if ((${#} == 0)); then
@@ -115,7 +130,7 @@ if ((${#} == 0)); then
   exit 1
 elif [[ "${1}" == -[vV] || "${1}" == '--version' ]]; then
   echo ""
-  echo "OpenCoarrays Coarray Fortran Executable Launcher (caf version ${caf_version})"
+  echo "OpenCoarrays Coarray Fortran Executable Launcher (cafrun version ${caf_version})"
   echo "Copyright (C) 2015-2016 Sourcery, Inc."
   echo ""
   echo "OpenCoarrays comes with NO WARRANTY, to the extent permitted by law."
@@ -124,30 +139,30 @@ elif [[ "${1}" == -[vV] || "${1}" == '--version' ]]; then
   echo "the file named LICENSE."
   echo ""
 elif [[ "${1}" == -w || "${1}" == --wraps ]]; then
-  "${CAFRUN}" -v
+  "${CAFRUN}" --version
 elif [[ "${1}" == -h || "${1}" == --help ]]; then
   usage
 elif [[ "${1}" == -s || "${1}" == --show ]]; then
   if ((${#} > 4)); then
     mpiexec_args=("${2:-${numproc_flag}}" "${3:-<number_of_images>}")
-    if [[ "${preflags[*]:-}" ]]; then
+    if [[ -n "${preflags[*]:-}" ]]; then
       mpiexec_args+=("${preflags[@]}")
     fi
     mpiexec_args+=("${4:-/path/to/coarray_Fortran_program}")
-    if [[ "${postflags[*]:-}" ]]; then
+    if [[ -n "${postflags[*]:-}" ]]; then
       mpiexec_args+=("${postflags[@]}")
     fi
-    if [[ "${*:5:$((${#} - 4))}" ]]; then
+    if [[ -n "${*:5:$((${#} - 4))}" ]]; then
       mpiexec_args+=("${@:5:$((${#} - 4))}")
     fi
     echo "${CAFRUN} ${mpiexec_args[*]}"
   else
     mpiexec_args=("${2:-${numproc_flag}}" "${3:-<number_of_images>}")
-    if [[ "${preflags[*]:-}" ]]; then
+    if [[ -n "${preflags[*]:-}" ]]; then
       mpiexec_args+=("${preflags[@]}")
     fi
     mpiexec_args+=("${4:-/path/to/coarray_Fortran_program}")
-    if [[ "${postflags[*]:-}" ]]; then
+    if [[ -n "${postflags[*]:-}" ]]; then
       mpiexec_args+=("${postflags[@]}")
     fi
     mpiexec_args+=("[arg4 [arg5 [...]]]")
@@ -157,18 +172,18 @@ elif [[ "${1}" == -np || "${1}" == -n ]]; then
   # shellcheck disable=SC1001
   if [[ "${2}" =~ ^[\-0-9]+$ ]] && (( ${2} > 0)) && ((${#} > 2)); then
     mpiexec_args=("${numproc_flag}" "${2}")
-    if [[ "${preflags[*]:-}" ]]; then
+    if [[ -n "${preflags[*]:-}" ]]; then
       mpiexec_args+=("${preflags[@]}")
     fi
     mpiexec_args+=("${3}")
-    if [[ "${postflags[*]:-}" ]]; then
+    if [[ -n "${postflags[*]:-}" ]]; then
       mpiexec_args+=("${postflags[@]}")
     fi
-    if [[ "${*:4:$((${#} - 3))}" ]]; then
+    if [[ -n "${*:4:$((${#} - 3))}" ]]; then
       mpiexec_args+=("${@:4:$((${#} - 3))}")
     fi
 
-    "${CAFRUN}" "${mpiexec_args[@]}"
+    "${CAFRUN}" "${mpiexec_args[@]//''/}"
   else
     echo "You must pass \"-np\", \"<number_of_images>\", \"/path/to/coarray_Fortran_program\" as the first 3 arguments to ${cmd}."
     exit 1

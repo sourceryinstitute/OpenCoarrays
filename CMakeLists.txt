@@ -39,7 +39,7 @@ if((NOT (OpenCoarraysVersion MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+")) AND (EXISTS "$
     if((git_status STREQUAL "0") AND (git_output MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+"))
       set(OpenCoarraysVersion "${git_output}")
     endif()
-    execute_process(COMMAND "${GIT_EXECUTABLE}" describe --always --dirty
+    execute_process(COMMAND "${GIT_EXECUTABLE}" describe --always
       WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
       RESULT_VARIABLE git_status
       OUTPUT_VARIABLE full_git_describe
@@ -65,6 +65,7 @@ endif()
 
 project(opencoarrays VERSION "${OpenCoarraysVersion}" LANGUAGES C Fortran)
 message( STATUS "Building OpenCoarrays version: ${full_git_describe}" )
+set(OpenCoarrays_dist_string "OpenCoarrays-${full_git_describe}")
 
 #Print an error message on an attempt to build inside the source directory tree:
 if ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
@@ -81,7 +82,7 @@ if ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
     "in a manner such as\n"
     "  $ mkdir build-opencarrays\n"
     "  $ cd build-opencoarrays\n"
-    "  $ CC=mpicc FC=mpif90 cmake <path-to-opencoarrays-source-directory> -DCMAKE_INSTALL_PREFIX=<path-to-install-directory>\n"
+    "  $ CC=gcc FC=gfortran cmake -DBUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/path/to/install/dir /path/to/opencoarrays/src/dir \n"
     "\nsubstituting the appropriate syntax for your shell (the above line assumes the bash shell)."
     )
 endif()
@@ -89,11 +90,10 @@ endif()
 #Report untested Fortran compiler unless explicitly directed to build all examples.
 if ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "GNU" )
   set(gfortran_compiler true)
-  # add_definitions(-DPREFIX_NAME=_gfortran_caf_)
   set ( CMAKE_C_FLAGS_CODECOVERAGE "-fprofile-arcs -ftest-coverage -O0"
     CACHE STRING "Code coverage C compiler flags")
   set ( CMAKE_Fortran_FLAGS_CODECOVERAGE "-fprofile-arcs -ftest-coverage -O0"
-    CACHE STRING "Code coverage C compiler flags")
+    CACHE STRING "Code coverage Fortran compiler flags")
 else()
   message(WARNING
     "\n"
@@ -151,7 +151,7 @@ endif()
     set(opencoarrays_aware_compiler false)
     add_definitions(-DPREFIX_NAME=_caf_extensions_)
   endif()
-  if(gfortran_compiler AND (CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 5.4))
+  if(gfortran_compiler AND (CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 5.4.0))
     # GCC patch to fix issue accepted for 5.4 release
     # See https://github.com/sourceryinstitute/opencoarrays/issues/28 and
     # https://groups.google.com/forum/#!msg/opencoarrays/RZOwwYTqG80/46S9eL696dgJ
@@ -164,6 +164,9 @@ endif()
   endif()
   if ( gfortran_compiler AND ( NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0 ) )
     add_definitions(-DGCC_GE_7) # Tell library to build against GFortran 7.x bindings b/c we might be using clang for C
+  endif()
+  if ( gfortran_compiler AND ( NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 8.0.0 ) )
+    add_definitions(-DGCC_GE_8) # Tell library to build against GFortran 8.x bindings w/ descriptor change
   endif()
 
 if(gfortran_compiler)
@@ -188,7 +191,7 @@ endif()
 # Find MPI and set some flags so that FC and CC can point to gfortran and gcc
 #----------------------------------------------------------------------------
 
-# If the user passes FC=mpif90 etc. check and prefer that location
+# If the user passes FC=mpifort etc. check and prefer that location
 get_filename_component( FTN_COMPILER_NAME "${CMAKE_Fortran_COMPILER}"
   NAME )
 get_filename_component( C_COMPILER_NAME "${CMAKE_C_COMPILER}"
@@ -222,12 +225,13 @@ if ( (NOT MPI_C_FOUND) OR (NOT MPI_Fortran_FOUND) OR (NOT MPIEXEC))
   set ( MPI_HOME "${MPI_HOME}" "${MY_MPI_EXEC}" "${MY_MPI_EXEC}/.." )
   find_package( MPI REQUIRED )
 endif()
+list(REMOVE_DUPLICATES MPI_Fortran_INCLUDE_PATH)
 
 # Test for consistent MPI environment
 if (NOT MPIEXEC)
   message ( ERROR "CMake failed to find `mpiexec` or similar. If building with `./install.sh` please
 report this bug to the OpenCoarrays developers at
-https://github.com/sourceryinstitute/opencoarrays/issues, otherwise use point CMake
+https://github.com/sourceryinstitute/opencoarrays/issues, otherwise point CMake
 to the desired MPI runtime.")
 endif()
 
@@ -423,6 +427,67 @@ include_directories(BEFORE ${MPI_C_INCLUDE_PATH} ${MPI_Fortran_INCLUDE_PATH})
 # Use standardized GNU install directory conventions
 #---------------------------------------------------
 include(GNUInstallDirs)
+set(mod_dir_tail "${OpenCoarrays_dist_string}_${CMAKE_Fortran_COMPILER_ID}-${CMAKE_Fortran_COMPILER_VERSION}")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/${OpenCoarrays_dist_string}-tests")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}")
+
+#---------------------------------------------------
+# Define macro for compiling with caf wrapper script
+#---------------------------------------------------
+function(caf_compile_executable target main_depend)
+  foreach(includedir IN LISTS MPI_Fortran_INCLUDE_PATH)
+    set(includes ${includes} -I ${includedir})
+  endforeach()
+  string(TOUPPER "${CMAKE_BUILD_TYPE}" build_type)
+  separate_arguments(config_Fortran_flags UNIX_COMMAND "${CMAKE_Fortran_FLAGS_${build_type}}")
+  get_directory_property( DirDefs DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" COMPILE_DEFINITIONS )
+  set(localDefs "")
+  foreach(d ${DirDefs})
+    list(APPEND localDefs "-D${d}")
+  endforeach()
+  add_custom_command(OUTPUT "${target}"
+    COMMAND "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf" ${includes} ${localDefs} ${config_Fortran_flags} -o "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target}" "${CMAKE_CURRENT_SOURCE_DIR}/${main_depend}" ${ARGN}
+    DEPENDS "${main_depend}" ${ARGN} caf_mpi_static
+    VERBATIM
+    )
+  add_custom_target("build_${target}" ALL
+    DEPENDS "${target}")
+endfunction(caf_compile_executable)
+
+enable_testing()
+
+#--------------------------------------------------------
+# Setup shellcheck if present for testing/linting scripts
+#--------------------------------------------------------
+find_program(SHELLCHECK_EXE shellcheck
+  DOC "Path to shellcheck executable for linting scripts"
+  )
+if (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER})
+  if(NOT SHELLCHECK_EXE)
+    message( AUTHOR_WARNING "OpenCoarrays developers should install shellcheck to test/lint all shell scripts.
+    See https://github.com/koalaman/shellcheck#installing for info on obtaining shellcheck.")
+  endif()
+endif()
+
+function(lint_script script_dir script_name)
+  if (SHELLCHECK_EXE)
+    add_test(NAME "shellcheck:${script_name}"
+      COMMAND ${SHELLCHECK_EXE} -x "${script_dir}/${script_name}"
+      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+  elseif (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER})
+    message( AUTHOR_WARNING "test: shellcheck:${script_name} not run because shellcheck not installed." )
+  endif()
+endfunction()
+
+#-----------------------------------------------
+# Setup script style testing & enforcement macro
+#-----------------------------------------------
+
+function(check_script_style script_full_path)
+  add_test(NAME "style:${script_full_path}"
+    COMMAND "${CMAKE_SOURCE_DIR}/developer-scripts/style.pl" "${script_full_path}")
+endfunction()
 
 #-------------------------------
 # Recurse into the src directory
@@ -471,11 +536,13 @@ configure_file ( "${CMAKE_SOURCE_DIR}/cmake/uninstall.cmake.in" "${CMAKE_BINARY_
 add_custom_target ( uninstall
   COMMAND ${CMAKE_COMMAND} -P "${CMAKE_BINARY_DIR}/uninstall.cmake" )
 
-enable_testing()
-
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure)
 # See JSON-Fortran's CMakeLists.txt file to find out how to get the check target to depend
 # on the test executables
+
+#---------------------------------------------------------------------------------------
+# Define macro for adding CAF tests, and ensuring proper flags are passed to MPI runtime
+#---------------------------------------------------------------------------------------
 
 # Determine if we're using Open MPI
 execute_process(COMMAND ${MPIEXEC} --version
@@ -486,140 +553,144 @@ if (mpi_version_out MATCHES "[Oo]pen[ -][Mm][Pp][Ii]")
 endif ()
 
 include( ProcessorCount )
-ProcessorCount(N)
-function(add_mpi_test name num_mpi_proc path)
-   if ( ((N LESS num_mpi_proc) OR (N EQUAL 0)) )
-     message(STATUS "Test ${name} is oversubscribed: ${num_mpi_proc} ranks requested with ${N} system processor available.")
+ProcessorCount(N_CPU)
+function(add_caf_test name num_caf_img test_target)
+   # Function to add MPI tests.
+   if ( ((N_CPU LESS num_caf_img) OR (N_CPU EQUAL 0)) )
+     message(STATUS "Test ${name} is oversubscribed: ${num_caf_img} CAF images requested with ${N_CPU} system processor available.")
      if ( openmpi )
-       if ( N LESS 2 )
-	 set( num_mpi_proc 2 )
-	 set (test_parameters --oversubscribe)
-       else()
-	 set ( num_mpi_proc ${N} )
+       if ( N_CPU LESS 2 )
+	 set( num_caf_img 2 )
        endif()
-       message( STATUS "Open-MPI detected, over-riding oversubscribed test, ${name}, with ${num_mpi_proc} ranks." )
+       set (test_parameters --oversubscribe)
+       message( STATUS "Open-MPI back end detected, passing --oversubscribe for oversubscribed test, ${name}, with ${num_caf_img} ranks/images." )
      endif()
    endif()
-   set(test_parameters ${test_parameters} ${MPIEXEC_NUMPROC_FLAG} ${num_mpi_proc} )
-   add_test(NAME ${name} COMMAND ${MPIEXEC} ${test_parameters} "${path}")
+   set(test_parameters -np ${num_caf_img} ${test_parameters})
+   add_test(NAME ${name} COMMAND "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun" ${test_parameters} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${test_target}")
    set_property(TEST ${name} PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
-endfunction(add_mpi_test)
+endfunction(add_caf_test)
 
-function(add_fault_tolerant_mpi_test name num_mpi_proc path)
-   if ( ((N LESS num_mpi_proc) OR (N EQUAL 0)) )
-     message(STATUS "Test ${name} is oversubscribed: ${num_mpi_proc} ranks requested with ${N} system processor available.")
-     if ( openmpi )
-       if ( N LESS 2 )
-	 set( num_mpi_proc 2 )
-	 set (test_parameters --oversubscribe)
-       else()
-	 set ( num_mpi_proc ${N} )
-       endif()
-       message( STATUS "Open-MPI detected, over-riding oversubscribed test, ${name}, with ${num_mpi_proc} ranks." )
-     endif()
-   endif()
-   set(test_parameters ${test_parameters} ${MPIEXEC_NUMPROC_FLAG} ${num_mpi_proc} -disable-auto-cleanup )
-   add_test(NAME ${name} COMMAND ${MPIEXEC} ${test_parameters} "${path}")
-   set_property(TEST ${name} PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
-endfunction(add_fault_tolerant_mpi_test)
-
-set(tests_root ${CMAKE_CURRENT_BINARY_DIR}/src/tests)
-
+#--------------
+# Add OCA tests
+#--------------
 
 if(opencoarrays_aware_compiler)
   if (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER})
     message ( STATUS "Running Developer tests is enabled." )
   endif()
   # Unit tests targeting each libcaf_mpi function, argument, and branch of code
-  add_mpi_test(initialize_mpi 2 ${tests_root}/unit/init_register/initialize_mpi)
-  add_mpi_test(register 2 ${tests_root}/unit/init_register/register)
-  add_mpi_test(register_vector 2 ${tests_root}/unit/init_register/register_vector)
-  add_mpi_test(register_alloc_vector 2 ${tests_root}/unit/init_register/register_alloc_vector)
-  add_mpi_test(allocate_as_barrier 2 ${tests_root}/unit/init_register/allocate_as_barrier)
-  add_mpi_test(allocate_as_barrier_proc 8 ${tests_root}/unit/init_register/allocate_as_barrier_proc)
-  if (gfortran_compiler AND (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7))
-    add_mpi_test(register_alloc_comp_1 2 ${tests_root}/unit/init_register/register_alloc_comp_1)
-    add_mpi_test(register_alloc_comp_2 2 ${tests_root}/unit/init_register/register_alloc_comp_2)
-    add_mpi_test(register_alloc_comp_3 2 ${tests_root}/unit/init_register/register_alloc_comp_3)
-    add_mpi_test(async_comp_alloc 6 ${tests_root}/unit/init_register/async_comp_alloc)
+  add_caf_test(initialize_mpi 2 initialize_mpi)
+  add_caf_test(register 2 register)
+  add_caf_test(register_vector 2 register_vector)
+  add_caf_test(register_alloc_vector 2 register_alloc_vector)
+  add_caf_test(allocate_as_barrier 2 allocate_as_barrier)
+  add_caf_test(allocate_as_barrier_proc 8 allocate_as_barrier_proc)
+  if (gfortran_compiler AND (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
+    message( STATUS "Allocatable components of coarray derived types only supported in GFortran >= 7 with OpenCoarrays > 1.8.4" )
+    message( STATUS "(but full support not anticipated until OpenCoarrays 2.0 release)" )
+    if (CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0)
+      message( AUTHOR_WARNING "Allocatable components of coarray derived type developer tests enabled, despite lack of support in GFortran < 7\n These tests should fail." )
+    endif()
+    add_caf_test(register_alloc_comp_1 2 register_alloc_comp_1)
+    add_caf_test(register_alloc_comp_2 2 register_alloc_comp_2)
+    add_caf_test(register_alloc_comp_3 2 register_alloc_comp_3)
+    add_caf_test(async_comp_alloc 6 async_comp_alloc)
+    add_caf_test(async_comp_alloc_2 2 async_comp_alloc_2)
+    add_caf_test(comp_allocated_1 2 comp_allocated_1)
+    add_caf_test(comp_allocated_2 2 comp_allocated_2)
   endif()
-  add_mpi_test(get_array 2 ${tests_root}/unit/send-get/get_array)
-  add_mpi_test(get_self 2 ${tests_root}/unit/send-get/get_self)
-  add_mpi_test(send_array 2 ${tests_root}/unit/send-get/send_array)
-  add_mpi_test(get_with_offset_1d 2 ${tests_root}/unit/send-get/get_with_offset_1d)
-  add_mpi_test(whole_get_array 2 ${tests_root}/unit/send-get/whole_get_array)
-  add_mpi_test(strided_get 2 ${tests_root}/unit/send-get/strided_get)
-  add_mpi_test(strided_sendget 3 ${tests_root}/unit/send-get/strided_sendget)
-  add_mpi_test(co_sum 4 ${tests_root}/unit/collectives/co_sum_test)
-  add_mpi_test(co_broadcast 4 ${tests_root}/unit/collectives/co_broadcast_test)
-  add_mpi_test(co_min 4 ${tests_root}/unit/collectives/co_min_test)
-  add_mpi_test(co_max 4 ${tests_root}/unit/collectives/co_max_test)
-  add_mpi_test(syncall 8 ${tests_root}/unit/sync/syncall)
-  add_mpi_test(syncimages 8 ${tests_root}/unit/sync/syncimages)
-  add_mpi_test(syncimages2 8 ${tests_root}/unit/sync/syncimages2)
-  add_mpi_test(duplicate_syncimages 8 ${tests_root}/unit/sync/duplicate_syncimages)
-  add_mpi_test(co_reduce 4 ${tests_root}/unit/collectives/co_reduce_test)
-  add_mpi_test(co_reduce_res_im 4 ${tests_root}/unit/collectives/co_reduce_res_im)
-  add_mpi_test(syncimages_status 8 ${tests_root}/unit/sync/syncimages_status)
-  add_mpi_test(sync_ring_abort_np3 3 ${tests_root}/unit/sync/sync_image_ring_abort_on_stopped_image)
-  add_mpi_test(sync_ring_abort_np7 7 ${tests_root}/unit/sync/sync_image_ring_abort_on_stopped_image)
-  add_mpi_test(simpleatomics 8 ${tests_root}/unit/simple/atomics)
+  add_caf_test(get_array 2 get_array)
+  add_caf_test(get_self 2 get_self)
+  add_caf_test(send_array 2 send_array)
+  add_caf_test(get_with_offset_1d 2 get_with_offset_1d)
+  add_caf_test(whole_get_array 2 whole_get_array)
+  add_caf_test(strided_get 2 strided_get)
+  add_caf_test(strided_sendget 3 strided_sendget)
+  add_caf_test(co_sum 4 co_sum_test)
+  add_caf_test(co_broadcast 4 co_broadcast_test)
+  add_caf_test(co_min 4 co_min_test)
+  add_caf_test(co_max 4 co_max_test)
+  add_caf_test(syncall 8 syncall)
+  add_caf_test(syncimages 8 syncimages)
+  add_caf_test(syncimages2 8 syncimages2)
+  add_caf_test(duplicate_syncimages 8 duplicate_syncimages)
+  add_caf_test(co_reduce 4 co_reduce_test)
+  add_caf_test(co_reduce_res_im 4 co_reduce_res_im)
+  add_caf_test(co_reduce_string 4 co_reduce_string)
+  add_caf_test(syncimages_status 8 syncimages_status)
+  add_caf_test(sync_ring_abort_np3 3 sync_image_ring_abort_on_stopped_image)
+  add_caf_test(sync_ring_abort_np7 7 sync_image_ring_abort_on_stopped_image)
+  add_caf_test(simpleatomics 8 atomics)
   # possible logic error in the following test
-#  add_mpi_test(increment_my_neighbor 32 ${tests_root}/unit/simple/increment_my_neighbor)
+#  add_caf_test(increment_my_neighbor 32 increment_my_neighbor)
 
   # Integration tests verifying the use of libcaf_mpi in applications
-  add_mpi_test(hello_multiverse 2 ${tests_root}/integration/coarrayHelloWorld/hello_multiverse)
-  add_mpi_test(coarray_burgers_pde 2 ${tests_root}/integration/pde_solvers/coarrayBurgers/coarray_burgers_pde)
-  add_mpi_test(co_heat 2 ${tests_root}/integration/pde_solvers/coarrayHeatSimplified/co_heat)
-  add_mpi_test(asynchronous_hello_world 3 ${tests_root}/integration/events/asynchronous_hello_world)
+  add_caf_test(hello_multiverse 2 hello_multiverse)
+  add_caf_test(coarray_burgers_pde 2 coarray_burgers_pde)
+  add_caf_test(co_heat 2 co_heat)
+  add_caf_test(asynchronous_hello_world 3 asynchronous_hello_world)
 
   # Regression tests based on reported issues
-  if(gfortran_compiler AND (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0))
-    # GFortran PR 78505 only fixed on trunk/gcc 7
-    add_mpi_test(source-alloc-no-sync 8 ${tests_root}/regression/reported/source-alloc-sync)
+  if((gfortran_compiler AND (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0)) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
+    if( CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0 )
+      message( AUTHOR_WARNING "Developer tests requested and GFortran < 7: test source-alloc-no-sync may fail" )
+    endif()
+    # GFortran PR 78505 only fixed on trunk/gcc 7, issue #243
+    add_caf_test(source-alloc-no-sync 8 source-alloc-sync)
   endif()
-  if (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER})
-    add_mpi_test(convert-before-put 3 ${tests_root}/regression/reported/convert-before-put)
+
+  # Open GCC 7 regressions
+  if ((CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}) OR (gfortran_compiler AND (CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0)))
+    add_caf_test(convert-before-put 3 convert-before-put)
+    add_caf_test(put-alloc-comp 2 issue-422-send)
+    add_caf_test(get-put-alloc-comp 3 issue-422-send-get)
   endif()
-  add_mpi_test(event-post 3 ${tests_root}/regression/reported/event-post)
-  add_mpi_test(co_reduce-factorial 4 ${tests_root}/regression/reported/co_reduce-factorial)
-  add_mpi_test(co_reduce-factorial-int8 4 ${tests_root}/regression/reported/co_reduce-factorial-int8)
-  add_mpi_test(co_reduce-factorial-int64 4 ${tests_root}/regression/reported/co_reduce-factorial-int64)
-  add_mpi_test(co_reduce_string 4 ${tests_root}/unit/collectives/co_reduce_string)
+
+  add_caf_test(allocatable_p2p_event_post 4 allocatable_p2p_event_post)
+  # Fixed GCC 7 regressions, should run on GCC 6 and 7
+  add_caf_test(static_event_post_issue_293 3 static_event_post_issue_293)
+
+  # These co_reduce (#172, fixed by PR #332, addl discussion in PR
+  # #331) tests are for bugs not regressions. Should be fixed in all
+  # version of GCC, I beleive
+  add_caf_test(co_reduce-factorial 4 co_reduce-factorial)
+  add_caf_test(co_reduce-factorial-int8 4 co_reduce-factorial-int8)
+  add_caf_test(co_reduce-factorial-int64 4 co_reduce-factorial-int64)
 
   # IMAGE FAIL tests
-  if(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7)
-    add_mpi_test(image_status_test_1 4 ${tests_root}/unit/fail_images/image_status_test_1)
+  if(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0)
+    add_caf_test(image_status_test_1 4 image_status_test_1)
     if(CAF_ENABLE_FAILED_IMAGES)
-      # No other way to check that image_fail_test_1 passes.
-      if ((NOT $ENV{TRAVIS}) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
-	add_fault_tolerant_mpi_test(image_fail_test_1 4 ${tests_root}/unit/fail_images/image_fail_test_1)
+      if ((NOT DEFINED ENV{TRAVIS}) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
+	add_caf_test(image_fail_test_1 4 image_fail_test_1)
 	set_property(TEST image_fail_test_1 PROPERTY FAIL_REGULAR_EXPRESSION "Test failed.")
-	add_fault_tolerant_mpi_test(image_fail_and_sync_test_1 4 ${tests_root}/unit/fail_images/image_fail_and_sync_test_1)
-        add_fault_tolerant_mpi_test(image_fail_and_sync_test_2 4 ${tests_root}/unit/fail_images/image_fail_and_sync_test_2)
+	# No other way to check that image_fail_test_1 passes.
+	add_caf_test(image_fail_and_sync_test_1 4 image_fail_and_sync_test_1)
+        add_caf_test(image_fail_and_sync_test_2 4 image_fail_and_sync_test_2)
 
-	add_fault_tolerant_mpi_test(image_fail_and_sync_test_3 4 ${tests_root}/unit/fail_images/image_fail_and_sync_test_3)
-	add_fault_tolerant_mpi_test(image_fail_and_status_test_1 4 ${tests_root}/unit/fail_images/image_fail_and_status_test_1)
-	add_fault_tolerant_mpi_test(image_fail_and_failed_images_test_1 4 ${tests_root}/unit/fail_images/image_fail_and_failed_images_test_1)
-	add_fault_tolerant_mpi_test(image_fail_and_stopped_images_test_1 4 ${tests_root}/unit/fail_images/image_fail_and_stopped_images_test_1)
-	add_fault_tolerant_mpi_test(image_fail_and_get_test_1 4 ${tests_root}/unit/fail_images/image_fail_and_get_test_1)
+	add_caf_test(image_fail_and_sync_test_3 4 image_fail_and_sync_test_3)
+	add_caf_test(image_fail_and_status_test_1 4 image_fail_and_status_test_1)
+	add_caf_test(image_fail_and_failed_images_test_1 4 image_fail_and_failed_images_test_1)
+	add_caf_test(image_fail_and_stopped_images_test_1 4 image_fail_and_stopped_images_test_1)
+	add_caf_test(image_fail_and_get_test_1 4 image_fail_and_get_test_1)
       endif()
     endif()
   endif()
 else()
-  add_test(co_sum_extension ${tests_root}/unit/extensions/test-co_sum-extension.sh)
+  add_test(co_sum_extension test-co_sum-extension.sh)
   set_property(TEST co_sum_extension PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
 
-  add_test(co_broadcast_extension ${tests_root}/unit/extensions/test-co_broadcast-extension.sh)
+  add_test(co_broadcast_extension test-co_broadcast-extension.sh)
   set_property(TEST co_broadcast_extension PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
 
-  add_test(co_min_extension ${tests_root}/unit/extensions/test-co_min-extension.sh)
+  add_test(co_min_extension test-co_min-extension.sh)
   set_property(TEST co_min_extension PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
 
-  add_test(co_max_extension ${tests_root}/unit/extensions/test-co_max-extension.sh)
+  add_test(co_max_extension test-co_max-extension.sh)
   set_property(TEST co_max_extension PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
 
-  add_test(co_reduce_extension ${tests_root}/unit/extensions/test-co_reduce-extension.sh)
+  add_test(co_reduce_extension test-co_reduce-extension.sh)
   set_property(TEST co_reduce_extension PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
 endif()
 

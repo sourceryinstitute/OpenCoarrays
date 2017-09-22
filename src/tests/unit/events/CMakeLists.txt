@@ -1,0 +1,2 @@
+caf_compile_executable(allocatable_p2p_event_post allocatable_p2p_event_post.f90)
+caf_compile_executable(static_event_post_issue_293 static_event_post_issue_293.f90)

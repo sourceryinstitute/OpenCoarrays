@@ -36,18 +36,18 @@ This pull request (PR) is a:
 
 ### I certify that ###
 
-- [ ] I have reviewed the [contributing guidelines] and followed the
-      policies on:
-      - Pull request (PR) naming to indicate work in progress (WIP),
-        and to attach the PR to the appropriate bug report, or feature
-        request [issue]
+- [ ] I reviewed and followed the [contributing guidelines], including
+      - Increasing test coverage for all feature-addition PRs
+      - Increasing test coverage for all bug-fix PRs for which there
+        does not already exist a related test that failed before the PR
+      - At least maintaining test coverage for all other PRs
+      - Ensuring that all tests pass when run locally 
+      - Naming PR  to indicate work in progress (WIP) and to attach the PR
+        to the appropriate bug report or feature request [issue]
       - White space (no trailing white space or white space errors may
         be introduced)
       - Commenting code where it is non-obvious and non-trivial
-      - Running tests locally, to ensure all of them pass
-      - Maintaining or increasing test coverage
       - Logically atomic, self consistent and coherent commits
       - Commit message content
-      - Waiting 24 hours before self-approving the pull request to
-        give another OpenCoarrays developer a chance to review my
-        proposed code
+      - Waiting 24 hours before self-approving the PR to give another
+        OpenCoarrays developer a chance to review my proposed code

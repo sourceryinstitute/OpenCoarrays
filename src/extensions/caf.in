@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# OpenCoarrays version @PROJECT_VERSION@
+# OpenCoarrays version @CAF_VERSION@
 #
 # Coarray Fortran (CAF) Compiler Wrapper
 #
@@ -49,12 +49,12 @@ set -o pipefail
 #---------------------------
 # List of variables needing configuration:
 #
-# @PROJECT_VERSION@ @opencoarrays_aware_compiler@ @Fortran_COMPILER@ @CAF_MODDIR@
-# @MOD_DIR_FLAG@ @MPI_Fortran_LINK_FLAGS@ @MPI_Fortran_COMPILE_FLAGS@
-# @CAF_LIBS@ @MPI_LIBS@ @MPI_INCLUDES@ @prefix@
+# CAF_VERSION, opencoarrays_aware_compiler, Fortran_COMPILER, CAF_MODDIR,
+# MPI_Fortran_LINK_FLAGS, MPI_Fortran_COMPILE_FLAGS,
+# CAF_LIBS, MPI_LIBS
 #
 
-caf_version='@PROJECT_VERSION@' # fetched from `git describe` and/or
+caf_version='@CAF_VERSION@' # fetched from `git describe` and/or
 # `.VERSION` file
 oca_compiler="@opencoarrays_aware_compiler@" # True for GFortran > 5.0.0
 
@@ -64,10 +64,8 @@ if [[ "${cafc}" == @*@ ]]; then
   cafc=gfortran
 fi
 caf_mod_dir="@CAF_MODDIR@"    # location of extensions module, needed for non-OCA compilers
-mod_dir_flag='@MOD_DIR_FLAG@' # For GFortran this is -J, but defaulting to -I is usually safe
-if [[ "${mod_dir_flag}" == @*@ ]]; then
-  mod_dir_flag="-I"
-fi
+mod_dir_flag="-I"
+
 
 # Ideally these should be absolute paths. Since they are array
 # variables multiple libs (absolute or not) can be specified provided
@@ -81,15 +79,12 @@ fi
 # pkg-config output *should* __ALREADY__ handle word splitting, and
 # variables expanded from CMake should be appropriately quoted.
 
-# This isn't needed
-# mpi_includes=(@MPI_INCLUDES@) # e.g. `pkg-config --cflags-only-I
-#                               # mpich`
+# shellcheck disable=SC2054
 mpi_link_flags=(@MPI_Fortran_LINK_FLAGS@) # e.g. `pkg-config
 # --libs-only-other mpich`
 # __*AND*__ `pkg-config
 # --libs-only-L`
 mpi_compile_flags=(@MPI_Fortran_COMPILE_FLAGS@)
-prefix=@prefix@
 caf_libs=(@CAF_LIBS@) # e.g. "libcaf_mpi" "libcaf_extensions",
 # preferably full paths, but could be
 # combination of -L... and -lcaf_mpi...
@@ -122,38 +117,88 @@ __file="${__dir}/$(basename "${BASH_SOURCE[${__caf_tmp_source_idx:-0}]}")"
 __base="$(basename "${__file}")"
 cmd="${__base}"
 
+# Set installation prefix. Compute this dynamically assuming this script is in a bin/ subdir
+# Dereference symbolic links and canonicalize (i.e., abs path) prefix in case stow, homebrew, etc being used
+# mac OS doesn't have readlink -f, so need to crawl symlinks manually.
+# See: https://stackoverflow.com/questions/1055671/how-can-i-get-the-behavior-of-gnus-readlink-f-on-a-mac
+current_dir="${PWD}"
+cd "${__dir}"
+  target_file="${__file}"
+  max_iter=1000
+  iter=0
+  while [[ -L "${target_file}" ]]; do
+    target_file="$(readlink "${target_file}")"
+    cd "$(dirname "${target_file}")"
+    target_file="$(basename "${target_file}")"
+    if ((++iter >= max_iter)); then
+      echo "Failed to compute OpenCoarrays instalation prefix!" >&2
+      echo "Likely cause: circular symlink cycles." >&2
+      echo "Aborting!" >&2
+      exit 200
+    fi
+  done
+  true_dir="$(pwd -P)"
+  true_dir="${true_dir%/}"
+  # shellcheck disable=SC2034
+  prefix="${true_dir%/bin}"
+  # echo "Install prefix is ${prefix}" # for debugging
+cd "${current_dir}"
+# echo "Current directory is $(pwd)"
+# echo "This script is in ${__dir}"
+
+# Error tracing
 # requires `set -o errtrace`
 __caf_err_report() {
   local error_code
   error_code=${?}
-  error "Error in ${__file} in function ${1} on line ${2}. Please report this error at http://bit.ly/OpenCoarrays-new-issue"
+  echo "Error in ${__file} in function ${1} on line ${2}. Please report this error at http://bit.ly/OpenCoarrays-new-issue" >&2
   exit ${error_code}
 }
 # Always provide an error backtrace
 trap '__caf_err_report "${FUNCNAME:-.}" ${LINENO}' ERR
+
+# See if we are compiling or compiling and/or linking
+__only_compiling () {
+    for arg in "${@}"; do
+      if [[ "${arg}" == "-c" ]]; then
+        return 0
+      fi
+    done
+    return 1
+}
 
 #--------------------------------------------------------------------------
 # End configured variables, now process them and build compile/link command
 #--------------------------------------------------------------------------
 
 # Always make extensions module available, user can choose whether to `use` it or not
-caf_pre_flags=("${mod_dir_flag}${caf_mod_dir}")
+caf_pre_flags=("${mod_dir_flag}${prefix%/}/${caf_mod_dir}")
 
 if [[ "${oca_compiler}" == true ]]; then
-  caf_pre_flags+=('-fcoarray=lib')
+  if [[ -z "${caf_pre_flags[*]:-}" ]]; then
+    caf_pre_flags=('-fcoarray=lib')
+  else
+    caf_pre_flags+=('-fcoarray=lib')
+  fi
 fi
-for compileflag in "${mpi_compile_flags[@]}"; do
-  caf_pre_flags+=("${compileflag}")
-done
-for linkflag in "${mpi_link_flags[@]}"; do
-  caf_pre_flags+=("${linkflag}")
-done
+if [[ -n "${mpi_compile_flags[*]:-}" ]]; then
+  for compileflag in "${mpi_compile_flags[@]:-}"; do
+      caf_pre_flags+=("${compileflag}")
+  done
+fi
+if [[ -n "${mpi_link_flags[*]:-}" ]]; then
+  if ! __only_compiling "${@}"; then
+    for linkflag in "${mpi_link_flags[@]:-}"; do
+      caf_pre_flags+=("${linkflag}")
+    done
+  fi
+fi
 
 # Now do libraries, IN CORRECT ORDER, to append to command
-for lib in "${caf_libs[@]}"; do
-  caf_added_libs+=("${lib}")
+for lib in "${caf_libs[@]:-}"; do
+  caf_added_libs+=("${prefix%/}/${lib}")
 done
-for lib in "${mpi_libs[@]}"; do
+for lib in "${mpi_libs[@]:-}"; do
   caf_added_libs+=("${lib}")
 done
 
@@ -222,6 +267,7 @@ if [[ ${1} == -[vV] || ${1} == '--version' ]]; then
   echo "BSD 3-Clause License.  For more information about these matters, see"
   echo "the file named LICENSE that is distributed with OpenCoarrays."
   echo ""
+  exit 0
 elif [[ ${1} == '-w' || ${1} == '--wraps' || ${1} == '--wrapping' ]]; then
   echo "${cmd} wraps ${cafc}"
   exit 0
@@ -238,7 +284,9 @@ elif [[ ${1} == '-s' || ${1} == '--show' ]]; then
     compiler_args+=("${args}")
   fi
   if [[ "${caf_added_libs[*]:-}" ]]; then
-    compiler_args+=("${caf_added_libs[@]}")
+    if ! __only_compiling "${@}"; then
+      compiler_args+=("${caf_added_libs[@]}")
+    fi
   fi
   echo "${cafc}" "${compiler_args[@]}"
   exit 0
@@ -268,11 +316,21 @@ if [[ "${caf_pre_flags[*]:-}" ]]; then
   compiler_args=("${caf_pre_flags[@]}")
 fi
 if [[ "${*:-}" ]]; then
-  fompiler_args+=("${@}")
+  compiler_args+=("${@}")
 fi
 if [[ "${caf_added_libs[*]:-}" ]]; then
-  compiler_args+=("${caf_added_libs[@]}")
+  if ! __only_compiling "${@}" ; then
+    compiler_args+=("${caf_added_libs[@]}")
+  fi
 fi
-#set -o verbose # Show what we're doing
-"${cafc}" "${@}" "${compiler_args[@]}"
-set +o verbose
+#set -o xtrace # Show what we're doing
+set +o errtrace
+set +o errexit
+if "${cafc}" "${compiler_args[@]}" ; then
+  exit 0
+else
+  echo "Error: comand:" >&2
+  echo "   \`${cafc} ${compiler_args[*]}\`" >&2
+  echo "failed to compile." >&2
+  exit 12
+fi

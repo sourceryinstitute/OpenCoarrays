@@ -29,7 +29,7 @@
 ! OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ! Comments preceded by "!!" are formatted for the FORD docoumentation generator
-program main
+program static_event_post_issue_293
   !! author: Damian Rouson
   !! date: 2016-12-22
   !! category: regression
@@ -39,7 +39,7 @@ program main
   implicit none
   type(event_type) :: test_post[*]
 
-  if (num_images()<3) error stop "exposing issue 293 requires num_images()>=3"
+  if (num_images()<3) error stop "exposing issue 293 requires num_images() >= 3"
   event post(test_post)
   if (this_image()==1) print *,"Test passed."
 

@@ -9,7 +9,7 @@ report_results()
   compiler_install_root="${fully_qualified_FC%bin/gfortran*}"
 
   fully_qualified_MPIFC="$(type -P "${MPIFC}")"
-  mpi_install_root="${fully_qualified_MPIFC%bin/mpif90*}"
+  mpi_install_root="${fully_qualified_MPIFC%bin/mpifort*}"
 
   fully_qualified_CMAKE="$(type -P "${CMAKE}")"
   cmake_install_path="${fully_qualified_CMAKE%/cmake*}"
@@ -71,7 +71,7 @@ report_results()
       echo "set LD_LIBRARY_PATH = (\"${compiler_lib_paths%/}\"/bin \"\$LD_LIBRARY_PATH\") " >> setup.csh
     fi
     echo "                                                                       " >> setup.sh
-    if [[ -x "${mpi_install_root}/bin/mpif90" ]]; then
+    if [[ -x "${mpi_install_root}/bin/mpifort" ]]; then
       echo "# Prepend the MPI path to the PATH environment variable:" | tee -a setup.sh setup.csh
       echo "if [[ -z \"\${PATH}\" ]]; then                                         " >> setup.sh
       echo "  export PATH=\"${mpi_install_root%/}/bin\"                        " >> setup.sh
