@@ -492,9 +492,12 @@ endfunction()
 # Setup script style testing & enforcement macro
 #-----------------------------------------------
 
+find_program(style_pl style.pl "${CMAKE_SOURCE_DIR}/developer-scripts/")
 function(check_script_style script_full_path)
-  add_test(NAME "style:${script_full_path}"
-    COMMAND "${CMAKE_SOURCE_DIR}/developer-scripts/style.pl" "${script_full_path}")
+  if(style_pl)
+    add_test(NAME "style:${script_full_path}"
+      COMMAND "${style_pl}" "${script_full_path}")
+  endif()
 endfunction()
 
 #-------------------------------
