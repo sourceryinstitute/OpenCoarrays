@@ -470,64 +470,64 @@ failed_stopped_errorhandler_function (MPI_Comm* pcomm, int* perr, ...)
 
   num_images_failed += num_failed_in_group;
 
-  if (!no_stopped_images_check_in_errhandler)
-    {
-      int buffer, flag;
-      MPI_Request req;
-      MPI_Status request_status;
-      dprint ("%d/%d: Checking for stopped images.\n", caf_this_image,
-              caf_num_images);
-      ierr = MPI_Irecv (&buffer, 1, MPI_INT, MPI_ANY_SOURCE, MPI_TAG_CAF_SYNC_IMAGES,
-                        CAF_COMM_WORLD, &req);
-      if (ierr == MPI_SUCCESS)
-        {
-          ierr = MPI_Test (&req, &flag, &request_status);
-          if (flag)
-            {
-              // Received a result
-              if (buffer == STAT_STOPPED_IMAGE)
-                {
-                  dprint ("%d/%d: Image #%d found stopped.\n",
-                          caf_this_image, caf_num_images, request_status.MPI_SOURCE);
-                  stopped = true;
-                  if (image_stati[request_status.MPI_SOURCE] == 0)
-                    ++num_images_stopped;
-                  image_stati[request_status.MPI_SOURCE] = STAT_STOPPED_IMAGE;
-                }
-            }
-          else
-            {
-              dprint ("%d/%d: No stopped images found.\n",
-                      caf_this_image, caf_num_images);
-              MPI_Cancel (&req);
-            }
-        }
-      else
-        {
-          int err;
-          MPI_Error_class (ierr, &err);
-          dprint ("%d/%d: Error on checking for stopped images %d.\n",
-                  caf_this_image, caf_num_images, err);
-        }
-    }
+  /* if (!no_stopped_images_check_in_errhandler) */
+  /*   { */
+  /*     int buffer, flag; */
+  /*     MPI_Request req; */
+  /*     MPI_Status request_status; */
+  /*     dprint ("%d/%d: Checking for stopped images.\n", caf_this_image, */
+  /*             caf_num_images); */
+  /*     ierr = MPI_Irecv (&buffer, 1, MPI_INT, MPI_ANY_SOURCE, MPI_TAG_CAF_SYNC_IMAGES, */
+  /*                       CAF_COMM_WORLD, &req); */
+  /*     if (ierr == MPI_SUCCESS) */
+  /*       { */
+  /*         ierr = MPI_Test (&req, &flag, &request_status); */
+  /*         if (flag) */
+  /*           { */
+  /*             // Received a result */
+  /*             if (buffer == STAT_STOPPED_IMAGE) */
+  /*               { */
+  /*                 dprint ("%d/%d: Image #%d found stopped.\n", */
+  /*                         caf_this_image, caf_num_images, request_status.MPI_SOURCE); */
+  /*                 stopped = true; */
+  /*                 if (image_stati[request_status.MPI_SOURCE] == 0) */
+  /*                   ++num_images_stopped; */
+  /*                 image_stati[request_status.MPI_SOURCE] = STAT_STOPPED_IMAGE; */
+  /*               } */
+  /*           } */
+  /*         else */
+  /*           { */
+  /*             dprint ("%d/%d: No stopped images found.\n", */
+  /*                     caf_this_image, caf_num_images); */
+  /*             MPI_Cancel (&req); */
+  /*           } */
+  /*       } */
+  /*     else */
+  /*       { */
+  /*         int err; */
+  /*         MPI_Error_class (ierr, &err); */
+  /*         dprint ("%d/%d: Error on checking for stopped images %d.\n", */
+  /*                 caf_this_image, caf_num_images, err); */
+  /*       } */
+  /* 	} */
 
-  /* TODO: Consider whether removing the failed image from images_full will be
-   * necessary. This is more or less politics. */
-  for (i = 0; i < num_failed_in_group; ++i)
-    {
-      if (ranks_of_failed_in_comm_world[i] >= 0
-          && ranks_of_failed_in_comm_world[i] < caf_num_images)
-        {
-          if (image_stati[ranks_of_failed_in_comm_world[i]] == 0)
-            image_stati[ranks_of_failed_in_comm_world[i]] = STAT_FAILED_IMAGE;
-        }
-      else
-        {
-          dprint ("%d/%d: Rank of failed image %d out of range of images 0..%d.\n",
-                  caf_this_image, caf_num_images, ranks_of_failed_in_comm_world[i],
-                  caf_num_images);
-        }
-    }
+  /* /\* TODO: Consider whether removing the failed image from images_full will be */
+  /*  * necessary. This is more or less politics. *\/ */
+  /* for (i = 0; i < num_failed_in_group; ++i) */
+  /*   { */
+  /*     if (ranks_of_failed_in_comm_world[i] >= 0 */
+  /*         && ranks_of_failed_in_comm_world[i] < caf_num_images) */
+  /*       { */
+  /*         if (image_stati[ranks_of_failed_in_comm_world[i]] == 0) */
+  /*           image_stati[ranks_of_failed_in_comm_world[i]] = STAT_FAILED_IMAGE; */
+  /*       } */
+  /*     else */
+  /*       { */
+  /*         dprint ("%d/%d: Rank of failed image %d out of range of images 0..%d.\n", */
+  /*                 caf_this_image, caf_num_images, ranks_of_failed_in_comm_world[i], */
+  /*                 caf_num_images); */
+  /*       } */
+  /*   } */
 
 redo:
   dprint ("%d/%d: %s: Before shrink. \n", caf_this_image, caf_num_images, __FUNCTION__);
@@ -588,6 +588,7 @@ redo:
   /* Also free the old communicator before replacing it. */
   MPI_Comm_free (pcomm);
   *pcomm = newcomm;
+  alive_comm = newcomm;
   *perr = stopped ? STAT_STOPPED_IMAGE : STAT_FAILED_IMAGE;
 }
 #endif
@@ -1464,25 +1465,25 @@ PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
     terminate_internal (ierr, 0);
 #endif
 
-  if (ierr != 0 && ierr != STAT_FAILED_IMAGE)
-    {
-      char *msg;
-      if (caf_is_finalized)
-        msg = "SYNC ALL failed - there are stopped images";
-      else
-        msg = "SYNC ALL failed";
+  /* if (ierr != 0 && ierr != STAT_FAILED_IMAGE) */
+  /*   { */
+  /*     char *msg; */
+  /*     if (caf_is_finalized) */
+  /*       msg = "SYNC ALL failed - there are stopped images"; */
+  /*     else */
+  /*       msg = "SYNC ALL failed"; */
 
-      if (errmsg_len > 0)
-        {
-          int len = ((int) strlen (msg) > errmsg_len) ? errmsg_len
-                                                      : (int) strlen (msg);
-          memcpy (errmsg, msg, len);
-          if (errmsg_len > len)
-            memset (&errmsg[len], ' ', errmsg_len-len);
-        }
-      else if (stat == NULL)
-        caf_runtime_error (msg);
-    }
+  /*     if (errmsg_len > 0) */
+  /*       { */
+  /*         int len = ((int) strlen (msg) > errmsg_len) ? errmsg_len */
+  /*                                                     : (int) strlen (msg); */
+  /*         memcpy (errmsg, msg, len); */
+  /*         if (errmsg_len > len) */
+  /*           memset (&errmsg[len], ' ', errmsg_len-len); */
+  /*       } */
+  /*     else if (stat == NULL) */
+  /*       caf_runtime_error (msg); */
+  /*   } */
   dprint ("%d/%d: Leaving sync all.\n", caf_this_image, caf_num_images);
 }
 
