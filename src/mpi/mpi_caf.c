@@ -580,6 +580,7 @@ redo:
         dprint ("%d/%d: %s: freed win img_status.\n", caf_this_image, caf_num_images, __FUNCTION__);
         MPI_Win_create (&img_status, sizeof (int), 1, mpi_info_same_size, newcomm,
                         stat_tok);
+	MPI_Win_set_errhandler (*stat_tok, MPI_ERRORS_RETURN);
         dprint ("%d/%d: %s: (re-)created win img_status.\n", caf_this_image, caf_num_images, __FUNCTION__);
         CAF_Win_lock_all (*stat_tok);
         dprint ("%d/%d: %s: Win_lock_all on img_status.\n", caf_this_image, caf_num_images, __FUNCTION__);
@@ -825,10 +826,11 @@ PREFIX (init) (int *argc, char ***argv)
 #else
       MPI_Win_create (&img_status, sizeof(int), 1, MPI_INFO_NULL, CAF_COMM_WORLD, stat_tok);
 #endif // MPI_VERSION
-
+      MPI_Win_set_errhandler (*stat_tok, MPI_ERRORS_RETURN);
       /* Create the dynamic window to allow images to asyncronously attach
        * memory. */
       MPI_Win_create_dynamic (MPI_INFO_NULL, CAF_COMM_WORLD, &global_dynamic_win);
+      MPI_Win_set_errhandler (global_dynamic_win, MPI_ERRORS_RETURN);
       CAF_Win_lock_all (global_dynamic_win);
     }
 }
@@ -1124,6 +1126,7 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
         MPI_Alloc_mem(actual_size, MPI_INFO_NULL, &mem);
         MPI_Win_create(mem, actual_size, 1, MPI_INFO_NULL, CAF_COMM_WORLD, p);
 #endif // MPI_VERSION
+	MPI_Win_set_errhandler (*p, MPI_ERRORS_RETURN);
         if (GFC_DESCRIPTOR_RANK (desc) != 0)
           mpi_token->desc = desc;
 
@@ -1225,7 +1228,7 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
   MPI_Alloc_mem(actual_size, MPI_INFO_NULL, &mem);
   MPI_Win_create(mem, actual_size, 1, MPI_INFO_NULL, CAF_COMM_WORLD, p);
 #endif // MPI_VERSION
-
+  MPI_Win_set_errhandler (*p, MPI_ERRORS_RETURN);
   if(l_var)
     {
       init_array = (int *)calloc(size, sizeof(int));
