@@ -282,6 +282,162 @@ program send_convert_int_array
       print *, co_real_k4
       if (any(abs(co_real_k4 - int_scal_k4) > tolerance4)) error stop 'send int kind=4 to real array kind=4 to image 2 failed.'
     end if
+
+    ! Now with strides
+    ! First check send/copy to self
+    if (me == 1) then
+      co_int_k1 = -1
+      co_int_k1(::2)[1] = int_k1(1:3)
+      print *, co_int_k1
+      if (any(co_int_k1 /= [int_k1(1), INT(-1, 1), int_k1(2), INT(-1, 1), int_k1(3)])) &
+        & error stop 'send strided int kind=1 to kind=1 self failed.'
+
+      co_int_k4 = -1
+      co_int_k4(::2)[1] = int_k4
+      print *, co_int_k4
+      if (any(co_int_k4 /= [int_k4(1), -1, int_k4(2), -1, int_k4(3)])) error stop 'send strided int kind=4 to kind=4 self failed.'
+
+      co_int_k4 = -2
+      co_int_k4(2::2)[1] = int_k1(4:5)
+      print *, co_int_k4
+      if (any(co_int_k4 /= [-2, int_k4(4), -2, int_k4(5), -2])) error stop 'send strided int kind=1 to kind=4 self failed.'
+
+      co_int_k1 = -2
+      co_int_k1(2::2)[1] = int_k4(4:5)
+      print *, co_int_k1
+      if (any(co_int_k1 /= [INT(-2, 1), int_k1(4), INT(-2, 1), int_k1(5), INT(-2, 1)])) &
+        & error stop 'send strided int kind=4 to kind=1 self failed.'
+    else if (me == 2) then ! Do the real copy to self checks on image 2
+      co_real_k4 = -1.0
+      co_real_k4(::2)[2] = real_k4(1:3)
+      print *, co_real_k4
+      if (any(abs(co_real_k4 - [real_k4(1), -1.0, real_k4(2), -1.0, real_k4(3)]) > tolerance4)) &
+        & error stop 'send strided real kind=4 to kind=4 self failed.'
+
+      co_real_k8 = -1.0
+      co_real_k8(::2)[2] = real_k8(1:3)
+      print *, co_real_k8
+      if (any(abs(co_real_k8 - [real_k8(1), REAL(-1.0, 8), real_k8(2), REAL(-1.0, 8), real_k8(3)]) > tolerance8)) &
+        & error stop 'send strided real kind=8 to kind=8 self failed.'
+
+      co_real_k8 = -2.0
+      co_real_k8(2::2)[2] = real_k4(4:5)
+      print *, co_real_k8, lbound(real_k8, 1)
+!      if (any(abs(co_real_k8 - [REAL(-2.0, 8), real_k8(4), REAL(-2.0, 8), real_k8(5), REAL(-2.0, 8)]) > tolerance4to8)) &
+!        & error stop 'send strided real kind=4 to kind=8 self failed.'
+
+      co_real_k4 = -2.0
+      co_real_k4(2::2)[2] = real_k8(1:2)
+      print *, co_real_k4
+      if (any(abs(co_real_k4 - [-2.0, real_k4(1), -2.0, real_k4(2), -2.0]) > tolerance4)) &
+        & error stop 'send strided real kind=8 to kind=4 self failed.'
+    end if
+
+    ! Transfer to other image now.
+    sync all
+    co_int_k4 = -1
+    co_int_k1 = INT(-1, 1)
+    co_real_k8 = -1.0
+    co_real_k4 = REAL(-1.0, 4)
+    sync all
+    if (me == 1) then
+      co_int_k4(::2)[2] = [ 15, 13, 11]
+
+      co_int_k1(::2)[2] = [INT(-15, 1), INT(-13, 1), INT(-11, 1)] 
+
+      co_real_k8(::2)[2] = [REAL(1.3, 8), REAL(1.5, 8), REAL(1.7, 8)]
+
+      co_real_k4(::2)[2] = [REAL(1.3, 4), REAL(1.5, 4), REAL(1.7, 4)]
+    end if
+
+    sync all
+    if (me == 2) then
+      print *, co_int_k4
+      if (any(co_int_k4 /= [15, -1, 13, -1, 11])) error stop 'strided send int kind=4 to kind=4 to image 2 failed.'
+
+      print *, co_int_k1
+      if (any(co_int_k1 /= [INT(-15, 1), INT(-1, 1), INT(-13, 1), INT(-1, 1), INT(-11, 1)])) &
+        & error stop 'strided send int kind=1 to kind=1 to image 2 failed.'
+
+      print *, co_real_k8
+      if (any(abs(co_real_k8 - [1.3, -1.0, 1.5, -1.0, 1.7]) > tolerance8)) &
+        & error stop 'strided send real kind=8 to kind=8 to image 2 failed.'
+
+      print *, co_real_k4
+      if (any(abs(co_real_k4 - [REAL(1.3, 4), REAL(-1.0, 4), REAL(1.5, 4), REAL(-1.0, 4), REAL(1.7, 4)]) > tolerance4)) &
+        & error stop 'strided send real kind=4 to kind=4 to image 2 failed.'
+    end if
+    
+    ! now with strides and kind conversion
+    sync all
+    co_int_k4 = -1
+    co_int_k1 = INT(-1, 1)
+    co_real_k8 = -1.0
+    co_real_k4 = REAL(-1.0, 4)
+    sync all
+    if (me == 1) then
+      co_int_k4(::2)[2] = [INT(15, 1), INT(13, 1), INT(11, 1)]
+
+      co_int_k1(::2)[2] = [-15, -13, -11] 
+
+      co_real_k8(::2)[2] = [REAL(1.3, 4), REAL(1.5, 4), REAL(1.7, 4)]
+
+      co_real_k4(::2)[2] = [REAL(1.3, 8), REAL(1.5, 8), REAL(1.7, 8)]
+    end if
+
+    sync all
+    if (me == 2) then
+      print *, co_int_k4
+      if (any(co_int_k4 /= [15, -1, 13, -1, 11])) error stop 'strided send int kind=1 to kind=4 to image 2 failed.'
+
+      print *, co_int_k1
+      if (any(co_int_k1 /= [INT(-15, 1), INT(-1, 1), INT(-13, 1), INT(-1, 1), INT(-11, 1)])) &
+        & error stop 'strided send int kind=4 to kind=1 to image 2 failed.'
+
+      print *, co_real_k8
+      if (any(abs(co_real_k8 - [1.3, -1.0, 1.5, -1.0, 1.7]) > tolerance8)) &
+        & error stop 'strided send real kind=4 to kind=8 to image 2 failed.'
+
+      print *, co_real_k4
+      if (any(abs(co_real_k4 - [REAL(1.3, 4), REAL(-1.0, 4), REAL(1.5, 4), REAL(-1.0, 4), REAL(1.7, 4)]) > tolerance4)) &
+        & error stop 'strided send real kind=8 to kind=4 to image 2 failed.'
+    end if
+
+    ! now with strides and type conversion
+    sync all
+    co_int_k4 = -1
+    co_int_k1 = INT(-1, 1)
+    co_real_k8 = -1.0
+    co_real_k4 = REAL(-1.0, 4)
+    sync all
+    if (me == 1) then
+      co_int_k4(::2)[2] = [15.0, 13.0, 11.0]
+
+      co_int_k1(::2)[2] = [-15.0, -13.0, -11.0] 
+
+      co_real_k8(::2)[2] = [13, 15, 17]
+
+      co_real_k4(::2)[2] = [23, 25, 27]
+    end if
+
+    sync all
+    if (me == 2) then
+      print *, co_int_k4
+      if (any(co_int_k4 /= [15, -1, 13, -1, 11])) error stop 'strided send real kind=4 to int kind=4 to image 2 failed.'
+
+      print *, co_int_k1
+      if (any(co_int_k1 /= [INT(-15, 1), INT(-1, 1), INT(-13, 1), INT(-1, 1), INT(-11, 1)])) &
+        & error stop 'strided send int real kind=4 to int kind=1 to image 2 failed.'
+
+      print *, co_real_k8
+      if (any(abs(co_real_k8 - [13.0, -1.0, 15.0, -1.0, 17.0]) > tolerance8)) &
+        & error stop 'strided send int kind=4 to real kind=8 to image 2 failed.'
+
+      print *, co_real_k4
+      if (any(abs(co_real_k4 - [REAL(23, 4), REAL(-1.0, 4), REAL(25, 4), REAL(-1.0, 4), REAL(27, 4)]) > tolerance4)) &
+        & error stop 'strided send int kind=4 to real kind=4 to image 2 failed.'
+    end if
+
     sync all
     if (me == 1) print *, "Test passed."
   end associate
