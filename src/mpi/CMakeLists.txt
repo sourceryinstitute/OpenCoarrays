@@ -82,14 +82,15 @@ else()
 endif()
 
 set(MPI_HEADERS mpi.h)
-CHECK_INCLUDE_FILE("mpi-ext.h" HAVE_MPI_EXT)
+include(CheckIncludeFiles)
+CHECK_INCLUDE_FILES("mpi.h;mpi-ext.h" HAVE_MPI_EXT)
 if(HAVE_MPI_EXT)
   add_definitions(-DHAVE_MPI_EXT_H)
   set(MPI_HEADERS ${MPI_HEADERS};mpi-ext.h)
 endif()
 
 foreach(symbol ${NEEDED_SYMBOLS})
-  CHECK_SYMBOL_EXISTS(${symbol} ${MPI_HEADERS} HAVE_${symbol})
+  CHECK_SYMBOL_EXISTS(${symbol} "${MPI_HEADERS}" HAVE_${symbol})
   if(NOT HAVE_${symbol})
     message( STATUS "\${HAVE_${symbol}} = ${HAVE_${symbol}}")
     message( WARNING "Disabling Failed Image support due to lack of support in the current MPI implementation.")
@@ -149,8 +150,8 @@ set_target_properties ( caf_mpi
 # Create a symlink in the include dir
 add_custom_command(TARGET caf_mpi
   POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E create_symlink "./${mod_dir_tail}/opencoarrays.mod" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_INCLUDEDIR}/opencaorrays.mod"
-  COMMENT "Creating symlink ${CMAKE_INSTALL_INCLUDEDIR}/opencaorrays.mod --> ${CMAKE_INSTALL_INCLUDEDIR}/${mod_dir_tail}/opencoarrays.mod")
+  COMMAND ${CMAKE_COMMAND} -E create_symlink "./${mod_dir_tail}/opencoarrays.mod" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_INCLUDEDIR}/opencoarrays.mod"
+  COMMENT "Creating symlink ${CMAKE_INSTALL_INCLUDEDIR}/opencoarrays.mod --> ${CMAKE_INSTALL_INCLUDEDIR}/${mod_dir_tail}/opencoarrays.mod")
 
 install(DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_INCLUDEDIR}/" DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
   FILES_MATCHING PATTERN "*.mod")
