@@ -432,6 +432,14 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}")
 
+#-----------------
+# Install manpages
+#-----------------
+install(FILES "${CMAKE_SOURCE_DIR}/doc/man/man1/caf.1" "${CMAKE_SOURCE_DIR}/doc/man/man1/cafrun.1"
+  DESTINATION "${CMAKE_INSTALL_MANDIR}/man1"
+  PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
+  COMPONENT documentation)
+
 #---------------------------------------------------
 # Define macro for compiling with caf wrapper script
 #---------------------------------------------------
@@ -484,9 +492,12 @@ endfunction()
 # Setup script style testing & enforcement macro
 #-----------------------------------------------
 
+find_program(style_pl style.pl "${CMAKE_SOURCE_DIR}/developer-scripts/")
 function(check_script_style script_full_path)
-  add_test(NAME "style:${script_full_path}"
-    COMMAND "${CMAKE_SOURCE_DIR}/developer-scripts/style.pl" "${script_full_path}")
+  if(style_pl)
+    add_test(NAME "style:${script_full_path}"
+      COMMAND "${style_pl}" "${script_full_path}")
+  endif()
 endfunction()
 
 #-------------------------------

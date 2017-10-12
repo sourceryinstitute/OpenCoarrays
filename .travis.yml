@@ -14,9 +14,9 @@ env:
     - MPICH_GCC7_BOT_URL_HEAD="https://github.com/sourceryinstitute/OpenCoarrays/files/976779/"
     - MPICH_BOT_URL_TAIL="mpich-3.2_3.yosemite.bottle.1.tar.gz"
     - BUILD_TYPES="Release Debug RelWithDebInfo CodeCoverage"
-  matrix:
-    - GCC=6 OSX_PACKAGES="gcc@6 cmake shellcheck"
-    - GCC=7 OSX_PACKAGES="gcc cmake shellcheck"
+  matrix: # shellcheck installed manually below for macOS
+    - GCC=6 OSX_PACKAGES="gcc@6 cmake"
+    - GCC=7 OSX_PACKAGES="gcc cmake"
 
 matrix:
   fast_finish: true
@@ -137,9 +137,11 @@ install:
     if [[ (-n ${TRAVIS}) && (${TRAVIS_OS_NAME} == osx) ]]; then
       brew update > /dev/null
 
+      [[ "$(brew ls --versions shellcheck)" ]] || brew install --force-bottle shellcheck
+      brew outdated shellcheck || brew upgrade --force-bottle shellcheck
       for pkg in ${OSX_PACKAGES}; do
-        [[ "$(brew ls --versions ${pkg})" ]] || brew install --force-bottle ${pkg}
-        brew outdated ${pkg} || brew upgrade --force-bottle ${pkg}
+        [[ "$(brew ls --versions ${pkg})" ]] || brew install ${pkg}
+        brew outdated ${pkg} || brew upgrade ${pkg}
       done
       if [[ ${BUILD_TYPE} == InstallScript ]]; then # uninstall some stuff if present
         brew uninstall --force --ignore-dependencies cmake || true
