@@ -1,10 +1,10 @@
 #                                               -*- Autoconf -*-
-# Process this file with autoconf to produce a configure script.
-m4_include([libtool.m4])
-
+# Process this file with autoconf to produce a configure script
 AC_PREREQ([2.64])
 AC_DISABLE_OPTION_CHECKING
 AC_INIT([OpenCoarrays], [1.9.0], [opencoarrays@googlegroups.com])
+AC_CONFIG_MACRO_DIR([m4])
+m4_include([libtool.m4])
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE([-Wall -Werror foreign tar-ustar])
 AC_CONFIG_SRCDIR([src/libcaf.h])
@@ -87,7 +87,7 @@ AC_SUBST(opencoarrays_aware_compiler)
 AC_SUBST(Fortran_COMPILER)
 AC_SUBST(CAF_MODDIR)
 AC_SUBST(MOD_DIR_FLAG)
-AC_SUBST(CAF_LIBS)
+AC_SUBST([CAF_LIBS])
 AC_SUBST(MPI_Fortran_LINK_FLAGS)
 AC_SUBST(MPI_Fortran_COMPILE_FLAGS)
 AC_SUBST(MPI_LIBS)
@@ -101,7 +101,7 @@ PROJECT_VERSION=$PACKAGE_VERSION
 Fortran_COMPILER=$(which $FC)
 CAF_MODDIR="."
 MOD_DIR_FLAG=-I
-CAF_LIBS=$libdir/libcaf_mpi.a
+CAF_LIBS=@libdir@/libcaf_mpi.a
 MPI_Fortran_COMPILE_FLAGS="-fPIC"
 opencoarrays_aware_compiler="true"
 
@@ -168,7 +168,8 @@ AC_OUTPUT
 #echo $Fortran_COMPILER
 #echo $CAF_MODDIR
 #echo $MOD_DIR_FLAG
-#echo $CAF_LIBS
+echo $CAF_LIBS
+echo $exec_prefix
 #echo "*******************************************"
 #echo $MPI_Fortran_LINK_FLAGS
 #echo $MPI_Fortran_COMPILE_FLAGS
