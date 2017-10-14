@@ -7069,14 +7069,6 @@ fi
 
 
 
-PROJECT_VERSION=$PACKAGE_VERSION
-Fortran_COMPILER=$(which $FC)
-CAF_MODDIR="."
-MOD_DIR_FLAG=-I
-CAF_LIBS=$am_libdir/libcaf_mpi.a
-MPI_Fortran_COMPILE_FLAGS="-fPIC"
-opencoarrays_aware_compiler="true"
-
 # Checks for header files.
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -7810,6 +7802,10 @@ fi
 
 # Configure needed files.
 ac_config_files="$ac_config_files Makefile src/Makefile src/tests/Makefile src/tests/integration/Makefile src/tests/integration/coarrayHelloWorld/Makefile src/tests/integration/dist_transpose/Makefile src/tests/integration/events/Makefile src/tests/integration/pde_solvers/Makefile src/tests/integration/pde_solvers/coarrayBurgers/include-files/Makefile src/tests/integration/pde_solvers/coarrayBurgers/Makefile src/tests/integration/pde_solvers/coarrayHeatSimplified/Makefile src/tests/unit/Makefile src/tests/unit/collectives/Makefile src/tests/unit/fail_images/Makefile src/tests/unit/init_register/Makefile src/tests/unit/send-get/Makefile src/tests/unit/simple/Makefile src/tests/unit/sync/Makefile src/extensions/caf src/extensions/cafrun"
+
+
+echo Before output $prefix
+echo Before output $libdir
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -9269,6 +9265,15 @@ $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
 
 
+# Set variables needed for caf and cafrun scripts.
+PROJECT_VERSION=$PACKAGE_VERSION
+Fortran_COMPILER=$(which $FC)
+CAF_MODDIR="."
+MOD_DIR_FLAG=-I
+CAF_LIBS=$prefix/lib/libcaf_mpi.a
+MPI_Fortran_COMPILE_FLAGS="-fPIC"
+opencoarrays_aware_compiler="true"
+
 #echo "Variables *********************************"
 #echo $PROJECT_VERSION
 #echo $FC
@@ -9282,12 +9287,13 @@ fi
 #echo $Fortran_COMPILER
 #echo $CAF_MODDIR
 #echo $MOD_DIR_FLAG
-echo $CAF_LIBS
-echo $exec_prefix
+#echo $exec_prefix
 #echo "*******************************************"
 #echo $MPI_Fortran_LINK_FLAGS
 #echo $MPI_Fortran_COMPILE_FLAGS
 #echo $MPI_LIBS
 #echo $libdir
+echo $CAF_LIBS
 echo $prefix
+echo libdir is: $libdir
 #echo "End Variables *****************************"

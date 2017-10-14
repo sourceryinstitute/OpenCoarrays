@@ -98,14 +98,6 @@ AC_SUBST(CPPFLAGS)
 AC_SUBST([LIBTOOL_DEPS])
 AC_SUBST([MPI_INCLUDE])
 
-PROJECT_VERSION=$PACKAGE_VERSION
-Fortran_COMPILER=$(which $FC)
-CAF_MODDIR="."
-MOD_DIR_FLAG=-I
-CAF_LIBS=$am_libdir/libcaf_mpi.a
-MPI_Fortran_COMPILE_FLAGS="-fPIC"
-opencoarrays_aware_compiler="true"
-
 # Checks for header files.
 AC_CHECK_HEADERS([stddef.h stdint.h stdlib.h string.h sys/time.h unistd.h pthread.h])
 AC_CHECK_HEADERS([mpi.h], [],
@@ -154,7 +146,20 @@ AC_CONFIG_FILES([
  src/extensions/caf
  src/extensions/cafrun
 ])
+
+echo Before output $prefix
+echo Before output $libdir
+
 AC_OUTPUT
+
+# Set variables needed for caf and cafrun scripts.
+PROJECT_VERSION=$PACKAGE_VERSION
+Fortran_COMPILER=$(which $FC)
+CAF_MODDIR="."
+MOD_DIR_FLAG=-I
+CAF_LIBS=$prefix/lib/libcaf_mpi.a
+MPI_Fortran_COMPILE_FLAGS="-fPIC"
+opencoarrays_aware_compiler="true"
 
 #echo "Variables *********************************"
 #echo $PROJECT_VERSION
@@ -169,12 +174,13 @@ AC_OUTPUT
 #echo $Fortran_COMPILER
 #echo $CAF_MODDIR
 #echo $MOD_DIR_FLAG
-echo $CAF_LIBS
-echo $exec_prefix
+#echo $exec_prefix
 #echo "*******************************************"
 #echo $MPI_Fortran_LINK_FLAGS
 #echo $MPI_Fortran_COMPILE_FLAGS
 #echo $MPI_LIBS
 #echo $libdir
+echo $CAF_LIBS
 echo $prefix
+echo libdir is: $libdir
 #echo "End Variables *****************************"
