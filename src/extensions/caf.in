@@ -85,7 +85,7 @@ mpi_link_flags=(@MPI_Fortran_LINK_FLAGS@) # e.g. `pkg-config
 # __*AND*__ `pkg-config
 # --libs-only-L`
 mpi_compile_flags=(@MPI_Fortran_COMPILE_FLAGS@)
-caf_libs=(@CAF_LIBS@) # e.g. "libcaf_mpi" "libcaf_extensions",
+caf_libs=[(@CAF_LIBS@)] # e.g. "libcaf_mpi" "libcaf_extensions",
 # preferably full paths, but could be
 # combination of -L... and -lcaf_mpi...
 mpi_libs=(@MPI_LIBS@) # e.g. `pkg-config --libs-only-l` or full paths

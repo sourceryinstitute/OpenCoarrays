@@ -6,7 +6,8 @@ AC_INIT([OpenCoarrays], [1.9.0], [opencoarrays@googlegroups.com])
 AC_CONFIG_MACRO_DIR([m4])
 m4_include([libtool.m4])
 AC_CANONICAL_SYSTEM
-AM_INIT_AUTOMAKE([-Wall -Werror foreign tar-ustar])
+AM_INIT_AUTOMAKE([-Wall -Werror foreign tar-ustar -Wno-portability])
+AM_PROG_AR
 AC_CONFIG_SRCDIR([src/libcaf.h])
 AC_CONFIG_HEADERS([config.h])
 
@@ -101,7 +102,7 @@ PROJECT_VERSION=$PACKAGE_VERSION
 Fortran_COMPILER=$(which $FC)
 CAF_MODDIR="."
 MOD_DIR_FLAG=-I
-CAF_LIBS=@libdir@/libcaf_mpi.a
+CAF_LIBS=$am_libdir/libcaf_mpi.a
 MPI_Fortran_COMPILE_FLAGS="-fPIC"
 opencoarrays_aware_compiler="true"
 
@@ -175,5 +176,5 @@ echo $exec_prefix
 #echo $MPI_Fortran_COMPILE_FLAGS
 #echo $MPI_LIBS
 #echo $libdir
-#echo $prefix
+echo $prefix
 #echo "End Variables *****************************"

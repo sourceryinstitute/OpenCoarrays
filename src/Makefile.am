@@ -1,5 +1,5 @@
 LIBTOOL=libtool
-CPPFLAGS=$(MPI_INCLUDE)
+AM_CPPFLAGS=$(MPI_INCLUDE)
 lib_LTLIBRARIES = libcaf_mpi.la
 libcaf_mpi_la_SOURCES = mpi/mpi_caf.c common/caf_auxiliary.c
 libcaf_mpi_la_LDFLAGS = -version-info 3:0:0
