@@ -1,353 +1,501 @@
-#!/usr/bin/env bash
+#!/bin/sh
+# install - install a program, script, or datafile
+
+scriptversion=2013-12-25.23; # UTC
+
+# This originates from X11R5 (mit/util/scripts/install.sh), which was
+# later released in X11R6 (xc/config/util/install.sh) with the
+# following copyright and license.
 #
-# install.sh
-#
-# -- This script installs OpenCoarrays and its prerequisites.
-#
-# OpenCoarrays is distributed under the OSI-approved BSD 3-clause License:
-# Copyright (c) 2015-2016, Sourcery, Inc.
-# Copyright (c) 2015-2016, Sourcery Institute
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without modification,
-# are permitted provided that the following conditions are met:
-#
-# 1. Redistributions of source code must retain the above copyright notice, this
-#    list of conditions and the following disclaimer.
-# 2. Redistributions in binary form must reproduce the above copyright notice, this
-#    list of conditions and the following disclaimer in the documentation and/or
-#    other materials provided with the distribution.
-# 3. Neither the names of the copyright holders nor the names of their contributors
-#    may be used to endorse or promote products derived from this software without
-#    specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-# IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-# NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-#
-# Portions of this script derive from BASH3 Boilerplate and are distributed under
-# the following license:
-#
-# The MIT License (MIT)
-#
-# Copyright (c) 2014 Kevin van Zonneveld
+# Copyright (C) 1994 X Consortium
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
+# of this software and associated documentation files (the "Software"), to
+# deal in the Software without restriction, including without limitation the
+# rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+# sell copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
 #
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
 #
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+# X CONSORTIUM BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN
+# AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNEC-
+# TION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#
+# Except as contained in this notice, the name of the X Consortium shall not
+# be used in advertising or otherwise to promote the sale, use or other deal-
+# ings in this Software without prior written authorization from the X Consor-
+# tium.
 #
 #
-#  - https://github.com/kvz/bash3boilerplate
-#  - http://kvz.io/blog/2013/02/26/introducing-bash3boilerplate/
+# FSF changes to this file are in the public domain.
 #
-# Version: 2.0.0
+# Calling this script install-sh is preferred over install.sh, to prevent
+# 'make' implicit rules from creating a file called install from it
+# when there is no Makefile.
 #
-# Authors:
-#
-#  - Kevin van Zonneveld (http://kvz.io)
-#  - Izaak Beekman (https://izaakbeekman.com/)
-#  - Alexander Rathai (Alexander.Rathai@gmail.com)
-#  - Dr. Damian Rouson (http://www.sourceryinstitute.org/) (documentation)
-#
-# Licensed under MIT
-# Copyright (c) 2013 Kevin van Zonneveld (http://kvz.io)
+# This script is compatible with the BSD install script, but was written
+# from scratch.
 
-# The invocation of bootstrap.sh below performs the following tasks:
-# (1) Import several bash3boilerplate helper functions & default settings.
-# (2) Set several variables describing the current file and its usage page.
-# (3) Parse the usage information (default usage file name: current file's name with -usage appended).
-# (4) Parse the command line using the usage information.
+tab='	'
+nl='
+'
+IFS=" $tab$nl"
 
-### Start of boilerplate -- do not edit this block #######################
-export OPENCOARRAYS_SRC_DIR="${OPENCOARRAYS_SRC_DIR:-${PWD%/}}"
-if [[ ! -f "${OPENCOARRAYS_SRC_DIR}/src/libcaf.h" ]]; then
-  echo "Please run this script inside the top-level OpenCoarrays source directory or "
-  echo "set OPENCOARRAYS_SRC_DIR to the OpenCoarrays source directory path."
-  exit 1
-fi
-export B3B_USE_CASE="${B3B_USE_CASE:-${OPENCOARRAYS_SRC_DIR}/prerequisites/use-case}"
-if [[ ! -f "${B3B_USE_CASE:-}/bootstrap.sh" ]]; then
-  echo "Please set B3B_USE_CASE to the bash3boilerplate use-case directory path."
-  exit 2
-else
-    # shellcheck source=./prerequisites/use-case/bootstrap.sh
-    source "${B3B_USE_CASE}/bootstrap.sh" "$@"
-fi
-### End of boilerplate -- start user edits below #########################
+# Set DOITPROG to "echo" to test this script.
 
-# Set expected value of present flags that take no arguments
-export __flag_present=1
+doit=${DOITPROG-}
+doit_exec=${doit:-exec}
 
-# Set up a function to call when receiving an EXIT signal to do some cleanup. Remove if
-# not needed. Other signals can be trapped too, like SIGINT and SIGTERM.
-function cleanup_before_exit () {
-  info "Cleaning up. Done"
-}
-trap cleanup_before_exit EXIT # The signal is specified here. Could be SIGINT, SIGTERM etc.
+# Put in absolute file names if you don't have them in your path;
+# or use environment vars.
 
+chgrpprog=${CHGRPPROG-chgrp}
+chmodprog=${CHMODPROG-chmod}
+chownprog=${CHOWNPROG-chown}
+cmpprog=${CMPPROG-cmp}
+cpprog=${CPPROG-cp}
+mkdirprog=${MKDIRPROG-mkdir}
+mvprog=${MVPROG-mv}
+rmprog=${RMPROG-rm}
+stripprog=${STRIPPROG-strip}
 
-### Validation (decide what's required for running your script and error out)
-#####################################################################
+posix_mkdir=
 
-[ -z "${LOG_LEVEL:-}" ] && emergency "Cannot continue without LOG_LEVEL. "
+# Desired mode of installed file.
+mode=0755
 
-# shellcheck disable=SC2154
-if [[ "${arg_v}" == "${__flag_present}" || "${arg_l}" == "${__flag_present}" || ! -z "${arg_P:-${arg_U:-${arg_V:-${arg_D:-${arg_B}}}}}" ]]; then
-   print_debug_only=7
-   if [ "$(( LOG_LEVEL < print_debug_only ))" -ne 0 ]; then
-     debug "Supressing info and debug messages: one of {-l, -v, -P, -U, -V, -D} present."
-     suppress_info_debug_messages
-   fi
-fi
+chgrpcmd=
+chmodcmd=$chmodprog
+chowncmd=
+mvcmd=$mvprog
+rmcmd="$rmprog -f"
+stripcmd=
 
-[ ! -z "${arg_D}" ] && [ ! -z "${arg_P:-${arg_U:-${arg_V:-${arg_B}}}}" ] &&
-  emergency "Please pass only one of {-B, -D, -p, -P, -U, -V} or a longer equivalent (multiple detected). [exit 101]"
+src=
+dst=
+dir_arg=
+dst_arg=
 
-[ ! -z "${arg_P}" ] && [ ! -z "${arg_U:-${arg_V:-${arg_B}}}" ] &&
-  emergency "Please pass only one of {-B, -D, -p, -P, -U, -V} or a longer equivalent (multiple detected). [exit 102]"
+copy_on_change=false
+is_target_a_directory=possibly
 
-[ ! -z "${arg_U}" ] && [ ! -z "${arg_V:-${arg_B}}" ] &&
-  emergency "Please pass only one of {-B, -D, -p, -P, -U, -V} or a longer equivalent (multiple detected). [exit 103]"
+usage="\
+Usage: $0 [OPTION]... [-T] SRCFILE DSTFILE
+   or: $0 [OPTION]... SRCFILES... DIRECTORY
+   or: $0 [OPTION]... -t DIRECTORY SRCFILES...
+   or: $0 [OPTION]... -d DIRECTORIES...
 
-[ ! -z "${arg_V}" ] && [ ! -z "${arg_B}" ] &&
-  emergency "Please pass only one of {-B, -D, -p, -P, -U, -V} or a longer equivalent (multiple detected). [exit 104]"
+In the 1st form, copy SRCFILE to DSTFILE.
+In the 2nd and 3rd, copy all SRCFILES to DIRECTORY.
+In the 4th, create DIRECTORIES.
 
-### Print bootstrapped magic variables to STDERR when LOG_LEVEL
-### is at the default value (6) or above.
-#####################################################################
-# shellcheck disable=SC2154
-{
-info "__file: ${__file}"
-info "__dir: ${__dir}"
-info "__base: ${__base}"
-info "__os: ${__os}"
-info "__usage: ${__usage}"
-info "LOG_LEVEL: ${LOG_LEVEL}"
+Options:
+     --help     display this help and exit.
+     --version  display version info and exit.
 
-info  "-b (--install-branch):   ${arg_b}"
-info  "-B (--list-branches):    ${arg_B}"
-info  "-c (--with-c):           ${arg_c}"
-info  "-C (--with-cxx):         ${arg_C}"
-info  "-d (--debug):            ${arg_d}"
-info  "-D (--print-downloader): ${arg_D}"
-info  "-e (--verbose):          ${arg_e}"
-info  "-f (--with-fortran):     ${arg_f}"
-info  "-h (--help):             ${arg_h}"
-info  "-i (--install-prefix):   ${arg_i}"
-info  "-I (--install-version):  ${arg_I}"
-info  "-j (--num-threads):      ${arg_j}"
-info  "-l (--list-packages):    ${arg_l}"
-info  "-m (--with-cmake):       ${arg_m}"
-info  "-M (--with-mpi):         ${arg_M}"
-info  "-n (--no-color):         ${arg_n}"
-info  "-o (--only-download):    ${arg_o}"
-info  "-p (--package):          ${arg_p}"
-info  "-P (--print-path):       ${arg_P}"
-info  "-u (--from-url):         ${arg_u}"
-info  "-U (--print-url):        ${arg_U}"
-info  "-v (--version):          ${arg_v}"
-info  "-V (--print-version):    ${arg_V}"
-info  "-y (--yes-to-all):       ${arg_y}"
-info  "-z (--disable-bootstrap):${arg_z}"
-}
-# This file is organized into three sections:
-# 1. Command-line argument and environment variable processing.
-# 2. Function definitions.
-# 3. Main body.
-# The script depends on several external programs, including a second script that
-# builds prerequisite software.  Building prerequisites requires network access
-# unless tar balls of the prerequisites are present.
+  -c            (ignored)
+  -C            install only if different (preserve the last data modification time)
+  -d            create directories instead of installing files.
+  -g GROUP      $chgrpprog installed files to GROUP.
+  -m MODE       $chmodprog installed files to MODE.
+  -o USER       $chownprog installed files to USER.
+  -s            $stripprog installed files.
+  -t DIRECTORY  install into DIRECTORY.
+  -T            report an error if DSTFILE is a directory.
 
-# TODO:
-# 1. Collapse the body of the main conditional branches in the find_or_install function
-#    into one new function.
-# 2. Verify that script-installed packages meet the minimum version number.
-# 3. Add a script_transfer function to collapse the stack_pop x; stack_push z y
-#    pattern into one statement
-# 4. Consider adding mpich and cmake to the dependency stack before passing them to
-#    find_or_install to make the blocks inside find_or_install more uniform.
-#    Alternatively, check the dependency stacks for the package before entering the
-#    main conditional blocks in find_or_install.
-#
+Environment variables override the default commands:
+  CHGRPPROG CHMODPROG CHOWNPROG CMPPROG CPPROG MKDIRPROG MVPROG
+  RMPROG STRIPPROG
+"
 
+while test $# -ne 0; do
+  case $1 in
+    -c) ;;
 
-# __________ Process command-line arguments and environment variables _____________
+    -C) copy_on_change=true;;
 
-this_script="$(basename "$0")"
-export this_script
+    -d) dir_arg=true;;
 
-export install_path="${arg_i%/}"
-info "install_path=\"${install_path}\""
+    -g) chgrpcmd="$chgrpprog $2"
+        shift;;
 
-export num_threads="${arg_j}"
-info "num_threads=\"${arg_j}\""
+    --help) echo "$usage"; exit $?;;
 
-export opencoarrays_src_dir="${OPENCOARRAYS_SRC_DIR}"
-info "opencoarrays_src_dir=${OPENCOARRAYS_SRC_DIR}"
+    -m) mode=$2
+        case $mode in
+          *' '* | *"$tab"* | *"$nl"* | *'*'* | *'?'* | *'['*)
+            echo "$0: invalid mode: $mode" >&2
+            exit 1;;
+        esac
+        shift;;
 
-export build_path="${opencoarrays_src_dir}"/prerequisites/builds
-info "build_path=\"${opencoarrays_src_dir}\"/prerequisites/builds"
+    -o) chowncmd="$chownprog $2"
+        shift;;
 
-export build_script="${opencoarrays_src_dir}"/prerequisites/build.sh
-info "build_script=\"${opencoarrays_src_dir}\"/prerequisites/build.sh"
+    -s) stripcmd=$stripprog;;
 
-# ___________________ Define functions for use in the Main Body ___________________
+    -t)
+        is_target_a_directory=always
+        dst_arg=$2
+        # Protect names problematic for 'test' and other utilities.
+        case $dst_arg in
+          -* | [=\(\)!]) dst_arg=./$dst_arg;;
+        esac
+        shift;;
 
-# Include stack management functions
-#. ./prerequisites/stack.sh
-# shellcheck source=./prerequisites/stack.sh
-source $opencoarrays_src_dir/prerequisites/stack.sh
-stack_new dependency_pkg
-stack_new dependency_exe
-stack_new dependency_path
-stack_new script_installed
+    -T) is_target_a_directory=never;;
 
-# shellcheck source=./prerequisites/install-functions/find_or_install.sh
-source $opencoarrays_src_dir/prerequisites/install-functions/find_or_install.sh
+    --version) echo "$0 $scriptversion"; exit $?;;
 
-# shellcheck source=./prerequisites/install-functions/print_header.sh
-source $opencoarrays_src_dir/prerequisites/install-functions/print_header.sh
+    --) shift
+        break;;
 
-# shellcheck source=./prerequisites/install-functions/build_opencoarrays.sh
-source $opencoarrays_src_dir/prerequisites/install-functions/build_opencoarrays.sh
+    -*) echo "$0: invalid option: $1" >&2
+        exit 1;;
 
-# shellcheck source=./prerequisites/install-functions/report_results.sh
-source $opencoarrays_src_dir/prerequisites/install-functions/report_results.sh
+    *)  break;;
+  esac
+  shift
+done
 
-# shellcheck source=./prerequisites/install-functions/install-xcode-clt.sh
-source "${opencoarrays_src_dir}/prerequisites/install-functions/install-xcode-clt.sh"
+# We allow the use of options -d and -T together, by making -d
+# take the precedence; this is for compatibility with GNU install.
 
-# ___________________ End of function definitions for use in the Main Body __________________
-
-
-# ________________________________ Start of the Main Body ___________________________________
-
-if [[ "${arg_v}" == "${__flag_present}" || "${arg_V}" == "opencoarrays" ]]; then
-
-  # Print script copyright & version if invoked with -v, -V, or
-  # --version argument git attributes handle .VERSION, making it more
-  # robust, but fallback version is still manually included. Search
-  # for the first version string we encounter and extract it using sed:
-  opencoarrays_version=$(sed -n '/[0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}/{s/^\([^.]*\)\([0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}\)\(.*\)/\2/p;q;}' "${opencoarrays_src_dir%/}/.VERSION")
-  if [[ "${arg_v}" == "${__flag_present}" ]]; then
-    echo "OpenCoarrays ${opencoarrays_version}"
-    echo ""
-    echo "OpenCoarrays installer"
-    echo "Copyright (C) 2015-2016 Sourcery, Inc."
-    echo "Copyright (C) 2015-2016 Sourcery Institute"
-    echo ""
-    echo "OpenCoarrays comes with NO WARRANTY, to the extent permitted by law."
-    echo "You may redistribute copies of ${this_script} under the terms of the"
-    echo "BSD 3-Clause License.  For more information about these matters, see"
-    echo "http://www.sourceryinstitute.org/license.html"
-    echo ""
-  elif [[ "${arg_V}" == "opencoarrays" ]]; then
-    echo "${opencoarrays_version//[[:space:]]/}"
+if test -n "$dir_arg"; then
+  if test -n "$dst_arg"; then
+    echo "$0: target directory not allowed when installing a directory." >&2
+    exit 1
   fi
+fi
 
-elif [[ ! -z "${arg_D:-${arg_P:-${arg_U:-${arg_V:-${arg_B}}}}}" ||  "${arg_l}" == "${__flag_present}" ]]; then
+if test $# -ne 0 && test -z "$dir_arg$dst_arg"; then
+  # When -d is used, all remaining arguments are directories to create.
+  # When -t is used, the destination is already specified.
+  # Otherwise, the last argument is the destination.  Remove it from $@.
+  for arg
+  do
+    if test -n "$dst_arg"; then
+      # $@ is not empty: it contains at least $arg.
+      set fnord "$@" "$dst_arg"
+      shift # fnord
+    fi
+    shift # arg
+    dst_arg=$arg
+    # Protect names problematic for 'test' and other utilities.
+    case $dst_arg in
+      -* | [=\(\)!]) dst_arg=./$dst_arg;;
+    esac
+  done
+fi
 
-  # Delegate to build.sh for the packages it builds
-  build_arg=${arg_B:-${arg_D:-${arg_P:-${arg_U:-${arg_V:-${arg_p}}}}}}
-  [ ! -z "${arg_B}" ] && build_flag="-B"
-  [ ! -z "${arg_D}" ] && build_flag="-D"
-  [ ! -z "${arg_P}" ] && build_flag="-P"
-  [ ! -z "${arg_U}" ] && build_flag="-U"
-  [ ! -z "${arg_V}" ] && build_flag="-V"
-  [ "${arg_l}" == "${__flag_present}" ] && build_flag="-l"
+if test $# -eq 0; then
+  if test -z "$dir_arg"; then
+    echo "$0: no input file specified." >&2
+    exit 1
+  fi
+  # It's OK to call 'install-sh -d' without argument.
+  # This can happen when creating conditional directories.
+  exit 0
+fi
 
-  if [[ "${arg_P}" == "opencoarrays" ]]; then
-
-    version="$("${opencoarrays_src_dir}/install.sh" -V opencoarrays)"
-    echo "${install_path%/}/opencoarrays/${version}"
-
-  else
-
-    info "Invoking build script with the following command:"
-    info "\"${opencoarrays_src_dir}\"/prerequisites/build.sh \"${build_flag}\" \"${build_arg}\""
-    "${opencoarrays_src_dir}"/prerequisites/build.sh "${build_flag}" "${build_arg}"
-
-    # Add lines other packages the current script builds
-    if [[ "${arg_l}" == "${__flag_present}" ]]; then
-      echo "opencoarrays (version $("${opencoarrays_src_dir}/install.sh" -V opencoarrays))"
-      echo "ofp (version: ofp-sdf for OS X )"
+if test -z "$dir_arg"; then
+  if test $# -gt 1 || test "$is_target_a_directory" = always; then
+    if test ! -d "$dst_arg"; then
+      echo "$0: $dst_arg: Is not a directory." >&2
+      exit 1
     fi
   fi
+fi
 
-elif [[ "${arg_p:-}" == "opencoarrays" ]]; then
+if test -z "$dir_arg"; then
+  do_exit='(exit $ret); exit $ret'
+  trap "ret=129; $do_exit" 1
+  trap "ret=130; $do_exit" 2
+  trap "ret=141; $do_exit" 13
+  trap "ret=143; $do_exit" 15
 
-  if [[ "${arg_o}" == "${__flag_present}" ]]; then
+  # Set umask so as not to create temps with too-generous modes.
+  # However, 'strip' requires both read and write access to temps.
+  case $mode in
+    # Optimize common cases.
+    *644) cp_umask=133;;
+    *755) cp_umask=22;;
 
-    # Download all prerequisites and exit
-    info "source ${OPENCOARRAYS_SRC_DIR}/prerequisites/install-functions/download-all-prerequisites.sh"
-    source "${OPENCOARRAYS_SRC_DIR}/prerequisites/install-functions/download-all-prerequisites.sh"
-    info "download_all_prerequisites"
-    download_all_prerequisites
+    *[0-7])
+      if test -z "$stripcmd"; then
+        u_plus_rw=
+      else
+        u_plus_rw='% 200'
+      fi
+      cp_umask=`expr '(' 777 - $mode % 1000 ')' $u_plus_rw`;;
+    *)
+      if test -z "$stripcmd"; then
+        u_plus_rw=
+      else
+        u_plus_rw=,u+rw
+      fi
+      cp_umask=$mode$u_plus_rw;;
+  esac
+fi
 
+for src
+do
+  # Protect names problematic for 'test' and other utilities.
+  case $src in
+    -* | [=\(\)!]) src=./$src;;
+  esac
+
+  if test -n "$dir_arg"; then
+    dst=$src
+    dstdir=$dst
+    test -d "$dstdir"
+    dstdir_status=$?
   else
 
-    # Install Xcode command line tools (CLT) if on macOS and if needed
-    maybe_install_xcodeCLT
-    # Install OpenCoarrays
+    # Waiting for this to be detected by the "$cpprog $src $dsttmp" command
+    # might cause directories to be created, which would be especially bad
+    # if $src (and thus $dsttmp) contains '*'.
+    if test ! -f "$src" && test ! -d "$src"; then
+      echo "$0: $src does not exist." >&2
+      exit 1
+    fi
 
-    cd prerequisites || exit 1
-    installation_record=install-opencoarrays.log
-    # shellcheck source=./prerequisites/build-functions/set_SUDO_if_needed_to_write_to_directory.sh
-    source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/set_SUDO_if_needed_to_write_to_directory.sh"
-    version="$("${opencoarrays_src_dir}/install.sh" -V opencoarrays)"
-    set_SUDO_if_needed_to_write_to_directory "${install_path}"
+    if test -z "$dst_arg"; then
+      echo "$0: no destination specified." >&2
+      exit 1
+    fi
+    dst=$dst_arg
 
-    if grep -s -q Microsoft /proc/version  ; then
-      info "Windows Subsystem for Linux detected.  Invoking windows-install.sh with the following command:"
-      info "\"${opencoarrays_src_dir}\"/prerequisites/install-functions/windows-install.sh \"$@\""
-      "${opencoarrays_src_dir}"/prerequisites/install-functions/windows-install.sh "$@"
+    # If destination is a directory, append the input filename; won't work
+    # if double slashes aren't ignored.
+    if test -d "$dst"; then
+      if test "$is_target_a_directory" = never; then
+        echo "$0: $dst_arg: Is a directory" >&2
+        exit 1
+      fi
+      dstdir=$dst
+      dst=$dstdir/`basename "$src"`
+      dstdir_status=0
     else
-      # Using process substitution "> >(...) -" instead of piping to tee via "2>&1 |" ensures that
-      # report_results gets the FC value set in build_opencoarrays
-      # Source: http://stackoverflow.com/questions/8221227/bash-variable-losing-its-value-strange
-      build_opencoarrays > >( tee ../"${installation_record}" ) -
-      report_results 2>&1 | tee -a ../"${installation_record}"
+      dstdir=`dirname "$dst"`
+      test -d "$dstdir"
+      dstdir_status=$?
     fi
   fi
 
-elif [[ "${arg_p:-}" == "ofp" ]]; then
+  obsolete_mkdir_used=false
 
-  # Install Xcode command line tools (CLT) if on macOS and if needed
-  maybe_install_xcodeCLT
+  if test $dstdir_status != 0; then
+    case $posix_mkdir in
+      '')
+        # Create intermediate dirs using mode 755 as modified by the umask.
+        # This is like FreeBSD 'install' as of 1997-10-28.
+        umask=`umask`
+        case $stripcmd.$umask in
+          # Optimize common cases.
+          *[2367][2367]) mkdir_umask=$umask;;
+          .*0[02][02] | .[02][02] | .[02]) mkdir_umask=22;;
 
-  info "Invoking Open Fortran Parser build script with the following command:"
-  info "\"${opencoarrays_src_dir}\"/prerequisites/install-ofp.sh"
-  "${opencoarrays_src_dir}"/prerequisites/install-ofp.sh
+          *[0-7])
+            mkdir_umask=`expr $umask + 22 \
+              - $umask % 100 % 40 + $umask % 20 \
+              - $umask % 10 % 4 + $umask % 2
+            `;;
+          *) mkdir_umask=$umask,go-w;;
+        esac
 
-elif [[ ! -z "${arg_p:-}" ]]; then
+        # With -d, create the new directory with the user-specified mode.
+        # Otherwise, rely on $mkdir_umask.
+        if test -n "$dir_arg"; then
+          mkdir_mode=-m$mode
+        else
+          mkdir_mode=
+        fi
 
-  # Install Xcode command line tools (CLT) if on macOS and if needed
-  maybe_install_xcodeCLT
+        posix_mkdir=false
+        case $umask in
+          *[123567][0-7][0-7])
+            # POSIX mkdir -p sets u+wx bits regardless of umask, which
+            # is incompatible with FreeBSD 'install' when (umask & 300) != 0.
+            ;;
+          *)
+            tmpdir=${TMPDIR-/tmp}/ins$RANDOM-$$
+            trap 'ret=$?; rmdir "$tmpdir/d" "$tmpdir" 2>/dev/null; exit $ret' 0
 
-  info "Invoking build script with the following command:"
-  info "\"${opencoarrays_src_dir}\"/prerequisites/build.sh ${*:-}"
-  "${opencoarrays_src_dir}"/prerequisites/build.sh "${@:-}"
+            if (umask $mkdir_umask &&
+                exec $mkdirprog $mkdir_mode -p -- "$tmpdir/d") >/dev/null 2>&1
+            then
+              if test -z "$dir_arg" || {
+                   # Check for POSIX incompatibilities with -m.
+                   # HP-UX 11.23 and IRIX 6.5 mkdir -m -p sets group- or
+                   # other-writable bit of parent directory when it shouldn't.
+                   # FreeBSD 6.1 mkdir -m -p sets mode of existing directory.
+                   ls_ld_tmpdir=`ls -ld "$tmpdir"`
+                   case $ls_ld_tmpdir in
+                     d????-?r-*) different_mode=700;;
+                     d????-?--*) different_mode=755;;
+                     *) false;;
+                   esac &&
+                   $mkdirprog -m$different_mode -p -- "$tmpdir" && {
+                     ls_ld_tmpdir_1=`ls -ld "$tmpdir"`
+                     test "$ls_ld_tmpdir" = "$ls_ld_tmpdir_1"
+                   }
+                 }
+              then posix_mkdir=:
+              fi
+              rmdir "$tmpdir/d" "$tmpdir"
+            else
+              # Remove any dirs left behind by ancient mkdir implementations.
+              rmdir ./$mkdir_mode ./-p ./-- 2>/dev/null
+            fi
+            trap '' 0;;
+        esac;;
+    esac
 
-fi
-# ____________________________________ End of Main Body ____________________________________________
+    if
+      $posix_mkdir && (
+        umask $mkdir_umask &&
+        $doit_exec $mkdirprog $mkdir_mode -p -- "$dstdir"
+      )
+    then :
+    else
+
+      # The umask is ridiculous, or mkdir does not conform to POSIX,
+      # or it failed possibly due to a race condition.  Create the
+      # directory the slow way, step by step, checking for races as we go.
+
+      case $dstdir in
+        /*) prefix='/';;
+        [-=\(\)!]*) prefix='./';;
+        *)  prefix='';;
+      esac
+
+      oIFS=$IFS
+      IFS=/
+      set -f
+      set fnord $dstdir
+      shift
+      set +f
+      IFS=$oIFS
+
+      prefixes=
+
+      for d
+      do
+        test X"$d" = X && continue
+
+        prefix=$prefix$d
+        if test -d "$prefix"; then
+          prefixes=
+        else
+          if $posix_mkdir; then
+            (umask=$mkdir_umask &&
+             $doit_exec $mkdirprog $mkdir_mode -p -- "$dstdir") && break
+            # Don't fail if two instances are running concurrently.
+            test -d "$prefix" || exit 1
+          else
+            case $prefix in
+              *\'*) qprefix=`echo "$prefix" | sed "s/'/'\\\\\\\\''/g"`;;
+              *) qprefix=$prefix;;
+            esac
+            prefixes="$prefixes '$qprefix'"
+          fi
+        fi
+        prefix=$prefix/
+      done
+
+      if test -n "$prefixes"; then
+        # Don't fail if two instances are running concurrently.
+        (umask $mkdir_umask &&
+         eval "\$doit_exec \$mkdirprog $prefixes") ||
+          test -d "$dstdir" || exit 1
+        obsolete_mkdir_used=true
+      fi
+    fi
+  fi
+
+  if test -n "$dir_arg"; then
+    { test -z "$chowncmd" || $doit $chowncmd "$dst"; } &&
+    { test -z "$chgrpcmd" || $doit $chgrpcmd "$dst"; } &&
+    { test "$obsolete_mkdir_used$chowncmd$chgrpcmd" = false ||
+      test -z "$chmodcmd" || $doit $chmodcmd $mode "$dst"; } || exit 1
+  else
+
+    # Make a couple of temp file names in the proper directory.
+    dsttmp=$dstdir/_inst.$$_
+    rmtmp=$dstdir/_rm.$$_
+
+    # Trap to clean up those temp files at exit.
+    trap 'ret=$?; rm -f "$dsttmp" "$rmtmp" && exit $ret' 0
+
+    # Copy the file name to the temp name.
+    (umask $cp_umask && $doit_exec $cpprog "$src" "$dsttmp") &&
+
+    # and set any options; do chmod last to preserve setuid bits.
+    #
+    # If any of these fail, we abort the whole thing.  If we want to
+    # ignore errors from any of these, just make sure not to ignore
+    # errors from the above "$doit $cpprog $src $dsttmp" command.
+    #
+    { test -z "$chowncmd" || $doit $chowncmd "$dsttmp"; } &&
+    { test -z "$chgrpcmd" || $doit $chgrpcmd "$dsttmp"; } &&
+    { test -z "$stripcmd" || $doit $stripcmd "$dsttmp"; } &&
+    { test -z "$chmodcmd" || $doit $chmodcmd $mode "$dsttmp"; } &&
+
+    # If -C, don't bother to copy if it wouldn't change the file.
+    if $copy_on_change &&
+       old=`LC_ALL=C ls -dlL "$dst"     2>/dev/null` &&
+       new=`LC_ALL=C ls -dlL "$dsttmp"  2>/dev/null` &&
+       set -f &&
+       set X $old && old=:$2:$4:$5:$6 &&
+       set X $new && new=:$2:$4:$5:$6 &&
+       set +f &&
+       test "$old" = "$new" &&
+       $cmpprog "$dst" "$dsttmp" >/dev/null 2>&1
+    then
+      rm -f "$dsttmp"
+    else
+      # Rename the file to the real destination.
+      $doit $mvcmd -f "$dsttmp" "$dst" 2>/dev/null ||
+
+      # The rename failed, perhaps because mv can't rename something else
+      # to itself, or perhaps because mv is so ancient that it does not
+      # support -f.
+      {
+        # Now remove or move aside any old file at destination location.
+        # We try this two ways since rm can't unlink itself on some
+        # systems and the destination file might be busy for other
+        # reasons.  In this case, the final cleanup might fail but the new
+        # file should still install successfully.
+        {
+          test ! -f "$dst" ||
+          $doit $rmcmd -f "$dst" 2>/dev/null ||
+          { $doit $mvcmd -f "$dst" "$rmtmp" 2>/dev/null &&
+            { $doit $rmcmd -f "$rmtmp" 2>/dev/null; :; }
+          } ||
+          { echo "$0: cannot unlink or rename $dst" >&2
+            (exit 1); exit 1
+          }
+        } &&
+
+        # Now rename the file to the real destination.
+        $doit $mvcmd "$dsttmp" "$dst"
+      }
+    fi || exit 1
+
+    trap '' 0
+  fi
+done
+
+# Local variables:
+# eval: (add-hook 'write-file-hooks 'time-stamp)
+# time-stamp-start: "scriptversion="
+# time-stamp-format: "%:y-%02m-%02d.%02H"
+# time-stamp-time-zone: "UTC"
+# time-stamp-end: "; # UTC"
+# End:
