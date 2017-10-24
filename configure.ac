@@ -4,12 +4,15 @@ AC_PREREQ([2.64])
 AC_DISABLE_OPTION_CHECKING
 AC_INIT([OpenCoarrays], [1.9.0], [opencoarrays@googlegroups.com])
 AC_CONFIG_MACRO_DIR([m4])
-m4_include([libtool.m4])
+#m4_include([libtool.m4])
 AC_CANONICAL_SYSTEM
-AM_INIT_AUTOMAKE([-Wall -Werror foreign tar-ustar -Wno-portability])
-AM_PROG_AR
+AM_INIT_AUTOMAKE([-Wall -Werror foreign tar-ustar subdir-objects -Wno-portability])
+#AM_PROG_AR
 AC_CONFIG_SRCDIR([src/libcaf.h])
 AC_CONFIG_HEADERS([config.h])
+
+LT_INIT
+AC_SUBST([LIBTOOL_DEPS])
 
 # Checks for programs.
 AC_PROG_CXX
@@ -18,7 +21,7 @@ AC_PROG_YACC
 AC_PROG_CC
 AC_PROG_LEX
 AC_PROG_INSTALL
-AC_PROG_RANLIB
+#AC_PROG_RANLIB
 AC_PROG_MAKE_SET
 AC_PROG_FC(gfortran)
 AC_CHECK_PROG(MPI_EXEC,[mpiexec],[mpiexec],[no])

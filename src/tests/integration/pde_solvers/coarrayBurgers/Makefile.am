@@ -13,8 +13,8 @@ $(srcdir)/main.F90
 coarrayBurgers_FCFLAGS = -fcoarray=lib -L$(MPI_LIB) -lmpi
 
 coarrayBurgers_LDADD = \
-$(top_builddir)/src/mpi_caf.o \
-$(top_builddir)/src/caf_auxiliary.o
+$(top_builddir)/src/mpi/mpi_caf.o \
+$(top_builddir)/src/common/caf_auxiliary.o
 
 CLEANFILES = \
 coarrayBurgers\
