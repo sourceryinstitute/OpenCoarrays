@@ -10,7 +10,7 @@ $(srcdir)/local_field.F90 \
 $(srcdir)/global_field.F90 \
 $(srcdir)/main.F90
 
-coarrayBurgers_FCFLAGS = -fcoarray=lib -L$(MPI_LIB) -lmpi
+coarrayBurgers_FCFLAGS = -fcoarray=lib -lmpi
 
 coarrayBurgers_LDADD = \
 $(top_builddir)/src/mpi/mpi_caf.o \
