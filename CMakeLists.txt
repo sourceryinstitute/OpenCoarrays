@@ -500,6 +500,22 @@ function(check_script_style script_full_path)
   endif()
 endfunction()
 
+#------------------------------------------------------------------------------
+# Add custom properties on targets for controling number of images during tests
+#------------------------------------------------------------------------------
+define_property(TARGET
+  PROPERTY MIN_IMAGES
+  BRIEF_DOCS "Minimum allowable images for the test <integer>"
+  FULL_DOCS "Property to mark executable targets run as tests that they require at least <MIN_IMAGES> images to run"
+  )
+
+define_property(TARGET
+  PROPERTY POWER_2_IMGS
+  BRIEF_DOCS "True if test must be run with a power of 2 images (T/F)"
+  FULL_DOCS "Property to mark executable targets run as tests that they require 2^n images."
+  )
+
+
 #-------------------------------
 # Recurse into the src directory
 #-------------------------------
@@ -566,20 +582,32 @@ endif ()
 include( ProcessorCount )
 ProcessorCount(N_CPU)
 function(add_caf_test name num_caf_img test_target)
-   # Function to add MPI tests.
-   if ( ((N_CPU LESS num_caf_img) OR (N_CPU EQUAL 0)) )
-     message(STATUS "Test ${name} is oversubscribed: ${num_caf_img} CAF images requested with ${N_CPU} system processor available.")
-     if ( openmpi )
-       if ( N_CPU LESS 2 )
-	 set( num_caf_img 2 )
-       endif()
-       set (test_parameters --oversubscribe)
-       message( STATUS "Open-MPI back end detected, passing --oversubscribe for oversubscribed test, ${name}, with ${num_caf_img} ranks/images." )
-     endif()
-   endif()
-   set(test_parameters -np ${num_caf_img} ${test_parameters})
-   add_test(NAME ${name} COMMAND "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun" ${test_parameters} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${test_target}")
-   set_property(TEST ${name} PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
+  # Function to add MPI tests.
+  if(TARGET ${test_target})
+    get_target_property(min_test_imgs ${test_target} MIN_IMAGES)
+  elseif(TARGET build_${test_target})
+    get_target_property(min_test_imgs build_${test_target} MIN_IMAGES)
+  endif()
+  if(min_test_imgs)
+    if(num_caf_img LESS min_test_imgs)
+      message( FATAL_ERROR "Test ${name} requires ${min_test_imgs} but was only given ${num_caf_images}" )
+    endif()
+  endif()
+  if ( ((N_CPU LESS num_caf_img) OR (N_CPU EQUAL 0)) )
+    message(STATUS "Test ${name} is oversubscribed: ${num_caf_img} CAF images requested with ${N_CPU} system processor available.")
+    if ( openmpi )
+      if (min_test_imgs)
+	set( num_caf_img ${min_test_imgs} )
+      elseif ( N_CPU LESS 2 )
+        set( num_caf_img 2 )
+      endif()
+      set (test_parameters --oversubscribe)
+      message( STATUS "Open-MPI back end detected, passing --oversubscribe for oversubscribed test, ${name}, with ${num_caf_img} ranks/images." )
+    endif()
+  endif()
+  set(test_parameters -np ${num_caf_img} ${test_parameters})
+  add_test(NAME ${name} COMMAND "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun" ${test_parameters} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${test_target}")
+  set_property(TEST ${name} PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
 endfunction(add_caf_test)
 
 #--------------
