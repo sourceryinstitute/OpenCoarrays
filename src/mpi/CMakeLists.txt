@@ -49,8 +49,9 @@ CHECK_SYMBOL_EXISTS(SIGKILL "signal.h" HAVE_SIGKILL)
 if(NOT HAVE_SIGKILL) # try -D_POSIX, needed for mingw-w64, maybe others, see #435
                      # https://github.com/sourceryinstitute/OpenCoarrays/issues/435#issuecomment-323592433
   list( APPEND CMAKE_REQUIRED_DEFINITIONS -D_POSIX)
-  CHECK_SYMBOL_EXISTS(SIGKILL "signal.h" HAVE_SIGKILL)
-  if(HAVE_SIGKILL)
+  CHECK_SYMBOL_EXISTS(SIGKILL "signal.h" HAVE_SIGKILL2)
+  if(HAVE_SIGKILL2)
+    set(HAVE_SIGKILL ${HAVE_SIGKILL2})
     add_definitions(-D_POSIX)
   endif()
 endif()
@@ -115,11 +116,18 @@ endif()
 #---------------------------------------------------
 # Windows Intel MPI compatibility, see GH issue #435
 #---------------------------------------------------
-CHECK_SYMBOL_EXISTS(I_MPI_VERSION mpi.h HAVE_Intel_MPI)
+set(old_cmake_required_includes "${CMAKE_REQUIRED_INCLUDES}")
+if(CMAKE_REQUIRED_INCLUDES)
+  set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES};${MPI_C_INCLUDE_PATH})
+else()
+  set(CMAKE_REQUIRED_INCLUDES ${MPI_C_INCLUDE_PATH})
+endif()
+CHECK_INCLUDE_FILES("mpi.h" HAVE_MPI_H)
+CHECK_SYMBOL_EXISTS(I_MPI_VERSION "mpi.h" HAVE_Intel_MPI)
 if(HAVE_Intel_MPI AND WIN32)
   add_definitions(-DUSE_GCC)
 endif()
-
+set(CMAKE_REQUIRED_INCLUDES ${old_cmake_required_includes})
 
 add_library(opencoarrays_mod OBJECT ../extensions/opencoarrays.F90)
 set_target_properties(opencoarrays_mod
@@ -148,10 +156,12 @@ set_target_properties ( caf_mpi
 )
 
 # Create a symlink in the include dir
-add_custom_command(TARGET caf_mpi
-  POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E create_symlink "./${mod_dir_tail}/opencoarrays.mod" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_INCLUDEDIR}/opencoarrays.mod"
-  COMMENT "Creating symlink ${CMAKE_INSTALL_INCLUDEDIR}/opencoarrays.mod --> ${CMAKE_INSTALL_INCLUDEDIR}/${mod_dir_tail}/opencoarrays.mod")
+if(UNIX)
+  add_custom_command(TARGET caf_mpi
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E create_symlink "./${mod_dir_tail}/opencoarrays.mod" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_INCLUDEDIR}/opencoarrays.mod"
+    COMMENT "Creating symlink ${CMAKE_INSTALL_INCLUDEDIR}/opencoarrays.mod --> ${CMAKE_INSTALL_INCLUDEDIR}/${mod_dir_tail}/opencoarrays.mod")
+endif()
 
 install(DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_INCLUDEDIR}/" DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
   FILES_MATCHING PATTERN "*.mod")

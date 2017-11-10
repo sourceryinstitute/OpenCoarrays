@@ -606,7 +606,7 @@ function(add_caf_test name num_caf_img test_target)
     endif()
   endif()
   set(test_parameters -np ${num_caf_img} ${test_parameters})
-  add_test(NAME ${name} COMMAND "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun" ${test_parameters} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${test_target}")
+  add_test(NAME ${name} COMMAND "bash" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun" ${test_parameters} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${test_target}")
   set_property(TEST ${name} PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
 endfunction(add_caf_test)
 
