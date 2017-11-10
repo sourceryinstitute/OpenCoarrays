@@ -1,0 +1,10 @@
+*.log
+log.*
+.git
+.gitignore
+hooks
+*~
+Untitled*.ipynb
+Makefile
+#*#
+\#*\#
