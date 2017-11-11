@@ -1,0 +1,2 @@
+# To verify cryptographic checksums `shasum -c opencoarrays-@full_git_describe@-SHA256.txt` on Mac OS X, or
+# `sha256sum -c  opencoarrays-@full_git_describe@-SHA256.txt` on Linux.
