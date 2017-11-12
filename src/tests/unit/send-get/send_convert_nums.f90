@@ -31,8 +31,8 @@ program send_convert_int_array
     allocate(int_scal_k4, SOURCE=42)
     allocate(co_int_scal_k1[*]) ! allocate syncs here
     allocate(co_int_scal_k4[*]) ! allocate syncs here
-    allocate(int_k1, SOURCE=INT([ 5, 4, 3, 2, 1], 1))
-    allocate(int_k4, SOURCE=[ 5, 4, 3, 2, 1])
+    allocate(int_k1(1:5), SOURCE=INT([ 5, 4, 3, 2, 1], 1))
+    allocate(int_k4(1:5), SOURCE=[ 5, 4, 3, 2, 1])
     allocate(co_int_k1(5)[*]) ! allocate syncs here
     allocate(co_int_k4(5)[*]) ! allocate syncs here
 
@@ -40,8 +40,8 @@ program send_convert_int_array
     allocate(real_scal_k8, SOURCE=REAL(37.042, 8))
     allocate(co_real_scal_k4[*]) ! allocate syncs here
     allocate(co_real_scal_k8[*]) ! allocate syncs here
-    allocate(real_k4, SOURCE=[ 5.1, 4.2, 3.3, 2.4, 1.5])
-    allocate(real_k8, SOURCE=REAL([ 5.1, 4.2, 3.3, 2.4, 1.5], 8))
+    allocate(real_k4(1:5), SOURCE=[ 5.1, 4.2, 3.3, 2.4, 1.5])
+    allocate(real_k8(1:5), SOURCE=REAL([ 5.1, 4.2, 3.3, 2.4, 1.5], 8))
     allocate(co_real_k4(5)[*]) ! allocate syncs here
     allocate(co_real_k8(5)[*]) ! allocate syncs here
     ! First check send/copy to self
@@ -307,6 +307,19 @@ program send_convert_int_array
       print *, co_int_k1
       if (any(co_int_k1 /= [INT(-2, 1), int_k1(4), INT(-2, 1), int_k1(5), INT(-2, 1)])) &
         & error stop 'send strided int kind=4 to kind=1 self failed.'
+
+      co_int_k1(1:5) = int_k1(5:1:-1)
+      co_int_k1(::2)[1] = co_int_k1(3:1:-1)
+      print *, co_int_k1
+      ! Note, indezes two times reversed!
+      if (any(co_int_k1 /= [int_k1(3), int_k1(4), int_k1(4), int_k1(2), int_k1(5)])) &
+        & error stop 'send strided with temp int kind=1 to kind=1 self failed.'
+
+      co_int_k4(1:5) = int_k4(5:1:-1)
+      co_int_k4(::2)[1] = co_int_k4(3:1:-1)
+      print *, co_int_k4
+      if (any(co_int_k4 /= [int_k4(3), int_k4(4), int_k4(4), int_k4(2), int_k4(5)])) &
+       & error stop 'send strided with temp int kind=4 to kind=4 self failed.'
     else if (me == 2) then ! Do the real copy to self checks on image 2
       co_real_k4 = -1.0
       co_real_k4(::2)[2] = real_k4(1:3)
@@ -322,15 +335,27 @@ program send_convert_int_array
 
       co_real_k8 = -2.0
       co_real_k8(2::2)[2] = real_k4(4:5)
-      print *, co_real_k8, lbound(real_k8, 1)
-!      if (any(abs(co_real_k8 - [REAL(-2.0, 8), real_k8(4), REAL(-2.0, 8), real_k8(5), REAL(-2.0, 8)]) > tolerance4to8)) &
-!        & error stop 'send strided real kind=4 to kind=8 self failed.'
+      print *, co_real_k8(1:5), lbound(real_k8, 1)
+      if (any(abs(co_real_k8 - [REAL(-2.0, 8), real_k8(4), REAL(-2.0, 8), real_k8(5), REAL(-2.0, 8)]) > tolerance4to8)) &
+        & error stop 'send strided real kind=4 to kind=8 self failed.'
 
       co_real_k4 = -2.0
       co_real_k4(2::2)[2] = real_k8(1:2)
       print *, co_real_k4
       if (any(abs(co_real_k4 - [-2.0, real_k4(1), -2.0, real_k4(2), -2.0]) > tolerance4)) &
         & error stop 'send strided real kind=8 to kind=4 self failed.'
+
+      co_real_k4(1:5) = real_k4(5:1:-1)
+      co_real_k4(::2)[2] = co_real_k4(3:1:-1)
+      print *, co_real_k4
+      if (any(abs(co_real_k4 - [real_k4(3), real_k4(4), real_k4(4), real_k4(2), real_k4(5)]) > tolerance4)) &
+        & error stop 'send strided with temp real kind=4 to kind=4 self failed.'
+
+      co_real_k8(1:5) = real_k8(5:1:-1)
+      co_real_k8(::2)[2] = co_real_k8(3:1:-1)
+      print *, co_real_k8
+      if (any(abs(co_real_k8 - [real_k8(3), real_k8(4), real_k8(4), real_k8(2), real_k8(5)]) > tolerance8)) &
+        & error stop 'send strided with temp real kind=8 to kind=8 self failed.'
     end if
 
     ! Transfer to other image now.

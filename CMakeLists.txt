@@ -627,7 +627,7 @@ if(opencoarrays_aware_compiler)
   # Integration tests verifying the use of libcaf_mpi in applications
   add_caf_test(hello_multiverse 2 hello_multiverse)
   add_caf_test(coarray_burgers_pde 2 coarray_burgers_pde)
-  add_caf_test(co_heat 2 co_heat)
+#  add_caf_test(co_heat 2 co_heat)
   add_caf_test(asynchronous_hello_world 3 asynchronous_hello_world)
 
   # Regression tests based on reported issues

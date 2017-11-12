@@ -1804,7 +1804,8 @@ convert_with_strides (void *dst, int dst_type, int dst_kind, ptrdiff_t byte_dst_
 
 static void
 copy_char_to_self (void *src, int src_type, int src_size, int src_kind,
-                   void *dst, int dst_type, int dst_size, int dst_kind)
+                   void *dst, int dst_type, int dst_size, int dst_kind,
+                   size_t size, bool src_is_scalar)
 {
 #ifdef GFC_CAF_CHECK
   if (dst_type != BT_CHARACTER || src_type != BT_CHARACTER)
@@ -1817,31 +1818,49 @@ copy_char_to_self (void *src, int src_type, int src_size, int src_kind,
    * memory location. No offset summation is needed.  */
   if (dst_kind == src_kind)
     {
-      memmove (dst, src, min_len * dst_kind);
-      /* Fill dest when source is too short. */
-      if (dst_len > src_len)
+      for (size_t c = 0; c < size; ++c)
         {
-          int32_t * dest_addr = (int32_t *)(dst + dst_kind * src_len);
-          const size_t pad_num = dst_len - src_len;
-          if (dst_kind == 1)
-            memset (dest_addr, ' ', pad_num);
-          else if (dst_kind == 4)
+          memmove (dst, src, min_len * dst_kind);
+          /* Fill dest when source is too short. */
+          if (dst_len > src_len)
             {
-              const void * end_addr = &(dest_addr[pad_num]);
-              while (dest_addr != end_addr)
-                *(dest_addr++) = (int32_t)' ';
+              int32_t * dest_addr = (int32_t *)(dst + dst_kind * src_len);
+              const size_t pad_num = dst_len - src_len;
+              if (dst_kind == 1)
+                memset (dest_addr, ' ', pad_num);
+              else if (dst_kind == 4)
+                {
+                  const void * end_addr = &(dest_addr[pad_num]);
+                  while (dest_addr != end_addr)
+                    *(dest_addr++) = (int32_t)' ';
+                }
+              else
+                caf_runtime_error (unreachable);
             }
-          else
-            caf_runtime_error (unreachable);
+          dst = (void *)((ptrdiff_t)(dst) + dst_size);
+          if (!src_is_scalar)
+            src = (void *)((ptrdiff_t)(src) + src_size);
         }
     }
   else
     {
       /* Assign using kind-conversion. */
       if (dst_kind == 1 && src_kind == 4)
-        assign_char1_from_char4 (dst_len, src_len, dst, src);
+        for (size_t c = 0; c < size; ++c)
+          {
+            assign_char1_from_char4 (dst_len, src_len, dst, src);
+            dst = (void *)((ptrdiff_t)(dst) + dst_size);
+            if (!src_is_scalar)
+              src = (void *)((ptrdiff_t)(src) + src_size);
+          }
       else if (dst_kind == 4 && src_kind == 1)
-        assign_char4_from_char1 (dst_len, src_len, dst, src);
+        for (size_t c = 0; c < size; ++c)
+          {
+            assign_char4_from_char1 (dst_len, src_len, dst, src);
+            dst = (void *)((ptrdiff_t)(dst) + dst_size);
+            if (!src_is_scalar)
+              src = (void *)((ptrdiff_t)(src) + src_size);
+          }
       else
         caf_runtime_error ("_caf_send(): Unsupported char kinds in same image assignment (kind(lhs)= %d, kind(rhs) = %d)",
                            dst_kind, src_kind);
@@ -2139,12 +2158,13 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
     {
       if(same_image)
         {
-          dprint ("%d/%d: %s() in caf_this == image_index\n",
-                  caf_this_image, caf_num_images, __FUNCTION__);
+          dprint ("%d/%d: %s() in caf_this == image_index, size = %d, dst_kind = %d, src_kind = %d\n",
+                  caf_this_image, caf_num_images, __FUNCTION__, size, dst_kind, src_kind);
           if (dst_type == BT_CHARACTER)
             /* The size is encoded in the descriptor's type for char arrays.  */
             copy_char_to_self (src->base_addr, src_type, src_size, src_kind,
-                               dest->base_addr, dst_type, dst_size, dst_kind);
+                               dest->base_addr, dst_type, dst_size, dst_kind,
+                               size, src_rank == 0);
           else
             copy_to_self (src, src_kind, dest, dst_kind, size, stat);
           return;
@@ -2168,7 +2188,8 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
                   || (dst_kind != src_kind && dst_type == BT_CHARACTER))
                 {
                   copy_char_to_self(src->base_addr, src_type, src_size, src_kind,
-                                    t_buff, dst_type, dst_size, dst_kind);
+                                    t_buff, dst_type, dst_size, dst_kind,
+                                    size, src_rank == 0);
                   ierr = MPI_Put (t_buff, dst_size, MPI_BYTE, remote_image,
                                   offset, dst_size, MPI_BYTE, *p);
                 }
@@ -2353,18 +2374,23 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
           ptrdiff_t array_offset_dst = 0;
           ptrdiff_t extent = 1;
           ptrdiff_t tot_ext = 1;
-          for (j = 0; j < dst_rank - 1; ++j)
+          if (!same_image || !mrt)
             {
-              array_offset_dst += ((i / tot_ext)
-                                   % (dest->dim[j]._ubound
-                                      - dest->dim[j].lower_bound + 1))
-                * dest->dim[j]._stride;
-              extent = (dest->dim[j]._ubound - dest->dim[j].lower_bound + 1);
-              tot_ext *= extent;
-            }
+              /* For same image and may require temp, the dst_offset is compute
+                 on storage.  */
+              for (j = 0; j < dst_rank - 1; ++j)
+                {
+                  array_offset_dst += ((i / tot_ext)
+                                       % (dest->dim[j]._ubound
+                                          - dest->dim[j].lower_bound + 1))
+                      * dest->dim[j]._stride;
+                  extent = (dest->dim[j]._ubound - dest->dim[j].lower_bound + 1);
+                  tot_ext *= extent;
+                }
 
-          array_offset_dst += (i / tot_ext) * dest->dim[dst_rank - 1]._stride;
-          dst_offset = offset + array_offset_dst * dst_size;
+              array_offset_dst += (i / tot_ext) * dest->dim[dst_rank - 1]._stride;
+              dst_offset = array_offset_dst * dst_size;
+            }
 
           void *sr;
           if (src_rank != 0)
@@ -2397,17 +2423,18 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
                       dst_size, src_kind, src_size);
               if (same_type_and_kind)
                 ierr = MPI_Put (sr, dst_size, MPI_BYTE, remote_image,
-                                dst_offset, dst_size, MPI_BYTE, *p);
+                                offset + dst_offset, dst_size, MPI_BYTE, *p);
               else
                 {
                   convert_type (t_buff, dst_type, dst_kind,
                                 sr, src_type, src_kind, stat);
                   ierr = MPI_Put (t_buff, dst_size, MPI_BYTE, remote_image,
-                                  dst_offset, dst_size, MPI_BYTE, *p);
+                                  offset + dst_offset, dst_size, MPI_BYTE, *p);
                 }
               if (pad_str)
-                ierr = MPI_Put (pad_str, dst_size - src_size, MPI_BYTE, remote_image,
-                                dst_offset, dst_size - src_size, MPI_BYTE, *p);
+                ierr = MPI_Put (pad_str, dst_size - src_size, MPI_BYTE,
+                                remote_image, offset + dst_offset,
+                                dst_size - src_size, MPI_BYTE, *p);
             }
           else
             {
@@ -2464,7 +2491,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
                 }
 
               array_offset_dst += (i / tot_ext) * dest->dim[dst_rank - 1]._stride;
-              dst_offset = offset + array_offset_dst * dst_size;
+              dst_offset = array_offset_dst * dst_size;
               memmove (dest->base_addr + dst_offset, t_buff +
                        i * dst_size, dst_size);
             }
@@ -2490,7 +2517,14 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
       if (stat)
         *stat = mpi_error;
       else
-        PREFIX(error_stop) (mpi_error);
+        {
+          int error_len = 2048;
+          char error_str[error_len];
+          strcpy (error_str, "MPI-error: ");
+          MPI_Error_string (mpi_error, &error_str[11], &error_len);
+          PREFIX (error_stop_str) (error_str, error_len + 11);
+        }
+//        PREFIX(error_stop) (mpi_error);
     }
 }
 
@@ -2886,9 +2920,7 @@ copy_data (void *ds, mpi_caf_token_t *token, MPI_Aint offset, int dst_type,
     This typedef is made to allow storing a copy of a remote descriptor on the
     stack without having to care about the rank.  */
 typedef struct gfc_max_dim_descriptor_t {
-  void *base_addr;
-  size_t offset;
-  ptrdiff_t dtype;
+  gfc_descriptor_t base;
   descriptor_dimension dim[GFC_MAX_DIMENSIONS];
 } gfc_max_dim_descriptor_t;
 
@@ -4021,11 +4053,14 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
                        MPI_BYTE, global_dynamic_win);
             }
 #ifdef EXTRA_DEBUG_OUTPUT
-          fprintf (stderr, "%d/%d: %s() remote desc rank: %d (ref_rank: %d)\n", caf_this_image, caf_num_images,
-                   __FUNCTION__, GFC_DESCRIPTOR_RANK (&src_desc), ref_rank);
-          for (i = 0; i < GFC_DESCRIPTOR_RANK (&src_desc); ++i)
-            fprintf (stderr, "%d/%d: %s() remote desc dim[%d] = (lb = %d, ub = %d, stride = %d)\n", caf_this_image, caf_num_images,
-                     __FUNCTION__, i, src_desc.dim[i].lower_bound, src_desc.dim[i]._ubound, src_desc.dim[i]._stride);
+          {
+            gfc_descriptor_t * src = (gfc_descriptor_t *)(&src_desc);
+            fprintf (stderr, "%d/%d: %s() remote desc rank: %d (ref_rank: %d)\n", caf_this_image, caf_num_images,
+                     __FUNCTION__, GFC_DESCRIPTOR_RANK (src), ref_rank);
+            for (i = 0; i < GFC_DESCRIPTOR_RANK (src); ++i)
+              fprintf (stderr, "%d/%d: %s() remote desc dim[%d] = (lb = %d, ub = %d, stride = %d)\n", caf_this_image, caf_num_images,
+                       __FUNCTION__, i, src_desc.dim[i].lower_bound, src_desc.dim[i]._ubound, src_desc.dim[i]._stride);
+          }
 #endif
 
           for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)

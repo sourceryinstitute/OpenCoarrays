@@ -51,6 +51,9 @@ typedef struct gfc_descriptor_t {
   void *base_addr;
   size_t offset;
   ptrdiff_t dtype;
+#if (__GNUC__ >= 8)
+  ptrdiff_t span;
+#endif
   descriptor_dimension dim[];
 } gfc_descriptor_t;
 
