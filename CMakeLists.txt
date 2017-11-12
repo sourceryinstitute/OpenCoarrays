@@ -47,6 +47,12 @@ if((NOT (OpenCoarraysVersion MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+")) AND (EXISTS "$
     if(NOT (git_status STREQUAL "0"))
       set(full_git_describe NOTFOUND)
     endif()
+    # Create a source distribution target using git archive
+    # e.g., `make dist` will package a release using current git state
+    add_custom_target(dist # OUTPUT "${CMAKE_BINARY_DIR}/${_OC_stem_name}.tar.gz"
+      COMMAND "${CMAKE_COMMAND}" -P "${CMAKE_SOURCE_DIR}/cmake/makeDist.cmake" "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}"
+      COMMENT "Creating source release asset, ${_OC_stem_name}.tar.gz, from ${git_full_describe} using the `git archive` command."
+      VERBATIM)
   else()
     message( WARNING "Could not find git executable!")
   endif()
