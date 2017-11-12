@@ -9,3 +9,5 @@ caf_compile_executable(get_with_offset_1d get_with_offset_1d.f90)
 caf_compile_executable(whole_get_array whole_get_array.f90)
 caf_compile_executable(strided_get strided_get.f90)
 caf_compile_executable(strided_sendget strided_sendget.f90)
+set_target_properties(build_strided_sendget
+  PROPERTIES MIN_IMAGES 3)
