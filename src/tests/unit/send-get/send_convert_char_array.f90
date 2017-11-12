@@ -20,8 +20,8 @@ program send_convert_char_array
     allocate(character(len=20)::co_str_k1_scal[*]) ! allocate syncs here
     allocate(character(kind=4, len=20)::co_str_k4_scal[*]) ! allocate syncs here
 
-    allocate(str_k1_arr, SOURCE=['abc', 'EFG', 'klm', 'NOP'])
-    allocate(str_k4_arr, SOURCE=[4_'abc', 4_'EFG', 4_'klm', 4_'NOP'])
+    allocate(str_k1_arr(1:4), SOURCE=['abc', 'EFG', 'klm', 'NOP'])
+    allocate(str_k4_arr(1:4), SOURCE=[4_'abc', 4_'EFG', 4_'klm', 4_'NOP'])
     allocate(character(len=5)::co_str_k1_arr(4)[*])
     allocate(character(kind=4, len=5)::co_str_k4_arr(4)[*])
 
@@ -94,6 +94,26 @@ program send_convert_char_array
 
       print *, '#' // co_str_k1_scal // '#, len:', len(co_str_k1_scal)
       if (co_str_k1_scal /= str_k1_scal // '          ') error stop 'send kind=4 to kind=1 to image 2 failed.'
+    end if
+
+    co_str_k1_arr(:) = '#####'
+    co_str_k4_arr(:) = 4_'#####'
+    
+    sync all
+
+    if (me == 1) then
+      co_str_k1_arr(::2)[2] = 'foo'
+      co_str_k4_arr(::2)[2] = ['bar', 'baz']
+    end if
+
+    sync all
+    if (me == 2) then
+      print *, co_str_k1_arr
+      if (any(co_str_k1_arr /= ['foo  ', '#####', 'foo  ', '#####'])) &
+        & error stop "strided send char arr kind 1 to kind 1 failed."
+      print *, co_str_k4_arr
+      if (any(co_str_k4_arr /= [4_'bar  ', 4_'#####', 4_'baz  ', 4_'#####'] )) &
+        & error stop "strided send char arr kind 1 to kind 4 failed."
     end if
 
     sync all
