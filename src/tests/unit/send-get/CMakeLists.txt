@@ -5,6 +5,7 @@ caf_compile_executable(get_array get_array_test.f90)
 
 caf_compile_executable(get_self sameloc.f90)
 caf_compile_executable(send_array send_array_test.f90)
+caf_compile_executable(get_convert_nums get_convert_nums.f90)
 caf_compile_executable(send_convert_char_array send_convert_char_array.f90)
 caf_compile_executable(send_convert_nums send_convert_nums.f90)
 caf_compile_executable(get_with_offset_1d get_with_offset_1d.f90)

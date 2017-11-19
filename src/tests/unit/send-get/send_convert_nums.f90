@@ -340,9 +340,9 @@ program send_convert_int_array
         & error stop 'send strided real kind=4 to kind=8 self failed.'
 
       co_real_k4 = -2.0
-      co_real_k4(2::2)[2] = real_k8(1:2)
+      co_real_k4(2::2)[2] = real_k8(0:1)
       print *, co_real_k4
-      if (any(abs(co_real_k4 - [-2.0, real_k4(1), -2.0, real_k4(2), -2.0]) > tolerance4)) &
+      if (any(abs(co_real_k4 - [-2.0, real_k4(0), -2.0, real_k4(1), -2.0]) > tolerance4)) &
         & error stop 'send strided real kind=8 to kind=4 self failed.'
 
       co_real_k4(1:5) = real_k4(5:1:-1)

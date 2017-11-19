@@ -59,7 +59,7 @@ program send_convert_char_array
       print *, 4_'#' // co_str_k4_arr(:) // 4_'#, len:', len(co_str_k4_arr(1))
       if (any(co_str_k4_arr /= [ 4_'abc  ', 4_'EFG  ', 4_'klm  ', 4_'NOP  '])) error stop 'send array kind=1 to kind=4 self failed.'
 
-      co_str_k1_arr(:)[1] = str_k4_arr
+      co_str_k1_arr(:)[2] = str_k4_arr
       print *, '#' // co_str_k1_arr(:) // '#, len:', len(co_str_k1_arr(1))
       if (any(co_str_k1_arr /= ['abc  ', 'EFG  ', 'klm  ', 'NOP  '])) error stop 'send array kind=4 to kind=1 self failed.'
     end if
