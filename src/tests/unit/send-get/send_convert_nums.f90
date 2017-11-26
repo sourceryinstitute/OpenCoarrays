@@ -1,4 +1,55 @@
-program send_convert_int_array
+!! Thoroughly test send, i.e. foo[N] = bar in all variants
+!!
+!! Do simple tests for send(). These test comprise
+!!
+!! FOO [N] = BAR
+!!
+!! where 
+!!
+!!  FOO                BAR               images
+!! scalar            scalar             N == me
+!!  int(k e [1,4])    int(k e [1,4])
+!!  real(k e [4,8])   real(k e [4,8])
+!!  int(k e [1,4])    real(k e [4,8])
+!!  real(k e [4,8])   int(k e [1,4])
+!!
+!! array(1:5)        scalar
+!!  int(k e [1,4])    int(k e [1,4])
+!!  real(k e [4,8])   real(k e [4,8])
+!!  int(k e [1,4])    real(k e [4,8])
+!!  real(k e [4,8])   int(k e [1,4])
+!!
+!! array(1:5)        array(1:5)
+!!  int(k e [1,4])    int(k e [1,4])
+!!  real(k e [4,8])   real(k e [4,8])
+!!  int(k e [1,4])    real(k e [4,8])
+!!  real(k e [4,8])   int(k e [1,4])
+!!
+!! array(1:3)       array(::2)
+!!  int(k e [1,4])    int(k e [1,4])
+!!  real(k e [4,8])   real(k e [4,8])
+!!  int(k e [1,4])    real(k e [4,8])
+!!  real(k e [4,8])   int(k e [1,4])
+!!
+!! array(4:5)       array(2::2)
+!!  int(k e [1,4])    int(k e [1,4])
+!!  real(k e [4,8])   real(k e [4,8])
+!!  int(k e [1,4])    real(k e [4,8])
+!!  real(k e [4,8])   int(k e [1,4])
+!!
+!! array(1:3)      array(3:1:-1)
+!!  int(k e [1,4])    int(k e [1,4])
+!!  real(k e [4,8])   real(k e [4,8])
+!!  int(k e [1,4])    real(k e [4,8])
+!!  real(k e [4,8])   int(k e [1,4])
+!!
+!! all of the above but for              N != me
+!!
+!! And may be some other, I've forgotten.
+!!
+!! Author: Andre Vehreschild, 2017
+
+program send_convert_nums
 
   implicit none
 
@@ -466,6 +517,6 @@ program send_convert_int_array
     sync all
     if (me == 1) print *, "Test passed."
   end associate
-end program send_convert_int_array
+end program send_convert_nums
 
 ! vim:ts=2:sts=2:sw=2:

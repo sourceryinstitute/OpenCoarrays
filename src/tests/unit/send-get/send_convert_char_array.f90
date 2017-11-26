@@ -1,3 +1,33 @@
+!! Thoroughly test send, i.e. foo [N] = bar in all variants
+!!
+!! Do simple tests for send(). These test comprise
+!!
+!! FOO [N] = BAR
+!!
+!! where 
+!!
+!!  FOO                BAR                 images
+!! character(len=20) character(len=10)   N == me
+!!  kind == 1         kind == 1
+!!  kind == 1         kind == 4
+!!  kind == 4         kind == 1
+!!  kind == 4         kind == 4
+!!
+!! character         character
+!!   (1:4, len == 5)  (1:4, len == 5)
+!!  kind == 1         kind == 1
+!!  kind == 1         kind == 4
+!!  kind == 4         kind == 1
+!!  kind == 4         kind == 4
+!!
+!! all of the above but for              N != me
+!!
+!! And may be some other, I've forgotten.
+!!
+!! Author: Andre Vehreschild, 2017
+
+
+
 program send_convert_char_array
 
   implicit none

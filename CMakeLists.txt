@@ -599,16 +599,26 @@ if(opencoarrays_aware_compiler)
     add_caf_test(get_with_vector_index 4 get_with_vector_index)
     add_caf_test(send_with_vector_index 2 send_with_vector_index)
   endif()
+
+  # Pure get tests
   add_caf_test(get_array 2 get_array)
   add_caf_test(get_self 2 get_self)
   add_caf_test(get_convert_nums 2 get_convert_nums)
-  add_caf_test(send_array 2 send_array)
-  add_caf_test(send_convert_char_array 2 send_convert_char_array)
-  add_caf_test(send_convert_nums 2 send_convert_nums)
+  add_caf_test(get_convert_char_array 2 get_convert_char_array)
   add_caf_test(get_with_offset_1d 2 get_with_offset_1d)
   add_caf_test(whole_get_array 2 whole_get_array)
   add_caf_test(strided_get 2 strided_get)
+
+  # Pure send tests
+  add_caf_test(send_array 2 send_array)
+  add_caf_test(send_convert_char_array 2 send_convert_char_array)
+  add_caf_test(send_convert_nums 2 send_convert_nums)
+
+  # Pure sendget tests
+  add_caf_test(sendget_convert_nums 3 sendget_convert_nums)
+  add_caf_test(sendget_convert_char_array 3 sendget_convert_char_array)
   add_caf_test(strided_sendget 3 strided_sendget)
+
   add_caf_test(co_sum 4 co_sum_test)
   add_caf_test(co_broadcast 4 co_broadcast_test)
   add_caf_test(co_min 4 co_min_test)
