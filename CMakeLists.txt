@@ -47,6 +47,12 @@ if((NOT (OpenCoarraysVersion MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+")) AND (EXISTS "$
     if(NOT (git_status STREQUAL "0"))
       set(full_git_describe NOTFOUND)
     endif()
+    # Create a source distribution target using git archive
+    # e.g., `make dist` will package a release using current git state
+    add_custom_target(dist # OUTPUT "${CMAKE_BINARY_DIR}/${_OC_stem_name}.tar.gz"
+      COMMAND "${CMAKE_COMMAND}" -P "${CMAKE_SOURCE_DIR}/cmake/makeDist.cmake" "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}"
+      COMMENT "Creating source release asset, ${_OC_stem_name}.tar.gz, from ${git_full_describe} using the `git archive` command."
+      VERBATIM)
   else()
     message( WARNING "Could not find git executable!")
   endif()
@@ -165,6 +171,9 @@ endif()
   if ( gfortran_compiler AND ( NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0 ) )
     add_definitions(-DGCC_GE_7) # Tell library to build against GFortran 7.x bindings b/c we might be using clang for C
   endif()
+  if ( gfortran_compiler AND ( NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 8.0.0 ) )
+    add_definitions(-DGCC_GE_8) # Tell library to build against GFortran 8.x bindings w/ descriptor change
+  endif()
 
 if(gfortran_compiler)
   set(OLD_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
@@ -213,7 +222,7 @@ if ( (NOT MPI_C_FOUND) OR (NOT MPI_Fortran_FOUND) OR (NOT MPIEXEC))
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
     OUTPUT_VARIABLE DEFAULT_MPICH_INSTALL_LOC
     OUTPUT_QUIET
-    OUTPUT_STRIP_TRAILING_WHITES_SPACE
+    OUTPUT_STRIP_TRAILING_WHITESPACE
   )
   find_program (MY_MPI_EXEC NAMES mpirun mpiexec lamexec srun
     PATHS "${DEFAULT_MPICH_INSTALL_LOC}" ENV PATH
@@ -429,6 +438,14 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}")
 
+#-----------------
+# Install manpages
+#-----------------
+install(FILES "${CMAKE_SOURCE_DIR}/doc/man/man1/caf.1" "${CMAKE_SOURCE_DIR}/doc/man/man1/cafrun.1"
+  DESTINATION "${CMAKE_INSTALL_MANDIR}/man1"
+  PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
+  COMPONENT documentation)
+
 #---------------------------------------------------
 # Define macro for compiling with caf wrapper script
 #---------------------------------------------------
@@ -481,10 +498,29 @@ endfunction()
 # Setup script style testing & enforcement macro
 #-----------------------------------------------
 
+find_program(style_pl style.pl "${CMAKE_SOURCE_DIR}/developer-scripts/")
 function(check_script_style script_full_path)
-  add_test(NAME "style:${script_full_path}"
-    COMMAND "${CMAKE_SOURCE_DIR}/developer-scripts/style.pl" "${script_full_path}")
+  if(style_pl)
+    add_test(NAME "style:${script_full_path}"
+      COMMAND "${style_pl}" "${script_full_path}")
+  endif()
 endfunction()
+
+#------------------------------------------------------------------------------
+# Add custom properties on targets for controling number of images during tests
+#------------------------------------------------------------------------------
+define_property(TARGET
+  PROPERTY MIN_IMAGES
+  BRIEF_DOCS "Minimum allowable images for the test <integer>"
+  FULL_DOCS "Property to mark executable targets run as tests that they require at least <MIN_IMAGES> images to run"
+  )
+
+define_property(TARGET
+  PROPERTY POWER_2_IMGS
+  BRIEF_DOCS "True if test must be run with a power of 2 images (T/F)"
+  FULL_DOCS "Property to mark executable targets run as tests that they require 2^n images."
+  )
+
 
 #-------------------------------
 # Recurse into the src directory
@@ -552,20 +588,32 @@ endif ()
 include( ProcessorCount )
 ProcessorCount(N_CPU)
 function(add_caf_test name num_caf_img test_target)
-   # Function to add MPI tests.
-   if ( ((N_CPU LESS num_caf_img) OR (N_CPU EQUAL 0)) )
-     message(STATUS "Test ${name} is oversubscribed: ${num_caf_img} CAF images requested with ${N_CPU} system processor available.")
-     if ( openmpi )
-       if ( N_CPU LESS 2 )
-	 set( num_caf_img 2 )
-       endif()
-       set (test_parameters --oversubscribe)
-       message( STATUS "Open-MPI back end detected, passing --oversubscribe for oversubscribed test, ${name}, with ${num_caf_img} ranks/images." )
-     endif()
-   endif()
-   set(test_parameters -np ${num_caf_img} ${test_parameters})
-   add_test(NAME ${name} COMMAND "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun" ${test_parameters} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${test_target}")
-   set_property(TEST ${name} PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
+  # Function to add MPI tests.
+  if(TARGET ${test_target})
+    get_target_property(min_test_imgs ${test_target} MIN_IMAGES)
+  elseif(TARGET build_${test_target})
+    get_target_property(min_test_imgs build_${test_target} MIN_IMAGES)
+  endif()
+  if(min_test_imgs)
+    if(num_caf_img LESS min_test_imgs)
+      message( FATAL_ERROR "Test ${name} requires ${min_test_imgs} but was only given ${num_caf_images}" )
+    endif()
+  endif()
+  if ( ((N_CPU LESS num_caf_img) OR (N_CPU EQUAL 0)) )
+    message(STATUS "Test ${name} is oversubscribed: ${num_caf_img} CAF images requested with ${N_CPU} system processor available.")
+    if ( openmpi )
+      if (min_test_imgs)
+	set( num_caf_img ${min_test_imgs} )
+      elseif ( N_CPU LESS 2 )
+        set( num_caf_img 2 )
+      endif()
+      set (test_parameters --oversubscribe)
+      message( STATUS "Open-MPI back end detected, passing --oversubscribe for oversubscribed test, ${name}, with ${num_caf_img} ranks/images." )
+    endif()
+  endif()
+  set(test_parameters -np ${num_caf_img} ${test_parameters})
+  add_test(NAME ${name} COMMAND "bash" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun" ${test_parameters} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${test_target}")
+  set_property(TEST ${name} PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
 endfunction(add_caf_test)
 
 #--------------

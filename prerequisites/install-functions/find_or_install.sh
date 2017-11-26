@@ -35,7 +35,7 @@ find_or_install()
   if type "$executable" >& /dev/null; then
     printf "yes.\n"
     package_in_path=true
-    package_version_in_path=$("$executable" --version|head -1)
+    package_version_in_path=$( ("${executable}" --version 2>/dev/null || "${executable}" -V) | head -1)
   else
     printf "no.\n"
     package_in_path=false
@@ -212,7 +212,7 @@ find_or_install()
 
     # Check consistency of MPIFC, if set, and user-specified Fortran compiler
     if [[ ! -z ${MPIFC:-} && ! -z "${arg_f:-}" ]]; then
-      MPIFC_wraps=$(${MPIFC} --version)
+      MPIFC_wraps=$("${MPIFC}" --version)
       compiler=$(${arg_f} --version)
       if [[ "${MPIFC_wraps}" != "${compiler}"   ]]; then
         emergency "Specified MPI ${MPIFC_wraps} wraps a compiler other than the specified Fortran compiler ${compiler}"

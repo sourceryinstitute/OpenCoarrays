@@ -23,3 +23,5 @@ caf_compile_executable(sendget_convert_nums sendget_convert_nums.f90)
 caf_compile_executable(sendget_convert_char_array sendget_convert_char_array.f90)
 #caf_compile_executable(sendget_with_vector_index sendget_with_vector_index.f90)
 caf_compile_executable(strided_sendget strided_sendget.f90)
+set_target_properties(build_strided_sendget
+  PROPERTIES MIN_IMAGES 3)

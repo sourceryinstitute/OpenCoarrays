@@ -10,7 +10,7 @@ program sync_image_ring_abort_on_stopped_image
 
   integer :: stat_var = 0
 
-  if (num_images() .lt. 2) error stop "Need at least two images to test."
+  if (num_images() .lt. 3) error stop "Need at least three images to test."
 
   associate (me => this_image())
     if (me == 1) then

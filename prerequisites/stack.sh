@@ -99,8 +99,8 @@ function stack_size
         return 1
     fi
     # TODO: revise the eval below to eliminate the need for this pop/push
-    # sequene, which is a workaround to prevent an error that occurs with 
-    # if the stack is new and has not been the target of a stack_push. 
+    # sequene, which is a workaround to prevent an error that occurs with
+    # if the stack is new and has not been the target of a stack_push.
     stack_push $1 __push_junk
     stack_pop $1 __pop_trash
     eval "$2"='$'"{#_stack_$1[*]}"
@@ -112,7 +112,7 @@ function no_such_stack
     stack_exists "$1"
     ret=$?
     declare -i x
-    let x="1-$ret"
+    let x="1-$ret" || true
     return $x
 }
 
@@ -183,8 +183,7 @@ function stack_print
 
     while (( _i > 0 ))
     do
-       (( _i = _i - 1 )) || true
-        eval 'e=$'"{_stack_$1[$_i]}"
+        eval 'e=$'"{_stack_$1[$((--_i))]}" # pre-decrement
 	# shellcheck  disable=SC2154
         tmp="$tmp $e"
     done
@@ -210,13 +209,8 @@ function stack_new
         return 1
     fi
 
-    if [[ $(uname) == "Darwin" ]]; then
-      eval "declare -ag _stack_$1" >& /dev/null || true
-      eval "declare -ig _stack_$1_i" >& /dev/null || true
-    else
-      eval "declare -ag _stack_$1" >& /dev/null
-      eval "declare -ig _stack_$1_i" >& /dev/null
-    fi
+    eval "_stack_$1=()"
+    eval "_stack_$1_i=0"
 
     variableName="_stack_$1_i"
     variableVal="0"
