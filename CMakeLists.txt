@@ -660,12 +660,14 @@ if(opencoarrays_aware_compiler)
   # Pure send tests
   add_caf_test(send_array 2 send_array)
   add_caf_test(send_convert_char_array 2 send_convert_char_array)
-  add_caf_test(send_convert_nums 2 send_convert_nums)
 
   # Pure sendget tests
-  add_caf_test(sendget_convert_nums 3 sendget_convert_nums)
   add_caf_test(sendget_convert_char_array 3 sendget_convert_char_array)
   add_caf_test(strided_sendget 3 strided_sendget)
+  if (gfortran_compiler AND (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.3.0))
+    add_caf_test(sendget_convert_nums 3 sendget_convert_nums)
+    add_caf_test(send_convert_nums 2 send_convert_nums)
+  endif()
 
   add_caf_test(co_sum 4 co_sum_test)
   add_caf_test(co_broadcast 4 co_broadcast_test)
