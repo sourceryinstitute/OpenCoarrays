@@ -78,20 +78,20 @@ program get_convert_nums
   real(kind=4)   , dimension(1:5)                            :: real_k4
   real(kind=8)   , dimension(1:5)                            :: real_k8
 
-  type(t), save :: obj[*]
+  type(t), save, codimension[*] :: obj
 
   associate(me => this_image(), np => num_images())
     if (np < 2) error stop 'Can not run with less than 2 images.'
 
-    allocate(obj[*]%int_scal_k1, SOURCE=INT(42, 1)) ! allocate syncs here
-    allocate(obj[*]%int_scal_k4, SOURCE=42) ! allocate syncs here
-    allocate(obj[*]%int_k1(5), SOURCE=INT([ 5, 4, 3, 2, 1], 1)) ! allocate syncs here
-    allocate(obj[*]%int_k4(5), SOURCE=[ 5, 4, 3, 2, 1]) ! allocate syncs here
+    allocate(obj%int_scal_k1, SOURCE=INT(42, 1)) ! allocate syncs here
+    allocate(obj%int_scal_k4, SOURCE=42) ! allocate syncs here
+    allocate(obj%int_k1(5), SOURCE=INT([ 5, 4, 3, 2, 1], 1)) ! allocate syncs here
+    allocate(obj%int_k4(5), SOURCE=[ 5, 4, 3, 2, 1]) ! allocate syncs here
 
-    allocate(obj[*]%real_scal_k4, SOURCE=37.042) ! allocate syncs here
-    allocate(obj[*]%real_scal_k8, SOURCE=REAL(37.042, 8)) ! allocate syncs here
-    allocate(obj[*]%real_k4(1:5), SOURCE=[ 5.1, 4.2, 3.3, 2.4, 1.5]) ! allocate syncs here
-    allocate(obj[*]%real_k8(1:5), SOURCE=REAL([ 5.1, 4.2, 3.3, 2.4, 1.5], 8)) ! allocate syncs here
+    allocate(obj%real_scal_k4, SOURCE=37.042) ! allocate syncs here
+    allocate(obj%real_scal_k8, SOURCE=REAL(37.042, 8)) ! allocate syncs here
+    allocate(obj%real_k4(1:5), SOURCE=[ 5.1, 4.2, 3.3, 2.4, 1.5]) ! allocate syncs here
+    allocate(obj%real_k8(1:5), SOURCE=REAL([ 5.1, 4.2, 3.3, 2.4, 1.5], 8)) ! allocate syncs here
 
     ! First check send/copy to self
     if (me == 1) then
