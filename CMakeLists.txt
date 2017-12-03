@@ -656,6 +656,7 @@ if(opencoarrays_aware_compiler)
   add_caf_test(get_with_offset_1d 2 get_with_offset_1d)
   add_caf_test(whole_get_array 2 whole_get_array)
   add_caf_test(strided_get 2 strided_get)
+  add_caf_test(alloc_comp_get_convert_nums 2 alloc_comp_get_convert_nums)
 
   # Pure send tests
   add_caf_test(send_array 2 send_array)
