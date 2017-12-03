@@ -294,38 +294,32 @@ program get_convert_nums
 
     ! Now with strides
 
-    ! Transfer to other image now.
+    ! Get from other image now.
     sync all
-    co_int_k4 = -1
-    co_int_k1 = INT(-1, 1)
-    co_real_k8 = -1.0
-    co_real_k4 = REAL(-1.0, 4)
+    int_k4 = -1
+    int_k1 = INT(-1, 1)
+    real_k8 = -1.0
+    real_k4 = REAL(-1.0, 4)
     sync all
     if (me == 1) then
-      co_int_k4(::2)[2] = [ 15, 13, 11]
+      int_k4(1:3) = co_int_k4(::2)[2]
+      print *, int_k4
+      if (any(int_k4 /= [co_int_k4(1), co_int_k4(3), co_int_k4(5), -1, -1])) &
+        & error stop 'strided send int kind=4 to kind=4 to image 2 failed.'
 
-      co_int_k1(::2)[2] = [INT(-15, 1), INT(-13, 1), INT(-11, 1)] 
-
-      co_real_k8(::2)[2] = [REAL(1.3, 8), REAL(1.5, 8), REAL(1.7, 8)]
-
-      co_real_k4(::2)[2] = [REAL(1.3, 4), REAL(1.5, 4), REAL(1.7, 4)]
-    end if
-
-    sync all
-    if (me == 2) then
-      print *, co_int_k4
-      if (any(co_int_k4 /= [15, -1, 13, -1, 11])) error stop 'strided send int kind=4 to kind=4 to image 2 failed.'
-
-      print *, co_int_k1
-      if (any(co_int_k1 /= [INT(-15, 1), INT(-1, 1), INT(-13, 1), INT(-1, 1), INT(-11, 1)])) &
+      int_k1(3:5) = co_int_k1(::2)[2]
+      print *, int_k1
+      if (any(int_k1 /= [INT(-1, 1), INT(-1, 1), co_int_k1(1), co_int_k1(3), co_int_k1(5)])) &
         & error stop 'strided send int kind=1 to kind=1 to image 2 failed.'
 
-      print *, co_real_k8
-      if (any(abs(co_real_k8 - [1.3, -1.0, 1.5, -1.0, 1.7]) > tolerance8)) &
+      real_k8(1:3) = co_real_k8(::2)[2]
+      print *, real_k8
+      if (any(abs(real_k8 - [co_real_k8(1), co_real_k8(3), co_real_k8(5), REAL(-1.0, 8), REAL(-1.0, 8)]) > tolerance8)) &
         & error stop 'strided send real kind=8 to kind=8 to image 2 failed.'
 
-      print *, co_real_k4
-      if (any(abs(co_real_k4 - [REAL(1.3, 4), REAL(-1.0, 4), REAL(1.5, 4), REAL(-1.0, 4), REAL(1.7, 4)]) > tolerance4)) &
+      real_k4(3:5) = co_real_k4(::2)[2]
+      print *, real_k4
+      if (any(abs(real_k4 - [-1.0, -1.0, co_real_k4(1), co_real_k4(3), co_real_k4(5)]) > tolerance4)) &
         & error stop 'strided send real kind=4 to kind=4 to image 2 failed.'
     end if
     
