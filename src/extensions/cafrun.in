@@ -160,7 +160,7 @@ usage() {
   echo "                            failed image support is present, OpenCoarrays triggers cleanup"
   echo "                            explicitly when a failed/stopped image is encountered in an"
   echo "                            image control statement without a \`stat=\` clause."
-  ehco "   --show, -s,              Show the command that the wrapper will execute. You can pass"
+  echo "   --show, -s,              Show the command that the wrapper will execute. You can pass"
   echo "                            this as the first argument and then the additional arguments"
   echo "                            that you're planning to pass to perform a dry run."
   echo ""
