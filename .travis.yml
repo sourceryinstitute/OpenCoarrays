@@ -102,7 +102,7 @@ before_install:
     set -o errexit
     if [[ (-n ${TRAVIS_TAG}) && (${TRAVIS_OS_NAME} == osx) ]] && ${TRAVIS_SECURE_ENV_VARS} ; then
       brew update > /dev/null
-      [[ "$(brew ls --versions gpg2)" ]] || brew install gpg2
+      brew ls --versions gpg2 >/dev/null || brew install gpg2
       brew outdated gpg2 || brew upgrade gpg2
       type -P openssl || brew install openssl
     fi
@@ -137,10 +137,10 @@ install:
     if [[ (-n ${TRAVIS}) && (${TRAVIS_OS_NAME} == osx) ]]; then
       brew update > /dev/null
 
-      [[ "$(brew ls --versions shellcheck)" ]] || brew install --force-bottle shellcheck
+      brew ls --versions shellcheck >/dev/null || brew install --force-bottle shellcheck
       brew outdated shellcheck || brew upgrade --force-bottle shellcheck
       for pkg in ${OSX_PACKAGES}; do
-        [[ "$(brew ls --versions ${pkg})" ]] || brew install ${pkg}
+        brew ls --versions ${pkg} >/dev/null || brew install ${pkg} || brew link --overwrite ${pkg}
         brew outdated ${pkg} || brew upgrade ${pkg}
       done
       if [[ ${BUILD_TYPE} == InstallScript ]]; then # uninstall some stuff if present
@@ -150,9 +150,7 @@ install:
       else
         wget "${!MPICH_BOT_URL_HEAD}${MPICH_BOT_URL_TAIL}"
         brew install --force-bottle ${MPICH_BOT_URL_TAIL}
-        if ! [[ "$(brew ls --versions mpich)" ]]; then
-          brew install --force-bottle mpich
-        fi
+        brew ls --versions mpich >/dev/null || brew install --force-bottle mpich
       fi
       mpif90 --version || mpif90 -show || true
       mpicc --version || mpicc -show || true
