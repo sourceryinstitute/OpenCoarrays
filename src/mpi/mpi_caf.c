@@ -1926,7 +1926,7 @@ PREFIX (sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
                   gfc_descriptor_t *dest, caf_vector_t *dst_vector,
                   caf_token_t token_g, size_t offset_g, int image_index_g,
                   gfc_descriptor_t *src , caf_vector_t *src_vector,
-                  int dst_kind, int src_kind, bool mrt, int *stat)
+                  int dst_kind, int src_kind, bool mrt, int *pstat)
 {
   int ierr = 0;
   size_t i, size;
@@ -1955,8 +1955,14 @@ PREFIX (sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
       dst_remote_image = image_index_s - 1;
 
   /* Ensure stat is always set. */
+#ifdef GCC_GE_7
+  int * stat = pstat;
   if (stat)
     *stat = 0;
+#else
+  /* Gcc prior to 7.0 does not have stat here. */
+  int * stat = NULL;
+#endif
 
   size = 1;
   for (j = 0; j < dst_rank; ++j)
@@ -2681,7 +2687,7 @@ void
 PREFIX (send) (caf_token_t token, size_t offset, int image_index,
                gfc_descriptor_t *dest, caf_vector_t *dst_vector,
                gfc_descriptor_t *src, int dst_kind, int src_kind,
-               bool mrt, int *stat)
+               bool mrt, int *pstat)
 {
   int ierr = 0;
   size_t i, size;
@@ -2708,8 +2714,14 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
   const int remote_image = image_index - 1;
 
   /* Ensure stat is always set. */
+#ifdef GCC_GE_7
+  int * stat = pstat;
   if (stat)
     *stat = 0;
+#else
+  /* Gcc prior to 7.0 does not have stat here. */
+  int * stat = NULL;
+#endif
 
   size = 1;
   for (j = 0; j < dst_rank; ++j)
@@ -3244,7 +3256,7 @@ void
 PREFIX (get) (caf_token_t token, size_t offset, int image_index,
               gfc_descriptor_t *src, caf_vector_t *src_vector,
               gfc_descriptor_t *dest, int src_kind, int dst_kind,
-              bool mrt, int *stat)
+              bool mrt, int *pstat)
 {
   int ierr = 0;
   size_t i, size;
@@ -3271,8 +3283,14 @@ PREFIX (get) (caf_token_t token, size_t offset, int image_index,
   const int remote_image = image_index - 1;
 
   /* Ensure stat is always set. */
+#ifdef GCC_GE_7
+  int * stat = pstat;
   if (stat)
     *stat = 0;
+#else
+  /* Gcc prior to 7.0 does not have stat here. */
+  int * stat = NULL;
+#endif
 
   size = 1;
   for (j = 0; j < dst_rank; ++j)
