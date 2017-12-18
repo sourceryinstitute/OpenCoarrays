@@ -176,6 +176,7 @@ install:
     fi
 
 script:
+  - echo "In Travis-CI 'script' section."
   - |
     if [[ ${BUILD_TYPE} == InstallScript ]]; then
       ./install.sh --yes-to-all -i "${HOME}/opencoarrays" -j 4 -f "$(type -P "${FC}")" -c "$(type -P "${CC}")" -C "$(type -P "${CXX}")"
@@ -183,12 +184,12 @@ script:
       ../../../installations/cmake/*/bin/ctest --output-on-failure --schedule-random --repeat-until-fail 7
       cd -
     else
-      mkdir cmake-build
+      mkdir cmake-build || echo "Cannot mkdir cmake-build"
       for BUILD_TYPE in ${BUILD_TYPES}; do
         rm -rf cmake-build/* || true
-        cd cmake-build
-        cmake -DCMAKE_INSTALL_PREFIX:PATH="${HOME}/OpenCoarrays" -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" ..
-        make -j 4
+        cd cmake-build || echo 'cannot cd to cmake-build/'
+        cmake -DCMAKE_INSTALL_PREFIX:PATH="${HOME}/OpenCoarrays" -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" .. || echo "running cmake failed"
+        make -j 4 || echo "running make failed"
         ctest --output-on-failure --schedule-random --repeat-until-fail 7
         make install
         make uninstall
