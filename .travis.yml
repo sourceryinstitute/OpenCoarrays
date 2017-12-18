@@ -99,7 +99,6 @@ before_install:
   - export CXX=g++-${GCC}
   - export MPICH_BOT_URL_HEAD=MPICH_GCC${GCC}_BOT_URL_HEAD
   - |
-    set -o errexit
     if [[ (-n ${TRAVIS_TAG}) && (${TRAVIS_OS_NAME} == osx) ]] && ${TRAVIS_SECURE_ENV_VARS} ; then
       brew update > /dev/null
       brew ls --versions gpg2 >/dev/null || brew install gpg2
@@ -116,9 +115,7 @@ before_install:
       curl https://izaakbeekman.com/izaak.pubkey.txt | gpg --import
       git tag -v ${TRAVIS_TAG}
     fi
-    set +o errexit
   - |
-    set -o errexit
     if [[ (-n ${TRAVIS}) && (${TRAVIS_OS_NAME} == osx) ]]; then
       export PATH="${PATH}:${HOME}/Library/Python/2.7/bin"
     else
@@ -129,11 +126,9 @@ before_install:
       ${CC} --version
       ${CXX} --version
     fi
-    set +o errexit
 
 install:
   - |
-    set -o errexit
     if [[ (-n ${TRAVIS}) && (${TRAVIS_OS_NAME} == osx) ]]; then
       brew update > /dev/null
 
@@ -179,11 +174,9 @@ install:
       mpicc --version
       cmake --version
     fi
-    set +o errexit
 
 script:
   - |
-    set -o errexit
     if [[ ${BUILD_TYPE} == InstallScript ]]; then
       ./install.sh --yes-to-all -i "${HOME}/opencoarrays" -j 4 -f "$(type -P "${FC}")" -c "$(type -P "${CC}")" -C "$(type -P "${CXX}")"
       cd prerequisites/builds/opencoarrays/*
@@ -202,18 +195,15 @@ script:
         cd ..
       done
     fi
-    set +o errexit
 
 after_script:
   - |
-    set -o errexit
     if [[ "${TRAVIS_TAG}" ]]; then
       if [[ "v${TRAVIS_TAG}" != "v$(sed -n '/[0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}/{s/^\([^.]*\)\([0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}\)\(.*\)/\2/p;q;}' .VERSION)" ]]; then
         echo "ERROR: You are trying to tag a new release but have a version missmatch in \`.VERSION\`"
         false # throw an error
       fi
     fi
-    set +o errexit
 
 after_success:
   - find . -name '*.gcno' -print
