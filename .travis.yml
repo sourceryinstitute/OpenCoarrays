@@ -26,12 +26,6 @@ matrix:
         - BUILD_TYPE="InstallScript"
           OSX_PACKAGES="gcc@6 cmake"
           GCC=6
-    - &osx_allowed_failure
-      os: osx
-      env:
-        - OSX_PACKAGES="gcc cmake"
-          GCC=7
-          OPENCOARRAYS_DEVELOPER=ON
     - &ubuntu
       os: linux
       sudo: false
@@ -39,15 +33,15 @@ matrix:
       env:
         - GCC=6
       cache:
-        apt: false
+        apt: true
         directories:
           - "$CACHE"
       addons:
         apt:
-          sources:
+          sources: &linuxsrcs
             - ubuntu-toolchain-r-test
             - george-edison55-precise-backports
-          packages:
+          packages: &gcc6pkgs
             - gcc-6
             - gfortran-6
             - g++-6
@@ -60,10 +54,8 @@ matrix:
         - GCC=7
       addons:
         apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - george-edison55-precise-backports
-          packages:
+          sources: *linuxsrcs
+          packages: &gcc7pkgs
             - gcc-7
             - gfortran-7
             - g++-7
@@ -75,11 +67,9 @@ matrix:
       env:
         - BUILD_TYPE="InstallScript"
           GCC=6
-      cache: false
       addons:
         apt:
-          sources:
-            - ubuntu-toolchain-r-test
+          sources: *linuxsrcs
           packages:
             - gcc-6
             - gfortran-6
@@ -91,19 +81,10 @@ matrix:
           OPENCOARRAYS_DEVELOPER=ON
       addons:
         apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - george-edison55-precise-backports
-          packages:
-            - gcc-7
-            - gfortran-7
-            - g++-7
-            - binutils
-            - cmake-data
-            - cmake
+          sources: *linuxsrcs
+          packages: *gcc7pkgs
 
   allow_failures:
-    - *osx_allowed_failure
     - *linux_allowed_failure
 
 before_install:
@@ -194,7 +175,7 @@ script:
     if [[ ${BUILD_TYPE} == InstallScript ]]; then
       ./install.sh --yes-to-all -i "${HOME}/opencoarrays" -j 4 -f "$(type -P "${FC}")" -c "$(type -P "${CC}")" -C "$(type -P "${CXX}")"
       cd prerequisites/builds/opencoarrays/*
-      ../../../installations/cmake/*/bin/ctest --output-on-failure --schedule-random --repeat-until-fail 7
+      ../../../installations/cmake/*/bin/ctest --output-on-failure --schedule-random --repeat-until-fail ${NREPEAT:-5}
       cd -
     else
       mkdir cmake-build || echo "Cannot mkdir cmake-build"
@@ -203,7 +184,7 @@ script:
         cd cmake-build || echo 'cannot cd to cmake-build/'
         cmake -DCMAKE_INSTALL_PREFIX:PATH="${HOME}/OpenCoarrays" -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" .. || echo "running cmake failed"
         make -j 4 || echo "running make failed"
-        ctest --output-on-failure --schedule-random --repeat-until-fail 7
+        ctest --output-on-failure --schedule-random --repeat-until-fail ${NREPEAT:-5}
         make install
         make uninstall
         cd ..
