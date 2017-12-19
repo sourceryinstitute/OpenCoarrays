@@ -26,11 +26,6 @@ matrix:
         - BUILD_TYPE="InstallScript"
           OSX_PACKAGES="gcc@6"
           GCC=6
-    - os: osx
-      env:
-        - OSX_PACKAGES="gcc cmake"
-          GCC=7
-          OPENCOARRAYS_DEVELOPER=ON
     - &ubuntu
       os: linux
       sudo: false
@@ -38,60 +33,59 @@ matrix:
       env:
         - GCC=6
       cache:
-        apt: false
+        apt: true
         directories:
           - "$CACHE"
       addons:
         apt:
-          sources:
+          sources: &linuxsrcs
             - ubuntu-toolchain-r-test
             - george-edison55-precise-backports
-          packages:
+          packages: &gcc6pkgs
             - gcc-6
             - gfortran-6
             - g++-6
             - binutils
             - cmake-data
             - cmake
-#            - shellcheck
     -
       <<: *ubuntu
       env:
         - GCC=7
       addons:
         apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - george-edison55-precise-backports
-          packages:
+          sources: *linuxsrcs
+          packages: &gcc7pkgs
             - gcc-7
             - gfortran-7
             - g++-7
             - binutils
             - cmake-data
             - cmake
-#            - shellcheck
     -
       <<: *ubuntu
       env:
         - BUILD_TYPE="InstallScript"
           GCC=6
-      cache: false
       addons:
         apt:
-          sources:
-            - ubuntu-toolchain-r-test
+          sources: *linuxsrcs
           packages:
             - gcc-6
             - gfortran-6
             - g++-6
-#            - shellcheck
-  allow_failures:
-    - os: osx
+    - &linux_allowed_failure
+      <<: *ubuntu
       env:
-        - OSX_PACKAGES="gcc cmake"
-          GCC=7
+        - GCC=7
           OPENCOARRAYS_DEVELOPER=ON
+      addons:
+        apt:
+          sources: *linuxsrcs
+          packages: *gcc7pkgs
+
+  allow_failures:
+    - *linux_allowed_failure
 
 before_install:
   - export FC=gfortran-${GCC}
@@ -181,7 +175,7 @@ script:
     if [[ ${BUILD_TYPE} == InstallScript ]]; then
       ./install.sh --yes-to-all -i "${HOME}/opencoarrays" -j 4 -f "$(type -P "${FC}")" -c "$(type -P "${CC}")" -C "$(type -P "${CXX}")"
       cd prerequisites/builds/opencoarrays/*
-      ../../../installations/cmake/*/bin/ctest --output-on-failure --schedule-random --repeat-until-fail 7
+      ../../../installations/cmake/*/bin/ctest --output-on-failure --schedule-random --repeat-until-fail ${NREPEAT:-5}
       cd -
     else
       mkdir cmake-build || echo "Cannot mkdir cmake-build"
@@ -190,7 +184,7 @@ script:
         cd cmake-build || echo 'cannot cd to cmake-build/'
         cmake -DCMAKE_INSTALL_PREFIX:PATH="${HOME}/OpenCoarrays" -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" .. || echo "running cmake failed"
         make -j 4 || echo "running make failed"
-        ctest --output-on-failure --schedule-random --repeat-until-fail 7
+        ctest --output-on-failure --schedule-random --repeat-until-fail ${NREPEAT:-5} --timeout ${TEST_TIMEOUT:-200}
         make install
         make uninstall
         cd ..
@@ -198,6 +192,9 @@ script:
     fi
 
 after_script:
+  - find . -name '*.gcno' -print
+  - gcov-${GCC} --version
+  - bash <(curl -s https://codecov.io/bash) -x $(type -P gcov-${GCC})
   - |
     if [[ "${TRAVIS_TAG}" ]]; then
       if [[ "v${TRAVIS_TAG}" != "v$(sed -n '/[0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}/{s/^\([^.]*\)\([0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}\)\(.*\)/\2/p;q;}' .VERSION)" ]]; then
@@ -205,11 +202,6 @@ after_script:
         false # throw an error
       fi
     fi
-
-after_success:
-  - find . -name '*.gcno' -print
-  - gcov-${GCC} --version
-  - bash <(curl -s https://codecov.io/bash) -x $(type -P gcov-${GCC})
 
 # before_deploy:
 #   - git archive -v --prefix "OpenCoarrays-${TRAVIS_TAG}/" -o "OpenCoarrays-${TRAVIS_TAG}.tar.gz" ${TRAVIS_TAG}
@@ -222,7 +214,6 @@ after_success:
 #       sha256sum  "OpenCoarrays-${TRAVIS_TAG}.tar.gz" >> "opencoarrays-${TRAVIS_TAG}-SHA256.txt
 #     fi
 #   - |
-#     set -o errexit
 #     openssl aes-256-cbc -K ${encrypted_ef4535c39461_key} -iv ${encrypted_ef4535c39461_iv} -in subkey-328B3A0E-secret.asc.enc -out ./subkey-328B3A0E-secret.asc -d
 #     gpg --allow-secret-key-import --import ./subkey-328B3A0E-secret.asc && rm subkey-328B3A0E-secret.asc
 #     rm subkey-328B3A0E-secret.* || true
@@ -241,7 +232,6 @@ after_success:
 #       --comment 'verify with:' \
 #       --comment '`gpg --verify opencoarrays-'"${TRAVIS_TAG}"'-SHA256.txt.asc`' \
 #       "opencoarrays-${TRAVIS_TAG}-SHA256.txt"
-#     set +o errexit
 
 # deploy:
 #   provider: releases
