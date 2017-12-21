@@ -184,7 +184,7 @@ script:
         cd cmake-build || echo 'cannot cd to cmake-build/'
         cmake -DCMAKE_INSTALL_PREFIX:PATH="${HOME}/OpenCoarrays" -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" .. || echo "running cmake failed"
         make -j 4 || echo "running make failed"
-        ctest --output-on-failure --schedule-random --repeat-until-fail ${NREPEAT:-5}
+        ctest --output-on-failure --schedule-random --repeat-until-fail ${NREPEAT:-5} --timeout ${TEST_TIMEOUT:-200}
         make install
         make uninstall
         cd ..
@@ -192,6 +192,9 @@ script:
     fi
 
 after_script:
+  - find . -name '*.gcno' -print
+  - gcov-${GCC} --version
+  - bash <(curl -s https://codecov.io/bash) -x $(type -P gcov-${GCC})
   - |
     if [[ "${TRAVIS_TAG}" ]]; then
       if [[ "v${TRAVIS_TAG}" != "v$(sed -n '/[0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}/{s/^\([^.]*\)\([0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}\)\(.*\)/\2/p;q;}' .VERSION)" ]]; then
@@ -199,11 +202,6 @@ after_script:
         false # throw an error
       fi
     fi
-
-after_success:
-  - find . -name '*.gcno' -print
-  - gcov-${GCC} --version
-  - bash <(curl -s https://codecov.io/bash) -x $(type -P gcov-${GCC})
 
 # before_deploy:
 #   - git archive -v --prefix "OpenCoarrays-${TRAVIS_TAG}/" -o "OpenCoarrays-${TRAVIS_TAG}.tar.gz" ${TRAVIS_TAG}
