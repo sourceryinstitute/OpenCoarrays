@@ -356,7 +356,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CPPFLAGS = $(MPI_INCLUDE)
-ACLOCAL_AMFLAGS = -I m4
+ACLOCAL_AMFLAGS = '-I m4'
 lib_LTLIBRARIES = libcaf_mpi.la
 libcaf_mpi_la_SOURCES = mpi/mpi_caf.c common/caf_auxiliary.c
 libcaf_mpi_la_LDFLAGS = -version-info 3:0:0
@@ -768,9 +768,6 @@ uninstall-am: uninstall-binSCRIPTS uninstall-includeHEADERS \
 
 .PRECIOUS: Makefile
 
-
-libtool: $(LIBTOOL_DEPS)
-	$(SHELL) ./config.status libtool
 
 caf: Makefile
 	echo $(MPI_INCLUDE)

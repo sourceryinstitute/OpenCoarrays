@@ -1,16 +1,11 @@
 AM_CPPFLAGS=$(MPI_INCLUDE)
-ACLOCAL_AMFLAGS=-I m4
+ACLOCAL_AMFLAGS='-I m4'
 lib_LTLIBRARIES = libcaf_mpi.la
 libcaf_mpi_la_SOURCES = mpi/mpi_caf.c common/caf_auxiliary.c
 libcaf_mpi_la_LDFLAGS = -version-info 3:0:0
 libcaf_mpi_la_CCFLAGS = -fPIC -O2
 include_HEADERS = libcaf.h libcaf-gfortran-descriptor.h
 bin_SCRIPTS = caf cafrun
-
-LIBTOOL_DEPS = @LIBTOOL_DEPS@
-
-libtool: $(LIBTOOL_DEPS)
-	$(SHELL) ./config.status libtool
 
 caf: Makefile
 	echo $(MPI_INCLUDE)

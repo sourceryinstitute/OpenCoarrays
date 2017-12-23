@@ -11,7 +11,7 @@ AM_INIT_AUTOMAKE([-Wall -Werror foreign tar-ustar subdir-objects -Wno-portabilit
 AC_CONFIG_SRCDIR([src/libcaf.h])
 AC_CONFIG_HEADERS([config.h])
 
-LT_INIT
+LT_INIT([disable-shared])
 AC_SUBST([LIBTOOL_DEPS])
 
 # Checks for programs.
@@ -21,7 +21,6 @@ AC_PROG_YACC
 AC_PROG_CC
 AC_PROG_LEX
 AC_PROG_INSTALL
-#AC_PROG_RANLIB
 AC_PROG_MAKE_SET
 AC_PROG_FC(gfortran)
 AC_CHECK_PROG(MPI_EXEC,[mpiexec],[mpiexec],[no])
@@ -98,7 +97,6 @@ AC_SUBST(MPI_LIBS)
 AC_SUBST(MPI_INCLUDE)
 AC_SUBST(FAILED_IMAGES)
 AC_SUBST(CPPFLAGS)
-AC_SUBST([LIBTOOL_DEPS])
 AC_SUBST([MPI_INCLUDE])
 
 # Checks for header files.
