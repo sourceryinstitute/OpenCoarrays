@@ -9,6 +9,8 @@ program send_with_vector_index
     if (np < 2) error stop "Need at least two images."
 
     dst = -1
+    sync all
+
     if (me == 2) dst(indexes)[1] = [ 99, 999, 9999, 99999]
 
     sync all
