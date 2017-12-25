@@ -15,11 +15,11 @@ caf_compile_executable(alloc_comp_get_convert_nums alloc_comp_get_convert_nums.f
 
 ## Pure send() tests
 caf_compile_executable(send_array send_array_test.f90)
-caf_compile_executable(send_convert_char_array send_convert_char_array.f90)
 caf_compile_executable(send_with_vector_index send_with_vector_index.f90)
 
 # Pure sendget() tests
 caf_compile_executable(sendget_convert_char_array sendget_convert_char_array.f90)
+caf_compile_executable(send_convert_char_array send_convert_char_array.f90)
 #caf_compile_executable(sendget_with_vector_index sendget_with_vector_index.f90)
 caf_compile_executable(strided_sendget strided_sendget.f90)
 set_target_properties(build_strided_sendget

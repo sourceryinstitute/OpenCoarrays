@@ -5,6 +5,12 @@ set ( CMAKE_CONFIGURATION_TYPES "Debug" "Release" "MinSizeRel" "RelWithDebInfo" 
 set ( CMAKE_BUILD_TYPE "Release"
   CACHE STRING "Select which configuration to build." )
 set_property ( CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${CMAKE_CONFIGURATION_TYPES} )
+message( STATUS
+  "
+============================================================
+   Building OpenCoarrays configuration: ${CMAKE_BUILD_TYPE}
+============================================================
+")
 
 # Add option and check environment to determine if developer tests should be run
 if($ENV{OPENCOARRAYS_DEVELOPER})
@@ -622,7 +628,7 @@ endfunction(add_caf_test)
 
 if(opencoarrays_aware_compiler)
   if (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER})
-    message ( STATUS "Running Developer tests is enabled." )
+    message ( STATUS "Running Developer tests is enabled. Some tests may fail for open issues." )
   endif()
   # Unit tests targeting each libcaf_mpi function, argument, and branch of code
   add_caf_test(initialize_mpi 2 initialize_mpi)
@@ -644,8 +650,30 @@ if(opencoarrays_aware_compiler)
     add_caf_test(async_comp_alloc_2 2 async_comp_alloc_2)
     add_caf_test(comp_allocated_1 2 comp_allocated_1)
     add_caf_test(comp_allocated_2 2 comp_allocated_2)
-    add_caf_test(get_with_vector_index 4 get_with_vector_index)
-    add_caf_test(send_with_vector_index 2 send_with_vector_index)
+  endif()
+
+
+  if (gfortran_compiler)
+    if((NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
+      add_caf_test(send_convert_nums 2 send_convert_nums)
+      add_caf_test(sendget_convert_nums 3 sendget_convert_nums)
+      add_caf_test(sendget_convert_char_array 3 sendget_convert_char_array)
+    else()
+      message( AUTHOR_WARNING "Skipping the following tests due to GFortran < 7.0.0 lack of compatibility:
+        sendget_convert_nums.f90
+        sendget_convert_char_array.f90
+        send_convert_nums.f90")
+    endif()
+    if((NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.3.0) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
+      if(NOT DEFINED ENV{TRAVIS})
+	add_caf_test(send_with_vector_index 2 send_with_vector_index) # Hang times out on Travis-CI
+      endif()
+      add_caf_test(send_convert_char_array 2 send_convert_char_array)
+    else()#if((CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
+      message( AUTHOR_WARNING "Skipping the following tests to GFortran < 7.3.0 lack of compatibility:
+        send_convert_char_array.f90
+        send_with_vector_index.f90")
+    endif()
   endif()
 
   # Pure get tests
@@ -660,15 +688,12 @@ if(opencoarrays_aware_compiler)
 
   # Pure send tests
   add_caf_test(send_array 2 send_array)
-  add_caf_test(send_convert_char_array 2 send_convert_char_array)
+  add_caf_test(convert-before-put 3 convert-before-put)
 
   # Pure sendget tests
-  add_caf_test(sendget_convert_char_array 3 sendget_convert_char_array)
   add_caf_test(strided_sendget 3 strided_sendget)
-  if (gfortran_compiler AND (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.3.0))
-    add_caf_test(sendget_convert_nums 3 sendget_convert_nums)
-    add_caf_test(send_convert_nums 2 send_convert_nums)
-  endif()
+  add_caf_test(get_with_vector_index 4 get_with_vector_index)
+
 
   add_caf_test(co_sum 4 co_sum_test)
   add_caf_test(co_broadcast 4 co_broadcast_test)
@@ -691,7 +716,7 @@ if(opencoarrays_aware_compiler)
   # Integration tests verifying the use of libcaf_mpi in applications
   add_caf_test(hello_multiverse 2 hello_multiverse)
   add_caf_test(coarray_burgers_pde 2 coarray_burgers_pde)
-#  add_caf_test(co_heat 2 co_heat)
+  add_caf_test(co_heat 2 co_heat)
   add_caf_test(asynchronous_hello_world 3 asynchronous_hello_world)
 
   # Regression tests based on reported issues
@@ -704,10 +729,18 @@ if(opencoarrays_aware_compiler)
   endif()
 
   # Open GCC 7 regressions
-  if ((CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}) OR (gfortran_compiler AND (CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0)))
-    add_caf_test(convert-before-put 3 convert-before-put)
-    add_caf_test(put-alloc-comp 2 issue-422-send)
-    add_caf_test(get-put-alloc-comp 3 issue-422-send-get)
+  if ((CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}) OR
+      (gfortran_compiler AND (
+	  (CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0) OR
+	  (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.3.0)
+	  )))
+    add_caf_test(put-allocatable-coarray-comp 2 issue-422-send)
+    add_caf_test(get-put-allocatable-comp 3 issue-422-send-get)
+  else()
+    message( AUTHOR_WARNING
+      "Skipping regressions in GFortran 7.0:
+       put-allocatable-coarray-comp (issue-422)
+       get-put-allocatable-comp     (issue-422)")
   endif()
 
   add_caf_test(allocatable_p2p_event_post 4 allocatable_p2p_event_post)
