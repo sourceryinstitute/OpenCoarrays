@@ -665,14 +665,10 @@ if(opencoarrays_aware_compiler)
         send_convert_nums.f90")
     endif()
     if((NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.3.0) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
-      if(NOT DEFINED ENV{TRAVIS})
-	add_caf_test(send_with_vector_index 2 send_with_vector_index) # Hang times out on Travis-CI
-      endif()
       add_caf_test(send_convert_char_array 2 send_convert_char_array)
     else()#if((CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
       message( AUTHOR_WARNING "Skipping the following tests to GFortran < 7.3.0 lack of compatibility:
-        send_convert_char_array.f90
-        send_with_vector_index.f90")
+        send_convert_char_array.f90")
     endif()
   endif()
 
@@ -688,6 +684,7 @@ if(opencoarrays_aware_compiler)
   # Pure send tests
   add_caf_test(send_array 2 send_array)
   add_caf_test(convert-before-put 3 convert-before-put)
+  add_caf_test(send_with_vector_index 2 send_with_vector_index)
 
   # Pure sendget tests
   add_caf_test(strided_sendget 3 strided_sendget)
