@@ -650,6 +650,8 @@ if(opencoarrays_aware_compiler)
     add_caf_test(async_comp_alloc_2 2 async_comp_alloc_2)
     add_caf_test(comp_allocated_1 2 comp_allocated_1)
     add_caf_test(comp_allocated_2 2 comp_allocated_2)
+    add_caf_test(alloc_comp_get_convert_nums 2 alloc_comp_get_convert_nums)
+    add_caf_test(alloc_comp_send_convert_nums 2 alloc_comp_send_convert_nums)
   endif()
 
 
@@ -684,7 +686,6 @@ if(opencoarrays_aware_compiler)
   add_caf_test(get_with_offset_1d 2 get_with_offset_1d)
   add_caf_test(whole_get_array 2 whole_get_array)
   add_caf_test(strided_get 2 strided_get)
-  add_caf_test(alloc_comp_get_convert_nums 2 alloc_comp_get_convert_nums)
 
   # Pure send tests
   add_caf_test(send_array 2 send_array)
