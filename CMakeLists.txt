@@ -5,6 +5,12 @@ set ( CMAKE_CONFIGURATION_TYPES "Debug" "Release" "MinSizeRel" "RelWithDebInfo" 
 set ( CMAKE_BUILD_TYPE "Release"
   CACHE STRING "Select which configuration to build." )
 set_property ( CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${CMAKE_CONFIGURATION_TYPES} )
+message( STATUS
+  "
+============================================================
+   Building OpenCoarrays configuration: ${CMAKE_BUILD_TYPE}
+============================================================
+")
 
 # Add option and check environment to determine if developer tests should be run
 if($ENV{OPENCOARRAYS_DEVELOPER})
@@ -622,7 +628,7 @@ endfunction(add_caf_test)
 
 if(opencoarrays_aware_compiler)
   if (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER})
-    message ( STATUS "Running Developer tests is enabled." )
+    message ( STATUS "Running Developer tests is enabled. Some tests may fail for open issues." )
   endif()
   # Unit tests targeting each libcaf_mpi function, argument, and branch of code
   add_caf_test(initialize_mpi 2 initialize_mpi)
@@ -645,13 +651,46 @@ if(opencoarrays_aware_compiler)
     add_caf_test(comp_allocated_1 2 comp_allocated_1)
     add_caf_test(comp_allocated_2 2 comp_allocated_2)
   endif()
+
+
+  if (gfortran_compiler)
+    if((NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
+      add_caf_test(send_convert_nums 2 send_convert_nums)
+      add_caf_test(sendget_convert_nums 3 sendget_convert_nums)
+      add_caf_test(sendget_convert_char_array 3 sendget_convert_char_array)
+    else()
+      message( AUTHOR_WARNING "Skipping the following tests due to GFortran < 7.0.0 lack of compatibility:
+        sendget_convert_nums.f90
+        sendget_convert_char_array.f90
+        send_convert_nums.f90")
+    endif()
+    if((NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.3.0) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
+      add_caf_test(send_convert_char_array 2 send_convert_char_array)
+    else()#if((CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
+      message( AUTHOR_WARNING "Skipping the following tests to GFortran < 7.3.0 lack of compatibility:
+        send_convert_char_array.f90")
+    endif()
+  endif()
+
+  # Pure get tests
   add_caf_test(get_array 2 get_array)
   add_caf_test(get_self 2 get_self)
-  add_caf_test(send_array 2 send_array)
+  add_caf_test(get_convert_nums 2 get_convert_nums)
+  add_caf_test(get_convert_char_array 2 get_convert_char_array)
   add_caf_test(get_with_offset_1d 2 get_with_offset_1d)
   add_caf_test(whole_get_array 2 whole_get_array)
   add_caf_test(strided_get 2 strided_get)
+
+  # Pure send tests
+  add_caf_test(send_array 2 send_array)
+  add_caf_test(convert-before-put 3 convert-before-put)
+  add_caf_test(send_with_vector_index 2 send_with_vector_index)
+
+  # Pure sendget tests
   add_caf_test(strided_sendget 3 strided_sendget)
+  add_caf_test(get_with_vector_index 4 get_with_vector_index)
+
+
   add_caf_test(co_sum 4 co_sum_test)
   add_caf_test(co_broadcast 4 co_broadcast_test)
   add_caf_test(co_min 4 co_min_test)
@@ -686,10 +725,18 @@ if(opencoarrays_aware_compiler)
   endif()
 
   # Open GCC 7 regressions
-  if ((CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}) OR (gfortran_compiler AND (CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0)))
-    add_caf_test(convert-before-put 3 convert-before-put)
-    add_caf_test(put-alloc-comp 2 issue-422-send)
-    add_caf_test(get-put-alloc-comp 3 issue-422-send-get)
+  if ((CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}) OR
+      (gfortran_compiler AND (
+	  (CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0) OR
+	  (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.3.0)
+	  )))
+    add_caf_test(put-allocatable-coarray-comp 2 issue-422-send)
+    add_caf_test(get-put-allocatable-comp 3 issue-422-send-get)
+  else()
+    message( AUTHOR_WARNING
+      "Skipping regressions in GFortran 7.0:
+       put-allocatable-coarray-comp (issue-422)
+       get-put-allocatable-comp     (issue-422)")
   endif()
 
   add_caf_test(allocatable_p2p_event_post 4 allocatable_p2p_event_post)

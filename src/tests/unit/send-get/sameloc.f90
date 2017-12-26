@@ -1,9 +1,6 @@
 ! This program tests the capability of copying data on the
 ! same memory location and within the same image from
 ! different memory locations.
-! NOTE:
-! In order to run this test successfully the efficient
-! strided transfer support must be disabled.
 program sameloc
   implicit none
 
