@@ -186,7 +186,6 @@ install(TARGETS caf_mpi_static EXPORT OpenCoarraysTargets
   LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
   )
 
-
 ##############################################
 # Configure `caf` and `cafrun` wrapper scripts
 ##############################################

@@ -5223,7 +5223,7 @@ void PREFIX (change_team) (caf_team_t *team, int coselector __attribute__ ((unus
 
   if(tmp_list == NULL)
     caf_runtime_error("CHANGE TEAM called on a non-existing team");
-  
+
   tmp_used->team_list_elem = tmp_list;
   used_teams = tmp_used;
   tmp_team = tmp_used->team_list_elem->team;
@@ -5232,6 +5232,30 @@ void PREFIX (change_team) (caf_team_t *team, int coselector __attribute__ ((unus
   MPI_Comm_rank(*tmp_comm,&caf_this_image);
   caf_this_image++;
   MPI_Comm_size(*tmp_comm,&caf_num_images);
+}
+
+MPI_Fint
+PREFIX (get_communicator) (caf_team_t *team)
+{
+  if(team != NULL) caf_runtime_error("get_communicator does not yet support the optional team argument");
+
+  MPI_Comm* comm_ptr = teams_list->team;
+
+  MPI_Fint ret = MPI_Comm_c2f(*comm_ptr);
+
+  return ret;
+
+  //  return  *(int*)comm_ptr;
+}
+
+int
+PREFIX (team_number) (caf_team_t *team)
+{
+  if(team != NULL) caf_runtime_error("team_number does not yet support the optional team argument");
+
+  /* if(used_teams->prev == NULL) */
+  /*   return -1; */
+  return used_teams->team_list_elem->team_id;
 }
 
 void PREFIX (end_team) (caf_team_t *team __attribute__ ((unused)))

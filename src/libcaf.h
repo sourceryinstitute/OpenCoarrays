@@ -34,6 +34,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 
 #include "libcaf-gfortran-descriptor.h"
 
+#include <mpi.h>
+
 #ifndef __GNUC__
 #define __attribute__(x)
 #define likely(x)       (x)
@@ -89,7 +91,6 @@ typedef enum caf_deregister_t {
 caf_deregister_t;
 
 typedef void* caf_token_t;
-#ifdef GCC_GE_7
 /** Add a dummy type representing teams in coarrays. */
 
 typedef void * caf_team_t;
@@ -107,7 +108,6 @@ typedef struct caf_used_teams_list {
 }
 caf_used_teams_list;
 
-#endif
 
 /* When there is a vector subscript in this dimension, nvec == 0, otherwise,
    lower_bound, upper_bound, stride contains the bounds relative to the declared
@@ -288,6 +288,7 @@ void PREFIX (form_team) (int, caf_team_t *, int);
 void PREFIX (change_team) (caf_team_t *, int);
 void PREFIX (end_team) (caf_team_t *);
 void PREFIX (sync_team) (caf_team_t *, int);
+int PREFIX (team_number) (caf_team_t *);
 
 int PREFIX (image_status) (int);
 void PREFIX (failed_images) (gfc_descriptor_t *, int, int *);
@@ -305,4 +306,10 @@ void PREFIX (unlock) (caf_token_t, size_t, int, int *, char *, int);
 void PREFIX (event_post) (caf_token_t, size_t, int, int *, char *, int);
 void PREFIX (event_wait) (caf_token_t, size_t, int, int *, char *, int);
 void PREFIX (event_query) (caf_token_t, size_t, int, int *, int *);
+
+/* Language extension */
+#ifdef HAVE_MPI
+MPI_Fint PREFIX (get_communicator) (caf_team_t *);
+#endif
+
 #endif  /* LIBCAF_H  */
