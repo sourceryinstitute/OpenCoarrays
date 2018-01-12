@@ -5333,12 +5333,12 @@ PREFIX (send_by_ref) (caf_token_t token, int image_index,
                                   "rank out of range.\n";
     const char extentoutofrange[] = "libcaf_mpi::caf_send_by_ref(): "
                                     "extent out of range.\n";
+    const char cannotallocdst[] = "libcaf_mpi::caf_get_by_ref(): "
+                                  "can not allocate %d bytes of memory.\n";
     const char unabletoallocdst[] = "libcaf_mpi::caf_send_by_ref(): "
                                   "unable to allocate memory on remote image.\n";
     const char nonallocextentmismatch[] = "libcaf_mpi::caf_send_by_ref(): "
         "extent of non-allocatable arrays mismatch (%lu != %lu).\n";
-    const char doublearrayref[] = "libcaf_mpi::caf_get_by_ref(): "
-        "two or more array part references are not supported.\n";
     size_t size, i, ref_rank;
     size_t src_index;
     int dst_rank = -1;
@@ -5346,7 +5346,7 @@ PREFIX (send_by_ref) (caf_token_t token, int image_index,
     size_t dst_size;
     mpi_caf_token_t *mpi_token = (mpi_caf_token_t *) token;
     void *remote_memptr = mpi_token->memptr, *remote_base_memptr = NULL;
-    gfc_max_dim_descriptor_t dst_desc;
+    gfc_max_dim_descriptor_t dst_desc, temp_src;
     gfc_descriptor_t *dst = (gfc_descriptor_t *)&dst_desc;
     caf_reference_t *riter = refs;
     long delta;
@@ -5364,6 +5364,7 @@ PREFIX (send_by_ref) (caf_token_t token, int image_index,
     bool access_data_through_global_win = false;
     /* Set when the remote descriptor is to accessed through the global window. */
     bool access_desc_through_global_win = false;
+    bool free_temp_src = false;
 
     if (stat)
       *stat = 0;
@@ -5556,41 +5557,41 @@ PREFIX (send_by_ref) (caf_token_t token, int image_index,
                         return;
                       }
                     /* Do further checks, when the source is not scalar.  */
-//                    else if (delta != 1)
-//                      {
-//                        /* When the realloc is required, then no extent may have
-//                           been set.  */
-//                        extent_mismatch = GFC_DESCRIPTOR_EXTENT (dst,
-//                                                                 src_cur_dim)
-//                                          != delta;
-//                        /* When it already known, that a realloc is needed or
-//                           the extent does not match the needed one.  */
-//                        if (realloc_dst || extent_mismatch)
-//                          {
-//                            /* Check whether dst is reallocatable.  */
-//                            if (unlikely (!dst_reallocatable))
-//                              {
-//                                caf_runtime_error (nonallocextentmismatch, stat,
-//                                                   NULL, 0, delta,
-//                                                   GFC_DESCRIPTOR_EXTENT (dst,
-//                                                                  src_cur_dim));
-//                                return;
-//                              }
-//                            /* Only report an error, when the extent needs to be
-//                               modified, which is not allowed.  */
-//                            else if (!dst_reallocatable && extent_mismatch)
-//                              {
-//                                caf_runtime_error (extentoutofrange, stat, NULL,
-//                                                   0);
-//                                return;
-//                              }
-//                            dprint ("%d/%d: %s() extent(dst): %d != delta: %d.\n",
-//                                    caf_this_image, caf_num_images, __FUNCTION__,
-//                                    GFC_DESCRIPTOR_EXTENT (dst, src_cur_dim),
-//                                    delta);
-//                            realloc_dst = true;
-//                          }
-//                      }
+                    else if (delta != 1)
+                      {
+                        /* When the realloc is required, then no extent may have
+                           been set.  */
+                        extent_mismatch = GFC_DESCRIPTOR_EXTENT (dst,
+                                                                 src_cur_dim)
+                                          < delta;
+                        /* When it already known, that a realloc is needed or
+                           the extent does not match the needed one.  */
+                        if (realloc_dst || extent_mismatch)
+                          {
+                            /* Check whether dst is reallocatable.  */
+                            if (unlikely (!dst_reallocatable))
+                              {
+                                caf_runtime_error (nonallocextentmismatch, stat,
+                                                   NULL, 0, delta,
+                                                   GFC_DESCRIPTOR_EXTENT (dst,
+                                                                  src_cur_dim));
+                                return;
+                              }
+                            /* Only report an error, when the extent needs to be
+                               modified, which is not allowed.  */
+                            else if (!dst_reallocatable && extent_mismatch)
+                              {
+                                caf_runtime_error (extentoutofrange, stat, NULL,
+                                                   0);
+                                return;
+                              }
+                            dprint ("%d/%d: %s() extent(dst): %d != delta: %d.\n",
+                                    caf_this_image, caf_num_images, __FUNCTION__,
+                                    GFC_DESCRIPTOR_EXTENT (dst, src_cur_dim),
+                                    delta);
+                            realloc_dst = true;
+                          }
+                      }
 
                     /* Only increase the dim counter, when in an array ref.  */
                     if (in_array_ref && src_cur_dim < GFC_DESCRIPTOR_RANK (src))
@@ -5683,41 +5684,21 @@ PREFIX (send_by_ref) (caf_token_t token, int image_index,
                         return;
                       }
                     /* Do further checks, when the source is not scalar.  */
-//                    else if (delta != 1)
-//                      {
-//                        /* Check that the extent is not scalar and we are not in
-//                           an array ref for the dst side.  */
-//                        if (!in_array_ref)
-//                          {
-//                            /* Check that this is the non-scalar extent.  */
-//                            if (!array_extent_fixed)
-//                              {
-//                                /* In an array extent now.  */
-//                                in_array_ref = true;
-//                                /* The dst is not reallocatable, so nothing more
-//                                   to do, then correct the dim counter.  */
-//                                src_cur_dim = i;
-//                              }
-//                            else
-//                              {
-//                                caf_runtime_error (doublearrayref, stat, NULL,
-//                                                   0);
-//                                return;
-//                              }
-//                          }
-//                        /* When the realloc is required, then no extent may have
-//                           been set.  */
-//                        extent_mismatch = GFC_DESCRIPTOR_EXTENT (dst,
-//                                                                 src_cur_dim)
-//                                          != delta;
-//                        /* When it is already known, that a realloc is needed or
-//                           the extent does not match the needed one.  */
-//                        if (realloc_dst || extent_mismatch)
-//                          {
-//                            caf_runtime_error(unabletoallocdst, stat);
-//                            return;
-//                          }
-//                      }
+                    else if (delta != 1)
+                      {
+                        /* When the realloc is required, then no extent may have
+                           been set.  */
+                        extent_mismatch = GFC_DESCRIPTOR_EXTENT (dst,
+                                                                 src_cur_dim)
+                                          < delta;
+                        /* When it is already known, that a realloc is needed or
+                           the extent does not match the needed one.  */
+                        if (realloc_dst || extent_mismatch)
+                          {
+                            caf_runtime_error(unabletoallocdst, stat);
+                            return;
+                          }
+                      }
                     /* Only increase the dim counter, when in an array ref.  */
                     if (in_array_ref && src_cur_dim < GFC_DESCRIPTOR_RANK (src))
                       ++src_cur_dim;
@@ -5761,12 +5742,42 @@ PREFIX (send_by_ref) (caf_token_t token, int image_index,
       fprintf (stderr, "%d/%d: %s() dst_dim[%d] = (%d, %d)\n", caf_this_image, caf_num_images,
                __FUNCTION__, i, src->dim[i].lower_bound, src->dim[i]._ubound);
 #endif
+    /* When accessing myself and may_require_tmp is set, then copy the source
+     * array. */
+    if (caf_this_image == image_index && may_require_tmp)
+      {
+        dprint ("%d/%d: %s() preparing temporary source.\n", caf_this_image,
+                caf_num_images, __FUNCTION__);
+        memcpy (&temp_src, src, sizeof_desc_for_rank (GFC_DESCRIPTOR_RANK (src)));
+        size_t cap = 0;
+        for (int r = 0; r < GFC_DESCRIPTOR_RANK (src); ++r)
+          cap += GFC_DESCRIPTOR_EXTENT (src, r);
+
+        cap *= GFC_DESCRIPTOR_SIZE (src);
+        temp_src.base.base_addr = alloca (cap);
+        if ((free_temp_src = (temp_src.base.base_addr == NULL)))
+          {
+            temp_src.base.base_addr = malloc (cap);
+            if (temp_src.base.base_addr == NULL)
+              {
+                caf_runtime_error (cannotallocdst, stat, NULL, cap);
+                return;
+              }
+          }
+        memcpy (temp_src.base.base_addr, src->base_addr, cap);
+        src = (gfc_descriptor_t *)&temp_src;
+      }
+
     i = 0;
     dprint ("%d/%d: %s() calling send_for_ref.\n", caf_this_image,
             caf_num_images, __FUNCTION__);
     send_by_ref (refs, &i, src_index, mpi_token, mpi_token->desc, src,
                  remote_memptr, src->base_addr, 0, 0, dst_kind, src_kind, 0, 0,
                  1, stat, remote_image, false, false);
+    if (free_temp_src)
+      {
+        free (temp_src.base.base_addr);
+      }
     CAF_Win_unlock (remote_image, global_dynamic_win);
     CAF_Win_unlock (remote_image, mpi_token->memptr_win);
 }
