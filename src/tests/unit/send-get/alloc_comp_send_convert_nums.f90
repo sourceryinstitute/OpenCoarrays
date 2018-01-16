@@ -83,7 +83,7 @@ program alloc_comp_send_convert_nums
   logical :: error_printed=.false.
 
   associate(me => this_image(), np => num_images())
-    if (np < 2) error stop 'Can not run with less than 2 images.'
+    if (np < 2) error stop 'Cannot run with less than 2 images.'
 
     int_scal_k1 = INT(42, 1)
     int_scal_k4 = 42
@@ -538,8 +538,15 @@ program alloc_comp_send_convert_nums
           call print_and_register( 'strided send int kind=4 to real kind=4 to image 2 failed')
     end if
 
-    sync all
-    if (me == 1) print *, "Test passed."
+    select case(me)
+      case(1)
+         if (error_printed) error stop
+         sync images(2)
+         print *, "Test passed."
+      case(2)
+         if (error_printed) error stop
+        sync images(1)
+    end select
   end associate
 
 contains
