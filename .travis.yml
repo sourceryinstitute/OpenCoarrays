@@ -122,74 +122,10 @@ before_install:
     fi
 
 install:
-  - |
-    if [[ (-n ${TRAVIS}) && (${TRAVIS_OS_NAME} == osx) ]]; then
-      brew update > /dev/null
-
-      brew ls --versions shellcheck >/dev/null || brew install --force-bottle shellcheck
-      brew outdated shellcheck || brew upgrade --force-bottle shellcheck
-      for pkg in ${OSX_PACKAGES}; do
-        brew ls --versions ${pkg} >/dev/null || brew install ${pkg} || brew link --overwrite ${pkg}
-        brew outdated ${pkg} || brew upgrade ${pkg}
-      done
-      if [[ ${BUILD_TYPE} == InstallScript ]]; then # uninstall some stuff if present
-        brew uninstall --force --ignore-dependencies cmake || true
-        brew uninstall --force --ignore-dependencies mpich || true
-        brew uninstall --force --ignore-dependencies openmpi || true
-      else
-        wget "${!MPICH_BOT_URL_HEAD}${MPICH_BOT_URL_TAIL}"
-        brew install --force-bottle ${MPICH_BOT_URL_TAIL}
-        brew ls --versions mpich >/dev/null || brew install --force-bottle mpich
-      fi
-      mpif90 --version || mpif90 -show || true
-      mpicc --version || mpicc -show || true
-      cmake --version || true
-
-    elif [[ ${BUILD_TYPE} != InstallScript ]]; then # Ubuntu on Travis-CI, NOT testing install.sh
-      if ! [[ -x "${HOME}/.local/bin/mpif90" && -x "${HOME}/.local/bin/mpicc" ]]; then
-        # mpich install not cached
-        # could use prerequisites/build instead...
-        wget "${MPICH_URL_HEAD}/${MPICH_URL_TAIL}"
-        mv "${MPICH_URL_TAIL}" "${MPICH_DIR}/.."
-        pushd "${MPICH_DIR}/.."
-        tar -xzvf "${MPICH_URL_TAIL}"
-        cd "${MPICH_URL_TAIL%.tar.gz}"
-        ./configure --prefix="${MPICH_DIR}"
-        make -j 4
-        make install
-        popd
-        for f in "${MPICH_DIR}/bin/"*; do
-          if [[ -x "${f}" ]]; then
-            ln -fs "${f}" "${HOME}/.local/bin/${f##*/}"
-          fi
-        done
-      fi
-      mpif90 --version
-      mpicc --version
-      cmake --version
-    fi
+  - developer-scripts/travis/install.${TRAVIS_OS_NAME}.sh
 
 script:
-  - echo "In Travis-CI 'script' section."
-  - |
-    if [[ ${BUILD_TYPE} == InstallScript ]]; then
-      ./install.sh --yes-to-all -i "${HOME}/opencoarrays" -j 4 -f "$(type -P "${FC}")" -c "$(type -P "${CC}")" -C "$(type -P "${CXX}")"
-      cd prerequisites/builds/opencoarrays/*
-      ../../../installations/cmake/*/bin/ctest --output-on-failure --schedule-random --repeat-until-fail ${NREPEAT:-5}
-      cd -
-    else
-      mkdir cmake-build || echo "Cannot mkdir cmake-build"
-      for BUILD_TYPE in ${BUILD_TYPES}; do
-        rm -rf cmake-build/* || true
-        cd cmake-build || echo 'cannot cd to cmake-build/'
-        cmake -DCMAKE_INSTALL_PREFIX:PATH="${HOME}/OpenCoarrays" -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" .. || echo "running cmake failed"
-        make -j 4 || echo "running make failed"
-        ctest --output-on-failure --schedule-random --repeat-until-fail ${NREPEAT:-5} --timeout ${TEST_TIMEOUT:-200}
-        make install
-        make uninstall
-        cd ..
-      done
-    fi
+  - developer-scripts/travis/install.${BUILD_TYPE:-cmake}.sh
 
 after_script:
   - find . -name '*.gcno' -print
