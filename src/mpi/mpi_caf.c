@@ -1537,25 +1537,12 @@ assign_char1_from_char4 (size_t dst_size, size_t src_size, unsigned char *dst,
     memset (&dst[n], ' ', dst_size - n);
 }
 
-<<<<<<< HEAD
-
-/* Send array data from src to dest on a remote image.  */
-/* The last argument means may_require_temporary */
-
-void
-PREFIX (send) (caf_token_t token, size_t offset, int image_index,
-               gfc_descriptor_t *dest,
-               caf_vector_t *dst_vector __attribute__ ((unused)),
-               gfc_descriptor_t *src, int dst_kind, int src_kind,
-               bool mrt, int *stat, void* team)
-=======
 /** Convert convertable types.
     Copied from the gcc:libgfortran/caf/single.c. Can't say much about it.
 */
 static void
 convert_type (void *dst, int dst_type, int dst_kind, void *src, int src_type,
 	      int src_kind, int *stat)
->>>>>>> master
 {
 #ifdef HAVE_GFC_INTEGER_16
   typedef __int128 int128t;
