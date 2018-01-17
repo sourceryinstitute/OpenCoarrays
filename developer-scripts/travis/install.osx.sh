@@ -11,11 +11,11 @@ __file=developer-scripts/travis/install.osx.sh
 # Error tracing
 # requires `set -o errtrace`
 __caf_err_report() {
-  local error_code
-  error_code=${?}
-  echo "Error (code=${error_code}) in ${__file} in function ${1} on line ${2}." >&2
-  false
-  return ${error_code}
+    error_code=${?}
+    local error_code
+    echo "Error (code=${error_code}) in ${__file} in function ${1} on line ${2}." >&2
+    false
+    return ${error_code}
 }
 # Always provide an error backtrace
 trap '__caf_err_report "${FUNCNAME:-.}" ${LINENO}' ERR
