@@ -32,9 +32,6 @@ program main
   use iso_fortran_env, only : team_type
   use iso_c_binding, only : c_loc
 
-  use opencoarrays, only : team_number
-    !! TODO: remove the above line below after the compiler supports team_number
-
   implicit none
 
   integer, parameter :: standard_initial_value=-1
