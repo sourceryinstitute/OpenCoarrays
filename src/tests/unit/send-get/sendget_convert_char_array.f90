@@ -4,7 +4,7 @@
 !!
 !! FOO = BAR [N]
 !!
-!! where 
+!! where
 !!
 !!  FOO                BAR                 images
 !! character(len=20) character(len=10)   N == M == me
@@ -41,6 +41,8 @@ program sendget_convert_char_array
   character(kind=4, len=5), codimension[*] :: co_str_k4_src_arr(1:4)
   character(kind=4, len=7), codimension[*] :: co_str_k4_dst_arr(1:4)
 
+  logical :: error_printed=.false.
+
   associate(me => this_image(), np => num_images())
     if (np < 3) error stop 'Can not run with less than 3 images.'
 
@@ -75,7 +77,7 @@ program sendget_convert_char_array
       print *, '#' // co_str_k1_dst_arr(:) // '#, len:', len(co_str_k1_dst_arr(1))
       if (any(co_str_k1_dst_arr /= ['abc    ', 'EFG    ', 'klm    ', 'NOP    '])) &
         & error stop 'sendget array kind=1 to kind=1 self failed.'
-     
+
       co_str_k4_dst_arr(:)[2] = co_str_k4_src_arr(:)[2]
       print *, 4_'#' // co_str_k4_dst_arr(:) // 4_'#, len:', len(co_str_k4_dst_arr(1))
       if (any(co_str_k4_dst_arr /= [4_'abc    ', 4_'EFG    ', 4_'klm    ', 4_'NOP    '])) &
@@ -94,7 +96,7 @@ program sendget_convert_char_array
 
     co_str_k1_dst_arr(:) = '#######'
     co_str_k4_dst_arr(:) = 4_'#######'
-    
+
     sync all
     if (me == 2) then
       co_str_k1_dst_scal[3] = co_str_k1_src_scal[1]
@@ -106,7 +108,7 @@ program sendget_convert_char_array
       co_str_k4_dst_arr(:)[3] = co_str_k4_src_arr(:)[1]
     end if
 
-    sync all 
+    sync all
     if (me == 3) then
       print *, '#' // co_str_k1_dst_scal // '#, len:', len(co_str_k1_dst_scal)
       if (co_str_k1_dst_scal /= co_str_k1_src_scal // '          ') &
@@ -129,7 +131,7 @@ program sendget_convert_char_array
 
     co_str_k1_dst_arr(:) = '#######'
     co_str_k4_dst_arr(:) = 4_'#######'
-    
+
     sync all
     if (me == 2) then
       co_str_k1_dst_scal[3] = co_str_k4_src_scal[1]
@@ -166,7 +168,7 @@ program sendget_convert_char_array
 
     co_str_k1_dst_arr(:) = '#######'
     co_str_k4_dst_arr(:) = 4_'#######'
-    
+
     ! Now strided.
     sync all
     if (me == 2) then
@@ -188,9 +190,30 @@ program sendget_convert_char_array
         & error stop 'sendget strided kind=1 to kind=4 from image 1 to image 3 failed.'
     end if
 
-    sync all
-    if (me == 1) print *, 'Test passed.'
+    select case(me)
+      case(1)
+        if (error_printed) error stop
+        sync images([2,3])
+        print *, 'Test passed.'
+      case(2)
+        if (error_printed) error stop
+        sync images(1)
+      case(3)
+        if (error_printed) error stop
+        sync images(1)
+    end select
+
   end associate
+
+contains
+
+  subroutine print_and_register(error_message)
+    use iso_fortran_env, only : error_unit
+    character(len=*), intent(in) :: error_message
+    write(error_unit,*) error_message
+    error_printed=.true.
+  end subroutine
+
 end program sendget_convert_char_array
 
 ! vim:ts=2:sts=2:sw=2:

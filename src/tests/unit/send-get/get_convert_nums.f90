@@ -4,7 +4,7 @@
 !!
 !! FOO = BAR [N]
 !!
-!! where 
+!! where
 !!
 !!  FOO                BAR              images
 !! scalar            scalar            N == me
@@ -74,6 +74,7 @@ program get_convert_nums
   real(kind=4)   , dimension(1:5)                            :: real_k4
   real(kind=8)   , allocatable, dimension(:), codimension[:] :: co_real_k8
   real(kind=8)   , dimension(1:5)                            :: real_k8
+  logical :: error_printed=.false.
 
   associate(me => this_image(), np => num_images())
     if (np < 2) error stop 'Can not run with less than 2 images.'
@@ -92,160 +93,176 @@ program get_convert_nums
     if (me == 1) then
       int_scal_k1 = co_int_scal_k1[1]
       print *, int_scal_k1
-      if (co_int_scal_k1 /= int_scal_k1) error stop 'get scalar int kind=1 from kind=1 self failed.'
+      if (co_int_scal_k1 /= int_scal_k1) call print_and_register( 'get scalar int kind=1 from kind=1 self failed.')
 
       int_scal_k4 = co_int_scal_k4[1]
       print *, int_scal_k4
-      if (co_int_scal_k4 /= int_scal_k4) error stop 'get scalar int kind=4 to kind=4 self failed.'
+      if (co_int_scal_k4 /= int_scal_k4) call print_and_register( 'get scalar int kind=4 to kind=4 self failed.')
 
       int_scal_k4 = co_int_scal_k1[1]
       print *, int_scal_k4
-      if (co_int_scal_k4 /= int_scal_k4) error stop 'get scalar int kind=1 to kind=4 self failed.'
+      if (co_int_scal_k4 /= int_scal_k4) call print_and_register( 'get scalar int kind=1 to kind=4 self failed.')
 
       int_scal_k1 = co_int_scal_k4[1]
       print *, int_scal_k1
-      if (co_int_scal_k1 /= int_scal_k1) error stop 'get scalar int kind=4 to kind=1 self failed.'
+      if (co_int_scal_k1 /= int_scal_k1) call print_and_register( 'get scalar int kind=4 to kind=1 self failed.')
 
       int_k1(:) = co_int_k1(:)[1]
       print *, int_k1
-      if (any(co_int_k1 /= int_k1)) error stop 'get int kind=1 to kind=1 self failed.'
+      if (any(co_int_k1 /= int_k1)) call print_and_register( 'get int kind=1 to kind=1 self failed.')
 
       int_k4(:) = co_int_k4(:)[1]
       print *, int_k4
-      if (any(co_int_k4 /= int_k4)) error stop 'get int kind=4 to kind=4 self failed.'
+      if (any(co_int_k4 /= int_k4)) call print_and_register( 'get int kind=4 to kind=4 self failed.')
 
       int_k4(:) = co_int_k1(:)[1]
       print *, int_k4
-      if (any(co_int_k4 /= int_k4)) error stop 'get int kind=1 to kind=4 self failed.'
+      if (any(co_int_k4 /= int_k4)) call print_and_register( 'get int kind=1 to kind=4 self failed.')
 
       int_k1(:) = co_int_k4(:)[1]
       print *, int_k1
-      if (any(co_int_k1 /= int_k1)) error stop 'get int kind=4 to kind=1 self failed.'
+      if (any(co_int_k1 /= int_k1)) call print_and_register( 'get int kind=4 to kind=1 self failed.')
     else if (me == 2) then ! Do the real copy to self checks on image 2
       real_scal_k4 = co_real_scal_k4[2]
       print *, real_scal_k4
-      if (abs(co_real_scal_k4 - real_scal_k4) > tolerance4) error stop 'get scalar real kind=4 to kind=4 self failed.'
+      if (abs(co_real_scal_k4 - real_scal_k4) > tolerance4) &
+        call print_and_register( 'get scalar real kind=4 to kind=4 self failed.')
 
       real_scal_k8 = co_real_scal_k8[2]
       print *, real_scal_k8
-      if (abs(co_real_scal_k8 - real_scal_k8) > tolerance8) error stop 'get scalar real kind=8 to kind=8 self failed.'
+      if (abs(co_real_scal_k8 - real_scal_k8) > tolerance8) &
+        call print_and_register( 'get scalar real kind=8 to kind=8 self failed.')
 
       real_scal_k8 = co_real_scal_k4[2]
       print *, real_scal_k8
-      if (abs(co_real_scal_k8 - real_scal_k8) > tolerance4to8) error stop 'get scalar real kind=4 to kind=8 self failed.'
+      if (abs(co_real_scal_k8 - real_scal_k8) > tolerance4to8) &
+        call print_and_register( 'get scalar real kind=4 to kind=8 self failed.')
 
       real_scal_k4 = co_real_scal_k8[2]
       print *, real_scal_k4
-      if (abs(co_real_scal_k4 - real_scal_k4) > tolerance4) error stop 'get scalar real kind=8 to kind=4 self failed.'
+      if (abs(co_real_scal_k4 - real_scal_k4) > tolerance4) &
+       call print_and_register( 'get scalar real kind=8 to kind=4 self failed.')
 
       real_k4(:) = co_real_k4(:)[2]
       print *, real_k4
-      if (any(abs(co_real_k4 - real_k4) > tolerance4)) error stop 'get real kind=4 to kind=4 self failed.'
+      if (any(abs(co_real_k4 - real_k4) > tolerance4)) call print_and_register( 'get real kind=4 to kind=4 self failed.')
 
       real_k8(:) = co_real_k8(:)[2]
       print *, real_k8
-      if (any(abs(co_real_k8 - real_k8) > tolerance8)) error stop 'get real kind=8 to kind=8 self failed.'
+      if (any(abs(co_real_k8 - real_k8) > tolerance8)) call print_and_register( 'get real kind=8 to kind=8 self failed.')
 
       real_k8(:) = co_real_k4(:)[2]
       print *, real_k8
-      if (any(abs(co_real_k8 - real_k8) > tolerance4to8)) error stop 'get real kind=4 to kind=8 self failed.'
+      if (any(abs(co_real_k8 - real_k8) > tolerance4to8)) call print_and_register( 'get real kind=4 to kind=8 self failed.')
 
       real_k4(:) = co_real_k8(:)[2]
       print *, real_k4
-      if (any(abs(co_real_k4 - real_k4) > tolerance4)) error stop 'get real kind=8 to kind=4 self failed.'
+      if (any(abs(co_real_k4 - real_k4) > tolerance4)) call print_and_register( 'get real kind=8 to kind=4 self failed.')
     end if
 
     sync all
     if (me == 1) then
       int_scal_k1 = co_int_scal_k1[2]
       print *, int_scal_k1
-      if (co_int_scal_k1 /= int_scal_k1) error stop 'get scalar int kind=1 to kind=1 to image 2 failed.'
+      if (co_int_scal_k1 /= int_scal_k1) call print_and_register( 'get scalar int kind=1 to kind=1 to image 2 failed.')
 
       int_scal_k4 = co_int_scal_k4[2]
       print *, int_scal_k4
-      if (co_int_scal_k4 /= int_scal_k4) error stop 'get scalar int kind=4 to kind=4 to image 2 failed.'
+      if (co_int_scal_k4 /= int_scal_k4) call print_and_register( 'get scalar int kind=4 to kind=4 to image 2 failed.')
 
       int_k1(:) = co_int_k1(:)[2]
       print *, int_k1
-      if (any(co_int_k1 /= int_k1)) error stop 'get int kind=1 to kind=1 to image 2 failed.'
+      if (any(co_int_k1 /= int_k1)) call print_and_register( 'get int kind=1 to kind=1 to image 2 failed.')
 
       int_k4(:) = co_int_k4(:)[2]
       print *, int_k4
-      if (any(co_int_k4 /= int_k4)) error stop 'get int kind=4 to kind=4 to image 2 failed.'
+      if (any(co_int_k4 /= int_k4)) call print_and_register( 'get int kind=4 to kind=4 to image 2 failed.')
 
     else if (me == 2) then
       real_scal_k4 = co_real_scal_k4[1]
       print *, real_scal_k4
-      if (abs(co_real_scal_k4 - real_scal_k4) > tolerance4) error stop 'get scalar real kind=4 to kind=4 to image 2 failed.'
+      if (abs(co_real_scal_k4 - real_scal_k4) > tolerance4) &
+        call print_and_register( 'get scalar real kind=4 to kind=4 to image 2 failed.')
 
       real_scal_k8 = co_real_scal_k8[1]
       print *, real_scal_k8
-      if (abs(co_real_scal_k8 - real_scal_k8) > tolerance8) error stop 'get scalar real kind=8 to kind=8 to image 2 failed.'
+      if (abs(co_real_scal_k8 - real_scal_k8) > tolerance8) &
+        call print_and_register( 'get scalar real kind=8 to kind=8 to image 2 failed.')
 
       real_k4(:) = co_real_k4(:)[1]
       print *, real_k4
-      if (any(abs(co_real_k4 - real_k4) > tolerance4)) error stop 'get real kind=4 to kind=4 to image 2 failed.'
+      if (any(abs(co_real_k4 - real_k4) > tolerance4)) call print_and_register( 'get real kind=4 to kind=4 to image 2 failed.')
 
       real_k8(:) = co_real_k8(:)[1]
       print *, real_k8
-      if (any(abs(co_real_k8 - real_k8) > tolerance8)) error stop 'get real kind=8 to kind=8 to image 2 failed.'
+      if (any(abs(co_real_k8 - real_k8) > tolerance8)) call print_and_register( 'get real kind=8 to kind=8 to image 2 failed.')
     end if
 
     sync all
+
     if (me == 1) then
+
       int_scal_k4 = co_int_scal_k1[2]
       print *, int_scal_k4
-      if (co_int_scal_k4 /= int_scal_k4) error stop 'get scalar int kind=1 to kind=4 to image 2 failed.'
+      if (co_int_scal_k4 /= int_scal_k4) call print_and_register( 'get scalar int kind=1 to kind=4 to image 2 failed.')
 
       int_scal_k1 = co_int_scal_k4[2]
       print *, int_scal_k1
-      if (co_int_scal_k1 /= int_scal_k1) error stop 'get scalar int kind=4 to kind=1 to image 2 failed.'
+      if (co_int_scal_k1 /= int_scal_k1) call print_and_register( 'get scalar int kind=4 to kind=1 to image 2 failed.')
 
       int_k4(:) = co_int_k1(:)[2]
       print *, int_k4
-      if (any(co_int_k4 /= int_k4)) error stop 'get int kind=1 to kind=4 to image 2 failed.'
+      if (any(co_int_k4 /= int_k4)) call print_and_register( 'get int kind=1 to kind=4 to image 2 failed.')
 
       int_k1(:) = co_int_k4(:)[2]
       print *, int_k1
-      if (any(co_int_k1 /= int_k1)) error stop 'get int kind=4 to kind=1 to image 2 failed.'
+      if (any(co_int_k1 /= int_k1)) call print_and_register( 'get int kind=4 to kind=1 to image 2 failed.')
 
     elseif (me == 2) then
       real_scal_k8 = co_real_scal_k4[1]
       print *, real_scal_k8
-      if (abs(co_real_scal_k8 - real_scal_k8) > tolerance4to8) error stop 'get scalar real kind=4 to kind=8 to image 2 failed.'
+      if (abs(co_real_scal_k8 - real_scal_k8) > tolerance4to8) &
+        call print_and_register( 'get scalar real kind=4 to kind=8 to image 2 failed.')
 
       real_scal_k4 = co_real_scal_k8[1]
       print *, real_scal_k4
-      if (abs(co_real_scal_k4 - real_scal_k4) > tolerance4) error stop 'get scalar real kind=8 to kind=4 to image 2 failed.'
+      if (abs(co_real_scal_k4 - real_scal_k4) > tolerance4) &
+        call print_and_register( 'get scalar real kind=8 to kind=4 to image 2 failed.')
 
       real_k8(:) = co_real_k4(:)[1]
       print *, real_k8
-      if (any(abs(co_real_k8 - real_k8) > tolerance4to8)) error stop 'get real kind=4 to kind=8 to image 2 failed.'
+      if (any(abs(co_real_k8 - real_k8) > tolerance4to8)) &
+        call print_and_register( 'get real kind=4 to kind=8 to image 2 failed.')
 
       real_k4(:) = co_real_k8(:)[1]
+
       print *, real_k4
-      if (any(abs(co_real_k4 - real_k4) > tolerance4)) error stop 'get real kind=8 to kind=4 to image 2 failed.'
+      if (any(abs(co_real_k4 - real_k4) > tolerance4)) call print_and_register( 'get real kind=8 to kind=4 to image 2 failed.')
+
     end if
+
 
     ! Scalar to array replication
     sync all
     if (me == 1) then
       int_k4(:) = co_int_scal_k4[2]
       print *, int_k4
-      if (any(co_int_scal_k4 /= int_k4)) error stop 'get int scal kind=4 to array kind=4 to image 2 failed.'
+      if (any(co_int_scal_k4 /= int_k4)) call print_and_register( 'get int scal kind=4 to array kind=4 to image 2 failed.')
 
       int_k1(:) = co_int_scal_k1[2]
       print *, int_k1
-      if (any(co_int_scal_k1 /= int_k1)) error stop 'get int scal kind=1 to array kind=1 to image 2 failed.'
+      if (any(co_int_scal_k1 /= int_k1)) call print_and_register( 'get int scal kind=1 to array kind=1 to image 2 failed.')
 
     else if (me == 2) then
       real_k8(:) = co_real_scal_k8[1]
       print *, real_k8
-      if (any(abs(co_real_scal_k8 - real_k8) > tolerance8)) error stop 'get real kind=8 to array kind=8 to image 2 failed.'
+      if (any(abs(co_real_scal_k8 - real_k8) > tolerance8)) &
+        call print_and_register( 'get real kind=8 to array kind=8 to image 2 failed.')
 
       real_k4(:) = co_real_scal_k4[1]
       print *, real_k4
-      if (any(abs(co_real_scal_k4 - real_k4) > tolerance4)) error stop 'get real kind=4 to array kind=4 to image 2 failed.'
+      if (any(abs(co_real_scal_k4 - real_k4) > tolerance4)) &
+        call print_and_register( 'get real kind=4 to array kind=4 to image 2 failed.')
     end if
 
     ! and with kind conversion
@@ -253,41 +270,48 @@ program get_convert_nums
     if (me == 1) then
       int_k4(:) = co_int_scal_k1[2]
       print *, int_k4
-      if (any(co_int_scal_k4 /= int_k4)) error stop 'get int scal kind=1 to array kind=4 to image 2 failed.'
+      if (any(co_int_scal_k4 /= int_k4)) call print_and_register( 'get int scal kind=1 to array kind=4 to image 2 failed.')
 
       int_k1(:) = co_int_scal_k4[2]
       print *, int_k1
-      if (any(co_int_scal_k1 /= int_k1)) error stop 'get int scal kind=4 to array kind=1 to image 2 failed.'
+      if (any(co_int_scal_k1 /= int_k1)) call print_and_register( 'get int scal kind=4 to array kind=1 to image 2 failed.')
 
     else if (me == 2) then
       real_k8(:) = co_real_scal_k4[1]
       print *, real_k8
-      if (any(abs(co_real_scal_k8 - real_k8) > tolerance8)) error stop 'get real kind=4 to array kind=8 to image 2 failed.'
+      if (any(abs(co_real_scal_k8 - real_k8) > tolerance8)) &
+        call print_and_register( 'get real kind=4 to array kind=8 to image 2 failed.')
 
       real_k4(:) = co_real_scal_k8[1]
       print *, real_k4
-      if (any(abs(co_real_scal_k4 - real_k4) > tolerance4)) error stop 'get real kind=8 to array kind=4 to image 2 failed.'
+      if (any(abs(co_real_scal_k4 - real_k4) > tolerance4)) &
+        call print_and_register( 'get real kind=8 to array kind=4 to image 2 failed.')
     end if
+
 
     ! and with type conversion
     sync all
     if (me == 1) then
       int_k4(:) = co_real_scal_k4[2]
       print *, int_k4
-      if (any(int_k4 /= INT(co_real_scal_k4, 4))) error stop 'get real scal kind=4 to int array kind=4 to image 2 failed.'
+      if (any(int_k4 /= INT(co_real_scal_k4, 4))) &
+        call print_and_register( 'get real scal kind=4 to int array kind=4 to image 2 failed.')
 
       int_k1(:) = co_real_scal_k4[2]
       print *, int_k1
-      if (any(int_k1 /= INT(co_real_scal_k4, 1))) error stop 'get real scal kind=1 to int array kind=1 to image 2 failed.'
+      if (any(int_k1 /= INT(co_real_scal_k4, 1))) &
+        call print_and_register( 'get real scal kind=1 to int array kind=1 to image 2 failed.')
 
     else if (me == 2) then
       real_k8(:) = co_int_scal_k4[1]
       print *, real_k8
-      if (any(abs(real_k8 - co_int_scal_k4) > tolerance4to8)) error stop 'get int kind=4 to real array kind=8 to image 2 failed.'
+      if (any(abs(real_k8 - co_int_scal_k4) > tolerance4to8)) &
+        call print_and_register( 'get int kind=4 to real array kind=8 to image 2 failed.')
 
       real_k4(:) = co_int_scal_k4[1]
       print *, real_k4
-      if (any(abs(real_k4 - co_int_scal_k4) > tolerance4)) error stop 'get int kind=4 to real array kind=4 to image 2 failed.'
+      if (any(abs(real_k4 - co_int_scal_k4) > tolerance4)) &
+        call print_and_register( 'get int kind=4 to real array kind=4 to image 2 failed.')
     end if
 
     sync all
@@ -305,24 +329,24 @@ program get_convert_nums
       int_k4(1:3) = co_int_k4(::2)[2]
       print *, int_k4
       if (any(int_k4 /= [co_int_k4(1), co_int_k4(3), co_int_k4(5), -1, -1])) &
-        & error stop 'strided send int kind=4 to kind=4 to image 2 failed.'
+        & call print_and_register( 'strided send int kind=4 to kind=4 to image 2 failed.')
 
       int_k1(3:5) = co_int_k1(::2)[2]
       print *, int_k1
       if (any(int_k1 /= [INT(-1, 1), INT(-1, 1), co_int_k1(1), co_int_k1(3), co_int_k1(5)])) &
-        & error stop 'strided send int kind=1 to kind=1 to image 2 failed.'
+        & call print_and_register( 'strided send int kind=1 to kind=1 to image 2 failed.')
 
       real_k8(1:3) = co_real_k8(::2)[2]
       print *, real_k8
       if (any(abs(real_k8 - [co_real_k8(1), co_real_k8(3), co_real_k8(5), REAL(-1.0, 8), REAL(-1.0, 8)]) > tolerance8)) &
-        & error stop 'strided send real kind=8 to kind=8 to image 2 failed.'
+        & call print_and_register( 'strided send real kind=8 to kind=8 to image 2 failed.')
 
       real_k4(3:5) = co_real_k4(::2)[2]
       print *, real_k4
       if (any(abs(real_k4 - [-1.0, -1.0, co_real_k4(1), co_real_k4(3), co_real_k4(5)]) > tolerance4)) &
-        & error stop 'strided send real kind=4 to kind=4 to image 2 failed.'
+        & call print_and_register( 'strided send real kind=4 to kind=4 to image 2 failed.')
     end if
-    
+
     ! now with strides and kind conversion
     sync all
     int_k4 = -1
@@ -337,48 +361,66 @@ program get_convert_nums
     if (me == 1) then
       int_k4(1:3) = co_int_k1(::2)[2]
       print *, int_k4
-      if (any(int_k4 /= [15, 13, 11, -1, -1])) error stop 'strided get int kind=1 to kind=4 to image 2 failed.'
+      if (any(int_k4 /= [15, 13, 11, -1, -1])) call print_and_register( 'strided get int kind=1 to kind=4 to image 2 failed.')
 
-      int_k1(1:3) = co_int_k4(::2)[2] 
+      int_k1(1:3) = co_int_k4(::2)[2]
       print *, int_k1
       if (any(int_k1 /= INT([105, 103, 101, -1, -1], 1))) &
-        & error stop 'strided get int kind=4 to kind=1 to image 2 failed.'
+        & call print_and_register( 'strided get int kind=4 to kind=1 to image 2 failed.')
 
       real_k8(1:3) = co_real_k4(::2)[2]
       print *, real_k8
       if (any(abs(real_k8 - [-5.1, -3.3, -1.5, -1.0, -1.0]) > tolerance8)) &
-        & error stop 'strided get real kind=4 to kind=8 to image 2 failed.'
+        & call print_and_register( 'strided get real kind=4 to kind=8 to image 2 failed.')
 
       real_k4(1:3) = co_real_k8(::2)[2]
       print *, real_k4
       if (any(abs(real_k4 - REAL([5.1, 3.3, 1.5, -1.0, -1.0], 4)) > tolerance4)) &
-        & error stop 'strided get real kind=8 to kind=4 to image 2 failed.'
+        & call print_and_register( 'strided get real kind=8 to kind=4 to image 2 failed.')
 
     else if (me == 2) then
       ! now with strides and type conversion
       int_k4(1:3) = co_real_k8(::2)[2]
       print *, int_k4
-      if (any(int_k4 /= [5, 3, 1, -1, -1])) error stop 'strided get real kind=4 to int kind=4 to image 2 failed.'
+      if (any(int_k4 /= [5, 3, 1, -1, -1])) call print_and_register( 'strided get real kind=4 to int kind=4 to image 2 failed.')
 
       int_k1(1:3) = co_real_k4(::2)[2]
       print *, int_k1
       if (any(int_k1 /= INT([-5, -3, -1, -1, -1], 1))) &
-        & error stop 'strided get real kind=4 to int kind=1 to image 2 failed.'
+        & call print_and_register( 'strided get real kind=4 to int kind=1 to image 2 failed.')
 
       real_k8(1:3) = co_int_k4(::2)[2]
       print *, real_k8
       if (any(abs(real_k8 - [105.0, 103.0, 101.0, -1.0, -1.0]) > tolerance8)) &
-        & error stop 'strided get int kind=4 to real kind=8 to image 2 failed.'
+        & call print_and_register( 'strided get int kind=4 to real kind=8 to image 2 failed.')
 
       real_k4(1:3) = co_int_k1(::2)[2]
       print *, real_k4
       if (any(abs(real_k4 - [15.0, 13.0, 11.0, -1.0, -1.0]) > tolerance4)) &
-        & error stop 'strided get int kind=1 to real kind=4 to image 2 failed.'
+        & call print_and_register( 'strided get int kind=1 to real kind=4 to image 2 failed.')
     end if
 
-    sync all
-    if (me == 1) print *, "Test passed."
+    select case(me)
+      case(1)
+        if (error_printed) error stop
+        sync images(2)
+        print *, "Test passed."
+      case(2)
+        if (error_printed) error stop
+        sync images(1)
+    end select
+
   end associate
+
+contains
+
+  subroutine print_and_register(error_message)
+    use iso_fortran_env, only : error_unit
+    character(len=*), intent(in) :: error_message
+    write(error_unit,*) error_message
+    error_printed=.true.
+  end subroutine
+
 end program get_convert_nums
 
 ! vim:ts=2:sts=2:sw=2:
