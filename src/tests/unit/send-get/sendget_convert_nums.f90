@@ -4,7 +4,7 @@
 !!
 !! FOO [M] = BAR [N]
 !!
-!! where 
+!! where
 !!
 !!  FOO                BAR                images
 !! scalar            scalar              N == M == me
@@ -67,13 +67,15 @@ program sendget_convert_nums
   real(kind=4)   , dimension(1:5), codimension[*] :: co_real_src_k4, co_real_dst_k4
   real(kind=8)   , dimension(1:5), codimension[*] :: co_real_src_k8, co_real_dst_k8
 
+  logical :: error_printed=.false.
+
   associate(me => this_image(), np => num_images())
     if (np < 3) error stop 'Can not run with less than 3 images.'
 
     co_int_scal_src_k1 = 42
     co_int_scal_dst_k1 = -1
     co_int_scal_src_k4 = 42
-    co_int_scal_dst_k4 = -1 
+    co_int_scal_dst_k4 = -1
     co_int_src_k1 = INT([ 5, 4, 3, 2, 1], 1)
     co_int_dst_k1 = -1
     co_int_src_k4 = [ 5, 4, 3, 2, 1]
@@ -91,71 +93,77 @@ program sendget_convert_nums
     if (me == 1) then
       co_int_scal_dst_k1[1] = co_int_scal_src_k1[1]
       print *, co_int_scal_dst_k1
-      if (co_int_scal_dst_k1 /= co_int_scal_src_k1) error stop 'sendgetget scalar int kind=1 to kind=1 self failed.'
+      if (co_int_scal_dst_k1 /= co_int_scal_src_k1) &
+        call print_and_register( 'sendgetget scalar int kind=1 to kind=1 self failed.')
 
       co_int_scal_dst_k4[1] = co_int_scal_src_k4[1]
       print *, co_int_scal_dst_k4
-      if (co_int_scal_dst_k4 /= co_int_scal_src_k4) error stop 'sendgetget scalar int kind=4 to kind=4 self failed.'
+      if (co_int_scal_dst_k4 /= co_int_scal_src_k4) &
+        call print_and_register( 'sendgetget scalar int kind=4 to kind=4 self failed.')
 
       co_int_scal_dst_k4[1] = co_int_scal_src_k1[1]
       print *, co_int_scal_dst_k4
-      if (co_int_scal_dst_k4 /= co_int_scal_src_k4) error stop 'sendget scalar int kind=1 to kind=4 self failed.'
+      if (co_int_scal_dst_k4 /= co_int_scal_src_k4) call print_and_register( 'sendget scalar int kind=1 to kind=4 self failed.')
 
       co_int_scal_dst_k1[1] = co_int_scal_src_k4[1]
       print *, co_int_scal_src_k1
-      if (co_int_scal_dst_k1 /= co_int_scal_src_k1) error stop 'sendget scalar int kind=4 to kind=1 self failed.'
+      if (co_int_scal_dst_k1 /= co_int_scal_src_k1) call print_and_register( 'sendget scalar int kind=4 to kind=1 self failed.')
 
       co_int_dst_k1(:)[1] = co_int_src_k1(:)[1]
       print *, co_int_dst_k1
-      if (any(co_int_dst_k1 /= co_int_src_k1)) error stop 'sendget int kind=1 to kind=1 self failed.'
+      if (any(co_int_dst_k1 /= co_int_src_k1)) call print_and_register( 'sendget int kind=1 to kind=1 self failed.')
 
       co_int_dst_k4(:)[1] = co_int_src_k4(:)[1]
       print *, co_int_dst_k4
-      if (any(co_int_dst_k4 /= co_int_src_k4)) error stop 'sendget int kind=4 to kind=4 self failed.'
+      if (any(co_int_dst_k4 /= co_int_src_k4)) call print_and_register( 'sendget int kind=4 to kind=4 self failed.')
 
       co_int_dst_k4(:)[1] = co_int_src_k1(:)[1]
       print *, co_int_dst_k4
-      if (any(co_int_dst_k4 /= co_int_src_k4)) error stop 'sendget int kind=1 to kind=4 self failed.'
+      if (any(co_int_dst_k4 /= co_int_src_k4)) call print_and_register( 'sendget int kind=1 to kind=4 self failed.')
 
       co_int_dst_k1(:)[1] = co_int_src_k4(:)[1]
       print *, co_int_dst_k1
-      if (any(co_int_dst_k1 /= co_int_src_k1)) error stop 'sendget int kind=4 to kind=1 self failed.'
+      if (any(co_int_dst_k1 /= co_int_src_k1)) call print_and_register( 'sendget int kind=4 to kind=1 self failed.')
     else if (me == 2) then ! Do the real copy to self checks on image 2
       co_real_scal_dst_k4[2] = co_real_scal_src_k4[2]
       print *, co_real_scal_dst_k4
       if (abs(co_real_scal_dst_k4 - co_real_scal_src_k4) > tolerance4) &
-        & error stop 'sendget scalar real kind=4 to kind=4 self failed.'
+        & call print_and_register( 'sendget scalar real kind=4 to kind=4 self failed.')
 
       co_real_scal_dst_k8[2] = co_real_scal_src_k8[2]
       print *, co_real_scal_dst_k8
       if (abs(co_real_scal_dst_k8 - co_real_scal_src_k8) > tolerance8) &
-        & error stop 'sendget scalar real kind=8 to kind=8 self failed.'
+        & call print_and_register( 'sendget scalar real kind=8 to kind=8 self failed.')
 
       co_real_scal_dst_k8[2] = co_real_scal_src_k4[2]
       print *, co_real_scal_dst_k8
       if (abs(co_real_scal_dst_k8 - co_real_scal_src_k8) > tolerance4to8) &
-        & error stop 'sendget scalar real kind=4 to kind=8 self failed.'
+        & call print_and_register( 'sendget scalar real kind=4 to kind=8 self failed.')
 
       co_real_scal_dst_k4[2] = co_real_scal_src_k8[2]
       print *, co_real_scal_dst_k4
       if (abs(co_real_scal_dst_k4 - co_real_scal_src_k4) > tolerance4) &
-        & error stop 'sendget scalar real kind=8 to kind=4 self failed.'
+        & call print_and_register( 'sendget scalar real kind=8 to kind=4 self failed.')
 
       co_real_dst_k4(:)[2] = co_real_src_k4(:)[2]
       print *, co_real_dst_k4
-      if (any(abs(co_real_dst_k4 - co_real_src_k4) > tolerance4)) error stop 'sendget real kind=4 to kind=4 self failed.'
+      if (any(abs(co_real_dst_k4 - co_real_src_k4) > tolerance4)) &
+        call print_and_register( 'sendget real kind=4 to kind=4 self failed.')
 
       co_real_dst_k8(:)[2] = co_real_src_k8(:)[2]
       print *, co_real_dst_k8
-      if (any(abs(co_real_dst_k8 - co_real_src_k8) > tolerance8)) error stop 'sendget real kind=8 to kind=8 self failed.'
+      if (any(abs(co_real_dst_k8 - co_real_src_k8) > tolerance8)) &
+        call print_and_register( 'sendget real kind=8 to kind=8 self failed.')
 
       co_real_dst_k8(:)[2] = co_real_src_k4(:)[2]
       print *, co_real_dst_k8
-      if (any(abs(co_real_dst_k8 - co_real_src_k8) > tolerance4to8)) error stop 'sendget real kind=4 to kind=8 self failed.'
+      if (any(abs(co_real_dst_k8 - co_real_src_k8) > tolerance4to8)) &
+        call print_and_register( 'sendget real kind=4 to kind=8 self failed.')
 
       co_real_dst_k4(:)[2] = co_real_src_k8(:)[2]
       print *, co_real_dst_k4
-      if (any(abs(co_real_dst_k4 - co_real_src_k4) > tolerance4)) error stop 'sendget real kind=8 to kind=4 self failed.'
+      if (any(abs(co_real_dst_k4 - co_real_src_k4) > tolerance4)) &
+        call print_and_register( 'sendget real kind=8 to kind=4 self failed.')
     end if
 
     sync all
@@ -180,30 +188,34 @@ program sendget_convert_nums
     sync all
     if (me == 1) then
       print *, co_int_scal_dst_k1
-      if (co_int_scal_dst_k1 /= co_int_scal_src_k1) error stop 'sendget scalar int kind=1 to kind=1 to image 2 failed.'
+      if (co_int_scal_dst_k1 /= co_int_scal_src_k1) &
+        call print_and_register( 'sendget scalar int kind=1 to kind=1 to image 2 failed.')
 
       print *, co_int_scal_dst_k4
-      if (co_int_scal_dst_k4 /= co_int_scal_src_k4) error stop 'sendget scalar int kind=4 to kind=4 to image 2 failed.'
+      if (co_int_scal_dst_k4 /= co_int_scal_src_k4) &
+        call print_and_register( 'sendget scalar int kind=4 to kind=4 to image 2 failed.')
 
       print *, co_int_dst_k1
-      if (any(co_int_dst_k1 /= co_int_src_k1)) error stop 'sendget int kind=1 to kind=1 to image 2 failed.'
+      if (any(co_int_dst_k1 /= co_int_src_k1)) call print_and_register( 'sendget int kind=1 to kind=1 to image 2 failed.')
 
       print *, co_int_dst_k4
-      if (any(co_int_dst_k4 /= co_int_src_k4)) error stop 'sendget int kind=4 to kind=4 to image 2 failed.'
+      if (any(co_int_dst_k4 /= co_int_src_k4)) call print_and_register( 'sendget int kind=4 to kind=4 to image 2 failed.')
 
       print *, co_real_scal_dst_k4
       if (abs(co_real_scal_dst_k4 - co_real_scal_src_k4) > tolerance4) &
-        & error stop 'sendget scalar real kind=4 to kind=4 to image 2 failed.'
+        & call print_and_register( 'sendget scalar real kind=4 to kind=4 to image 2 failed.')
 
       print *, co_real_scal_dst_k8
       if (abs(co_real_scal_dst_k8 - co_real_scal_src_k8) > tolerance8) &
-        & error stop 'sendget scalar real kind=8 to kind=8 to image 2 failed.'
+        & call print_and_register( 'sendget scalar real kind=8 to kind=8 to image 2 failed.')
 
       print *, co_real_dst_k4
-      if (any(abs(co_real_dst_k4 - co_real_src_k4) > tolerance4)) error stop 'sendget real kind=4 to kind=4 to image 2 failed.'
+      if (any(abs(co_real_dst_k4 - co_real_src_k4) > tolerance4)) &
+        call print_and_register( 'sendget real kind=4 to kind=4 to image 2 failed.')
 
       print *, co_real_dst_k8
-      if (any(abs(co_real_dst_k8 - co_real_src_k8) > tolerance8)) error stop 'sendget real kind=8 to kind=8 to image 2 failed.'
+      if (any(abs(co_real_dst_k8 - co_real_src_k8) > tolerance8)) &
+        call print_and_register( 'sendget real kind=8 to kind=8 to image 2 failed.')
     end if
 
     sync all
@@ -228,30 +240,34 @@ program sendget_convert_nums
     sync all
     if (me == 1) then
       print *, co_int_scal_dst_k4
-      if (co_int_scal_dst_k4 /= co_int_scal_src_k4) error stop 'sendget scalar int kind=1 to kind=4 to image 2 failed.'
+      if (co_int_scal_dst_k4 /= co_int_scal_src_k4) &
+        call print_and_register( 'sendget scalar int kind=1 to kind=4 to image 2 failed.')
 
       print *, co_int_scal_dst_k1
-      if (co_int_scal_dst_k1 /= co_int_scal_src_k1) error stop 'sendget scalar int kind=4 to kind=1 to image 2 failed.'
+      if (co_int_scal_dst_k1 /= co_int_scal_src_k1) &
+        call print_and_register( 'sendget scalar int kind=4 to kind=1 to image 2 failed.')
 
       print *, co_int_dst_k4
-      if (any(co_int_dst_k4 /= co_int_src_k4)) error stop 'sendget int kind=1 to kind=4 to image 2 failed.'
+      if (any(co_int_dst_k4 /= co_int_src_k4)) call print_and_register( 'sendget int kind=1 to kind=4 to image 2 failed.')
 
       print *, co_int_dst_k1
-      if (any(co_int_dst_k1 /= co_int_src_k1)) error stop 'sendget int kind=4 to kind=1 to image 2 failed.'
+      if (any(co_int_dst_k1 /= co_int_src_k1)) call print_and_register( 'sendget int kind=4 to kind=1 to image 2 failed.')
 
       print *, co_real_scal_dst_k8
       if (abs(co_real_scal_dst_k8 - co_real_scal_src_k8) > tolerance4to8) &
-        & error stop 'sendget scalar real kind=4 to kind=8 to image 2 failed.'
+        & call print_and_register( 'sendget scalar real kind=4 to kind=8 to image 2 failed.')
 
       print *, co_real_scal_dst_k4
       if (abs(co_real_scal_dst_k4 - co_real_scal_src_k4) > tolerance4) &
-        & error stop 'sendget scalar real kind=8 to kind=4 to image 2 failed.'
+        & call print_and_register( 'sendget scalar real kind=8 to kind=4 to image 2 failed.')
 
       print *, co_real_dst_k8
-      if (any(abs(co_real_dst_k8 - co_real_src_k8) > tolerance4to8)) error stop 'sendget real kind=4 to kind=8 to image 2 failed.'
+      if (any(abs(co_real_dst_k8 - co_real_src_k8) > tolerance4to8)) &
+        call print_and_register( 'sendget real kind=4 to kind=8 to image 2 failed.')
 
       print *, co_real_dst_k4
-      if (any(abs(co_real_dst_k4 - co_real_src_k4) > tolerance4)) error stop 'sendget real kind=8 to kind=4 to image 2 failed.'
+      if (any(abs(co_real_dst_k4 - co_real_src_k4) > tolerance4)) &
+        call print_and_register( 'sendget real kind=8 to kind=4 to image 2 failed.')
     end if
 
     ! Scalar to array replication
@@ -269,18 +285,20 @@ program sendget_convert_nums
     sync all
     if (me == 1) then
       print *, co_int_dst_k4
-      if (any(co_int_dst_k4 /= co_int_scal_src_k4)) error stop 'sendget int scal kind=4 to array kind=4 to image 2 failed.'
+      if (any(co_int_dst_k4 /= co_int_scal_src_k4)) &
+        call print_and_register( 'sendget int scal kind=4 to array kind=4 to image 2 failed.')
 
       print *, co_int_dst_k1
-      if (any(co_int_dst_k1 /= co_int_scal_src_k1)) error stop 'sendget int scal kind=1 to array kind=1 to image 2 failed.'
+      if (any(co_int_dst_k1 /= co_int_scal_src_k1)) &
+        call print_and_register( 'sendget int scal kind=1 to array kind=1 to image 2 failed.')
 
       print *, co_real_dst_k8
       if (any(abs(co_real_dst_k8 - co_real_scal_src_k8) > tolerance8)) &
-        & error stop 'sendget real kind=8 to array kind=8 to image 2 failed.'
+        & call print_and_register( 'sendget real kind=8 to array kind=8 to image 2 failed.')
 
       print *, co_real_dst_k4
       if (any(abs(co_real_dst_k4 - co_real_scal_src_k4) > tolerance4)) &
-        & error stop 'sendget real kind=4 to array kind=4 to image 2 failed.'
+        & call print_and_register( 'sendget real kind=4 to array kind=4 to image 2 failed.')
     end if
 
     ! and with kind conversion
@@ -297,18 +315,20 @@ program sendget_convert_nums
     sync all
     if (me == 1) then
       print *, co_int_dst_k4
-      if (any(co_int_dst_k4 /= co_int_scal_src_k4)) error stop 'sendget int scal kind=1 to array kind=4 to image 2 failed.'
+      if (any(co_int_dst_k4 /= co_int_scal_src_k4)) &
+        call print_and_register( 'sendget int scal kind=1 to array kind=4 to image 2 failed.')
 
       print *, co_int_dst_k1
-      if (any(co_int_dst_k1 /= co_int_scal_src_k1)) error stop 'sendget int scal kind=4 to array kind=1 to image 2 failed.'
+      if (any(co_int_dst_k1 /= co_int_scal_src_k1)) &
+        call print_and_register( 'sendget int scal kind=4 to array kind=1 to image 2 failed.')
 
       print *, co_real_dst_k8
       if (any(abs(co_real_dst_k8 - co_real_scal_src_k8) > tolerance8)) &
-        & error stop 'sendget real kind=4 to array kind=8 to image 2 failed.'
+        & call print_and_register( 'sendget real kind=4 to array kind=8 to image 2 failed.')
 
       print *, co_real_dst_k4
       if (any(abs(co_real_dst_k4 - co_real_scal_src_k4) > tolerance4)) &
-        & error stop 'sendget real kind=8 to array kind=4 to image 2 failed.'
+        & call print_and_register( 'sendget real kind=8 to array kind=4 to image 2 failed.')
     end if
     ! and with type conversion
     sync all
@@ -326,19 +346,19 @@ program sendget_convert_nums
     if (me == 1) then
       print *, co_int_dst_k4
       if (any(co_int_dst_k4 /= INT(co_real_scal_src_k4, 4))) &
-        & error stop 'sendget real scal kind=4 to int array kind=4 to image 2 failed.'
+        & call print_and_register( 'sendget real scal kind=4 to int array kind=4 to image 2 failed.')
 
       print *, co_int_dst_k1
       if (any(co_int_dst_k1 /= INT(co_real_scal_src_k4, 1))) &
-        & error stop 'sendget real scal kind=1 to int array kind=1 to image 2 failed.'
+        & call print_and_register( 'sendget real scal kind=1 to int array kind=1 to image 2 failed.')
 
       print *, co_real_dst_k8
       if (any(abs(co_real_dst_k8 - co_int_scal_src_k4) > tolerance4to8)) &
-        & error stop 'sendget int kind=4 to real array kind=8 to image 2 failed.'
+        & call print_and_register( 'sendget int kind=4 to real array kind=8 to image 2 failed.')
 
       print *, co_real_dst_k4
       if (any(abs(co_real_dst_k4 - co_int_scal_src_k4) > tolerance4)) &
-        & error stop 'sendget int kind=4 to real array kind=4 to image 2 failed.'
+        & call print_and_register( 'sendget int kind=4 to real array kind=4 to image 2 failed.')
     end if
 
     ! Now with strides
@@ -348,76 +368,76 @@ program sendget_convert_nums
       co_int_dst_k1(::2)[1] = co_int_src_k1(1:3)[1]
       print *, co_int_dst_k1
       if (any(co_int_dst_k1 /= [co_int_src_k1(1), INT(-1, 1), co_int_src_k1(2), INT(-1, 1), co_int_src_k1(3)])) &
-        & error stop 'sendget strided int kind=1 to kind=1 self failed.'
+        & call print_and_register( 'sendget strided int kind=1 to kind=1 self failed.')
 
       co_int_dst_k4 = -1
       co_int_dst_k4(::2)[1] = co_int_src_k4(1:3)[1]
       print *, co_int_dst_k4
       if (any(co_int_dst_k4 /= [co_int_src_k4(1), -1, co_int_src_k4(2), -1, co_int_src_k4(3)])) &
-        & error stop 'sendget strided int kind=4 to kind=4 self failed.'
+        & call print_and_register( 'sendget strided int kind=4 to kind=4 self failed.')
 
       co_int_dst_k4 = -2
       co_int_dst_k4(2::2)[1] = co_int_src_k1(4:5)[1]
       print *, co_int_dst_k4
       if (any(co_int_dst_k4 /= [-2, co_int_src_k4(4), -2, co_int_src_k4(5), -2])) &
-        & error stop 'sendget strided int kind=1 to kind=4 self failed.'
+        & call print_and_register( 'sendget strided int kind=1 to kind=4 self failed.')
 
       co_int_dst_k1 = -2
       co_int_dst_k1(2::2)[1] = co_int_src_k4(4:5)[1]
       print *, co_int_dst_k1
       if (any(co_int_dst_k1 /= [INT(-2, 1), co_int_src_k1(4), INT(-2, 1), co_int_src_k1(5), INT(-2, 1)])) &
-        & error stop 'sendget strided int kind=4 to kind=1 self failed.'
+        & call print_and_register( 'sendget strided int kind=4 to kind=1 self failed.')
 
       co_int_dst_k1(1:5) = co_int_src_k1(5:1:-1)
       co_int_dst_k1(::2)[1] = co_int_dst_k1(3:1:-1)[1]
       print *, co_int_dst_k1
       ! Note, indezes two times reversed!
       if (any(co_int_dst_k1 /= [co_int_src_k1(3), co_int_src_k1(4), co_int_src_k1(4), co_int_src_k1(2), co_int_src_k1(5)])) &
-        & error stop 'sendget strided with temp int kind=1 to kind=1 self failed.'
+        & call print_and_register( 'sendget strided with temp int kind=1 to kind=1 self failed.')
 
       co_int_dst_k4(1:5) = co_int_src_k4(5:1:-1)
       co_int_dst_k4(::2)[1] = co_int_dst_k4(3:1:-1)[1]
       print *, co_int_dst_k4
       if (any(co_int_dst_k4 /= [co_int_src_k4(3), co_int_src_k4(4), co_int_src_k4(4), co_int_src_k4(2), co_int_src_k4(5)])) &
-       & error stop 'sendget strided with temp int kind=4 to kind=4 self failed.'
+       & call print_and_register( 'sendget strided with temp int kind=4 to kind=4 self failed.')
     else if (me == 2) then ! Do the real copy to self checks on image 2
       co_real_dst_k4 = -1.0
       co_real_dst_k4(::2)[2] = co_real_src_k4(1:3)[2]
       print *, co_real_dst_k4
       if (any(abs(co_real_dst_k4 - [co_real_src_k4(1), -1.0, co_real_src_k4(2), -1.0, co_real_src_k4(3)]) > tolerance4)) &
-        & error stop 'sendget strided real kind=4 to kind=4 self failed.'
+        & call print_and_register( 'sendget strided real kind=4 to kind=4 self failed.')
 
       co_real_dst_k8 = -1.0
       co_real_dst_k8(::2)[2] = co_real_src_k8(1:3)[2]
       print *, co_real_dst_k8
       if (any(abs(co_real_dst_k8 - [co_real_src_k8(1), REAL(-1.0, 8), co_real_src_k8(2), REAL(-1.0, 8), co_real_src_k8(3)]) &
-        & > tolerance8)) error stop 'sendget strided real kind=8 to kind=8 self failed.'
+        & > tolerance8)) call print_and_register( 'sendget strided real kind=8 to kind=8 self failed.')
 
       co_real_dst_k8 = -2.0
       co_real_dst_k8(2::2)[2] = co_real_src_k4(4:5)[2]
       print *, co_real_dst_k8(1:5), lbound(co_real_dst_k8, 1)
       if (any(abs(co_real_dst_k8 - [REAL(-2.0, 8), co_real_src_k8(4), REAL(-2.0, 8), co_real_src_k8(5), REAL(-2.0, 8)]) &
-        & > tolerance4to8)) error stop 'sendget strided real kind=4 to kind=8 self failed.'
+        & > tolerance4to8)) call print_and_register( 'sendget strided real kind=4 to kind=8 self failed.')
 
       co_real_dst_k4 = -2.0
       co_real_dst_k4(2::2)[2] = co_real_src_k8(1:2)[2]
       print *, co_real_dst_k4
       if (any(abs(co_real_dst_k4 - [-2.0, co_real_src_k4(1), -2.0, co_real_src_k4(2), -2.0]) > tolerance4)) &
-        & error stop 'sendget strided real kind=8 to kind=4 self failed.'
+        & call print_and_register( 'sendget strided real kind=8 to kind=4 self failed.')
 
       co_real_dst_k4(1:5) = co_real_src_k4(5:1:-1)
       co_real_dst_k4(::2)[2] = co_real_dst_k4(3:1:-1)[2]
       print *, co_real_dst_k4
       if (any(abs(co_real_dst_k4 - [co_real_src_k4(3), co_real_src_k4(4), co_real_src_k4(4), co_real_src_k4(2), &
         & co_real_src_k4(5)]) > tolerance4)) &
-        & error stop 'sendget strided with temp real kind=4 to kind=4 self failed.'
+        & call print_and_register( 'sendget strided with temp real kind=4 to kind=4 self failed.')
 
       co_real_dst_k8(1:5) = co_real_src_k8(5:1:-1)
       co_real_dst_k8(::2)[2] = co_real_dst_k8(3:1:-1)[2]
       print *, co_real_dst_k8
       if (any(abs(co_real_dst_k8 - [co_real_src_k8(3), co_real_src_k8(4), co_real_src_k8(4), co_real_src_k8(2), &
         & co_real_src_k8(5)]) > tolerance8)) &
-        & error stop 'sendget strided with temp real kind=8 to kind=8 self failed.'
+        & call print_and_register( 'sendget strided with temp real kind=8 to kind=8 self failed.')
     end if
 
     ! Transfer to other image now.
@@ -441,23 +461,23 @@ program sendget_convert_nums
     if (me == 1) then
       print *, co_int_dst_k4
       if (any(co_int_dst_k4 /= [co_int_src_k4(1), -1, co_int_src_k4(2), -1, co_int_src_k4(3)])) &
-        & error stop 'strided sendget int kind=4 to kind=4 from image 3 to image 1 failed.'
+        & call print_and_register( 'strided sendget int kind=4 to kind=4 from image 3 to image 1 failed.')
 
       print *, co_int_dst_k1
       if (any(co_int_dst_k1 /= [co_int_src_k1(1), INT(-1, 1), co_int_src_k1(2), INT(-1, 1), co_int_src_k1(3)])) &
-        & error stop 'strided sendget int kind=1 to kind=1 from image 3 to image 1 failed.'
+        & call print_and_register( 'strided sendget int kind=1 to kind=1 from image 3 to image 1 failed.')
 
       print *, co_real_dst_k8
       if (any(abs(co_real_dst_k8 - [co_real_src_k8(1), REAL(-1.0, 8), co_real_src_k8(2), REAL(-1.0, 8), &
         & co_real_src_k8(3)]) > tolerance8)) &
-        & error stop 'strided sendget real kind=8 to kind=8 from image 3 to image 1 failed.'
+        & call print_and_register( 'strided sendget real kind=8 to kind=8 from image 3 to image 1 failed.')
 
       print *, co_real_dst_k4
       if (any(abs(co_real_dst_k4 - [co_real_src_k4(1), REAL(-1.0, 4), co_real_src_k4(2), REAL(-1.0, 4), &
         & co_real_src_k4(3)]) > tolerance4)) &
-        & error stop 'strided sendget real kind=4 to kind=4 from image 3 to image 1 failed.'
+        & call print_and_register( 'strided sendget real kind=4 to kind=4 from image 3 to image 1 failed.')
     end if
-    
+
     ! now with strides and kind conversion
     sync all
     co_int_dst_k4 = -1
@@ -479,21 +499,21 @@ program sendget_convert_nums
     if (me == 1) then
       print *, co_int_dst_k4
       if (any(co_int_dst_k4 /= [co_int_src_k4(3), -1, co_int_src_k4(4), -1, co_int_src_k4(5)])) &
-        & error stop 'strided sendget int kind=1 to kind=4 from image 3 to image 1 failed.'
+        & call print_and_register( 'strided sendget int kind=1 to kind=4 from image 3 to image 1 failed.')
 
       print *, co_int_dst_k1
       if (any(co_int_dst_k1 /= [co_int_src_k1(3), INT(-1, 1), co_int_src_k1(4), INT(-1, 1), co_int_src_k1(5)])) &
-        & error stop 'strided sendget int kind=4 to kind=1 from image 3 to image 1 failed.'
+        & call print_and_register( 'strided sendget int kind=4 to kind=1 from image 3 to image 1 failed.')
 
       print *, co_real_dst_k8
       if (any(abs(co_real_dst_k8 - [co_real_src_k8(3), REAL(-1.0, 8), co_real_src_k8(4), REAL(-1.0, 8), &
         & co_real_src_k8(5)]) > tolerance8)) &
-        & error stop 'strided sendget real kind=4 to kind=8 from image 3 to image 1 failed.'
+        & call print_and_register( 'strided sendget real kind=4 to kind=8 from image 3 to image 1 failed.')
 
       print *, co_real_dst_k4
       if (any(abs(co_real_dst_k4 - [co_real_src_k4(3), REAL(-1.0, 4), co_real_src_k4(4), REAL(-1.0, 4), &
         & co_real_src_k4(5)]) > tolerance4)) &
-        & error stop 'strided sendget real kind=8 to kind=4 from image 3 to image 1 failed.'
+        & call print_and_register( 'strided sendget real kind=8 to kind=4 from image 3 to image 1 failed.')
     end if
 
     ! now with strides and type conversion
@@ -517,24 +537,45 @@ program sendget_convert_nums
     if (me == 1) then
       print *, co_int_dst_k4
       if (any(co_int_dst_k4 /= [5, -1, 4, -1, 3])) &
-        & error stop 'strided sendget real kind=4 to int kind=4 from image 3 to image 1 failed.'
+        & call print_and_register( 'strided sendget real kind=4 to int kind=4 from image 3 to image 1 failed.')
 
       print *, co_int_dst_k1
       if (any(co_int_dst_k1 /= [INT(5, 1), INT(-1, 1), INT(4, 1), INT(-1, 1), INT(3, 1)])) &
-        & error stop 'strided sendget int real kind=4 to int kind=1 from image 3 to image 1 failed.'
+        & call print_and_register( 'strided sendget int real kind=4 to int kind=1 from image 3 to image 1 failed.')
 
       print *, co_real_dst_k8
       if (any(abs(co_real_dst_k8 - [3.0, -1.0, 2.0, -1.0, 1.0]) > tolerance8)) &
-        & error stop 'strided sendget int kind=4 to real kind=8 from image 3 to image 1 failed.'
+        & call print_and_register( 'strided sendget int kind=4 to real kind=8 from image 3 to image 1 failed.')
 
       print *, co_real_dst_k4
       if (any(abs(co_real_dst_k4 - [REAL(3, 4), REAL(-1.0, 4), REAL(2, 4), REAL(-1.0, 4), REAL(1, 4)]) > tolerance4)) &
-        & error stop 'strided sendget int kind=4 to real kind=4 from image 3 to image 1 failed.'
+        & call print_and_register( 'strided sendget int kind=4 to real kind=4 from image 3 to image 1 failed.')
     end if
 
-    sync all
-    if (me == 1) print *, "Test passed."
+    select case(me)
+     case(1)
+       if (error_printed) error stop
+       sync images([2,3])
+       print *, "Test passed."
+     case(2)
+       if (error_printed) error stop
+       sync images(1)
+     case(3)
+       if (error_printed) error stop
+       sync images(1)
+    end select
+
   end associate
+
+contains
+
+  subroutine print_and_register(error_message)
+    use iso_fortran_env, only : error_unit
+    character(len=*), intent(in) :: error_message
+    write(error_unit,*) error_message
+    error_printed=.true.
+  end subroutine
+
 end program sendget_convert_nums
 
 ! vim:ts=2:sts=2:sw=2:
