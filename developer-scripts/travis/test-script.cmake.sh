@@ -25,9 +25,9 @@ mkdir cmake-build || echo "Cannot mkdir cmake-build"
 for BUILD_TYPE in ${BUILD_TYPES}; do
     rm -rf cmake-build/* || true
     (
-	cd cmake-build || echo 'cannot cd to cmake-build/'
-	cmake -DCMAKE_INSTALL_PREFIX:PATH="${HOME}/OpenCoarrays" -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" .. || echo "running cmake failed"
-	make -j 4 || echo "running make failed"
+	cd cmake-build
+	cmake -DCMAKE_INSTALL_PREFIX:PATH="${HOME}/OpenCoarrays" -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" ..
+	make -j 4
 	ctest --output-on-failure --schedule-random --repeat-until-fail "${NREPEAT:-5}" --timeout "${TEST_TIMEOUT:-200}"
 	make install
 	make uninstall
