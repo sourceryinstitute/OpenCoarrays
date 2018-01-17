@@ -21,25 +21,18 @@ trap '__caf_err_report "${FUNCNAME:-.}" ${LINENO}' ERR
 
 echo "Performing Travis-CI installation phase on Linux..."
 
-if [[ ${BUILD_TYPE} != InstallScript ]]; then # Ubuntu on Travis-CI, NOT testing install.sh
+if [[ "${BUILD_TYPE:-}" != InstallScript ]]; then # Ubuntu on Travis-CI, NOT testing install.sh
     if ! [[ -x "${HOME}/.local/bin/mpif90" && -x "${HOME}/.local/bin/mpicc" ]]; then
         # mpich install not cached
         # could use prerequisites/build instead...
         wget "${MPICH_URL_HEAD}/${MPICH_URL_TAIL}"
-        mv "${MPICH_URL_TAIL}" "${MPICH_DIR}/.."
+        tar -xzvf "${MPICH_URL_TAIL}"
         (
-	    cd "${MPICH_DIR}/.."
-            tar -xzvf "${MPICH_URL_TAIL}"
-            cd "${MPICH_URL_TAIL%.tar.gz}"
-            ./configure --prefix="${MPICH_DIR}"
+	    cd "${MPICH_URL_TAIL%.tar.gz}"
+            ./configure --prefix="${CACHE}"
             make -j 4
             make install
-        )
-        for f in "${MPICH_DIR}/bin/"*; do
-            if [[ -x "${f}" ]]; then
-		ln -fs "${f}" "${HOME}/.local/bin/${f##*/}"
-            fi
-        done
+	)
     fi
     mpif90 --version
     mpicc --version

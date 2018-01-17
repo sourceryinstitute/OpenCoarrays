@@ -30,7 +30,7 @@ for pkg in ${OSX_PACKAGES}; do
     brew ls --versions "${pkg}" >/dev/null || brew install "${pkg}" || brew link --overwrite "${pkg}"
     brew outdated "${pkg}" || brew upgrade "${pkg}"
 done
-if [[ ${BUILD_TYPE} == InstallScript ]]; then # uninstall some stuff if present
+if [[ "${BUILD_TYPE:-}" == InstallScript ]]; then # uninstall some stuff if present
     brew uninstall --force --ignore-dependencies cmake || true
     brew uninstall --force --ignore-dependencies mpich || true
     brew uninstall --force --ignore-dependencies openmpi || true
