@@ -84,7 +84,6 @@ contains
 
   subroutine mpi_matches_caf(comm)
     use iso_c_binding, only : c_int
-    use mpi, only : MPI_COMM_SIZE, MPI_COMM_RANK
     integer(c_int), intent(in) :: comm
       !! MPI communicator
     integer(c_int) :: isize,ierror,irank
