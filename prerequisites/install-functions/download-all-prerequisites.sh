@@ -16,7 +16,7 @@ function download_all_prerequisites()
     ./install.sh --package gcc  --only-download
     gcc_version=$(./install.sh -V gcc)
     cd prerequisites/downloads/
-    tar xf gcc-${gcc_version}.tar.bz2 || emergency "tar didn't work"
+    tar xf gcc-${gcc_version}.tar.[bg]z* || emergency "tar didn't work"
     listing=$(ls -lt)
     cd gcc-${gcc_version}
   fi

@@ -164,10 +164,12 @@ info  "-n (--no-color):         ${arg_n}"
 info  "-o (--only-download):    ${arg_o}"
 info  "-p (--package):          ${arg_p}"
 info  "-P (--print-path):       ${arg_P}"
+info  "-u (--from-url):         ${arg_u}"
 info  "-U (--print-url):        ${arg_U}"
 info  "-v (--version):          ${arg_v}"
 info  "-V (--print-version):    ${arg_V}"
 info  "-y (--yes-to-all):       ${arg_y}"
+info  "-z (--disable-bootstrap):${arg_z}"
 }
 # This file is organized into three sections:
 # 1. Command-line argument and environment variable processing.
@@ -233,6 +235,9 @@ source $opencoarrays_src_dir/prerequisites/install-functions/build_opencoarrays.
 # shellcheck source=./prerequisites/install-functions/report_results.sh
 source $opencoarrays_src_dir/prerequisites/install-functions/report_results.sh
 
+# shellcheck source=./prerequisites/install-functions/install-xcode-clt.sh
+source "${opencoarrays_src_dir}/prerequisites/install-functions/install-xcode-clt.sh"
+
 # ___________________ End of function definitions for use in the Main Body __________________
 
 
@@ -293,37 +298,52 @@ elif [[ ! -z "${arg_D:-${arg_P:-${arg_U:-${arg_V:-${arg_B}}}}}" ||  "${arg_l}" =
 elif [[ "${arg_p:-}" == "opencoarrays" ]]; then
 
   if [[ "${arg_o}" == "${__flag_present}" ]]; then
-    
+
     # Download all prerequisites and exit
     info "source ${OPENCOARRAYS_SRC_DIR}/prerequisites/install-functions/download-all-prerequisites.sh"
     source "${OPENCOARRAYS_SRC_DIR}/prerequisites/install-functions/download-all-prerequisites.sh"
     info "download_all_prerequisites"
     download_all_prerequisites
 
-  else 
+  else
 
+    # Install Xcode command line tools (CLT) if on macOS and if needed
+    maybe_install_xcodeCLT
     # Install OpenCoarrays
+
     cd prerequisites || exit 1
     installation_record=install-opencoarrays.log
     # shellcheck source=./prerequisites/build-functions/set_SUDO_if_needed_to_write_to_directory.sh
     source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/set_SUDO_if_needed_to_write_to_directory.sh"
     version="$("${opencoarrays_src_dir}/install.sh" -V opencoarrays)"
     set_SUDO_if_needed_to_write_to_directory "${install_path}"
-  
-    # Using process substitution "> >(...) -" instead of piping to tee via "2>&1 |" ensures that
-    # report_results gets the FC value set in build_opencoarrays
-    # Source: http://stackoverflow.com/questions/8221227/bash-variable-losing-its-value-strange
-    build_opencoarrays > >( tee ../"${installation_record}" ) -
-    report_results 2>&1 | tee -a ../"${installation_record}"
+
+    if grep -s -q Microsoft /proc/version  ; then
+      info "Windows Subsystem for Linux detected.  Invoking windows-install.sh with the following command:"
+      info "\"${opencoarrays_src_dir}\"/prerequisites/install-functions/windows-install.sh \"$@\""
+      "${opencoarrays_src_dir}"/prerequisites/install-functions/windows-install.sh "$@"
+    else
+      # Using process substitution "> >(...) -" instead of piping to tee via "2>&1 |" ensures that
+      # report_results gets the FC value set in build_opencoarrays
+      # Source: http://stackoverflow.com/questions/8221227/bash-variable-losing-its-value-strange
+      build_opencoarrays > >( tee ../"${installation_record}" ) -
+      report_results 2>&1 | tee -a ../"${installation_record}"
+    fi
   fi
 
 elif [[ "${arg_p:-}" == "ofp" ]]; then
+
+  # Install Xcode command line tools (CLT) if on macOS and if needed
+  maybe_install_xcodeCLT
 
   info "Invoking Open Fortran Parser build script with the following command:"
   info "\"${opencoarrays_src_dir}\"/prerequisites/install-ofp.sh"
   "${opencoarrays_src_dir}"/prerequisites/install-ofp.sh
 
 elif [[ ! -z "${arg_p:-}" ]]; then
+
+  # Install Xcode command line tools (CLT) if on macOS and if needed
+  maybe_install_xcodeCLT
 
   info "Invoking build script with the following command:"
   info "\"${opencoarrays_src_dir}\"/prerequisites/build.sh ${*:-}"

@@ -8,7 +8,7 @@ find_or_install()
   package_executable_array=(
     "gcc:gfortran"
     "cmake:cmake"
-    "mpich:mpif90"
+    "mpich:mpifort"
     "flex:flex"
     "bison:yacc"
     "m4:m4"
@@ -35,7 +35,7 @@ find_or_install()
   if type "$executable" >& /dev/null; then
     printf "yes.\n"
     package_in_path=true
-    package_version_in_path=$("$executable" --version|head -1)
+    package_version_in_path=$( ("${executable}" --version 2>/dev/null || "${executable}" -V) | head -1)
   else
     printf "no.\n"
     package_in_path=false
@@ -121,11 +121,11 @@ find_or_install()
     # MPIFC, MPICC, and MPICXX environment variables. Every branch must also manage the
     # dependency stack.
 
-    # If the user specified a Fortran compiler, verify that mpif90 wraps the specified compiler
+    # If the user specified a Fortran compiler, verify that mpifort wraps the specified compiler
     if [[ ! -z "${arg_M:-}" ]]; then
 
       echo -e "$this_script: Using the $package specified by -M or --with-mpi: ${arg_M}\n"
-      export MPIFC="${arg_M}"/bin/mpif90
+      export MPIFC="${arg_M}"/bin/mpifort
       export MPICC="${arg_M}"/bin/mpicc
       export MPICXX="${arg_M}"/bin/mpicxx
       # Halt the recursion
@@ -136,7 +136,7 @@ find_or_install()
     elif [[ "$script_installed_package" == true ]]; then
 
       echo -e "$this_script: Using the $package installed by $this_script\n"
-      export MPIFC=$package_install_path/bin/mpif90
+      export MPIFC=$package_install_path/bin/mpifort
       export MPICC=$package_install_path/bin/mpicc
       export MPICXX=$package_install_path/bin/mpicxx
       # Halt the recursion
@@ -147,8 +147,8 @@ find_or_install()
     elif [[ "$package_in_path" == "true" ]]; then
 
       echo -e "$this_script: Checking whether $executable in PATH wraps gfortran... "
-      mpif90_version_header=$(mpif90 --version | head -1)
-      first_three_characters=$(echo "$mpif90_version_header" | cut -c1-3)
+      mpifort_version_header=$(mpifort --version | head -1)
+      first_three_characters=$(echo "$mpifort_version_header" | cut -c1-3)
       if [[ "$first_three_characters" != "GNU" ]]; then
         printf "no.\n"
         # Trigger 'find_or_install gcc' and subsequent build of $package
@@ -162,7 +162,7 @@ find_or_install()
 
           info "-f (or --with-fortran) argument detected with value ${arg_f}"
           printf "yes.\n %s: Using the specified %s.\n" "$this_script" "$executable"
-          export MPIFC=mpif90
+          export MPIFC=mpifort
           export MPICC=mpicc
           export MPICXX=mpicxx
 
@@ -185,7 +185,7 @@ find_or_install()
           fi
           if [[ "$acceptable" == "${is_true:-}" ]]; then
             printf "yes.\n %s: Using the $executable found in the PATH.\n" "$this_script"
-            export MPIFC=mpif90
+            export MPIFC=mpifort
             export MPICC=mpicc
             export MPICXX=mpicxx
 
@@ -212,7 +212,7 @@ find_or_install()
 
     # Check consistency of MPIFC, if set, and user-specified Fortran compiler
     if [[ ! -z ${MPIFC:-} && ! -z "${arg_f:-}" ]]; then
-      MPIFC_wraps=$(${MPIFC} --version)
+      MPIFC_wraps=$("${MPIFC}" --version)
       compiler=$(${arg_f} --version)
       if [[ "${MPIFC_wraps}" != "${compiler}"   ]]; then
         emergency "Specified MPI ${MPIFC_wraps} wraps a compiler other than the specified Fortran compiler ${compiler}"
@@ -637,8 +637,8 @@ find_or_install()
             export LD_LIBRARY_PATH="$gfortran_lib_paths:$LD_LIBRARY_PATH"
           fi
         elif [[ $package == "mpich" ]]; then
-          echo "$this_script: export MPIFC=$package_install_path/bin/mpif90"
-                              export MPIFC="$package_install_path/bin/mpif90"
+          echo "$this_script: export MPIFC=$package_install_path/bin/mpifort"
+                              export MPIFC="$package_install_path/bin/mpifort"
           echo "$this_script: export MPICC= $package_install_path/bin/mpicc"
                               export MPICC="$package_install_path/bin/mpicc"
           echo "$this_script: export MPICXX=$package_install_path/bin/mpicxx"

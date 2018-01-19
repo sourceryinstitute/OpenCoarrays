@@ -13,8 +13,8 @@ build_opencoarrays()
   if [[ -z ${MPIFC:-} || -z ${MPICC:-} ]]; then
     emergency "build_opencoarrays.sh: empty \${MPIFC}=${MPIFC:-} or \${MPICC}=${MPICC:-}"
   fi
-  MPIFC_show=($($MPIFC -show))
-  MPICC_show=($($MPICC -show))
+  MPIFC_show=($("$MPIFC" -show))
+  MPICC_show=($("$MPICC" -show))
   if [[ "${MPIFC_show[0]}" != *gfortran* || "${MPICC_show[0]}" != *gcc* ]]; then
     emergency "build_opencoarrays.sh: MPI doesn't wrap gfortran/gcc: \${MPIFC_show}=${MPIFC_show[*]}, \${MPICC_show}=${MPICC_show[*]}"
   fi

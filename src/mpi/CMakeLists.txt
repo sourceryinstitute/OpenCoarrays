@@ -1,5 +1,3 @@
-set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/mod)
-
 if (NOT MPI_C_FOUND)
   find_package(MPI REQUIRED)
 
@@ -19,7 +17,7 @@ elseif("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "PGI")
 endif()
 
 if(gfortran_compiler AND (NOT opencoarrays_aware_compiler))
-  # This applied to gfortran 4.9 and some earlier versions (FIX ME: find out which)
+  # This applied to gfortran < 5.2
   add_definitions(-DCOMPILER_SUPPORTS_CAF_INTRINSICS)
 endif()
 
@@ -38,8 +36,33 @@ endif()
 #----------------------------------------------------------------------
 # Test if MPI implementation provides features needed for failed images
 #----------------------------------------------------------------------
-set(NEEDED_SYMBOLS MPIX_ERR_PROC_FAILED;MPIX_ERR_REVOKED;MPIX_Comm_failure_ack;MPIX_Comm_failure_get_acked;MPIX_Comm_shrink;MPIX_Comm_agree)
 set(MPI_HAS_FAULT_TOL_EXT YES)
+
+CHECK_INCLUDE_FILE("signal.h" HAVE_SIGNAL_H)
+if (NOT HAVE_SIGNAL_H)
+  set(MPI_HAS_FAULT_TOL_EXT NO)
+  message( FATAL_ERROR "Currently, OpenCoarrays cannot build without signal.h")
+endif()
+
+include(CheckSymbolExists)
+CHECK_SYMBOL_EXISTS(SIGKILL "signal.h" HAVE_SIGKILL)
+if(NOT HAVE_SIGKILL) # try -D_POSIX, needed for mingw-w64, maybe others, see #435
+                     # https://github.com/sourceryinstitute/OpenCoarrays/issues/435#issuecomment-323592433
+  list( APPEND CMAKE_REQUIRED_DEFINITIONS -D_POSIX)
+  CHECK_SYMBOL_EXISTS(SIGKILL "signal.h" HAVE_SIGKILL2)
+  if(HAVE_SIGKILL2)
+    set(HAVE_SIGKILL ${HAVE_SIGKILL2})
+    add_definitions(-D_POSIX)
+  endif()
+endif()
+
+if (NOT HAVE_SIGKILL)
+  set(MPI_HAS_FAULT_TOL_EXT NO)
+  message (FATAL_ERROR "Currently, OpenCoarrays cannot build without SIGKILL from signal.h")
+endif()
+
+set(NEEDED_SYMBOLS MPIX_ERR_PROC_FAILED;MPIX_ERR_REVOKED;MPIX_Comm_failure_ack;MPIX_Comm_failure_get_acked;MPIX_Comm_shrink;MPIX_Comm_agree)
+
 set(old_cmake_required_includes "${CMAKE_REQUIRED_INCLUDES}")
 if(CMAKE_REQUIRED_INCLUDES)
   set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES};${MPI_C_INCLUDE_PATH})
@@ -60,14 +83,15 @@ else()
 endif()
 
 set(MPI_HEADERS mpi.h)
-CHECK_INCLUDE_FILE("mpi-ext.h" HAVE_MPI_EXT)
+include(CheckIncludeFiles)
+CHECK_INCLUDE_FILES("mpi.h;mpi-ext.h" HAVE_MPI_EXT)
 if(HAVE_MPI_EXT)
   add_definitions(-DHAVE_MPI_EXT_H)
   set(MPI_HEADERS ${MPI_HEADERS};mpi-ext.h)
 endif()
-include(CheckSymbolExists)
+
 foreach(symbol ${NEEDED_SYMBOLS})
-  CHECK_SYMBOL_EXISTS(${symbol} ${MPI_HEADERS} HAVE_${symbol})
+  CHECK_SYMBOL_EXISTS(${symbol} "${MPI_HEADERS}" HAVE_${symbol})
   if(NOT HAVE_${symbol})
     message( STATUS "\${HAVE_${symbol}} = ${HAVE_${symbol}}")
     message( WARNING "Disabling Failed Image support due to lack of support in the current MPI implementation.")
@@ -89,96 +113,127 @@ if(CAF_ENABLE_FAILED_IMAGES)
   add_definitions(-DUSE_FAILED_IMAGES)
 endif()
 
-# Determine whether and how to include OpenCoarrays module based on if the Fortran MPI compiler:
-#   - workds
-#   - is compatible with the fortran compiler used to build the MPI implementation
-if (MPI_Fortran_MODULE_COMPILES)
-  # likely the same compiler compiled MPI
-  set(MPI_CAF_FORTRAN_FILES ../extensions/opencoarrays.F90)
+#---------------------------------------------------
+# Windows Intel MPI compatibility, see GH issue #435
+#---------------------------------------------------
+set(old_cmake_required_includes "${CMAKE_REQUIRED_INCLUDES}")
+if(CMAKE_REQUIRED_INCLUDES)
+  set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES};${MPI_C_INCLUDE_PATH})
+else()
+  set(CMAKE_REQUIRED_INCLUDES ${MPI_C_INCLUDE_PATH})
 endif()
+CHECK_INCLUDE_FILES("mpi.h" HAVE_MPI_H)
+CHECK_SYMBOL_EXISTS(I_MPI_VERSION "mpi.h" HAVE_Intel_MPI)
+if(HAVE_Intel_MPI AND WIN32)
+  add_definitions(-DUSE_GCC)
+endif()
+set(CMAKE_REQUIRED_INCLUDES ${old_cmake_required_includes})
 
-add_library(caf_mpi mpi_caf.c ../common/caf_auxiliary.c ${MPI_CAF_FORTRAN_FILES})
+add_library(opencoarrays_mod OBJECT ../extensions/opencoarrays.F90)
+set_target_properties(opencoarrays_mod
+  PROPERTIES
+  Fortran_MODULE_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_INCLUDEDIR}/${mod_dir_tail}"
+  POSITION_INDEPENDENT_CODE TRUE)
+
+add_library(caf_mpi SHARED mpi_caf.c ../common/caf_auxiliary.c $<TARGET_OBJECTS:opencoarrays_mod>)
+add_library(caf_mpi_static STATIC  mpi_caf.c ../common/caf_auxiliary.c $<TARGET_OBJECTS:opencoarrays_mod>)
 target_link_libraries(caf_mpi PRIVATE ${MPI_C_LIBRARIES} ${MPI_Fortran_LIBRARIES})
+target_link_libraries(caf_mpi_static PRIVATE ${MPI_C_LIBRARIES} ${MPI_Fortran_LIBRARIES})
+
+set(CAF_SO_VERSION 0)
+if(gfortran_compiler)
+  if(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0)
+    set(CAF_SO_VERSION 2)
+  elseif(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 6.0.0)
+    set(CAF_SO_VERSION 1)
+  endif()
+endif()
 
 set_target_properties ( caf_mpi
   PROPERTIES
-  SOVERSION ${PROJECT_VERSION.MAJOR}.${PROJECT_VERSION.MINOR}
-  VERSION ${PROJECT_VERSION}
-  )
+  SOVERSION ${CAF_SO_VERSION}
+#  VERSION ${PROJECT_VERSION}
+)
 
+# Create a symlink in the include dir
+if(UNIX)
+  add_custom_command(TARGET caf_mpi
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E create_symlink "./${mod_dir_tail}/opencoarrays.mod" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_INCLUDEDIR}/opencoarrays.mod"
+    COMMENT "Creating symlink ${CMAKE_INSTALL_INCLUDEDIR}/opencoarrays.mod --> ${CMAKE_INSTALL_INCLUDEDIR}/${mod_dir_tail}/opencoarrays.mod")
+endif()
+
+install(DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_INCLUDEDIR}/" DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+  FILES_MATCHING PATTERN "*.mod")
+
+set_target_properties( caf_mpi_static
+  PROPERTIES
+  SOVERSION ${CAF_SO_VERSION}
+#  VERSION ${PROJECT_VERSION}
+)
 
 if (gfortran_compiler)
   target_compile_options(caf_mpi INTERFACE -fcoarray=lib)
+  target_compile_options(caf_mpi_static INTERFACE -fcoarray=lib)
 endif()
-
-include_directories(${CMAKE_BINARY_DIR}/mod)
 
 install(TARGETS caf_mpi EXPORT OpenCoarraysTargets
-  ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}"
   LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
 )
-
-# Install modules to standard include dir, but namespace them with compiler/version
-set (mod_install "OpenCoarrays/${CMAKE_Fortran_COMPILER_ID}/${CMAKE_Fortran_COMPILER_VERSION}")
-install(DIRECTORY  "${CMAKE_BINARY_DIR}/mod/"
-  DESTINATION "${CMAKE_INSTALL_FULL_INCLUDEDIR}/${mod_install}"
-  FILES_MATCHING PATTERN "*.mod"
-)
-
-# Now add a link in standard include dir so that compilers will find by default... this may or may not actually be a good idea...
-if ( "${CMAKE_Fortran_COMPILER_ID}" MATCHES "GNU" )
-  INSTALL(CODE "execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink ${mod_install}/opencoarrays.mod \$ENV{DESTDIR}${CMAKE_INSTALL_FULL_INCLUDEDIR}/opencoarrays.mod )"
+install(TARGETS caf_mpi_static EXPORT OpenCoarraysTargets
+  ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
   )
-endif ()
 
-# Now we write the script that passes CAF source to the compiler with the necessary arguments
-# and, if necessary, performs some code transformations prior to invoking the compiler.
-set(exe_dir ${CMAKE_BINARY_DIR}/bin_staging)
-set(compiler_wrapper ${exe_dir}/caf)
-install(
-    FILES "${compiler_wrapper}"
-    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-    DESTINATION "${CMAKE_INSTALL_BINDIR}"
-)
-file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/caf-head CAF_HEADER)
-file(WRITE  "${compiler_wrapper}" "${CAF_HEADER}\n")
-file(APPEND "${compiler_wrapper}"  "caf_mod_dir=\"${CMAKE_INSTALL_FULL_INCLUDEDIR}/mod\"\n")
-file(APPEND "${compiler_wrapper}"  "caf_lib_dir=\"${CMAKE_INSTALL_FULL_LIBDIR}\"\n")
-file(APPEND "${compiler_wrapper}"  "caf_version=${full_git_describe}\n")
-if(gfortran_compiler)
-  file(APPEND "${compiler_wrapper}"  "link_args='-fcoarray=lib -lcaf_mpi'\n")
-elseif(portland_group_compiler)
-  file(APPEND "${compiler_wrapper}"  "link_args=-lcaf_mpi\n")
-endif()
-if(opencoarrays_aware_compiler)
-  file(APPEND "${compiler_wrapper}"  "caf_compiler=true\n")
+##############################################
+# Configure `caf` and `cafrun` wrapper scripts
+##############################################
+# List of caf.in variables needing configuration:
+#
+# @CAF_VERSION@ @opencoarrays_aware_compiler@ @Fortran_COMPILER@ @CAF_MODDIR@
+# @MPI_Fortran_LINK_FLAGS@ @MPI_Fortran_COMPILE_FLAGS@
+# @CAF_LIBS@ @MPI_LIBS@
+#
+
+set(CAF_VERSION "${full_git_describe}")
+set(Fortran_COMPILER "${CMAKE_Fortran_COMPILER}")
+set(CAF_MODDIR "${CMAKE_INSTALL_INCLUDEDIR}/${mod_dir_tail}")
+set(MOD_DIR_FLAG "${CMAKE_Fortran_MODDIR_FLAG}")
+set(MPI_LIBS "")
+foreach( lib IN LISTS MPI_Fortran_LIBRARIES)
+  set(MPI_LIBS "${MPI_LIBS} \"${lib}\"")
+endforeach()
+string(STRIP "${MPI_LIBS}" MPI_LIBS)
+set_target_properties(caf_mpi_static
+  PROPERTIES OUTPUT_NAME caf_mpi)
+get_target_property(libcaf_static caf_mpi_static OUTPUT_NAME)
+set(CAF_LIBS "${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${libcaf_static}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+
+configure_file("${CMAKE_SOURCE_DIR}/src/extensions/caf.in" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf"
+  @ONLY)
+
+
+# List of carrun.in variables needing configuration:
+#
+# @CAF_VERSION@ @MPIEXEC@ @MPIEXEC_NUMPROC_FLAG@ @MPIEXEC_PREFLAGS@ @MPIEXEC_POSTFLAGS@
+# @HAVE_FAILED_IMG@
+#
+
+if(CAF_ENABLE_FAILED_IMAGES)
+  set(HAVE_FAILED_IMG "true")
 else()
-  file(APPEND "${compiler_wrapper}"  "caf_compiler=false\n")
+  set(HAVE_FAILED_IMG "false")
 endif()
 
-if ( DEFINED ENV{FC} )
-  file(APPEND "${compiler_wrapper}"  "CAFC=${MPI_Fortran_COMPILER}\n")
-endif ()
+configure_file("${CMAKE_SOURCE_DIR}/src/extensions/cafrun.in" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun"
+  @ONLY)
 
-if ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
-  file(APPEND "${compiler_wrapper}"  "linux=true\n")
-endif()
-file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/caf-foot FOOTER)
-file(APPEND "${compiler_wrapper}" "${FOOTER}")
+install(PROGRAMS "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun"
+  "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf"
+  DESTINATION "${CMAKE_INSTALL_FULL_BINDIR}")
 
-# Now we write the script that launches executable files produced from CAF codes
-set(caf_launcher ${exe_dir}/cafrun)
-install(
-    FILES "${caf_launcher}"
-    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-    DESTINATION "${CMAKE_INSTALL_BINDIR}"
-)
-file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/cafrun-head CAFRUN_HEADER)
-file(WRITE  "${caf_launcher}" "${CAFRUN_HEADER}\n")
-file(APPEND "${caf_launcher}"  "caf_version=${full_git_describe}\n")
-file(APPEND "${caf_launcher}"  "CAFRUN=${MPIEXEC}\n")
-
-file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/cafrun-foot FOOTER)
-file(APPEND "${caf_launcher}" "${FOOTER}")
-
-#set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${exe_dir}/cafrun;${exe_dir}/caf;${exe_dir}/test-caf-tally.sh")
+lint_script("${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}" caf)
+check_script_style("${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf")
+lint_script("${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}" cafrun)
+check_script_style("${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun")

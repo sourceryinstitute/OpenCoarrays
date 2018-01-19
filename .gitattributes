@@ -32,6 +32,14 @@ developer-scripts export-ignore
 codecov.yml export-ignore
 *.enc export-ignore
 .github export-ignore
+makefile export-ignore
+Makefile export-ignore
+make.inc* export-ignore
+.Dockerfiles export-ignore
+
+# Experimental conduits/backends
+src/gasnet export-ignore
+src/openshmem export-ignore
 
 # Perform substitutions when `git export`ing these files
 .VERSION export-subst

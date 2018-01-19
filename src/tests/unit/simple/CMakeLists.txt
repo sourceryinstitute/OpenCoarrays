@@ -1,10 +1,7 @@
 # Fortran tests
 
-add_executable(increment_my_neighbor test1Caf.f90)
-target_link_libraries(increment_my_neighbor OpenCoarrays)
-
-add_executable(atomics testAtomics.f90)
-target_link_libraries(atomics OpenCoarrays)
+caf_compile_executable(increment_my_neighbor increment_neighbor.f90)
+caf_compile_executable(atomics testAtomics.f90)
 
 # C tests
 #include(CMakeForceCompiler)
