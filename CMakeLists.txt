@@ -651,7 +651,6 @@ if(opencoarrays_aware_compiler)
     add_caf_test(comp_allocated_1 2 comp_allocated_1)
     add_caf_test(comp_allocated_2 2 comp_allocated_2)
     add_caf_test(alloc_comp_get_convert_nums 2 alloc_comp_get_convert_nums)
-    add_caf_test(alloc_comp_send_convert_nums 2 alloc_comp_send_convert_nums)
   endif()
 
 
@@ -668,9 +667,11 @@ if(opencoarrays_aware_compiler)
     endif()
     if((NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.3.0) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
       add_caf_test(send_convert_char_array 2 send_convert_char_array)
+      add_caf_test(alloc_comp_send_convert_nums 2 alloc_comp_send_convert_nums)
     else()#if((CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
       message( AUTHOR_WARNING "Skipping the following tests to GFortran < 7.3.0 lack of compatibility:
-        send_convert_char_array.f90")
+        send_convert_char_array.f90
+        alloc_comp_send_convert_nums.f90")
     endif()
   endif()
 
