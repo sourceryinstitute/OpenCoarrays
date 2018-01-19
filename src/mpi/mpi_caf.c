@@ -58,8 +58,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 /* Define GFC_CAF_CHECK to enable run-time checking.  */
 /* #define GFC_CAF_CHECK  1  */
 
-#define GCC_GE_7
-
 #ifndef EXTRA_DEBUG_OUTPUT
 #define dprint(...)
 #else
