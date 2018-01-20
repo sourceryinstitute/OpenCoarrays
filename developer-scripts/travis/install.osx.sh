@@ -43,10 +43,12 @@ fi
 
 {
     mpif90 --version && mpif90 -show
-} || true
+} || echo "No mpif90"
 {
     mpicc --version && mpicc -show
-} || true
+} || echo "No mpicc"
+
+type -a cmake || echo "CMake not installed"
 cmake --version || true
 
 echo "Done."

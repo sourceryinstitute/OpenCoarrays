@@ -791,3 +791,13 @@ endif()
 
 include(cmake/AddInstallationScriptTest.cmake )
 add_installation_script_test(installation-scripts.sh src/tests/installation/)
+
+# Lint the Travis-CI scripts
+set(TRAVIS_SCRIPTS
+  install.linux.sh
+  install.osx.sh
+  test-script.InstallScript.sh
+  test-script.cmake.sh)
+foreach(SCRIPT ${TRAVIS_SCRIPTS})
+  lint_script("${CMAKE_SOURCE_DIR}/developer-scripts/travis" ${SCRIPT})
+endforeach()
