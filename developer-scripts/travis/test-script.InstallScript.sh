@@ -23,9 +23,10 @@ trap '__caf_err_report "${FUNCNAME:-.}" ${LINENO}' ERR
 echo "Performing Travis-CI script phase for the OpenCoarrays installation script..."
 
 ./install.sh --yes-to-all -i "${HOME}/opencoarrays" -j 4 -f "$(type -P "${FC}")" -c "$(type -P "${CC}")" -C "$(type -P "${CXX}")"
-(
-    cd prerequisites/builds/opencoarrays/*
-    "../../../installations/cmake/*/bin/ctest" --output-on-failure --schedule-random --repeat-until-fail "${NREPEAT:-5}"
-)
+if [[ -x "prerequisites/installations/cmake/*/bin/ctest" ]] ;then
+    "prerequisites/installations/cmake/*/bin/ctest" --output-on-failure --schedule-random --repeat-until-fail "${NREPEAT:-5}"
+else
+    ctest --output-on-failure --schedule-random --repeat-until-fail "${NREPEAT:-5}"
+fi
 
 echo "Done."

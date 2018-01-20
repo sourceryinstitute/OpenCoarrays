@@ -35,9 +35,14 @@ if [[ "${BUILD_TYPE:-}" != InstallScript ]]; then # Ubuntu on Travis-CI, NOT tes
             make install
 	)
     fi
-    mpif90 --version
-    mpicc --version
-    cmake --version
 fi
+
+{
+    mpif90 --version && mpif90 -show
+} || true
+{
+    mpicc --version && mpicc -show
+} || true
+cmake --version || true
 
 echo "Done."

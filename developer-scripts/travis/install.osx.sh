@@ -40,8 +40,13 @@ else
     brew install --force-bottle "${MPICH_BOT_URL_TAIL}"
     brew ls --versions mpich >/dev/null || brew install --force-bottle mpich
 fi
-mpif90 --version || mpif90 -show || true
-mpicc --version || mpicc -show || true
+
+{
+    mpif90 --version && mpif90 -show
+} || true
+{
+    mpicc --version && mpicc -show
+} || true
 cmake --version || true
 
 echo "Done."
