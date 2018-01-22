@@ -24,7 +24,7 @@ echo "Performing Travis-CI script phase for the OpenCoarrays installation script
 
 ./install.sh --yes-to-all -i "${HOME}/opencoarrays" -j 4 -f "$(type -P "${FC}")" -c "$(type -P "${CC}")" -C "$(type -P "${CXX}")"
 BUILD_LOC=(prerequisites/builds/opencoarrays/*/)
-BUILD_LOC_DIR="${BUILD_LOC[${#BUILD_LOC[@]}]-1}"
+BUILD_LOC_DIR="${BUILD_LOC[${#BUILD_LOC[@]}-1]}"
 if [[ -d "${BUILD_LOC_DIR}" ]]; then
     echo "Found opencoarrays build directory created by the install script:"
     echo "   ${BUILD_LOC_DIR}"
