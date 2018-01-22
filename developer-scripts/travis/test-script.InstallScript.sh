@@ -29,7 +29,7 @@ if [[ -d "${BUILD_LOC_DIR}" ]]; then
     echo "Found opencoarrays build directory created by the install script:"
     echo "   ${BUILD_LOC_DIR}"
     (
-	cd "${BUILD_LOC}"
+	cd "${BUILD_LOC[${#BUILD_LOC[@]}-1]}"
 	CTEST_LOC=(../../../installations/cmake/*/bin/ctest)
 	INSTALLER_CTEST="${CTEST_LOC[${#CTEST_LOC[@]}-1]}"
 	if [[ -x "${INSTALLER_CTEST}" ]] ;then
