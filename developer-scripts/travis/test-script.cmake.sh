@@ -22,7 +22,7 @@ trap '__caf_err_report "${FUNCNAME:-.}" ${LINENO}' ERR
 
 echo "Performing Travis-CI script phase for the OpenCoarrays direct cmake build..."
 
-mkdir cmake-build || echo "Cannot mkdir cmake-build"
+mkdir cmake-build
 # shellcheck disable=SC2153
 for BUILD_TYPE in ${BUILD_TYPES}; do
     rm -rf cmake-build/* || true

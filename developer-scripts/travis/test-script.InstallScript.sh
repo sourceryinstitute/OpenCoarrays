@@ -23,12 +23,25 @@ trap '__caf_err_report "${FUNCNAME:-.}" ${LINENO}' ERR
 echo "Performing Travis-CI script phase for the OpenCoarrays installation script..."
 
 ./install.sh --yes-to-all -i "${HOME}/opencoarrays" -j 4 -f "$(type -P "${FC}")" -c "$(type -P "${CC}")" -C "$(type -P "${CXX}")"
-CTEST_LOC=(prerequisites/installations/cmake/*/bin/ctest)
-INSTALLER_CTEST="${CTEST_LOC[${#CTEST_LOC[@]}-1]}"
-if [[ -x "${INSTALLER_CTEST}" ]] ;then
-    "${INSTALLER_CTEST}" --output-on-failure --schedule-random --repeat-until-fail "${NREPEAT:-5}"
+BUILD_LOC=(prerequisites/builds/opencoarrays/*/)
+BUILD_LOC_DIR="${BUILD_LOC[${#BUILD_LOC[@]}]-1}"
+if [[ -d "${BUILD_LOC_DIR}" ]]; then
+    echo "Found opencoarrays build directory created by the install script:"
+    echo "   ${BUILD_LOC_DIR}"
+    (
+	cd "${BUILD_LOC}"
+	CTEST_LOC=(../../../installations/cmake/*/bin/ctest)
+	INSTALLER_CTEST="${CTEST_LOC[${#CTEST_LOC[@]}-1]}"
+	if [[ -x "${INSTALLER_CTEST}" ]] ;then
+	    "${INSTALLER_CTEST}" --output-on-failure --schedule-random --repeat-until-fail "${NREPEAT:-5}"
+	else
+	    ctest --output-on-failure --schedule-random --repeat-until-fail "${NREPEAT:-5}"
+	fi
+    )
 else
-    ctest --output-on-failure --schedule-random --repeat-until-fail "${NREPEAT:-5}"
+    echo "Failed to find install.sh build directory. Contents of prerequisites/builds is:"
+    ls prerequisites/builds/*/
+    exit 5
 fi
 
 echo "Done."
