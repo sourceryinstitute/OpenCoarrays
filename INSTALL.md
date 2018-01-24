@@ -40,7 +40,9 @@ OpenCoarrays source.
 
 [![homebrew][Homebrew badge]][braumeister link]
 
-* [Homebrew]: This is the recommend OpenCoarrays installation method on macOS.
+#### [Homebrew] ####
+
+  This is the recommend OpenCoarrays installation method on macOS.
   Basic Homebrew installation steps:
 
   ```bash
@@ -59,7 +61,9 @@ OpenCoarrays source.
   brew bundle
   ```
 
-* [MacPorts]: An unmaintained [OpenCoarrays Portfile] exists for the [MacPorts] package
+#### [MacPorts] ####
+
+  An unmaintained [OpenCoarrays Portfile] exists for the [MacPorts] package
   manager.  Although the current OpenCoarrays contributors have no plans to
   update the portfile, new contributors are welcome to asssume the port
   maintainer role and to submit a pull request to update this [INSTALL.md] file.
