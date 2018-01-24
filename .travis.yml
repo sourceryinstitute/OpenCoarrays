@@ -20,11 +20,6 @@ env:
 matrix:
   fast_finish: true
   include:
-    - os: osx
-      env:
-        - BUILD_TYPE="InstallScript"
-          OSX_PACKAGES="shellcheck gcc@6"
-          GCC=6
     - &ubuntu
       os: linux
       sudo: false
