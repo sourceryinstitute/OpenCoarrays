@@ -15,8 +15,8 @@ build_opencoarrays()
   fi
   MPIFC_show=($("$MPIFC" -show))
   MPICC_show=($("$MPICC" -show))
-  if [[ "${MPIFC_show[0]}" != *gfortran* || "${MPICC_show[0]}" != *gcc* ]]; then
-    emergency "build_opencoarrays.sh: MPI doesn't wrap gfortran/gcc: \${MPIFC_show}=${MPIFC_show[*]}, \${MPICC_show}=${MPICC_show[*]}"
+  if [[ "${MPIFC_show[0]}" != *gfortran* ]]; then
+    emergency "build_opencoarrays.sh: MPI doesn't wrap gfortran/gcc: \${MPIFC_show}=${MPIFC_show[*]}"
   fi
   if [[ -z "${OPENCOARRAYS_DEVELOPER:-}" ]]; then
       # We should examine the value too, but CMake has many ways of saying "true"
