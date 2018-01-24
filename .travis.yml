@@ -13,17 +13,14 @@ env:
     - MPICH_GCC7_BOT_URL_HEAD="https://github.com/sourceryinstitute/OpenCoarrays/files/976779/"
     - MPICH_BOT_URL_TAIL="mpich-3.2_3.yosemite.bottle.1.tar.gz"
     - BUILD_TYPES="Release Debug RelWithDebInfo CodeCoverage"
+  matrix:
+    - GCC=6 OSX_PACKAGES="gcc@6 cmake shellcheck"
+    - GCC=7 OSX_PACKAGES="gcc cmake shellcheck"
 
 matrix:
   fast_finish: true
-    -
-      os: osx
-      env:
-        - GCC="6 7"
-          OSX_PACKAGES="shellcheck gcc gcc@6 cmake"
-          BUILD_TYPE="cmake"
-    -
-      os: osx
+  include:
+    - os: osx
       env:
         - BUILD_TYPE="InstallScript"
           OSX_PACKAGES="shellcheck gcc@6"
