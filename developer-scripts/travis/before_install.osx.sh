@@ -27,6 +27,6 @@ if [[ -n "${TRAVIS_TAG}" ]] && ${TRAVIS_SECURE_ENV_VARS} ; then
     curl https://izaakbeekman.com/izaak.pubkey.txt | gpg --import
     git tag -v "${TRAVIS_TAG}"
 fi
-gfortran --version
-gcc --version
-g++ --version
+gfortran --version || true
+gcc --version || true
+g++ --version || true
