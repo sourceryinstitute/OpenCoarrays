@@ -1,8 +1,7 @@
-OpenCoarrays developer/quickstart guide
+Developer/quickstart installation guide
 =======================================
 
- This guide assumes that the reader is on a *nix operating system---Windows
- is *NOT* officially supported.
+ This guide assumes that the reader is on a *nix operating system.
 
  Please report any issues encountered or bugs to:
 

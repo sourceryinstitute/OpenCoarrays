@@ -383,51 +383,12 @@ opencoarrays
 
 ### CMake ###
 
-On most platforms, the [`install.sh`] script ultimately invokes [CMake] after performing
-numerous checks, customizations, and installations of any missing prerequisites.
-Advanced users who prefer to invoke CMake directly may do so as described here.
-CMake is a cross-platform Makefile generator that includes the testing tool CTest.
-To avoid cluttering or clobbering the source tree, our CMake setup requires that
-your build directory be any directory other than the top-level OpenCoarays
-source directory.  In a bash shell, the following steps should build OpenCoarrays,
-build the tests, run the tests, and report the test results:
-
-```
-tar xvzf opencoarrays.tar.gz
-cd opencoarrays
-mkdir opencoarrays-build
-cd opencoarrays-build
-CC=gcc FC=gfortran cmake .. -DCMAKE_INSTALL_PREFIX=${HOME}/packages/
-make
-ctest
-make install
-```
-
-where the the first part of the cmake line sets the CC and FC
-environment variables and the final part of the same line defines the
-installation path as the `packages` directory in the current user's
-`$HOME` directory.  Please report any test failures via the
-OpenCoarrays [Issues] page. Please note that you need a recent
-GCC/GFortran, and a recent MPI-3 implementation. If CMake is having
-trouble finding the MPI implementation, or is finding the wrong MPI
-implementation, you can try setting the `MPI_HOME` environment
-variable to point to the installation you wish to use. If that fails,
-you can also try passing the
-`-DMPI_Fortran_COMPILER=/path/to/mpi/fortran/wrapper/script` and
-`-DMP_C_COMPILER=/path/to/mpi/c/wrapper/script` options to CMake.
-
-Advanced options (most users should not use these):
-
-```CMake
--DMPI_HOME=/path/to/mpi/dir  # try to force CMake to find your preferred MPI implementation
-        # OR
--DMPI_C_COMPILER=/path/to/c/wrapper
--DMPI_Fortran_COMPILER=/path/to/fortran/wrapper
-
--DHIGH_RESOLUTION_TIMER=ON   # enables timers that tick once per clock cycle
--DCOMPILER_PROVIDES_MPI      # is set automatically when building with-the Cray
-                             # Compiler Environment
-```
+On most platforms, the [`install.sh`] script ultimately invokes [CMake] after
+performing numerous checks, customizations, and installations of any missing
+prerequisites. Users wishing to install OpenCoarrays directly with CMake should
+have a look at the documentation in the [`./INSTALL`] file if they encounter
+issues or need further guidance. A brief summary is also given at the top of
+this document [here][Developer Build and Install].
 
 [top]
 
