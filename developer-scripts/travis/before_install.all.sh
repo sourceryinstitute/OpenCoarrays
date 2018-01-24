@@ -6,7 +6,7 @@ if ! [[ "${TRAVIS_TAG}" ]] || ! ${TRAVIS_SECURE_ENV_VARS} ; then
 else
     echo "Encrypted vars not unset"
 fi
-if [[ "${OS_TYPE}" == [Dd]arwin* ]]; then
+if [[ "${OSTYPE}" == [Dd]arwin* ]]; then
     export PATH="${PATH}:${HOME}/Library/Python/2.7/bin"
 else
     export PATH="${CACHE}/bin:${PATH}"

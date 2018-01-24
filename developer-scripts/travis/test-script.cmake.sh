@@ -28,7 +28,7 @@ for version in ${GCC}; do
     export CC=gcc-${version}
     ${FC} --version
     ${CC} --version
-    if [[ ${OS_TYPE} == [Dd]arwin* ]]; then
+    if [[ ${OSTYPE} == [Dd]arwin* ]]; then
 	# Ideally this stuff would be in the `install:` section
 	# but puting it here simplifies the Travis code a lot
 	MPICH_BOT_URL_HEAD=MPICH_GCC${version}_BOT_URL_HEAD
