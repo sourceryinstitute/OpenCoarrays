@@ -13,6 +13,7 @@
 Download this file as a PDF document
 [here][INSTALL.pdf].
 
+* [Developer Build and Install]
 * [End-User Installation]
   * [macOS]
   * [Windows]
@@ -22,8 +23,54 @@ Download this file as a PDF document
   * [Installation Script]
 * [Advanced Installation from Source]
   * [Prerequisites]
-  * [CMake scripts]
+  * [CMake]
   * [Make]
+
+## Developer Build and Install ##
+
+If you are a GCC developer, a package maintainer building OpenCoarrays
+for distribution, or an advanced user who is comfortable building
+software from source (using cmake), then we recommend installing
+OpenCoarrays directly via CMake. If you do not fit into one of these
+categories, we encourage you to skip ahead to review installation
+options via Linux or MacOS package management software, or the
+[`install.sh`] script. The text below is a condensed version of the
+content available in [`INSTALL`]: plain text instructions for installing
+OpenCoarrays in a canonical CMake way.
+
+Prerequites for direct CMake installation:
+
+* An MPI 3 implementation (MPICH is preferred, OpenMPI works too)
+* A recent version of GCC with GFortran version 6.1 or newer
+* CMake version 3.4 or newer
+
+After obtaining the OpenCoarrays source (from git or our [latest release])
+the following commands to build and install OpenCoarrays from source
+using CMake:
+
+```bash
+mkdir opencoarrays-build
+cd opencoarrays-build
+export FC=/path/to/gfortran
+export CC=/path/to/gcc
+cmake /path/to/OpenCoarrays/source \
+  -DCMAKE_INSTALL_PREFIX=/path/to/desired/installation/location
+make
+make test # optional; verify build works
+make install
+```
+
+If you have either of the CMake gui tools installed, `ccmake` or
+`cmake-gui` you may explore different configuration options and/or try
+to locate/change which MPI version is found by repeating the steps
+above and simply replacing `cmake` with `ccmake` or `cmake-gui`.
+
+Please keep in mind that CMake cache variables are sticky and, once
+set, can only be changed by using `ccmake`, `cmake-gui`, or explicitly
+setting them on the command line: `cmake ../path/to/src -DVAR=VALUE`
+If the wrong compiler or MPI implementation is being used and you
+cannot determine why, you can try deleting the entire build directly
+and re-running CMake.
 
 ## End-User Installation ##
 
@@ -31,8 +78,8 @@ Most users will find it easiest and fastest to use package management
 software to install OpenCoarrays.  Package management options for
 macOS, Windows, and Linux are described first below. Also described
 below are options for installing via the Sourcery Institute virtual
-machine or via the bash and/or CMake scripts included that are in the
-OpenCoarrays source.
+machine or via the bash scripts included that are in the OpenCoarrays
+source.
 
 [top]
 
@@ -69,7 +116,7 @@ OpenCoarrays source.
 
 ### Windows ###
 
-Windows users may run the [install.sh] script inside the Windows Subsystem
+Windows users may run the [`install.sh`] script inside the Windows Subsystem
 for Linux ([WSL]). The script uses Ubuntu's [APT] package manager to build
 [GCC] 5.4.0, [CMake], and [MPICH].  Windows users who desire a newer version
 of GCC are welcome to submit a request via our [Issues] page and suggest a
@@ -227,7 +274,7 @@ of flags. Each flag also has a single-character version not shown here.
                 --with-c <path-to-gcc-bin>/gcc
    ```
 
-   Without the latter arguments, [install.sh] will attempt to install the
+   Without the latter arguments, [`install.sh`] will attempt to install the
    default GCC version even if a newer version is available.  This happens
    to protect users from instability in cases when known one or more
    known regressions exist in the newer compiler.
@@ -312,7 +359,7 @@ of flags. Each flag also has a single-character version not shown here.
 
 ### Prerequisites ###
 
-Package managers and the [install.sh] attempt to handle the installation
+Package managers and the [`install.sh`] attempt to handle the installation
 of all OpenCoarrays prerequisites automatically.  Installing with CMake
 or the provided, static Makefile burdens the person installing with the
 need to ensure that all prerequisites have been built and are in the
@@ -334,9 +381,9 @@ opencoarrays
 
 [top]
 
-### CMake scripts ###
+### CMake ###
 
-On most platforms, the [install.sh] script ultimately invokes [CMake] after performing
+On most platforms, the [`install.sh`] script ultimately invokes [CMake] after performing
 numerous checks, customizations, and installations of any missing prerequisites.
 Advanced users who prefer to invoke CMake directly may do so as described here.
 CMake is a cross-platform Makefile generator that includes the testing tool CTest.
@@ -434,6 +481,7 @@ file.
 [Internal document links]: #
 
 [top]: #top
+[Developer Build and Install]: #developer-build-and-install
 [End-User Installation]: #end-user-installation
 [macOS]: #macos
 [Windows]: #windows
@@ -444,12 +492,13 @@ file.
 
 [Advanced Installation from Source]: #advanced-installation-from-source
 [Prerequisites]: #prerequisites
-[CMake scripts]: #cmake-scripts
+[CMake]: #cmake
 [Make]: #make
 
 [Links to source]: #
 
-[install.sh]: ./install.sh
+[`install.sh`]: ./install.sh
+[`INSTALL`]: ./INSTALL
 
 [URLs]: #
 
