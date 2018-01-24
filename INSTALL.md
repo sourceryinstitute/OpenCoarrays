@@ -38,14 +38,12 @@ OpenCoarrays source.
 
 ### macOS ###
 
-[![homebrew][Homebrew badge]][braumeister link]
-
-#### [Homebrew] ####
-
+* [Homebrew]:  
+  [![homebrew][Homebrew badge]][braumeister link]  
   This is the recommend OpenCoarrays installation method on macOS.
   Basic Homebrew installation steps:
 
-  ```bash
+  ```
   brew update
   brew install opencoarrays
   ```
@@ -55,14 +53,13 @@ OpenCoarrays source.
   with the GNU Compiler Collection ([GCC]). To install using the
   [`Brewfile`][Brewfile] with MPICH wrapping GCC, follow these steps:
 
-  ```bash
+  ```
   brew tap homebrew/bundle
   brew update
   brew bundle
   ```
 
-#### [MacPorts] ####
-
+* [MacPorts]:  
   An unmaintained [OpenCoarrays Portfile] exists for the [MacPorts] package
   manager.  Although the current OpenCoarrays contributors have no plans to
   update the portfile, new contributors are welcome to asssume the port
@@ -114,7 +111,7 @@ eb OpenCoarrays-1.9.0-gompi-2017a.eb --robot
 Once installed, use OpenCoarrays by loading the newly created environment
 module `OpenCoarrays/1.9.0-gompi-2017a`:
 
-```bash
+```
 module load OpenCoarrays/1.9.0-gompi-2017a
 ```
 
@@ -141,7 +138,7 @@ already installed, and is available as a compiler to Spack. Otherwise,
 [add a new compiler to Spack]. Once installed, OpenCoarrays can be
 used by [loading the environment modules with Spack], e.g.
 
-```bash
+```
 spack module loads --dependencies opencoarrays
 ```
 
@@ -152,7 +149,7 @@ spack module loads --dependencies opencoarrays
 Use the OpenCoarrays FreeBSD, Port to install OpenCoarrays by
 executing the following commands as root:
 
-```bash
+```
 pkg install opencoarrays
 ```
 
@@ -182,7 +179,7 @@ OpenCoarrays by downloading and uncompressing our [latest release] and
 running our installation script in the top-level OpenCoarrays source
 directory (see above for the corresponding [Windows] script):
 
-```bash
+```
 tar xvzf OpenCoarrays-x.y.z.tar.gz
 cd OpenCoarrays-x.y.z
 ./install.sh
@@ -210,21 +207,21 @@ of flags. Each flag also has a single-character version not shown here.
    and installation files will be inside the OpenCoarrays source tree under
    prerequisites/installations:
 
-   ```bash
+   ```
    ./install.sh
    ```
 
 1. Install non-interactively by assuming a "yes" answer to all
    questions
 
-   ```bash
+   ```
    ./install.sh --yes-to-all
    ```
 
 1. Install with the specified compilers, overriding the default
    compilers:
 
-   ```bash
+   ```
    ./install.sh --with-fortran <path-to-gcc-bin>/gfortran \
                 --with-cxx <path-to-gcc-bin>/g++ \
                 --with-c <path-to-gcc-bin>/gcc
@@ -237,20 +234,20 @@ of flags. Each flag also has a single-character version not shown here.
 
 1. Install only a specific prerequisite package (the default version):
 
-   ```bash
+   ```
    ./install.sh --package mpich
    ```
 
 1. Install a specific version of a prerequisite:
 
-   ```bash
+   ```
    ./install.sh --package cmake --install-version 3.7.0
    ```
 
 1. Download a prerequisite package (e.g., gcc/gfortran/g++ below) but
    don't build or install it:
 
-   ```bash
+   ```
    ./install.sh --only-download gcc
    ```
 
@@ -258,7 +255,7 @@ of flags. Each flag also has a single-character version not shown here.
    script will use for a given prerequisite package (e.g., mpich
    below) on this system:
 
-   ```bash
+   ```
    ./install.sh --print-url mpich
    ./install.sh --print-version mpich
    ./install.sh --print-downloader mpich
@@ -266,13 +263,13 @@ of flags. Each flag also has a single-character version not shown here.
 
 1. Install a prerelease branch (e.g., trunk below) of the GCC repository:
 
-   ```bash
+   ```
    ./install.sh --package gcc --install-branch trunk
    ```
 
 1. Install to a specific location:
 
-   ```bash
+   ```
    ./install.sh --install-prefix /opt/gnu/
    ```
 
@@ -282,7 +279,7 @@ of flags. Each flag also has a single-character version not shown here.
 
 1. Install a prerequisite package from a non-default URL:
 
-   ```bash
+   ```
    ./install.sh --package gcc \
      --from-url https://github.com/sourceryinstitute/gcc/archive/teams-20170919.tar.gz \
      --install-version teams-20170919
@@ -293,7 +290,7 @@ of flags. Each flag also has a single-character version not shown here.
 
 1. Speed up a GCC build at a higher risk of a faild build:
 
-   ```bash
+   ```
    ./install.sh --package gcc --disable-bootstrap
    ```
 
@@ -302,7 +299,7 @@ of flags. Each flag also has a single-character version not shown here.
 
 1. Speed up a GCC build with multithreading at a risk of a failed build:
 
-   ```bash
+   ```
    ./install.sh --package gcc --num-threads 4
    ```
 
@@ -348,7 +345,7 @@ your build directory be any directory other than the top-level OpenCoarays
 source directory.  In a bash shell, the following steps should build OpenCoarrays,
 build the tests, run the tests, and report the test results:
 
-```bash
+```
 tar xvzf opencoarrays.tar.gz
 cd opencoarrays
 mkdir opencoarrays-build
@@ -405,7 +402,7 @@ If none of the installation methods mentioned higher in this document are
 work on your platform and if CMake is unavailable, build and install the
 OpenCoarrays parallel runtime library as follows:
 
-```bash
+```
 tar xvzf opencoarrays.tar.gz
 cd opencoarray/src
 make
