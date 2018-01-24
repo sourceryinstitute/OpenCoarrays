@@ -12,7 +12,6 @@ __file=developer-scripts/travis/test-script.cmake.sh
 # requires `set -o errtrace`
 __caf_err_report() {
     error_code=${?}
-    local error_code
     echo "Error (code=${error_code}) in ${__file} in function ${1} on line ${2}." >&2
     false
     return ${error_code}
@@ -28,7 +27,7 @@ for version in ${GCC}; do
     export FC=gfortran-${version}
     export CC=gcc-${version}
     ${FC} --version
-    ${CC} --verions
+    ${CC} --version
     if [[ ${OS_TYPE} == [Dd]arwin* ]]; then
 	# Ideally this stuff would be in the `install:` section
 	# but puting it here simplifies the Travis code a lot
