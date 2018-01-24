@@ -25,20 +25,17 @@ echo "Performing Travis-CI installation phase on macOS..."
 # Update and install via Homebrew on macOS
 brew update > /dev/null
 
-brew ls --versions shellcheck >/dev/null || brew install --force-bottle shellcheck
-brew outdated shellcheck || brew upgrade --force-bottle shellcheck
 for pkg in ${OSX_PACKAGES}; do
-    brew ls --versions "${pkg}" >/dev/null || brew install "${pkg}" || brew link --overwrite "${pkg}"
-    brew outdated "${pkg}" || brew upgrade "${pkg}"
+    brew ls --versions "${pkg}" >/dev/null || brew install --force-bottle "${pkg}" || brew link --overwrite "${pkg}"
+    brew outdated "${pkg}" || brew upgrade --force-bottle "${pkg}"
 done
+
+# Uninstall mpich and openmpi so that we can install our own version
+brew uninstall --force --ignore-dependencies openmpi || true
+brew uninstall --force --ignore-dependencies mpich || true
+
 if [[ "${BUILD_TYPE:-}" == InstallScript ]]; then # uninstall some stuff if present
     brew uninstall --force --ignore-dependencies cmake || true
-    brew uninstall --force --ignore-dependencies mpich || true
-    brew uninstall --force --ignore-dependencies openmpi || true
-else
-    wget "${!MPICH_BOT_URL_HEAD}${MPICH_BOT_URL_TAIL}"
-    brew install --force-bottle "${MPICH_BOT_URL_TAIL}"
-    brew ls --versions mpich >/dev/null || brew install --force-bottle mpich
 fi
 
 {

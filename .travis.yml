@@ -13,9 +13,8 @@ env:
     - MPICH_GCC7_BOT_URL_HEAD="https://github.com/sourceryinstitute/OpenCoarrays/files/976779/"
     - MPICH_BOT_URL_TAIL="mpich-3.2_3.yosemite.bottle.1.tar.gz"
     - BUILD_TYPES="Release Debug RelWithDebInfo CodeCoverage"
-  matrix: # shellcheck installed manually below for macOS
-    - GCC=6 OSX_PACKAGES="gcc@6 cmake"
-    - GCC=7 OSX_PACKAGES="gcc cmake"
+  matrix:
+    - GCC="6 7" OSX_PACKAGES="shellcheck gcc gcc@6 cmake"
 
 matrix:
   fast_finish: true
@@ -23,7 +22,7 @@ matrix:
     - os: osx
       env:
         - BUILD_TYPE="InstallScript"
-          OSX_PACKAGES="gcc@6"
+          OSX_PACKAGES="shellcheck gcc@6"
           GCC=6
     - &ubuntu
       os: linux
@@ -44,8 +43,6 @@ matrix:
             - gcc-6
             - gfortran-6
             - g++-6
-            - binutils
-            - cmake-data
             - cmake
     -
       <<: *ubuntu
@@ -58,8 +55,6 @@ matrix:
             - gcc-7
             - gfortran-7
             - g++-7
-            - binutils
-            - cmake-data
             - cmake
     -
       <<: *ubuntu
@@ -87,37 +82,8 @@ matrix:
     - *linux_allowed_failure
 
 before_install:
-  - export FC=gfortran-${GCC}
-  - export CC=gcc-${GCC}
-  - export CXX=g++-${GCC}
-  - export MPICH_BOT_URL_HEAD=MPICH_GCC${GCC}_BOT_URL_HEAD
-  - |
-    if [[ (-n ${TRAVIS_TAG}) && (${TRAVIS_OS_NAME} == osx) ]] && ${TRAVIS_SECURE_ENV_VARS} ; then
-      brew update > /dev/null
-      brew ls --versions gpg2 >/dev/null || brew install gpg2
-      brew outdated gpg2 || brew upgrade gpg2
-      type -P openssl || brew install openssl
-    fi
-    if ! [[ "${TRAVIS_TAG}" ]] || ! ${TRAVIS_SECURE_ENV_VARS} ; then
-      unset encrypted_ef4535c39461_key || true
-      unset encrypted_ef4535c39461_iv || true
-      rm subkey-328B3A0E-secret.asc{,.enc} || true
-
-    fi
-    if [[ "${TRAVIS_TAG}" ]] ; then
-      curl https://izaakbeekman.com/izaak.pubkey.txt | gpg --import
-      git tag -v ${TRAVIS_TAG}
-    fi
-  - |
-    if [[ (-n ${TRAVIS}) && (${TRAVIS_OS_NAME} == osx) ]]; then
-      export PATH="${PATH}:${HOME}/Library/Python/2.7/bin"
-    else
-      [[ -d "${CACHE}/bin" ]] || mkdir -p "${CACHE}/bin"
-      export PATH="${CACHE}/bin:${PATH}"
-      ${FC} --version
-      ${CC} --version
-      ${CXX} --version
-    fi
+  - source developer-scripts/travis/before_install.all.sh
+  - developer-scripts/travis/before_install.${TRAVIS_OS_NAME}.sh
 
 install:
   - pwd
@@ -129,8 +95,7 @@ script:
 
 after_script:
   - find . -name '*.gcno' -print
-  - gcov-${GCC} --version
-  - bash <(curl -s https://codecov.io/bash) -x $(type -P gcov-${GCC})
+  - for version in ${GCC}; do bash <(curl -s https://codecov.io/bash) -x $(type -P gcov-${GCC}) ; done
   - |
     if [[ "${TRAVIS_TAG}" ]]; then
       if [[ "v${TRAVIS_TAG}" != "v$(sed -n '/[0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}/{s/^\([^.]*\)\([0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}\)\(.*\)/\2/p;q;}' .VERSION)" ]]; then

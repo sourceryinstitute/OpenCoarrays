@@ -28,6 +28,8 @@ if [[ "${BUILD_TYPE:-}" != InstallScript ]]; then # Ubuntu on Travis-CI, NOT tes
         # could use prerequisites/build instead...
         wget "${MPICH_URL_HEAD}/${MPICH_URL_TAIL}"
         tar -xzvf "${MPICH_URL_TAIL}"
+	export CC=gcc-${GCC}
+	export FC=gfortran-${GCC}
         (
 	    cd "${MPICH_URL_TAIL%.tar.gz}"
             ./configure --prefix="${CACHE}"
