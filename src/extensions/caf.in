@@ -327,10 +327,11 @@ fi
 set +o errtrace
 set +o errexit
 if "${cafc}" "${compiler_args[@]}" ; then
-  exit 0
+  exit $?
 else
+  return_code=$?
   echo "Error: comand:" >&2
   echo "   \`${cafc} ${compiler_args[*]}\`" >&2
   echo "failed to compile." >&2
-  exit 12
+  exit "${return_code}"
 fi
