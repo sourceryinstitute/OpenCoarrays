@@ -668,10 +668,17 @@ if(opencoarrays_aware_compiler)
     if((NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.3.0) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
       add_caf_test(send_convert_char_array 2 send_convert_char_array)
       add_caf_test(alloc_comp_send_convert_nums 2 alloc_comp_send_convert_nums)
-    else()#if((CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
+    elseif((NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.4.0) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
+      add_caf_test(send-strided-self 2 send-strided-self)
+    endif()
+    if((CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.3.0) AND (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
       message( AUTHOR_WARNING "Skipping the following tests to GFortran < 7.3.0 lack of compatibility:
         send_convert_char_array.f90
         alloc_comp_send_convert_nums.f90")
+    endif()
+    if((CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.4.0) AND (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
+      message( AUTHOR_WARNING "Skipping the following test to GFortran < 7.4.0 lack of compatibility:
+        send-strided-self.f90")
     endif()
   endif()
 
