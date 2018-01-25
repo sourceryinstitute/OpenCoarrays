@@ -15,10 +15,16 @@ build_opencoarrays()
   fi
   MPIFC_show=($("$MPIFC" -show))
   MPICC_show=($("$MPICC" -show))
-  if [[ "${MPIFC_show[0]}" != *gfortran* || "${MPICC_show[0]}" != *gcc* ]]; then
-    emergency "build_opencoarrays.sh: MPI doesn't wrap gfortran/gcc: \${MPIFC_show}=${MPIFC_show[*]}, \${MPICC_show}=${MPICC_show[*]}"
+  if [[ "${MPIFC_show[0]}" != *gfortran* ]]; then
+    emergency "build_opencoarrays.sh: MPI doesn't wrap gfortran/gcc: \${MPIFC_show}=${MPIFC_show[*]}"
   fi
-  # Set FC to the MPI implementation's gfortran command with any preceding path but without any subsequent arguments:
+  if [[ -z "${OPENCOARRAYS_DEVELOPER:-}" ]]; then
+      # We should examine the value too, but CMake has many ways of saying "true"
+      WDEVFLAG=-Wno-dev
+  else
+      WDEVFLAG=-Wdev
+  fi
+    # Set FC to the MPI implementation's gfortran command with any preceding path but without any subsequent arguments:
   FC="${MPIFC_show[0]}"
   # Set CC to the MPI implementation's gcc command...
   CC="${MPICC_show[0]}"
@@ -31,8 +37,8 @@ build_opencoarrays()
     MPIEXEC="${MPIEXEC_CANDIDATES[0]}"
   fi
   info "Configuring OpenCoarrays in ${PWD} with the command:"
-  info "CC=\"${CC}\" FC=\"${FC}\" $CMAKE \"${opencoarrays_src_dir}\" -DCMAKE_INSTALL_PREFIX=\"${install_path}\" -DMPIEXEC=\"${MPIEXEC}\" -DMPI_C_COMPILER=\"${MPICC}\" -DMPI_Fortran_COMPILER=\"${MPIFC}\""
-  CC="${CC}" FC="${FC}" $CMAKE "${opencoarrays_src_dir}" -DCMAKE_INSTALL_PREFIX="${install_path}" -DMPIEXEC="${MPIEXEC}" -DMPI_C_COMPILER="${MPICC}" -DMPI_Fortran_COMPILER="${MPIFC}"
+  info "CC=\"${CC}\" FC=\"${FC}\" $CMAKE \"${opencoarrays_src_dir}\" \"${WDEVFLAG}\" -DCMAKE_INSTALL_PREFIX=\"${install_path}\" -DMPIEXEC=\"${MPIEXEC}\" -DMPI_C_COMPILER=\"${MPICC}\" -DMPI_Fortran_COMPILER=\"${MPIFC}\""
+  CC="${CC}" FC="${FC}" $CMAKE "${opencoarrays_src_dir}" "${WDEVFLAG}" -DCMAKE_INSTALL_PREFIX="${install_path}" -DMPIEXEC="${MPIEXEC}" -DMPI_C_COMPILER="${MPICC}" -DMPI_Fortran_COMPILER="${MPIFC}"
   info "Building OpenCoarrays in ${PWD} with the command make -j${num_threads}"
   make "-j${num_threads}"
   if [[ ! -z ${SUDO:-} ]]; then
