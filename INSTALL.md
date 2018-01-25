@@ -489,7 +489,7 @@ file.
 [MVAPICH]:http://mvapich.cse.ohio-state.edu
 [MacPorts]: https://www.macports.org
 [GCC]: http://gcc.gnu.org
-[TS18508 Additional Parallel Features in Fortran]: http://isotc.iso.org/livelink/livelink/nfetch/-8919044/8919782/8919787/17001078/ISO%2DIECJTC1%2DSC22%2DWG5_N2056_Draft_TS_18508_Additional_Paralle.pdf?nodeid=17181227&vernum=0
+[TS18508 Additional Parallel Features in Fortran]: https://isotc.iso.org/livelink/livelink/nfetch/-8919044/8919782/8919787/17001078/ISO%2DIECJTC1%2DSC22%2DWG5_N2056_Draft_TS_18508_Additional_Paralle.pdf?nodeid=17181227&vernum=0
 [GFortran Binaries]:  https://gcc.gnu.org/wiki/GFortranBinaries#FromSource
 [Installing GCC]: https://gcc.gnu.org/install/
 [Arch Linux]: https://www.archlinux.org
@@ -499,10 +499,10 @@ file.
 [commit comment 20539810]: https://github.com/sourceryinstitute/OpenCoarrays/commit/26e99919fe732576f7277a0e1b83f43cc7c9d749#commitcomment-20539810
 [Homebrew]: https://brew.sh
 [dnf]: https://github.com/rpm-software-management/dnf
-[port details]: http://www.freshports.org/lang/opencoarrays
+[port details]: https://www.freshports.org/lang/opencoarrays
 [port search]: https://www.freebsd.org/cgi/ports.cgi?query=opencoarrays
 [EasyBuild]: https://github.com/easybuilders/easybuild
-[Spack]: https://github.com/LLNL/spack
+[Spack]: https://github.com/spack/spack
 [add a new compiler to Spack]: http://spack.readthedocs.io/en/latest/tutorial_modules.html#add-a-new-compiler
 [loading the environment modules with Spack]: http://spack.readthedocs.io/en/latest/module_file_support.html#cmd-spack-module-loads
 [OpenCoarrays Portfile]: https://www.macports.org/ports.php?by=name&substr=opencoarrays
