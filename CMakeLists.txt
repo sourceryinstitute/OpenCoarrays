@@ -584,15 +584,16 @@ add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure)
 #---------------------------------------------------------------------------------------
 
 # Determine if we're using Open MPI
+cmake_host_system_information(RESULT N_CPU QUERY NUMBER_OF_LOGICAL_CORES)
+cmake_host_system_information(RESULT HOST_NAME QUERY HOSTNAME)
 execute_process(COMMAND ${MPIEXEC} --version
   OUTPUT_VARIABLE mpi_version_out)
 if (mpi_version_out MATCHES "[Oo]pen[ -][Mm][Pp][Ii]")
   message( STATUS "OpenMPI detected")
   set ( openmpi true )
+  # Write out a host file because OMPI's mpiexec is dumb
+  file(APPEND ${CMAKE_BINARY_DIR}/hostfile "${HOST_NAME} slots=${N_CPU}\n")
 endif ()
-
-include( ProcessorCount )
-ProcessorCount(N_CPU)
 function(add_caf_test name num_caf_img test_target)
   # Function to add MPI tests.
   if(TARGET ${test_target})
@@ -605,6 +606,10 @@ function(add_caf_test name num_caf_img test_target)
       message( FATAL_ERROR "Test ${name} requires ${min_test_imgs} but was only given ${num_caf_images}" )
     endif()
   endif()
+  # Add a host file for OMPI
+  if ( openmpi )
+    set(test_parameters --hostfile ${CMAKE_BINARY_DIR}/hostfile)
+  endif()
   if ( ((N_CPU LESS num_caf_img) OR (N_CPU EQUAL 0)) )
     message(STATUS "Test ${name} is oversubscribed: ${num_caf_img} CAF images requested with ${N_CPU} system processor available.")
     if ( openmpi )
@@ -613,7 +618,7 @@ function(add_caf_test name num_caf_img test_target)
       elseif ( N_CPU LESS 2 )
         set( num_caf_img 2 )
       endif()
-      set (test_parameters --oversubscribe)
+      set (test_parameters ${test_parameters} --oversubscribe)
       message( STATUS "Open-MPI back end detected, passing --oversubscribe for oversubscribed test, ${name}, with ${num_caf_img} ranks/images." )
     endif()
   endif()
@@ -755,8 +760,8 @@ if(opencoarrays_aware_compiler)
 
   # IMAGE FAIL tests
   if(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0)
-    add_caf_test(image_status_test_1 4 image_status_test_1)
     if(CAF_ENABLE_FAILED_IMAGES)
+      add_caf_test(image_status_test_1 4 image_status_test_1)
       if ((NOT DEFINED ENV{TRAVIS}) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
 	add_caf_test(image_fail_test_1 4 image_fail_test_1)
 	set_property(TEST image_fail_test_1 PROPERTY FAIL_REGULAR_EXPRESSION "Test failed.")
