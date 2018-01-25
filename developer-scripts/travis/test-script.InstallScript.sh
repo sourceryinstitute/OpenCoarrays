@@ -22,6 +22,7 @@ trap '__caf_err_report "${FUNCNAME:-.}" ${LINENO}' ERR
 echo "Performing Travis-CI script phase for the OpenCoarrays installation script..."
 export FC=gfortran-${GCC}
 export CC=gcc-${GCC}
+export CXX=g++-${GCC}
 ./install.sh --yes-to-all -i "${HOME}/opencoarrays" -j 4 -f "$(type -P "${FC}")" -c "$(type -P "${CC}")" -C "$(type -P "${CXX}")"
 BUILD_LOC=(prerequisites/builds/opencoarrays/*/)
 BUILD_LOC_DIR="${BUILD_LOC[${#BUILD_LOC[@]}-1]}"
