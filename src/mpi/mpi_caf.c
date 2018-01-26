@@ -216,6 +216,9 @@ char err_buffer[MPI_MAX_ERROR_STRING];
    MPI_COMM_WORLD for interoperability purposes. */
 MPI_Comm CAF_COMM_WORLD;
 
+static caf_teams_list *teams_list = NULL;
+static caf_used_teams_list *used_teams = NULL;
+
 /* Emitted when a theorectically unreachable part is reached.  */
 const char unreachable[] = "Fatal error: unreachable alternative found.\n";
 
@@ -800,6 +803,16 @@ PREFIX (init) (int *argc, char ***argv)
       /* END SYNC IMAGE preparation.  */
 
       stat_tok = malloc (sizeof (MPI_Win));
+
+      teams_list = (caf_teams_list *)calloc(1,sizeof(caf_teams_list));
+      teams_list->team_id = -1;
+      MPI_Comm *tmp_comm = (MPI_Comm *)calloc(1,sizeof(MPI_Comm));
+      *tmp_comm = CAF_COMM_WORLD;
+      teams_list->team = tmp_comm;
+      teams_list->prev = NULL;
+      used_teams = (caf_used_teams_list *)calloc(1,sizeof(caf_used_teams_list));
+      used_teams->team_list_elem = teams_list;
+      used_teams->prev = NULL;
 
 #ifdef WITH_FAILED_IMAGES
       MPI_Comm_dup (MPI_COMM_WORLD, &alive_comm);
@@ -7142,7 +7155,6 @@ PREFIX(atomic_ref) (caf_token_t token, size_t offset,
   return;
 }
 
-
 void
 PREFIX(atomic_cas) (caf_token_t token, size_t offset,
                     int image_index, void *old, void *compare,
@@ -7633,4 +7645,141 @@ unimplemented_alloc_comps_message (const char * functionname)
 #ifdef STOP_ON_UNSUPPORTED
   exit (EXIT_FAILURE);
 #endif
+}
+
+void PREFIX (form_team) (int team_id, caf_team_t *team, int index __attribute__ ((unused)))
+{
+  struct caf_teams_list *tmp;
+  void * tmp_team;
+  MPI_Comm *newcomm;
+  MPI_Comm *current_comm = &CAF_COMM_WORLD;
+
+  MPI_Barrier(CAF_COMM_WORLD);
+  newcomm = (MPI_Comm *)calloc(1,sizeof(MPI_Comm));
+  MPI_Comm_split(*current_comm, team_id, caf_this_image, newcomm);
+
+  tmp = calloc(1,sizeof(struct caf_teams_list));
+  tmp->prev = teams_list;
+  teams_list = tmp;
+  teams_list->team_id = team_id;
+  teams_list->team = newcomm;
+  *team = tmp;
+}
+
+void PREFIX (change_team) (caf_team_t *team, int coselector __attribute__ ((unused)))
+{
+  caf_used_teams_list *tmp_used = NULL;
+  caf_teams_list * tmp_list = NULL;
+  void *tmp_team;
+  MPI_Comm *tmp_comm;
+
+  MPI_Barrier(CAF_COMM_WORLD);
+  tmp_list = (struct caf_teams_list *)*team;
+  tmp_team = (void *)tmp_list->team;
+  tmp_comm = (MPI_Comm *)tmp_team;
+
+  tmp_used = (caf_used_teams_list *)calloc(1,sizeof(caf_used_teams_list));
+  tmp_used->prev = used_teams;
+
+  /* /\* We need to look in the teams_list and find the appropriate element. */
+  /*  * This is not efficient but can be easily fixed in the future.  */
+  /*  * Instead of keeping track of the communicator in the compiler  */
+  /*  * we should keep track of the caf_teams_list element associated with it. *\/ */
+
+  /* tmp_list = teams_list; */
+
+  /* while(tmp_list) */
+  /*   { */
+  /*     if(tmp_list->team == tmp_team) */
+  /* 	break; */
+  /*     tmp_list = tmp_list->prev; */
+  /*   } */
+
+  if(tmp_list == NULL)
+    caf_runtime_error("CHANGE TEAM called on a non-existing team");
+
+  tmp_used->team_list_elem = tmp_list;
+  used_teams = tmp_used;
+  tmp_team = tmp_used->team_list_elem->team;
+  tmp_comm = (MPI_Comm *)tmp_team;
+  CAF_COMM_WORLD = *tmp_comm;
+  MPI_Comm_rank(*tmp_comm,&caf_this_image);
+  caf_this_image++;
+  MPI_Comm_size(*tmp_comm,&caf_num_images);
+}
+
+MPI_Fint
+PREFIX (get_communicator) (caf_team_t *team)
+{
+  if(team != NULL) caf_runtime_error("get_communicator does not yet support the optional team argument");
+
+  MPI_Comm* comm_ptr = teams_list->team;
+
+  MPI_Fint ret = MPI_Comm_c2f(*comm_ptr);
+
+  return ret;
+
+  //  return  *(int*)comm_ptr;
+}
+
+int
+PREFIX (team_number) (caf_team_t *team)
+{
+  if(team != NULL) caf_runtime_error("team_number does not yet support the optional team argument");
+
+  /* if(used_teams->prev == NULL) */
+  /*   return -1; */
+  return used_teams->team_list_elem->team_id;
+}
+
+void PREFIX (end_team) (caf_team_t *team __attribute__ ((unused)))
+{
+  caf_used_teams_list *tmp_used = NULL;
+  void *tmp_team;
+  MPI_Comm *tmp_comm;
+
+  MPI_Barrier(CAF_COMM_WORLD);
+  if(used_teams->prev == NULL)
+    caf_runtime_error("END TEAM called on initial team");
+
+  tmp_used = used_teams;
+  used_teams = used_teams->prev;
+  free(tmp_used);
+  tmp_used = used_teams;
+  tmp_team = tmp_used->team_list_elem->team;
+  tmp_comm = (MPI_Comm *)tmp_team;
+  CAF_COMM_WORLD = *tmp_comm;
+  MPI_Barrier(CAF_COMM_WORLD);
+  /* CAF_COMM_WORLD = (MPI_Comm)*tmp_used->team_list_elem->team; */
+  MPI_Comm_rank(CAF_COMM_WORLD,&caf_this_image);
+  caf_this_image++;
+  MPI_Comm_size(CAF_COMM_WORLD,&caf_num_images);
+}
+
+void PREFIX (sync_team) (caf_team_t *team , int unused __attribute__ ((unused)))
+{
+  caf_teams_list *tmp_list = NULL;
+  caf_used_teams_list *tmp_used = NULL;
+  void *tmp_team;
+  MPI_Comm *tmp_comm;
+
+  /* Check if the team is the current, and ancestor or a descendant. To be implemented. */
+
+  tmp_used = used_teams;
+  tmp_list = (struct caf_teams_list *)*team;
+  tmp_team = (void *)tmp_list->team;
+  tmp_comm = (MPI_Comm *)tmp_team;
+
+  while(tmp_used)
+    {
+      if(tmp_used->team_list_elem == tmp_list)
+	break;
+      tmp_used = tmp_used->prev;
+    }
+
+  if(tmp_used == NULL)
+    caf_runtime_error("SYNC TEAM called on team different from current or ancestor or descendant");
+
+  MPI_Barrier(*tmp_comm);
+
 }

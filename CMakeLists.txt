@@ -245,6 +245,8 @@ if (NOT MPIEXEC)
 report this bug to the OpenCoarrays developers at
 https://github.com/sourceryinstitute/opencoarrays/issues, otherwise point CMake
 to the desired MPI runtime.")
+else()
+  add_definitions(-DHAVE_MPI)
 endif()
 
 get_filename_component(MPIEXEC_RELATIVE_LOC "${MPIEXEC}"
@@ -656,6 +658,10 @@ if(opencoarrays_aware_compiler)
     add_caf_test(comp_allocated_1 2 comp_allocated_1)
     add_caf_test(comp_allocated_2 2 comp_allocated_2)
     add_caf_test(alloc_comp_get_convert_nums 2 alloc_comp_get_convert_nums)
+    if(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 8)
+      add_caf_test(team_number 2 ${tests_root}/unit/teams/team_number)
+      add_caf_test(get_communicator 3 ${tests_root}/unit/teams/get_communicator)
+    endif()
   endif()
 
 
@@ -729,6 +735,7 @@ if(opencoarrays_aware_compiler)
   add_caf_test(coarray_burgers_pde 2 coarray_burgers_pde)
   add_caf_test(co_heat 2 co_heat)
   add_caf_test(asynchronous_hello_world 3 asynchronous_hello_world)
+
 
   # Regression tests based on reported issues
   if((gfortran_compiler AND (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0)) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
