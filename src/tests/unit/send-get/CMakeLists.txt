@@ -29,3 +29,9 @@ caf_compile_executable(send_convert_char_array send_convert_char_array.f90)
 caf_compile_executable(strided_sendget strided_sendget.f90)
 set_target_properties(build_strided_sendget
   PROPERTIES MIN_IMAGES 3)
+
+# Allocatable components w/ convert
+if((NOT (CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0)) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
+  caf_compile_executable(alloc_comp_get_convert_nums alloc_comp_get_convert_nums.f90)
+  caf_compile_executable(alloc_comp_send_convert_nums alloc_comp_send_convert_nums.f90)
+endif()

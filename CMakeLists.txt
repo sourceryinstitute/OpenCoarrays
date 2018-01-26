@@ -586,15 +586,16 @@ add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure)
 #---------------------------------------------------------------------------------------
 
 # Determine if we're using Open MPI
+cmake_host_system_information(RESULT N_CPU QUERY NUMBER_OF_LOGICAL_CORES)
+cmake_host_system_information(RESULT HOST_NAME QUERY HOSTNAME)
 execute_process(COMMAND ${MPIEXEC} --version
   OUTPUT_VARIABLE mpi_version_out)
 if (mpi_version_out MATCHES "[Oo]pen[ -][Mm][Pp][Ii]")
   message( STATUS "OpenMPI detected")
   set ( openmpi true )
+  # Write out a host file because OMPI's mpiexec is dumb
+  file(APPEND ${CMAKE_BINARY_DIR}/hostfile "${HOST_NAME} slots=${N_CPU}\n")
 endif ()
-
-include( ProcessorCount )
-ProcessorCount(N_CPU)
 function(add_caf_test name num_caf_img test_target)
   # Function to add MPI tests.
   if(TARGET ${test_target})
@@ -607,6 +608,10 @@ function(add_caf_test name num_caf_img test_target)
       message( FATAL_ERROR "Test ${name} requires ${min_test_imgs} but was only given ${num_caf_images}" )
     endif()
   endif()
+  # Add a host file for OMPI
+  if ( openmpi )
+    set(test_parameters --hostfile ${CMAKE_BINARY_DIR}/hostfile)
+  endif()
   if ( ((N_CPU LESS num_caf_img) OR (N_CPU EQUAL 0)) )
     message(STATUS "Test ${name} is oversubscribed: ${num_caf_img} CAF images requested with ${N_CPU} system processor available.")
     if ( openmpi )
@@ -615,7 +620,7 @@ function(add_caf_test name num_caf_img test_target)
       elseif ( N_CPU LESS 2 )
         set( num_caf_img 2 )
       endif()
-      set (test_parameters --oversubscribe)
+      set (test_parameters ${test_parameters} --oversubscribe)
       message( STATUS "Open-MPI back end detected, passing --oversubscribe for oversubscribed test, ${name}, with ${num_caf_img} ranks/images." )
     endif()
   endif()
@@ -652,6 +657,7 @@ if(opencoarrays_aware_compiler)
     add_caf_test(async_comp_alloc_2 2 async_comp_alloc_2)
     add_caf_test(comp_allocated_1 2 comp_allocated_1)
     add_caf_test(comp_allocated_2 2 comp_allocated_2)
+    add_caf_test(alloc_comp_get_convert_nums 2 alloc_comp_get_convert_nums)
     if(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 8)
       add_caf_test(team_number 2 ${tests_root}/unit/teams/team_number)
       add_caf_test(get_communicator 3 ${tests_root}/unit/teams/get_communicator)
@@ -672,9 +678,18 @@ if(opencoarrays_aware_compiler)
     endif()
     if((NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.3.0) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
       add_caf_test(send_convert_char_array 2 send_convert_char_array)
-    else()#if((CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
+      add_caf_test(alloc_comp_send_convert_nums 2 alloc_comp_send_convert_nums)
+    elseif((NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.4.0) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
+      add_caf_test(send-strided-self 2 send-strided-self)
+    endif()
+    if((CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.3.0) AND (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
       message( AUTHOR_WARNING "Skipping the following tests to GFortran < 7.3.0 lack of compatibility:
-        send_convert_char_array.f90")
+        send_convert_char_array.f90
+        alloc_comp_send_convert_nums.f90")
+    endif()
+    if((CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.4.0) AND (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
+      message( AUTHOR_WARNING "Skipping the following test to GFortran < 7.4.0 lack of compatibility:
+        send-strided-self.f90")
     endif()
   endif()
 
@@ -759,8 +774,8 @@ if(opencoarrays_aware_compiler)
 
   # IMAGE FAIL tests
   if(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0)
-    add_caf_test(image_status_test_1 4 image_status_test_1)
     if(CAF_ENABLE_FAILED_IMAGES)
+      add_caf_test(image_status_test_1 4 image_status_test_1)
       if ((NOT DEFINED ENV{TRAVIS}) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
 	add_caf_test(image_fail_test_1 4 image_fail_test_1)
 	set_property(TEST image_fail_test_1 PROPERTY FAIL_REGULAR_EXPRESSION "Test failed.")
@@ -795,3 +810,13 @@ endif()
 
 include(cmake/AddInstallationScriptTest.cmake )
 add_installation_script_test(installation-scripts.sh src/tests/installation/)
+
+# Lint the Travis-CI scripts
+set(TRAVIS_SCRIPTS
+  install.linux.sh
+  install.osx.sh
+  test-script.InstallScript.sh
+  test-script.cmake.sh)
+foreach(SCRIPT ${TRAVIS_SCRIPTS})
+  lint_script("${CMAKE_SOURCE_DIR}/developer-scripts/travis" ${SCRIPT})
+endforeach()

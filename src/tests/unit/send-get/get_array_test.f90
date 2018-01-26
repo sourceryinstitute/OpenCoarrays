@@ -7,6 +7,8 @@ program main
   integer, parameter :: n = 3
   integer, parameter :: m = 4
 
+  logical :: error_printed=.false.
+
   ! Allocatable coarrays
   call one(-5, 1)
   call one(0, 0)
@@ -16,7 +18,11 @@ program main
   ! Static coarrays
   call two()
   call three()
-  write(*,*) 'Test passed'
+
+  if (error_printed)  error stop
+  sync all
+
+  if (this_image()==1) print *,'Test passed.'
 contains
   subroutine one(lb1, lb2)
     integer, value :: lb1, lb2
@@ -42,7 +48,7 @@ contains
     end if
     sync all
     if(this_image()==1) then
-       if(any (a /= c)) error stop "ARRAY = SCALAR failed in get_array_test"
+       if(any (a /= c)) call print_and_register( "ARRAY = SCALAR failed in get_array_test")
     endif
 
     ! Whole array: ARRAY = ARRAY
@@ -59,7 +65,7 @@ contains
           print *, a
           print *, c
           ! FIXME: Without the print lines above, it always fails. Why?
-          error stop "ARRAY = ARRAY failed in get_array_test"
+          call print_and_register( "ARRAY = ARRAY failed in get_array_test")
        end if
     endif
 
@@ -98,7 +104,7 @@ contains
           print *, this_image(), ': ', a
           print *, this_image(), ': ', c
           ! FIXME: Without the print lines above, it always fails. Why?
-          error stop "scalar assignment failed in get_array_test"
+          call print_and_register( "scalar assignment failed in get_array_test")
        end if
     endif
     ! Array sections with different ranges and pos/neg strides
@@ -130,7 +136,7 @@ contains
                                   print *, a
                                   print *, c
                                   print *, a-c
-                                  error stop "array sections with ranges and strides failed in get_array_test"
+                                  call print_and_register( "array sections with ranges and strides failed in get_array_test")
                                endif
                             end if
                             ! ARRAY = ARRAY
@@ -155,7 +161,7 @@ contains
                                   print *, a
                                   print *, c
                                   print *, a-c
-                                  error stop "array sections with ranges and strides failed in get_array_test"
+                                  call print_and_register( "array sections with ranges and strides failed in get_array_test")
                                endif
                             end if
                          end do
@@ -189,7 +195,7 @@ contains
     sync all
     if (this_image() == num_images()) then
       if (any (a /= caf)) &
-           error stop "Array = scalar failed in subroutine two get_array_test"
+           call print_and_register( "Array = scalar failed in subroutine two get_array_test")
     end if
 
     ! Whole array: ARRAY = ARRAY
@@ -203,7 +209,7 @@ contains
     sync all
     if (this_image() == num_images()) then
       if (any (a /= caf)) &
-           error stop "Array = array failed in subroutine two get_array_test"
+           call print_and_register( "Array = array failed in subroutine two get_array_test")
     end if
 
     ! Scalar assignment
@@ -235,7 +241,7 @@ contains
     sync all
     if (this_image() == num_images()) then
       if (any (a /= caf)) &
-           error stop "scalar assignment failed in subroutine two get_array_test"
+           call print_and_register( "scalar assignment failed in subroutine two get_array_test")
     end if
 
     ! Array sections with different ranges and pos/neg strides
@@ -280,7 +286,7 @@ contains
                         print *, a
                         print *, caf
                         print *, a-caf
-                        error stop "arrays with ranges and strides failed sub. two get_array_test failed"
+                        call print_and_register( "arrays with ranges and strides failed sub. two get_array_test failed")
                       endif
                     end if
                   end do
@@ -314,7 +320,7 @@ contains
     sync all
     if (this_image() == num_images()) then
       if (any (a /= caf)) &
-           error stop "Array = scalar subroutine three get_array_test failed"
+           call print_and_register( "Array = scalar subroutine three get_array_test failed")
     end if
 
     ! Whole array: ARRAY = ARRAY
@@ -328,7 +334,7 @@ contains
     sync all
     if (this_image() == num_images()) then
       if (any (a /= caf)) &
-           error stop "Array = array subroutine three get_array_test failed"
+           call print_and_register( "Array = array subroutine three get_array_test failed")
     end if
 
     ! Scalar assignment
@@ -360,7 +366,7 @@ contains
     sync all
     if (this_image() == num_images()) then
       if (any (a /= caf)) &
-           error stop "scalar assignment subroutine three get_array_test failed"
+           call print_and_register( "scalar assignment subroutine three get_array_test failed")
     end if
 
     ! Array sections with different ranges and pos/neg strides
@@ -405,7 +411,7 @@ contains
                         print *, a
                         print *, caf
                         print *, a-caf
-                        error stop "range stride in subroutine three get_array_test failed"
+                        call print_and_register( "range stride in subroutine three get_array_test failed")
                       endif
                     end if
                   end do
@@ -417,4 +423,12 @@ contains
       end do
     end do
   end subroutine three
+
+  subroutine print_and_register(error_message)
+    use iso_fortran_env, only : error_unit
+    character(len=*), intent(in) :: error_message
+    write(error_unit,*) error_message
+    error_printed=.true.
+  end subroutine
+
 end program main
