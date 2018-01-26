@@ -262,7 +262,15 @@ elif [[ "${1}" == -np || "${1}" == -n ]]; then
       mpiexec_args+=("${@:4:$((${#} - 3))}")
     fi
 
-    "${CAFRUN}" "${mpiexec_args[@]//''/}"
+    if "${CAFRUN}" "${mpiexec_args[@]//''/}" ; then
+      exit $?
+    else
+      return_code=$?
+      echo "Error: Command:" >&2
+      echo "   \`${CAFRUN}" "${mpiexec_args[*]//''/}\`" >&2
+      echo "failed to run." >&2
+      exit "${return_code}"
+    fi
   else
     echo "You must pass \"-np\", \"<number_of_images>\", \"/path/to/coarray_Fortran_program\" as the first 3 arguments to ${cmd}."
     exit 1
