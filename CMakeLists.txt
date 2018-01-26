@@ -214,9 +214,11 @@ get_filename_component( C_COMPILER_DIR "${CMAKE_C_COMPILER}"
   REALPATH )
 
 if (FTN_COMPILER_NAME MATCHES "^[mM][pP][iI]")
+  message( DEPRECATION "Setting the Fortran compiler to an MPI wrapper script is deprecated!")
   set (MPI_Fortran_COMPILER "${CMAKE_Fortran_COMPILER}")
 endif()
 if (C_COMPILER_NAME MATCHES "^[mM][pP][iI]")
+  message( DEPRECATION "Setting the Fortran compiler to an MPI wrapper script is deprecated!")
   set (MPI_C_COMPILER "${CMAKE_C_COMPILER}")
 endif()
 

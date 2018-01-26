@@ -195,12 +195,16 @@ if [[ -n "${mpi_link_flags[*]:-}" ]]; then
 fi
 
 # Now do libraries, IN CORRECT ORDER, to append to command
-for lib in "${caf_libs[@]:-}"; do
-  caf_added_libs+=("${prefix%/}/${lib}")
-done
-for lib in "${mpi_libs[@]:-}"; do
-  caf_added_libs+=("${lib}")
-done
+if [[ -n "${caf_libs[*]:-}" ]]; then
+  for lib in "${caf_libs[@]:-}"; do
+    caf_added_libs+=("${prefix%/}/${lib}")
+  done
+fi
+if [[ -n "${mpi_libs[*]:-}" ]]; then
+  for lib in "${mpi_libs[@]:-}"; do
+    caf_added_libs+=("${lib}")
+  done
+fi
 
 usage() {
   echo ""
