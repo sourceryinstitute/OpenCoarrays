@@ -1,5 +1,5 @@
   -b --install-branch [arg]   Install the specified repository development branch (Examples: -b trunk or -b gcc-7-branch).
-  -B --list-branches [arg]    List the available branches in the specified package's repository (Example: -B gcc).
+  -B --list-branches [arg]    List the available branches in a package's repository (Currently only '-B gcc' is supported).
   -c --with-c [arg]           Use specified C compiler (Example: -c /usr/local/bin/gcc).
   -C --with-cxx [arg]         Use specified C++ compiler (Example: -C /usr/local/bin/g++).
   -d --debug                  Enable debug mode. 
