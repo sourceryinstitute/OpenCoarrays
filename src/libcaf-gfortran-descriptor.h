@@ -58,12 +58,24 @@ typedef struct gfc_descriptor_t {
 } gfc_descriptor_t;
 
 
-#define GFC_MAX_DIMENSIONS 7
+#ifdef GCC_GE_8
 
+#define GFC_MAX_DIMENSIONS 15
+#define GFC_DTYPE_RANK_MASK 0x0F
+#define GFC_DTYPE_TYPE_SHIFT 4
+#define GFC_DTYPE_TYPE_MASK 0x70
+#define GFC_DTYPE_SIZE_SHIFT 7
+
+#else
+
+#define GFC_MAX_DIMENSIONS 7
 #define GFC_DTYPE_RANK_MASK 0x07
 #define GFC_DTYPE_TYPE_SHIFT 3
 #define GFC_DTYPE_TYPE_MASK 0x38
 #define GFC_DTYPE_SIZE_SHIFT 6
+
+#endif
+
 #define GFC_DESCRIPTOR_RANK(desc) ((desc)->dtype & GFC_DTYPE_RANK_MASK)
 #define GFC_DESCRIPTOR_TYPE(desc) (((desc)->dtype & GFC_DTYPE_TYPE_MASK) \
                                    >> GFC_DTYPE_TYPE_SHIFT)
