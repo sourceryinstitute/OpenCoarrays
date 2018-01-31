@@ -104,7 +104,7 @@ typedef struct gfc_descriptor_t {
 #endif
 
 #define GFC_DTYPE_SIZE_MASK \
-  ((~((ptrdiff_t) 0) >> GFC_DTYPE_SIZE_SHIFT) << GFC_DTYPE_SIZE_SHIFT)
+  ( ~((ptrdiff_t)(1 << GFC_DTYPE_SIZE_SHIFT) - 1)) // least significant bits to 0
 #define GFC_DTYPE_TYPE_SIZE_MASK (GFC_DTYPE_SIZE_MASK | GFC_DTYPE_TYPE_MASK)
 
 #define GFC_DTYPE_INTEGER_1 ((BT_INTEGER << GFC_DTYPE_TYPE_SHIFT) \

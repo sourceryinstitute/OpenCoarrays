@@ -6304,7 +6304,8 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
               /* The first descriptor is accessible by the
               mpi_token->memptr_win.
               Count the dims to fetch.  */
-              for (ref_rank = 0; riter->u.a.mode[ref_rank] != CAF_ARR_REF_NONE; ++ref_rank) ;
+              for (ref_rank = 0; riter->u.a.mode[ref_rank] != CAF_ARR_REF_NONE; ++ref_rank)
+		;
               dprint ("%d/%d: %s() Getting remote descriptor of rank %d from win: %p, sizeof() %d\n",
                       caf_this_image, caf_num_images, __FUNCTION__,
                       ref_rank, mpi_token->memptr_win, sizeof_desc_for_rank(ref_rank));
@@ -6317,7 +6318,8 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
             {
               /* All inner descriptors go by the dynamic window.
               Count the dims to fetch.  */
-              for (ref_rank = 0; riter->u.a.mode[ref_rank] != CAF_ARR_REF_NONE; ++ref_rank) ;
+              for (ref_rank = 0; riter->u.a.mode[ref_rank] != CAF_ARR_REF_NONE; ++ref_rank)
+		;
               dprint ("%d/%d: %s() Getting remote descriptor of rank %d from: %p, sizeof() %d\n",
                       caf_this_image, caf_num_images, __FUNCTION__,
                       ref_rank, remote_base_memptr, sizeof_desc_for_rank(ref_rank));
