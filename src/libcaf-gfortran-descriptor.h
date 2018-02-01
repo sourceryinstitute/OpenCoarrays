@@ -84,7 +84,8 @@ typedef struct gfc_descriptor_t {
 #define GFC_DESCRIPTOR_RANK(desc) (desc)->dtype.rank
 #define GFC_DESCRIPTOR_TYPE(desc) (desc)->dtype.type
 #define GFC_DESCRIPTOR_SIZE(desc) (desc)->dtype.elem_len
-#define GFC_DTYPE_TYPE_SIZE(desc) (desc)->dtype.elem_len
+#define GFC_DTYPE_TYPE_SIZE(desc) (( ((desc)->dtype.type << GFC_DTYPE_TYPE_SHIFT) \
+    | ((desc)->dtype.elem_len << GFC_DTYPE_SIZE_SHIFT) ) & GFC_DTYPE_TYPE_SIZE_MASK)
 
 #else
 
@@ -167,11 +168,14 @@ typedef struct gfc_descriptor_t {
     receives in the dtype component its gf_descriptor_t argument for character(kind=c_char)
     and logical(kind=c_bool) data:
 */
-#define GFC_DTYPE_CHARACTER 48
 
-#if 0
+#ifdef GCC_GE_8
+
 #define GFC_DTYPE_CHARACTER ((BT_CHARACTER << GFC_DTYPE_TYPE_SHIFT) \
    | (sizeof(char) << GFC_DTYPE_SIZE_SHIFT))
+
+#else
+#define GFC_DTYPE_CHARACTER 48
 #endif
 
 
