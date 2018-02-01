@@ -30,6 +30,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 
 #include <stdint.h>	/* For int32_t.  */
 
+#if __GNUC__ >= 8
+#define GCC_GE_8 1
+#endif
+
+#if __GNUC__ >= 7
+#define GCC_GE_7 1
+#endif
+
 /* GNU Fortran's array descriptor.  Keep in sync with libgfortran.h.  To be
    replaced by TS29113's ISO_Fortran_binding.h with CFI_cdesc_t.  */
 
@@ -79,9 +87,10 @@ typedef struct gfc_descriptor_t {
 #define GFC_DTYPE_TYPE_MASK 0x70
 #define GFC_DTYPE_SIZE_SHIFT 7
 
-#define GFC_DESCRIPTOR_RANK(desc) ((desc)->dtype.rank)
-#define GFC_DESCRIPTOR_TYPE(desc) (((desc)->dtype.type)
-#define GFC_DESCRIPTOR_SIZE(desc) ((desc)->dtype.elem_len)
+#define GFC_DESCRIPTOR_RANK(desc) (desc)->dtype.rank
+#define GFC_DESCRIPTOR_TYPE(desc) (desc)->dtype.type
+#define GFC_DESCRIPTOR_SIZE(desc) (desc)->dtype.elem_len
+#define GFC_DTYPE_TYPE_SIZE(desc) (desc)->dtype.elem_len
 
 #else
 
@@ -95,14 +104,13 @@ typedef struct gfc_descriptor_t {
 #define GFC_DESCRIPTOR_TYPE(desc) (((desc)->dtype & GFC_DTYPE_TYPE_MASK) \
                                    >> GFC_DTYPE_TYPE_SHIFT)
 #define GFC_DESCRIPTOR_SIZE(desc) ((desc)->dtype >> GFC_DTYPE_SIZE_SHIFT)
+#define GFC_DTYPE_TYPE_SIZE(desc) ((desc)->dtype & GFC_DTYPE_TYPE_SIZE_MASK)
 
 #endif
 
 #define GFC_DTYPE_SIZE_MASK \
   ((~((ptrdiff_t) 0) >> GFC_DTYPE_SIZE_SHIFT) << GFC_DTYPE_SIZE_SHIFT)
 #define GFC_DTYPE_TYPE_SIZE_MASK (GFC_DTYPE_SIZE_MASK | GFC_DTYPE_TYPE_MASK)
-
-#define GFC_DTYPE_TYPE_SIZE(desc) ((desc)->dtype & GFC_DTYPE_TYPE_SIZE_MASK)
 
 #define GFC_DTYPE_INTEGER_1 ((BT_INTEGER << GFC_DTYPE_TYPE_SHIFT) \
    | (sizeof(int8_t) << GFC_DTYPE_SIZE_SHIFT))

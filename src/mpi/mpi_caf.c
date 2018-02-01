@@ -6092,8 +6092,13 @@ PREFIX (sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
   */
 
   dst_rank = size > 1 ? 1 : 0;
+#ifdef GCC_GE_8
+  temp_src_desc.base.dtype.elem_len = GFC_DTYPE_INTEGER_4;
+  temp_src_desc.base.dtype.rank = dst_rank;
+#else
   temp_src_desc.base.dtype = GFC_DTYPE_INTEGER_4 |
-                             dst_rank;
+			     dst_rank;
+#endif
   temp_src_desc.base.offset = 0;
   temp_src_desc.dim[0].lower_bound = 0;
   temp_src_desc.dim[0]._ubound = size - 1;
