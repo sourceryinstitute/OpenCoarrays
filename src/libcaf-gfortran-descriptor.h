@@ -47,27 +47,56 @@ typedef struct descriptor_dimension
 }
 descriptor_dimension;
 
+#ifdef GCC_GE_8
+  typedef struct dtype_type
+  {
+    size_t elem_len;
+    int version;
+    signed char rank;
+    signed char type;
+    signed short attribute;
+  }
+  dtype_type;
+#endif
+
 typedef struct gfc_descriptor_t {
   void *base_addr;
   size_t offset;
-  ptrdiff_t dtype;
 #ifdef GCC_GE_8
+  dtype_type dtype;
   ptrdiff_t span;
+#else
+  ptrdiff_t dtype;
 #endif
   descriptor_dimension dim[];
 } gfc_descriptor_t;
 
+#ifdef GCC_GE_8
+
+#define GFC_MAX_DIMENSIONS 15
+#define GFC_DTYPE_RANK_MASK 0x0F
+#define GFC_DTYPE_TYPE_SHIFT 4
+#define GFC_DTYPE_TYPE_MASK 0x70
+#define GFC_DTYPE_SIZE_SHIFT 7
+
+#define GFC_DESCRIPTOR_RANK(desc) ((desc)->dtype.rank)
+#define GFC_DESCRIPTOR_TYPE(desc) (((desc)->dtype.type)
+#define GFC_DESCRIPTOR_SIZE(desc) ((desc)->dtype.elem_len)
+
+#else
 
 #define GFC_MAX_DIMENSIONS 7
-
 #define GFC_DTYPE_RANK_MASK 0x07
 #define GFC_DTYPE_TYPE_SHIFT 3
 #define GFC_DTYPE_TYPE_MASK 0x38
 #define GFC_DTYPE_SIZE_SHIFT 6
+
 #define GFC_DESCRIPTOR_RANK(desc) ((desc)->dtype & GFC_DTYPE_RANK_MASK)
 #define GFC_DESCRIPTOR_TYPE(desc) (((desc)->dtype & GFC_DTYPE_TYPE_MASK) \
                                    >> GFC_DTYPE_TYPE_SHIFT)
 #define GFC_DESCRIPTOR_SIZE(desc) ((desc)->dtype >> GFC_DTYPE_SIZE_SHIFT)
+
+#endif
 
 #define GFC_DTYPE_SIZE_MASK \
   ((~((ptrdiff_t) 0) >> GFC_DTYPE_SIZE_SHIFT) << GFC_DTYPE_SIZE_SHIFT)

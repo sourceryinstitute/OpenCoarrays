@@ -7560,8 +7560,14 @@ PREFIX (failed_images) (gfc_descriptor_t *array, int team __attribute__ ((unused
   array->dim[0]._ubound = -1;
   array->base_addr = NULL;
 #endif
+
+#ifdef GCC_GE_8
+  array->dtype.type = BT_INTEGER;
+  array->dtype.elem_len = local_kind;
+#else
   array->dtype = ((BT_INTEGER << GFC_DTYPE_TYPE_SHIFT)
 		  | (local_kind << GFC_DTYPE_SIZE_SHIFT));
+#endif
   array->dim[0].lower_bound = 0;
   array->dim[0]._stride = 1;
   array->offset = 0;
@@ -7611,8 +7617,14 @@ PREFIX (stopped_images) (gfc_descriptor_t *array, int team __attribute__ ((unuse
   array->dim[0]._ubound = -1;
   array->base_addr = NULL;
 #endif
+
+#ifdef GCC_GE_8
+  array->dtype.type = BT_INTEGER;
+  array->dtype.elem_len = local_kind;
+#else
   array->dtype = ((BT_INTEGER << GFC_DTYPE_TYPE_SHIFT)
 		  | (local_kind << GFC_DTYPE_SIZE_SHIFT));
+#endif
   array->dim[0].lower_bound = 0;
   array->dim[0]._stride = 1;
   array->offset = 0;

@@ -37,7 +37,7 @@ compiler=gnu
 
 ifeq ($(compiler),gnu)
   FC=gfortran
-  CC=gcc
+  CC=mpicc
   MPFC = mpifort
   MPICC = mpicc
   OSHCC = oshcc
