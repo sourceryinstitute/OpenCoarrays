@@ -1151,7 +1151,10 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
         MPI_Alloc_mem(actual_size, MPI_INFO_NULL, &mem);
         MPI_Win_create(mem, actual_size, 1, MPI_INFO_NULL, CAF_COMM_WORLD, p);
 #endif // MPI_VERSION
+
+#ifndef GCC_GE_8
         if (GFC_DESCRIPTOR_RANK (desc) != 0)
+#endif
           mpi_token->desc = desc;
 
         if(l_var)
