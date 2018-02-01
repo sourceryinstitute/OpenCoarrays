@@ -28,15 +28,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 #ifndef LIBCAF_GFORTRAN_DESCRIPTOR_H
 #define LIBCAF_GFORTRAN_DESCRIPTOR_H
 
+#include "libcaf-version-def.h"
+
 #include <stdint.h>	/* For int32_t.  */
-
-#if __GNUC__ >= 8
-#define GCC_GE_8 1
-#endif
-
-#if __GNUC__ >= 7
-#define GCC_GE_7 1
-#endif
 
 /* GNU Fortran's array descriptor.  Keep in sync with libgfortran.h.  To be
    replaced by TS29113's ISO_Fortran_binding.h with CFI_cdesc_t.  */

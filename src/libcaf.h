@@ -32,6 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 #include <stddef.h>	/* For size_t.  */
 #include <stdbool.h>
 
+#include  "libcaf-version-def.h"
 #include "libcaf-gfortran-descriptor.h"
 
 #include <mpi.h>
@@ -43,14 +44,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 #else
 #define likely(x)       __builtin_expect(!!(x), 1)
 #define unlikely(x)     __builtin_expect(!!(x), 0)
-#endif
-
-#if __GNUC__ >= 8
-#define GCC_GE_8 1
-#endif
-
-#if __GNUC__ >= 7
-#define GCC_GE_7 1
 #endif
 
 #ifdef PREFIX_NAME
