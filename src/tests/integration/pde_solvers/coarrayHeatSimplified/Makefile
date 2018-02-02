@@ -3,10 +3,7 @@ compiler=gnu
 executable=co_heat
 
 ifeq ($(compiler),gnu)
-  opencoarrays_dir=/opt/opencoarrays
-  opt=-L $(opencoarrays_dir)/lib
-  compile=mpifort -fcoarray=lib
-  lib=-lcaf_mpi
+  compile=caf
 else
   ifeq ($(compiler),intel)
     compile=ifort -coarray=shared -standard-semantics -O3 -coarray-num-images=2
