@@ -1151,7 +1151,10 @@ PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
         MPI_Alloc_mem(actual_size, MPI_INFO_NULL, &mem);
         MPI_Win_create(mem, actual_size, 1, MPI_INFO_NULL, CAF_COMM_WORLD, p);
 #endif // MPI_VERSION
+
+#ifndef GCC_GE_8
         if (GFC_DESCRIPTOR_RANK (desc) != 0)
+#endif
           mpi_token->desc = desc;
 
         if(l_var)
@@ -6092,8 +6095,13 @@ PREFIX (sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
   */
 
   dst_rank = size > 1 ? 1 : 0;
+#ifdef GCC_GE_8
+  temp_src_desc.base.dtype.elem_len = GFC_DTYPE_INTEGER_4;
+  temp_src_desc.base.dtype.rank = dst_rank;
+#else
   temp_src_desc.base.dtype = GFC_DTYPE_INTEGER_4 |
-                             dst_rank;
+			     dst_rank;
+#endif
   temp_src_desc.base.offset = 0;
   temp_src_desc.dim[0].lower_bound = 0;
   temp_src_desc.dim[0]._ubound = size - 1;
@@ -7560,8 +7568,14 @@ PREFIX (failed_images) (gfc_descriptor_t *array, int team __attribute__ ((unused
   array->dim[0]._ubound = -1;
   array->base_addr = NULL;
 #endif
+
+#ifdef GCC_GE_8
+  array->dtype.type = BT_INTEGER;
+  array->dtype.elem_len = local_kind;
+#else
   array->dtype = ((BT_INTEGER << GFC_DTYPE_TYPE_SHIFT)
 		  | (local_kind << GFC_DTYPE_SIZE_SHIFT));
+#endif
   array->dim[0].lower_bound = 0;
   array->dim[0]._stride = 1;
   array->offset = 0;
@@ -7611,8 +7625,14 @@ PREFIX (stopped_images) (gfc_descriptor_t *array, int team __attribute__ ((unuse
   array->dim[0]._ubound = -1;
   array->base_addr = NULL;
 #endif
+
+#ifdef GCC_GE_8
+  array->dtype.type = BT_INTEGER;
+  array->dtype.elem_len = local_kind;
+#else
   array->dtype = ((BT_INTEGER << GFC_DTYPE_TYPE_SHIFT)
 		  | (local_kind << GFC_DTYPE_SIZE_SHIFT));
+#endif
   array->dim[0].lower_bound = 0;
   array->dim[0]._stride = 1;
   array->offset = 0;

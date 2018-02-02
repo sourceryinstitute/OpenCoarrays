@@ -37,12 +37,12 @@ compiler=gnu
 
 ifeq ($(compiler),gnu)
   FC=gfortran
-  CC=gcc
+  CC=mpicc
   MPFC = mpifort
   MPICC = mpicc
   OSHCC = oshcc
   FFLAGS_EXTRA = -fcoarray=lib
-  MPI_EXTRA_FLAGS = -Wall -Wextra -Wno-error=cpp -Wno-error=unused-parameter -DSTRIDED#-DNONBLOCKING_PUT -DCAF_MPI_LOCK_UNLOCK
+  MPI_EXTRA_FLAGS = -Wall -Wextra -Wno-error=cpp -Wno-error=unused-parameter -DSTRIDED -DUSE_FAILED_IMAGES  #-DNONBLOCKING_PUT -DCAF_MPI_LOCK_UNLOCK
   MPI_RUN = mpiexec -np 2
 else
   ifeq ($(compiler),cray)
