@@ -3,9 +3,9 @@ SUBDIRS = include-files
 noinst_PROGRAMS = coarrayBurgers
 
 dist_coarrayBurgers_SOURCES = \
-$(srcdir)/library/object_interface.F90 \
-$(srcdir)/library/co_object_interface.F90 \
-$(srcdir)/library/ForTrilinos_assertion_utility.F90 \
+$(srcdir)/object_interface.F90 \
+$(srcdir)/co_object_interface.F90 \
+$(srcdir)/ForTrilinos_assertion_utility.F90 \
 $(srcdir)/local_field.F90 \
 $(srcdir)/global_field.F90 \
 $(srcdir)/main.F90
