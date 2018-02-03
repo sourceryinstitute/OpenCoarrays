@@ -104,14 +104,13 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am__dirstamp = $(am__leading_dot)dirstamp
 dist_coarrayBurgers_OBJECTS =  \
-	$(srcdir)/coarrayBurgers-object_interface.$(OBJEXT) \
-	$(srcdir)/coarrayBurgers-co_object_interface.$(OBJEXT) \
-	$(srcdir)/coarrayBurgers-ForTrilinos_assertion_utility.$(OBJEXT) \
-	$(srcdir)/coarrayBurgers-local_field.$(OBJEXT) \
-	$(srcdir)/coarrayBurgers-global_field.$(OBJEXT) \
-	$(srcdir)/coarrayBurgers-main.$(OBJEXT)
+	coarrayBurgers-object_interface.$(OBJEXT) \
+	coarrayBurgers-co_object_interface.$(OBJEXT) \
+	coarrayBurgers-ForTrilinos_assertion_utility.$(OBJEXT) \
+	coarrayBurgers-local_field.$(OBJEXT) \
+	coarrayBurgers-global_field.$(OBJEXT) \
+	coarrayBurgers-main.$(OBJEXT)
 coarrayBurgers_OBJECTS = $(dist_coarrayBurgers_OBJECTS)
 coarrayBurgers_DEPENDENCIES = $(top_builddir)/src/mpi/mpi_caf.o \
 	$(top_builddir)/src/common/caf_auxiliary.o
@@ -371,14 +370,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = include-files
-dist_coarrayBurgers_SOURCES = \
-$(srcdir)/object_interface.F90 \
-$(srcdir)/co_object_interface.F90 \
-$(srcdir)/ForTrilinos_assertion_utility.F90 \
-$(srcdir)/local_field.F90 \
-$(srcdir)/global_field.F90 \
-$(srcdir)/main.F90
-
+dist_coarrayBurgers_SOURCES = object_interface.F90 co_object_interface.F90  ForTrilinos_assertion_utility.F90 local_field.F90 global_field.F90 main.F90
 coarrayBurgers_FCFLAGS = -fcoarray=lib -lmpi
 coarrayBurgers_LDADD = \
 $(top_builddir)/src/mpi/mpi_caf.o \
@@ -435,24 +427,6 @@ clean-noinstPROGRAMS:
 	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
 	echo " rm -f" $$list; \
 	rm -f $$list
-$(srcdir)/$(am__dirstamp):
-	@$(MKDIR_P) $(srcdir)
-	@: > $(srcdir)/$(am__dirstamp)
-$(srcdir)/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) $(srcdir)/$(DEPDIR)
-	@: > $(srcdir)/$(DEPDIR)/$(am__dirstamp)
-$(srcdir)/coarrayBurgers-object_interface.$(OBJEXT):  \
-	$(srcdir)/$(am__dirstamp) $(srcdir)/$(DEPDIR)/$(am__dirstamp)
-$(srcdir)/coarrayBurgers-co_object_interface.$(OBJEXT):  \
-	$(srcdir)/$(am__dirstamp) $(srcdir)/$(DEPDIR)/$(am__dirstamp)
-$(srcdir)/coarrayBurgers-ForTrilinos_assertion_utility.$(OBJEXT):  \
-	$(srcdir)/$(am__dirstamp) $(srcdir)/$(DEPDIR)/$(am__dirstamp)
-$(srcdir)/coarrayBurgers-local_field.$(OBJEXT):  \
-	$(srcdir)/$(am__dirstamp) $(srcdir)/$(DEPDIR)/$(am__dirstamp)
-$(srcdir)/coarrayBurgers-global_field.$(OBJEXT):  \
-	$(srcdir)/$(am__dirstamp) $(srcdir)/$(DEPDIR)/$(am__dirstamp)
-$(srcdir)/coarrayBurgers-main.$(OBJEXT): $(srcdir)/$(am__dirstamp) \
-	$(srcdir)/$(DEPDIR)/$(am__dirstamp)
 
 coarrayBurgers$(EXEEXT): $(coarrayBurgers_OBJECTS) $(coarrayBurgers_DEPENDENCIES) $(EXTRA_coarrayBurgers_DEPENDENCIES) 
 	@rm -f coarrayBurgers$(EXEEXT)
@@ -460,7 +434,6 @@ coarrayBurgers$(EXEEXT): $(coarrayBurgers_OBJECTS) $(coarrayBurgers_DEPENDENCIES
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
-	-rm -f $(srcdir)/*.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
@@ -474,41 +447,41 @@ distclean-compile:
 .F90.lo:
 	$(AM_V_PPFC)$(LTPPFCCOMPILE) -c -o $@ $<
 
-$(srcdir)/coarrayBurgers-object_interface.o: $(srcdir)/object_interface.F90
-	$(AM_V_PPFC)$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(coarrayBurgers_FCFLAGS) $(FCFLAGS) -c -o $(srcdir)/coarrayBurgers-object_interface.o `test -f '$(srcdir)/object_interface.F90' || echo '$(srcdir)/'`$(srcdir)/object_interface.F90
+coarrayBurgers-object_interface.o: object_interface.F90
+	$(AM_V_PPFC)$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(coarrayBurgers_FCFLAGS) $(FCFLAGS) -c -o coarrayBurgers-object_interface.o `test -f 'object_interface.F90' || echo '$(srcdir)/'`object_interface.F90
 
-$(srcdir)/coarrayBurgers-object_interface.obj: $(srcdir)/object_interface.F90
-	$(AM_V_PPFC)$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(coarrayBurgers_FCFLAGS) $(FCFLAGS) -c -o $(srcdir)/coarrayBurgers-object_interface.obj `if test -f '$(srcdir)/object_interface.F90'; then $(CYGPATH_W) '$(srcdir)/object_interface.F90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/object_interface.F90'; fi`
+coarrayBurgers-object_interface.obj: object_interface.F90
+	$(AM_V_PPFC)$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(coarrayBurgers_FCFLAGS) $(FCFLAGS) -c -o coarrayBurgers-object_interface.obj `if test -f 'object_interface.F90'; then $(CYGPATH_W) 'object_interface.F90'; else $(CYGPATH_W) '$(srcdir)/object_interface.F90'; fi`
 
-$(srcdir)/coarrayBurgers-co_object_interface.o: $(srcdir)/co_object_interface.F90
-	$(AM_V_PPFC)$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(coarrayBurgers_FCFLAGS) $(FCFLAGS) -c -o $(srcdir)/coarrayBurgers-co_object_interface.o `test -f '$(srcdir)/co_object_interface.F90' || echo '$(srcdir)/'`$(srcdir)/co_object_interface.F90
+coarrayBurgers-co_object_interface.o: co_object_interface.F90
+	$(AM_V_PPFC)$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(coarrayBurgers_FCFLAGS) $(FCFLAGS) -c -o coarrayBurgers-co_object_interface.o `test -f 'co_object_interface.F90' || echo '$(srcdir)/'`co_object_interface.F90
 
-$(srcdir)/coarrayBurgers-co_object_interface.obj: $(srcdir)/co_object_interface.F90
-	$(AM_V_PPFC)$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(coarrayBurgers_FCFLAGS) $(FCFLAGS) -c -o $(srcdir)/coarrayBurgers-co_object_interface.obj `if test -f '$(srcdir)/co_object_interface.F90'; then $(CYGPATH_W) '$(srcdir)/co_object_interface.F90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/co_object_interface.F90'; fi`
+coarrayBurgers-co_object_interface.obj: co_object_interface.F90
+	$(AM_V_PPFC)$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(coarrayBurgers_FCFLAGS) $(FCFLAGS) -c -o coarrayBurgers-co_object_interface.obj `if test -f 'co_object_interface.F90'; then $(CYGPATH_W) 'co_object_interface.F90'; else $(CYGPATH_W) '$(srcdir)/co_object_interface.F90'; fi`
 
-$(srcdir)/coarrayBurgers-ForTrilinos_assertion_utility.o: $(srcdir)/ForTrilinos_assertion_utility.F90
-	$(AM_V_PPFC)$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(coarrayBurgers_FCFLAGS) $(FCFLAGS) -c -o $(srcdir)/coarrayBurgers-ForTrilinos_assertion_utility.o `test -f '$(srcdir)/ForTrilinos_assertion_utility.F90' || echo '$(srcdir)/'`$(srcdir)/ForTrilinos_assertion_utility.F90
+coarrayBurgers-ForTrilinos_assertion_utility.o: ForTrilinos_assertion_utility.F90
+	$(AM_V_PPFC)$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(coarrayBurgers_FCFLAGS) $(FCFLAGS) -c -o coarrayBurgers-ForTrilinos_assertion_utility.o `test -f 'ForTrilinos_assertion_utility.F90' || echo '$(srcdir)/'`ForTrilinos_assertion_utility.F90
 
-$(srcdir)/coarrayBurgers-ForTrilinos_assertion_utility.obj: $(srcdir)/ForTrilinos_assertion_utility.F90
-	$(AM_V_PPFC)$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(coarrayBurgers_FCFLAGS) $(FCFLAGS) -c -o $(srcdir)/coarrayBurgers-ForTrilinos_assertion_utility.obj `if test -f '$(srcdir)/ForTrilinos_assertion_utility.F90'; then $(CYGPATH_W) '$(srcdir)/ForTrilinos_assertion_utility.F90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ForTrilinos_assertion_utility.F90'; fi`
+coarrayBurgers-ForTrilinos_assertion_utility.obj: ForTrilinos_assertion_utility.F90
+	$(AM_V_PPFC)$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(coarrayBurgers_FCFLAGS) $(FCFLAGS) -c -o coarrayBurgers-ForTrilinos_assertion_utility.obj `if test -f 'ForTrilinos_assertion_utility.F90'; then $(CYGPATH_W) 'ForTrilinos_assertion_utility.F90'; else $(CYGPATH_W) '$(srcdir)/ForTrilinos_assertion_utility.F90'; fi`
 
-$(srcdir)/coarrayBurgers-local_field.o: $(srcdir)/local_field.F90
-	$(AM_V_PPFC)$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(coarrayBurgers_FCFLAGS) $(FCFLAGS) -c -o $(srcdir)/coarrayBurgers-local_field.o `test -f '$(srcdir)/local_field.F90' || echo '$(srcdir)/'`$(srcdir)/local_field.F90
+coarrayBurgers-local_field.o: local_field.F90
+	$(AM_V_PPFC)$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(coarrayBurgers_FCFLAGS) $(FCFLAGS) -c -o coarrayBurgers-local_field.o `test -f 'local_field.F90' || echo '$(srcdir)/'`local_field.F90
 
-$(srcdir)/coarrayBurgers-local_field.obj: $(srcdir)/local_field.F90
-	$(AM_V_PPFC)$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(coarrayBurgers_FCFLAGS) $(FCFLAGS) -c -o $(srcdir)/coarrayBurgers-local_field.obj `if test -f '$(srcdir)/local_field.F90'; then $(CYGPATH_W) '$(srcdir)/local_field.F90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/local_field.F90'; fi`
+coarrayBurgers-local_field.obj: local_field.F90
+	$(AM_V_PPFC)$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(coarrayBurgers_FCFLAGS) $(FCFLAGS) -c -o coarrayBurgers-local_field.obj `if test -f 'local_field.F90'; then $(CYGPATH_W) 'local_field.F90'; else $(CYGPATH_W) '$(srcdir)/local_field.F90'; fi`
 
-$(srcdir)/coarrayBurgers-global_field.o: $(srcdir)/global_field.F90
-	$(AM_V_PPFC)$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(coarrayBurgers_FCFLAGS) $(FCFLAGS) -c -o $(srcdir)/coarrayBurgers-global_field.o `test -f '$(srcdir)/global_field.F90' || echo '$(srcdir)/'`$(srcdir)/global_field.F90
+coarrayBurgers-global_field.o: global_field.F90
+	$(AM_V_PPFC)$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(coarrayBurgers_FCFLAGS) $(FCFLAGS) -c -o coarrayBurgers-global_field.o `test -f 'global_field.F90' || echo '$(srcdir)/'`global_field.F90
 
-$(srcdir)/coarrayBurgers-global_field.obj: $(srcdir)/global_field.F90
-	$(AM_V_PPFC)$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(coarrayBurgers_FCFLAGS) $(FCFLAGS) -c -o $(srcdir)/coarrayBurgers-global_field.obj `if test -f '$(srcdir)/global_field.F90'; then $(CYGPATH_W) '$(srcdir)/global_field.F90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/global_field.F90'; fi`
+coarrayBurgers-global_field.obj: global_field.F90
+	$(AM_V_PPFC)$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(coarrayBurgers_FCFLAGS) $(FCFLAGS) -c -o coarrayBurgers-global_field.obj `if test -f 'global_field.F90'; then $(CYGPATH_W) 'global_field.F90'; else $(CYGPATH_W) '$(srcdir)/global_field.F90'; fi`
 
-$(srcdir)/coarrayBurgers-main.o: $(srcdir)/main.F90
-	$(AM_V_PPFC)$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(coarrayBurgers_FCFLAGS) $(FCFLAGS) -c -o $(srcdir)/coarrayBurgers-main.o `test -f '$(srcdir)/main.F90' || echo '$(srcdir)/'`$(srcdir)/main.F90
+coarrayBurgers-main.o: main.F90
+	$(AM_V_PPFC)$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(coarrayBurgers_FCFLAGS) $(FCFLAGS) -c -o coarrayBurgers-main.o `test -f 'main.F90' || echo '$(srcdir)/'`main.F90
 
-$(srcdir)/coarrayBurgers-main.obj: $(srcdir)/main.F90
-	$(AM_V_PPFC)$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(coarrayBurgers_FCFLAGS) $(FCFLAGS) -c -o $(srcdir)/coarrayBurgers-main.obj `if test -f '$(srcdir)/main.F90'; then $(CYGPATH_W) '$(srcdir)/main.F90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/main.F90'; fi`
+coarrayBurgers-main.obj: main.F90
+	$(AM_V_PPFC)$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(coarrayBurgers_FCFLAGS) $(FCFLAGS) -c -o coarrayBurgers-main.obj `if test -f 'main.F90'; then $(CYGPATH_W) 'main.F90'; else $(CYGPATH_W) '$(srcdir)/main.F90'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -702,8 +675,6 @@ clean-generic:
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
-	-test -z "$(srcdir)/$(DEPDIR)/$(am__dirstamp)" || rm -f $(srcdir)/$(DEPDIR)/$(am__dirstamp)
-	-test -z "$(srcdir)/$(am__dirstamp)" || rm -f $(srcdir)/$(am__dirstamp)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"

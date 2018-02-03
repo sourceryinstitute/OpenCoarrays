@@ -104,11 +104,10 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am__dirstamp = $(am__leading_dot)dirstamp
 dist_coarrayHeatSimplified_OBJECTS =  \
-	$(srcdir)/coarrayHeatSimplified-local_field.$(OBJEXT) \
-	$(srcdir)/coarrayHeatSimplified-global_field.$(OBJEXT) \
-	$(srcdir)/coarrayHeatSimplified-main.$(OBJEXT)
+	coarrayHeatSimplified-local_field.$(OBJEXT) \
+	coarrayHeatSimplified-global_field.$(OBJEXT) \
+	coarrayHeatSimplified-main.$(OBJEXT)
 coarrayHeatSimplified_OBJECTS = $(dist_coarrayHeatSimplified_OBJECTS)
 coarrayHeatSimplified_DEPENDENCIES =  \
 	$(top_builddir)/src/mpi/mpi_caf.o \
@@ -323,7 +322,7 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-dist_coarrayHeatSimplified_SOURCES = $(srcdir)/local_field.f90 $(srcdir)/global_field.f90 $(srcdir)/main.f90
+dist_coarrayHeatSimplified_SOURCES = local_field.f90 global_field.f90 main.f90
 coarrayHeatSimplified_FCFLAGS = -fcoarray=lib -lmpi
 coarrayHeatSimplified_LDADD = $(top_builddir)/src/mpi/mpi_caf.o $(top_builddir)/src/common/caf_auxiliary.o
 CLEANFILES = coarrayHeatSimplified
@@ -369,18 +368,6 @@ clean-noinstPROGRAMS:
 	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
 	echo " rm -f" $$list; \
 	rm -f $$list
-$(srcdir)/$(am__dirstamp):
-	@$(MKDIR_P) $(srcdir)
-	@: > $(srcdir)/$(am__dirstamp)
-$(srcdir)/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) $(srcdir)/$(DEPDIR)
-	@: > $(srcdir)/$(DEPDIR)/$(am__dirstamp)
-$(srcdir)/coarrayHeatSimplified-local_field.$(OBJEXT):  \
-	$(srcdir)/$(am__dirstamp) $(srcdir)/$(DEPDIR)/$(am__dirstamp)
-$(srcdir)/coarrayHeatSimplified-global_field.$(OBJEXT):  \
-	$(srcdir)/$(am__dirstamp) $(srcdir)/$(DEPDIR)/$(am__dirstamp)
-$(srcdir)/coarrayHeatSimplified-main.$(OBJEXT):  \
-	$(srcdir)/$(am__dirstamp) $(srcdir)/$(DEPDIR)/$(am__dirstamp)
 
 coarrayHeatSimplified$(EXEEXT): $(coarrayHeatSimplified_OBJECTS) $(coarrayHeatSimplified_DEPENDENCIES) $(EXTRA_coarrayHeatSimplified_DEPENDENCIES) 
 	@rm -f coarrayHeatSimplified$(EXEEXT)
@@ -388,7 +375,6 @@ coarrayHeatSimplified$(EXEEXT): $(coarrayHeatSimplified_OBJECTS) $(coarrayHeatSi
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
-	-rm -f $(srcdir)/*.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
@@ -402,23 +388,23 @@ distclean-compile:
 .f90.lo:
 	$(AM_V_FC)$(LTFCCOMPILE) -c -o $@ $<
 
-$(srcdir)/coarrayHeatSimplified-local_field.o: $(srcdir)/local_field.f90
-	$(AM_V_FC)$(FC) $(coarrayHeatSimplified_FCFLAGS) $(FCFLAGS) -c -o $(srcdir)/coarrayHeatSimplified-local_field.o `test -f '$(srcdir)/local_field.f90' || echo '$(srcdir)/'`$(srcdir)/local_field.f90
+coarrayHeatSimplified-local_field.o: local_field.f90
+	$(AM_V_FC)$(FC) $(coarrayHeatSimplified_FCFLAGS) $(FCFLAGS) -c -o coarrayHeatSimplified-local_field.o `test -f 'local_field.f90' || echo '$(srcdir)/'`local_field.f90
 
-$(srcdir)/coarrayHeatSimplified-local_field.obj: $(srcdir)/local_field.f90
-	$(AM_V_FC)$(FC) $(coarrayHeatSimplified_FCFLAGS) $(FCFLAGS) -c -o $(srcdir)/coarrayHeatSimplified-local_field.obj `if test -f '$(srcdir)/local_field.f90'; then $(CYGPATH_W) '$(srcdir)/local_field.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/local_field.f90'; fi`
+coarrayHeatSimplified-local_field.obj: local_field.f90
+	$(AM_V_FC)$(FC) $(coarrayHeatSimplified_FCFLAGS) $(FCFLAGS) -c -o coarrayHeatSimplified-local_field.obj `if test -f 'local_field.f90'; then $(CYGPATH_W) 'local_field.f90'; else $(CYGPATH_W) '$(srcdir)/local_field.f90'; fi`
 
-$(srcdir)/coarrayHeatSimplified-global_field.o: $(srcdir)/global_field.f90
-	$(AM_V_FC)$(FC) $(coarrayHeatSimplified_FCFLAGS) $(FCFLAGS) -c -o $(srcdir)/coarrayHeatSimplified-global_field.o `test -f '$(srcdir)/global_field.f90' || echo '$(srcdir)/'`$(srcdir)/global_field.f90
+coarrayHeatSimplified-global_field.o: global_field.f90
+	$(AM_V_FC)$(FC) $(coarrayHeatSimplified_FCFLAGS) $(FCFLAGS) -c -o coarrayHeatSimplified-global_field.o `test -f 'global_field.f90' || echo '$(srcdir)/'`global_field.f90
 
-$(srcdir)/coarrayHeatSimplified-global_field.obj: $(srcdir)/global_field.f90
-	$(AM_V_FC)$(FC) $(coarrayHeatSimplified_FCFLAGS) $(FCFLAGS) -c -o $(srcdir)/coarrayHeatSimplified-global_field.obj `if test -f '$(srcdir)/global_field.f90'; then $(CYGPATH_W) '$(srcdir)/global_field.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/global_field.f90'; fi`
+coarrayHeatSimplified-global_field.obj: global_field.f90
+	$(AM_V_FC)$(FC) $(coarrayHeatSimplified_FCFLAGS) $(FCFLAGS) -c -o coarrayHeatSimplified-global_field.obj `if test -f 'global_field.f90'; then $(CYGPATH_W) 'global_field.f90'; else $(CYGPATH_W) '$(srcdir)/global_field.f90'; fi`
 
-$(srcdir)/coarrayHeatSimplified-main.o: $(srcdir)/main.f90
-	$(AM_V_FC)$(FC) $(coarrayHeatSimplified_FCFLAGS) $(FCFLAGS) -c -o $(srcdir)/coarrayHeatSimplified-main.o `test -f '$(srcdir)/main.f90' || echo '$(srcdir)/'`$(srcdir)/main.f90
+coarrayHeatSimplified-main.o: main.f90
+	$(AM_V_FC)$(FC) $(coarrayHeatSimplified_FCFLAGS) $(FCFLAGS) -c -o coarrayHeatSimplified-main.o `test -f 'main.f90' || echo '$(srcdir)/'`main.f90
 
-$(srcdir)/coarrayHeatSimplified-main.obj: $(srcdir)/main.f90
-	$(AM_V_FC)$(FC) $(coarrayHeatSimplified_FCFLAGS) $(FCFLAGS) -c -o $(srcdir)/coarrayHeatSimplified-main.obj `if test -f '$(srcdir)/main.f90'; then $(CYGPATH_W) '$(srcdir)/main.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/main.f90'; fi`
+coarrayHeatSimplified-main.obj: main.f90
+	$(AM_V_FC)$(FC) $(coarrayHeatSimplified_FCFLAGS) $(FCFLAGS) -c -o coarrayHeatSimplified-main.obj `if test -f 'main.f90'; then $(CYGPATH_W) 'main.f90'; else $(CYGPATH_W) '$(srcdir)/main.f90'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -539,8 +525,6 @@ clean-generic:
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
-	-test -z "$(srcdir)/$(DEPDIR)/$(am__dirstamp)" || rm -f $(srcdir)/$(DEPDIR)/$(am__dirstamp)
-	-test -z "$(srcdir)/$(am__dirstamp)" || rm -f $(srcdir)/$(am__dirstamp)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"

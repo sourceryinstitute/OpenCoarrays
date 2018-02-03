@@ -2,13 +2,7 @@ SUBDIRS = include-files
 
 noinst_PROGRAMS = coarrayBurgers
 
-dist_coarrayBurgers_SOURCES = \
-$(srcdir)/object_interface.F90 \
-$(srcdir)/co_object_interface.F90 \
-$(srcdir)/ForTrilinos_assertion_utility.F90 \
-$(srcdir)/local_field.F90 \
-$(srcdir)/global_field.F90 \
-$(srcdir)/main.F90
+dist_coarrayBurgers_SOURCES = object_interface.F90 co_object_interface.F90  ForTrilinos_assertion_utility.F90 local_field.F90 global_field.F90 main.F90
 
 coarrayBurgers_FCFLAGS = -fcoarray=lib -lmpi
 
