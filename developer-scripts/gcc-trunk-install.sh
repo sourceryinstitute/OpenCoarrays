@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 
-### Diagnostics ###
+# Exit on error or use of an unset variable:
+set -o errexit
+set -o nounset
+
+# Return the highest exit code in a chain of pipes:
+set -o pipefail
 
 # Print usage information and exit if this script was invoked with no arugments or with -h or --help
 # as the first argument or in a location other than the top-level OpenCoarrays source directory
@@ -8,12 +13,14 @@ function usage()
 {
   echo "Usage:"
   echo "  cd <opencoarrays-source-directory>"
-  echo "  ./developer_scripts/patched-trunk-install.sh <patch-file>"
+  echo "  ./developer_scripts/patched-trunk-install.sh [patch-file]"
+  echo ""
+  echo "  where omitting the patch file builds the unpatched GCC trunk."
   exit 1
 }
-[[ $# -eq 0 || "${1}" == "-h" || "${1}" == "--help"  || ! -f src/libcaf.h ]] && usage
+[[ "${1:-}" == "-h" || "${1:-}" == "--help"  || ! -f src/libcaf.h ]] && usage
 
-patch_file="${1}"
+patch_file="${1:-}"
 
 function set_absolute_path()
 {
@@ -27,14 +34,10 @@ function set_absolute_path()
     absolute_path="${PWD%%/}/${arg}"
   fi
 }
-set_absolute_path "${patch_file}"
+if [[ ! -z "${1:-}" ]]; then
+  set_absolute_path "${patch_file}"
+fi
 
-# Exit on error or use of an unset variable:
-set -o errexit
-set -o nounset
-
-# Return the highest exit code in a chain of pipes:
-set -o pipefail
 
 ### Define functions
 function choose_package_manager()
@@ -122,12 +125,14 @@ install_if_missing flex
 # Download and build the GCC trunk:
 echo "Downloading the GCC trunk."
 ./install.sh --only-download --package gcc --install-branch trunk
- 
-# Patch the GCC trunk and rebuild
-echo "Patching the GCC source using ${absolute_path}."
-pushd prerequisites/downloads/trunk
-  patch -p0 < "${absolute_path}"
-popd
+
+if [[ ! -z "${absolute_path:-}" ]]; then
+  # Patch the GCC trunk and rebuild
+  echo "Patching the GCC source using ${absolute_path}."
+  pushd prerequisites/downloads/trunk
+    patch -p0 < "${absolute_path}"
+  popd
+fi
 
 # Build the patched GCC trunk
 echo "Rebuilding the patched GCC source."
@@ -159,7 +164,7 @@ if [[ -d "${PWD}/prerequisites/installations/gcc/trunk/lib"   ]]; then
   prepend_to_LD_LIBRARY_PATH "${patched_GCC_install_path}/lib/"
 fi
 
-if [[ -d "${PWD}/prerequisites/installations/gcc/trunk/lib64" ]]; then 
+if [[ -d "${PWD}/prerequisites/installations/gcc/trunk/lib64" ]]; then
   prepend_to_LD_LIBRARY_PATH "${patched_GCC_install_path}/lib64/"
 fi
 
@@ -172,7 +177,10 @@ fi
 
 # Build MPICH with the patched compilers.
 echo "Building MPICH with the patched compilers."
-./install.sh --package mpich --yes-to-all \
+./install.sh \
+  --package mpich \
+  --num-threads 4 \
+  --yes-to-all \
   --with-fortran "${patched_GCC_install_path}/bin/gfortran" \
   --with-c "${patched_GCC_install_path}/bin/gcc" \
   --with-cxx "${patched_GCC_install_path}/bin/g++"
@@ -186,8 +194,11 @@ fi
 
 # Build OpenCoarrays with the patched compilers and the just-built MPICH
 echo "Building OpenCoarrays with the patched compilers"
-# Build OpenCoarrays with the patched compiler:
-./install.sh --yes-to-all \
+./install.sh \
+  --package opencoarrays \
+  --disable-bootstrap \
+  --num-threads 4 \
+  --yes-to-all \
   --with-fortran "${patched_GCC_install_path}/bin/gfortran" \
   --with-c "${patched_GCC_install_path}/bin/gcc" \
   --with-cxx "${patched_GCC_install_path}/bin/g++" \
