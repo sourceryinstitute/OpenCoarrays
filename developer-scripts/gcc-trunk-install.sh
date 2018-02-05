@@ -12,15 +12,30 @@ set -o pipefail
 function usage()
 {
   echo "Usage:"
-  echo "  cd <opencoarrays-source-directory>"
-  echo "  ./developer_scripts/patched-trunk-install.sh [patch-file]"
   echo ""
-  echo "  where omitting the patch file builds the unpatched GCC trunk."
-  exit 1
+  echo "  cd <opencoarrays-source-directory>"
+  echo "  ./developer_scripts/gcc-trunk-install.sh [--patch-file <patch-file-name>] [--install-prefix <installation-path>]"
+  echo "or"
+  echo "  ./developer_scripts/gcc-trunk-install.sh [-p <patch-file-name>] [-i <installation-path>]"
+  echo ""
+  echo " Square brackets surround optional arguments."
+  exit 0
 }
 [[ "${1:-}" == "-h" || "${1:-}" == "--help"  || ! -f src/libcaf.h ]] && usage
 
-patch_file="${1:-}"
+if [[ "${1:-}" == "-i" || "${1:-}" == "--install-prefix" ]]; then
+  export install_prefix="${2}"
+  if [[ "${3:-}" == "-i" || "${3:-}" == "--install-prefix" ]]; then
+    export patch_file="${4}"
+  fi
+elif [[ "${1:-}" == "-p" || "${1:-}" == "--patch-file" ]]; then
+  export patch_file="${2:-}"
+  if [[ "${3:-}" == "-i" || "${3:-}" == "--install-prefix" ]]; then
+    export install_prefix="${4}"
+  fi
+fi
+export default_prefix="${HOME}/opt"
+export install_prefix="${install_prefix:-${default_prefix}}"
 
 function set_absolute_path()
 {
@@ -34,10 +49,9 @@ function set_absolute_path()
     absolute_path="${PWD%%/}/${arg}"
   fi
 }
-if [[ ! -z "${1:-}" ]]; then
+if [[ ! -z "${patch_file:-}" ]]; then
   set_absolute_path "${patch_file}"
 fi
-
 
 ### Define functions
 function choose_package_manager()
@@ -124,7 +138,7 @@ install_if_missing flex
 
 # Download and build the GCC trunk:
 echo "Downloading the GCC trunk."
-./install.sh --only-download --package gcc --install-branch trunk
+./install.sh --only-download --package gcc --install-branch trunk --yes-to-all
 
 if [[ ! -z "${absolute_path:-}" ]]; then
   # Patch the GCC trunk and rebuild
@@ -134,14 +148,20 @@ if [[ ! -z "${absolute_path:-}" ]]; then
   popd
 fi
 
+export GCC_install_prefix=${install_prefix}/gcc/trunk
 # Build the patched GCC trunk
 echo "Rebuilding the patched GCC source."
-./install.sh --package gcc --install-branch trunk --yes-to-all
+./install.sh \
+  --package gcc \
+  --install-branch trunk \
+  --yes-to-all \
+  --num-threads 4 \
+  --disable-bootstrap \
+  --install-prefix "${GCC_install_prefix}"
 
 # Verify that GCC installed in the expected path
-patched_GCC_install_path=${PWD}/prerequisites/installations/gcc/trunk
-if ! type "${patched_GCC_install_path}"/bin/gfortran >& /dev/null; then
-  echo "gfortran is not installed in the expected location ${patched_GCC_install_path}."
+if ! type "${GCC_install_prefix}"/bin/gfortran >& /dev/null; then
+  echo "gfortran is not installed in the expected location ${GCC_install_prefix}."
   exit 1
 fi
 
@@ -160,46 +180,45 @@ function prepend_to_LD_LIBRARY_PATH() {
 
 old_path="${LD_LIBRARY_PATH:-}"
 
-if [[ -d "${PWD}/prerequisites/installations/gcc/trunk/lib"   ]]; then
-  prepend_to_LD_LIBRARY_PATH "${patched_GCC_install_path}/lib/"
-fi
-
-if [[ -d "${PWD}/prerequisites/installations/gcc/trunk/lib64" ]]; then
-  prepend_to_LD_LIBRARY_PATH "${patched_GCC_install_path}/lib64/"
+if [[ -d "${GCC_install_prefix}/lib64" ]]; then
+  prepend_to_LD_LIBRARY_PATH "${GCC_install_prefix}/lib64/"
 fi
 
 echo "\${LD_LIBRARY_PATH}=${LD_LIBRARY_PATH:=}"
 
 if [[ "${LD_LIBRARY_PATH}" == "${old_path}" ]]; then
-  echo "gfortran libraries did not install where expected: ${patched_GCC_install_path}/lib64 or ${patched_GCC_install_path}/lib"
+  echo "gfortran libraries did not install where expected: ${GCC_install_prefix}/lib64 or ${GCC_install_prefix}/lib"
   exit 1
 fi
 
 # Build MPICH with the patched compilers.
 echo "Building MPICH with the patched compilers."
+export mpich_install_prefix="${install_prefix}/mpich/3.2/gnu/trunk"
 ./install.sh \
   --package mpich \
   --num-threads 4 \
   --yes-to-all \
-  --with-fortran "${patched_GCC_install_path}/bin/gfortran" \
-  --with-c "${patched_GCC_install_path}/bin/gcc" \
-  --with-cxx "${patched_GCC_install_path}/bin/g++"
+  --with-fortran "${GCC_install_prefix}/bin/gfortran" \
+  --with-c "${GCC_install_prefix}/bin/gcc" \
+  --with-cxx "${GCC_install_prefix}/bin/g++" \
+  --install-prefix "${mpich_install_prefix}"
 
 # Verify that MPICH installed where expected
-mpich_install_path=$(./install.sh -P mpich)
-if ! type "${mpich_install_path}"/bin/mpifort; then
-  echo "MPICH is not installed in the expected location ${mpich_install_path}."
+if ! type "${mpich_install_prefix}"/bin/mpifort; then
+  echo "MPICH is not installed in the expected location ${mpich_install_prefix}."
   exit 1
 fi
 
 # Build OpenCoarrays with the patched compilers and the just-built MPICH
-echo "Building OpenCoarrays with the patched compilers"
+echo "Building OpenCoarrays."
+export opencoarrays_version=$(./install.sh --version)
 ./install.sh \
   --package opencoarrays \
   --disable-bootstrap \
   --num-threads 4 \
   --yes-to-all \
-  --with-fortran "${patched_GCC_install_path}/bin/gfortran" \
-  --with-c "${patched_GCC_install_path}/bin/gcc" \
-  --with-cxx "${patched_GCC_install_path}/bin/g++" \
-  --with-mpi "${mpich_install_path}"
+  --with-fortran "${GCC_install_prefix}/bin/gfortran" \
+  --with-c "${GCC_install_prefix}/bin/gcc" \
+  --with-cxx "${GCC_install_prefix}/bin/g++" \
+  --with-mpi "${mpich_install_prefix}" \
+  --install-prefix "${install_prefix}/opencoarrays/${opencoarrays_version}/gnu/trunk"
