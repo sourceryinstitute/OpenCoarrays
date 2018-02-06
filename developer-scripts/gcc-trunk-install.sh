@@ -148,7 +148,7 @@ if [[ ! -z "${absolute_path:-}" ]]; then
   popd
 fi
 
-export GCC_install_prefix=${install_prefix}/gcc/trunk
+export GCC_install_prefix=${install_prefix}/gnu/trunk
 # Build the patched GCC trunk
 echo "Rebuilding the patched GCC source."
 ./install.sh \
