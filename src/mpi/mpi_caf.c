@@ -5364,7 +5364,7 @@ PREFIX (send_by_ref) (caf_token_t token, int image_index,
     gfc_max_dim_descriptor_t dst_desc, temp_src;
     gfc_descriptor_t *dst = (gfc_descriptor_t *)&dst_desc;
     caf_reference_t *riter = refs;
-    long delta;
+    long delta = 0;
     ptrdiff_t data_offset = 0, desc_offset = 0;
     const int remote_image = image_index - 1;
     /* Reallocation of data on remote is needed (e.g., array to small).  This is
@@ -5435,6 +5435,7 @@ PREFIX (send_by_ref) (caf_token_t token, int image_index,
             /* When there has been no CAF_REF_COMP before hand, then the
             descriptor is stored in the token and the extends are the same on all
             images, which is taken care of in the else part.  */
+	    in_array_ref = true;
             if (access_data_through_global_win)
               {
                 for (ref_rank = 0; riter->u.a.mode[ref_rank] != CAF_ARR_REF_NONE; ++ref_rank) ;
@@ -5577,7 +5578,7 @@ PREFIX (send_by_ref) (caf_token_t token, int image_index,
                         /* When the realloc is required, then no extent may have
                            been set.  */
                         extent_mismatch = GFC_DESCRIPTOR_EXTENT (dst,
-                                                                 src_cur_dim)
+                                                                 src_cur_dim)//i
                                           < delta;
                         /* When it already known, that a realloc is needed or
                            the extent does not match the needed one.  */
@@ -5609,7 +5610,11 @@ PREFIX (send_by_ref) (caf_token_t token, int image_index,
                       }
 
                     /* Only increase the dim counter, when in an array ref.  */
-                    if (in_array_ref && src_cur_dim < GFC_DESCRIPTOR_RANK (src))
+		    printf("array_ref=%d src_cur_dim=%d src_rank=%d dst_rank=%d\n",in_array_ref,src_cur_dim,
+			   GFC_DESCRIPTOR_RANK (src),GFC_DESCRIPTOR_RANK (dst));
+                    if (in_array_ref &&
+			(src_cur_dim < GFC_DESCRIPTOR_RANK (src) ||
+			 src_cur_dim < GFC_DESCRIPTOR_RANK (dst)))
                       ++src_cur_dim;
                   }
                 size *= (ptrdiff_t)delta;
