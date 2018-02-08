@@ -4627,8 +4627,9 @@ PREFIX (get_by_ref) (caf_token_t token, int image_index,
                         }
                     }
 
-                  /* Only increase the dim counter, when in an array ref.  */
-                  if (in_array_ref && dst_cur_dim < dst_rank)
+                  /* Only increase the dim counter, when in an array ref, and
+                     MODE != CAF_ARR_REF_SINGLE (delta == 1) see caf_array_ref_t. */
+                  if (in_array_ref && dst_cur_dim < dst_rank && delta != 1)
                     ++dst_cur_dim;
                 }
               size *= (ptrdiff_t)delta;
@@ -4775,8 +4776,9 @@ PREFIX (get_by_ref) (caf_token_t token, int image_index,
                           dst->dim[dst_cur_dim]._stride = size;
                         }
                     }
-                  /* Only increase the dim counter, when in an array ref.  */
-                  if (in_array_ref && dst_cur_dim < dst_rank)
+                  /* Only increase the dim counter, when in an array ref, and
+                     MODE != CAF_ARR_REF_SINGLE (delta == 1) see caf_array_ref_t. */
+                  if (in_array_ref && dst_cur_dim < dst_rank && delta != 1)
                     ++dst_cur_dim;
                 }
               size *= (ptrdiff_t)delta;
