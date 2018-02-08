@@ -5376,7 +5376,6 @@ PREFIX (send_by_ref) (caf_token_t token, int image_index,
     bool extent_mismatch = false;
     /* Set when the first non-scalar array reference is encountered.  */
     bool in_array_ref = false;
-    bool array_extent_fixed = false;
     /* Set when remote data is to be accessed through the global dynamic window. */
     bool access_data_through_global_win = false;
     /* Set when the remote descriptor is to accessed through the global window. */
@@ -5576,6 +5575,7 @@ PREFIX (send_by_ref) (caf_token_t token, int image_index,
                     /* Do further checks, when the source is not scalar.  */
                     else if (delta != 1)
                       {
+                        in_array_ref = true;
                         /* When the realloc is required, then no extent may have
                            been set.  */
                         extent_mismatch = GFC_DESCRIPTOR_EXTENT (dst,
@@ -5617,10 +5617,7 @@ PREFIX (send_by_ref) (caf_token_t token, int image_index,
                 size *= (ptrdiff_t)delta;
               }
             if (in_array_ref)
-              {
-                array_extent_fixed = true;
-                in_array_ref = false;
-              }
+              in_array_ref = false;
             break;
           case CAF_REF_STATIC_ARRAY:
             for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
@@ -5703,6 +5700,7 @@ PREFIX (send_by_ref) (caf_token_t token, int image_index,
                     /* Do further checks, when the source is not scalar.  */
                     else if (delta != 1)
                       {
+                        in_array_ref = true;
                         /* When the realloc is required, then no extent may have
                            been set.  */
                         extent_mismatch = GFC_DESCRIPTOR_EXTENT (dst,
@@ -5723,10 +5721,7 @@ PREFIX (send_by_ref) (caf_token_t token, int image_index,
                 size *= (ptrdiff_t)delta;
               }
             if (in_array_ref)
-              {
-                array_extent_fixed = true;
-                in_array_ref = false;
-              }
+              in_array_ref = false;
             break;
           default:
             caf_runtime_error (unknownreftype, stat, NULL, 0);
