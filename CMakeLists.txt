@@ -760,6 +760,8 @@ if(opencoarrays_aware_compiler)
   # Fixed GCC 7 regressions, should run on GCC 6 and 7
   add_caf_test(static_event_post_issue_293 3 static_event_post_issue_293)
 
+  add_caf_test(issue-493-coindex-slice 8 issue-493-coindex-slice) # Contributed by @neok-m4700 in #493
+
   # These co_reduce (#172, fixed by PR #332, addl discussion in PR
   # #331) tests are for bugs not regressions. Should be fixed in all
   # version of GCC, I beleive
