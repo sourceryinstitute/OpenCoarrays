@@ -8,6 +8,22 @@ if (NOT MPI_C_FOUND)
   include_directories(BEFORE ${MPI_C_INCLUDE_PATH} ${MPI_Fortran_INCLUDE_PATH})
 endif()
 
+#----------------------------------
+# Determine if we're using Open MPI
+#----------------------------------
+cmake_host_system_information(RESULT N_CPU QUERY NUMBER_OF_LOGICAL_CORES)
+set(N_CPU ${N_CPU} PARENT_SCOPE)
+cmake_host_system_information(RESULT HOST_NAME QUERY HOSTNAME)
+set(HOSTNAME ${HOSTNAME} PARENT_SCOPE)
+execute_process(COMMAND ${MPIEXEC} --version
+  OUTPUT_VARIABLE mpi_version_out)
+if (mpi_version_out MATCHES "[Oo]pen[ -][Mm][Pp][Ii]")
+  message( STATUS "OpenMPI detected")
+  set ( openmpi true PARENT_SCOPE)
+  # Write out a host file because OMPI's mpiexec is dumb
+  file(APPEND ${CMAKE_BINARY_DIR}/hostfile "${HOST_NAME} slots=${N_CPU}\n")
+endif ()
+
 if("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
   set(gfortran_compiler true)
 elseif("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Cray")
@@ -103,7 +119,7 @@ set(CMAKE_REQUIRED_INCLUDES ${old_cmake_required_includes})
 set(CMAKE_REQUIRED_FLAGS ${old_cmake_required_flags})
 set(CMAKE_REQUIRED_LIBRARIES ${old_cmake_required_libraries})
 
-if(MPI_HAS_FAULT_TOL_EXT)
+if(MPI_HAS_FAULT_TOL_EXT) # AND (NOT openmpi))
   option(CAF_ENABLE_FAILED_IMAGES "Enable failed images support" TRUE)
 else()
   set(CAF_ENABLE_FAILED_IMAGES FALSE CACHE BOOL "Enable failed images support" FORCE)
