@@ -158,7 +158,9 @@ target_link_libraries(caf_mpi_static PRIVATE ${MPI_C_LIBRARIES} ${MPI_Fortran_LI
 
 set(CAF_SO_VERSION 0)
 if(gfortran_compiler)
-  if(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0)
+  if(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 8.0.0)
+    set(CAF_SO_VERSION 3)
+  elseif(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0)
     set(CAF_SO_VERSION 2)
   elseif(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 6.0.0)
     set(CAF_SO_VERSION 1)
