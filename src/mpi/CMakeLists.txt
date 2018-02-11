@@ -158,7 +158,9 @@ target_link_libraries(caf_mpi_static PRIVATE ${MPI_C_LIBRARIES} ${MPI_Fortran_LI
 
 set(CAF_SO_VERSION 0)
 if(gfortran_compiler)
-  if(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0)
+  if(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 8.0.0)
+    set(CAF_SO_VERSION 3)
+  elseif(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0)
     set(CAF_SO_VERSION 2)
   elseif(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 6.0.0)
     set(CAF_SO_VERSION 1)
@@ -208,19 +210,29 @@ install(TARGETS caf_mpi_static EXPORT OpenCoarraysTargets
 # List of caf.in variables needing configuration:
 #
 # @CAF_VERSION@ @opencoarrays_aware_compiler@ @Fortran_COMPILER@ @CAF_MODDIR@
-# @MPI_Fortran_LINK_FLAGS@ @MPI_Fortran_COMPILE_FLAGS@
-# @CAF_LIBS@ @MPI_LIBS@
+# @CAF_MPI_Fortran_LINK_FLAGS@ @CAF_MPI_Fortran_COMPILE_FLAGS@
+# @CAF_LIBS@ @CAF_MPI_LIBS@
 #
 
 set(CAF_VERSION "${full_git_describe}")
 set(Fortran_COMPILER "${CMAKE_Fortran_COMPILER}")
 set(CAF_MODDIR "${CMAKE_INSTALL_INCLUDEDIR}/${mod_dir_tail}")
 set(MOD_DIR_FLAG "${CMAKE_Fortran_MODDIR_FLAG}")
-set(MPI_LIBS "")
+set(CAF_MPI_LIBS "")
 foreach( lib IN LISTS MPI_Fortran_LIBRARIES)
-  set(MPI_LIBS "${MPI_LIBS} \"${lib}\"")
+  set(CAF_MPI_LIBS "${CAF_MPI_LIBS} \"${lib}\"")
 endforeach()
 string(STRIP "${MPI_LIBS}" MPI_LIBS)
+set(CAF_MPI_Fortran_LINK_FLAGS "")
+foreach( lflag IN LISTS MPI_Fortran_LINK_FLAGS)
+  set(CAF_MPI_Fortran_LINK_FLAGS "${CAF_MPI_Fortran_LINK_FLAGS} ${lflag}" )
+endforeach()
+string(STRIP "${CAF_MPI_Fortran_LINK_FLAGS}" CAF_MPI_Fortran_LINK_FLAGS)
+set(CAF_MPI_Fortran_COMPILE_FLAGS "")
+foreach( fcflag IN LISTS MPI_Fortran_COMPILE_FLAGS)
+  set(CAF_MPI_Fortran_COMPILE_FLAGS "${CAF_MPI_Fortran_COMPILE_FLAGS} ${fcflag}" )
+endforeach()
+string(STRIP "${CAF_MPI_Fortran_COMPILE_FLAGS}" CAF_MPI_Fortran_COMPILE_FLAGS)
 set_target_properties(caf_mpi_static
   PROPERTIES OUTPUT_NAME caf_mpi)
 get_target_property(libcaf_static caf_mpi_static OUTPUT_NAME)

@@ -50,8 +50,8 @@ set -o pipefail
 # List of variables needing configuration:
 #
 # CAF_VERSION, opencoarrays_aware_compiler, Fortran_COMPILER, CAF_MODDIR,
-# MPI_Fortran_LINK_FLAGS, MPI_Fortran_COMPILE_FLAGS,
-# CAF_LIBS, MPI_LIBS
+# CAF_MPI_Fortran_LINK_FLAGS, CAF_MPI_Fortran_COMPILE_FLAGS,
+# CAF_LIBS, CAF_MPI_LIBS
 #
 
 caf_version='@CAF_VERSION@' # fetched from `git describe` and/or
@@ -80,15 +80,15 @@ mod_dir_flag="-I"
 # variables expanded from CMake should be appropriately quoted.
 
 # shellcheck disable=SC2054
-mpi_link_flags=(@MPI_Fortran_LINK_FLAGS@) # e.g. `pkg-config
+mpi_link_flags=(@CAF_MPI_Fortran_LINK_FLAGS@) # e.g. `pkg-config
 # --libs-only-other mpich`
 # __*AND*__ `pkg-config
 # --libs-only-L`
-mpi_compile_flags=(@MPI_Fortran_COMPILE_FLAGS@)
+mpi_compile_flags=(@CAF_MPI_Fortran_COMPILE_FLAGS@)
 caf_libs=(@CAF_LIBS@) # e.g. "libcaf_mpi" "libcaf_extensions",
 # preferably full paths, but could be
 # combination of -L... and -lcaf_mpi...
-mpi_libs=(@MPI_LIBS@) # e.g. `pkg-config --libs-only-l` or full paths
+mpi_libs=(@CAF_MPI_LIBS@) # e.g. `pkg-config --libs-only-l` or full paths
 # to MPI libs
 
 #-------------------------

@@ -68,10 +68,12 @@ if [[ ${numproc_flag} == @*@ ]]; then
   numproc_flag='-np'
 fi
 preflags="@MPIEXEC_PREFLAGS@"
+preflags="${preflags//;/ }"
 if [[ "${preflags}" == @*@ ]]; then
   unset preflags
 fi
 postflags="@MPIEXEC_POSTFLAGS@"
+postflags="${postflags//;/ }"
 if [[ "${postflags}" == @*@ ]]; then
   unset postflags
 fi
