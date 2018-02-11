@@ -30,10 +30,10 @@ file(STRINGS ".VERSION" first_line
   LIMIT_COUNT 1
   )
 
-string(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+"
+string(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+(-rc[0-9]+)?"
   OpenCoarraysVersion "${first_line}")
 
-if((NOT (OpenCoarraysVersion MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+")) AND (EXISTS "${CMAKE_SOURCE_DIR}/.git"))
+if((NOT (OpenCoarraysVersion MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+(-rc[0-9]+)?")) AND (EXISTS "${CMAKE_SOURCE_DIR}/.git"))
   message( STATUS "Build from git repository detected")
   find_package(Git)
   if(GIT_FOUND)
@@ -42,7 +42,7 @@ if((NOT (OpenCoarraysVersion MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+")) AND (EXISTS "$
       RESULT_VARIABLE git_status
       OUTPUT_VARIABLE git_output
       OUTPUT_STRIP_TRAILING_WHITESPACE)
-    if((git_status STREQUAL "0") AND (git_output MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+"))
+    if((git_status STREQUAL "0") AND (git_output MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+(-rc[0-9]+)?"))
       set(OpenCoarraysVersion "${git_output}")
     endif()
     execute_process(COMMAND "${GIT_EXECUTABLE}" describe --always
@@ -64,10 +64,10 @@ if((NOT (OpenCoarraysVersion MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+")) AND (EXISTS "$
   endif()
 endif()
 
-if(NOT (OpenCoarraysVersion MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+"))
+if(NOT (OpenCoarraysVersion MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+(-rc[0-9]+)?"))
   message( WARNING "Could not extract version from git, falling back on .VERSION, line 3.")
   file(STRINGS ".VERSION" OpenCoarraysVersion
-  REGEX "[0-9]+\\.[0-9]+\\.[0-9]+"
+  REGEX "[0-9]+\\.[0-9]+\\.[0-9]+(-rc[0-9]+)?"
   )
 endif()
 
@@ -75,7 +75,10 @@ if(NOT full_git_describe)
   set(full_git_describe ${OpenCoarraysVersion})
 endif()
 
-project(opencoarrays VERSION "${OpenCoarraysVersion}" LANGUAGES C Fortran)
+string(REGEX REPLACE "-rc[0-9]+$"
+       ".0" OPENCOARRAYS_CMAKE_PROJECT_VERSION
+       "${OpenCoarraysVersion}")
+project(opencoarrays VERSION "${OPENCOARRAYS_CMAKE_PROJECT_VERSION}" LANGUAGES C Fortran)
 message( STATUS "Building OpenCoarrays version: ${full_git_describe}" )
 set(OpenCoarrays_dist_string "OpenCoarrays-${full_git_describe}")
 
@@ -819,5 +822,7 @@ set(TRAVIS_SCRIPTS
   test-script.InstallScript.sh
   test-script.cmake.sh)
 foreach(SCRIPT ${TRAVIS_SCRIPTS})
-  lint_script("${CMAKE_SOURCE_DIR}/developer-scripts/travis" ${SCRIPT})
+  if(EXISTS "${CMAKE_SOURCE_DIR}/developer-scripts/travis/${SCRIPT}")
+    lint_script("${CMAKE_SOURCE_DIR}/developer-scripts/travis" ${SCRIPT})
+  endif()
 endforeach()
