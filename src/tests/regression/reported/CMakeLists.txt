@@ -5,3 +5,4 @@ caf_compile_executable(source-alloc-sync issue-243-source-allocation-no-sync.f90
 caf_compile_executable(convert-before-put issue-292-convert-type-before-put.f90)
 caf_compile_executable(issue-422-send issue-422-send.F90)
 caf_compile_executable(issue-422-send-get issue-422-send-get.F90)
+caf_compile_executable(issue-488-multi-dim-cobounds issue-488-multi-dim-cobounds.f90)

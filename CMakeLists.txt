@@ -586,18 +586,7 @@ add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure)
 #---------------------------------------------------------------------------------------
 # Define macro for adding CAF tests, and ensuring proper flags are passed to MPI runtime
 #---------------------------------------------------------------------------------------
-
-# Determine if we're using Open MPI
-cmake_host_system_information(RESULT N_CPU QUERY NUMBER_OF_LOGICAL_CORES)
-cmake_host_system_information(RESULT HOST_NAME QUERY HOSTNAME)
-execute_process(COMMAND ${MPIEXEC} --version
-  OUTPUT_VARIABLE mpi_version_out)
-if (mpi_version_out MATCHES "[Oo]pen[ -][Mm][Pp][Ii]")
-  message( STATUS "OpenMPI detected")
-  set ( openmpi true )
-  # Write out a host file because OMPI's mpiexec is dumb
-  file(APPEND ${CMAKE_BINARY_DIR}/hostfile "${HOST_NAME} slots=${N_CPU}\n")
-endif ()
+# Test for OpenMPI moved to src/mpi/CMakeLists.txt and passed back up through set(... PARENT_SCOPE)
 function(add_caf_test name num_caf_img test_target)
   # Function to add MPI tests.
   if(TARGET ${test_target})
@@ -627,7 +616,11 @@ function(add_caf_test name num_caf_img test_target)
     endif()
   endif()
   set(test_parameters -np ${num_caf_img} ${test_parameters})
-  add_test(NAME ${name} COMMAND "bash" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun" ${test_parameters} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${test_target}")
+  if(DEFINED ARGN)
+    add_test(NAME ${name} COMMAND "bash" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun" ${test_parameters} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${test_target}" ${ARGN})
+  else()
+    add_test(NAME ${name} COMMAND "bash" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun" ${test_parameters} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${test_target}")
+  endif()
   set_property(TEST ${name} PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
 endfunction(add_caf_test)
 
@@ -773,6 +766,10 @@ if(opencoarrays_aware_compiler)
   add_caf_test(co_reduce-factorial 4 co_reduce-factorial)
   add_caf_test(co_reduce-factorial-int8 4 co_reduce-factorial-int8)
   add_caf_test(co_reduce-factorial-int64 4 co_reduce-factorial-int64)
+
+  # issues reported by @neok-m4700
+  add_caf_test(issue-488-multi-dim-cobounds-true  8 issue-488-multi-dim-cobounds true)
+  add_caf_test(issue-488-multi-dim-cobounds-false 8 issue-488-multi-dim-cobounds false)
 
   # IMAGE FAIL tests
   if(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0)
