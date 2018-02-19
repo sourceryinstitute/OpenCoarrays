@@ -6921,7 +6921,7 @@ PREFIX (co_broadcast) (gfc_descriptor_t *a, int source_image, int *stat, char *e
           extent = (a->dim[j]._ubound - a->dim[j].lower_bound + 1);
           stride = a->dim[j]._stride;
         }
-      array_offset_sr += (i / extent) * a->dim[rank-1]._stride;
+      array_offset_sr += (i / (extent * stride)) * a->dim[rank-1]._stride;
       void *sr = (void *)((char *) a->base_addr
                           + array_offset_sr*GFC_DESCRIPTOR_SIZE (a));
 
