@@ -36,6 +36,7 @@ program main
 
    if (abs(red1 - nimg * sum1) > epsilon(0.) .or. abs(red2 - nimg * sum2) > epsilon(0.)) then
       write(*,*) 'Test failed!'
+      error stop 5
    else
       write(*,*) 'Test passed.'
    end if
