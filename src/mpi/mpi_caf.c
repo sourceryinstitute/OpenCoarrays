@@ -4627,10 +4627,13 @@ PREFIX (get_by_ref) (caf_token_t token, int image_index,
                         }
                     }
 
-                  /* Only increase the dim counter, when in an array ref, and
-                     MODE != CAF_ARR_REF_SINGLE (delta == 1) see caf_array_ref_t. */
-                  if (in_array_ref && dst_cur_dim < dst_rank && delta != 1)
-                    ++dst_cur_dim;
+                  /* Only increase the dim counter, when in an array ref */
+                  if (in_array_ref && dst_cur_dim < dst_rank)
+                  {
+                    // Mode != CAF_ARR_REF_SINGLE (delta == 1), and no rank reduction
+                    if (!(delta == 1 && dst_rank != GFC_DESCRIPTOR_RANK(src)))
+                      ++dst_cur_dim;
+                  }
                 }
               size *= (ptrdiff_t)delta;
             }
@@ -4776,10 +4779,13 @@ PREFIX (get_by_ref) (caf_token_t token, int image_index,
                           dst->dim[dst_cur_dim]._stride = size;
                         }
                     }
-                  /* Only increase the dim counter, when in an array ref, and
-                     MODE != CAF_ARR_REF_SINGLE (delta == 1) see caf_array_ref_t. */
-                  if (in_array_ref && dst_cur_dim < dst_rank && delta != 1)
-                    ++dst_cur_dim;
+                  /* Only increase the dim counter, when in an array ref */
+                  if (in_array_ref && dst_cur_dim < dst_rank)
+                  {
+                    // Mode != CAF_ARR_REF_SINGLE (delta == 1), and no rank reduction
+                    if (!(delta == 1 && dst_rank != GFC_DESCRIPTOR_RANK(src)))
+                      ++dst_cur_dim;
+                  }
                 }
               size *= (ptrdiff_t)delta;
             }
@@ -5350,7 +5356,7 @@ PREFIX (send_by_ref) (caf_token_t token, int image_index,
                                   "rank out of range.\n";
     const char extentoutofrange[] = "libcaf_mpi::caf_send_by_ref(): "
                                     "extent out of range.\n";
-    const char cannotallocdst[] = "libcaf_mpi::caf_get_by_ref(): "
+    const char cannotallocdst[] = "libcaf_mpi::caf_send_by_ref(): "
                                   "can not allocate %d bytes of memory.\n";
     const char unabletoallocdst[] = "libcaf_mpi::caf_send_by_ref(): "
                                   "unable to allocate memory on remote image.\n";
