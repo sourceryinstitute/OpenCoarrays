@@ -28,7 +28,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 #ifndef LIBCAF_H
 #define LIBCAF_H
 
-#include <stdint.h>	/* For int32_t.  */
 #include <stddef.h>	/* For size_t.  */
 #include <stdbool.h>
 
@@ -213,10 +212,16 @@ typedef struct caf_reference_t {
 #define GFC_CAF_ARG_VALUE  (1<<2)
 #define GFC_CAF_ARG_DESC   (1<<3)
 
+/* The type to use for string lengths.  */
+#ifdef GCC_GE_8
+typedef size_t charlen_t;
+#else
+typedef int charlen_t;
+#endif
+
 /* Common auxiliary functions: caf_auxiliary.c.  */
 
 bool PREFIX (is_contiguous) (gfc_descriptor_t *);
-
 
 /* Header for the specific implementation.  */
 
@@ -228,8 +233,8 @@ int PREFIX (num_images) (int, int);
 
 #ifdef GCC_GE_7
 void PREFIX (register) (size_t, caf_register_t, caf_token_t *,
-						gfc_descriptor_t *, int *, char *, int);
-void PREFIX (deregister) (caf_token_t *, int, int *, char *, int);
+			gfc_descriptor_t *, int *, char *, charlen_t);
+void PREFIX (deregister) (caf_token_t *, int, int *, char *, charlen_t);
 #else
 void * PREFIX (register) (size_t, caf_register_t, caf_token_t *,
 						  int *, char *, int);
@@ -263,22 +268,22 @@ void PREFIX(sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
 int PREFIX(is_present) (caf_token_t, int, caf_reference_t *refs);
 #endif
 
-void PREFIX (co_broadcast) (gfc_descriptor_t *, int, int *, char *, int);
-void PREFIX (co_max) (gfc_descriptor_t *, int, int *, char *, int, int);
-void PREFIX (co_min) (gfc_descriptor_t *, int, int *, char *, int, int);
+void PREFIX (co_broadcast) (gfc_descriptor_t *, int, int *, char *, charlen_t);
+void PREFIX (co_max) (gfc_descriptor_t *, int, int *, char *, int, charlen_t);
+void PREFIX (co_min) (gfc_descriptor_t *, int, int *, char *, int, charlen_t);
 void PREFIX (co_reduce) (gfc_descriptor_t *, void *(*opr) (void *, void *),
-			 int, int, int *, char *, int , int);
-void PREFIX (co_sum) (gfc_descriptor_t *, int, int *, char *, int);
+			 int, int, int *, char *, int , charlen_t);
+void PREFIX (co_sum) (gfc_descriptor_t *, int, int *, char *, charlen_t);
 
-void PREFIX (sync_all) (int *, char *, int);
-void PREFIX (sync_images) (int, int[], int *, char *, int);
-void PREFIX (sync_memory) (int *, char *, int);
+void PREFIX (sync_all) (int *, char *, charlen_t);
+void PREFIX (sync_images) (int, int[], int *, char *, charlen_t);
+void PREFIX (sync_memory) (int *, char *, charlen_t);
 
-void PREFIX (stop_str) (const char *, int32_t) __attribute__ ((noreturn));
-void PREFIX (stop) (int32_t) __attribute__ ((noreturn));
-void PREFIX (error_stop_str) (const char *, int32_t)
+void PREFIX (stop_str) (const char *, charlen_t) __attribute__ ((noreturn));
+void PREFIX (stop) (int) __attribute__ ((noreturn));
+void PREFIX (error_stop_str) (const char *, charlen_t)
      __attribute__ ((noreturn));
-void PREFIX (error_stop) (int32_t) __attribute__ ((noreturn));
+void PREFIX (error_stop) (int) __attribute__ ((noreturn));
 void PREFIX (fail_image) (void) __attribute__ ((noreturn));
 
 void PREFIX (form_team) (int, caf_team_t *, int);
@@ -298,10 +303,10 @@ void PREFIX (atomic_cas) (caf_token_t, size_t, int, void *, void *,
 void PREFIX (atomic_op) (int, caf_token_t, size_t, int, void *, void *,
 			 int *, int, int);
 
-void PREFIX (lock) (caf_token_t, size_t, int, int *, int *, char *, int);
-void PREFIX (unlock) (caf_token_t, size_t, int, int *, char *, int);
-void PREFIX (event_post) (caf_token_t, size_t, int, int *, char *, int);
-void PREFIX (event_wait) (caf_token_t, size_t, int, int *, char *, int);
+void PREFIX (lock) (caf_token_t, size_t, int, int *, int *, char *, charlen_t);
+void PREFIX (unlock) (caf_token_t, size_t, int, int *, char *, charlen_t);
+void PREFIX (event_post) (caf_token_t, size_t, int, int *, char *, charlen_t);
+void PREFIX (event_wait) (caf_token_t, size_t, int, int *, char *, charlen_t);
 void PREFIX (event_query) (caf_token_t, size_t, int, int *, int *);
 
 /* Language extension */

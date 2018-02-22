@@ -42,6 +42,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 #include <alloca.h>        /* Assume functionality provided elsewhere if missing */
 #endif
 #include <unistd.h>
+#include <stdint.h>	/* For int32_t.  */
 #include <mpi.h>
 #include <pthread.h>
 #include <signal.h>        /* For raise */
@@ -146,7 +147,7 @@ typedef MPI_Win *mpi_caf_token_t;
 static void terminate_internal (int stat_code, int exit_code)
             __attribute__ ((noreturn));
 static void sync_images_internal (int count, int images[], int *stat,
-                                  char *errmsg, int errmsg_len, bool internal);
+                                  char *errmsg, size_t errmsg_len, bool internal);
 
 /* Global variables.  */
 static int caf_this_image;
@@ -602,7 +603,7 @@ redo:
 #endif
 
 void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
-		int *acquired_lock, char *errmsg, int errmsg_len)
+		int *acquired_lock, char *errmsg, size_t errmsg_len)
 {
   const char msg[] = "Already locked";
 #if MPI_VERSION >= 3
@@ -683,7 +684,7 @@ stat_error:
 }
 
 void mutex_unlock(MPI_Win win, int image_index, int index, int *stat,
-		  char* errmsg, int errmsg_len)
+		  char* errmsg, size_t errmsg_len)
 {
   const char msg[] = "Variable is not locked";
   if(stat != NULL)
@@ -1051,7 +1052,7 @@ PREFIX (num_images) (int distance __attribute__ ((unused)),
 void
 PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
                    gfc_descriptor_t *desc, int *stat, char *errmsg,
-		   int errmsg_len)
+		   charlen_t errmsg_len)
 {
   /* int ierr; */
   void *mem = NULL;
@@ -1202,10 +1203,10 @@ error:
         *stat = caf_is_finalized ? STAT_STOPPED_IMAGE : 1;
         if (errmsg_len > 0)
           {
-            int len = ((int) strlen (msg) > errmsg_len) ? errmsg_len
-                                                        : (int) strlen (msg);
+            size_t len = (strlen (msg) > (size_t) errmsg_len) ? (size_t) errmsg_len
+                                                        : strlen (msg);
             memcpy (errmsg, msg, len);
-            if (errmsg_len > len)
+            if ((size_t) errmsg_len > len)
               memset (&errmsg[len], ' ', errmsg_len-len);
           }
       }
@@ -1216,7 +1217,7 @@ error:
 #else // GCC_GE_7
 void *
 PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
-                   int *stat, char *errmsg, int errmsg_len)
+                   int *stat, char *errmsg, charlen_t errmsg_len)
 {
   /* int ierr; */
   void *mem;
@@ -1291,8 +1292,8 @@ error:
         *stat = caf_is_finalized ? STAT_STOPPED_IMAGE : 1;
         if (errmsg_len > 0)
           {
-            int len = ((int) strlen (msg) > errmsg_len) ? errmsg_len
-                                                        : (int) strlen (msg);
+            size_t len = (strlen (msg) > (size_t) errmsg_len) ? (size_t) errmsg_len
+                                                        : strlen (msg);
             memcpy (errmsg, msg, len);
             if (errmsg_len > len)
               memset (&errmsg[len], ' ', errmsg_len-len);
@@ -1309,10 +1310,10 @@ error:
 #ifdef GCC_GE_7
 void
 PREFIX (deregister) (caf_token_t *token, int type, int *stat, char *errmsg,
-		     int errmsg_len)
+		     charlen_t errmsg_len)
 #else
 void
-PREFIX (deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len)
+PREFIX (deregister) (caf_token_t *token, int *stat, char *errmsg, charlen_t errmsg_len)
 #endif
 {
   dprint ("%d/%d: deregister(%p)\n", caf_this_image, caf_num_images, *token);
@@ -1327,8 +1328,8 @@ PREFIX (deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len
 
           if (errmsg_len > 0)
             {
-              int len = ((int) sizeof (msg) - 1 > errmsg_len)
-                        ? errmsg_len : (int) sizeof (msg) - 1;
+              size_t len = (sizeof (msg) - 1 > (size_t) errmsg_len)
+		? (size_t) errmsg_len : sizeof (msg) - 1;
               memcpy (errmsg, msg, len);
               if (errmsg_len > len)
                 memset (&errmsg[len], ' ', errmsg_len-len);
@@ -1451,7 +1452,7 @@ PREFIX (deregister) (caf_token_t *token, int *stat, char *errmsg, int errmsg_len
 void
 PREFIX (sync_memory) (int *stat __attribute__ ((unused)),
                       char *errmsg __attribute__ ((unused)),
-                      int errmsg_len __attribute__ ((unused)))
+                      charlen_t errmsg_len __attribute__ ((unused)))
 {
 #if defined(NONBLOCKING_PUT) && !defined(CAF_MPI_LOCK_UNLOCK)
   explicit_flush ();
@@ -1460,7 +1461,7 @@ PREFIX (sync_memory) (int *stat __attribute__ ((unused)),
 
 
 void
-PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
+PREFIX (sync_all) (int *stat, char *errmsg, charlen_t errmsg_len)
 {
   int ierr = 0;
 
@@ -1505,8 +1506,8 @@ PREFIX (sync_all) (int *stat, char *errmsg, int errmsg_len)
 
       if (errmsg_len > 0)
         {
-          int len = ((int) strlen (msg) > errmsg_len) ? errmsg_len
-                                                      : (int) strlen (msg);
+          size_t len = (strlen (msg) > (size_t) errmsg_len) ? (size_t) errmsg_len
+	    : strlen (msg);
           memcpy (errmsg, msg, len);
           if (errmsg_len > len)
             memset (&errmsg[len], ' ', errmsg_len-len);
@@ -6420,14 +6421,14 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
 
 void
 PREFIX (sync_images) (int count, int images[], int *stat, char *errmsg,
-                     int errmsg_len)
+		      charlen_t errmsg_len)
 {
   sync_images_internal (count, images, stat, errmsg, errmsg_len, false);
 }
 
 static void
 sync_images_internal (int count, int images[], int *stat, char *errmsg,
-                      int errmsg_len, bool internal)
+                      size_t errmsg_len, bool internal)
 {
   int ierr = 0, i = 0, j = 0, int_zero = 0, done_count = 0;
   MPI_Status s;
@@ -6580,8 +6581,8 @@ sync_images_err_chk:
 
       if (errmsg_len > 0)
         {
-          int len = ((int) strlen (msg) > errmsg_len) ? errmsg_len
-                                                      : (int) strlen (msg);
+          size_t len = (strlen (msg) > errmsg_len) ? errmsg_len
+	    : strlen (msg);
           memcpy (errmsg, msg, len);
           if (errmsg_len > len)
             memset (&errmsg[len], ' ', errmsg_len-len);
@@ -6776,7 +6777,7 @@ get_MPI_datatype (gfc_descriptor_t *desc, int char_len)
 
 static void
 internal_co_reduce (MPI_Op op, gfc_descriptor_t *source, int result_image, int *stat,
-	     char *errmsg, int src_len, int errmsg_len)
+	     char *errmsg, int src_len, size_t errmsg_len)
 {
   size_t i, size;
   int j, ierr;
@@ -6869,7 +6870,7 @@ error:
 
 void
 PREFIX (co_broadcast) (gfc_descriptor_t *a, int source_image, int *stat, char *errmsg,
-                       int errmsg_len)
+                       charlen_t errmsg_len)
 {
   size_t i, size;
   int j, ierr;
@@ -6969,7 +6970,7 @@ error:
  * for use in MPI_*Reduce functions. */
 void
 PREFIX (co_reduce) (gfc_descriptor_t *a, void *(*opr) (void *, void *), int opr_flags,
-		    int result_image, int *stat, char *errmsg, int a_len, int errmsg_len)
+		    int result_image, int *stat, char *errmsg, int a_len, charlen_t errmsg_len)
 {
   MPI_Op op;
   /* Integers and logicals can be treated the same. */
@@ -7039,7 +7040,7 @@ PREFIX (co_reduce) (gfc_descriptor_t *a, void *(*opr) (void *, void *), int opr_
 
 void
 PREFIX (co_sum) (gfc_descriptor_t *a, int result_image, int *stat, char *errmsg,
-                 int errmsg_len)
+                 charlen_t errmsg_len)
 {
   internal_co_reduce (MPI_SUM, a, result_image, stat, errmsg, 0, errmsg_len);
 }
@@ -7047,7 +7048,7 @@ PREFIX (co_sum) (gfc_descriptor_t *a, int result_image, int *stat, char *errmsg,
 
 void
 PREFIX (co_min) (gfc_descriptor_t *a, int result_image, int *stat, char *errmsg,
-                 int src_len, int errmsg_len)
+                 int src_len, charlen_t errmsg_len)
 {
   internal_co_reduce (MPI_MIN, a, result_image, stat, errmsg, src_len, errmsg_len);
 }
@@ -7055,7 +7056,7 @@ PREFIX (co_min) (gfc_descriptor_t *a, int result_image, int *stat, char *errmsg,
 
 void
 PREFIX (co_max) (gfc_descriptor_t *a, int result_image, int *stat,
-                 char *errmsg, int src_len, int errmsg_len)
+                 char *errmsg, int src_len, charlen_t errmsg_len)
 {
   internal_co_reduce (MPI_MAX, a, result_image, stat, errmsg, src_len, errmsg_len);
 }
@@ -7066,7 +7067,7 @@ PREFIX (co_max) (gfc_descriptor_t *a, int result_image, int *stat,
 void
 PREFIX (lock) (caf_token_t token, size_t index, int image_index,
                int *acquired_lock, int *stat, char *errmsg,
-               int errmsg_len)
+               charlen_t errmsg_len)
 {
   int dest_img;
   MPI_Win *p = TOKEN(token);
@@ -7082,7 +7083,7 @@ PREFIX (lock) (caf_token_t token, size_t index, int image_index,
 
 void
 PREFIX (unlock) (caf_token_t token, size_t index, int image_index,
-                 int *stat, char *errmsg, int errmsg_len)
+                 int *stat, char *errmsg, charlen_t errmsg_len)
 {
   int dest_img;
   MPI_Win *p = TOKEN(token);
@@ -7266,7 +7267,7 @@ PREFIX (atomic_op) (int op, caf_token_t token ,
 void
 PREFIX (event_post) (caf_token_t token, size_t index,
 		     int image_index, int *stat,
-		     char *errmsg, int errmsg_len)
+		     char *errmsg, charlen_t errmsg_len)
 {
   int image, value = 1, ierr = 0,flag;
   MPI_Win *p = TOKEN(token);
@@ -7309,7 +7310,7 @@ PREFIX (event_post) (caf_token_t token, size_t index,
 void
 PREFIX (event_wait) (caf_token_t token, size_t index,
 		     int until_count, int *stat,
-		     char *errmsg, int errmsg_len)
+		     char *errmsg, charlen_t errmsg_len)
 {
   int ierr = 0, count = 0, i, image = caf_this_image - 1;
   int *var = NULL, flag, old = 0;
@@ -7413,7 +7414,7 @@ terminate_internal (int stat_code, int exit_code)
 /* STOP function for integer arguments.  */
 
 void
-PREFIX (stop_numeric) (int32_t stop_code)
+PREFIX (stop_numeric) (int stop_code)
 {
   fprintf (stderr, "STOP %d\n", stop_code);
 
@@ -7426,7 +7427,7 @@ PREFIX (stop_numeric) (int32_t stop_code)
 /* STOP function for string arguments.  */
 
 void
-PREFIX (stop_str) (const char *string, int32_t len)
+PREFIX (stop_str) (const char *string, charlen_t len)
 {
   fputs ("STOP ", stderr);
   while (len--)
@@ -7441,7 +7442,7 @@ PREFIX (stop_str) (const char *string, int32_t len)
 /* ERROR STOP function for string arguments.  */
 
 void
-PREFIX (error_stop_str) (const char *string, int32_t len)
+PREFIX (error_stop_str) (const char *string, charlen_t len)
 {
   fputs ("ERROR STOP ", stderr);
   while (len--)
@@ -7455,7 +7456,7 @@ PREFIX (error_stop_str) (const char *string, int32_t len)
 /* ERROR STOP function for numerical arguments.  */
 
 void
-PREFIX (error_stop) (int32_t error)
+PREFIX (error_stop) (int error)
 {
   fprintf (stderr, "ERROR STOP %d\n", error);
 
