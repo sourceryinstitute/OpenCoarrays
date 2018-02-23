@@ -1,6 +1,6 @@
 ! BSD 3-Clause License
 !
-! Copyright (c) 2016, Sourcery Institute
+! Copyright (c) 2018, Sourcery Institute
 ! All rights reserved.
 !
 ! Redistribution and use in source and binary forms, with or without
@@ -83,6 +83,7 @@ contains
    end function
 
   subroutine mpi_matches_caf(comm)
+    use mpi
     use iso_c_binding, only : c_int
     integer(c_int), intent(in) :: comm
       !! MPI communicator
