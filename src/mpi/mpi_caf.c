@@ -148,6 +148,7 @@ static void terminate_internal (int stat_code, int exit_code)
             __attribute__ ((noreturn));
 static void sync_images_internal (int count, int images[], int *stat,
                                   char *errmsg, size_t errmsg_len, bool internal);
+static void error_stop_str (const char *string, size_t len, bool quiet) __attribute__((noreturn));
 
 /* Global variables.  */
 static int caf_this_image;
@@ -2699,7 +2700,7 @@ PREFIX (sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
           char error_str[error_len];
           strcpy (error_str, "MPI-error: ");
           MPI_Error_string (mpi_error, &error_str[11], &error_len);
-          PREFIX (error_stop_str) (error_str, error_len + 11);
+          error_stop_str (error_str, error_len + 11, false);
         }
     }
 }
@@ -3269,7 +3270,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
           char error_str[error_len];
           strcpy (error_str, "MPI-error: ");
           MPI_Error_string (mpi_error, &error_str[11], &error_len);
-          PREFIX (error_stop_str) (error_str, error_len + 11);
+          error_stop_str (error_str, error_len + 11, false);
         }
     }
 }
@@ -3779,7 +3780,7 @@ PREFIX (get) (caf_token_t token, size_t offset, int image_index,
           char error_str[error_len + 11];
           strcpy (error_str, "MPI-error: ");
           MPI_Error_string (mpi_error, &error_str[11], &error_len);
-          PREFIX (error_stop_str) (error_str, error_len + 11);
+          error_stop_str (error_str, error_len + 11, false);
         }
     }
 }
@@ -7411,12 +7412,21 @@ terminate_internal (int stat_code, int exit_code)
 }
 
 
+#ifdef GCC_GE_8
+#undef QUIETARG
+#define QUIETARG , bool quiet
+#endif
+
 /* STOP function for integer arguments.  */
 
 void
-PREFIX (stop_numeric) (int stop_code)
+PREFIX (stop_numeric) (int stop_code QUIETARG)
 {
-  fprintf (stderr, "STOP %d\n", stop_code);
+#ifndef GCC_GE_8
+  bool quiet = false;
+#endif
+  if (!quiet)
+    fprintf (stderr, "STOP %d\n", stop_code);
 
   /* Stopping includes taking down the runtime regularly and returning the
    * stop_code. */
@@ -7427,13 +7437,18 @@ PREFIX (stop_numeric) (int stop_code)
 /* STOP function for string arguments.  */
 
 void
-PREFIX (stop_str) (const char *string, charlen_t len)
+PREFIX (stop_str) (const char *string, charlen_t len QUIETARG)
 {
-  fputs ("STOP ", stderr);
-  while (len--)
-    fputc (*(string++), stderr);
-  fputs ("\n", stderr);
-
+#ifndef GCC_GE_8
+  bool quiet = false;
+#endif
+  if (!quiet)
+    {
+      fputs ("STOP ", stderr);
+      while (len--)
+	fputc (*(string++), stderr);
+      fputs ("\n", stderr);
+    }
   /* Stopping includes taking down the runtime regularly. */
   terminate_internal (STAT_STOPPED_IMAGE, 0);
 }
@@ -7441,24 +7456,40 @@ PREFIX (stop_str) (const char *string, charlen_t len)
 
 /* ERROR STOP function for string arguments.  */
 
-void
-PREFIX (error_stop_str) (const char *string, charlen_t len)
+static void
+error_stop_str (const char *string, size_t len, bool quiet)
 {
-  fputs ("ERROR STOP ", stderr);
-  while (len--)
-    fputc (*(string++), stderr);
-  fputs ("\n", stderr);
-
+  if (!quiet)
+    {
+      fputs ("ERROR STOP ", stderr);
+      while (len--)
+	fputc (*(string++), stderr);
+      fputs ("\n", stderr);
+    }
   terminate_internal (STAT_STOPPED_IMAGE, 1);
+}
+
+
+void
+PREFIX (error_stop_str) (const char *string, charlen_t len QUIETARG)
+{
+#ifndef GCC_GE_8
+  bool quiet = false;
+#endif
+  error_stop_str (string, len, quiet);
 }
 
 
 /* ERROR STOP function for numerical arguments.  */
 
 void
-PREFIX (error_stop) (int error)
+PREFIX (error_stop) (int error QUIETARG)
 {
-  fprintf (stderr, "ERROR STOP %d\n", error);
+#ifndef GCC_GE_8
+  bool quiet = false;
+#endif
+  if (!quiet)
+    fprintf (stderr, "ERROR STOP %d\n", error);
 
   terminate_internal (STAT_STOPPED_IMAGE, error);
 }

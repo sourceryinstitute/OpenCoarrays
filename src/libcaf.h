@@ -215,8 +215,10 @@ typedef struct caf_reference_t {
 /* The type to use for string lengths.  */
 #ifdef GCC_GE_8
 typedef size_t charlen_t;
+#define QUIETARG , bool
 #else
 typedef int charlen_t;
+#define QUIETARG
 #endif
 
 /* Common auxiliary functions: caf_auxiliary.c.  */
@@ -279,11 +281,12 @@ void PREFIX (sync_all) (int *, char *, charlen_t);
 void PREFIX (sync_images) (int, int[], int *, char *, charlen_t);
 void PREFIX (sync_memory) (int *, char *, charlen_t);
 
-void PREFIX (stop_str) (const char *, charlen_t) __attribute__ ((noreturn));
-void PREFIX (stop) (int) __attribute__ ((noreturn));
-void PREFIX (error_stop_str) (const char *, charlen_t)
+void PREFIX (stop_str) (const char *, charlen_t QUIETARG) __attribute__ ((noreturn));
+void PREFIX (stop) (int QUIETARG) __attribute__ ((noreturn));
+void PREFIX (error_stop_str) (const char *, charlen_t QUIETARG)
      __attribute__ ((noreturn));
-void PREFIX (error_stop) (int) __attribute__ ((noreturn));
+void PREFIX (error_stop) (int QUIETARG) __attribute__ ((noreturn));
+
 void PREFIX (fail_image) (void) __attribute__ ((noreturn));
 
 void PREFIX (form_team) (int, caf_team_t *, int);
