@@ -42,7 +42,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 #include <alloca.h>        /* Assume functionality provided elsewhere if missing */
 #endif
 #include <unistd.h>
-#include <stdint.h>	/* For int32_t.  */
+#include <stdint.h>        /* For int32_t.  */
 #include <mpi.h>
 #include <pthread.h>
 #include <signal.h>        /* For raise */
@@ -470,13 +470,13 @@ failed_stopped_errorhandler_function (MPI_Comm* pcomm, int* perr, ...)
 
   MPI_Comm_group (comm, &comm_world_group);
   ranks_of_failed_in_comm_world = (int *) alloca (sizeof (int)
-						  * num_failed_in_group);
+                                                  * num_failed_in_group);
   ranks_failed = (int *) alloca (sizeof (int) * num_failed_in_group);
   for (i = 0; i < num_failed_in_group; ++i)
     ranks_failed[i] = i;
   /* Now translate the ranks of the failed images into communicator world. */
   MPI_Group_translate_ranks (failed_group, num_failed_in_group, ranks_failed,
-			     comm_world_group, ranks_of_failed_in_comm_world);
+                             comm_world_group, ranks_of_failed_in_comm_world);
 
   num_images_failed += num_failed_in_group;
 
@@ -550,7 +550,7 @@ redo:
   MPI_Comm_rank (*pcomm, &crank);
 
   dprint ("%d/%d: %s: After getting ranks, ns = %d, srank = %d, crank = %d.\n",
-	  caf_this_image, caf_num_images, __FUNCTION__, ns, srank, crank);
+          caf_this_image, caf_num_images, __FUNCTION__, ns, srank, crank);
 
   /* Split does the magic: removing spare processes and reordering ranks
    * so that all surviving processes remain at their former place */
@@ -578,7 +578,7 @@ redo:
     int cmpres;
     ierr = MPI_Comm_compare (*pcomm, CAF_COMM_WORLD, &cmpres);
     dprint ("%d/%d: %s: Comm_compare(*comm, CAF_COMM_WORLD, res = %d) = %d.\n", caf_this_image,
-	   caf_num_images, __FUNCTION__, cmpres, ierr);
+           caf_num_images, __FUNCTION__, cmpres, ierr);
     ierr = MPI_Comm_compare (*pcomm, alive_comm, &cmpres);
     dprint ("%d/%d: %s: Comm_compare(*comm, alive_comm, res = %d) = %d.\n", caf_this_image,
            caf_num_images, __FUNCTION__, cmpres, ierr);
@@ -604,7 +604,7 @@ redo:
 #endif
 
 void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
-		int *acquired_lock, char *errmsg, size_t errmsg_len)
+                int *acquired_lock, char *errmsg, size_t errmsg_len)
 {
   const char msg[] = "Already locked";
 #if MPI_VERSION >= 3
@@ -630,7 +630,7 @@ void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
       if(value == 0)
         *acquired_lock = 1;
       else
-	*acquired_lock = 0;
+        *acquired_lock = 0;
       return;
     }
 
@@ -685,7 +685,7 @@ stat_error:
 }
 
 void mutex_unlock(MPI_Win win, int image_index, int index, int *stat,
-		  char* errmsg, size_t errmsg_len)
+                  char* errmsg, size_t errmsg_len)
 {
   const char msg[] = "Variable is not locked";
   if(stat != NULL)
@@ -761,12 +761,12 @@ PREFIX (init) (int *argc, char ***argv)
         caf_runtime_error ("MPI_THREAD_MULTIPLE is not supported: %d", prov_lev);
 #else
       if (is_init) {
-	caf_owns_mpi = false;
+        caf_owns_mpi = false;
       } else {
-	MPI_Init_thread (argc, argv, prior_thread_level, &prov_lev);
-	caf_owns_mpi = true;
-	if (caf_this_image == 0 && MPI_THREAD_FUNNELED != prov_lev)
-	  caf_runtime_error ("MPI_THREAD_FUNNELED is not supported: %d", prov_lev);
+        MPI_Init_thread (argc, argv, prior_thread_level, &prov_lev);
+        caf_owns_mpi = true;
+        if (caf_this_image == 0 && MPI_THREAD_FUNNELED != prov_lev)
+          caf_runtime_error ("MPI_THREAD_FUNNELED is not supported: %d", prov_lev);
       }
 #endif
       if (unlikely ((ierr != MPI_SUCCESS)))
@@ -861,7 +861,7 @@ void
 finalize_internal (int status_code)
 {
   dprint ("%d/%d: %s(status_code = %d)\n",
-	  caf_this_image, caf_num_images, __FUNCTION__, status_code);
+          caf_this_image, caf_num_images, __FUNCTION__, status_code);
 
 #ifdef WITH_FAILED_IMAGES
   no_stopped_images_check_in_errhandler = true;
@@ -1053,7 +1053,7 @@ PREFIX (num_images) (int distance __attribute__ ((unused)),
 void
 PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
                    gfc_descriptor_t *desc, int *stat, char *errmsg,
-		   charlen_t errmsg_len)
+                   charlen_t errmsg_len)
 {
   /* int ierr; */
   void *mem = NULL;
@@ -1311,7 +1311,7 @@ error:
 #ifdef GCC_GE_7
 void
 PREFIX (deregister) (caf_token_t *token, int type, int *stat, char *errmsg,
-		     charlen_t errmsg_len)
+                     charlen_t errmsg_len)
 #else
 void
 PREFIX (deregister) (caf_token_t *token, int *stat, char *errmsg, charlen_t errmsg_len)
@@ -1330,7 +1330,7 @@ PREFIX (deregister) (caf_token_t *token, int *stat, char *errmsg, charlen_t errm
           if (errmsg_len > 0)
             {
               size_t len = (sizeof (msg) - 1 > (size_t) errmsg_len)
-		? (size_t) errmsg_len : sizeof (msg) - 1;
+                ? (size_t) errmsg_len : sizeof (msg) - 1;
               memcpy (errmsg, msg, len);
               if (errmsg_len > len)
                 memset (&errmsg[len], ' ', errmsg_len-len);
@@ -1508,7 +1508,7 @@ PREFIX (sync_all) (int *stat, char *errmsg, charlen_t errmsg_len)
       if (errmsg_len > 0)
         {
           size_t len = (strlen (msg) > (size_t) errmsg_len) ? (size_t) errmsg_len
-	    : strlen (msg);
+            : strlen (msg);
           memcpy (errmsg, msg, len);
           if (errmsg_len > len)
             memset (&errmsg[len], ' ', errmsg_len-len);
@@ -1524,7 +1524,7 @@ PREFIX (sync_all) (int *stat, char *errmsg, charlen_t errmsg_len)
 */
 static void
 assign_char4_from_char1 (size_t dst_size, size_t src_size, uint32_t *dst,
-			 unsigned char *src)
+                         unsigned char *src)
 {
   size_t i, n;
   n = dst_size > src_size ? src_size : dst_size;
@@ -1540,7 +1540,7 @@ assign_char4_from_char1 (size_t dst_size, size_t src_size, uint32_t *dst,
 */
 static void
 assign_char1_from_char4 (size_t dst_size, size_t src_size, unsigned char *dst,
-			 uint32_t *src)
+                         uint32_t *src)
 {
   size_t i, n;
   n = dst_size > src_size ? src_size : dst_size;
@@ -1555,7 +1555,7 @@ assign_char1_from_char4 (size_t dst_size, size_t src_size, unsigned char *dst,
 */
 static void
 convert_type (void *dst, int dst_type, int dst_kind, void *src, int src_type,
-	      int src_kind, int *stat)
+              int src_kind, int *stat)
 {
 #ifdef HAVE_GFC_INTEGER_16
   typedef __int128 int128t;
@@ -1586,51 +1586,51 @@ convert_type (void *dst, int dst_type, int dst_kind, void *src, int src_type,
     {
     case BT_INTEGER:
       if (src_kind == 1)
-	int_val = *(int8_t*) src;
+        int_val = *(int8_t*) src;
       else if (src_kind == 2)
-	int_val = *(int16_t*) src;
+        int_val = *(int16_t*) src;
       else if (src_kind == 4)
-	int_val = *(int32_t*) src;
+        int_val = *(int32_t*) src;
       else if (src_kind == 8)
-	int_val = *(int64_t*) src;
+        int_val = *(int64_t*) src;
 #ifdef HAVE_GFC_INTEGER_16
       else if (src_kind == 16)
-	int_val = *(int128t*) src;
+        int_val = *(int128t*) src;
 #endif
       else
-	goto error;
+        goto error;
       break;
     case BT_REAL:
       if (src_kind == 4)
-	real_val = *(float*) src;
+        real_val = *(float*) src;
       else if (src_kind == 8)
-	real_val = *(double*) src;
+        real_val = *(double*) src;
 #ifdef HAVE_GFC_REAL_10
       else if (src_kind == 10)
-	real_val = *(long double*) src;
+        real_val = *(long double*) src;
 #endif
 #ifdef HAVE_GFC_REAL_16
       else if (src_kind == 16)
-	real_val = *(real128t*) src;
+        real_val = *(real128t*) src;
 #endif
       else
-	goto error;
+        goto error;
       break;
     case BT_COMPLEX:
       if (src_kind == 4)
-	cmpx_val = *(_Complex float*) src;
+        cmpx_val = *(_Complex float*) src;
       else if (src_kind == 8)
-	cmpx_val = *(_Complex double*) src;
+        cmpx_val = *(_Complex double*) src;
 #ifdef HAVE_GFC_REAL_10
       else if (src_kind == 10)
-	cmpx_val = *(_Complex long double*) src;
+        cmpx_val = *(_Complex long double*) src;
 #endif
 #ifdef HAVE_GFC_REAL_16
       else if (src_kind == 16)
-	cmpx_val = *(complex128t*) src;
+        cmpx_val = *(complex128t*) src;
 #endif
       else
-	goto error;
+        goto error;
       break;
     default:
       goto error;
@@ -1640,166 +1640,166 @@ convert_type (void *dst, int dst_type, int dst_kind, void *src, int src_type,
     {
     case BT_INTEGER:
       if (src_type == BT_INTEGER)
-	{
-	  if (dst_kind == 1)
-	    *(int8_t*) dst = (int8_t) int_val;
-	  else if (dst_kind == 2)
-	    *(int16_t*) dst = (int16_t) int_val;
-	  else if (dst_kind == 4)
-	    *(int32_t*) dst = (int32_t) int_val;
-	  else if (dst_kind == 8)
-	    *(int64_t*) dst = (int64_t) int_val;
+        {
+          if (dst_kind == 1)
+            *(int8_t*) dst = (int8_t) int_val;
+          else if (dst_kind == 2)
+            *(int16_t*) dst = (int16_t) int_val;
+          else if (dst_kind == 4)
+            *(int32_t*) dst = (int32_t) int_val;
+          else if (dst_kind == 8)
+            *(int64_t*) dst = (int64_t) int_val;
 #ifdef HAVE_GFC_INTEGER_16
-	  else if (dst_kind == 16)
-	    *(int128t*) dst = (int128t) int_val;
+          else if (dst_kind == 16)
+            *(int128t*) dst = (int128t) int_val;
 #endif
-	  else
-	    goto error;
-	}
+          else
+            goto error;
+        }
       else if (src_type == BT_REAL)
-	{
-	  if (dst_kind == 1)
-	    *(int8_t*) dst = (int8_t) real_val;
-	  else if (dst_kind == 2)
-	    *(int16_t*) dst = (int16_t) real_val;
-	  else if (dst_kind == 4)
-	    *(int32_t*) dst = (int32_t) real_val;
-	  else if (dst_kind == 8)
-	    *(int64_t*) dst = (int64_t) real_val;
+        {
+          if (dst_kind == 1)
+            *(int8_t*) dst = (int8_t) real_val;
+          else if (dst_kind == 2)
+            *(int16_t*) dst = (int16_t) real_val;
+          else if (dst_kind == 4)
+            *(int32_t*) dst = (int32_t) real_val;
+          else if (dst_kind == 8)
+            *(int64_t*) dst = (int64_t) real_val;
 #ifdef HAVE_GFC_INTEGER_16
-	  else if (dst_kind == 16)
-	    *(int128t*) dst = (int128t) real_val;
+          else if (dst_kind == 16)
+            *(int128t*) dst = (int128t) real_val;
 #endif
-	  else
-	    goto error;
-	}
+          else
+            goto error;
+        }
       else if (src_type == BT_COMPLEX)
-	{
-	  if (dst_kind == 1)
-	    *(int8_t*) dst = (int8_t) cmpx_val;
-	  else if (dst_kind == 2)
-	    *(int16_t*) dst = (int16_t) cmpx_val;
-	  else if (dst_kind == 4)
-	    *(int32_t*) dst = (int32_t) cmpx_val;
-	  else if (dst_kind == 8)
-	    *(int64_t*) dst = (int64_t) cmpx_val;
+        {
+          if (dst_kind == 1)
+            *(int8_t*) dst = (int8_t) cmpx_val;
+          else if (dst_kind == 2)
+            *(int16_t*) dst = (int16_t) cmpx_val;
+          else if (dst_kind == 4)
+            *(int32_t*) dst = (int32_t) cmpx_val;
+          else if (dst_kind == 8)
+            *(int64_t*) dst = (int64_t) cmpx_val;
 #ifdef HAVE_GFC_INTEGER_16
-	  else if (dst_kind == 16)
-	    *(int128t*) dst = (int128t) cmpx_val;
+          else if (dst_kind == 16)
+            *(int128t*) dst = (int128t) cmpx_val;
 #endif
-	  else
-	    goto error;
-	}
+          else
+            goto error;
+        }
       else
-	goto error;
+        goto error;
       return;
     case BT_REAL:
       if (src_type == BT_INTEGER)
-	{
-	  if (dst_kind == 4)
-	    *(float*) dst = (float) int_val;
-	  else if (dst_kind == 8)
-	    *(double*) dst = (double) int_val;
+        {
+          if (dst_kind == 4)
+            *(float*) dst = (float) int_val;
+          else if (dst_kind == 8)
+            *(double*) dst = (double) int_val;
 #ifdef HAVE_GFC_REAL_10
-	  else if (dst_kind == 10)
-	    *(long double*) dst = (long double) int_val;
+          else if (dst_kind == 10)
+            *(long double*) dst = (long double) int_val;
 #endif
 #ifdef HAVE_GFC_REAL_16
-	  else if (dst_kind == 16)
-	    *(real128t*) dst = (real128t) int_val;
+          else if (dst_kind == 16)
+            *(real128t*) dst = (real128t) int_val;
 #endif
-	  else
-	    goto error;
-	}
+          else
+            goto error;
+        }
       else if (src_type == BT_REAL)
-	{
-	  if (dst_kind == 4)
-	    *(float*) dst = (float) real_val;
-	  else if (dst_kind == 8)
-	    *(double*) dst = (double) real_val;
+        {
+          if (dst_kind == 4)
+            *(float*) dst = (float) real_val;
+          else if (dst_kind == 8)
+            *(double*) dst = (double) real_val;
 #ifdef HAVE_GFC_REAL_10
-	  else if (dst_kind == 10)
-	    *(long double*) dst = (long double) real_val;
+          else if (dst_kind == 10)
+            *(long double*) dst = (long double) real_val;
 #endif
 #ifdef HAVE_GFC_REAL_16
-	  else if (dst_kind == 16)
-	    *(real128t*) dst = (real128t) real_val;
+          else if (dst_kind == 16)
+            *(real128t*) dst = (real128t) real_val;
 #endif
-	  else
-	    goto error;
-	}
+          else
+            goto error;
+        }
       else if (src_type == BT_COMPLEX)
-	{
-	  if (dst_kind == 4)
-	    *(float*) dst = (float) cmpx_val;
-	  else if (dst_kind == 8)
-	    *(double*) dst = (double) cmpx_val;
+        {
+          if (dst_kind == 4)
+            *(float*) dst = (float) cmpx_val;
+          else if (dst_kind == 8)
+            *(double*) dst = (double) cmpx_val;
 #ifdef HAVE_GFC_REAL_10
-	  else if (dst_kind == 10)
-	    *(long double*) dst = (long double) cmpx_val;
+          else if (dst_kind == 10)
+            *(long double*) dst = (long double) cmpx_val;
 #endif
 #ifdef HAVE_GFC_REAL_16
-	  else if (dst_kind == 16)
-	    *(real128t*) dst = (real128t) cmpx_val;
+          else if (dst_kind == 16)
+            *(real128t*) dst = (real128t) cmpx_val;
 #endif
-	  else
-	    goto error;
-	}
+          else
+            goto error;
+        }
       return;
     case BT_COMPLEX:
       if (src_type == BT_INTEGER)
-	{
-	  if (dst_kind == 4)
-	    *(_Complex float*) dst = (_Complex float) int_val;
-	  else if (dst_kind == 8)
-	    *(_Complex double*) dst = (_Complex double) int_val;
+        {
+          if (dst_kind == 4)
+            *(_Complex float*) dst = (_Complex float) int_val;
+          else if (dst_kind == 8)
+            *(_Complex double*) dst = (_Complex double) int_val;
 #ifdef HAVE_GFC_REAL_10
-	  else if (dst_kind == 10)
-	    *(_Complex long double*) dst = (_Complex long double) int_val;
+          else if (dst_kind == 10)
+            *(_Complex long double*) dst = (_Complex long double) int_val;
 #endif
 #ifdef HAVE_GFC_REAL_16
-	  else if (dst_kind == 16)
-	    *(complex128t*) dst = (complex128t) int_val;
+          else if (dst_kind == 16)
+            *(complex128t*) dst = (complex128t) int_val;
 #endif
-	  else
-	    goto error;
-	}
+          else
+            goto error;
+        }
       else if (src_type == BT_REAL)
-	{
-	  if (dst_kind == 4)
-	    *(_Complex float*) dst = (_Complex float) real_val;
-	  else if (dst_kind == 8)
-	    *(_Complex double*) dst = (_Complex double) real_val;
+        {
+          if (dst_kind == 4)
+            *(_Complex float*) dst = (_Complex float) real_val;
+          else if (dst_kind == 8)
+            *(_Complex double*) dst = (_Complex double) real_val;
 #ifdef HAVE_GFC_REAL_10
-	  else if (dst_kind == 10)
-	    *(_Complex long double*) dst = (_Complex long double) real_val;
+          else if (dst_kind == 10)
+            *(_Complex long double*) dst = (_Complex long double) real_val;
 #endif
 #ifdef HAVE_GFC_REAL_16
-	  else if (dst_kind == 16)
-	    *(complex128t*) dst = (complex128t) real_val;
+          else if (dst_kind == 16)
+            *(complex128t*) dst = (complex128t) real_val;
 #endif
-	  else
-	    goto error;
-	}
+          else
+            goto error;
+        }
       else if (src_type == BT_COMPLEX)
-	{
-	  if (dst_kind == 4)
-	    *(_Complex float*) dst = (_Complex float) cmpx_val;
-	  else if (dst_kind == 8)
-	    *(_Complex double*) dst = (_Complex double) cmpx_val;
+        {
+          if (dst_kind == 4)
+            *(_Complex float*) dst = (_Complex float) cmpx_val;
+          else if (dst_kind == 8)
+            *(_Complex double*) dst = (_Complex double) cmpx_val;
 #ifdef HAVE_GFC_REAL_10
-	  else if (dst_kind == 10)
-	    *(_Complex long double*) dst = (_Complex long double) cmpx_val;
+          else if (dst_kind == 10)
+            *(_Complex long double*) dst = (_Complex long double) cmpx_val;
 #endif
 #ifdef HAVE_GFC_REAL_16
-	  else if (dst_kind == 16)
-	    *(complex128t*) dst = (complex128t) cmpx_val;
+          else if (dst_kind == 16)
+            *(complex128t*) dst = (complex128t) cmpx_val;
 #endif
-	  else
-	    goto error;
-	}
+          else
+            goto error;
+        }
       else
-	goto error;
+        goto error;
       return;
     default:
       goto error;
@@ -1807,7 +1807,7 @@ convert_type (void *dst, int dst_type, int dst_kind, void *src, int src_type,
 
 error:
   fprintf (stderr, "libcaf_mpi RUNTIME ERROR: Cannot convert type %d kind "
-	   "%d to type %d kind %d\n", src_type, src_kind, dst_type, dst_kind);
+           "%d to type %d kind %d\n", src_type, src_kind, dst_type, dst_kind);
   if (stat)
     *stat = 1;
   else
@@ -6105,7 +6105,7 @@ PREFIX (sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
   temp_src_desc.base.dtype.rank = dst_rank;
 #else
   temp_src_desc.base.dtype = GFC_DTYPE_INTEGER_4 |
-			     dst_rank;
+                             dst_rank;
 #endif
   temp_src_desc.base.offset = 0;
   temp_src_desc.dim[0].lower_bound = 0;
@@ -6315,7 +6315,7 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
               mpi_token->memptr_win.
               Count the dims to fetch.  */
               for (ref_rank = 0; riter->u.a.mode[ref_rank] != CAF_ARR_REF_NONE; ++ref_rank)
-		;
+                ;
               dprint ("%d/%d: %s() Getting remote descriptor of rank %d from win: %p, sizeof() %d\n",
                       caf_this_image, caf_num_images, __FUNCTION__,
                       ref_rank, mpi_token->memptr_win, sizeof_desc_for_rank(ref_rank));
@@ -6329,7 +6329,7 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
               /* All inner descriptors go by the dynamic window.
               Count the dims to fetch.  */
               for (ref_rank = 0; riter->u.a.mode[ref_rank] != CAF_ARR_REF_NONE; ++ref_rank)
-		;
+                ;
               dprint ("%d/%d: %s() Getting remote descriptor of rank %d from: %p, sizeof() %d\n",
                       caf_this_image, caf_num_images, __FUNCTION__,
                       ref_rank, remote_base_memptr, sizeof_desc_for_rank(ref_rank));
@@ -6422,7 +6422,7 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
 
 void
 PREFIX (sync_images) (int count, int images[], int *stat, char *errmsg,
-		      charlen_t errmsg_len)
+                      charlen_t errmsg_len)
 {
   sync_images_internal (count, images, stat, errmsg, errmsg_len, false);
 }
@@ -6453,12 +6453,12 @@ sync_images_internal (int count, int images[], int *stat, char *errmsg,
   for(i = 0; i < count; ++i)
     for(j = 0; j < i; ++j)
       if(images[i] == images[j])
-	{
-	  ierr = STAT_DUP_SYNC_IMAGES;
-	  if(stat)
-	    *stat = ierr;
-	  goto sync_images_err_chk;
-	}
+        {
+          ierr = STAT_DUP_SYNC_IMAGES;
+          if(stat)
+            *stat = ierr;
+          goto sync_images_err_chk;
+        }
 
 #ifdef GFC_CAF_CHECK
   {
@@ -6576,14 +6576,14 @@ sync_images_err_chk:
     {
       char *msg;
       if (caf_is_finalized)
-	msg = "SYNC IMAGES failed - there are stopped images";
+        msg = "SYNC IMAGES failed - there are stopped images";
       else
         msg = "SYNC IMAGES failed";
 
       if (errmsg_len > 0)
         {
           size_t len = (strlen (msg) > errmsg_len) ? errmsg_len
-	    : strlen (msg);
+            : strlen (msg);
           memcpy (errmsg, msg, len);
           if (errmsg_len > len)
             memset (&errmsg[len], ' ', errmsg_len-len);
@@ -6607,27 +6607,27 @@ name (datatype *invec, datatype *inoutvec, int *len, \
 #define REFERENCE_FUNC(TYPE) TYPE ## _by_reference
 #define VALUE_FUNC(TYPE) TYPE ## _by_value
 
-#define GEN_COREDUCE(name, dt)			\
+#define GEN_COREDUCE(name, dt)                  \
 static void \
 name##_by_reference_adapter (void *invec, void *inoutvec, int *len, \
-      MPI_Datatype *datatype)		     \
+      MPI_Datatype *datatype)                \
 { \
-  int i;	     \
-  for(i=0;i<*len;i++)				\
-    {								\
-      *((dt*)inoutvec) = (dt)(REFERENCE_FUNC(dt)((dt *)invec, (dt *)inoutvec));	\
-     invec+=sizeof(dt); inoutvec+=sizeof(dt);	\
+  int i;             \
+  for(i=0;i<*len;i++)                           \
+    {                                                           \
+      *((dt*)inoutvec) = (dt)(REFERENCE_FUNC(dt)((dt *)invec, (dt *)inoutvec)); \
+     invec+=sizeof(dt); inoutvec+=sizeof(dt);   \
    } \
 } \
 static void \
 name##_by_value_adapter (void *invec, void *inoutvec, int *len, \
-      MPI_Datatype *datatype)		     \
+      MPI_Datatype *datatype)                \
 { \
-  int i;	     \
-  for(i=0;i<*len;i++)				\
-    {								\
-      *((dt*)inoutvec) = (dt)(VALUE_FUNC(dt)(*(dt *)invec, *(dt *)inoutvec));	\
-     invec+=sizeof(dt); inoutvec+=sizeof(dt);	\
+  int i;             \
+  for(i=0;i<*len;i++)                           \
+    {                                                           \
+      *((dt*)inoutvec) = (dt)(VALUE_FUNC(dt)(*(dt *)invec, *(dt *)inoutvec));   \
+     invec+=sizeof(dt); inoutvec+=sizeof(dt);   \
    } \
 }
 
@@ -6765,7 +6765,7 @@ get_MPI_datatype (gfc_descriptor_t *desc, int char_len)
     {
       MPI_Datatype string;
       if (char_len == 0)
-	char_len = GFC_DESCRIPTOR_SIZE (desc);
+        char_len = GFC_DESCRIPTOR_SIZE (desc);
       MPI_Type_contiguous(char_len, MPI_CHARACTER, &string);
       MPI_Type_commit(&string);
       return string;
@@ -6778,7 +6778,7 @@ get_MPI_datatype (gfc_descriptor_t *desc, int char_len)
 
 static void
 internal_co_reduce (MPI_Op op, gfc_descriptor_t *source, int result_image, int *stat,
-	     char *errmsg, int src_len, size_t errmsg_len)
+             char *errmsg, int src_len, size_t errmsg_len)
 {
   size_t i, size;
   int j, ierr;
@@ -6799,13 +6799,13 @@ internal_co_reduce (MPI_Op op, gfc_descriptor_t *source, int result_image, int *
   if (rank == 0 || PREFIX (is_contiguous) (source))
     {
       if (result_image == 0)
-	ierr = MPI_Allreduce (MPI_IN_PLACE, source->base_addr, size, datatype,
+        ierr = MPI_Allreduce (MPI_IN_PLACE, source->base_addr, size, datatype,
                               op, CAF_COMM_WORLD);
       else if (result_image == caf_this_image)
-	ierr = MPI_Reduce (MPI_IN_PLACE, source->base_addr, size, datatype, op,
+        ierr = MPI_Reduce (MPI_IN_PLACE, source->base_addr, size, datatype, op,
                            result_image-1, CAF_COMM_WORLD);
       else
-	ierr = MPI_Reduce (source->base_addr, NULL, size, datatype, op,
+        ierr = MPI_Reduce (source->base_addr, NULL, size, datatype, op,
                            result_image-1, CAF_COMM_WORLD);
       if (ierr)
         goto error;
@@ -6830,13 +6830,13 @@ internal_co_reduce (MPI_Op op, gfc_descriptor_t *source, int result_image, int *
       void *sr = (void *)((char *) source->base_addr
                           + array_offset_sr*GFC_DESCRIPTOR_SIZE (source));
       if (result_image == 0)
-	ierr = MPI_Allreduce (MPI_IN_PLACE, sr, 1, datatype, op,
+        ierr = MPI_Allreduce (MPI_IN_PLACE, sr, 1, datatype, op,
                               CAF_COMM_WORLD);
       else if (result_image == caf_this_image)
-	ierr = MPI_Reduce (MPI_IN_PLACE, sr, 1, datatype, op,
+        ierr = MPI_Reduce (MPI_IN_PLACE, sr, 1, datatype, op,
                            result_image-1, CAF_COMM_WORLD);
       else
-	ierr = MPI_Reduce (sr, NULL, 1, datatype, op, result_image-1,
+        ierr = MPI_Reduce (sr, NULL, 1, datatype, op, result_image-1,
                            CAF_COMM_WORLD);
       if (ierr)
         goto error;
@@ -6892,7 +6892,7 @@ PREFIX (co_broadcast) (gfc_descriptor_t *a, int source_image, int *stat, char *e
   if (rank == 0)
     {
       if (datatype != MPI_CHARACTER)
-	ierr = MPI_Bcast(a->base_addr, size, datatype, source_image-1, CAF_COMM_WORLD);
+        ierr = MPI_Bcast(a->base_addr, size, datatype, source_image-1, CAF_COMM_WORLD);
       else
       {
         int a_length;
@@ -6903,7 +6903,7 @@ PREFIX (co_broadcast) (gfc_descriptor_t *a, int source_image, int *stat, char *e
         if (ierr)
           goto error;
         /* Broadcast the string itself */
-	ierr = MPI_Bcast(a->base_addr, a_length, datatype, source_image-1, CAF_COMM_WORLD);
+        ierr = MPI_Bcast(a->base_addr, a_length, datatype, source_image-1, CAF_COMM_WORLD);
       }
 
       if (ierr)
@@ -6971,7 +6971,7 @@ error:
  * for use in MPI_*Reduce functions. */
 void
 PREFIX (co_reduce) (gfc_descriptor_t *a, void *(*opr) (void *, void *), int opr_flags,
-		    int result_image, int *stat, char *errmsg, int a_len, charlen_t errmsg_len)
+                    int result_image, int *stat, char *errmsg, int a_len, charlen_t errmsg_len)
 {
   MPI_Op op;
   /* Integers and logicals can be treated the same. */
@@ -6981,15 +6981,15 @@ PREFIX (co_reduce) (gfc_descriptor_t *a, void *(*opr) (void *, void *), int opr_
       /* When the ARG_VALUE opr_flag is set, then the user-function expects its
        * arguments to be passed by value. */
       if ((opr_flags & GFC_CAF_ARG_VALUE) > 0)
-	{
-	  int32_t_by_value = (typeof (VALUE_FUNC(int32_t)))opr;
-	  MPI_Op_create(redux_int32_by_value_adapter, 1, &op);
-	}
+        {
+          int32_t_by_value = (typeof (VALUE_FUNC(int32_t)))opr;
+          MPI_Op_create(redux_int32_by_value_adapter, 1, &op);
+        }
       else
-	{
-	  int32_t_by_reference = (typeof (REFERENCE_FUNC(int32_t)))opr;
-	  MPI_Op_create(redux_int32_by_reference_adapter, 1, &op);
-	}
+        {
+          int32_t_by_reference = (typeof (REFERENCE_FUNC(int32_t)))opr;
+          MPI_Op_create(redux_int32_by_reference_adapter, 1, &op);
+        }
     }
   /* Treat reals/doubles. */
   else if(GFC_DESCRIPTOR_TYPE(a) == BT_REAL)
@@ -6997,33 +6997,33 @@ PREFIX (co_reduce) (gfc_descriptor_t *a, void *(*opr) (void *, void *), int opr_
       /* When the ARG_VALUE opr_flag is set, then the user-function expects its
        * arguments to be passed by value. */
       if(GFC_DESCRIPTOR_SIZE(a) == sizeof(float))
-  	{
-	  if ((opr_flags & GFC_CAF_ARG_VALUE) > 0)
-	    {
-	      float_by_value = (typeof (VALUE_FUNC(float)))opr;
-	      MPI_Op_create(redux_real32_by_value_adapter, 1, &op);
-	    }
-	  else
-	    {
-	      float_by_reference = (typeof (REFERENCE_FUNC(float)))opr;
-	      MPI_Op_create(redux_real32_by_reference_adapter, 1, &op);
-	    }
-  	}
+        {
+          if ((opr_flags & GFC_CAF_ARG_VALUE) > 0)
+            {
+              float_by_value = (typeof (VALUE_FUNC(float)))opr;
+              MPI_Op_create(redux_real32_by_value_adapter, 1, &op);
+            }
+          else
+            {
+              float_by_reference = (typeof (REFERENCE_FUNC(float)))opr;
+              MPI_Op_create(redux_real32_by_reference_adapter, 1, &op);
+            }
+        }
       else
-	{
-	  /* When the ARG_VALUE opr_flag is set, then the user-function expects its
-	   * arguments to be passed by value. */
-	  if ((opr_flags & GFC_CAF_ARG_VALUE) > 0)
-	    {
-	      double_by_value = (typeof (VALUE_FUNC(double)))opr;
-	      MPI_Op_create(redux_real64_by_value_adapter, 1, &op);
-	    }
-	  else
-	    {
-	      double_by_reference = (typeof (REFERENCE_FUNC(double)))opr;
-	      MPI_Op_create(redux_real64_by_reference_adapter, 1, &op);
-	    }
-  	}
+        {
+          /* When the ARG_VALUE opr_flag is set, then the user-function expects its
+           * arguments to be passed by value. */
+          if ((opr_flags & GFC_CAF_ARG_VALUE) > 0)
+            {
+              double_by_value = (typeof (VALUE_FUNC(double)))opr;
+              MPI_Op_create(redux_real64_by_value_adapter, 1, &op);
+            }
+          else
+            {
+              double_by_reference = (typeof (REFERENCE_FUNC(double)))opr;
+              MPI_Op_create(redux_real64_by_reference_adapter, 1, &op);
+            }
+        }
     }
   else if (GFC_DESCRIPTOR_TYPE(a) == BT_CHARACTER)
     {
@@ -7267,8 +7267,8 @@ PREFIX (atomic_op) (int op, caf_token_t token ,
 
 void
 PREFIX (event_post) (caf_token_t token, size_t index,
-		     int image_index, int *stat,
-		     char *errmsg, charlen_t errmsg_len)
+                     int image_index, int *stat,
+                     char *errmsg, charlen_t errmsg_len)
 {
   int image, value = 1, ierr = 0,flag;
   MPI_Win *p = TOKEN(token);
@@ -7299,19 +7299,19 @@ PREFIX (event_post) (caf_token_t token, size_t index,
   if(ierr != MPI_SUCCESS)
     {
       if(stat != NULL)
-	*stat = ierr;
+        *stat = ierr;
       if(errmsg != NULL)
-	{
-	  memset(errmsg,' ',errmsg_len);
-	  memcpy(errmsg, msg, MIN(errmsg_len,strlen(msg)));
-	}
+        {
+          memset(errmsg,' ',errmsg_len);
+          memcpy(errmsg, msg, MIN(errmsg_len,strlen(msg)));
+        }
     }
 }
 
 void
 PREFIX (event_wait) (caf_token_t token, size_t index,
-		     int until_count, int *stat,
-		     char *errmsg, charlen_t errmsg_len)
+                     int until_count, int *stat,
+                     char *errmsg, charlen_t errmsg_len)
 {
   int ierr = 0, count = 0, i, image = caf_this_image - 1;
   int *var = NULL, flag, old = 0;
@@ -7330,7 +7330,7 @@ PREFIX (event_wait) (caf_token_t token, size_t index,
       MPI_Win_sync (*p);
       count = var[index];
       if(count >= until_count)
-	break;
+        break;
     }
 
   i = 1;
@@ -7339,7 +7339,7 @@ PREFIX (event_wait) (caf_token_t token, size_t index,
       MPI_Win_sync (*p);
       count = var[index];
       usleep (10 * i);
-	++i;
+        ++i;
       /* Needed to enforce MPI progress */
       MPI_Win_flush (image, *p);
     }
@@ -7358,18 +7358,18 @@ PREFIX (event_wait) (caf_token_t token, size_t index,
   if(ierr != MPI_SUCCESS)
     {
       if(stat != NULL)
-	*stat = ierr;
+        *stat = ierr;
       if(errmsg != NULL)
-	{
-	  memset(errmsg,' ',errmsg_len);
-	  memcpy(errmsg, msg, MIN(errmsg_len,strlen(msg)));
-	}
+        {
+          memset(errmsg,' ',errmsg_len);
+          memcpy(errmsg, msg, MIN(errmsg_len,strlen(msg)));
+        }
     }
 }
 
 void
 PREFIX (event_query) (caf_token_t token, size_t index,
-		      int image_index, int *count, int *stat)
+                      int image_index, int *count, int *stat)
 {
   int image,ierr=0;
   MPI_Win *p = TOKEN(token);
@@ -7446,7 +7446,7 @@ PREFIX (stop_str) (const char *string, charlen_t len QUIETARG)
     {
       fputs ("STOP ", stderr);
       while (len--)
-	fputc (*(string++), stderr);
+        fputc (*(string++), stderr);
       fputs ("\n", stderr);
     }
   /* Stopping includes taking down the runtime regularly. */
@@ -7463,7 +7463,7 @@ error_stop_str (const char *string, size_t len, bool quiet)
     {
       fputs ("ERROR STOP ", stderr);
       while (len--)
-	fputc (*(string++), stderr);
+        fputc (*(string++), stderr);
       fputs ("\n", stderr);
     }
   terminate_internal (STAT_STOPPED_IMAGE, 1);
@@ -7563,7 +7563,7 @@ PREFIX (image_status) (int image)
 
 void
 PREFIX (failed_images) (gfc_descriptor_t *array, int team __attribute__ ((unused)),
-			int * kind)
+                        int * kind)
 {
   int local_kind = kind ? *kind : 4; /* GFC_DEFAULT_INTEGER_KIND = 4*/
 
@@ -7573,31 +7573,31 @@ PREFIX (failed_images) (gfc_descriptor_t *array, int team __attribute__ ((unused
   for (int i = 0; i < caf_num_images; ++i)
     {
       if (image_stati[i] == STAT_FAILED_IMAGE)
-	{
-	  switch (local_kind)
-	    {
-	    case 1:
-	      *(int8_t *)mem = i + 1;
-	      break;
-	    case 2:
-	      *(int16_t *)mem = i + 1;
-	      break;
-	    case 4:
-	      *(int32_t *)mem = i + 1;
-	      break;
-	    case 8:
-	      *(int64_t *)mem = i + 1;
-	      break;
+        {
+          switch (local_kind)
+            {
+            case 1:
+              *(int8_t *)mem = i + 1;
+              break;
+            case 2:
+              *(int16_t *)mem = i + 1;
+              break;
+            case 4:
+              *(int32_t *)mem = i + 1;
+              break;
+            case 8:
+              *(int64_t *)mem = i + 1;
+              break;
 #ifdef HAVE_GFC_INTEGER_16
-	    case 16:
-	      *(int128t *)mem = i + 1;
-	      break;
+            case 16:
+              *(int128t *)mem = i + 1;
+              break;
 #endif
-	    default:
-	      caf_runtime_error("Unsupported integer kind %1 in caf_failed_images.", local_kind);
-	    }
-	  mem += local_kind;
-	}
+            default:
+              caf_runtime_error("Unsupported integer kind %1 in caf_failed_images.", local_kind);
+            }
+          mem += local_kind;
+        }
     }
   array->dim[0]._ubound = num_images_failed-1;
 #else
@@ -7611,7 +7611,7 @@ PREFIX (failed_images) (gfc_descriptor_t *array, int team __attribute__ ((unused
   array->dtype.elem_len = local_kind;
 #else
   array->dtype = ((BT_INTEGER << GFC_DTYPE_TYPE_SHIFT)
-		  | (local_kind << GFC_DTYPE_SIZE_SHIFT));
+                  | (local_kind << GFC_DTYPE_SIZE_SHIFT));
 #endif
   array->dim[0].lower_bound = 0;
   array->dim[0]._stride = 1;
@@ -7620,7 +7620,7 @@ PREFIX (failed_images) (gfc_descriptor_t *array, int team __attribute__ ((unused
 
 void
 PREFIX (stopped_images) (gfc_descriptor_t *array, int team __attribute__ ((unused)),
-			 int * kind)
+                         int * kind)
 {
   int local_kind = kind ? *kind : 4; /* GFC_DEFAULT_INTEGER_KIND = 4*/
 
@@ -7630,31 +7630,31 @@ PREFIX (stopped_images) (gfc_descriptor_t *array, int team __attribute__ ((unuse
   for (int i = 0; i < caf_num_images; ++i)
     {
       if (image_stati[i])
-	{
-	  switch (local_kind)
-	    {
-	    case 1:
-	      *(int8_t *)mem = i + 1;
-	      break;
-	    case 2:
-	      *(int16_t *)mem = i + 1;
-	      break;
-	    case 4:
-	      *(int32_t *)mem = i + 1;
-	      break;
-	    case 8:
-	      *(int64_t *)mem = i + 1;
-	      break;
+        {
+          switch (local_kind)
+            {
+            case 1:
+              *(int8_t *)mem = i + 1;
+              break;
+            case 2:
+              *(int16_t *)mem = i + 1;
+              break;
+            case 4:
+              *(int32_t *)mem = i + 1;
+              break;
+            case 8:
+              *(int64_t *)mem = i + 1;
+              break;
 #ifdef HAVE_GFC_INTEGER_16
-	    case 16:
-	      *(int128t *)mem = i + 1;
-	      break;
+            case 16:
+              *(int128t *)mem = i + 1;
+              break;
 #endif
-	    default:
-	      caf_runtime_error("Unsupported integer kind %1 in caf_stopped_images.", local_kind);
-	    }
-	  mem += local_kind;
-	}
+            default:
+              caf_runtime_error("Unsupported integer kind %1 in caf_stopped_images.", local_kind);
+            }
+          mem += local_kind;
+        }
     }
   array->dim[0]._ubound = num_images_stopped - 1;
 #else
@@ -7668,7 +7668,7 @@ PREFIX (stopped_images) (gfc_descriptor_t *array, int team __attribute__ ((unuse
   array->dtype.elem_len = local_kind;
 #else
   array->dtype = ((BT_INTEGER << GFC_DTYPE_TYPE_SHIFT)
-		  | (local_kind << GFC_DTYPE_SIZE_SHIFT));
+                  | (local_kind << GFC_DTYPE_SIZE_SHIFT));
 #endif
   array->dim[0].lower_bound = 0;
   array->dim[0]._stride = 1;
@@ -7748,7 +7748,7 @@ void PREFIX (change_team) (caf_team_t *team, int coselector __attribute__ ((unus
   /* while(tmp_list) */
   /*   { */
   /*     if(tmp_list->team == tmp_team) */
-  /* 	break; */
+  /*    break; */
   /*     tmp_list = tmp_list->prev; */
   /*   } */
 
@@ -7830,7 +7830,7 @@ void PREFIX (sync_team) (caf_team_t *team , int unused __attribute__ ((unused)))
   while(tmp_used)
     {
       if(tmp_used->team_list_elem == tmp_list)
-	break;
+        break;
       tmp_used = tmp_used->prev;
     }
 
