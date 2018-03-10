@@ -659,9 +659,9 @@ if(opencoarrays_aware_compiler)
     if(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 8)
       add_caf_test(team_number 2 team_number)
       add_caf_test(get_communicator 3  get_communicator)
+      add_caf_test(alloc_comp_multidim_shape 2 alloc_comp_multidim_shape)
     endif()
   endif()
-
 
   if (gfortran_compiler)
     if((NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
