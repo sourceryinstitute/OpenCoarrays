@@ -772,11 +772,11 @@ if(opencoarrays_aware_compiler)
   add_caf_test(co_reduce-factorial-int64 4 co_reduce-factorial-int64)
 
   # issues reported by @neok-m4700
-  add_caf_test(coindex-slice            8 coindex-slice)
-  add_caf_test(multi-dim-cobounds-true  8 multi-dim-cobounds true)
-  add_caf_test(multi-dim-cobounds-false 8 multi-dim-cobounds false)
-  add_caf_test(multidim-array-broadcast 2 multidim-array-broadcast)
-  add_caf_test(non-contig-red-ndarray   2 non-contig-red-ndarray)
+  add_caf_test(issue-493-coindex-slice            8 issue-493-coindex-slice)
+  add_caf_test(issue-488-multi-dim-cobounds-true  8 issue-488-multi-dim-cobounds true)
+  add_caf_test(issue-488-multi-dim-cobounds-false 8 issue-488-multi-dim-cobounds false)
+  add_caf_test(issue-503-multidim-array-broadcast 2 issue-503-multidim-array-broadcast)
+  add_caf_test(issue-503-non-contig-red-ndarray   2 issue-503-non-contig-red-ndarray)
 
   # IMAGE FAIL tests
   if(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0)
