@@ -4626,6 +4626,8 @@ PREFIX (get_by_ref) (caf_token_t token, int image_index,
                           dst->dim[dst_cur_dim].lower_bound = 1;
                           dst->dim[dst_cur_dim]._ubound = delta;
                           dst->dim[dst_cur_dim]._stride = size;
+                          if (realloc_required)
+                            dst->offset = -1;
                         }
                     }
 
@@ -4779,6 +4781,8 @@ PREFIX (get_by_ref) (caf_token_t token, int image_index,
                           dst->dim[dst_cur_dim].lower_bound = 1;
                           dst->dim[dst_cur_dim]._ubound = delta;
                           dst->dim[dst_cur_dim]._stride = size;
+                          if (realloc_required)
+                            dst->offset = -1;
                         }
                     }
                   /* Only increase the dim counter, when in an array ref */
