@@ -39,7 +39,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 #include <stddef.h>	/* For size_t.  */
 #include <stdbool.h>
 
+#include  "libcaf-version-def.h"
 #include "libcaf-gfortran-descriptor.h"
+
+#include <mpi.h>
 
 #ifndef __GNUC__
 #define __attribute__(x)
@@ -48,10 +51,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 #else
 #define likely(x)       __builtin_expect(!!(x), 1)
 #define unlikely(x)     __builtin_expect(!!(x), 0)
-#endif
-
-#if __GNUC__ >= 7
-#define GCC_GE_7 1
 #endif
 
 #ifdef PREFIX_NAME
@@ -96,10 +95,23 @@ typedef enum caf_deregister_t {
 caf_deregister_t;
 
 typedef void* caf_token_t;
-#ifdef GCC_GE_7
 /** Add a dummy type representing teams in coarrays. */
+
 typedef void * caf_team_t;
-#endif
+
+typedef struct caf_teams_list {
+  caf_team_t team;
+  int team_id;
+  struct caf_teams_list *prev;
+}
+caf_teams_list;
+
+typedef struct caf_used_teams_list {
+  struct caf_teams_list *team_list_elem;
+  struct caf_used_teams_list *prev;
+}
+caf_used_teams_list;
+
 
 /* When there is a vector subscript in this dimension, nvec == 0, otherwise,
    lower_bound, upper_bound, stride contains the bounds relative to the declared
@@ -208,10 +220,18 @@ typedef struct caf_reference_t {
 #define GFC_CAF_ARG_VALUE  (1<<2)
 #define GFC_CAF_ARG_DESC   (1<<3)
 
+/* The type to use for string lengths.  */
+#ifdef GCC_GE_8
+typedef size_t charlen_t;
+#define QUIETARG , bool
+#else
+typedef int charlen_t;
+#define QUIETARG
+#endif
+
 /* Common auxiliary functions: caf_auxiliary.c.  */
 
 bool PREFIX (is_contiguous) (gfc_descriptor_t *);
-
 
 /* Header for the specific implementation.  */
 
@@ -223,8 +243,8 @@ int PREFIX (num_images) (int, int);
 
 #ifdef GCC_GE_7
 void PREFIX (register) (size_t, caf_register_t, caf_token_t *,
-						gfc_descriptor_t *, int *, char *, int);
-void PREFIX (deregister) (caf_token_t *, int, int *, char *, int);
+			gfc_descriptor_t *, int *, char *, charlen_t);
+void PREFIX (deregister) (caf_token_t *, int, int *, char *, charlen_t);
 #else
 void * PREFIX (register) (size_t, caf_register_t, caf_token_t *,
 						  int *, char *, int);
@@ -258,23 +278,30 @@ void PREFIX(sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
 int PREFIX(is_present) (caf_token_t, int, caf_reference_t *refs);
 #endif
 
-void PREFIX (co_broadcast) (gfc_descriptor_t *, int, int *, char *, int);
-void PREFIX (co_max) (gfc_descriptor_t *, int, int *, char *, int, int);
-void PREFIX (co_min) (gfc_descriptor_t *, int, int *, char *, int, int);
+void PREFIX (co_broadcast) (gfc_descriptor_t *, int, int *, char *, charlen_t);
+void PREFIX (co_max) (gfc_descriptor_t *, int, int *, char *, int, charlen_t);
+void PREFIX (co_min) (gfc_descriptor_t *, int, int *, char *, int, charlen_t);
 void PREFIX (co_reduce) (gfc_descriptor_t *, void *(*opr) (void *, void *),
-			 int, int, int *, char *, int , int);
-void PREFIX (co_sum) (gfc_descriptor_t *, int, int *, char *, int);
+			 int, int, int *, char *, int , charlen_t);
+void PREFIX (co_sum) (gfc_descriptor_t *, int, int *, char *, charlen_t);
 
-void PREFIX (sync_all) (int *, char *, int);
-void PREFIX (sync_images) (int, int[], int *, char *, int);
-void PREFIX (sync_memory) (int *, char *, int);
+void PREFIX (sync_all) (int *, char *, charlen_t);
+void PREFIX (sync_images) (int, int[], int *, char *, charlen_t);
+void PREFIX (sync_memory) (int *, char *, charlen_t);
 
-void PREFIX (stop_str) (const char *, int32_t) __attribute__ ((noreturn));
-void PREFIX (stop) (int32_t) __attribute__ ((noreturn));
-void PREFIX (error_stop_str) (const char *, int32_t)
+void PREFIX (stop_str) (const char *, charlen_t QUIETARG) __attribute__ ((noreturn));
+void PREFIX (stop) (int QUIETARG) __attribute__ ((noreturn));
+void PREFIX (error_stop_str) (const char *, charlen_t QUIETARG)
      __attribute__ ((noreturn));
-void PREFIX (error_stop) (int32_t) __attribute__ ((noreturn));
+void PREFIX (error_stop) (int QUIETARG) __attribute__ ((noreturn));
+
 void PREFIX (fail_image) (void) __attribute__ ((noreturn));
+
+void PREFIX (form_team) (int, caf_team_t *, int);
+void PREFIX (change_team) (caf_team_t *, int);
+void PREFIX (end_team) (caf_team_t *);
+void PREFIX (sync_team) (caf_team_t *, int);
+int PREFIX (team_number) (caf_team_t *);
 
 int PREFIX (image_status) (int);
 void PREFIX (failed_images) (gfc_descriptor_t *, int, int *);
@@ -287,9 +314,15 @@ void PREFIX (atomic_cas) (caf_token_t, size_t, int, void *, void *,
 void PREFIX (atomic_op) (int, caf_token_t, size_t, int, void *, void *,
 			 int *, int, int);
 
-void PREFIX (lock) (caf_token_t, size_t, int, int *, int *, char *, int);
-void PREFIX (unlock) (caf_token_t, size_t, int, int *, char *, int);
-void PREFIX (event_post) (caf_token_t, size_t, int, int *, char *, int);
-void PREFIX (event_wait) (caf_token_t, size_t, int, int *, char *, int);
+void PREFIX (lock) (caf_token_t, size_t, int, int *, int *, char *, charlen_t);
+void PREFIX (unlock) (caf_token_t, size_t, int, int *, char *, charlen_t);
+void PREFIX (event_post) (caf_token_t, size_t, int, int *, char *, charlen_t);
+void PREFIX (event_wait) (caf_token_t, size_t, int, int *, char *, charlen_t);
 void PREFIX (event_query) (caf_token_t, size_t, int, int *, int *);
+
+/* Language extension */
+#ifdef HAVE_MPI
+MPI_Fint PREFIX (get_communicator) (caf_team_t *);
+#endif
+
 #endif  /* LIBCAF_H  */

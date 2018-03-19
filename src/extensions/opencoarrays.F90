@@ -46,6 +46,10 @@ module opencoarrays
   public :: num_images
   public :: error_stop
   public :: sync_all
+  public :: team_number
+#ifdef HAVE_MPI
+  public :: get_communicator
+#endif
 #ifdef COMPILER_SUPPORTS_ATOMICS
   public :: event_type
   public :: event_post
@@ -101,6 +105,31 @@ module opencoarrays
        logical :: lhs_op_rhs
      end function
   end interface
+
+  interface
+#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
+    function team_number(team_type_ptr) result(my_team_number) bind(C,name="_caf_extensions_team_number")
+#else
+    function team_number(team_type_ptr) result(my_team_number) bind(C,name="_gfortran_caf_team_number")
+#endif
+       use iso_c_binding, only : c_int,c_ptr
+       implicit none
+       type(c_ptr), optional :: team_type_ptr
+       integer(c_int) :: my_team_number
+    end function
+
+#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
+    function get_communicator(team_type_ptr) result(my_team) bind(C,name="_caf_extensions_get_communicator")
+#else
+    function get_communicator(team_type_ptr) result(my_team) bind(C,name="_gfortran_caf_get_communicator")
+#endif
+       use iso_c_binding, only : c_int,c_ptr
+       implicit none
+       type(c_ptr), optional :: team_type_ptr
+       integer(c_int) :: my_team
+    end function
+  end interface
+
 
   ! __________ End Public Interface _____________
 

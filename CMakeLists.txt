@@ -5,6 +5,12 @@ set ( CMAKE_CONFIGURATION_TYPES "Debug" "Release" "MinSizeRel" "RelWithDebInfo" 
 set ( CMAKE_BUILD_TYPE "Release"
   CACHE STRING "Select which configuration to build." )
 set_property ( CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${CMAKE_CONFIGURATION_TYPES} )
+message( STATUS
+  "
+============================================================
+   Building OpenCoarrays configuration: ${CMAKE_BUILD_TYPE}
+============================================================
+")
 
 # Add option and check environment to determine if developer tests should be run
 if($ENV{OPENCOARRAYS_DEVELOPER})
@@ -24,10 +30,10 @@ file(STRINGS ".VERSION" first_line
   LIMIT_COUNT 1
   )
 
-string(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+"
+string(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+(-rc[0-9]+)?"
   OpenCoarraysVersion "${first_line}")
 
-if((NOT (OpenCoarraysVersion MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+")) AND (EXISTS "${CMAKE_SOURCE_DIR}/.git"))
+if((NOT (OpenCoarraysVersion MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+(-rc[0-9]+)?")) AND (EXISTS "${CMAKE_SOURCE_DIR}/.git"))
   message( STATUS "Build from git repository detected")
   find_package(Git)
   if(GIT_FOUND)
@@ -36,7 +42,7 @@ if((NOT (OpenCoarraysVersion MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+")) AND (EXISTS "$
       RESULT_VARIABLE git_status
       OUTPUT_VARIABLE git_output
       OUTPUT_STRIP_TRAILING_WHITESPACE)
-    if((git_status STREQUAL "0") AND (git_output MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+"))
+    if((git_status STREQUAL "0") AND (git_output MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+(-rc[0-9]+)?"))
       set(OpenCoarraysVersion "${git_output}")
     endif()
     execute_process(COMMAND "${GIT_EXECUTABLE}" describe --always
@@ -47,15 +53,21 @@ if((NOT (OpenCoarraysVersion MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+")) AND (EXISTS "$
     if(NOT (git_status STREQUAL "0"))
       set(full_git_describe NOTFOUND)
     endif()
+    # Create a source distribution target using git archive
+    # e.g., `make dist` will package a release using current git state
+    add_custom_target(dist # OUTPUT "${CMAKE_BINARY_DIR}/${_OC_stem_name}.tar.gz"
+      COMMAND "${CMAKE_COMMAND}" -P "${CMAKE_SOURCE_DIR}/cmake/makeDist.cmake" "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}"
+      COMMENT "Creating source release asset, ${_OC_stem_name}.tar.gz, from ${git_full_describe} using the `git archive` command."
+      VERBATIM)
   else()
     message( WARNING "Could not find git executable!")
   endif()
 endif()
 
-if(NOT (OpenCoarraysVersion MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+"))
+if(NOT (OpenCoarraysVersion MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+(-rc[0-9]+)?"))
   message( WARNING "Could not extract version from git, falling back on .VERSION, line 3.")
   file(STRINGS ".VERSION" OpenCoarraysVersion
-  REGEX "[0-9]+\\.[0-9]+\\.[0-9]+"
+  REGEX "[0-9]+\\.[0-9]+\\.[0-9]+(-rc[0-9]+)?"
   )
 endif()
 
@@ -63,7 +75,10 @@ if(NOT full_git_describe)
   set(full_git_describe ${OpenCoarraysVersion})
 endif()
 
-project(opencoarrays VERSION "${OpenCoarraysVersion}" LANGUAGES C Fortran)
+string(REGEX REPLACE "-rc[0-9]+$"
+       ".0" OPENCOARRAYS_CMAKE_PROJECT_VERSION
+       "${OpenCoarraysVersion}")
+project(opencoarrays VERSION "${OPENCOARRAYS_CMAKE_PROJECT_VERSION}" LANGUAGES C Fortran)
 message( STATUS "Building OpenCoarrays version: ${full_git_describe}" )
 set(OpenCoarrays_dist_string "OpenCoarrays-${full_git_describe}")
 
@@ -202,9 +217,11 @@ get_filename_component( C_COMPILER_DIR "${CMAKE_C_COMPILER}"
   REALPATH )
 
 if (FTN_COMPILER_NAME MATCHES "^[mM][pP][iI]")
+  message( DEPRECATION "Setting the Fortran compiler to an MPI wrapper script is deprecated!")
   set (MPI_Fortran_COMPILER "${CMAKE_Fortran_COMPILER}")
 endif()
 if (C_COMPILER_NAME MATCHES "^[mM][pP][iI]")
+  message( DEPRECATION "Setting the Fortran compiler to an MPI wrapper script is deprecated!")
   set (MPI_C_COMPILER "${CMAKE_C_COMPILER}")
 endif()
 
@@ -233,6 +250,8 @@ if (NOT MPIEXEC)
 report this bug to the OpenCoarrays developers at
 https://github.com/sourceryinstitute/opencoarrays/issues, otherwise point CMake
 to the desired MPI runtime.")
+else()
+  add_definitions(-DHAVE_MPI)
 endif()
 
 get_filename_component(MPIEXEC_RELATIVE_LOC "${MPIEXEC}"
@@ -500,6 +519,22 @@ function(check_script_style script_full_path)
   endif()
 endfunction()
 
+#------------------------------------------------------------------------------
+# Add custom properties on targets for controling number of images during tests
+#------------------------------------------------------------------------------
+define_property(TARGET
+  PROPERTY MIN_IMAGES
+  BRIEF_DOCS "Minimum allowable images for the test <integer>"
+  FULL_DOCS "Property to mark executable targets run as tests that they require at least <MIN_IMAGES> images to run"
+  )
+
+define_property(TARGET
+  PROPERTY POWER_2_IMGS
+  BRIEF_DOCS "True if test must be run with a power of 2 images (T/F)"
+  FULL_DOCS "Property to mark executable targets run as tests that they require 2^n images."
+  )
+
+
 #-------------------------------
 # Recurse into the src directory
 #-------------------------------
@@ -554,32 +589,42 @@ add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure)
 #---------------------------------------------------------------------------------------
 # Define macro for adding CAF tests, and ensuring proper flags are passed to MPI runtime
 #---------------------------------------------------------------------------------------
-
-# Determine if we're using Open MPI
-execute_process(COMMAND ${MPIEXEC} --version
-  OUTPUT_VARIABLE mpi_version_out)
-if (mpi_version_out MATCHES "[Oo]pen[ -][Mm][Pp][Ii]")
-  message( STATUS "OpenMPI detected")
-  set ( openmpi true )
-endif ()
-
-include( ProcessorCount )
-ProcessorCount(N_CPU)
+# Test for OpenMPI moved to src/mpi/CMakeLists.txt and passed back up through set(... PARENT_SCOPE)
 function(add_caf_test name num_caf_img test_target)
-   # Function to add MPI tests.
-   if ( ((N_CPU LESS num_caf_img) OR (N_CPU EQUAL 0)) )
-     message(STATUS "Test ${name} is oversubscribed: ${num_caf_img} CAF images requested with ${N_CPU} system processor available.")
-     if ( openmpi )
-       if ( N_CPU LESS 2 )
-	 set( num_caf_img 2 )
-       endif()
-       set (test_parameters --oversubscribe)
-       message( STATUS "Open-MPI back end detected, passing --oversubscribe for oversubscribed test, ${name}, with ${num_caf_img} ranks/images." )
-     endif()
-   endif()
-   set(test_parameters -np ${num_caf_img} ${test_parameters})
-   add_test(NAME ${name} COMMAND "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun" ${test_parameters} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${test_target}")
-   set_property(TEST ${name} PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
+  # Function to add MPI tests.
+  if(TARGET ${test_target})
+    get_target_property(min_test_imgs ${test_target} MIN_IMAGES)
+  elseif(TARGET build_${test_target})
+    get_target_property(min_test_imgs build_${test_target} MIN_IMAGES)
+  endif()
+  if(min_test_imgs)
+    if(num_caf_img LESS min_test_imgs)
+      message( FATAL_ERROR "Test ${name} requires ${min_test_imgs} but was only given ${num_caf_images}" )
+    endif()
+  endif()
+  # Add a host file for OMPI
+  if ( openmpi )
+    set(test_parameters --hostfile ${CMAKE_BINARY_DIR}/hostfile)
+  endif()
+  if ( ((N_CPU LESS num_caf_img) OR (N_CPU EQUAL 0)) )
+    message(STATUS "Test ${name} is oversubscribed: ${num_caf_img} CAF images requested with ${N_CPU} system processor available.")
+    if ( openmpi )
+      if (min_test_imgs)
+	set( num_caf_img ${min_test_imgs} )
+      elseif ( N_CPU LESS 2 )
+        set( num_caf_img 2 )
+      endif()
+      set (test_parameters ${test_parameters} --oversubscribe)
+      message( STATUS "Open-MPI back end detected, passing --oversubscribe for oversubscribed test, ${name}, with ${num_caf_img} ranks/images." )
+    endif()
+  endif()
+  set(test_parameters -np ${num_caf_img} ${test_parameters})
+  if(DEFINED ARGN)
+    add_test(NAME ${name} COMMAND "bash" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun" ${test_parameters} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${test_target}" ${ARGN})
+  else()
+    add_test(NAME ${name} COMMAND "bash" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun" ${test_parameters} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${test_target}")
+  endif()
+  set_property(TEST ${name} PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
 endfunction(add_caf_test)
 
 #--------------
@@ -588,7 +633,7 @@ endfunction(add_caf_test)
 
 if(opencoarrays_aware_compiler)
   if (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER})
-    message ( STATUS "Running Developer tests is enabled." )
+    message ( STATUS "Running Developer tests is enabled. Some tests may fail for open issues." )
   endif()
   # Unit tests targeting each libcaf_mpi function, argument, and branch of code
   add_caf_test(initialize_mpi 2 initialize_mpi)
@@ -610,14 +655,61 @@ if(opencoarrays_aware_compiler)
     add_caf_test(async_comp_alloc_2 2 async_comp_alloc_2)
     add_caf_test(comp_allocated_1 2 comp_allocated_1)
     add_caf_test(comp_allocated_2 2 comp_allocated_2)
+    add_caf_test(alloc_comp_get_convert_nums 2 alloc_comp_get_convert_nums)
+    if(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 8)
+      add_caf_test(team_number 2 team_number)
+      add_caf_test(get_communicator 3  get_communicator)
+      add_caf_test(alloc_comp_multidim_shape 2 alloc_comp_multidim_shape)
+    endif()
   endif()
+
+  if (gfortran_compiler)
+    if((NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
+      add_caf_test(send_convert_nums 2 send_convert_nums)
+      add_caf_test(sendget_convert_nums 3 sendget_convert_nums)
+      add_caf_test(sendget_convert_char_array 3 sendget_convert_char_array)
+    else()
+      message( AUTHOR_WARNING "Skipping the following tests due to GFortran < 7.0.0 lack of compatibility:
+        sendget_convert_nums.f90
+        sendget_convert_char_array.f90
+        send_convert_nums.f90")
+    endif()
+    if((NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.3.0) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
+      add_caf_test(send_convert_char_array 2 send_convert_char_array)
+      add_caf_test(alloc_comp_send_convert_nums 2 alloc_comp_send_convert_nums)
+    elseif((NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.4.0) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
+      add_caf_test(send-strided-self 2 send-strided-self)
+    endif()
+    if((CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.3.0) AND (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
+      message( AUTHOR_WARNING "Skipping the following tests to GFortran < 7.3.0 lack of compatibility:
+        send_convert_char_array.f90
+        alloc_comp_send_convert_nums.f90")
+    endif()
+    if((CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.4.0) AND (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
+      message( AUTHOR_WARNING "Skipping the following test to GFortran < 7.4.0 lack of compatibility:
+        send-strided-self.f90")
+    endif()
+  endif()
+
+  # Pure get tests
   add_caf_test(get_array 2 get_array)
   add_caf_test(get_self 2 get_self)
-  add_caf_test(send_array 2 send_array)
+  add_caf_test(get_convert_nums 2 get_convert_nums)
+  add_caf_test(get_convert_char_array 2 get_convert_char_array)
   add_caf_test(get_with_offset_1d 2 get_with_offset_1d)
   add_caf_test(whole_get_array 2 whole_get_array)
   add_caf_test(strided_get 2 strided_get)
+
+  # Pure send tests
+  add_caf_test(send_array 2 send_array)
+  add_caf_test(convert-before-put 3 convert-before-put)
+  add_caf_test(send_with_vector_index 2 send_with_vector_index)
+
+  # Pure sendget tests
   add_caf_test(strided_sendget 3 strided_sendget)
+  add_caf_test(get_with_vector_index 4 get_with_vector_index)
+
+
   add_caf_test(co_sum 4 co_sum_test)
   add_caf_test(co_broadcast 4 co_broadcast_test)
   add_caf_test(co_min 4 co_min_test)
@@ -642,6 +734,7 @@ if(opencoarrays_aware_compiler)
   add_caf_test(co_heat 2 co_heat)
   add_caf_test(asynchronous_hello_world 3 asynchronous_hello_world)
 
+
   # Regression tests based on reported issues
   if((gfortran_compiler AND (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0)) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
     if( CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0 )
@@ -652,15 +745,25 @@ if(opencoarrays_aware_compiler)
   endif()
 
   # Open GCC 7 regressions
-  if ((CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}) OR (gfortran_compiler AND (CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0)))
-    add_caf_test(convert-before-put 3 convert-before-put)
-    add_caf_test(put-alloc-comp 2 issue-422-send)
-    add_caf_test(get-put-alloc-comp 3 issue-422-send-get)
+  if ((CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}) OR
+      (gfortran_compiler AND (
+	  (CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0) OR
+	  (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.3.0)
+	  )))
+    add_caf_test(put-allocatable-coarray-comp 2 issue-422-send)
+    add_caf_test(get-put-allocatable-comp 3 issue-422-send-get)
+  else()
+    message( AUTHOR_WARNING
+      "Skipping regressions in GFortran 7.0:
+       put-allocatable-coarray-comp (issue-422)
+       get-put-allocatable-comp     (issue-422)")
   endif()
 
   add_caf_test(allocatable_p2p_event_post 4 allocatable_p2p_event_post)
   # Fixed GCC 7 regressions, should run on GCC 6 and 7
   add_caf_test(static_event_post_issue_293 3 static_event_post_issue_293)
+
+  add_caf_test(issue-493-coindex-slice 8 issue-493-coindex-slice) # Contributed by @neok-m4700 in #493
 
   # These co_reduce (#172, fixed by PR #332, addl discussion in PR
   # #331) tests are for bugs not regressions. Should be fixed in all
@@ -669,10 +772,15 @@ if(opencoarrays_aware_compiler)
   add_caf_test(co_reduce-factorial-int8 4 co_reduce-factorial-int8)
   add_caf_test(co_reduce-factorial-int64 4 co_reduce-factorial-int64)
 
+  # issues reported by @neok-m4700
+  add_caf_test(issue-488-multi-dim-cobounds-true  8 issue-488-multi-dim-cobounds true)
+  add_caf_test(issue-488-multi-dim-cobounds-false 8 issue-488-multi-dim-cobounds false)
+  add_caf_test(issue-503-multidim-array-broadcast 2 issue-503-multidim-array-broadcast)
+
   # IMAGE FAIL tests
   if(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0)
-    add_caf_test(image_status_test_1 4 image_status_test_1)
     if(CAF_ENABLE_FAILED_IMAGES)
+      add_caf_test(image_status_test_1 4 image_status_test_1)
       if ((NOT DEFINED ENV{TRAVIS}) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
 	add_caf_test(image_fail_test_1 4 image_fail_test_1)
 	set_property(TEST image_fail_test_1 PROPERTY FAIL_REGULAR_EXPRESSION "Test failed.")
@@ -707,3 +815,15 @@ endif()
 
 include(cmake/AddInstallationScriptTest.cmake )
 add_installation_script_test(installation-scripts.sh src/tests/installation/)
+
+# Lint the Travis-CI scripts
+set(TRAVIS_SCRIPTS
+  install.linux.sh
+  install.osx.sh
+  test-script.InstallScript.sh
+  test-script.cmake.sh)
+foreach(SCRIPT ${TRAVIS_SCRIPTS})
+  if(EXISTS "${CMAKE_SOURCE_DIR}/developer-scripts/travis/${SCRIPT}")
+    lint_script("${CMAKE_SOURCE_DIR}/developer-scripts/travis" ${SCRIPT})
+  endif()
+endforeach()

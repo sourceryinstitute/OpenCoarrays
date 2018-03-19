@@ -35,6 +35,7 @@ codecov.yml export-ignore
 makefile export-ignore
 Makefile export-ignore
 make.inc* export-ignore
+.Dockerfiles export-ignore
 
 # Experimental conduits/backends
 src/gasnet export-ignore

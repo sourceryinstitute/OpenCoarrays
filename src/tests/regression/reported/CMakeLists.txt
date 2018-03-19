@@ -3,5 +3,8 @@ caf_compile_executable(co_reduce-factorial-int8 issue-172-wrong-co_reduce-int8.f
 caf_compile_executable(co_reduce-factorial-int64 issue-172-wrong-co_reduce-int64.f90)
 caf_compile_executable(source-alloc-sync issue-243-source-allocation-no-sync.f90)
 caf_compile_executable(convert-before-put issue-292-convert-type-before-put.f90)
+caf_compile_executable(issue-493-coindex-slice issue-493-coindex-slice.f90)
 caf_compile_executable(issue-422-send issue-422-send.F90)
 caf_compile_executable(issue-422-send-get issue-422-send-get.F90)
+caf_compile_executable(issue-488-multi-dim-cobounds issue-488-multi-dim-cobounds.f90)
+caf_compile_executable(issue-503-multidim-array-broadcast issue-503-multidim-array-broadcast.f90)

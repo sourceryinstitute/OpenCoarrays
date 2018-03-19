@@ -28,7 +28,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 #ifndef LIBCAF_GFORTRAN_DESCRIPTOR_H
 #define LIBCAF_GFORTRAN_DESCRIPTOR_H
 
-#include <stdint.h>	/* For int32_t.  */
+#include "libcaf-version-def.h"
 
 /* GNU Fortran's array descriptor.  Keep in sync with libgfortran.h.  To be
    replaced by TS29113's ISO_Fortran_binding.h with CFI_cdesc_t.  */
@@ -47,33 +47,63 @@ typedef struct descriptor_dimension
 }
 descriptor_dimension;
 
+#ifdef GCC_GE_8
+  typedef struct dtype_type
+  {
+    size_t elem_len;
+    int version;
+    signed char rank;
+    signed char type;
+    signed short attribute;
+  }
+  dtype_type;
+#endif
+
 typedef struct gfc_descriptor_t {
   void *base_addr;
   size_t offset;
-  ptrdiff_t dtype;
 #ifdef GCC_GE_8
+  dtype_type dtype;
   ptrdiff_t span;
+#else
+  ptrdiff_t dtype;
 #endif
   descriptor_dimension dim[];
 } gfc_descriptor_t;
 
+#ifdef GCC_GE_8
+
+#define GFC_MAX_DIMENSIONS 15
+#define GFC_DTYPE_RANK_MASK 0x0F
+#define GFC_DTYPE_TYPE_SHIFT 4
+#define GFC_DTYPE_TYPE_MASK 0x70
+#define GFC_DTYPE_SIZE_SHIFT 7
+
+#define GFC_DESCRIPTOR_RANK(desc) (desc)->dtype.rank
+#define GFC_DESCRIPTOR_TYPE(desc) (desc)->dtype.type
+#define GFC_DESCRIPTOR_SIZE(desc) (desc)->dtype.elem_len
+#define GFC_DTYPE_TYPE_SIZE(desc) (( ((desc)->dtype.type << GFC_DTYPE_TYPE_SHIFT) \
+    | ((desc)->dtype.elem_len << GFC_DTYPE_SIZE_SHIFT) ) & GFC_DTYPE_TYPE_SIZE_MASK)
+
+#else
 
 #define GFC_MAX_DIMENSIONS 7
-
 #define GFC_DTYPE_RANK_MASK 0x07
 #define GFC_DTYPE_TYPE_SHIFT 3
 #define GFC_DTYPE_TYPE_MASK 0x38
 #define GFC_DTYPE_SIZE_SHIFT 6
+
 #define GFC_DESCRIPTOR_RANK(desc) ((desc)->dtype & GFC_DTYPE_RANK_MASK)
 #define GFC_DESCRIPTOR_TYPE(desc) (((desc)->dtype & GFC_DTYPE_TYPE_MASK) \
                                    >> GFC_DTYPE_TYPE_SHIFT)
 #define GFC_DESCRIPTOR_SIZE(desc) ((desc)->dtype >> GFC_DTYPE_SIZE_SHIFT)
+#define GFC_DTYPE_TYPE_SIZE(desc) ((desc)->dtype & GFC_DTYPE_TYPE_SIZE_MASK)
+
+#endif
 
 #define GFC_DTYPE_SIZE_MASK \
-  ((~((ptrdiff_t) 0) >> GFC_DTYPE_SIZE_SHIFT) << GFC_DTYPE_SIZE_SHIFT)
+  ( ~((ptrdiff_t)(1 << GFC_DTYPE_SIZE_SHIFT) - 1)) // least significant bits to 0
 #define GFC_DTYPE_TYPE_SIZE_MASK (GFC_DTYPE_SIZE_MASK | GFC_DTYPE_TYPE_MASK)
-
-#define GFC_DTYPE_TYPE_SIZE(desc) ((desc)->dtype & GFC_DTYPE_TYPE_SIZE_MASK)
 
 #define GFC_DTYPE_INTEGER_1 ((BT_INTEGER << GFC_DTYPE_TYPE_SHIFT) \
    | (sizeof(int8_t) << GFC_DTYPE_SIZE_SHIFT))
@@ -136,11 +166,14 @@ typedef struct gfc_descriptor_t {
     receives in the dtype component its gf_descriptor_t argument for character(kind=c_char)
     and logical(kind=c_bool) data:
 */
-#define GFC_DTYPE_CHARACTER 48
 
-#if 0
+#ifdef GCC_GE_8
+
 #define GFC_DTYPE_CHARACTER ((BT_CHARACTER << GFC_DTYPE_TYPE_SHIFT) \
    | (sizeof(char) << GFC_DTYPE_SIZE_SHIFT))
+
+#else
+#define GFC_DTYPE_CHARACTER 48
 #endif
 
 

@@ -25,11 +25,11 @@ download_if_necessary()
       args=("clone")
       ;;
     "svn" )
-       case "${arg_B:-}" in 
-         "gcc") 
+       case "${arg_B:-}" in
+         "gcc")
            args=("ls")
-           ;; 
-         *) 
+           ;;
+         *)
            args=("checkout")
          ;;
        esac
@@ -39,10 +39,10 @@ download_if_necessary()
       case "${first_three_characters}" in
         "ftp"  )
            args=("-LO" "-u" "anonymous: ")
-        ;; 
+        ;;
         "htt"  )
            args=("-LO")
-        ;; 
+        ;;
         *)
           emergency "download_if_necessary.sh: Unrecognized URL."
         ;;
@@ -50,7 +50,7 @@ download_if_necessary()
       ;;
     *)
       emergency "download_if_necessary.sh: Unrecognized \${fetch}=${fetch}."
-      ;; 
+      ;;
   esac
 
   case "${gcc_prereqs_fetch}" in
@@ -62,14 +62,15 @@ download_if_necessary()
       ;;
     "curl" )
       gcc_prereqs_fetch_args=("-LO" "-u" "anonymous: ")
-      ;; 
+      ;;
     *)
       emergency "download_if_necessary.sh: Unrecognized \${gcc_prereqs_fetch}=${gcc_prereqs_fetch}."
       ;;
    esac
-  
-  if  [[ -f "${download_path}/${url_tail}" || -d "${download_path}/${url_tail}" ]] ; then
-    info "Found '${url_tail}' in ${download_path}."
+
+
+  if  [[ -f "${download_path}/${url_tail}" || -d "${download_path}/${url_tail##*branches/}" && ! -z ${url_tail##*branches/} ]]; then
+    info "Found '${url_tail##*branches/}' in ${download_path}."
     info "If it resulted from an incomplete download, building ${package_name} could fail."
     if [[ "${arg_y}" == "${__flag_present}" ]]; then
       info "-y or --yes-to-all flag present. Proceeding with non-interactive build."
@@ -78,7 +79,7 @@ download_if_necessary()
       read -r proceed
       if [[ "${proceed}" == "n" || "${proceed}" == "N" || "${proceed}" == "no"  ]]; then
         info "n"
-        info "Please remove $url_tail and restart the installation to to ensure a fresh download." 1>&2
+        info "Please remove ${url_tail##*branches/} and restart the installation to to ensure a fresh download." 1>&2
         emergency "Aborting. [exit 80]"
       else
         info "y"

@@ -8,6 +8,22 @@ if (NOT MPI_C_FOUND)
   include_directories(BEFORE ${MPI_C_INCLUDE_PATH} ${MPI_Fortran_INCLUDE_PATH})
 endif()
 
+#----------------------------------
+# Determine if we're using Open MPI
+#----------------------------------
+cmake_host_system_information(RESULT N_CPU QUERY NUMBER_OF_LOGICAL_CORES)
+set(N_CPU ${N_CPU} PARENT_SCOPE)
+cmake_host_system_information(RESULT HOST_NAME QUERY HOSTNAME)
+set(HOSTNAME ${HOSTNAME} PARENT_SCOPE)
+execute_process(COMMAND ${MPIEXEC} --version
+  OUTPUT_VARIABLE mpi_version_out)
+if (mpi_version_out MATCHES "[Oo]pen[ -][Mm][Pp][Ii]")
+  message( STATUS "OpenMPI detected")
+  set ( openmpi true PARENT_SCOPE)
+  # Write out a host file because OMPI's mpiexec is dumb
+  file(APPEND ${CMAKE_BINARY_DIR}/hostfile "${HOST_NAME} slots=${N_CPU}\n")
+endif ()
+
 if("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
   set(gfortran_compiler true)
 elseif("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Cray")
@@ -49,8 +65,9 @@ CHECK_SYMBOL_EXISTS(SIGKILL "signal.h" HAVE_SIGKILL)
 if(NOT HAVE_SIGKILL) # try -D_POSIX, needed for mingw-w64, maybe others, see #435
                      # https://github.com/sourceryinstitute/OpenCoarrays/issues/435#issuecomment-323592433
   list( APPEND CMAKE_REQUIRED_DEFINITIONS -D_POSIX)
-  CHECK_SYMBOL_EXISTS(SIGKILL "signal.h" HAVE_SIGKILL)
-  if(HAVE_SIGKILL)
+  CHECK_SYMBOL_EXISTS(SIGKILL "signal.h" HAVE_SIGKILL2)
+  if(HAVE_SIGKILL2)
+    set(HAVE_SIGKILL ${HAVE_SIGKILL2})
     add_definitions(-D_POSIX)
   endif()
 endif()
@@ -102,7 +119,7 @@ set(CMAKE_REQUIRED_INCLUDES ${old_cmake_required_includes})
 set(CMAKE_REQUIRED_FLAGS ${old_cmake_required_flags})
 set(CMAKE_REQUIRED_LIBRARIES ${old_cmake_required_libraries})
 
-if(MPI_HAS_FAULT_TOL_EXT)
+if(MPI_HAS_FAULT_TOL_EXT) # AND (NOT openmpi))
   option(CAF_ENABLE_FAILED_IMAGES "Enable failed images support" TRUE)
 else()
   set(CAF_ENABLE_FAILED_IMAGES FALSE CACHE BOOL "Enable failed images support" FORCE)
@@ -115,11 +132,18 @@ endif()
 #---------------------------------------------------
 # Windows Intel MPI compatibility, see GH issue #435
 #---------------------------------------------------
-CHECK_SYMBOL_EXISTS(I_MPI_VERSION mpi.h HAVE_Intel_MPI)
+set(old_cmake_required_includes "${CMAKE_REQUIRED_INCLUDES}")
+if(CMAKE_REQUIRED_INCLUDES)
+  set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES};${MPI_C_INCLUDE_PATH})
+else()
+  set(CMAKE_REQUIRED_INCLUDES ${MPI_C_INCLUDE_PATH})
+endif()
+CHECK_INCLUDE_FILES("mpi.h" HAVE_MPI_H)
+CHECK_SYMBOL_EXISTS(I_MPI_VERSION "mpi.h" HAVE_Intel_MPI)
 if(HAVE_Intel_MPI AND WIN32)
   add_definitions(-DUSE_GCC)
 endif()
-
+set(CMAKE_REQUIRED_INCLUDES ${old_cmake_required_includes})
 
 add_library(opencoarrays_mod OBJECT ../extensions/opencoarrays.F90)
 set_target_properties(opencoarrays_mod
@@ -134,7 +158,9 @@ target_link_libraries(caf_mpi_static PRIVATE ${MPI_C_LIBRARIES} ${MPI_Fortran_LI
 
 set(CAF_SO_VERSION 0)
 if(gfortran_compiler)
-  if(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0)
+  if(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 8.0.0)
+    set(CAF_SO_VERSION 3)
+  elseif(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0)
     set(CAF_SO_VERSION 2)
   elseif(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 6.0.0)
     set(CAF_SO_VERSION 1)
@@ -148,10 +174,12 @@ set_target_properties ( caf_mpi
 )
 
 # Create a symlink in the include dir
-add_custom_command(TARGET caf_mpi
-  POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E create_symlink "./${mod_dir_tail}/opencoarrays.mod" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_INCLUDEDIR}/opencoarrays.mod"
-  COMMENT "Creating symlink ${CMAKE_INSTALL_INCLUDEDIR}/opencoarrays.mod --> ${CMAKE_INSTALL_INCLUDEDIR}/${mod_dir_tail}/opencoarrays.mod")
+if(UNIX)
+  add_custom_command(TARGET caf_mpi
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E create_symlink "./${mod_dir_tail}/opencoarrays.mod" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_INCLUDEDIR}/opencoarrays.mod"
+    COMMENT "Creating symlink ${CMAKE_INSTALL_INCLUDEDIR}/opencoarrays.mod --> ${CMAKE_INSTALL_INCLUDEDIR}/${mod_dir_tail}/opencoarrays.mod")
+endif()
 
 install(DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_INCLUDEDIR}/" DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
   FILES_MATCHING PATTERN "*.mod")
@@ -176,26 +204,35 @@ install(TARGETS caf_mpi_static EXPORT OpenCoarraysTargets
   LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
   )
 
-
 ##############################################
 # Configure `caf` and `cafrun` wrapper scripts
 ##############################################
 # List of caf.in variables needing configuration:
 #
 # @CAF_VERSION@ @opencoarrays_aware_compiler@ @Fortran_COMPILER@ @CAF_MODDIR@
-# @MPI_Fortran_LINK_FLAGS@ @MPI_Fortran_COMPILE_FLAGS@
-# @CAF_LIBS@ @MPI_LIBS@
+# @CAF_MPI_Fortran_LINK_FLAGS@ @CAF_MPI_Fortran_COMPILE_FLAGS@
+# @CAF_LIBS@ @CAF_MPI_LIBS@
 #
 
 set(CAF_VERSION "${full_git_describe}")
 set(Fortran_COMPILER "${CMAKE_Fortran_COMPILER}")
 set(CAF_MODDIR "${CMAKE_INSTALL_INCLUDEDIR}/${mod_dir_tail}")
 set(MOD_DIR_FLAG "${CMAKE_Fortran_MODDIR_FLAG}")
-set(MPI_LIBS "")
+set(CAF_MPI_LIBS "")
 foreach( lib IN LISTS MPI_Fortran_LIBRARIES)
-  set(MPI_LIBS "${MPI_LIBS} \"${lib}\"")
+  set(CAF_MPI_LIBS "${CAF_MPI_LIBS} \"${lib}\"")
 endforeach()
 string(STRIP "${MPI_LIBS}" MPI_LIBS)
+set(CAF_MPI_Fortran_LINK_FLAGS "")
+foreach( lflag IN LISTS MPI_Fortran_LINK_FLAGS)
+  set(CAF_MPI_Fortran_LINK_FLAGS "${CAF_MPI_Fortran_LINK_FLAGS} ${lflag}" )
+endforeach()
+string(STRIP "${CAF_MPI_Fortran_LINK_FLAGS}" CAF_MPI_Fortran_LINK_FLAGS)
+set(CAF_MPI_Fortran_COMPILE_FLAGS "")
+foreach( fcflag IN LISTS MPI_Fortran_COMPILE_FLAGS)
+  set(CAF_MPI_Fortran_COMPILE_FLAGS "${CAF_MPI_Fortran_COMPILE_FLAGS} ${fcflag}" )
+endforeach()
+string(STRIP "${CAF_MPI_Fortran_COMPILE_FLAGS}" CAF_MPI_Fortran_COMPILE_FLAGS)
 set_target_properties(caf_mpi_static
   PROPERTIES OUTPUT_NAME caf_mpi)
 get_target_property(libcaf_static caf_mpi_static OUTPUT_NAME)

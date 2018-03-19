@@ -50,8 +50,8 @@ set -o pipefail
 # List of variables needing configuration:
 #
 # CAF_VERSION, opencoarrays_aware_compiler, Fortran_COMPILER, CAF_MODDIR,
-# MPI_Fortran_LINK_FLAGS, MPI_Fortran_COMPILE_FLAGS,
-# CAF_LIBS, MPI_LIBS
+# CAF_MPI_Fortran_LINK_FLAGS, CAF_MPI_Fortran_COMPILE_FLAGS,
+# CAF_LIBS, CAF_MPI_LIBS
 #
 
 caf_version='@CAF_VERSION@' # fetched from `git describe` and/or
@@ -80,15 +80,15 @@ mod_dir_flag="-I"
 # variables expanded from CMake should be appropriately quoted.
 
 # shellcheck disable=SC2054
-mpi_link_flags=(@MPI_Fortran_LINK_FLAGS@) # e.g. `pkg-config
+mpi_link_flags=(@CAF_MPI_Fortran_LINK_FLAGS@) # e.g. `pkg-config
 # --libs-only-other mpich`
 # __*AND*__ `pkg-config
 # --libs-only-L`
-mpi_compile_flags=(@MPI_Fortran_COMPILE_FLAGS@)
-caf_libs=[(@CAF_LIBS@)] # e.g. "libcaf_mpi" "libcaf_extensions",
+mpi_compile_flags=(@CAF_MPI_Fortran_COMPILE_FLAGS@)
+caf_libs=(@CAF_LIBS@) # e.g. "libcaf_mpi" "libcaf_extensions",
 # preferably full paths, but could be
 # combination of -L... and -lcaf_mpi...
-mpi_libs=(@MPI_LIBS@) # e.g. `pkg-config --libs-only-l` or full paths
+mpi_libs=(@CAF_MPI_LIBS@) # e.g. `pkg-config --libs-only-l` or full paths
 # to MPI libs
 
 #-------------------------
@@ -122,13 +122,13 @@ cmd="${__base}"
 # mac OS doesn't have readlink -f, so need to crawl symlinks manually.
 # See: https://stackoverflow.com/questions/1055671/how-can-i-get-the-behavior-of-gnus-readlink-f-on-a-mac
 current_dir="${PWD}"
-cd "${__dir}"
+cd "${__dir}" || exit 5
   target_file="${__file}"
   max_iter=1000
   iter=0
   while [[ -L "${target_file}" ]]; do
     target_file="$(readlink "${target_file}")"
-    cd "$(dirname "${target_file}")"
+    cd "$(dirname "${target_file}")" || exit 5
     target_file="$(basename "${target_file}")"
     if ((++iter >= max_iter)); then
       echo "Failed to compute OpenCoarrays instalation prefix!" >&2
@@ -142,7 +142,7 @@ cd "${__dir}"
   # shellcheck disable=SC2034
   prefix="${true_dir%/bin}"
   # echo "Install prefix is ${prefix}" # for debugging
-cd "${current_dir}"
+cd "${current_dir}" || exit 5
 # echo "Current directory is $(pwd)"
 # echo "This script is in ${__dir}"
 
@@ -195,12 +195,16 @@ if [[ -n "${mpi_link_flags[*]:-}" ]]; then
 fi
 
 # Now do libraries, IN CORRECT ORDER, to append to command
-for lib in "${caf_libs[@]:-}"; do
-  caf_added_libs+=("${prefix%/}/${lib}")
-done
-for lib in "${mpi_libs[@]:-}"; do
-  caf_added_libs+=("${lib}")
-done
+if [[ -n "${caf_libs[*]:-}" ]]; then
+  for lib in "${caf_libs[@]:-}"; do
+    caf_added_libs+=("${prefix%/}/${lib}")
+  done
+fi
+if [[ -n "${mpi_libs[*]:-}" ]]; then
+  for lib in "${mpi_libs[@]:-}"; do
+    caf_added_libs+=("${lib}")
+  done
+fi
 
 usage() {
   echo ""
@@ -327,10 +331,11 @@ fi
 set +o errtrace
 set +o errexit
 if "${cafc}" "${compiler_args[@]}" ; then
-  exit 0
+  exit $?
 else
+  return_code=$?
   echo "Error: comand:" >&2
   echo "   \`${cafc} ${compiler_args[*]}\`" >&2
   echo "failed to compile." >&2
-  exit 12
+  exit "${return_code}"
 fi

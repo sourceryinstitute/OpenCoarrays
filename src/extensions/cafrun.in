@@ -34,6 +34,17 @@
 #    2. The environment variable "FC" is used to determine the identity fo the Fortran compiler/linker.
 #    3. If "FC" is empty, a default value of "mpifort" is used.
 
+# Exit on error. Append "|| true" if you expect an error.
+set -o errexit
+# Exit on error inside any functions or subshells.
+set -o errtrace
+# Do not allow use of undefined vars. Use ${VAR:-} to use an undefined VAR
+set -o nounset
+# Catch the error in case mysqldump fails (but gzip succeeds) in `mysqldump |gzip`
+set -o pipefail
+# Turn on traces, useful while debugging but commented out by default
+# set -o xtrace
+
 
 #---------------------
 # Configured variables
@@ -44,8 +55,8 @@
 #
 
 caf_version='@CAF_VERSION@'
-CAFRUN='@MPIEXEC@'
-if [[ ${CAFRUN} == @*@ ]]; then
+CAFRUN="@MPIEXEC@"
+if [[ "${CAFRUN}" == @*@ ]]; then
   CAFRUN=mpiexec
 fi
 have_failed_img=@HAVE_FAILED_IMG@
@@ -56,17 +67,84 @@ numproc_flag='@MPIEXEC_NUMPROC_FLAG@'
 if [[ ${numproc_flag} == @*@ ]]; then
   numproc_flag='-np'
 fi
-preflags='@MPIEXEC_PREFLAGS@'
-if [[ ${preflags} == @*@ ]]; then
+preflags="@MPIEXEC_PREFLAGS@"
+preflags="${preflags//;/ }"
+if [[ "${preflags}" == @*@ ]]; then
   unset preflags
 fi
-postflags='@MPIEXEC_POSTFLAGS@'
-if [[ ${postflags} == @*@ ]]; then
+postflags="@MPIEXEC_POSTFLAGS@"
+postflags="${postflags//;/ }"
+if [[ "${postflags}" == @*@ ]]; then
   unset postflags
 fi
+#-------------------------
+# End configured variables
+#-------------------------
+
+if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
+  __i_am_main_script="0" # false
+
+  # shellcheck disable=SC2154
+  if [[ "${__usage+x}" ]]; then
+    if [[ "${BASH_SOURCE[1]}" == "${0}" ]]; then
+      __i_am_main_script="1" # true
+    fi
+    __caf_tmp_source_idx=1
+  fi
+else
+  # shellcheck disable=SC2034
+  __i_am_main_script="1" # true
+fi
+
+# Set magic variables for current file, directory, os, etc.
+__dir="$(cd "$(dirname "${BASH_SOURCE[${__caf_tmp_source_idx:-0}]}")" && pwd)"
+__file="${__dir}/$(basename "${BASH_SOURCE[${__caf_tmp_source_idx:-0}]}")"
+# shellcheck disable=SC2034
+__base="$(basename "${__file}")"
+cmd="${__base}"
+
+# Set installation prefix. Compute this dynamically assuming this script is in a bin/ subdir
+# Dereference symbolic links and canonicalize (i.e., abs path) prefix in case stow, homebrew, etc being used
+# mac OS doesn't have readlink -f, so need to crawl symlinks manually.
+# See: https://stackoverflow.com/questions/1055671/how-can-i-get-the-behavior-of-gnus-readlink-f-on-a-mac
+current_dir="${PWD}"
+cd "${__dir}" || exit 5
+  target_file="${__file}"
+  max_iter=1000
+  iter=0
+  while [[ -L "${target_file}" ]]; do
+    target_file="$(readlink "${target_file}")"
+    cd "$(dirname "${target_file}")" || exit 5
+    target_file="$(basename "${target_file}")"
+    if ((++iter >= max_iter)); then
+      echo "Failed to compute OpenCoarrays instalation prefix!" >&2
+      echo "Likely cause: circular symlink cycles." >&2
+      echo "Aborting!" >&2
+      exit 200
+    fi
+  done
+  true_dir="$(pwd -P)"
+  true_dir="${true_dir%/}"
+  # shellcheck disable=SC2034
+  prefix="${true_dir%/bin}"
+  # echo "Install prefix is ${prefix}" # for debugging
+cd "${current_dir}" || exit 5
+# echo "Current directory is $(pwd)"
+# echo "This script is in ${__dir}"
+
+# Error tracing
+# requires `set -o errtrace`
+__caf_err_report() {
+  local error_code
+  error_code=${?}
+  echo "Error in ${__file} in function ${1} on line ${2}. Please report this error at http://bit.ly/OpenCoarrays-new-issue" >&2
+  exit ${error_code}
+}
+# Always provide an error backtrace
+trap '__caf_err_report "${FUNCNAME:-.}" ${LINENO}' ERR
+
 
 usage() {
-  cmd="$(basename "${0}")"
   echo ""
   echo " ${cmd} - Coarray Fortran executable launcher for OpenCoarrays"
   echo ""
@@ -75,7 +153,7 @@ usage() {
   echo " Options:"
   echo "   --help, -h               Show this help message"
   echo "   --version, -v, -V        Report version and copyright information"
-  echo "   --wraps, -w,             Report the name of the wrapped compiler"
+  echo "   --wraps, -w,             Report info about the wrapped MPI launcher"
   echo "   -np <N>,                 Number of images, N, to execute, N must be a positive integer"
   echo "   --reenable-auto-cleanup  Turn off failed images support (if library support is present)"
   echo "                            This option re-enables MPI auto cleanup, which is disabled by"
@@ -84,6 +162,9 @@ usage() {
   echo "                            failed image support is present, OpenCoarrays triggers cleanup"
   echo "                            explicitly when a failed/stopped image is encountered in an"
   echo "                            image control statement without a \`stat=\` clause."
+  echo "   --show, -s,              Show the command that the wrapper will execute. You can pass"
+  echo "                            this as the first argument and then the additional arguments"
+  echo "                            that you're planning to pass to perform a dry run."
   echo ""
   echo " Example usage:"
   echo ""
@@ -183,7 +264,15 @@ elif [[ "${1}" == -np || "${1}" == -n ]]; then
       mpiexec_args+=("${@:4:$((${#} - 3))}")
     fi
 
-    "${CAFRUN}" "${mpiexec_args[@]//''/}"
+    if "${CAFRUN}" "${mpiexec_args[@]//''/}" ; then
+      exit $?
+    else
+      return_code=$?
+      echo "Error: Command:" >&2
+      echo "   \`${CAFRUN}" "${mpiexec_args[*]//''/}\`" >&2
+      echo "failed to run." >&2
+      exit "${return_code}"
+    fi
   else
     echo "You must pass \"-np\", \"<number_of_images>\", \"/path/to/coarray_Fortran_program\" as the first 3 arguments to ${cmd}."
     exit 1
