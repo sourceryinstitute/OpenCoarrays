@@ -42,8 +42,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 #include  "libcaf-version-def.h"
 #include "libcaf-gfortran-descriptor.h"
 
-#include <mpi.h>
-
 #ifndef __GNUC__
 #define __attribute__(x)
 #define likely(x)       (x)
@@ -322,6 +320,7 @@ void PREFIX (event_query) (caf_token_t, size_t, int, int *, int *);
 
 /* Language extension */
 #ifdef HAVE_MPI
+#include <mpi.h>
 MPI_Fint PREFIX (get_communicator) (caf_team_t *);
 #endif
 
