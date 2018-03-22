@@ -11,6 +11,8 @@ caf_compile_executable(get_with_offset_1d get_with_offset_1d.f90)
 caf_compile_executable(whole_get_array whole_get_array.f90)
 caf_compile_executable(strided_get strided_get.f90)
 caf_compile_executable(get_with_vector_index get_with_vector_index.f90)
+## Inquiry functions (these are gets that could be optimized in the future to communicate only the descriptors)
+caf_compile_executable(alloc_comp_multidim_shape alloc_comp_multidim_shape.F90)
 
 ## Pure send() tests
 caf_compile_executable(send_array send_array_test.f90)
