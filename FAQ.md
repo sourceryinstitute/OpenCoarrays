@@ -1,6 +1,14 @@
 Frequently Asked Questions
 ==========================
 
+* [1. I have installed OpenCoarrays with OpenMPI but I'm having trouble running with more than a few images, why?]
+* [2. I have installed OpenCoarrays with a recent version of OpenMPI, but my Coarray Fortran programs won't run when launched with cafrun, why?]
+* [3. `install.sh` is trying to download and install GCC/GFortran and its prerequisites, but I want to use GCC version X already present on my system, how can I do this?]
+* [4. How can I uninstall OpenCoarrays?]
+* [5. OpenCoarrays was built with MPICH as the MPI back end, but I am running into bugs, what should I do?]
+* [6. How can I pass additional flags through to the underlying parallel run-time or compiler?]
+* [7. When `install.sh` builds the GCC compilers, it takes forever (hours).  How can I speed up the build?]
+
 ## 1. I have installed OpenCoarrays with OpenMPI but I'm having trouble running with more than a few images, why? ##
 
 OpenMPI requires oversubscribed jobs (more MPI ranks/coarray
@@ -47,7 +55,7 @@ invoked CMake yourself it should be in the top level of your build
 directory at `/path/to/build/dir/hostfile`. (You must run CMake
 first, to create this file.)
 
-## 3. [`install.sh`] is trying to download and install GCC/GFortran and its prerequisites, but I want to use GCC version X already present on my system, how can I do this? ##
+## 3. `install.sh` is trying to download and install GCC/GFortran and its prerequisites, but I want to use GCC version X already present on my system, how can I do this? ##
 
 [`install.sh`] defaults to trying to install the most recent stable
 version of GFortran and GCC that has the best functionality with
@@ -121,3 +129,12 @@ decrease the GCC build time from several hours to 15 or fewer minutes.
 [`install.sh`]: https://github.com/sourceryinstitute/OpenCoarrays/blob/master/install.sh
 [`INSTALL']: https://github.com/sourceryinstitute/OpenCoarrays/blob/master/INSTALL
 [new issue]: https://github.com/sourceryinstitute/OpenCoarrays/issues/new
+
+[TOC links]: #
+[1. I have installed OpenCoarrays with OpenMPI but I'm having trouble running with more than a few images, why?]: #1-i-have-installed-opencoarrays-with-openmpi-but-im-having-trouble-running-with-more-than-a-few-images-why
+[2. I have installed OpenCoarrays with a recent version of OpenMPI, but my Coarray Fortran programs won't run when launched with cafrun, why?]: #2-i-have-installed-opencoarrays-with-a-recent-version-of-openmpi-but-my-coarray-fortran-programs-wont-run-when-launched-with-cafrun-why
+[3. `install.sh` is trying to download and install GCC/GFortran and its prerequisites, but I want to use GCC version X already present on my system, how can I do this?]: #3-installsh-is-trying-to-download-and-install-gccgfortran-and-its-prerequisites-but-i-want-to-use-gcc-version-x-already-present-on-my-system-how-can-i-do-this
+[4. How can I uninstall OpenCoarrays?]: #4-how-can-i-uninstall-opencoarrays
+[5. OpenCoarrays was built with MPICH as the MPI back end, but I am running into bugs, what should I do?]: #5-opencoarrays-was-built-with-mpich-as-the-mpi-back-end-but-i-am-running-into-bugs-what-should-i-do
+[6. How can I pass additional flags through to the underlying parallel run-time or compiler?]: #6-how-can-i-pass-additional-flags-through-to-the-underlying-parallel-run-time-or-compiler
+[7. When `install.sh` builds the GCC compilers, it takes forever (hours).  How can I speed up the build?]: #7-when-installsh-builds-the-gcc-compilers-it-takes-forever-hours--how-can-i-speed-up-the-build
