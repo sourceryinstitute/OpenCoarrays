@@ -67,7 +67,9 @@ compiler. Alternatively the "Developer/quick-start instructions"
 installation using CMake directly, without calling [`install.sh`]. The
 compilers are specified using the `FC`, `CC` and `CXX` environment
 variables, and all prerequisites (GFortran, CMake, and a suitable MPI
-implementation) are assumed to be already installed on the system.
+implementation) are assumed to be already installed on the system. If
+you pass one compiler-specification argument (e.g., `-f`), it is best
+to pass all three (e.g., `-f`, `-c`, and `-C`) to ensure consistency.
 
 ## 4. How can I uninstall OpenCoarrays? ##
 
@@ -103,6 +105,18 @@ GFortran or `mpirun` after any flags specific to `caf` or `cafrun`
 such as the `-s` flag to show the underlying command, or the `-np <N>`
 flag to specify the number of images in the `cafrun` script and before
 any files such as Fortran source files or Coarray Fortran executables.
+
+## 7. When `install.sh` builds the GCC compilers, it takes forever (hours).  How can I speed up the build? ##
+
+To increase the odds of success, `install.sh` defaults to a GCC
+bootstrap build, which builds a minimal compiler to build the ultimate
+compiler (not every version of GCC can build every other version of
+GCC).  For a much faster build process that has a somewhat higher
+chance of failing, pass the `--disable-bootstrap` or `-z` argument and
+use more threads by passing, for example, `--num-threads -4` or `-j 4`
+to use four threads.  In combination, these two recommendations can
+decrease the GCC build time from several hours to 15 or fewer minutes.
+
 
 [`install.sh`]: https://github.com/sourceryinstitute/OpenCoarrays/blob/master/install.sh
 [`INSTALL']: https://github.com/sourceryinstitute/OpenCoarrays/blob/master/INSTALL
