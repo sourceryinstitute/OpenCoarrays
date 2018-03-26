@@ -6791,7 +6791,7 @@ internal_co_reduce (MPI_Op op, gfc_descriptor_t *source, int result_image, int *
   MPI_Datatype datatype = get_MPI_datatype (source, src_len);
 
   size = 1;
-  for (j = 0; j < rank; j++)
+  for (j = 0; j < rank; ++j)
     {
       ptrdiff_t dimextent = source->dim[j]._ubound
                             - source->dim[j].lower_bound + 1;
@@ -6816,21 +6816,18 @@ internal_co_reduce (MPI_Op op, gfc_descriptor_t *source, int result_image, int *
       goto co_reduce_cleanup;
     }
 
-  for (i = 0; i < size; i++)
+  for (i = 0; i < size; ++i)
     {
       ptrdiff_t array_offset_sr = 0;
-      ptrdiff_t stride = 1;
+      ptrdiff_t tot_ext = 1;
       ptrdiff_t extent = 1;
-      for (j = 0; j < GFC_DESCRIPTOR_RANK (source)-1; j++)
+      for (j = 0; j < rank-1; ++j)
         {
-          array_offset_sr += ((i / (extent*stride))
-                           % (source->dim[j]._ubound
-                              - source->dim[j].lower_bound + 1))
-                          * source->dim[j]._stride;
           extent = (source->dim[j]._ubound - source->dim[j].lower_bound + 1);
-          stride = source->dim[j]._stride;
+          array_offset_sr += ((i / tot_ext) % extent) * source->dim[j]._stride;
+          tot_ext *= extent;
         }
-      array_offset_sr += (i / extent) * source->dim[rank-1]._stride;
+      array_offset_sr += (i / tot_ext) * source->dim[rank-1]._stride;
       void *sr = (void *)((char *) source->base_addr
                           + array_offset_sr*GFC_DESCRIPTOR_SIZE (source));
       if (result_image == 0)
@@ -6884,10 +6881,9 @@ PREFIX (co_broadcast) (gfc_descriptor_t *a, int source_image, int *stat, char *e
   MPI_Datatype datatype = get_MPI_datatype (a, 0);
 
   size = 1;
-  for (j = 0; j < rank; j++)
+  for (j = 0; j < rank; ++j)
     {
-      ptrdiff_t dimextent = a->dim[j]._ubound
-                            - a->dim[j].lower_bound + 1;
+      ptrdiff_t dimextent = a->dim[j]._ubound - a->dim[j].lower_bound + 1;
       if (dimextent < 0)
         dimextent = 0;
       size *= dimextent;
@@ -6919,21 +6915,18 @@ PREFIX (co_broadcast) (gfc_descriptor_t *a, int source_image, int *stat, char *e
         caf_runtime_error ("Co_broadcast of character arrays not yet supported\n");
     }
 
-  for (i = 0; i < size; i++)
+  for (i = 0; i < size; ++i)
     {
       ptrdiff_t array_offset_sr = 0;
-      ptrdiff_t stride = 1;
+      ptrdiff_t tot_ext = 1;
       ptrdiff_t extent = 1;
-      for (j = 0; j < GFC_DESCRIPTOR_RANK (a)-1; j++)
+      for (j = 0; j < rank-1; ++j)
         {
-          array_offset_sr += ((i / (extent*stride))
-                           % (a->dim[j]._ubound
-                              - a->dim[j].lower_bound + 1))
-                          * a->dim[j]._stride;
           extent = (a->dim[j]._ubound - a->dim[j].lower_bound + 1);
-          stride = a->dim[j]._stride;
+          array_offset_sr += ((i / tot_ext) % extent) * a->dim[j]._stride;
+          tot_ext *= extent;
         }
-      array_offset_sr += (i / (extent * stride)) * a->dim[rank-1]._stride;
+      array_offset_sr += (i / tot_ext) * a->dim[rank-1]._stride;
       void *sr = (void *)((char *) a->base_addr
                           + array_offset_sr*GFC_DESCRIPTOR_SIZE (a));
 
