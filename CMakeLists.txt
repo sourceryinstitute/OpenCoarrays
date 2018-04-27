@@ -158,6 +158,10 @@ the C compiler if it matches the Fortran compiler ID." )
   set( CMAKE_Fortran_COMPILER_VERSION "${DETECTED_VER}" )
 endif()
 
+if(CMAKE_BUILD_TYPE MATCHES "Debug|DEBUG|debug")
+  add_definitions(-DEXTRA_DEBUG_OUTPUT)
+endif()
+
   # We have populated CMAKE_Fortran_COMPILER_VERSION if it was missing
   if(gfortran_compiler AND (CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 5.0.0))
     set(opencoarrays_aware_compiler true)
