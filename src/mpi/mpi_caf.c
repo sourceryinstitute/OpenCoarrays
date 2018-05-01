@@ -263,13 +263,19 @@ bool caf_owns_mpi = false;
 
 /* Foo function pointers for coreduce.
   The handles when arguments are passed by reference.  */
+int (*int8_t_by_reference)(void *, void *);
+int (*int16_t_by_reference)(void *, void *);
 int (*int32_t_by_reference)(void *, void *);
+int (*int64_t_by_reference)(void *, void *);
 float (*float_by_reference)(void *, void *);
 double (*double_by_reference)(void *, void *);
 /* Strings are always passed by reference.  */
 void (*char_by_reference)(void *, int, void *, void *, int, int);
 /* The handles when arguments are passed by value.  */
+int8_t (*int8_t_by_value)(int8_t, int8_t);
+int16_t (*int16_t_by_value)(int16_t, int16_t);
 int (*int32_t_by_value)(int32_t, int32_t);
+int64_t (*int64_t_by_value)(int64_t, int64_t);
 float (*float_by_value)(float, float);
 double (*double_by_value)(double, double);
 
@@ -6686,7 +6692,10 @@ name##_by_value_adapter (void *invec, void *inoutvec, int *len, \
    } \
 }
 
+GEN_COREDUCE (redux_int8, int8_t)
+GEN_COREDUCE (redux_int16, int16_t)
 GEN_COREDUCE (redux_int32, int32_t)
+GEN_COREDUCE (redux_int64, int64_t)
 GEN_COREDUCE (redux_real32, float)
 GEN_COREDUCE (redux_real64, double)
 
@@ -7030,8 +7039,20 @@ PREFIX (co_reduce) (gfc_descriptor_t *a, void *(*opr) (void *, void *), int opr_
        * arguments to be passed by value. */
       if ((opr_flags & GFC_CAF_ARG_VALUE) > 0)
         {
-          int32_t_by_value = (typeof (VALUE_FUNC(int32_t)))opr;
-          MPI_Op_create(redux_int32_by_value_adapter, 1, &op);
+#define ifTypeGen(type) if (GFC_DESCRIPTOR_SIZE(a) == sizeof (type ## _t)) \
+            { \
+              type ## _t_by_value = (typeof (VALUE_FUNC(type ## _t)))opr; \
+              MPI_Op_create(redux_ ## type ## _by_value_adapter, 1, &op); \
+            }
+
+          ifTypeGen(int8)
+          else ifTypeGen(int16)
+          else ifTypeGen(int32)
+          else ifTypeGen(int64)
+          else
+            {
+              caf_runtime_error ("CO_REDUCE unsupported integer datatype");
+            }
         }
       else
         {
