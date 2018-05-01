@@ -748,6 +748,11 @@ if(opencoarrays_aware_compiler)
     add_caf_test(source-alloc-no-sync 8 source-alloc-sync)
   endif()
 
+  # Fixed on GCC 6 > 6.4, 7 > 7.3 and 8.x
+  if (FALSE) # FIXME!
+    add_caf_test(non-coarray-vector-indexed-lhs issue-322-non-coarray-vector-idx-lhs)
+  endif()
+
   # Open GCC 7 regressions
   if ((CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}) OR
       (gfortran_compiler AND (
