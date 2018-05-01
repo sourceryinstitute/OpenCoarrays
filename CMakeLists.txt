@@ -158,6 +158,10 @@ the C compiler if it matches the Fortran compiler ID." )
   set( CMAKE_Fortran_COMPILER_VERSION "${DETECTED_VER}" )
 endif()
 
+if(CMAKE_BUILD_TYPE MATCHES "Debug|DEBUG|debug")
+  add_definitions(-DEXTRA_DEBUG_OUTPUT)
+endif()
+
   # We have populated CMAKE_Fortran_COMPILER_VERSION if it was missing
   if(gfortran_compiler AND (CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 5.0.0))
     set(opencoarrays_aware_compiler true)
@@ -742,6 +746,11 @@ if(opencoarrays_aware_compiler)
     endif()
     # GFortran PR 78505 only fixed on trunk/gcc 7, issue #243
     add_caf_test(source-alloc-no-sync 8 source-alloc-sync)
+  endif()
+
+  # Fixed on GCC 6 > 6.4, 7 > 7.3 and 8.x
+  if (FALSE) # FIXME!
+    add_caf_test(non-coarray-vector-indexed-lhs issue-322-non-coarray-vector-idx-lhs)
   endif()
 
   # Open GCC 7 regressions

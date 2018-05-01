@@ -25,16 +25,21 @@ if [[ "${BUILD_TYPE:-}" != InstallScript ]]; then # Ubuntu on Travis-CI, NOT tes
     if ! [[ -x "${HOME}/.local/bin/mpif90" && -x "${HOME}/.local/bin/mpicc" ]]; then
         # mpich install not cached
         # could use prerequisites/build instead...
-        wget "${MPICH_URL_HEAD}/${MPICH_URL_TAIL}"
-        tar -xzvf "${MPICH_URL_TAIL}"
-	export CC=gcc-${GCC}
-	export FC=gfortran-${GCC}
+        echo "Downloading MPICH from ${MPICH_URL_HEAD}/${MPICH_URL_TAIL} ..."
+        wget "${MPICH_URL_HEAD}/${MPICH_URL_TAIL}" > wget_mpich.log 2>&1 || cat wget_mpich.log
+        echo "Extracting MPICH ..."
+        tar -xzvf "${MPICH_URL_TAIL}" > tar_mpich.log 2>&1 || cat tar_mpich.log
+        export CC=gcc-${GCC}
+        export FC=gfortran-${GCC}
         (
-	    cd "${MPICH_URL_TAIL%.tar.gz}"
-            ./configure --prefix="${CACHE}"
-            make -j 4
-            make install
-	)
+            cd "${MPICH_URL_TAIL%.tar.gz}"
+            echo "Configuring MPICH ..."
+            ${TRAVIS:+travis_wait} ./configure --prefix="${CACHE}" > configure_mpich.log 2>&1 || cat configure_mpich.log
+            echo "Building MPICH ..."
+            ${TRAVIS:+travis_wait 30} make -j 4 > make_mpich.log 2>&1 || cat make_mpich.log
+            echo "Installing MPICH ..."
+            ${TRAVIS:+travis_wait} make install > install_mpich.log 2>&1 || cat install_mpich.log
+        )
     fi
 fi
 

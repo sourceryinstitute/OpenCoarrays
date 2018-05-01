@@ -33,7 +33,8 @@ for version in ${GCC}; do
 	# but puting it here simplifies the Travis code a lot
 	MPICH_BOT_URL_HEAD=MPICH_GCC${version}_BOT_URL_HEAD
 	brew uninstall --force --ignore-dependencies mpich || true
-	wget "${!MPICH_BOT_URL_HEAD}${MPICH_BOT_URL_TAIL}"
+	echo "Downloading Custom MPICH bottle ${!MPICH_BOT_URL_HEAD}${MPICH_BOT_URL_TAIL} ..."
+	wget "${!MPICH_BOT_URL_HEAD}${MPICH_BOT_URL_TAIL}" > wget_mpichbottle.log 2>&1 || cat wget_mpichbottle.log
 	brew install --force-bottle "${MPICH_BOT_URL_TAIL}"
 	brew ls --versions mpich >/dev/null || brew install --force-bottle mpich
 	rm "${MPICH_BOT_URL_TAIL}"
