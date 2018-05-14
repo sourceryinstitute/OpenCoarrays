@@ -1,0 +1,1 @@
+add_executable( ISO_Fortran_binding_tests ISO_Fortran_binding_tests.c )

@@ -1,3 +1,5 @@
+add_subdirectory(iso_fortran_binding)
+
 if (${opencoarrays_aware_compiler})
   add_subdirectory(simple)
   add_subdirectory(send-get)
