@@ -51,7 +51,7 @@ build_and_install()
     # Patch gfortran if necessary
     export patches_dir="${OPENCOARRAYS_SRC_DIR}/prerequisites/build-functions/patches/${package_to_build}/${version_to_build}"
     if [[ -d "${patches_dir:-}" ]]; then
-      for patch in "${patches_dir%/}"*.diff ; do
+      for patch in "${patches_dir%/}"/*.diff ; do
 	info "Applying patch ${patch##*/} to $package_to_build ${version_to_build}."
 	patch -p1 < "$patch"
       done
