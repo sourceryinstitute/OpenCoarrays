@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Make the build directory, configure, and build
 # shellcheck disable=SC2154
 
@@ -6,7 +7,6 @@ source "${OPENCOARRAYS_SRC_DIR}/prerequisites/build-functions/edit_GCC_download_
 
 build_and_install()
 {
-
   num_threads=${arg_j}
   build_path="${OPENCOARRAYS_SRC_DIR}/prerequisites/builds/${package_to_build}-${version_to_build}"
 
@@ -45,13 +45,22 @@ build_and_install()
 
   else # ${package_to_build} == "gcc"
 
-    # Use GCC's contrib/download_prerequisites script after modifying it, if necessary, to use the
-    # the preferred download mechanism set in prerequisites/build-functions/set_or_print_downloader.sh
-
     info "pushd ${download_path}/${package_source_directory} "
     pushd "${download_path}/${package_source_directory}"
 
-    # Switch download mechanism, if wget is not available
+    # Patch gfortran if necessary
+    export patches_dir="${OPENCOARRAYS_SRC_DIR}/prerequisites/build-functions/patches/${package_to_build}/${version_to_build}"
+    if [[ -d "${patches_dir:-}" ]]; then
+      for patch in "${patches_dir%/}"*.diff ; do
+	info "Applying patch ${patch##*/} to $package_to_build ${version_to_build}."
+	patch -p1 < "$patch"
+      done
+    fi
+
+    # Use GCC's contrib/download_prerequisites script after modifying it, if necessary, to use the
+    # the preferred download mechanism set in prerequisites/build-functions/set_or_print_downloader.sh
+
+    # Switch download mechanism if wget is not available
     edit_GCC_download_prereqs_file_if_necessary
 
     # Download GCC prerequisities
