@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Make the build directory, configure, and build
 # shellcheck disable=SC2154
 
@@ -50,11 +51,10 @@ build_and_install()
     # Patch gfortran if necessary
     export patches_dir="${OPENCOARRAYS_SRC_DIR}/prerequisites/build-functions/patches/${package_to_build}/${version_to_build}"
     if [[ -d "${patches_dir:-}" ]]; then
-      #TODO: check whether multiple patch files exist in $patches_dir and apply each one
-      export patch_file="$(ls "$patches_dir")"
-      info "Applying patch $patch_file to $package_to_build ${version_to_build}."
-      patch_file="${patches_dir:-}/$patch_file"
-      patch -p1 < "$patch_file"
+      for patch in "${patches_dir%/}"*.diff ; do
+	info "Applying patch ${patch##*/} to $package_to_build ${version_to_build}."
+	patch -p1 < "$patch"
+      done
     fi
 
     # Use GCC's contrib/download_prerequisites script after modifying it, if necessary, to use the
