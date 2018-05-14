@@ -623,12 +623,97 @@ int main (void)
 
   /* Test CFI_setpointer */
   printf ("Test CFI_setpointer: Checking component assignment.\n\n");
-  rank           = 1;
+  for (int i = 0; i < CFI_MAX_RANK; i++)
+    {
+      rank           = i;
+      errno          = 1;
+      base_type      = type[3] & CFI_type_mask;
+      base_type_size = (type[3] - base_type) >> CFI_type_kind_shift;
+      attribute      = CFI_attribute_other;
+      CFI_CDESC_T (rank) test8a, test8b;
+
+      if (extents != NULL)
+        {
+          free (extents);
+        }
+      if (lower != NULL)
+        {
+          free (lower);
+        }
+      extents = malloc (rank * sizeof (CFI_index_t));
+      lower   = malloc (rank * sizeof (CFI_index_t));
+      for (int r = 0; r < rank; r++)
+        {
+          extents[r] = r + 1;
+          lower[r]   = r - 2;
+        }
+      ind = CFI_establish ((CFI_cdesc_t *) &test8a, &ind, attribute, type[3],
+                           base_type_size, rank, extents);
+      for (int r = 0; r < rank; r++)
+        {
+          extents[r] = r + 2;
+        }
+      ind = CFI_establish ((CFI_cdesc_t *) &test8b, &errno, attribute, type[3],
+                           base_type_size, rank, extents);
+      ind = CFI_setpointer ((CFI_cdesc_t *) &test8a, (CFI_cdesc_t *) &test8b,
+                            lower);
+      for (int r = 0; r < rank; r++)
+        {
+          if (test8a.dim[r].lower_bound != lower[r])
+            {
+              printf ("CFI_setpointer failed reassign lower bounds.\n");
+              printf ("test8a.dim[%d].lower_bound = %ld\tlower[%d] = %ld\n", r,
+                      test8a.dim[r].lower_bound, r, lower[r]);
+              errno *= 2;
+            }
+          if (test8a.dim[r].extent != test8b.dim[r].extent)
+            {
+              printf ("CFI_setpointer failed reassign lower bounds.\n");
+              printf (
+                  "test8a.dim[%d].extent = %ld\ttest8b.dim[%d].extent = %ld\n",
+                  r, test8a.dim[r].extent, r, test8b.dim[r].extent);
+              errno *= 3;
+            }
+          if (test8a.dim[r].sm != test8b.dim[r].sm)
+            {
+              printf ("CFI_setpointer failed reassign lower bounds.\n");
+              printf ("test8a.dim[%d].sm = %ld\ttest8b.dim[%d].sm = %ld\n", r,
+                      test8a.dim[r].sm, r, test8b.dim[r].sm);
+              errno *= 5;
+            }
+        }
+      if (test8a.base_addr != test8b.base_addr)
+        {
+          printf ("CFI_setpointer failed to reassign base address.\n");
+          errno *= 7;
+        }
+      if (test8a.version != test8b.version)
+        {
+          printf ("CFI_setpointer failed to reassign version.\n");
+          errno *= 11;
+        }
+      if (test8a.attribute != test8b.attribute)
+        {
+          printf ("CFI_setpointer failed to reassign attribute.\n");
+          errno *= 13;
+        }
+      if (test8a.offset != test8b.offset)
+        {
+          printf ("CFI_setpointer failed to change lower bounds.\n");
+          errno *= 17;
+        }
+      printf ("errno = %ld\n", errno);
+    }
+  printf ("\n");
+
+  /* NULL source. */
+  printf (
+      "CFI_set_pointer: change of attribute to a CFI_attribute_pointer.\n\n");
+  rank           = 10;
   errno          = 1;
   base_type      = type[3] & CFI_type_mask;
   base_type_size = (type[3] - base_type) >> CFI_type_kind_shift;
-  attribute      = CFI_attribute_other;
-  CFI_CDESC_T (rank) test8a, test8b;
+  CFI_CDESC_T (rank) test9;
 
   if (extents != NULL)
     {
@@ -645,69 +730,114 @@ int main (void)
       extents[r] = r + 1;
       lower[r]   = r - 2;
     }
-  ind = CFI_establish ((CFI_cdesc_t *) &test8a, &ind, attribute, type[3],
-                       elem_len, rank, extents);
+  ind = CFI_establish ((CFI_cdesc_t *) &test9, &ind, attribute, type[3],
+                       base_type_size, rank, extents);
+  ind = CFI_setpointer ((CFI_cdesc_t *) &test9, NULL, lower);
+  if (test9.attribute != CFI_attribute_pointer)
+    {
+      printf ("CFI_establish failed to set attribute to pointer.\n");
+      errno *= 2;
+    }
+  if (test9.base_addr != NULL)
+    {
+      printf ("CFI_establish failed to set base addres to NULL.\n");
+      errno *= 3;
+    }
+  printf ("errno = %ld\n\n", errno);
+
+  printf ("CFI_setpointer testing if statements.\n\n");
+  rank      = 3;
+  errno     = 1;
+  attribute = CFI_attribute_other;
+  CFI_CDESC_T (rank) test10a, test10b;
+  if (extents != NULL)
+    {
+      free (extents);
+    }
+  if (lower != NULL)
+    {
+      free (lower);
+    }
+  extents = malloc (rank * sizeof (CFI_index_t));
+  lower   = malloc (rank * sizeof (CFI_index_t));
+  for (int r = 0; r < rank; r++)
+    {
+      extents[r] = r + 1;
+      lower[r]   = r - 2;
+    }
+  base_type      = CFI_type_long & CFI_type_mask;
+  base_type_size = (CFI_type_long - base_type) >> CFI_type_kind_shift;
+  ind = CFI_establish ((CFI_cdesc_t *) &test10a, &ind, attribute, CFI_type_long,
+                       base_type_size, rank, extents);
   for (int r = 0; r < rank; r++)
     {
       extents[r] = r + 2;
     }
-  ind = CFI_establish ((CFI_cdesc_t *) &test8b, &errno, attribute, type[3],
-                       elem_len, rank, extents);
-  ind =
-      CFI_setpointer ((CFI_cdesc_t *) &test8a, (CFI_cdesc_t *) &test8b, lower);
-  for (int r = 0; r < rank; r++)
+  base_type      = CFI_type_double & CFI_type_mask;
+  base_type_size = (CFI_type_double - base_type) >> CFI_type_kind_shift;
+  ind            = CFI_establish ((CFI_cdesc_t *) &test10b, &errno, attribute,
+                       CFI_type_double, base_type_size, rank, extents);
+  ind = CFI_setpointer ((CFI_cdesc_t *) &test10a, (CFI_cdesc_t *) &test10b,
+                        lower);
+  if (ind != CFI_INVALID_TYPE)
     {
-      if (test8a.dim[r].lower_bound != lower[r])
-        {
-          printf ("CFI_setpointer failed reassign lower bounds.\n");
-          printf ("test8a.dim[%d].lower_bound = %ld\tlower[%d] = %ld\n", r,
-                  test8a.dim[r].lower_bound, r, lower[r]);
-          errno *= 2;
-        }
-      if (test8a.dim[r].extent != test8b.dim[r].extent)
-        {
-          printf ("CFI_setpointer failed reassign lower bounds.\n");
-          printf ("test8a.dim[%d].extent = %ld\ttest8b.dim[%d].extent = %ld\n",
-                  r, test8a.dim[r].extent, r, test8b.dim[r].extent);
-          errno *= 3;
-        }
-      if (test8a.dim[r].sm != test8b.dim[r].sm)
-        {
-          printf ("CFI_setpointer failed reassign lower bounds.\n");
-          printf ("test8a.dim[%d].sm = %ld\ttest8b.dim[%d].sm = %ld\n",
-                  r, test8a.dim[r].sm, r, test8b.dim[r].sm);
-          errno *= 5;
-        }
+      printf ("CFI_setpointer failed to detect wrong types.\n");
+      errno *= 2;
     }
-  if (test8a.base_addr != test8b.base_addr)
-    {
-      printf ("CFI_setpointer failed to reassign base address.\n");
-      errno *= 7;
-    }
-  if (test8a.version != test8b.version)
-    {
-      printf ("CFI_setpointer failed to reassign version.\n");
-      errno *= 11;
-    }
-  if (test8a.attribute != test8b.attribute)
-    {
-      printf ("CFI_setpointer failed to reassign attribute.\n");
-      errno *= 13;
-    }
-  if (test8a.offset != test8b.offset)
-    {
-      printf ("CFI_setpointer failed to change lower bounds.\n");
-      errno *= 17;
-    }
-
   printf ("errno = %ld\n\n", errno);
 
-  /* NULL source. */
-  printf ("CFI_set_pointer: change of attribute to a CFI_attribute_pointer.\n");
-  ind = CFI_setpointer ((CFI_cdesc_t *) &test8a, NULL, lower);
-  printf ("ptr.attribute = %d\n", test8a.attribute);
-  printf ("test8.base_addr = %lu\n", (char *) test8a.base_addr);
+  errno          = 1;
+  base_type      = CFI_type_other & CFI_type_mask;
+  base_type_size = 666;
+  ind            = CFI_establish ((CFI_cdesc_t *) &test10a, &ind, attribute,
+                       CFI_type_other, base_type_size, rank, extents);
+  base_type      = CFI_type_other & CFI_type_mask;
+  base_type_size = 69;
+  ind            = CFI_establish ((CFI_cdesc_t *) &test10b, &errno, attribute,
+                       CFI_type_other, base_type_size, rank, extents);
+  ind = CFI_setpointer ((CFI_cdesc_t *) &test10a, (CFI_cdesc_t *) &test10b,
+                        lower);
+  if (ind != CFI_INVALID_ELEM_LEN)
+    {
+      printf ("CFI_setpointer failed to detect wrong element lengths.\n");
+      errno *= 2;
+    }
+  printf ("errno = %ld\n\n", errno);
 
+  errno          = 1;
+  base_type      = type[3] & CFI_type_mask;
+  base_type_size = (CFI_type_long - base_type) >> CFI_type_kind_shift;
+  ind = CFI_establish ((CFI_cdesc_t *) &test10a, &ind, attribute, type[3],
+                       base_type_size, rank, extents);
+  rank++;
+  CFI_CDESC_T (rank) test10c;
+  if (extents != NULL)
+    {
+      free (extents);
+    }
+  if (lower != NULL)
+    {
+      free (lower);
+    }
+  extents = malloc (rank * sizeof (CFI_index_t));
+  lower   = malloc (rank * sizeof (CFI_index_t));
+  for (int r = 0; r < rank; r++)
+    {
+      extents[r] = r + 1;
+      lower[r]   = r - 2;
+    }
+  base_type      = CFI_type_other & CFI_type_mask;
+  base_type_size = (CFI_type_long - base_type) >> CFI_type_kind_shift;
+  ind = CFI_establish ((CFI_cdesc_t *) &test10c, &errno, attribute, type[3],
+                       base_type_size, rank, extents);
+  ind = CFI_setpointer ((CFI_cdesc_t *) &test10a, (CFI_cdesc_t *) &test10c,
+                        lower);
+  if (ind != CFI_INVALID_RANK)
+    {
+      printf ("CFI_setpointer failed to detect wrong element lengths.\n");
+      errno *= 2;
+    }
+  printf ("errno = %ld\n\n", errno);
   /* Test CFI_section */
   /* Test CFI_select_part */
 

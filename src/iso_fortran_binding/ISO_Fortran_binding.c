@@ -228,8 +228,8 @@ int CFI_setpointer (CFI_cdesc_t *result, CFI_cdesc_t *source,
       if (result->rank != source->rank)
         {
           fprintf (stderr, "ISO_Fortran_binding.c: CFI_setpointer: Ranks of "
-                           "result (result->elem_len = %ld) and source "
-                           "(source->elem_len = %ld) must be the same. (Error "
+                           "result (result->rank = %d) and source "
+                           "(source->rank = %d) must be the same. (Error "
                            "No. %d).\n",
                    result->rank, source->rank, CFI_INVALID_RANK);
           return CFI_INVALID_RANK;
@@ -237,8 +237,8 @@ int CFI_setpointer (CFI_cdesc_t *result, CFI_cdesc_t *source,
       if (result->type != source->type)
         {
           fprintf (stderr, "ISO_Fortran_binding.c: CFI_setpointer: Types of "
-                           "result (result->elem_len = %ld) and source "
-                           "(source->elem_len = %ld) must be the same. (Error "
+                           "result (result->type = %d) and source "
+                           "(source->type = %d) must be the same. (Error "
                            "No. %d).\n",
                    result->type, source->type, CFI_INVALID_TYPE);
           return CFI_INVALID_TYPE;
@@ -269,60 +269,6 @@ int CFI_setpointer (CFI_cdesc_t *result, CFI_cdesc_t *source,
           result->dim[i].sm     = source->dim[i].sm;
         }
     }
-
-  // if (source->base_addr == NULL &&
-  //          source->attribute == CFI_attribute_pointer)
-  //   {
-  //     result->base_addr = NULL;
-  //     result->elem_len  = source->elem_len;
-  //     result->version   = source->version;
-  //     result->rank      = source->rank;
-  //     result->attribute = source->attribute;
-  //     result->type      = source->type;
-  //     result->offset    = source->offset;
-  //     for (int i = 0; i < source->rank; i++)
-  //       {
-  //         result->dim[i].lower_bound = source->dim[i].lower_bound;
-  //         result->dim[i].extent      = source->dim[i].extent;
-  //         result->dim[i].sm          = source->dim[i].sm;
-  //       }
-  //   }
-  // else
-  //   {
-  //     if (source->rank > 0 && lower_bounds != NULL)
-  //     result->base_addr = source->base_addr;
-  //     result->elem_len  = source->elem_len;
-  //     result->version   = source->version;
-  //     result->rank      = source->rank;
-  //     result->attribute = source->attribute;
-  //     result->type      = source->type;
-  //     result->offset    = source->offset;
-  //       {
-  //         for (int i = 0; i < source->rank; i++)
-  //           {
-  //             result->dim[i].lower_bound = lower_bounds[i];
-  //             result->dim[i].extent      = source->dim[i].extent;
-  //             result->dim[i].sm          = source->dim[i].sm;
-  //           }
-  //       }
-  //     else
-  //       {
-  //         result->base_addr = source->base_addr;
-  //         result->elem_len  = source->elem_len;
-  //         result->version   = source->version;
-  //         result->rank      = source->rank;
-  //         result->attribute = source->attribute;
-  //         result->type      = source->type;
-  //         result->offset    = source->offset;
-  //         for (int i = 0; i < source->rank; i++)
-  //           {
-  //             result->dim[i].lower_bound = source->dim[i].lower_bound;
-  //             result->dim[i].extent      = source->dim[i].extent;
-  //             result->dim[i].sm          = source->dim[i].sm;
-  //           }
-  //       }
-  //   }
-
   return CFI_SUCCESS;
 }
 
