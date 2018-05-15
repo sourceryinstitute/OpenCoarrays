@@ -838,6 +838,7 @@ int main (void)
       errno *= 2;
     }
   printf ("errno = %ld\n\n", errno);
+
   /* Test CFI_section */
   /* Test CFI_select_part */
 
@@ -883,4 +884,8 @@ int main (void)
   //   {
   //     return CFI_FAILURE;
   //   }
+  //
+  const int INCOMPLETE_TEST=1;
+  return INCOMPLETE_TEST;
+
 }
