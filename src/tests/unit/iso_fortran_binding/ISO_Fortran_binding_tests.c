@@ -840,6 +840,147 @@ int main (void)
   printf ("errno = %ld\n\n", errno);
 
   /* Test CFI_section */
+  printf ("Test CFI_section.\n\n");
+  CFI_index_t *strides;
+  /* Loop through type. */
+  for (int i = 0; i < 10; i++)
+    {
+      elem_len = 0;
+      if (type[i] == CFI_type_struct)
+        {
+          base_type      = type[i];
+          base_type_size = 69;
+        }
+      else if (type[i] == CFI_type_other)
+        {
+          base_type      = type[i];
+          base_type_size = 666;
+        }
+      else if (type[i] == CFI_type_char || type[i] == CFI_type_ucs4_char ||
+               type[i] == CFI_type_signed_char)
+        {
+          base_type      = type[i] & CFI_type_mask;
+          base_type_size = 3;
+        }
+      else
+        {
+          base_type      = type[i] & CFI_type_mask;
+          base_type_size = (type[i] - base_type) >> CFI_type_kind_shift;
+        }
+      elem_len = base_type_size;
+      if (base_type_size == 10)
+        {
+          elem_len = 64;
+        }
+      if (base_type == CFI_type_Complex)
+        {
+          elem_len *= 2;
+        }
+      /* Loop through rank. */
+      for (int k = 1; k <= CFI_MAX_RANK; k++)
+        {
+          errno = 1;
+          rank  = k;
+          CFI_CDESC_T (rank) section, source;
+          if (extents != NULL)
+            {
+              free (extents);
+            }
+          if (lower != NULL)
+            {
+              free (lower);
+            }
+          if (upper != NULL)
+            {
+              free (upper);
+            }
+          if (strides == NULL)
+            {
+              free (strides);
+            }
+          extents = malloc (rank * sizeof (CFI_index_t));
+          lower   = malloc (rank * sizeof (CFI_index_t));
+          upper   = malloc (rank * sizeof (CFI_index_t));
+          strides = malloc (rank * sizeof (CFI_index_t));
+          for (int r = 0; r < rank; r++)
+            {
+              extents[r] = rank - r + 10;
+              lower[r]   = rank - r - 5;
+              upper[r]   = lower[r] + extents[r] - 1;
+            }
+          ind = CFI_establish ((CFI_cdesc_t *) &source, NULL,
+                               CFI_attribute_allocatable, type[i], elem_len,
+                               rank, extents);
+          ind = CFI_establish ((CFI_cdesc_t *) &section, NULL,
+                               CFI_attribute_other, type[i], elem_len, rank,
+                               NULL);
+          ind = CFI_allocate ((CFI_cdesc_t *) &source, lower, upper, elem_len);
+          if (ind == CFI_ERROR_MEM_ALLOCATION)
+            {
+              goto next_type2;
+            }
+          /* Lower is within bounds. */
+          printf ("Lower is within bounds\n");
+          for (int r = 0; r < rank; r++)
+            {
+              lower[r]   = rank - r - 3;
+              strides[r] = r + 1;
+            }
+          ind = CFI_section ((CFI_cdesc_t *) &section, (CFI_cdesc_t *) &source,
+                             lower, NULL, strides);
+          printf ("\n\n");
+          /* Lower is below lower bounds. */
+          printf ("Lower is below bounds\n");
+          for (int r = 0; r < rank; r++)
+            {
+              lower[r]   = rank - r - 6;
+              strides[r] = r + 1;
+            }
+          ind = CFI_section ((CFI_cdesc_t *) &section, (CFI_cdesc_t *) &source,
+                             lower, NULL, strides);
+          printf ("\n\n");
+          /* Lower is above upper bounds. */
+          printf ("Lower is above bounds\n");
+          for (int r = 0; r < rank; r++)
+            {
+              lower[r]   = upper[r] + 1;
+              strides[r] = r + 1;
+            }
+          ind = CFI_section ((CFI_cdesc_t *) &section, (CFI_cdesc_t *) &source,
+                             lower, NULL, strides);
+          printf ("\n\n");
+        }
+    next_type2:;
+      printf ("\n");
+    }
+  /*
+  CFI_index_t *strides;
+  rank = 1;
+  CFI_CDESC_T (rank) section, source;
+  if (lower != NULL)
+    {
+      free (lower);
+    }
+  if (upper != NULL)
+    {
+      free (upper);
+    }
+  lower   = malloc (rank * sizeof (CFI_index_t));
+  strides = malloc (rank * sizeof (CFI_index_t));
+  for (int r = 0; r < rank; r++)
+    {
+      extents[r] = r + 2;
+      lower[r]   = r - 2;
+      strides[r] = r + 1;
+    }
+  base_type      = type[3] & CFI_type_mask;
+  base_type_size = (CFI_type_long - base_type) >> CFI_type_kind_shift;
+  ind = CFI_establish ((CFI_cdesc_t *) &section, NULL, CFI_attribute_other,
+                       type[3], base_type_size, rank, NULL);
+  ind = CFI_section ((CFI_cdesc_t *) &section, (CFI_cdesc_t *) &section, lower,
+  NULL, strides);
+  */
+
   /* Test CFI_select_part */
 
   // // This sets the value "val" at position "offset" for a CFI array "arr"
@@ -850,42 +991,6 @@ int main (void)
   // char address = (char *)test3.base_addr + l * test3.elem_len;
   // // This is the value of the l'th element of the array (C indices).
   // my_type value = *(my_type*)((char *)test3.base_addr + l * test3.elem_len);
-
-  // if (type[i] == CFI_type_double)
-  //   {
-  //     size_t arr_len = 1;
-  //     double val     = 0.;
-  //     for (int r = 0; r < rank; r++)
-  //       {
-  //         arr_len *= test3.dim[r].extent;
-  //       }
-  //       printf("arr_len = %d\n", arr_len);
-  //     for (size_t l = 0; l < arr_len; l++)
-  //       {
-  //         val++;
-  //         /* Use memcpy */
-  //         memcpy ((char *)test3.base_addr + l * test3.elem_len,
-  //                 (void *)&val, test3.elem_len);
-  //         printf ("val = %d, addr = %u\n",
-  //                 (char *)test3.base_addr + l * test3.elem_len, (char
-  //                 *)test3.base_addr + l * test3.elem_len);
-  //         // printf(" %f ", *(double*)((char *)test3.base_addr + l *
-  //         test3.elem_len));
-  //         // test3.base_addr[l] = (void*)val;
-  //       }
-  //     printf ("\n\n");
-  //   }
-
-  // if (errno == 1)
-  //   {
-  //     return CFI_SUCCESS;
-  //   }
-  // else
-  //   {
-  //     return CFI_FAILURE;
-  //   }
-  //
-  const int INCOMPLETE_TEST=1;
+  const int INCOMPLETE_TEST = 1;
   return INCOMPLETE_TEST;
-
 }

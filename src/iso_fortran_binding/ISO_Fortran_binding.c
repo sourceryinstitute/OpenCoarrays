@@ -70,7 +70,9 @@ int CFI_establish (CFI_cdesc_t *dv, void *base_addr, CFI_attribute_t attribute,
     }
   dv->base_addr = base_addr;
   /* elem_len is only used if the item is not a type with a kind parameter. */
-  if (type == CFI_type_struct || type == CFI_type_other)
+  if (type == CFI_type_char || type == CFI_type_ucs4_char ||
+      type == CFI_type_signed_char || type == CFI_type_struct ||
+      type == CFI_type_other)
     {
       dv->elem_len = elem_len;
     }
@@ -142,7 +144,8 @@ int CFI_setpointer (CFI_cdesc_t *result, CFI_cdesc_t *source,
     }
   else
     {
-      /* Check that element lengths, ranks and types of source and result are the same. */
+      /* Check that element lengths, ranks and types of source and result are
+       * the same. */
       if (result->elem_len != source->elem_len)
         {
           fprintf (stderr, "ISO_Fortran_binding.c: CFI_setpointer: Element "
@@ -170,7 +173,8 @@ int CFI_setpointer (CFI_cdesc_t *result, CFI_cdesc_t *source,
                    result->type, source->type, CFI_INVALID_TYPE);
           return CFI_INVALID_TYPE;
         }
-        /* If the source is a disassociated pointer, the result must also describe a disassociated pointer. */
+      /* If the source is a disassociated pointer, the result must also describe
+       * a disassociated pointer. */
       if (source->base_addr == NULL &&
           source->attribute == CFI_attribute_pointer)
         {
@@ -364,7 +368,7 @@ int CFI_allocate (CFI_cdesc_t *dv, const CFI_index_t lower_bounds[],
                CFI_INVALID_ATTRIBUTE);
       return CFI_INVALID_ATTRIBUTE;
     }
-  /* If the type is a character, the descriptor's elemenent length is replaced
+  /* If the type is a character, the descriptor's element length is replaced
    * by the elem_len argument. */
   if (dv->type == CFI_type_char || dv->type == CFI_type_ucs4_char ||
       dv->type == CFI_type_signed_char)
@@ -530,45 +534,6 @@ int CFI_section (CFI_cdesc_t *result, const CFI_cdesc_t *source,
   lower  = malloc (source->rank * sizeof (CFI_index_t));
   upper  = malloc (source->rank * sizeof (CFI_index_t));
   stride = malloc (source->rank * sizeof (CFI_index_t));
-  /* Lower bounds. */
-  if (lower_bounds == NULL)
-    {
-      for (int i = 0; i < source->rank; i++)
-        {
-          lower[i] = source->dim[i].lower_bound - 1;
-        }
-    }
-  else
-    {
-      for (int i = 0; i < source->rank; i++)
-        {
-          lower[i] = lower_bounds[i];
-        }
-    }
-  /* Upper bounds. */
-  if (upper_bounds == NULL)
-    {
-      if (source->dim[source->rank].extent == -1)
-        {
-          fprintf (stderr,
-                   "ISO_Fortran_binding.c: CFI_section: Source must not "
-                   "be an assumed size array if upper_bounds is NULL. (Error "
-                   "No. %d).\n",
-                   CFI_INVALID_EXTENT);
-          return CFI_INVALID_EXTENT;
-        }
-      for (int i = 0; i < source->rank; i++)
-        {
-          upper[i] = source->dim[i].lower_bound + source->dim[i].extent - 2;
-        }
-    }
-  else
-    {
-      for (int i = 0; i < source->rank; i++)
-        {
-          upper[i] = upper_bounds[i];
-        }
-    }
   /* Stride */
   if (strides == NULL)
     {
@@ -598,16 +563,24 @@ int CFI_section (CFI_cdesc_t *result, const CFI_cdesc_t *source,
         }
     }
   /* Lower bounds. */
-  if (lower_bounds != NULL)
+  if (lower_bounds == NULL)
     {
       for (int i = 0; i < source->rank; i++)
         {
+          lower[i] = source->dim[i].lower_bound;
+        }
+    }
+  else
+    {
+      for (int i = 0; i < source->rank; i++)
+        {
+          lower[i] = lower_bounds[i];
           if (stride[i] == 0 ||
               (upper[i] - lower[i] + stride[i]) / stride[i] > 0)
             {
-              if (lower[i] < source->dim[i].lower_bound - 1 ||
+              if (lower[i] < source->dim[i].lower_bound ||
                   lower[i] >
-                      source->dim[i].lower_bound + source->dim[i].extent - 2)
+                      source->dim[i].lower_bound + source->dim[i].extent - 1)
                 {
                   fprintf (stderr, "ISO_Fortran_binding.c: "
                                    "CFI_section: If stride[%d] = "
@@ -636,16 +609,33 @@ int CFI_section (CFI_cdesc_t *result, const CFI_cdesc_t *source,
         }
     }
   /* Upper bounds. */
-  if (upper_bounds != NULL)
+  if (upper_bounds == NULL)
+    {
+      if (source->dim[source->rank].extent == -1)
+        {
+          fprintf (stderr,
+                   "ISO_Fortran_binding.c: CFI_section: Source must not "
+                   "be an assumed size array if upper_bounds is NULL. (Error "
+                   "No. %d).\n",
+                   CFI_INVALID_EXTENT);
+          return CFI_INVALID_EXTENT;
+        }
+      for (int i = 0; i < source->rank; i++)
+        {
+          upper[i] = source->dim[i].lower_bound + source->dim[i].extent - 1;
+        }
+    }
+  else
     {
       for (int i = 0; i < source->rank; i++)
         {
+          upper[i] = upper_bounds[i];
           if (stride[i] == 0 ||
               (upper[i] - lower[i] + stride[i]) / stride[i] > 0)
             {
-              if (upper[i] < source->dim[i].lower_bound - 1 ||
+              if (upper[i] < source->dim[i].lower_bound ||
                   upper[i] >
-                      source->dim[i].lower_bound + source->dim[i].extent - 2)
+                      source->dim[i].lower_bound + source->dim[i].extent - 1)
                 {
                   fprintf (stderr, "ISO_Fortran_binding.c: CFI_section: If "
                                    "stride[%d] = 0, or (upper[%d] - lower[%d] "
