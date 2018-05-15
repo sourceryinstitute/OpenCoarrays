@@ -28,80 +28,9 @@ header file.
 * features, that is what ISO_Fortran_binding_prototyping_tests.c is for. I'm
 * currently annotating the structures according to the standard just to have
 * them in-file so I know what to do with them. */
-#pragma GCC diagnostic ignored "-Wvla"
-// #include "libgfortran.h"
 #include "ISO_Fortran_binding.h"
 #include <stdio.h>
 #include <stdlib.h>
-
-// typedef struct CFI_dim_t
-// {
-//   // Value of the lower bound of the dimension being described.
-//   CFI_index_t lower_bound;
-//   // Number of elments in the dimension being described.
-//   // If object is an assumed size array the value at the last dimension is
-//   -1.
-//   CFI_index_t extent;
-//   // The difference in bytes between the addresses of successive elements in
-//   the dimension.
-//   CFI_index_t sm;
-// }
-// CFI_dim_t;
-//
-// typedef struct CFI_cdesc_t
-// {
-//   // NULL if unallocated allocatable or pointer.
-//   // Processor dependent if object has 0 size.
-//   // C address of the first element in Fortran array order.
-//   void *base_addr;
-//   // Storage size in bytes of object if scalar.
-//   // Storage size in bytes of a single element in object if not scalar.
-//   size_t elem_len;
-//   // CFI_VERSION in ISO_Fortran.h file.
-//   int version;
-//   // Number of dimensions of Fortran object (scalar is 0).
-//   CFI_rank_t rank;
-//   // Value of the specifier for the memory characteristics of the object,
-//   whether it is an allocatable, a pointer, or a nonallocatable nonpointer
-//   object.
-//   CFI_attribute_t attribute;
-//   // Value of the specifier for the type of the object. Each C interoperable
-//   has its own specifier.
-//   CFI_type_t type;
-//   // Not described in ISO/IEC 1539-1:2017
-//   size_t offset;
-//   // Number of elements in dim is the rank of the object.
-//   // If the object is an array pointer or allocatable array, the value of
-//   dim[].lower_bound is determined by argument association, allocation or
-//   pointer association.
-//   // If the object is a nonallocatable nonpointer, the value of
-//   dim[].lower_bound = 0.
-//   // The N dimensions are ordered such that:
-//   // n = 0, 1, 2, ..., N - 1
-//   // abs( dim[n=0].sm ) >= elem_len &&
-//   // abs( dim[n+1].sm ) >= abs( dim[n].sm ) * dim[n].extent && ... &&
-//   // abs( dim[N-1].sm ) >= abs( dim[N-2].sm ) * dim[N-2].extent
-//   // In an assumed size array the extent of the last element is equal to -1,
-//   dim[N-1].extent = -1
-//   CFI_dim_t dim[];
-// }
-// CFI_cdesc_t;
-/* Definitions */
-#define type(x)                                                                \
-  _Generic((x), \
-int : "int", \
-float : "float", \
-double : "double", \
-ptrdiff_t: "ptrdiff_t", \
-size_t: "size_t", \
-int8_t: "int8_t", \
-int *: "int *", \
-float *: "float *", \
-double *: "double *", \
-ptrdiff_t *: "ptrdiff_t *", \
-size_t *: "size_t *", \
-int8_t *: "int8_t *", \
-default: "other")
 
 /* Functions */
 
@@ -211,11 +140,9 @@ int CFI_setpointer (CFI_cdesc_t *result, CFI_cdesc_t *source,
       result->version   = CFI_VERSION;
       result->attribute = CFI_attribute_pointer;
     }
-  /* If source is a disassociated pointer, the result is a C Descriptor that
-   * describes a disassociated pointer but with the characteristics of source.
-   */
   else
     {
+      /* Check that element lengths, ranks and types of source and result are the same. */
       if (result->elem_len != source->elem_len)
         {
           fprintf (stderr, "ISO_Fortran_binding.c: CFI_setpointer: Element "
@@ -228,8 +155,8 @@ int CFI_setpointer (CFI_cdesc_t *result, CFI_cdesc_t *source,
       if (result->rank != source->rank)
         {
           fprintf (stderr, "ISO_Fortran_binding.c: CFI_setpointer: Ranks of "
-                           "result (result->elem_len = %ld) and source "
-                           "(source->elem_len = %ld) must be the same. (Error "
+                           "result (result->rank = %d) and source "
+                           "(source->rank = %d) must be the same. (Error "
                            "No. %d).\n",
                    result->rank, source->rank, CFI_INVALID_RANK);
           return CFI_INVALID_RANK;
@@ -237,12 +164,13 @@ int CFI_setpointer (CFI_cdesc_t *result, CFI_cdesc_t *source,
       if (result->type != source->type)
         {
           fprintf (stderr, "ISO_Fortran_binding.c: CFI_setpointer: Types of "
-                           "result (result->elem_len = %ld) and source "
-                           "(source->elem_len = %ld) must be the same. (Error "
+                           "result (result->type = %d) and source "
+                           "(source->type = %d) must be the same. (Error "
                            "No. %d).\n",
                    result->type, source->type, CFI_INVALID_TYPE);
           return CFI_INVALID_TYPE;
         }
+        /* If the source is a disassociated pointer, the result must also describe a disassociated pointer. */
       if (source->base_addr == NULL &&
           source->attribute == CFI_attribute_pointer)
         {
@@ -269,60 +197,6 @@ int CFI_setpointer (CFI_cdesc_t *result, CFI_cdesc_t *source,
           result->dim[i].sm     = source->dim[i].sm;
         }
     }
-
-  // if (source->base_addr == NULL &&
-  //          source->attribute == CFI_attribute_pointer)
-  //   {
-  //     result->base_addr = NULL;
-  //     result->elem_len  = source->elem_len;
-  //     result->version   = source->version;
-  //     result->rank      = source->rank;
-  //     result->attribute = source->attribute;
-  //     result->type      = source->type;
-  //     result->offset    = source->offset;
-  //     for (int i = 0; i < source->rank; i++)
-  //       {
-  //         result->dim[i].lower_bound = source->dim[i].lower_bound;
-  //         result->dim[i].extent      = source->dim[i].extent;
-  //         result->dim[i].sm          = source->dim[i].sm;
-  //       }
-  //   }
-  // else
-  //   {
-  //     if (source->rank > 0 && lower_bounds != NULL)
-  //     result->base_addr = source->base_addr;
-  //     result->elem_len  = source->elem_len;
-  //     result->version   = source->version;
-  //     result->rank      = source->rank;
-  //     result->attribute = source->attribute;
-  //     result->type      = source->type;
-  //     result->offset    = source->offset;
-  //       {
-  //         for (int i = 0; i < source->rank; i++)
-  //           {
-  //             result->dim[i].lower_bound = lower_bounds[i];
-  //             result->dim[i].extent      = source->dim[i].extent;
-  //             result->dim[i].sm          = source->dim[i].sm;
-  //           }
-  //       }
-  //     else
-  //       {
-  //         result->base_addr = source->base_addr;
-  //         result->elem_len  = source->elem_len;
-  //         result->version   = source->version;
-  //         result->rank      = source->rank;
-  //         result->attribute = source->attribute;
-  //         result->type      = source->type;
-  //         result->offset    = source->offset;
-  //         for (int i = 0; i < source->rank; i++)
-  //           {
-  //             result->dim[i].lower_bound = source->dim[i].lower_bound;
-  //             result->dim[i].extent      = source->dim[i].extent;
-  //             result->dim[i].sm          = source->dim[i].sm;
-  //           }
-  //       }
-  //   }
-
   return CFI_SUCCESS;
 }
 
@@ -425,7 +299,6 @@ void *CFI_address (const CFI_cdesc_t *dv, const CFI_index_t subscripts[])
       /* There's no way in C to do general arithmetic on a void pointer so we
        * cast to a char pointer, do the arithmetic and cast back to a
        * void pointer. */
-      // printf ("idx = %ld\n", index);
       base_addr = (char *) dv->base_addr + index;
       return base_addr;
     }
@@ -523,7 +396,6 @@ int CFI_allocate (CFI_cdesc_t *dv, const CFI_index_t lower_bounds[],
         }
     }
   dv->base_addr = calloc (arr_len, dv->elem_len);
-  // malloc (arr_len * dv->elem_len);
   if (dv->base_addr == NULL)
     {
       printf ("ISO_Fortran_binding.c: CFI_allocate: Failure in memory "
@@ -531,7 +403,6 @@ int CFI_allocate (CFI_cdesc_t *dv, const CFI_index_t lower_bounds[],
               CFI_ERROR_MEM_ALLOCATION);
       return CFI_ERROR_MEM_ALLOCATION;
     }
-
   return CFI_SUCCESS;
 }
 
@@ -810,7 +681,6 @@ int CFI_section (CFI_cdesc_t *result, const CFI_cdesc_t *source,
   free (lower);
   free (upper);
   free (stride);
-
   return CFI_SUCCESS;
 }
 
@@ -824,8 +694,7 @@ int CFI_select_part (CFI_cdesc_t *result, const CFI_cdesc_t *source,
                CFI_INVALID_ATTRIBUTE);
       return CFI_INVALID_ATTRIBUTE;
     }
-
-  // Base address of source must not be NULL.
+  /* Base address of source must not be NULL. */
   if (source->base_addr == NULL)
     {
       fprintf (stderr,
@@ -834,8 +703,7 @@ int CFI_select_part (CFI_cdesc_t *result, const CFI_cdesc_t *source,
                CFI_ERROR_BASE_ADDR_NULL);
       return CFI_ERROR_BASE_ADDR_NULL;
     }
-
-  /* Nonallocatable nonpointer must not be an assumed size array */
+  /* Nonallocatable nonpointer must not be an assumed size array. */
   if (source->dim[source->rank].extent == -1)
     {
       fprintf (stderr, "ISO_Fortran_binding.c: CFI_select_part: Source must "
@@ -843,7 +711,6 @@ int CFI_select_part (CFI_cdesc_t *result, const CFI_cdesc_t *source,
                CFI_INVALID_DESCRIPTOR);
       return CFI_INVALID_DESCRIPTOR;
     }
-
   /* Check the element length */
   size_t base_type_size =
       (result->type - CFI_type_Character) >> CFI_type_kind_shift;
@@ -884,8 +751,7 @@ int CFI_select_part (CFI_cdesc_t *result, const CFI_cdesc_t *source,
           result->dim[i].sm = result->elem_len;
         }
     }
-
-  /* Check displacement */
+  /* Check displacement. */
   if (displacement < 0 || displacement > source->elem_len - 1)
     {
       fprintf (stderr,
@@ -895,7 +761,6 @@ int CFI_select_part (CFI_cdesc_t *result, const CFI_cdesc_t *source,
                displacement, source->elem_len - 1, CFI_ERROR_OUT_OF_BOUNDS);
       return CFI_ERROR_OUT_OF_BOUNDS;
     }
-
   if (displacement + result->elem_len > source->elem_len)
     {
       fprintf (stderr, "ISO_Fortran_binding.c: CFI_select_part: Displacement "
@@ -908,55 +773,6 @@ int CFI_select_part (CFI_cdesc_t *result, const CFI_cdesc_t *source,
                source->elem_len, CFI_ERROR_OUT_OF_BOUNDS);
       return CFI_ERROR_OUT_OF_BOUNDS;
     }
-
   result->base_addr = (char *) source->base_addr + displacement;
-
   return CFI_SUCCESS;
 }
-/*
-void main ()
-{
-  CFI_CDESC_T (2) * dv;
-  CFI_index_t  subscripts[2];
-  CFI_index_t  test[0];
-  CFI_index_t *address;
-
-  dv                             = malloc (sizeof (CFI_CDESC_T (2)));
-  dv->base_addr                  = malloc (sizeof (CFI_index_t));
-  *(CFI_index_t *) dv->base_addr = 1;
-  printf ("%s\n", type (*dv->base_addr));
-  printf ("------------\n");
-  printf ("%ld\n", dv->base_addr);
-  dv->rank               = 2;
-  dv->dim[0].lower_bound = 1;
-  dv->dim[0].extent      = 3;
-  dv->dim[0].sm          = 1;
-  dv->dim[1].lower_bound = 1;
-  dv->dim[1].extent      = 2;
-  dv->dim[1].sm          = 1;
-  printf ("------------\n");
-  for (int i = 0; i < dv->dim[0].extent; i++)
-    {
-      for (int j = 0; j < dv->dim[1].extent; j++)
-        {
-          subscripts[0] = i;
-          subscripts[1] = j;
-          address       = (CFI_index_t *) CFI_address (dv, subscripts);
-          printf ("A[%d, %d] = %d\n", i + 1, j + 1, (char *) address);
-        }
-    }
-  // subscripts[0] = 0;
-  // subscripts[1] = 0;
-  // address = (CFI_index_t*) CFI_address(dv, subscripts);
-  // printf("%d\n", (char*)address);
-  // printf("%ld\n", *address);
-  // printf("%d, %d, %d\n", sizeof(subscripts), sizeof(CFI_index_t),
-  // sizeof(test));
-  printf("type size in bytes = %d\n", (CFI_type_int128_t - (CFI_type_int128_t &
-CFI_type_mask)) >> CFI_type_kind_shift);
-  printf("base type = %d\n", CFI_type_int128_t & CFI_type_mask);
-
-  free (dv->base_addr);
-  free (dv);
-}
-*/
