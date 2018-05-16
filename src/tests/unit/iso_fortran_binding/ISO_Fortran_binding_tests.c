@@ -842,6 +842,7 @@ int main (void)
   /* Test CFI_section */
   printf ("Test CFI_section.\n\n");
   CFI_index_t *strides;
+  printf ("Test bounds.\n");
   /* Loop through type. */
   for (int i = 0; i < 10; i++)
     {
@@ -920,7 +921,7 @@ int main (void)
               goto next_type2;
             }
           /* Lower is within bounds. */
-          printf ("Lower is within bounds\n");
+          printf ("Lower is within bounds.\n");
           for (int r = 0; r < rank; r++)
             {
               lower[r]   = rank - r - 3;
@@ -928,9 +929,15 @@ int main (void)
             }
           ind = CFI_section ((CFI_cdesc_t *) &section, (CFI_cdesc_t *) &source,
                              lower, NULL, strides);
-          printf ("\n\n");
+          if (ind != CFI_SUCCESS)
+            {
+              errno *= 2;
+              printf ("CFI_section failed to properly assign lower "
+                      "bounds.\n");
+            }
+          printf ("errno = %ld\n\n", errno);
           /* Lower is below lower bounds. */
-          printf ("Lower is below bounds\n");
+          printf ("Lower is below bounds.\n");
           for (int r = 0; r < rank; r++)
             {
               lower[r]   = rank - r - 6;
@@ -938,9 +945,15 @@ int main (void)
             }
           ind = CFI_section ((CFI_cdesc_t *) &section, (CFI_cdesc_t *) &source,
                              lower, NULL, strides);
-          printf ("\n\n");
+          if (ind != CFI_ERROR_OUT_OF_BOUNDS)
+            {
+              errno *= 3;
+              printf ("CFI_section failed to properly assign lower "
+                      "bounds.\n");
+            }
+          printf ("errno = %ld\n\n", errno);
           /* Lower is above upper bounds. */
-          printf ("Lower is above bounds\n");
+          printf ("Lower is above bounds.\n");
           for (int r = 0; r < rank; r++)
             {
               lower[r]   = upper[r] + 1;
@@ -948,7 +961,66 @@ int main (void)
             }
           ind = CFI_section ((CFI_cdesc_t *) &section, (CFI_cdesc_t *) &source,
                              lower, NULL, strides);
-          printf ("\n\n");
+          if (ind != CFI_ERROR_OUT_OF_BOUNDS)
+            {
+              errno *= 5;
+              printf ("CFI_section failed to properly assign lower "
+                      "bounds.\n");
+            }
+          for (int r = 0; r < rank; r++)
+            {
+              extents[r] = rank - r + 10;
+              lower[r]   = rank - r - 5;
+              upper[r]   = lower[r] + extents[r] - 1;
+            }
+            /* Lower is within bounds. */
+            printf ("Lower is within bounds.\n");
+            for (int r = 0; r < rank; r++)
+              {
+                upper[r]   = rank - r - 3;
+                strides[r] = r + 1;
+              }
+            ind = CFI_section ((CFI_cdesc_t *) &section, (CFI_cdesc_t *) &source,
+                               NULL, upper, strides);
+            if (ind != CFI_SUCCESS)
+              {
+                errno *= 7;
+                printf ("CFI_section failed to properly assign upper "
+                        "bounds.\n");
+              }
+            printf ("errno = %ld\n\n", errno);
+            /* Lower is below lower bounds. */
+            printf ("Lower is below bounds.\n");
+            for (int r = 0; r < rank; r++)
+              {
+                upper[r]   = rank - r - 6;
+                strides[r] = r + 1;
+              }
+            ind = CFI_section ((CFI_cdesc_t *) &section, (CFI_cdesc_t *) &source,
+                               NULL, upper, strides);
+            if (ind != CFI_ERROR_OUT_OF_BOUNDS)
+              {
+                errno *= 11;
+                printf ("CFI_section failed to properly assign upper "
+                        "bounds.\n");
+              }
+            printf ("errno = %ld\n\n", errno);
+            /* Lower is above upper bounds. */
+            printf ("Lower is above bounds.\n");
+            for (int r = 0; r < rank; r++)
+              {
+                upper[r]   = lower[r] + extents[r];
+                strides[r] = r + 1;
+              }
+            ind = CFI_section ((CFI_cdesc_t *) &section, (CFI_cdesc_t *) &source,
+                               NULL, upper, strides);
+            if (ind != CFI_ERROR_OUT_OF_BOUNDS)
+              {
+                errno *= 13;
+                printf ("CFI_section failed to properly assign upper "
+                        "bounds.\n");
+              }
+          printf ("errno = %ld\n\n", errno);
         }
     next_type2:;
       printf ("\n");

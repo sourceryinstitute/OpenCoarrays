@@ -575,37 +575,6 @@ int CFI_section (CFI_cdesc_t *result, const CFI_cdesc_t *source,
       for (int i = 0; i < source->rank; i++)
         {
           lower[i] = lower_bounds[i];
-          if (stride[i] == 0 ||
-              (upper[i] - lower[i] + stride[i]) / stride[i] > 0)
-            {
-              if (lower[i] < source->dim[i].lower_bound ||
-                  lower[i] >
-                      source->dim[i].lower_bound + source->dim[i].extent - 1)
-                {
-                  fprintf (stderr, "ISO_Fortran_binding.c: "
-                                   "CFI_section: If stride[%d] = "
-                                   "0, or (upper[%d] - lower[%d] + "
-                                   "stride[%d])/stride[%d] = (%ld - "
-                                   "%ld + %ld)/%ld = %ld. "
-                                   "(Error No. %d).\nIf upper_bounds "
-                                   "is not NULL, then "
-                                   "upper[i] = upper_bounds[i] for "
-                                   "all i, otherwhise "
-                                   "upper[i] is the upper bound of "
-                                   "the Fortran array. "
-                                   "If lower_bounds is not NULL, "
-                                   "then lower[i] = "
-                                   "lower_bounds[i] for all i, "
-                                   "otherwhise lower[i] is "
-                                   "the lower bound of the Fortran "
-                                   "array.\n",
-                           i, i, i, i, i, upper[i], lower[i], stride[i],
-                           stride[i],
-                           (upper[i] - lower[i] + stride[i]) / stride[i],
-                           CFI_ERROR_OUT_OF_BOUNDS);
-                  return CFI_ERROR_OUT_OF_BOUNDS;
-                }
-            }
         }
     }
   /* Upper bounds. */
@@ -630,34 +599,40 @@ int CFI_section (CFI_cdesc_t *result, const CFI_cdesc_t *source,
       for (int i = 0; i < source->rank; i++)
         {
           upper[i] = upper_bounds[i];
-          if (stride[i] == 0 ||
-              (upper[i] - lower[i] + stride[i]) / stride[i] > 0)
-            {
-              if (upper[i] < source->dim[i].lower_bound ||
-                  upper[i] >
-                      source->dim[i].lower_bound + source->dim[i].extent - 1)
-                {
-                  fprintf (stderr, "ISO_Fortran_binding.c: CFI_section: If "
-                                   "stride[%d] = 0, or (upper[%d] - lower[%d] "
-                                   "+ stride[%d])/stride[%d] = (%ld - %ld + "
-                                   "%ld)/%ld = %ld. (Error No. %d).\nIf "
-                                   "upper_bounds is not NULL, then upper[i] = "
-                                   "upper_bounds[i] for all i, otherwhise "
-                                   "upper[i] is the upper bound of "
-                                   "the Fortran array. "
-                                   "If lower_bounds is not NULL, "
-                                   "then lower[i] = "
-                                   "lower_bounds[i] for all i, "
-                                   "otherwhise lower[i] is "
-                                   "the lower bound of the Fortran "
-                                   "array.\n",
-                           i, i, i, i, i, upper[i], lower[i], stride[i],
-                           stride[i],
-                           (upper[i] - lower[i] + stride[i]) / stride[i],
-                           CFI_ERROR_OUT_OF_BOUNDS);
-                  return CFI_ERROR_OUT_OF_BOUNDS;
-                }
-            }
+        }
+    }
+  /* Check upper and lower bounds. */
+  for (int i = 0; i < source->rank; i++)
+    {
+      if (lower_bounds != NULL &&
+          (lower[i] < source->dim[i].lower_bound ||
+           lower[i] > source->dim[i].lower_bound + source->dim[i].extent - 1))
+        {
+          fprintf (stderr, "ISO_Fortran_binding.c: CFI_section: Lower bounds "
+                           "must be within the bounds of the fortran array "
+                           "(source->dim[%d].lower_bound <= lower_bounds[%d] "
+                           "<= source->dim[%d].lower_bound + "
+                           "source->dim[%d].extent - 1, %ld <= %ld <= %ld). "
+                           "(Error No. %d).\n",
+                   i, i, i, i, source->dim[i].lower_bound, lower[i],
+                   source->dim[i].lower_bound + source->dim[i].extent - 1,
+                   CFI_ERROR_OUT_OF_BOUNDS);
+          return CFI_ERROR_OUT_OF_BOUNDS;
+        }
+      if (upper_bounds != NULL &&
+          (upper[i] < source->dim[i].lower_bound ||
+           upper[i] > source->dim[i].lower_bound + source->dim[i].extent - 1))
+        {
+          fprintf (stderr, "ISO_Fortran_binding.c: CFI_section: Upper bounds "
+                           "must be within the bounds of the fortran array "
+                           "(source->dim[%d].lower_bound <= upper_bounds[%d] "
+                           "<= source->dim[%d].lower_bound + "
+                           "source->dim[%d].extent - 1, %ld <= %ld <= %ld). "
+                           "(Error No. %d).\n",
+                   i, i, i, i, source->dim[i].lower_bound, upper[i],
+                   source->dim[i].lower_bound + source->dim[i].extent - 1,
+                   CFI_ERROR_OUT_OF_BOUNDS);
+          return CFI_ERROR_OUT_OF_BOUNDS;
         }
     }
   /* Update the result to describe the array section. */
