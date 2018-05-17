@@ -65,8 +65,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 #define dprint(args...) fprintf (stderr, args)
 #endif
 
-// Remove before flight!
-
 #ifdef GCC_GE_7
 /** The caf-token of the mpi-library.
 
@@ -4876,7 +4874,7 @@ PREFIX (get_by_ref) (caf_token_t token, int image_index,
 #ifdef GCC_GE_8
                src_type
 #else
-               -1
+               -1 // should src_type be calculated here? something similar to GFC_DESCRIPTOR_TYPE(mpi_token->desc)
 #endif
                );
   CAF_Win_unlock (remote_image, global_dynamic_win);
@@ -5438,8 +5436,12 @@ PREFIX (send_by_ref) (caf_token_t token, int image_index,
 
     check_image_health (image_index, stat);
 
-    dprint ("%d/%d: Entering send_by_ref(may_require_tmp = %d, dst_type = %d).\n", caf_this_image,
-            caf_num_images, may_require_tmp, dst_type);
+    dprint ("%d/%d: Entering send_by_ref(may_require_tmp = %d", caf_this_image,
+            caf_num_images, may_require_tmp);
+#ifdef GCC_GE_8
+    dprint (", dst_type = %d", dst_type);
+#endif
+    dprint (").\n");
 
     /* Compute the size of the result.  In the beginning size just counts the
        number of elements.  */
@@ -5840,7 +5842,7 @@ PREFIX (send_by_ref) (caf_token_t token, int image_index,
 #ifdef GCC_GE_8
                  dst_type
 #else
-                 -1
+                 -1 // should dst_type be calculated here? something similar to GFC_DESCRIPTOR_TYPE(mpi_token->desc)
 #endif
                  );
     if (free_temp_src)
