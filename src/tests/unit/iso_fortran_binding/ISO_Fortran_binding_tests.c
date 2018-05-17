@@ -973,8 +973,8 @@ int main (void)
               lower[r]   = rank - r - 5;
               upper[r]   = lower[r] + extents[r] - 1;
             }
-          /* Lower is within bounds. */
-          printf ("Lower is within bounds.\n");
+          /* Upper is within bounds. */
+          printf ("Upper is within bounds.\n");
           for (int r = 0; r < rank; r++)
             {
               upper[r]   = rank - r - 3;
@@ -989,8 +989,8 @@ int main (void)
                       "bounds.\n");
             }
           printf ("errno = %ld\n\n", errno);
-          /* Lower is below lower bounds. */
-          printf ("Lower is below bounds.\n");
+          /* Upper is below lower bounds. */
+          printf ("Upper is below bounds.\n");
           for (int r = 0; r < rank; r++)
             {
               upper[r]   = rank - r - 6;
@@ -1005,8 +1005,8 @@ int main (void)
                       "bounds.\n");
             }
           printf ("errno = %ld\n\n", errno);
-          /* Lower is above upper bounds. */
-          printf ("Lower is above bounds.\n");
+          /* Upper is above upper bounds. */
+          printf ("Upper is above bounds.\n");
           for (int r = 0; r < rank; r++)
             {
               upper[r]   = lower[r] + extents[r];
@@ -1057,6 +1057,7 @@ int main (void)
     next_type2:;
       printf ("\n");
     }
+
   printf ("CFI_section trivial tests.\n\n");
   errno = 1;
   rank  = 1;
@@ -1073,7 +1074,7 @@ int main (void)
     {
       free (upper);
     }
-  if (strides == NULL)
+  if (strides != NULL)
     {
       free (strides);
     }
@@ -1173,6 +1174,116 @@ int main (void)
       errno *= 17;
     }
   printf ("errno = %ld\n\n", errno);
+
+  printf ("CFI_section rank reduction.\n\n");
+  for (int i = 1; i < CFI_MAX_RANK; i++)
+    {
+      errno   = 1;
+      rank    = i;
+      int ctr = 0;
+      CFI_CDESC_T (rank) source;
+      if (extents != NULL)
+        {
+          free (extents);
+        }
+      if (lower != NULL)
+        {
+          free (lower);
+        }
+      if (upper != NULL)
+        {
+          free (upper);
+        }
+      if (strides != NULL)
+        {
+          free (strides);
+        }
+      extents = malloc (rank * sizeof (CFI_index_t));
+      lower   = malloc (rank * sizeof (CFI_index_t));
+      upper   = malloc (rank * sizeof (CFI_index_t));
+      strides = malloc (rank * sizeof (CFI_index_t));
+      for (int r = 0; r < rank; r++)
+        {
+          extents[r] = rank - r + 10;
+          lower[r]   = rank - r - 5;
+          upper[r]   = lower[r] + extents[r] - 1;
+        }
+      ind =
+          CFI_establish ((CFI_cdesc_t *) &source, NULL,
+                         CFI_attribute_allocatable, type[3], 0, rank, extents);
+      ind = CFI_allocate ((CFI_cdesc_t *) &source, lower, upper, elem_len);
+      if (ind == CFI_ERROR_MEM_ALLOCATION)
+        {
+          continue;
+        }
+      for (int r = 0; r < rank; r++)
+        {
+          lower[r] = rank - r - 3;
+          if (r % 2 == 0)
+            {
+              strides[r] = 0;
+              upper[r]   = lower[r];
+              ctr++;
+            }
+          else
+            {
+              strides[r] = r + 1;
+              upper[r]   = lower[r] + extents[r] - 3;
+            }
+        }
+      CFI_CDESC_T (rank - ctr) section;
+      ind = CFI_establish ((CFI_cdesc_t *) &section, NULL, CFI_attribute_other,
+                           type[3], 0, rank - ctr, NULL);
+      ind = CFI_section ((CFI_cdesc_t *) &section, (CFI_cdesc_t *) &source,
+                         lower, upper, strides);
+      ctr = 0;
+      for (int r = 0; r < rank; r++)
+        {
+          if (strides[r] == 0)
+            {
+              ctr++;
+              continue;
+            }
+          int idx = r - ctr;
+          if (section.dim[idx].lower_bound != lower[r])
+            {
+              printf ("CFI_section does not properly assign lower bound in "
+                      "rank reduction.\nsection.dim[%d].lower_bound = %ld\t "
+                      "lower[%d] = %ld\n",
+                      idx, section.dim[idx].lower_bound, r, lower[r]);
+              errno *= 2;
+            }
+          if (section.dim[idx].extent != upper[r] - lower[r] + 1)
+            {
+              printf ("CFI_section does not properly assign extent in rank "
+                      "reduction.\nsection.dim[%d].extent = %ld\t "
+                      "upper[%d] - lower[%d] + 1 = %ld\n",
+                      idx, section.dim[idx].lower_bound, r, r,
+                      upper[r] - lower[r] + 1);
+              errno *= 3;
+            }
+          if (section.dim[idx].sm != strides[r] * section.elem_len)
+            {
+              printf ("CFI_section does not properly assign extent in rank "
+                      "reduction.\nsection.dim[%d].sm = %ld\t"
+                      "strides[%d] * section.elem_len = %ld\n",
+                      r, section.dim[r].sm, r, strides[r] * section.elem_len);
+              errno *= 5;
+            }
+          CFI_CDESC_T (rank - ctr - 1) section2;
+          ind = CFI_establish ((CFI_cdesc_t *) &section2, NULL,
+                               CFI_attribute_other, type[3], 0, rank - ctr - 1,
+                               NULL);
+          ind = CFI_section ((CFI_cdesc_t *) &section2, (CFI_cdesc_t *) &source,
+                             lower, upper, strides);
+          if (ind != CFI_SUCCESS && ind != CFI_INVALID_RANK)
+            {
+              printf ("CFI_section is not detecting wrong rank.\n");
+              errno *= 7;
+            }
+          printf ("errno = %ld\n\n", errno);
+        }
+    }
   /*
   CFI_index_t *strides;
   rank = 1;

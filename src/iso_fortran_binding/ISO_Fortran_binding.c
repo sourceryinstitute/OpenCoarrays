@@ -424,8 +424,8 @@ int CFI_deallocate (CFI_cdesc_t *dv)
   if (dv->base_addr == NULL)
     {
       fprintf (stderr, "ISO_Fortran_binding.c: CFI_deallocate Base address "
-                      "already NULL. (Error No. %d).\n",
-              CFI_ERROR_BASE_ADDR_NULL);
+                       "already NULL. (Error No. %d).\n",
+               CFI_ERROR_BASE_ADDR_NULL);
       return CFI_ERROR_BASE_ADDR_NULL;
     }
   /* C Descriptor must be for an allocatable or pointer variable. */
@@ -542,34 +542,6 @@ int CFI_section (CFI_cdesc_t *result, const CFI_cdesc_t *source,
   lower  = malloc (source->rank * sizeof (CFI_index_t));
   upper  = malloc (source->rank * sizeof (CFI_index_t));
   stride = malloc (source->rank * sizeof (CFI_index_t));
-  /* Stride */
-  if (strides == NULL)
-    {
-      for (int i = 0; i < source->rank; i++)
-        {
-          stride[i] = 1;
-        }
-    }
-  else
-    {
-      for (int i = 0; i < source->rank; i++)
-        {
-          stride[i] = strides[i];
-          /* If stride[i] = then lower[i] and upper[i] must be equal. */
-          if (stride[i] == 0 && lower[i] != upper[i])
-            {
-              fprintf (stderr, "ISO_Fortran_binding.c: "
-                               "CFI_section: If strides[%d] = 0, "
-                               "then the lower bounds, "
-                               "lower_bounds[%d] = %ld, and "
-                               "upper_bounds[%d] = %ld, must be "
-                               "equal. (Error No. %d).\n",
-                       i, i, lower_bounds[i], i, upper_bounds[i],
-                       CFI_ERROR_OUT_OF_BOUNDS);
-              return CFI_ERROR_OUT_OF_BOUNDS;
-            }
-        }
-    }
   /* Lower bounds. */
   if (lower_bounds == NULL)
     {
@@ -607,6 +579,34 @@ int CFI_section (CFI_cdesc_t *result, const CFI_cdesc_t *source,
       for (int i = 0; i < source->rank; i++)
         {
           upper[i] = upper_bounds[i];
+        }
+    }
+  /* Stride */
+  if (strides == NULL)
+    {
+      for (int i = 0; i < source->rank; i++)
+        {
+          stride[i] = 1;
+        }
+    }
+  else
+    {
+      for (int i = 0; i < source->rank; i++)
+        {
+          stride[i] = strides[i];
+          /* If stride[i] = then lower[i] and upper[i] must be equal. */
+          if (stride[i] == 0 && lower[i] != upper[i])
+            {
+              fprintf (stderr, "ISO_Fortran_binding.c: "
+                               "CFI_section: If strides[%d] = 0, "
+                               "then the lower bounds, "
+                               "lower_bounds[%d] = %ld, and "
+                               "upper_bounds[%d] = %ld, must be "
+                               "equal. (Error No. %d).\n",
+                       i, i, lower_bounds[i], i, upper_bounds[i],
+                       CFI_ERROR_OUT_OF_BOUNDS);
+              return CFI_ERROR_OUT_OF_BOUNDS;
+            }
         }
     }
   /* Check upper and lower bounds. */
