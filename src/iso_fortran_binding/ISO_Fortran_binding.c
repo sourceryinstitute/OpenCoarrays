@@ -326,16 +326,19 @@ int CFI_is_contiguous (const CFI_cdesc_t *dv)
                CFI_INVALID_RANK);
       return CFI_INVALID_RANK;
     }
-  /* There is no guarantee other arrays are contiguous. */
-  if (dv->attribute == CFI_attribute_pointer)
-    {
-      return CFI_FAILURE;
-    }
-  /* Allocatable, assume shape and assumed size arrays are always contiguous. */
-  else
+  /* Allocatable arrays are always contiguous. */
+  if (dv->attribute == CFI_attribute_allocatable)
     {
       return CFI_SUCCESS;
     }
+  /* If an array is not contiguous the memory stride is different to the element
+   * length. */
+  for (int i = 0; i < dv->rank; i++)
+    {
+      if (dv->dim[i].sm != dv->elem_len)
+        return CFI_FAILURE;
+    }
+  return CFI_SUCCESS;
 }
 
 int CFI_allocate (CFI_cdesc_t *dv, const CFI_index_t lower_bounds[],
@@ -641,6 +644,16 @@ int CFI_section (CFI_cdesc_t *result, const CFI_cdesc_t *source,
                    source->dim[i].lower_bound + source->dim[i].extent - 1,
                    CFI_ERROR_OUT_OF_BOUNDS);
           return CFI_ERROR_OUT_OF_BOUNDS;
+        }
+      if (upper[i] < lower[i] && stride[i] >= 0)
+        {
+          fprintf (stderr, "ISO_Fortran_binding.c: CFI_section: If the upper "
+                           "bound is smaller than the lower bound for a given "
+                           "dimension (upper[%d] < lower[%d], %ld < %ld), then "
+                           "the stride for said dimension must be negative "
+                           "(stride[%d] < 0, %ld < 0). (Error No. %d)\n",
+                   i, i, upper[i], lower[i], i, stride[i], CFI_INVALID_STRIDE);
+          return CFI_INVALID_STRIDE;
         }
     }
   /* Update the result to describe the array section. */
