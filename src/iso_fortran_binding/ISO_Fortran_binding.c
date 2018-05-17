@@ -421,6 +421,13 @@ int CFI_deallocate (CFI_cdesc_t *dv)
                CFI_INVALID_DESCRIPTOR);
       return CFI_INVALID_DESCRIPTOR;
     }
+  if (dv->base_addr == NULL)
+    {
+      fprintf (stderr, "ISO_Fortran_binding.c: CFI_deallocate Base address "
+                      "already NULL. (Error No. %d).\n",
+              CFI_ERROR_BASE_ADDR_NULL);
+      return CFI_ERROR_BASE_ADDR_NULL;
+    }
   /* C Descriptor must be for an allocatable or pointer variable. */
   if (dv->attribute == CFI_attribute_other)
     {
@@ -432,6 +439,7 @@ int CFI_deallocate (CFI_cdesc_t *dv)
       return CFI_INVALID_ATTRIBUTE;
     }
   free (dv->base_addr);
+  dv->base_addr = NULL;
   return CFI_SUCCESS;
 }
 

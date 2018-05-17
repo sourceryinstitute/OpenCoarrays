@@ -1057,6 +1057,122 @@ int main (void)
     next_type2:;
       printf ("\n");
     }
+  printf ("CFI_section trivial tests.\n\n");
+  errno = 1;
+  rank  = 1;
+  CFI_CDESC_T (rank) section, source;
+  if (extents != NULL)
+    {
+      free (extents);
+    }
+  if (lower != NULL)
+    {
+      free (lower);
+    }
+  if (upper != NULL)
+    {
+      free (upper);
+    }
+  if (strides == NULL)
+    {
+      free (strides);
+    }
+  extents = malloc (rank * sizeof (CFI_index_t));
+  lower   = malloc (rank * sizeof (CFI_index_t));
+  upper   = malloc (rank * sizeof (CFI_index_t));
+  strides = malloc (rank * sizeof (CFI_index_t));
+  for (int r = 0; r < rank; r++)
+    {
+      extents[r] = rank - r + 10;
+      lower[r]   = rank - r - 5;
+      upper[r]   = lower[r] + extents[r] - 1;
+    }
+  ind = CFI_establish ((CFI_cdesc_t *) &source, NULL, CFI_attribute_allocatable,
+                       type[3], elem_len, rank, extents);
+  ind = CFI_establish ((CFI_cdesc_t *) &section, NULL, CFI_attribute_other,
+                       type[3], elem_len, rank, NULL);
+  ind = CFI_allocate ((CFI_cdesc_t *) &source, lower, upper, elem_len);
+  for (int r = 0; r < rank; r++)
+    {
+      lower[r]   = rank - r - 3;
+      strides[r] = r + 1;
+      upper[r]   = lower[r] + extents[r] - 3;
+    }
+  ind = CFI_section ((CFI_cdesc_t *) &section, NULL, lower, upper, strides);
+  if (ind != CFI_INVALID_DESCRIPTOR)
+    {
+      printf ("CFI_section not picking up that source is NULL.\n");
+      errno *= 2;
+    }
+  ind = CFI_section (NULL, (CFI_cdesc_t *) &source, lower, upper, strides);
+  if (ind != CFI_INVALID_DESCRIPTOR)
+    {
+      printf ("CFI_section not picking up that source is NULL.\n");
+      errno *= 3;
+    }
+  ind =
+      CFI_establish ((CFI_cdesc_t *) &section, NULL, CFI_attribute_allocatable,
+                     type[3], elem_len, rank, NULL);
+  ind = CFI_section ((CFI_cdesc_t *) &section, (CFI_cdesc_t *) &source, lower,
+                     upper, strides);
+  if (ind != CFI_INVALID_ATTRIBUTE)
+    {
+      printf (
+          "CFI_section not accounting for the attribute of result properly.\n");
+      errno *= 5;
+    }
+  ind = CFI_establish ((CFI_cdesc_t *) &section, NULL, CFI_attribute_other,
+                       type[3], elem_len, rank, NULL);
+  ind = CFI_deallocate ((CFI_cdesc_t *) &source);
+  ind = CFI_section ((CFI_cdesc_t *) &section, (CFI_cdesc_t *) &source, lower,
+                     upper, strides);
+  if (ind != CFI_ERROR_BASE_ADDR_NULL)
+    {
+      printf ("CFI_section not picking up that source->base_addr is NULL.\n");
+      errno *= 7;
+    }
+  CFI_CDESC_T (0) section2, source2;
+  ind = CFI_establish ((CFI_cdesc_t *) &source2, &ind, CFI_attribute_other,
+                       type[3], 0, 0, NULL);
+  ind = CFI_establish ((CFI_cdesc_t *) &section2, &errno, CFI_attribute_other,
+                       type[3], 0, 0, NULL);
+  ind = CFI_section ((CFI_cdesc_t *) &section2, (CFI_cdesc_t *) &source2, lower,
+                     upper, strides);
+  if (ind != CFI_INVALID_RANK)
+    {
+      printf ("CFI_section not picking up that source has rank.\n");
+      errno *= 11;
+    }
+  ind = CFI_establish ((CFI_cdesc_t *) &source, NULL, CFI_attribute_allocatable,
+                       type[3], 0, rank, extents);
+  ind = CFI_establish ((CFI_cdesc_t *) &section, NULL, CFI_attribute_other,
+                       type[6], 0, rank, NULL);
+  ind = CFI_allocate ((CFI_cdesc_t *) &source, lower, upper, elem_len);
+  for (int r = 0; r < rank; r++)
+    {
+      lower[r]   = rank - r - 3;
+      strides[r] = r + 1;
+      upper[r]   = lower[r] + extents[r] - 3;
+    }
+  ind = CFI_section ((CFI_cdesc_t *) &section, (CFI_cdesc_t *) &source, lower,
+                     upper, strides);
+  if (ind != CFI_INVALID_ELEM_LEN)
+    {
+      printf ("CFI_section not picking up different element lengths of source "
+              "and section.\n");
+      errno *= 13;
+    }
+  ind = CFI_establish ((CFI_cdesc_t *) &section, NULL, CFI_attribute_other,
+                       CFI_type_long, 0, rank, NULL);
+  ind = CFI_section ((CFI_cdesc_t *) &section, (CFI_cdesc_t *) &source, lower,
+                     upper, strides);
+  if (ind != CFI_INVALID_TYPE)
+    {
+      printf ("CFI_section not picking up different types of source and "
+              "section.\n");
+      errno *= 17;
+    }
+  printf ("errno = %ld\n\n", errno);
   /*
   CFI_index_t *strides;
   rank = 1;
