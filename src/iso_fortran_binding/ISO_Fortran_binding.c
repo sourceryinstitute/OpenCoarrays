@@ -637,11 +637,18 @@ int CFI_section (CFI_cdesc_t *result, const CFI_cdesc_t *source,
     }
   /* Update the result to describe the array section. */
   result->base_addr = CFI_address (source, lower);
-  for (int i = 0; i < result->rank; i++)
+  int aux           = 0;
+  for (int i = 0; i < source->rank; i++)
     {
-      result->dim[i].lower_bound = lower[i];
-      result->dim[i].extent      = upper[i] - lower[i] + 1;
-      result->dim[i].sm          = stride[i] * result->elem_len;
+      if (stride[i] == 0)
+        {
+          aux++;
+          continue;
+        }
+      int idx                      = i - aux;
+      result->dim[idx].lower_bound = lower[i];
+      result->dim[idx].extent      = upper[i] - lower[i] + 1;
+      result->dim[idx].sm          = stride[i] * result->elem_len;
     }
   free (lower);
   free (upper);
