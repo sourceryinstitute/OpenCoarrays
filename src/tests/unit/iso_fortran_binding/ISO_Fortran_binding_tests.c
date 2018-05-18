@@ -315,8 +315,8 @@ int main (void)
                 }
               ind = CFI_establish ((CFI_cdesc_t *) &test3, NULL, attribute,
                                    type[i], elem_len, rank, extents);
-              ind = CFI_allocate ((CFI_cdesc_t *) &test3, lower, upper,
-                                  base_type_size);
+              ind =
+                  CFI_allocate ((CFI_cdesc_t *) &test3, lower, upper, elem_len);
               printf ("type = %ld\nelem_len = %ld\n", base_type,
                       test3.elem_len);
               if (ind != CFI_SUCCESS)
@@ -1284,44 +1284,30 @@ int main (void)
           printf ("errno = %ld\n\n", errno);
         }
     }
-  /*
-  CFI_index_t *strides;
+
+  /* CFI_select_part */
+  typedef struct foo_t
+  {
+    double x;
+    double _Complex y;
+  } foo_t;
   rank = 1;
-  CFI_CDESC_T (rank) section, source;
-  if (lower != NULL)
-    {
-      free (lower);
-    }
-  if (upper != NULL)
-    {
-      free (upper);
-    }
-  lower   = malloc (rank * sizeof (CFI_index_t));
-  strides = malloc (rank * sizeof (CFI_index_t));
-  for (int r = 0; r < rank; r++)
-    {
-      extents[r] = r + 2;
-      lower[r]   = r - 2;
-      strides[r] = r + 1;
-    }
-  base_type      = type[3] & CFI_type_mask;
-  base_type_size = (CFI_type_long - base_type) >> CFI_type_kind_shift;
-  ind = CFI_establish ((CFI_cdesc_t *) &section, NULL, CFI_attribute_other,
-                       type[3], base_type_size, rank, NULL);
-  ind = CFI_section ((CFI_cdesc_t *) &section, (CFI_cdesc_t *) &section, lower,
-  NULL, strides);
-  */
+  CFI_CDESC_T (rank) foo_c, cx, cy;
+  int         arr_len = 100;
+  foo_t       foo[arr_len];
+  CFI_index_t extent[] = {arr_len};
+  ind = CFI_establish ((CFI_cdesc_t *) &foo_c, &foo, CFI_attribute_other,
+                       CFI_type_struct, sizeof (foo_t), rank, extent);
+  printf ("sizeof(foo_t) = %ld\tsizeof(foo) = %ld\tfoo.elem_len = %ld\n",
+          sizeof (foo_t), sizeof (foo), foo_c.elem_len);
+  printf ("&foo[5] = %u\t foo_c[5] = %u\n", (char *) &foo[5],
+          (char *) ((char *) foo_c.base_addr + foo_c.elem_len * 5));
+  // ind                  = CFI_establish (comp_cdesc, NULL,
+  // CFI_attribute_other,
+  //                      CFI_type_double_Complex, sizeof (double _Complex),
+  //                      1,
+  //                      extent);
 
-  /* Test CFI_select_part */
-
-  // // This sets the value "val" at position "offset" for a CFI array "arr"
-  // with element size "arr.elem_len" described by CFI_cdesc_t.
-  // memcpy ((char *)arr.base_addr + offset * arr.elem_len,
-  //         (void *)& val, arr.elem_len);
-  // // This is the memory address of the l'th element of the array (C indices).
-  // char address = (char *)test3.base_addr + l * test3.elem_len;
-  // // This is the value of the l'th element of the array (C indices).
-  // my_type value = *(my_type*)((char *)test3.base_addr + l * test3.elem_len);
   const int INCOMPLETE_TEST = 1;
   return INCOMPLETE_TEST;
 }

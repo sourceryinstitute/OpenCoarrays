@@ -669,7 +669,7 @@ int CFI_section (CFI_cdesc_t *result, const CFI_cdesc_t *source,
       int idx                      = i - aux;
       result->dim[idx].lower_bound = lower[i];
       result->dim[idx].extent      = upper[i] - lower[i] + 1;
-      result->dim[idx].sm          = stride[i] * result->elem_len;
+      result->dim[idx].sm          = stride[i] * result->dim[idx].sm;
     }
   free (lower);
   free (upper);
@@ -680,6 +680,8 @@ int CFI_section (CFI_cdesc_t *result, const CFI_cdesc_t *source,
 int CFI_select_part (CFI_cdesc_t *result, const CFI_cdesc_t *source,
                      size_t displacement, size_t elem_len)
 {
+  /* Attribute of result will be CFI_attribute_other or CFI_attribute_pointer.
+   */
   if (result->attribute == CFI_attribute_allocatable)
     {
       fprintf (stderr, "ISO_Fortran_binding.c: CFI_select_part: Result must "
@@ -696,55 +698,31 @@ int CFI_select_part (CFI_cdesc_t *result, const CFI_cdesc_t *source,
                CFI_ERROR_BASE_ADDR_NULL);
       return CFI_ERROR_BASE_ADDR_NULL;
     }
+  /* Source and result must have the same rank. */
+  if (source->rank != result->rank)
+    {
+      fprintf (stderr, "ISO_Fortran_binding.c: CFI_select_part: Source and "
+                       "result must have the same rank (source->rank = %d, "
+                       "result->rank = %d). (Error No. %d).\n",
+               source->rank, result->rank, CFI_INVALID_RANK);
+      return CFI_INVALID_RANK;
+    }
   /* Nonallocatable nonpointer must not be an assumed size array. */
-  if (source->dim[source->rank].extent == -1)
+  if (source->rank > 0 && source->dim[source->rank - 1].extent == -1)
     {
       fprintf (stderr, "ISO_Fortran_binding.c: CFI_select_part: Source must "
                        "not describe an assumed size array. (Error No. %d).\n",
                CFI_INVALID_DESCRIPTOR);
       return CFI_INVALID_DESCRIPTOR;
     }
-  /* Check the element length */
-  size_t base_type_size =
-      (result->type - CFI_type_Character) >> CFI_type_kind_shift;
-  if (base_type_size == 1 || base_type_size == 4)
+  /* Element length. */
+  if (result->type == CFI_type_char || result->type == CFI_type_ucs4_char ||
+      result->type == CFI_type_signed_char)
     {
-      if (elem_len != base_type_size)
-        {
-          fprintf (stderr, "ISO_Fortran_binding.c: "
-                           "CFI_select_part: Element length, elem_len = %ld, "
-                           "must be equal to the size in bytes of a Fortran "
-                           "character, base_type_size = %ld. (Error "
-                           "No. %d).\n",
-                   elem_len, base_type_size, CFI_INVALID_ELEM_LEN);
-          return CFI_INVALID_ELEM_LEN;
-        }
       result->elem_len = elem_len;
-      for (int i = 0; i < result->rank; i++)
-        {
-          result->dim[i].sm = result->elem_len;
-        }
     }
-  else
-    {
-      base_type_size = (result->type - CFI_type_Integer) >> CFI_type_kind_shift;
-      if (base_type_size == 1 && elem_len != base_type_size)
-        {
-          fprintf (stderr, "ISO_Fortran_binding.c: "
-                           "CFI_select_part: Element length, elem_len = %ld, "
-                           "must be equal to the size in bytes of a Fortran "
-                           "character, base_type_size = %ld. (Error "
-                           "No. %d).\n",
-                   elem_len, base_type_size, CFI_INVALID_ELEM_LEN);
-          return CFI_INVALID_ELEM_LEN;
-        }
-      result->elem_len = elem_len;
-      for (int i = 0; i < result->rank; i++)
-        {
-          result->dim[i].sm = result->elem_len;
-        }
-    }
-  /* Check displacement. */
+  /* Ensure displacement is within the bounds of the element length of source.
+   */
   if (displacement < 0 || displacement > source->elem_len - 1)
     {
       fprintf (stderr,
@@ -754,6 +732,8 @@ int CFI_select_part (CFI_cdesc_t *result, const CFI_cdesc_t *source,
                displacement, source->elem_len - 1, CFI_ERROR_OUT_OF_BOUNDS);
       return CFI_ERROR_OUT_OF_BOUNDS;
     }
+  /* Ensure displacement and element length of result are less than or equal to
+   * the element length of source. */
   if (displacement + result->elem_len > source->elem_len)
     {
       fprintf (stderr, "ISO_Fortran_binding.c: CFI_select_part: Displacement "
@@ -765,6 +745,13 @@ int CFI_select_part (CFI_cdesc_t *result, const CFI_cdesc_t *source,
                displacement, source->elem_len, displacement + source->elem_len,
                source->elem_len, CFI_ERROR_OUT_OF_BOUNDS);
       return CFI_ERROR_OUT_OF_BOUNDS;
+    }
+  if (result->rank > 0)
+    {
+      for (int i = 0; i < result->rank; i++)
+        {
+          result->dim[i].sm = source->dim[i].sm;
+        }
     }
   result->base_addr = (char *) source->base_addr + displacement;
   return CFI_SUCCESS;
