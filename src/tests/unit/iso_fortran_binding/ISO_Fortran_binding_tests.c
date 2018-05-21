@@ -1264,10 +1264,10 @@ int main (void)
             }
           if (section.dim[idx].sm != strides[r] * section.elem_len)
             {
-              printf ("CFI_section does not properly assign extent in rank "
+              printf ("CFI_section does not properly assign stride in rank "
                       "reduction.\nsection.dim[%d].sm = %ld\t"
                       "strides[%d] * section.elem_len = %ld\n",
-                      r, section.dim[r].sm, r, strides[r] * section.elem_len);
+                      idx, section.dim[idx].sm, r, strides[r] * section.elem_len);
               errno *= 5;
             }
           CFI_CDESC_T (rank - ctr - 1) section2;
@@ -1293,20 +1293,33 @@ int main (void)
   } foo_t;
   rank = 1;
   CFI_CDESC_T (rank) foo_c, cx, cy;
-  int         arr_len = 100;
-  foo_t       foo[arr_len];
+  int    arr_len = 100;
+  // foo_t * restrict foo;
+  // foo                  = malloc (arr_len * sizeof (foo_t));
+  foo_t foo[arr_len];
   CFI_index_t extent[] = {arr_len};
+  /* Establish c descriptor for the structure. */
   ind = CFI_establish ((CFI_cdesc_t *) &foo_c, &foo, CFI_attribute_other,
                        CFI_type_struct, sizeof (foo_t), rank, extent);
-  printf ("sizeof(foo_t) = %ld\tsizeof(foo) = %ld\tfoo.elem_len = %ld\n",
-          sizeof (foo_t), sizeof (foo), foo_c.elem_len);
-  printf ("&foo[5] = %u\t foo_c[5] = %u\n", (char *) &foo[5],
-          (char *) ((char *) foo_c.base_addr + foo_c.elem_len * 5));
-  // ind                  = CFI_establish (comp_cdesc, NULL,
-  // CFI_attribute_other,
-  //                      CFI_type_double_Complex, sizeof (double _Complex),
-  //                      1,
-  //                      extent);
+  for (int i = 0; i < arr_len; i++)
+    {
+      if ((char *) &foo[i] !=
+          (char *) ((char *) foo_c.base_addr + foo_c.elem_len * i))
+        {
+          printf ("&foo[%d] = %u\t foo_c[%d] = %u\n", i, (char *) &foo[i], i,
+                  (char *) ((char *) foo_c.base_addr + foo_c.elem_len * i));
+        }
+    }
+  /* Establish c descriptor for the y component. */
+  ind = CFI_establish ((CFI_cdesc_t *) &cy, NULL, CFI_attribute_other,
+                       CFI_type_double_Complex, 0, rank, extent);
+  ind = CFI_select_part ((CFI_cdesc_t *) &cy, (CFI_cdesc_t *) &foo_c,
+                         offsetof (foo_t, y), 0);
+  /* Establish c descriptor for the x component. */
+  ind = CFI_establish ((CFI_cdesc_t *) &cx, NULL, CFI_attribute_other,
+                       CFI_type_double, 0, rank, extent);
+  ind = CFI_select_part ((CFI_cdesc_t *) &cx, (CFI_cdesc_t *) &foo_c,
+                         offsetof (foo_t, x), 0);
 
   const int INCOMPLETE_TEST = 1;
   return INCOMPLETE_TEST;

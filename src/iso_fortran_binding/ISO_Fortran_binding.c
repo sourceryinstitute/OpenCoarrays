@@ -669,7 +669,7 @@ int CFI_section (CFI_cdesc_t *result, const CFI_cdesc_t *source,
       int idx                      = i - aux;
       result->dim[idx].lower_bound = lower[i];
       result->dim[idx].extent      = upper[i] - lower[i] + 1;
-      result->dim[idx].sm          = stride[i] * result->dim[idx].sm;
+      result->dim[idx].sm          = stride[i] * source->dim[i].sm;
     }
   free (lower);
   free (upper);
