@@ -1295,9 +1295,7 @@ int main (void)
   } foo_t;
   rank = 1;
   CFI_CDESC_T (rank) foo_c, cx, cy;
-  int arr_len = 100;
-  // foo_t *foo;
-  // foo = calloc (arr_len, sizeof (foo_t));
+  int         arr_len = 100;
   foo_t       foo[arr_len];
   CFI_index_t extent[] = {arr_len};
   /* Establish c descriptor for the structure. */
@@ -1307,14 +1305,6 @@ int main (void)
     {
       foo[i].x = (double) (i + 1) * 2.;
       foo[i].y = (double) (i + 1) * 3. + (double) (i + 1) * 5. * I;
-      if ((char *) &foo[i] !=
-          (char *) ((char *) foo_c.base_addr + foo_c.elem_len * i))
-        {
-          printf ("&foo[%d] = %u\t foo_c[%d] = %u\n", i, (char *) &foo[i], i,
-                  (char *) ((char *) foo_c.base_addr + foo_c.elem_len * i));
-        }
-      // printf ("foo[%d]\t x = %f\ty = %f + %fi\n", i, foo[i].x,
-      //         creal (foo[i].y), cimag (foo[i].y));
     }
   /* Establish c descriptor for the x component. */
   ind = CFI_establish ((CFI_cdesc_t *) &cx, NULL, CFI_attribute_other,
@@ -1328,14 +1318,122 @@ int main (void)
                          offsetof (foo_t, y), 0);
   for (int i = 0; i < arr_len; i++)
     {
-      // printf ("cx.base_addr[%d] = %f\n", i, *(double*)((char*)cx.base_addr +
-      // i*cx.offset));
-      printf ("cx.base_addr = %f\tcy.base_addr[%d] = %f + %f i\n", i,
-              *(double *) ((char *) cx.base_addr + i * cx.offset), i,
-              *(double *) ((char *) cy.base_addr +
-                           +i * (cy.offset - cy.elem_len / 2)),
-              *(double *) ((char *) cy.base_addr + +cy.elem_len / 2 +
-                           i * (cy.offset - cy.elem_len / 2)));
+      if (*(double *) ((char *) cx.base_addr + i * cx.dim[0].sm) !=
+          foo[i].x) // cx.offset) != foo[i].x)
+        {
+          printf ("CFI_select_part not properly assigning the value to the "
+                  "first component.\n");
+          errno *= 2;
+        }
+      if (*(double *) ((char *) cy.base_addr +
+                       i * (cy.dim[0].sm - cy.elem_len / 2)) !=
+          creal (
+              foo[i].y)) //(cy.offset - cy.elem_len / 2)) != creal (foo[i].y))
+        {
+          printf ("CFI_select_part not properly assigning the real value to "
+                  "the second component.\n");
+          errno *= 3;
+        }
+      if (*(double *) ((char *) cy.base_addr + cy.elem_len / 2 +
+                       i * (cy.dim[0].sm - cy.elem_len / 2)) !=
+          cimag (foo[i].y))
+        // cy.elem_len / 2 + i * (cy.offset - cy.elem_len / 2)) != cimag
+        // (foo[i].y))
+        {
+          printf ("CFI_select_part not properly assigning the imaginary value "
+                  "to the second component.\n");
+          errno *= 5;
+        }
+      printf ("errno = %ld\n", errno);
+    }
+  printf ("\n");
+
+  printf ("CFI_select_part trivial tests.\n");
+  errno = 1;
+  ind   = CFI_establish ((CFI_cdesc_t *) &foo_c, &foo, CFI_attribute_other,
+                       CFI_type_struct, sizeof (foo_t), rank, extent);
+  ind = CFI_establish ((CFI_cdesc_t *) &cx, NULL, CFI_attribute_allocatable,
+                       CFI_type_double, 0, rank, extent);
+  ind = CFI_select_part ((CFI_cdesc_t *) &cx, (CFI_cdesc_t *) &foo_c,
+                         offsetof (foo_t, x), 0);
+  if (ind != CFI_INVALID_ATTRIBUTE)
+    {
+      printf ("CFI_select_part is not detecting innapropriate attribute.\n");
+      errno *= 2;
+    }
+
+  ind = CFI_establish ((CFI_cdesc_t *) &foo_c, NULL, CFI_attribute_other,
+                       CFI_type_struct, sizeof (foo_t), rank, extent);
+  ind = CFI_establish ((CFI_cdesc_t *) &cx, NULL, CFI_attribute_other,
+                       CFI_type_double, 0, rank, extent);
+  ind = CFI_select_part ((CFI_cdesc_t *) &cx, (CFI_cdesc_t *) &foo_c,
+                         offsetof (foo_t, x), 0);
+  if (ind != CFI_ERROR_BASE_ADDR_NULL)
+    {
+      printf ("CFI_select_part is not detecting the NULL base address of "
+              "source.\n");
+      errno *= 3;
+    }
+
+  ind = CFI_establish ((CFI_cdesc_t *) &foo_c, &foo, CFI_attribute_other,
+                       CFI_type_struct, sizeof (foo_t), rank + 1, extent);
+  ind = CFI_establish ((CFI_cdesc_t *) &cx, NULL, CFI_attribute_other,
+                       CFI_type_double, 0, rank, extent);
+  ind = CFI_select_part ((CFI_cdesc_t *) &cx, (CFI_cdesc_t *) &foo_c,
+                         offsetof (foo_t, x), 0);
+  if (ind != CFI_INVALID_RANK)
+    {
+      printf ("CFI_select_part is not detecting the incorrect rank.\n");
+      errno *= 5;
+    }
+
+  extent[0] = -1;
+  ind       = CFI_establish ((CFI_cdesc_t *) &foo_c, &foo, CFI_attribute_other,
+                       CFI_type_struct, sizeof (foo_t), rank, extent);
+  extent[0] = arr_len;
+  ind       = CFI_establish ((CFI_cdesc_t *) &cx, NULL, CFI_attribute_other,
+                       CFI_type_double, 0, rank, extent);
+  ind = CFI_select_part ((CFI_cdesc_t *) &cx, (CFI_cdesc_t *) &foo_c,
+                         offsetof (foo_t, x), 0);
+  if (ind != CFI_INVALID_DESCRIPTOR)
+    {
+      printf ("CFI_select_part is not detecting that the source is assumed "
+              "size.\n");
+      errno *= 7;
+    }
+
+  ind = CFI_establish ((CFI_cdesc_t *) &foo_c, &foo, CFI_attribute_other,
+                       CFI_type_struct, sizeof (foo_t), rank, extent);
+  ind = CFI_establish ((CFI_cdesc_t *) &cx, NULL, CFI_attribute_other,
+                       CFI_type_double, 0, rank, extent);
+  ind = CFI_select_part ((CFI_cdesc_t *) &cx, (CFI_cdesc_t *) &foo_c, -1, 0);
+  if (ind != CFI_ERROR_OUT_OF_BOUNDS)
+    {
+      printf ("CFI_select_part is not detecting the displacement is out of "
+              "bounds size.\n");
+      errno *= 11;
+    }
+  ind = CFI_select_part ((CFI_cdesc_t *) &cx, (CFI_cdesc_t *) &foo_c,
+                         foo_c.elem_len, 0);
+  if (ind != CFI_ERROR_OUT_OF_BOUNDS)
+    {
+      printf ("CFI_select_part is not detecting the displacement is out of "
+              "bounds size.\n");
+      errno *= 13;
+    }
+
+  ind = CFI_establish ((CFI_cdesc_t *) &foo_c, &foo, CFI_attribute_other,
+                       CFI_type_struct, sizeof (foo_t), rank, extent);
+  ind = CFI_establish ((CFI_cdesc_t *) &cx, NULL, CFI_attribute_other,
+                       CFI_type_double, 0, rank, extent);
+  ind = CFI_select_part ((CFI_cdesc_t *) &cx, (CFI_cdesc_t *) &foo_c,
+                         foo_c.elem_len - 1, 0);
+  if (ind != CFI_ERROR_OUT_OF_BOUNDS)
+    {
+      printf ("CFI_select_part is not detecting the displacement and element "
+              "length of result are greater than the element length of "
+              "source.\n");
+      errno *= 17;
     }
   const int INCOMPLETE_TEST = 1;
   return INCOMPLETE_TEST;
