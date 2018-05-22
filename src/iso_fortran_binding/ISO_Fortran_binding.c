@@ -754,5 +754,7 @@ int CFI_select_part (CFI_cdesc_t *result, const CFI_cdesc_t *source,
         }
     }
   result->base_addr = (char *) source->base_addr + displacement;
+  result->offset    = displacement + source->elem_len;
+  printf("offset = %ld\n",source->elem_len);
   return CFI_SUCCESS;
 }

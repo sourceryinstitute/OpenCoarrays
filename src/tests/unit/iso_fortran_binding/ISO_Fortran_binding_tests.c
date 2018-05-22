@@ -1,5 +1,6 @@
 /* Test suite for ISO_Fortran_binding.h */
 #include "../../../iso_fortran_binding/ISO_Fortran_binding.h"
+#include <complex.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -1267,7 +1268,8 @@ int main (void)
               printf ("CFI_section does not properly assign stride in rank "
                       "reduction.\nsection.dim[%d].sm = %ld\t"
                       "strides[%d] * section.elem_len = %ld\n",
-                      idx, section.dim[idx].sm, r, strides[r] * section.elem_len);
+                      idx, section.dim[idx].sm, r,
+                      strides[r] * section.elem_len);
               errno *= 5;
             }
           CFI_CDESC_T (rank - ctr - 1) section2;
@@ -1293,34 +1295,48 @@ int main (void)
   } foo_t;
   rank = 1;
   CFI_CDESC_T (rank) foo_c, cx, cy;
-  int    arr_len = 100;
-  // foo_t * restrict foo;
-  // foo                  = malloc (arr_len * sizeof (foo_t));
-  foo_t foo[arr_len];
+  int arr_len = 100;
+  // foo_t *foo;
+  // foo = calloc (arr_len, sizeof (foo_t));
+  foo_t       foo[arr_len];
   CFI_index_t extent[] = {arr_len};
   /* Establish c descriptor for the structure. */
   ind = CFI_establish ((CFI_cdesc_t *) &foo_c, &foo, CFI_attribute_other,
                        CFI_type_struct, sizeof (foo_t), rank, extent);
   for (int i = 0; i < arr_len; i++)
     {
+      foo[i].x = (double) (i + 1) * 2.;
+      foo[i].y = (double) (i + 1) * 3. + (double) (i + 1) * 5. * I;
       if ((char *) &foo[i] !=
           (char *) ((char *) foo_c.base_addr + foo_c.elem_len * i))
         {
           printf ("&foo[%d] = %u\t foo_c[%d] = %u\n", i, (char *) &foo[i], i,
                   (char *) ((char *) foo_c.base_addr + foo_c.elem_len * i));
         }
+      // printf ("foo[%d]\t x = %f\ty = %f + %fi\n", i, foo[i].x,
+      //         creal (foo[i].y), cimag (foo[i].y));
     }
-  /* Establish c descriptor for the y component. */
-  ind = CFI_establish ((CFI_cdesc_t *) &cy, NULL, CFI_attribute_other,
-                       CFI_type_double_Complex, 0, rank, extent);
-  ind = CFI_select_part ((CFI_cdesc_t *) &cy, (CFI_cdesc_t *) &foo_c,
-                         offsetof (foo_t, y), 0);
   /* Establish c descriptor for the x component. */
   ind = CFI_establish ((CFI_cdesc_t *) &cx, NULL, CFI_attribute_other,
                        CFI_type_double, 0, rank, extent);
   ind = CFI_select_part ((CFI_cdesc_t *) &cx, (CFI_cdesc_t *) &foo_c,
                          offsetof (foo_t, x), 0);
-
+  /* Establish c descriptor for the y component. */
+  ind = CFI_establish ((CFI_cdesc_t *) &cy, NULL, CFI_attribute_other,
+                       CFI_type_double_Complex, 0, rank, extent);
+  ind = CFI_select_part ((CFI_cdesc_t *) &cy, (CFI_cdesc_t *) &foo_c,
+                         offsetof (foo_t, y), 0);
+  for (int i = 0; i < arr_len; i++)
+    {
+      // printf ("cx.base_addr[%d] = %f\n", i, *(double*)((char*)cx.base_addr +
+      // i*cx.offset));
+      printf ("cx.base_addr = %f\tcy.base_addr[%d] = %f + %f i\n", i,
+              *(double *) ((char *) cx.base_addr + i * cx.offset), i,
+              *(double *) ((char *) cy.base_addr +
+                           +i * (cy.offset - cy.elem_len / 2)),
+              *(double *) ((char *) cy.base_addr + +cy.elem_len / 2 +
+                           i * (cy.offset - cy.elem_len / 2)));
+    }
   const int INCOMPLETE_TEST = 1;
   return INCOMPLETE_TEST;
 }
