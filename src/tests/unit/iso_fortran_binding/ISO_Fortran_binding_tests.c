@@ -1336,11 +1336,12 @@ int main (void)
   printf ("errno = %ld\n\n", errno);
 
   /* CFI_select_part */
+  printf("CFI_select_part tests.\n\n");
   typedef struct foo_t
   {
     double _Complex p;
-    double z;
     double _Complex y;
+    double z;
     double x;
   } foo_t;
   rank = 1;
@@ -1483,6 +1484,7 @@ int main (void)
               "source.\n");
       errno *= 17;
     }
+  printf ("errno = %ld\n\n", errno);
   const int INCOMPLETE_TEST = 1;
   return INCOMPLETE_TEST;
 }
