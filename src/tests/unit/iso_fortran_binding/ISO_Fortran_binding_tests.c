@@ -1286,12 +1286,62 @@ int main (void)
           printf ("errno = %ld\n\n", errno);
         }
     }
+  printf ("\n");
+
+  /* CFI_section negative strides. */
+  printf ("CFI_section test negative strides.\n");
+  errno = 1;
+  rank  = 8;
+  if (extents != NULL)
+    {
+      free (extents);
+    }
+  if (lower != NULL)
+    {
+      free (lower);
+    }
+  if (upper != NULL)
+    {
+      free (upper);
+    }
+  if (strides != NULL)
+    {
+      free (strides);
+    }
+  extents = malloc (rank * sizeof (CFI_index_t));
+  lower   = malloc (rank * sizeof (CFI_index_t));
+  upper   = malloc (rank * sizeof (CFI_index_t));
+  strides = malloc (rank * sizeof (CFI_index_t));
+  for (int r = 0; r < rank; r++)
+    {
+      extents[r] = rank - r + 10;
+      lower[r]   = rank - r - 3;
+      upper[r]   = lower[r] + extents[r] - 3;
+      strides[r] = -(r + 1);
+    }
+  CFI_CDESC_T (rank) section3, source3;
+  ind = CFI_establish ((CFI_cdesc_t *) &source3, NULL,
+                       CFI_attribute_allocatable, type[3], 0, rank, extents);
+  ind = CFI_establish ((CFI_cdesc_t *) &section3, NULL, CFI_attribute_other,
+                       type[3], 0, rank, NULL);
+  ind = CFI_allocate ((CFI_cdesc_t *) &source3, lower, upper, elem_len);
+
+  ind = CFI_section ((CFI_cdesc_t *) &section3, (CFI_cdesc_t *) &source3, upper,
+                     lower, strides);
+  if (ind != CFI_SUCCESS)
+    {
+      printf ("CFI_section not detecting invalid stride.\n");
+      errno *= 2;
+    }
+  printf ("errno = %ld\n\n", errno);
 
   /* CFI_select_part */
   typedef struct foo_t
   {
-    double x;
+    double _Complex p;
+    double z;
     double _Complex y;
+    double x;
   } foo_t;
   rank = 1;
   CFI_CDESC_T (rank) foo_c, cx, cy;
@@ -1305,6 +1355,7 @@ int main (void)
     {
       foo[i].x = (double) (i + 1) * 2.;
       foo[i].y = (double) (i + 1) * 3. + (double) (i + 1) * 5. * I;
+      foo[i].z = (double) (i + 1) * 7;
     }
   /* Establish c descriptor for the x component. */
   ind = CFI_establish ((CFI_cdesc_t *) &cx, NULL, CFI_attribute_other,
@@ -1322,21 +1373,18 @@ int main (void)
           foo[i].x) // cx.offset) != foo[i].x)
         {
           printf ("CFI_select_part not properly assigning the value to the "
-                  "first component.\n");
+                  "first component\n");
           errno *= 2;
         }
-      if (*(double *) ((char *) cy.base_addr +
-                       i * (cy.dim[0].sm - cy.elem_len / 2)) !=
-          creal (
-              foo[i].y)) //(cy.offset - cy.elem_len / 2)) != creal (foo[i].y))
+      if (*(double *) ((char *) cy.base_addr + i * cy.dim[0].sm) !=
+          creal (foo[i].y)) //(cy.offset - cy.elem_len / 2)) != creal
         {
           printf ("CFI_select_part not properly assigning the real value to "
                   "the second component.\n");
           errno *= 3;
         }
       if (*(double *) ((char *) cy.base_addr + cy.elem_len / 2 +
-                       i * (cy.dim[0].sm - cy.elem_len / 2)) !=
-          cimag (foo[i].y))
+                       i * cy.dim[0].sm) != cimag (foo[i].y))
         // cy.elem_len / 2 + i * (cy.offset - cy.elem_len / 2)) != cimag
         // (foo[i].y))
         {
