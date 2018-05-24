@@ -92,7 +92,6 @@ int CFI_section (CFI_cdesc_t *, const CFI_cdesc_t *, const CFI_index_t [],
                  const CFI_index_t [], const CFI_index_t []);
 int CFI_select_part (CFI_cdesc_t *, const CFI_cdesc_t *, size_t, size_t);
 int CFI_setpointer (CFI_cdesc_t *, CFI_cdesc_t *, const CFI_index_t []);
-void *CFI_get_val(const CFI_cdesc_t *, const CFI_index_t []);
 
 /* Types and kind numbers. Allows bitwise and to reveal the intrinsic type of a kind type. It also allows us to find the kind parameter by inverting the bit-shift equation.
    CFI_type_kind_shift = 8

@@ -1336,7 +1336,7 @@ int main (void)
   printf ("errno = %ld\n\n", errno);
 
   /* CFI_select_part */
-  printf("CFI_select_part tests.\n\n");
+  printf ("CFI_select_part tests.\n\n");
   typedef struct foo_t
   {
     double _Complex p;
@@ -1368,26 +1368,26 @@ int main (void)
                        CFI_type_double_Complex, 0, rank, extent);
   ind = CFI_select_part ((CFI_cdesc_t *) &cy, (CFI_cdesc_t *) &foo_c,
                          offsetof (foo_t, y), 0);
+  CFI_index_t index[1];
   for (int i = 0; i < arr_len; i++)
     {
-      if (*(double *) ((char *) cx.base_addr + i * cx.dim[0].sm) !=
-          foo[i].x) // cx.offset) != foo[i].x)
+      index[0] = i + 1;
+      if (*(double *) (char *) CFI_address ((CFI_cdesc_t *) &cx, index) !=
+          foo[i].x)
         {
           printf ("CFI_select_part not properly assigning the value to the "
                   "first component\n");
           errno *= 2;
         }
-      if (*(double *) ((char *) cy.base_addr + i * cy.dim[0].sm) !=
-          creal (foo[i].y)) //(cy.offset - cy.elem_len / 2)) != creal
+      if (*(double *) (char *) CFI_address ((CFI_cdesc_t *) &cy, index) !=
+          creal (foo[i].y))
         {
           printf ("CFI_select_part not properly assigning the real value to "
                   "the second component.\n");
           errno *= 3;
         }
-      if (*(double *) ((char *) cy.base_addr + cy.elem_len / 2 +
-                       i * cy.dim[0].sm) != cimag (foo[i].y))
-        // cy.elem_len / 2 + i * (cy.offset - cy.elem_len / 2)) != cimag
-        // (foo[i].y))
+      if (*(double *) (char *) (CFI_address ((CFI_cdesc_t *) &cy, index) +
+                                cy.elem_len / 2) != cimag (foo[i].y))
         {
           printf ("CFI_select_part not properly assigning the imaginary value "
                   "to the second component.\n");

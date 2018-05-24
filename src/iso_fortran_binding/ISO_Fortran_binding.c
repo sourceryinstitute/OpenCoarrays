@@ -852,48 +852,7 @@ int CFI_select_part (CFI_cdesc_t *result, const CFI_cdesc_t *source,
         }
     }
 
-  // correction for displacement:
-  // result->dim[i].sm = source->dim[i].sm + displacement *(source->dim[i].sm /
-  // source->elem_len - 1)
   result->base_addr = (char *) source->base_addr + displacement;
   result->offset    = displacement + source->elem_len;
   return CFI_SUCCESS;
 }
-
-// void *CFI_get_val (const CFI_cdesc_t *dv, const CFI_index_t index[])
-// {
-//   /* C descriptor must not be NULL. */
-//   if (dv == NULL)
-//     {
-//       fprintf (stderr, "ISO_Fortran_binding.c: CFI_get_val: C descriptor is "
-//                        "NULL. (Error No. %d).\n",
-//                CFI_INVALID_DESCRIPTOR);
-//       return NULL;
-//     }
-//
-//   /* Base address of C Descriptor must not be NULL. */
-//   if (dv->base_addr == NULL)
-//     {
-//       fprintf (stderr, "ISO_Fortran_binding.c: CFI_get_val: base address of C
-//       "
-//                        "Descriptor must not be NULL. (Error No. %d).\n",
-//                CFI_ERROR_BASE_ADDR_NULL);
-//       return NULL;
-//     }
-//
-//   /* Return base address if C descriptor is a scalar. */
-//   if (dv->rank == 0)
-//     {
-//       fprintf (stderr, "ISO_Fortran_binding.c: CFI_is_contiguous: C
-//       Descriptor "
-//                        "must describe an array (0 < dv->rank = %d). (Error
-//                        No. "
-//                        "%d).\n",
-//                dv->rank, CFI_INVALID_RANK);
-//       return NULL;
-//     }
-//
-//     for(int i =0;i<dv->rank;i++){
-//
-//     }
-// }
