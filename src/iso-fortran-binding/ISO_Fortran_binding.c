@@ -116,7 +116,6 @@ int CFI_establish (CFI_cdesc_t *dv, void *base_addr, CFI_attribute_t attribute,
   dv->rank      = rank;
   dv->attribute = attribute;
   dv->type      = type;
-  dv->offset    = 0;
 
   /* Extents must not be NULL if rank is greater than zero and base_addr is not
    * NULL */
@@ -219,7 +218,6 @@ int CFI_setpointer (CFI_cdesc_t *result, CFI_cdesc_t *source,
       /* Assign components to result. */
       result->version   = source->version;
       result->attribute = source->attribute;
-      result->offset    = source->offset;
 
       /* Dimension information. */
       for (int i = 0; i < source->rank; i++)
@@ -855,6 +853,5 @@ int CFI_select_part (CFI_cdesc_t *result, const CFI_cdesc_t *source,
     }
 
   result->base_addr = (char *) source->base_addr + displacement;
-  result->offset    = displacement + source->elem_len;
   return CFI_SUCCESS;
 }

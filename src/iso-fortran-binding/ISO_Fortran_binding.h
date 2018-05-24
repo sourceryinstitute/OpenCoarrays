@@ -77,7 +77,6 @@ typedef struct CFI_cdesc_t
         CFI_rank_t rank;
         CFI_attribute_t attribute;
         CFI_type_t type;
-        size_t offset;
         CFI_dim_t dim[];
 }
 CFI_cdesc_t;
@@ -91,7 +90,6 @@ CFI_cdesc_t;
                 CFI_rank_t rank; \
                 CFI_attribute_t attribute; \
                 CFI_type_t type; \
-                size_t offset; \
                 CFI_dim_t dim[r]; \
         }
 #define CFI_CDESC_T(r) CFI_CDESC_TYPE_T (r, void)
