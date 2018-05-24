@@ -730,11 +730,6 @@ int main (void)
           printf ("CFI_setpointer failed to reassign attribute.\n");
           errno *= 13;
         }
-      if (test8a.offset != test8b.offset)
-        {
-          printf ("CFI_setpointer failed to change lower bounds.\n");
-          errno *= 17;
-        }
       printf ("errno = %ld\n", errno);
     }
   printf ("\n");
