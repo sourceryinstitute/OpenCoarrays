@@ -54,20 +54,21 @@ int main (void)
 
   /* Test function establish. */
   /* Fresh descriptor, base address is NULL. */
-  printf ("Test CFI_establish: dv.base_addr == NULL.\n\n");
   /* Loop through type. */
   for (int i = 0; i < 10; i++)
     {
       elem_len = 0;
-      if (type[i] != CFI_type_struct && type[i] != CFI_type_other)
-        {
-          base_type      = type[i] & CFI_type_mask;
-          base_type_size = (type[i] - base_type) >> CFI_type_kind_shift;
-        }
-      else
+      if (type[i] == CFI_type_char || type[i] == CFI_type_ucs4_char ||
+          type[i] == CFI_type_signed_char || type[i] == CFI_type_struct ||
+          type[i] == CFI_type_other)
         {
           base_type      = type[i];
           base_type_size = elem_len;
+        }
+      else
+        {
+          base_type      = type[i] & CFI_type_mask;
+          base_type_size = (type[i] - base_type) >> CFI_type_kind_shift;
         }
       /* Loop through attribute. */
       for (int j = 1; j <= 3; j++)
@@ -90,32 +91,25 @@ int main (void)
                 }
               ind = CFI_establish ((CFI_cdesc_t *) &test1, NULL, attribute,
                                    type[i], elem_len, rank, NULL);
-              printf ("attribute = %d\ntype = %d\nbase_type = %ld\nrank = "
-                      "%d\nelem_len = %ld\n",
-                      attribute, type[i], base_type, rank, elem_len);
               if (ind != CFI_SUCCESS)
                 {
-                  printf ("CFI_establish return value = %d\n", ind);
-                  errno *= 2;
-                  printf ("errno = %ld\n\n", errno);
                   goto next_attribute1;
                 }
               if (attribute != test1.attribute)
                 {
-                  printf ("Attribute fail.\n");
-                  errno *= 3;
+                  printf ("CFI_establish: failed to assign attribute.\n");
+                  return 1;
                 }
               if (type[i] != test1.type)
                 {
-                  printf ("Type fail.\n");
-                  errno *= 5;
+                  printf ("CFI_establish: failed to assign type.\n");
+                  return 1;
                 }
               if (rank != test1.rank)
                 {
-                  printf ("Rank fail.\n");
-                  errno *= 7;
+                  printf ("CFI_establish: failed to assign rank.\n");
+                  return 1;
                 }
-
               elem_len = base_type_size;
               if (base_type_size == 10)
                 {
@@ -127,33 +121,31 @@ int main (void)
                 }
               if (elem_len != test1.elem_len)
                 {
-                  printf ("Element length fail: type_idx = %d., elem_len = "
-                          "%ld\n",
-                          i, elem_len);
-                  errno *= 11;
+                  printf ("CFI_establish: failed to assign element length.\n");
+                  return 1;
                 }
-              printf ("errno = %ld\n\n", errno);
             }
         next_attribute1:;
         }
     }
 
   /* Fresh descriptor, base address is not NULL */
-  printf ("Test CFI_establish: dv.base_addr != NULL.\n\n");
   CFI_index_t *extents = NULL;
   /* Loop through type. */
   for (int i = 0; i < 10; i++)
     {
       elem_len = 0;
-      if (type[i] != CFI_type_struct && type[i] != CFI_type_other)
-        {
-          base_type      = type[i] & CFI_type_mask;
-          base_type_size = (type[i] - base_type) >> CFI_type_kind_shift;
-        }
-      else
+      if (type[i] == CFI_type_char || type[i] == CFI_type_ucs4_char ||
+          type[i] == CFI_type_signed_char || type[i] == CFI_type_struct ||
+          type[i] == CFI_type_other)
         {
           base_type      = type[i];
           base_type_size = elem_len;
+        }
+      else
+        {
+          base_type      = type[i] & CFI_type_mask;
+          base_type_size = (type[i] - base_type) >> CFI_type_kind_shift;
         }
       /* Loop through attribute. */
       for (int j = 1; j <= 3; j++)
@@ -185,30 +177,24 @@ int main (void)
                 }
               ind = CFI_establish ((CFI_cdesc_t *) &test2, &ind, attribute,
                                    type[i], elem_len, rank, extents);
-              printf ("attribute = %d\ntype = %d\nbase_type = %ld\nrank = "
-                      "%d\nelem_len = %ld\n",
-                      attribute, type[i], base_type, rank, elem_len);
               if (ind != CFI_SUCCESS)
                 {
-                  printf ("CFI_establish return value = %d\n", ind);
-                  errno *= 2;
-                  printf ("errno = %ld\n\n", errno);
                   goto next_attribute2;
                 }
               if (attribute != test2.attribute)
                 {
-                  printf ("Attribute fail.\n");
-                  errno *= 3;
+                  printf ("CFI_establish: failed to assign attribute.\n");
+                  return 1;
                 }
               if (type[i] != test2.type)
                 {
-                  printf ("Type fail.\n");
-                  errno *= 5;
+                  printf ("CFI_establish: failed to assign type.\n");
+                  return 1;
                 }
               if (rank != test2.rank)
                 {
-                  printf ("Rank fail.\n");
-                  errno *= 7;
+                  printf ("CFI_establish: failed to assign rank.\n");
+                  return 1;
                 }
 
               elem_len = base_type_size;
@@ -222,53 +208,38 @@ int main (void)
                 }
               if (elem_len != test2.elem_len)
                 {
-                  printf ("Element length fail: type_idx = %d., elem_len = "
-                          "%ld must be equal.\n",
-                          i, elem_len);
-                  errno *= 11;
+                  printf ("CFI_establish: failed to assign element length.\n");
+                  return 1;
                 }
 
-              printf ("extents = [ ");
               for (int r = 0; r < rank; r++)
                 {
                   if (extents[r] != test2.dim[r].extent)
                     {
-                      printf ("Extents fail: extents[%d] = %ld., "
-                              "dv.dim[%d].extent = %ld\n",
-                              r, extents[r], r, test2.dim[r].extent);
-                      errno *= 13;
+                      printf ("CFI_establish: failed to assign dimension "
+                              "extents.\n");
+                      return 1;
                     }
-                  printf ("%ld ", extents[r]);
                 }
-              printf ("]\n");
 
               if (attribute == CFI_attribute_pointer)
                 {
-                  printf ("test2.dim[].lower_bound = [ ");
                   for (int r = 0; r < rank; r++)
                     {
                       if (test2.dim[r].lower_bound != 0)
                         {
-                          printf (
-                              "Dimension lower bound fail: if the attribute is "
-                              "for a pointer, the lower bounds of every "
-                              "dimension must be zero, "
-                              "test2.dim[%d].lower_bound = %ld.\n",
-                              r, test2.dim[r].lower_bound);
-                          errno *= 17;
+                          printf ("CFI_establish: failed to assign dimension "
+                                  "lower bounds.\n");
+                          return 1;
                         }
-                      printf ("%ld ", test2.dim[r].lower_bound);
                     }
-                  printf ("]\n");
                 }
-              printf ("errno = %ld\n\n", errno);
             }
         next_attribute2:;
         }
     }
 
   /* Fresh descriptor, base address is not NULL */
-  printf ("Test CFI_allocate: dv.base_addr != NULL.\n\n");
   CFI_index_t *lower = NULL;
   CFI_index_t *upper = NULL;
   /* Loop through type. */
@@ -350,55 +321,42 @@ int main (void)
                                    type[i], elem_len, rank, extents);
               ind =
                   CFI_allocate ((CFI_cdesc_t *) &test3, lower, upper, elem_len);
-              printf ("type = %ld\nelem_len = %ld\n", base_type,
-                      test3.elem_len);
               if (ind != CFI_SUCCESS)
                 {
-                  errno *= 2;
                   goto next_attribute3;
                 }
               for (int r = 0; r < rank; r++)
                 {
                   if (lower[r] != test3.dim[r].lower_bound)
                     {
-                      printf (
-                          "Dimension lower bound fail: lower[%d] = %ld, "
-                          "test3.dim[%d].lower_bound = %ld must be equal.\n",
-                          r, lower[r], r, test3.dim[r].lower_bound);
-                      errno *= 3;
+                      printf ("CFI_allocate: failed to reassign dimension "
+                              "lower bounds.\n");
+                      return 1;
                     }
                   if (upper[r] - test3.dim[r].lower_bound + 1 !=
                       test3.dim[r].extent)
                     {
-                      printf ("Extent fail: upper[%d] - "
-                              "test3.dim[%d].lower_bound + 1 = %ld, "
-                              "test3.dim[%d].extent = %ld must be equal.\n",
-                              r, r, upper[r] - test3.dim[r].lower_bound + 1, r,
-                              test3.dim[r].lower_bound);
-                      errno *= 5;
+                      printf ("CFI_allocate: failed to reassign dimension "
+                              "extents.\n");
+                      return 1;
                     }
                   if (test3.dim[r].sm != test3.elem_len)
                     {
-                      printf ("Memory stride fail: test3.dim[%d].sm = %ld, "
-                              "test3.elem_len = %ld must be equal.\n",
-                              r, test3.dim[r].sm, test3.elem_len);
-                      errno *= 7;
+                      printf (
+                          "CFI_allocate: failed to assign dimension stride.\n");
+                      return 1;
                     }
                 }
               if (elem_len != test3.elem_len)
                 {
-                  printf ("Element length fail: type_idx = %d., elem_len = "
-                          "%ld must be equal.\n",
-                          i, elem_len);
-                  errno *= 11;
+                  printf ("CFI_allocate: failed to reassign element length.\n");
+                  return 1;
                 }
             }
         next_attribute3:;
-          printf ("errno = %ld\n\n", errno);
         }
     }
 
-  printf ("Test CFI_allocate: dv.base_addr == NULL.\n\n");
   rank  = 1;
   errno = 1;
   CFI_CDESC_T (rank) test4;
@@ -410,11 +368,10 @@ int main (void)
   ind = CFI_allocate ((CFI_cdesc_t *) &test4, NULL, NULL, base_type_size);
   if (ind != CFI_INVALID_EXTENT)
     {
-      errno *= 2;
+      printf ("CFI_allocate: failed to detect invalid extents.\n");
+      return 1;
     }
-  printf ("errno = %ld\n\n", errno);
 
-  printf ("Test CFI_allocate: lower and upper == NULL.\n\n");
   rank  = 1;
   errno = 1;
   CFI_CDESC_T (rank) test5;
@@ -426,12 +383,11 @@ int main (void)
   ind = CFI_allocate ((CFI_cdesc_t *) &test5, NULL, NULL, base_type_size);
   if (ind != CFI_ERROR_BASE_ADDR_NOT_NULL)
     {
-      errno *= 2;
+      printf ("CFI_allocate: failed to detect base address is not NULL.\n");
+      return 1;
     }
-  printf ("errno = %ld\n\n", errno);
 
   /* Test CFI_deallocate. */
-  printf ("Test CFI_deallocate.\n\n");
   rank           = 1;
   errno          = 1;
   base_type      = type[3] & CFI_type_mask;
@@ -461,14 +417,12 @@ int main (void)
       ind = CFI_deallocate ((CFI_cdesc_t *) &test6);
       if (ind != CFI_INVALID_ATTRIBUTE && test6.base_addr != NULL)
         {
-          errno *= 2;
-          printf ("Deallocation failed.\n");
+          printf ("CFI_deallocate: failed to deallocate memory.\n");
+          return 1;
         }
-      printf ("attribute = %d\nerrno = %ld\n\n", test6.attribute, errno);
     }
 
   /* Test CFI_is_contiguous. */
-  printf ("Test CFI_is_contiguous.\n\n");
   int tmp_ind;
   base_type      = type[3] & CFI_type_mask;
   base_type_size = (type[3] - base_type) >> CFI_type_kind_shift;
@@ -506,25 +460,23 @@ int main (void)
           tmp_ind = CFI_allocate ((CFI_cdesc_t *) &test7, lower, upper,
                                   base_type_size);
           ind = CFI_is_contiguous ((CFI_cdesc_t *) &test7);
-          printf ("attribute = %d\nrank = %d\n", attribute, rank);
           if (ind != CFI_INVALID_RANK && rank == 0 &&
               tmp_ind != CFI_INVALID_ATTRIBUTE)
             {
-              printf ("CFI_is_contiguous rank failure %d.\n", tmp_ind);
-              errno *= 2;
+              printf ("CFI_is_contiguous: failed to detect incorrect rank.\n");
+              return 1;
             }
           else if (ind == CFI_ERROR_BASE_ADDR_NULL && test7.base_addr != NULL &&
                    tmp_ind != CFI_SUCCESS)
             {
-              printf ("CFI_is_contiguous base addres failure.\n");
-              errno *= 3;
+              printf ("CFI_is_contiguous: failed to detect base address is not "
+                      "NULL.\n");
+              return 1;
             }
-          printf ("errno = %ld\n\n", errno);
         }
     }
 
   /* Test CFI_address. */
-  printf ("Test CFI_address.\n\n");
   CFI_index_t *tr_subscripts;
   CFI_dim_t *  tr_dim;
   /* Loop through type. */
@@ -638,11 +590,10 @@ int main (void)
                   free (tr_dim);
                   if (index - dif_addr != 0)
                     {
-                      errno *= 2;
-                      printf ("Error CFI_address is not being calculated "
-                              "properly.\n");
+                      printf ("CFI_address: difference in address is not being "
+                              "properly calculated.\n");
+                      return 1;
                     }
-                  printf ("errno = %ld\n", errno);
                 }
               else if (ind == CFI_ERROR_MEM_ALLOCATION)
                 {
@@ -651,11 +602,9 @@ int main (void)
             }
         }
     next_type:;
-      printf ("\n");
     }
 
   /* Test CFI_setpointer */
-  printf ("Test CFI_setpointer: Checking component assignment.\n\n");
   for (int i = 0; i < CFI_MAX_RANK; i++)
     {
       rank           = i;
@@ -694,49 +643,38 @@ int main (void)
         {
           if (test8a.dim[r].lower_bound != lower[r])
             {
-              printf ("CFI_setpointer failed reassign lower bounds.\n");
-              printf ("test8a.dim[%d].lower_bound = %ld\tlower[%d] = %ld\n", r,
-                      test8a.dim[r].lower_bound, r, lower[r]);
-              errno *= 2;
+              printf ("CFI_setpointer: failed to reassign lower bounds.\n");
+              return 1;
             }
           if (test8a.dim[r].extent != test8b.dim[r].extent)
             {
-              printf ("CFI_setpointer failed reassign lower bounds.\n");
-              printf (
-                  "test8a.dim[%d].extent = %ld\ttest8b.dim[%d].extent = %ld\n",
-                  r, test8a.dim[r].extent, r, test8b.dim[r].extent);
-              errno *= 3;
+              printf ("CFI_setpointer: failed to reassign extents.\n");
+              return 1;
             }
           if (test8a.dim[r].sm != test8b.dim[r].sm)
             {
-              printf ("CFI_setpointer failed reassign lower bounds.\n");
-              printf ("test8a.dim[%d].sm = %ld\ttest8b.dim[%d].sm = %ld\n", r,
-                      test8a.dim[r].sm, r, test8b.dim[r].sm);
-              errno *= 5;
+              printf ("CFI_setpointer: failed to reassign memory strides.\n");
+              return 1;
             }
         }
       if (test8a.base_addr != test8b.base_addr)
         {
-          printf ("CFI_setpointer failed to reassign base address.\n");
-          errno *= 7;
+          printf ("CFI_setpointer: failed to reassign base address.\n");
+          return 1;
         }
       if (test8a.version != test8b.version)
         {
-          printf ("CFI_setpointer failed to reassign version.\n");
-          errno *= 11;
+          printf ("CFI_setpointer: failed to reassign lower bounds.\n");
+          return 1;
         }
       if (test8a.attribute != test8b.attribute)
         {
-          printf ("CFI_setpointer failed to reassign attribute.\n");
-          errno *= 13;
+          printf ("CFI_setpointer: failed to reassign attribute.\n");
+          return 1;
         }
-      printf ("errno = %ld\n", errno);
     }
-  printf ("\n");
 
   /* NULL source. */
-  printf (
-      "CFI_set_pointer: change of attribute to a CFI_attribute_pointer.\n\n");
   rank           = 10;
   errno          = 1;
   base_type      = type[3] & CFI_type_mask;
@@ -763,17 +701,15 @@ int main (void)
   ind = CFI_setpointer ((CFI_cdesc_t *) &test9, NULL, lower);
   if (test9.attribute != CFI_attribute_pointer)
     {
-      printf ("CFI_establish failed to set attribute to pointer.\n");
-      errno *= 2;
+      printf ("CFI_setpointer: failed to set attribute pointer.\n");
+      return 1;
     }
   if (test9.base_addr != NULL)
     {
-      printf ("CFI_establish failed to set base addres to NULL.\n");
-      errno *= 3;
+      printf ("CFI_setpointer: failed to set base address to NULL.\n");
+      return 1;
     }
-  printf ("errno = %ld\n\n", errno);
 
-  printf ("CFI_setpointer testing if statements.\n\n");
   rank      = 3;
   errno     = 1;
   attribute = CFI_attribute_other;
@@ -809,10 +745,9 @@ int main (void)
                         lower);
   if (ind != CFI_INVALID_TYPE)
     {
-      printf ("CFI_setpointer failed to detect wrong types.\n");
-      errno *= 2;
+      printf ("CFI_setpointer: failed to detect invalid type.\n");
+      return 1;
     }
-  printf ("errno = %ld\n\n", errno);
 
   errno          = 1;
   base_type      = CFI_type_other & CFI_type_mask;
@@ -827,10 +762,9 @@ int main (void)
                         lower);
   if (ind != CFI_INVALID_ELEM_LEN)
     {
-      printf ("CFI_setpointer failed to detect wrong element lengths.\n");
-      errno *= 2;
+      printf ("CFI_setpointer: failed to detect invalid element length.\n");
+      return 1;
     }
-  printf ("errno = %ld\n\n", errno);
 
   errno          = 1;
   base_type      = type[3] & CFI_type_mask;
@@ -862,15 +796,12 @@ int main (void)
                         lower);
   if (ind != CFI_INVALID_RANK)
     {
-      printf ("CFI_setpointer failed to detect wrong element lengths.\n");
-      errno *= 2;
+      printf ("CFI_setpointer: failed to detect invalid rank.\n");
+      return 1;
     }
-  printf ("errno = %ld\n\n", errno);
 
   /* Test CFI_section */
-  printf ("Test CFI_section.\n\n");
   CFI_index_t *strides;
-  printf ("Test bounds.\n");
   /* Loop through type. */
   for (int i = 0; i < 10; i++)
     {
@@ -949,7 +880,6 @@ int main (void)
               goto next_type2;
             }
           /* Lower is within bounds. */
-          printf ("Lower is within bounds.\n");
           for (int r = 0; r < rank; r++)
             {
               lower[r]   = rank - r - 3;
@@ -959,13 +889,11 @@ int main (void)
                              lower, NULL, strides);
           if (ind != CFI_SUCCESS)
             {
-              errno *= 2;
-              printf ("CFI_section failed to properly assign lower "
+              printf ("CFI_section: failed to detect lower bounds are within "
                       "bounds.\n");
+              return 1;
             }
-          printf ("errno = %ld\n\n", errno);
           /* Lower is below lower bounds. */
-          printf ("Lower is below bounds.\n");
           for (int r = 0; r < rank; r++)
             {
               lower[r]   = rank - r - 6;
@@ -975,13 +903,11 @@ int main (void)
                              lower, NULL, strides);
           if (ind != CFI_ERROR_OUT_OF_BOUNDS)
             {
-              errno *= 3;
-              printf ("CFI_section failed to properly assign lower "
+              printf ("CFI_section: failed to detect lower bounds are below "
                       "bounds.\n");
+              return 1;
             }
-          printf ("errno = %ld\n\n", errno);
           /* Lower is above upper bounds. */
-          printf ("Lower is above bounds.\n");
           for (int r = 0; r < rank; r++)
             {
               lower[r]   = upper[r] + 1;
@@ -991,9 +917,9 @@ int main (void)
                              lower, NULL, strides);
           if (ind != CFI_ERROR_OUT_OF_BOUNDS)
             {
-              errno *= 5;
-              printf ("CFI_section failed to properly assign lower "
+              printf ("CFI_section: failed to detect lower bounds are above "
                       "bounds.\n");
+              return 1;
             }
           for (int r = 0; r < rank; r++)
             {
@@ -1002,7 +928,6 @@ int main (void)
               upper[r]   = lower[r] + extents[r] - 1;
             }
           /* Upper is within bounds. */
-          printf ("Upper is within bounds.\n");
           for (int r = 0; r < rank; r++)
             {
               upper[r]   = rank - r - 3;
@@ -1012,13 +937,11 @@ int main (void)
                              NULL, upper, strides);
           if (ind != CFI_SUCCESS)
             {
-              errno *= 7;
-              printf ("CFI_section failed to properly assign upper "
+              printf ("CFI_section: failed to detect upper bounds are within "
                       "bounds.\n");
+              return 1;
             }
-          printf ("errno = %ld\n\n", errno);
           /* Upper is below lower bounds. */
-          printf ("Upper is below bounds.\n");
           for (int r = 0; r < rank; r++)
             {
               upper[r]   = rank - r - 6;
@@ -1028,13 +951,11 @@ int main (void)
                              NULL, upper, strides);
           if (ind != CFI_ERROR_OUT_OF_BOUNDS)
             {
-              errno *= 11;
-              printf ("CFI_section failed to properly assign upper "
+              printf ("CFI_section: failed to detect upper bounds are below "
                       "bounds.\n");
+              return 1;
             }
-          printf ("errno = %ld\n\n", errno);
           /* Upper is above upper bounds. */
-          printf ("Upper is above bounds.\n");
           for (int r = 0; r < rank; r++)
             {
               upper[r]   = lower[r] + extents[r];
@@ -1044,13 +965,10 @@ int main (void)
                              NULL, upper, strides);
           if (ind != CFI_ERROR_OUT_OF_BOUNDS)
             {
-              errno *= 13;
-              printf ("CFI_section failed to properly assign upper "
+              printf ("CFI_section: failed to detect lower bounds are above "
                       "bounds.\n");
+              return 1;
             }
-          printf ("\n");
-          printf ("Test whether upper and lower bounds, and memory stride are "
-                  "set properly.\n");
           for (int r = 0; r < rank; r++)
             {
               extents[r] = rank - r + 10;
@@ -1064,29 +982,26 @@ int main (void)
             {
               if (section.dim[i].lower_bound != lower[i])
                 {
-                  printf (
-                      "CFI_section does not correctly assign lower bounds.\n");
-                  errno *= 17;
+                  printf ("CFI_section: failed to correctly assign lower "
+                          "bounds.\n");
+                  return 1;
                 }
               if (section.dim[i].extent != upper[i] - lower[i] + 1)
                 {
-                  printf ("CFI_section does not correctly assign extent.\n");
-                  errno *= 19;
+                  printf ("CFI_section: failed to correctly assign extents.\n");
+                  return 1;
                 }
               if (section.dim[i].sm != strides[i] * section.elem_len)
                 {
-                  printf ("CFI_section does not correctly assign memory "
+                  printf ("CFI_section: failed to correctly assign memory "
                           "strides.\n");
-                  errno *= 23;
+                  return 1;
                 }
             }
-          printf ("errno = %ld\n\n", errno);
         }
     next_type2:;
-      printf ("\n");
     }
 
-  printf ("CFI_section trivial tests.\n\n");
   errno = 1;
   rank  = 1;
   CFI_CDESC_T (rank) section, source;
@@ -1130,14 +1045,14 @@ int main (void)
   ind = CFI_section ((CFI_cdesc_t *) &section, NULL, lower, upper, strides);
   if (ind != CFI_INVALID_DESCRIPTOR)
     {
-      printf ("CFI_section not picking up that source is NULL.\n");
-      errno *= 2;
+      printf ("CFI_section: failed to detect that source is NULL.\n");
+      return 1;
     }
   ind = CFI_section (NULL, (CFI_cdesc_t *) &source, lower, upper, strides);
   if (ind != CFI_INVALID_DESCRIPTOR)
     {
-      printf ("CFI_section not picking up that source is NULL.\n");
-      errno *= 3;
+      printf ("CFI_section: failed to detect that section is NULL.\n");
+      return 1;
     }
   ind =
       CFI_establish ((CFI_cdesc_t *) &section, NULL, CFI_attribute_allocatable,
@@ -1146,9 +1061,8 @@ int main (void)
                      upper, strides);
   if (ind != CFI_INVALID_ATTRIBUTE)
     {
-      printf (
-          "CFI_section not accounting for the attribute of result properly.\n");
-      errno *= 5;
+      printf ("CFI_section: failed to detect invalid attribute.\n");
+      return 1;
     }
   ind = CFI_establish ((CFI_cdesc_t *) &section, NULL, CFI_attribute_other,
                        type[3], elem_len, rank, NULL);
@@ -1157,8 +1071,8 @@ int main (void)
                      upper, strides);
   if (ind != CFI_ERROR_BASE_ADDR_NULL)
     {
-      printf ("CFI_section not picking up that source->base_addr is NULL.\n");
-      errno *= 7;
+      printf ("CFI_section: failed to detect that the base address is NULL.\n");
+      return 1;
     }
   CFI_CDESC_T (0) section2, source2;
   ind = CFI_establish ((CFI_cdesc_t *) &source2, &ind, CFI_attribute_other,
@@ -1169,8 +1083,8 @@ int main (void)
                      upper, strides);
   if (ind != CFI_INVALID_RANK)
     {
-      printf ("CFI_section not picking up that source has rank.\n");
-      errno *= 11;
+      printf ("CFI_section: failed to detect invalid rank.\n");
+      return 1;
     }
   ind = CFI_establish ((CFI_cdesc_t *) &source, NULL, CFI_attribute_allocatable,
                        type[3], 0, rank, extents);
@@ -1187,9 +1101,9 @@ int main (void)
                      upper, strides);
   if (ind != CFI_INVALID_ELEM_LEN)
     {
-      printf ("CFI_section not picking up different element lengths of source "
-              "and section.\n");
-      errno *= 13;
+      printf ("CFI_section: failed to detect incompatible element lengths "
+              "between source and section.\n");
+      return 1;
     }
   ind = CFI_establish ((CFI_cdesc_t *) &section, NULL, CFI_attribute_other,
                        CFI_type_long, 0, rank, NULL);
@@ -1197,13 +1111,10 @@ int main (void)
                      upper, strides);
   if (ind != CFI_INVALID_TYPE)
     {
-      printf ("CFI_section not picking up different types of source and "
-              "section.\n");
-      errno *= 17;
+      printf ("CFI_section: failed to detect invalid type.\n");
+      return 1;
     }
-  printf ("errno = %ld\n\n", errno);
 
-  printf ("CFI_section rank reduction.\n\n");
   for (int i = 1; i < CFI_MAX_RANK; i++)
     {
       errno   = 1;
@@ -1275,29 +1186,21 @@ int main (void)
           int idx = r - ctr;
           if (section.dim[idx].lower_bound != lower[r])
             {
-              printf ("CFI_section does not properly assign lower bound in "
-                      "rank reduction.\nsection.dim[%d].lower_bound = %ld\t "
-                      "lower[%d] = %ld\n",
-                      idx, section.dim[idx].lower_bound, r, lower[r]);
-              errno *= 2;
+              printf ("CFI_section: failed to correctly assign lower bounds in "
+                      "rank reduction.\n");
+              return 1;
             }
           if (section.dim[idx].extent != upper[r] - lower[r] + 1)
             {
-              printf ("CFI_section does not properly assign extent in rank "
-                      "reduction.\nsection.dim[%d].extent = %ld\t "
-                      "upper[%d] - lower[%d] + 1 = %ld\n",
-                      idx, section.dim[idx].lower_bound, r, r,
-                      upper[r] - lower[r] + 1);
-              errno *= 3;
+              printf ("CFI_section: failed to correctly assign extents in rank "
+                      "reduction.\n");
+              return 1;
             }
           if (section.dim[idx].sm != strides[r] * section.elem_len)
             {
-              printf ("CFI_section does not properly assign stride in rank "
-                      "reduction.\nsection.dim[%d].sm = %ld\t"
-                      "strides[%d] * section.elem_len = %ld\n",
-                      idx, section.dim[idx].sm, r,
-                      strides[r] * section.elem_len);
-              errno *= 5;
+              printf ("CFI_section: failed to correctly assign memory strides "
+                      "in rank reduction.\n");
+              return 1;
             }
           CFI_CDESC_T (rank - ctr - 1) section2;
           ind = CFI_establish ((CFI_cdesc_t *) &section2, NULL,
@@ -1307,16 +1210,13 @@ int main (void)
                              lower, upper, strides);
           if (ind != CFI_SUCCESS && ind != CFI_INVALID_RANK)
             {
-              printf ("CFI_section is not detecting wrong rank.\n");
-              errno *= 7;
+              printf ("CFI_section: failed to detect invalid rank.\n");
+              return 1;
             }
-          printf ("errno = %ld\n\n", errno);
         }
     }
-  printf ("\n");
 
   /* CFI_section negative strides. */
-  printf ("CFI_section test negative strides.\n");
   errno = 1;
   rank  = 8;
   if (extents != NULL)
@@ -1355,35 +1255,37 @@ int main (void)
 
   ind = CFI_section ((CFI_cdesc_t *) &section3, (CFI_cdesc_t *) &source3, upper,
                      lower, strides);
-  if (ind != CFI_SUCCESS)
+  if (ind != CFI_SUCCESS && ind != CFI_INVALID_STRIDE)
     {
-      printf ("CFI_section not detecting invalid stride.\n");
-      errno *= 2;
+      printf ("CFI_section: failed to detect invalid stride.\n");
+      return 1;
     }
-  printf ("errno = %ld\n\n", errno);
 
   /* CFI_select_part */
-  printf ("CFI_select_part tests.\n\n");
   typedef struct foo_t
   {
+    int w;
     double _Complex p;
     double _Complex y;
     double z;
     double x;
   } foo_t;
-  rank = 1;
+  rank = 2;
   CFI_CDESC_T (rank) foo_c, cx, cy;
   int         arr_len = 100;
-  foo_t       foo[arr_len];
-  CFI_index_t extent[] = {arr_len};
+  foo_t       foo[arr_len][arr_len];
+  CFI_index_t extent[] = {arr_len, arr_len};
   /* Establish c descriptor for the structure. */
   ind = CFI_establish ((CFI_cdesc_t *) &foo_c, &foo, CFI_attribute_other,
                        CFI_type_struct, sizeof (foo_t), rank, extent);
   for (int i = 0; i < arr_len; i++)
     {
-      foo[i].x = (double) (i + 1) * 2.;
-      foo[i].y = (double) (i + 1) * 3. + (double) (i + 1) * 5. * I;
-      foo[i].z = (double) (i + 1) * 7;
+      for (int j = 0; j < arr_len; j++)
+        {
+          foo[i][j].x = (double) (i + 1) * 2 - (double) (j + 1) * 11.;
+          foo[i][j].y = (double) (i + 1) * 3 - (double) (j + 1) * 13. +
+                        ((double) (i + 1) * 5. - (double) (j + 1) * 17) * I;
+        }
     }
   /* Establish c descriptor for the x component. */
   ind = CFI_establish ((CFI_cdesc_t *) &cx, NULL, CFI_attribute_other,
@@ -1395,107 +1297,113 @@ int main (void)
                        CFI_type_double_Complex, 0, rank, extent);
   ind = CFI_select_part ((CFI_cdesc_t *) &cy, (CFI_cdesc_t *) &foo_c,
                          offsetof (foo_t, y), 0);
-  CFI_index_t index[1];
+  CFI_index_t index[2];
   for (int i = 0; i < arr_len; i++)
     {
       index[0] = i + 1;
-      if (*(double *) (char *) CFI_address ((CFI_cdesc_t *) &cx, index) !=
-          foo[i].x)
+      for (int j = 0; j < arr_len; j++)
         {
-          printf ("CFI_select_part not properly assigning the value to the "
-                  "first component\n");
-          errno *= 2;
+          index[1] = j + 1;
+          if (*(double *) (char *) CFI_address ((CFI_cdesc_t *) &cx, index) !=
+              foo[i][j].x)
+            {
+              printf ("CFI_select_part: failed to properly assign memory and "
+                      "dimensional information.\n");
+              return 1;
+            }
+          if (*(double *) (char *) CFI_address ((CFI_cdesc_t *) &cy, index) !=
+              creal (foo[i][j].y))
+            {
+              printf ("CFI_select_part: failed to properly assign memory and "
+                      "dimensional information.\n");
+              return 1;
+            }
+          if (*(double *) (char *) (CFI_address ((CFI_cdesc_t *) &cy, index) +
+                                    cy.elem_len / 2) != cimag (foo[i][j].y))
+            {
+              printf ("CFI_select_part: failed to properly assign memory and "
+                      "dimensional information.\n");
+              return 1;
+            }
         }
-      if (*(double *) (char *) CFI_address ((CFI_cdesc_t *) &cy, index) !=
-          creal (foo[i].y))
-        {
-          printf ("CFI_select_part not properly assigning the real value to "
-                  "the second component.\n");
-          errno *= 3;
-        }
-      if (*(double *) (char *) (CFI_address ((CFI_cdesc_t *) &cy, index) +
-                                cy.elem_len / 2) != cimag (foo[i].y))
-        {
-          printf ("CFI_select_part not properly assigning the imaginary value "
-                  "to the second component.\n");
-          errno *= 5;
-        }
-      printf ("errno = %ld\n", errno);
     }
-  printf ("\n");
 
-  printf ("CFI_select_part trivial tests.\n");
-  errno = 1;
-  ind   = CFI_establish ((CFI_cdesc_t *) &foo_c, &foo, CFI_attribute_other,
-                       CFI_type_struct, sizeof (foo_t), rank, extent);
+  rank = 1;
+  if (extents != NULL)
+    {
+      free (extents);
+    }
+  extents    = malloc (rank * sizeof (CFI_index_t));
+  extents[0] = arr_len;
+  ind        = CFI_establish ((CFI_cdesc_t *) &foo_c, &foo, CFI_attribute_other,
+                       CFI_type_struct, sizeof (foo_t), rank, extents);
   ind = CFI_establish ((CFI_cdesc_t *) &cx, NULL, CFI_attribute_allocatable,
-                       CFI_type_double, 0, rank, extent);
+                       CFI_type_double, 0, rank, extents);
   ind = CFI_select_part ((CFI_cdesc_t *) &cx, (CFI_cdesc_t *) &foo_c,
                          offsetof (foo_t, x), 0);
   if (ind != CFI_INVALID_ATTRIBUTE)
     {
-      printf ("CFI_select_part is not detecting innapropriate attribute.\n");
-      errno *= 2;
+      printf ("CFI_select_part: failed to detect invalid attribute.\n");
+      return 1;
     }
 
   ind = CFI_establish ((CFI_cdesc_t *) &foo_c, NULL, CFI_attribute_other,
-                       CFI_type_struct, sizeof (foo_t), rank, extent);
+                       CFI_type_struct, sizeof (foo_t), rank, extents);
   ind = CFI_establish ((CFI_cdesc_t *) &cx, NULL, CFI_attribute_other,
-                       CFI_type_double, 0, rank, extent);
+                       CFI_type_double, 0, rank, extents);
   ind = CFI_select_part ((CFI_cdesc_t *) &cx, (CFI_cdesc_t *) &foo_c,
                          offsetof (foo_t, x), 0);
   if (ind != CFI_ERROR_BASE_ADDR_NULL)
     {
-      printf ("CFI_select_part is not detecting the NULL base address of "
-              "source.\n");
-      errno *= 3;
+      printf ("CFI_select_part: failed to detect that base address of source "
+              "is NULL.\n");
+      return 1;
     }
 
   ind = CFI_establish ((CFI_cdesc_t *) &foo_c, &foo, CFI_attribute_other,
-                       CFI_type_struct, sizeof (foo_t), rank + 1, extent);
+                       CFI_type_struct, sizeof (foo_t), rank + 1, extents);
   ind = CFI_establish ((CFI_cdesc_t *) &cx, NULL, CFI_attribute_other,
-                       CFI_type_double, 0, rank, extent);
+                       CFI_type_double, 0, rank, extents);
   ind = CFI_select_part ((CFI_cdesc_t *) &cx, (CFI_cdesc_t *) &foo_c,
                          offsetof (foo_t, x), 0);
   if (ind != CFI_INVALID_RANK)
     {
-      printf ("CFI_select_part is not detecting the incorrect rank.\n");
-      errno *= 5;
+      printf ("CFI_select_part: failed to detect invalid rank.\n");
+      return 1;
     }
 
-  extent[0] = -1;
-  ind       = CFI_establish ((CFI_cdesc_t *) &foo_c, &foo, CFI_attribute_other,
-                       CFI_type_struct, sizeof (foo_t), rank, extent);
-  extent[0] = arr_len;
-  ind       = CFI_establish ((CFI_cdesc_t *) &cx, NULL, CFI_attribute_other,
-                       CFI_type_double, 0, rank, extent);
+  extents[0] = -1;
+  ind        = CFI_establish ((CFI_cdesc_t *) &foo_c, &foo, CFI_attribute_other,
+                       CFI_type_struct, sizeof (foo_t), rank, extents);
+  extents[0] = arr_len;
+  ind        = CFI_establish ((CFI_cdesc_t *) &cx, NULL, CFI_attribute_other,
+                       CFI_type_double, 0, rank, extents);
   ind = CFI_select_part ((CFI_cdesc_t *) &cx, (CFI_cdesc_t *) &foo_c,
                          offsetof (foo_t, x), 0);
   if (ind != CFI_INVALID_DESCRIPTOR)
     {
-      printf ("CFI_select_part is not detecting that the source is assumed "
-              "size.\n");
-      errno *= 7;
+      printf ("CFI_select_part: failed to detect that source is an assumed "
+              "size array.\n");
+      return 1;
     }
 
   ind = CFI_establish ((CFI_cdesc_t *) &foo_c, &foo, CFI_attribute_other,
-                       CFI_type_struct, sizeof (foo_t), rank, extent);
+                       CFI_type_struct, sizeof (foo_t), rank, extents);
   ind = CFI_establish ((CFI_cdesc_t *) &cx, NULL, CFI_attribute_other,
-                       CFI_type_double, 0, rank, extent);
+                       CFI_type_double, 0, rank, extents);
   ind = CFI_select_part ((CFI_cdesc_t *) &cx, (CFI_cdesc_t *) &foo_c, -1, 0);
   if (ind != CFI_ERROR_OUT_OF_BOUNDS)
     {
-      printf ("CFI_select_part is not detecting the displacement is out of "
-              "bounds size.\n");
-      errno *= 11;
+      printf (
+          "CFI_select_part: failed to detect out of bounds displacement.\n");
+      return 1;
     }
   ind = CFI_select_part ((CFI_cdesc_t *) &cx, (CFI_cdesc_t *) &foo_c,
                          foo_c.elem_len, 0);
   if (ind != CFI_ERROR_OUT_OF_BOUNDS)
     {
-      printf ("CFI_select_part is not detecting the displacement is out of "
-              "bounds size.\n");
-      errno *= 13;
+      printf ("CFI_select_part: failed to detect out of bounds size.\n");
+      return 1;
     }
 
   ind = CFI_establish ((CFI_cdesc_t *) &foo_c, &foo, CFI_attribute_other,
@@ -1506,12 +1414,9 @@ int main (void)
                          foo_c.elem_len - 1, 0);
   if (ind != CFI_ERROR_OUT_OF_BOUNDS)
     {
-      printf ("CFI_select_part is not detecting the displacement and element "
-              "length of result are greater than the element length of "
-              "source.\n");
-      errno *= 17;
+      printf ("CFI_select_part: failed to detect displacement plus element length go beyond the structure bounds.\n");
+      return 1;
     }
-  printf ("errno = %ld\n\n", errno);
-  const int INCOMPLETE_TEST = 1;
-  return INCOMPLETE_TEST;
+
+  return 0;
 }

@@ -53,9 +53,9 @@ int CFI_establish (CFI_cdesc_t *dv, void *base_addr, CFI_attribute_t attribute,
   if (rank < 0 || rank > CFI_MAX_RANK)
     {
       fprintf (stderr, "ISO_Fortran_binding.c: CFI_establish: Rank must be "
-                       "between 0 and CFI_MAX_RANK (= %d), 0 < rank (= %d) < "
-                       "%d. (Error No. %d).\n",
-               CFI_INVALID_RANK, rank, CFI_MAX_RANK, CFI_INVALID_RANK);
+                       "between 0 and %d, 0 < rank (0 !< %d). (Error No. "
+                       "%d).\n",
+               CFI_MAX_RANK, rank, CFI_INVALID_RANK);
       return CFI_INVALID_RANK;
     }
 
@@ -552,7 +552,7 @@ int CFI_section (CFI_cdesc_t *result, const CFI_cdesc_t *source,
   if (source->rank <= 0)
     {
       fprintf (stderr, "ISO_Fortran_binding.c: CFI_section: Source must "
-                       "describe an array (0 < source->rank = %d). (Error No. "
+                       "describe an array (0 < source->rank, 0 !< %d). (Error No. "
                        "%d).\n",
                source->rank, CFI_INVALID_RANK);
       return CFI_INVALID_RANK;
@@ -597,7 +597,7 @@ int CFI_section (CFI_cdesc_t *result, const CFI_cdesc_t *source,
       fprintf (stderr, "ISO_Fortran_binding.c: CFI_section: Rank of result "
                        "must be equal to the rank of source minus the number "
                        "of zeros in strides (result->rank = source->rank - "
-                       "zero_count, %d = %d - %d) (Error No. %d).\n",
+                       "zero_count, %d != %d - %d) (Error No. %d).\n",
                result->rank, source->rank, zero_count, CFI_INVALID_RANK);
       return CFI_INVALID_RANK;
     }
@@ -704,7 +704,7 @@ int CFI_section (CFI_cdesc_t *result, const CFI_cdesc_t *source,
                            "must be within the bounds of the fortran array "
                            "(source->dim[%d].lower_bound <= upper_bounds[%d] "
                            "<= source->dim[%d].lower_bound + "
-                           "source->dim[%d].extent - 1, %ld <= %ld <= %ld). "
+                           "source->dim[%d].extent - 1, %ld !<= %ld !<= %ld). "
                            "(Error No. %d).\n",
                    i, i, i, i, source->dim[i].lower_bound, upper[i],
                    source->dim[i].lower_bound + source->dim[i].extent - 1,
