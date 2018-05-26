@@ -3916,9 +3916,15 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
              int dst_kind, int src_kind, size_t dst_dim, size_t src_dim,
              size_t num, int *stat, int image_index,
              bool sr_global, /* access sr through global_dynamic_win */
-             bool desc_global, /* access desc through global_dynamic_win */
-             int src_type)
+             bool desc_global /* access desc through global_dynamic_win */
+#ifdef GCC_GE_8
+             , int src_type)
 {
+#else
+             )
+{
+  int src_type = -1;
+#endif
   ptrdiff_t extent_src = 1, array_offset_src = 0, stride_src;
   size_t next_dst_dim, ref_rank;
   gfc_max_dim_descriptor_t src_desc_data;
@@ -3964,12 +3970,21 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
           if (sr_global)
             get_data (ds, NULL, MPI_Aint_add ((MPI_Aint)sr, sr_byte_offset),
                       GFC_DESCRIPTOR_TYPE (dst),
+#ifdef GCC_GE_8
                       src_type != -1 ? src_type : GFC_DESCRIPTOR_TYPE (dst),
+#else
+                      GFC_DESCRIPTOR_TYPE (dst),
+#endif
                       dst_kind, src_kind, dst_size, ref->item_size, 1, stat,
                       image_index);
           else
             get_data (ds, mpi_token, sr_byte_offset,
-                      GFC_DESCRIPTOR_TYPE (dst), src_type,
+                      GFC_DESCRIPTOR_TYPE (dst),
+#ifdef GCC_GE_8
+                      src_type,
+#else
+                      GFC_DESCRIPTOR_TYPE (src),
+#endif
                       dst_kind, src_kind, dst_size, ref->item_size, 1, stat,
                       image_index);
           ++(*i);
@@ -3984,14 +3999,22 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
                 get_data (ds + dst_index * dst_size, NULL,
                           MPI_Aint_add ((MPI_Aint)sr, sr_byte_offset),
                           GFC_DESCRIPTOR_TYPE (dst),
+#ifdef GCC_GE_8
                           src_type != -1 ? src_type : GFC_DESCRIPTOR_TYPE (src),
+#else
+                          src_type == -1 ? GFC_DESCRIPTOR_TYPE (src) : src_type,
+#endif
                           dst_kind, src_kind, dst_size, ref->item_size, num,
                           stat, image_index);
               else
                 {
                   get_data (ds + dst_index * dst_size, mpi_token,
                             sr_byte_offset, GFC_DESCRIPTOR_TYPE (dst),
+#ifdef GCC_GE_8
                             src_type != -1 ? src_type : GFC_DESCRIPTOR_TYPE (src),
+#else
+                            src_type == -1 ? GFC_DESCRIPTOR_TYPE (src) : src_type,
+#endif
                             dst_kind, src_kind, dst_size, ref->item_size, num,
                             stat, image_index);
                 }
@@ -4034,8 +4057,11 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
         }
       get_for_ref (ref->next, i, dst_index, mpi_token, dst, NULL, ds,
                    sr, sr_byte_offset, desc_byte_offset, dst_kind, src_kind,
-                   dst_dim, 0, 1, stat, image_index, sr_global, desc_global,
-                   src_type);
+                   dst_dim, 0, 1, stat, image_index, sr_global, desc_global
+#ifdef GCC_GE_8
+                   ,src_type
+#endif
+                   );
       return;
     case CAF_REF_ARRAY:
       if (ref->u.a.mode[src_dim] == CAF_ARR_REF_NONE)
@@ -4043,7 +4069,11 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
           get_for_ref (ref->next, i, dst_index, mpi_token, dst,
                        src, ds, sr, sr_byte_offset, desc_byte_offset, dst_kind,
                        src_kind, dst_dim, 0, 1, stat, image_index, sr_global,
-                       desc_global, src_type);
+                       desc_global
+#ifdef GCC_GE_8
+                       , src_type
+#endif
+                       );
           return;
         }
       /* Only when on the left most index switch the data pointer to
@@ -4116,8 +4146,11 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
                            sr_byte_offset + array_offset_src * ref->item_size,
                            desc_byte_offset + array_offset_src * ref->item_size,
                            dst_kind, src_kind, dst_dim + 1, src_dim + 1,
-                           1, stat, image_index, sr_global, desc_global,
-                           src_type);
+                           1, stat, image_index, sr_global, desc_global
+#ifdef GCC_GE_8
+                           , src_type
+#endif
+                           );
               dst_index += dst->dim[dst_dim]._stride;
             }
           return;
@@ -4136,8 +4169,11 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
                            sr_byte_offset + array_offset_src * ref->item_size,
                            desc_byte_offset + array_offset_src * ref->item_size,
                            dst_kind, src_kind, dst_dim + 1, src_dim + 1,
-                           1, stat, image_index, sr_global, desc_global,
-                           src_type);
+                           1, stat, image_index, sr_global, desc_global
+#ifdef GCC_GE_8
+                           , src_type
+#endif
+                           );
               dst_index += dst->dim[dst_dim]._stride;
             }
           return;
@@ -4163,8 +4199,11 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
                            sr_byte_offset + array_offset_src * ref->item_size,
                            desc_byte_offset + array_offset_src * ref->item_size,
                            dst_kind, src_kind, next_dst_dim, src_dim + 1,
-                           1, stat, image_index, sr_global, desc_global,
-                           src_type);
+                           1, stat, image_index, sr_global, desc_global
+#ifdef GCC_GE_8
+                           , src_type
+#endif
+                           );
               dst_index += dst->dim[dst_dim]._stride;
               array_offset_src += stride_src;
             }
@@ -4177,7 +4216,11 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
                        sr_byte_offset + array_offset_src * ref->item_size,
                        desc_byte_offset + array_offset_src * ref->item_size,
                        dst_kind, src_kind, dst_dim, src_dim + 1, 1,
-                       stat, image_index, sr_global, desc_global, src_type);
+                       stat, image_index, sr_global, desc_global
+#ifdef GCC_GE_8
+                       , src_type
+#endif
+                       );
           return;
         case CAF_ARR_REF_OPEN_END:
           COMPUTE_NUM_ITEMS (extent_src,
@@ -4195,8 +4238,11 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
                            sr_byte_offset + array_offset_src * ref->item_size,
                            desc_byte_offset + array_offset_src * ref->item_size,
                            dst_kind, src_kind, dst_dim + 1, src_dim + 1,
-                           1, stat, image_index, sr_global, desc_global,
-                           src_type);
+                           1, stat, image_index, sr_global, desc_global
+#ifdef GCC_GE_8
+                           , src_type
+#endif
+                           );
               dst_index += dst->dim[dst_dim]._stride;
               array_offset_src += stride_src;
             }
@@ -4215,8 +4261,11 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
                            sr_byte_offset + array_offset_src * ref->item_size,
                            desc_byte_offset + array_offset_src * ref->item_size,
                            dst_kind, src_kind, dst_dim + 1, src_dim + 1,
-                           1, stat, image_index, sr_global, desc_global,
-                           src_type);
+                           1, stat, image_index, sr_global, desc_global
+#ifdef GCC_GE_8
+                           , src_type
+#endif
+                           );
               dst_index += dst->dim[dst_dim]._stride;
               array_offset_src += stride_src;
             }
@@ -4230,8 +4279,11 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
         {
           get_for_ref (ref->next, i, dst_index, mpi_token, dst, NULL, ds, sr,
                        sr_byte_offset, desc_byte_offset, dst_kind, src_kind,
-                       dst_dim, 0, 1, stat, image_index, sr_global, desc_global,
-                       src_type);
+                       dst_dim, 0, 1, stat, image_index, sr_global, desc_global
+#ifdef GCC_GE_8
+                       , src_type
+#endif
+                       );
           return;
         }
       switch (ref->u.a.mode[src_dim])
@@ -4264,8 +4316,11 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
                            sr_byte_offset + array_offset_src * ref->item_size,
                            desc_byte_offset + array_offset_src * ref->item_size,
                            dst_kind, src_kind, dst_dim + 1, src_dim + 1,
-                           1, stat, image_index, sr_global, desc_global,
-                           src_type);
+                           1, stat, image_index, sr_global, desc_global
+#ifdef GCC_GE_8
+                           , src_type
+#endif
+                           );
               dst_index += dst->dim[dst_dim]._stride;
             }
           return;
@@ -4278,8 +4333,11 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
                            sr_byte_offset + array_offset_src * ref->item_size,
                            desc_byte_offset + array_offset_src * ref->item_size,
                            dst_kind, src_kind, dst_dim + 1, src_dim + 1,
-                           1, stat, image_index, sr_global, desc_global,
-                           src_type);
+                           1, stat, image_index, sr_global, desc_global
+#ifdef GCC_GE_8
+                           , src_type
+#endif
+                           );
               dst_index += dst->dim[dst_dim]._stride;
             }
           return;
@@ -4295,8 +4353,11 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
                            sr_byte_offset + array_offset_src * ref->item_size,
                            desc_byte_offset + array_offset_src * ref->item_size,
                            dst_kind, src_kind, dst_dim + 1, src_dim + 1,
-                           1, stat, image_index, sr_global, desc_global,
-                           src_type);
+                           1, stat, image_index, sr_global, desc_global
+#ifdef GCC_GE_8
+                           , src_type
+#endif
+                           );
               dst_index += dst->dim[dst_dim]._stride;
               array_offset_src += ref->u.a.dim[src_dim].s.stride;
             }
@@ -4307,7 +4368,11 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
                        sr_byte_offset + array_offset_src * ref->item_size,
                        desc_byte_offset + array_offset_src * ref->item_size,
                        dst_kind, src_kind, dst_dim, src_dim + 1, 1,
-                       stat, image_index, sr_global, desc_global, src_type);
+                       stat, image_index, sr_global, desc_global
+#ifdef GCC_GE_8
+                       , src_type
+#endif
+                       );
           return;
           /* The OPEN_* are mapped to a RANGE and therefore can not occur.  */
         case CAF_ARR_REF_OPEN_END:
@@ -4870,11 +4935,9 @@ PREFIX (get_by_ref) (caf_token_t token, int image_index,
           caf_num_images);
   get_for_ref (refs, &i, dst_index, mpi_token, dst, mpi_token->desc,
                dst->base_addr, remote_memptr, 0, 0, dst_kind, src_kind, 0, 0,
-               1, stat, remote_image, false, false,
+               1, stat, remote_image, false, false
 #ifdef GCC_GE_8
-               src_type
-#else // GCC_GE_7
-               -1 // should src_type be calculated here? something similar to GFC_DESCRIPTOR_TYPE(mpi_token->desc)
+               , src_type
 #endif
                );
   CAF_Win_unlock (remote_image, global_dynamic_win);
@@ -6211,7 +6274,11 @@ PREFIX (sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
                (gfc_descriptor_t *)&temp_src_desc, src_mpi_token->desc,
                temp_src_desc.base.base_addr, remote_memptr, 0, 0,
                dst_kind, src_kind, 0, 0,
-               1, src_stat, src_remote_image, false, false, src_type);
+               1, src_stat, src_remote_image, false, false
+#ifdef GCC_GE_8
+               , src_type
+#endif
+               );
   CAF_Win_unlock (src_remote_image, global_dynamic_win);
   CAF_Win_unlock (src_remote_image, src_mpi_token->memptr_win);
   dprint ("%d/%d: %s() calling send_by_ref.\n", caf_this_image,
