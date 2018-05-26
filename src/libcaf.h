@@ -238,13 +238,14 @@ void PREFIX (register) (size_t, caf_register_t, caf_token_t *,
 			gfc_descriptor_t *, int *, char *, charlen_t);
 void PREFIX (deregister) (caf_token_t *, int, int *, char *, charlen_t);
 #else
-void * PREFIX (register) (size_t, caf_register_t, caf_token_t *,
-						  int *, char *, int);
+void * PREFIX (register) (size_t, caf_register_t, caf_token_t *, int *, char *,
+                          int);
 void PREFIX (deregister) (caf_token_t *, int *, char *, int);
 #endif
 
 void PREFIX (caf_get) (caf_token_t, size_t, int, gfc_descriptor_t *,
-               caf_vector_t *, gfc_descriptor_t *, int, int, bool, int *);
+                       caf_vector_t *, gfc_descriptor_t *, int, int, bool,
+                       int *);
 void PREFIX (caf_send) (caf_token_t, size_t, int, gfc_descriptor_t *,
                         caf_vector_t *, gfc_descriptor_t *, int, int, bool,
                         int *);
@@ -264,10 +265,11 @@ void PREFIX(send_by_ref) (caf_token_t token, int image_index,
                           int dst_kind, int src_kind, bool may_require_tmp,
                           bool dst_reallocatable, int *stat, int dst_type);
 void PREFIX(sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
-                             caf_reference_t *dst_refs, caf_token_t src_token, int src_image_index,
-                             caf_reference_t *src_refs, int dst_kind, int src_kind,
-                             bool may_require_tmp, int *dst_stat, int *src_stat,
-                             int dst_type, int src_type);
+                             caf_reference_t *dst_refs, caf_token_t src_token,
+                             int src_image_index, caf_reference_t *src_refs,
+                             int dst_kind, int src_kind, bool may_require_tmp,
+                             int *dst_stat, int *src_stat, int dst_type,
+                             int src_type);
 #elif defined(GCC_GE_7)
 void PREFIX(get_by_ref) (caf_token_t, int,
                          gfc_descriptor_t *dst, caf_reference_t *refs,
@@ -278,9 +280,10 @@ void PREFIX(send_by_ref) (caf_token_t token, int image_index,
                           int dst_kind, int src_kind, bool may_require_tmp,
                           bool dst_reallocatable, int *stat);
 void PREFIX(sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
-                             caf_reference_t *dst_refs, caf_token_t src_token, int src_image_index,
-                             caf_reference_t *src_refs, int dst_kind, int src_kind,
-                             bool may_require_tmp, int *dst_stat, int *src_stat);
+                             caf_reference_t *dst_refs, caf_token_t src_token,
+                             int src_image_index, caf_reference_t *src_refs,
+                             int dst_kind, int src_kind, bool may_require_tmp,
+                             int *dst_stat, int *src_stat);
 #endif
 #ifdef GCC_GE_7
 int PREFIX(is_present) (caf_token_t, int, caf_reference_t *refs);
