@@ -1219,7 +1219,7 @@ error:
       caf_runtime_error (msg);
   }
 }
-#else // GCC_GE_7
+#else // GCC_LT_7
 void *
 PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
                    int *stat, char *errmsg, charlen_t errmsg_len)
@@ -1309,7 +1309,7 @@ error:
   }
   return NULL;
 }
-#endif
+#endif // GCC_GE_7
 
 
 #ifdef GCC_GE_7
@@ -1358,7 +1358,7 @@ PREFIX (deregister) (caf_token_t *token, int *stat, char *errmsg, charlen_t errm
       PREFIX (sync_all) (NULL, NULL, 0);
 #endif
     }
-#endif
+#endif // GCC_GE_7
 
   {
     struct caf_allocated_tokens_t *cur = caf_allocated_tokens, *prev,
@@ -1447,7 +1447,7 @@ PREFIX (deregister) (caf_token_t *token, int *stat, char *errmsg, charlen_t errm
         cur_stok = prev_stok;
       }
   }
-#endif
+#endif // GCC_GE_7
 #ifdef EXTRA_DEBUG_OUTPUT
   fprintf (stderr, "Fortran runtime warning on image %d: Could not find token to free %p",
            caf_this_image, *token);
@@ -2277,7 +2277,7 @@ PREFIX (sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
       MPI_Type_free (&dt_s);
       MPI_Type_free (&dt_d);
     }
-#endif
+#endif // STRIDED
   else
     {
       if ((free_dst_t_buff = ((dst_t_buff = alloca (dst_size * size)) == NULL)))
@@ -2603,7 +2603,7 @@ PREFIX (sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
       MPI_Type_free (&dt_s);
       MPI_Type_free (&dt_d);
     }
-#endif
+#endif // STRIDED
   else
     {
       if (!dst_same_image)
@@ -3042,7 +3042,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
       MPI_Type_free (&dt_s);
       MPI_Type_free (&dt_d);
     }
-#endif
+#endif // STRIDED
   else
     {
       if(same_image && mrt)
@@ -3587,7 +3587,7 @@ PREFIX (get) (caf_token_t token, size_t offset, int image_index,
       MPI_Type_free (&dt_s);
       MPI_Type_free (&dt_d);
     }
-#endif
+#endif // STRIDED
   else
     {
       if(same_image && mrt)
@@ -4873,7 +4873,7 @@ PREFIX (get_by_ref) (caf_token_t token, int image_index,
                1, stat, remote_image, false, false,
 #ifdef GCC_GE_8
                src_type
-#else
+#else // GCC_GE_7
                -1 // should src_type be calculated here? something similar to GFC_DESCRIPTOR_TYPE(mpi_token->desc)
 #endif
                );
@@ -5841,7 +5841,7 @@ PREFIX (send_by_ref) (caf_token_t token, int image_index,
                  1, stat, remote_image, false, false,
 #ifdef GCC_GE_8
                  dst_type
-#else
+#else // GCC_GE_7
                  -1 // should dst_type be calculated here? something similar to GFC_DESCRIPTOR_TYPE(mpi_token->desc)
 #endif
                  );
@@ -6165,7 +6165,7 @@ PREFIX (sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
                                                              : (2 * dst_kind);
   temp_src_desc.base.dtype.rank = 1;
   temp_src_desc.base.dtype.type = dst_type;
-#else
+#else // GCC_GE_7
   temp_src_desc.base.dtype = GFC_DTYPE_INTEGER_4 | 1;
 #endif
   temp_src_desc.base.offset = 0;
@@ -6476,7 +6476,7 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
           caf_this_image, caf_num_images, __FUNCTION__, remote_memptr);
   return remote_memptr != NULL;
 }
-#endif
+#endif // GCC_GE_7
 
 
 /* SYNC IMAGES. Note: SYNC IMAGES(*) is passed as count == -1 while
@@ -6619,7 +6619,7 @@ sync_images_internal (int count, int images[], int *stat, char *errmsg,
             }
 #else
             break;
-#endif
+#endif // WITH_FAILED_IMAGES
         }
     }
 
@@ -7627,7 +7627,7 @@ PREFIX (image_status) (int image)
   return image_stati[image - 1];
 #else
   unsupported_fail_images_message ("IMAGE_STATUS()");
-#endif
+#endif // WITH_FAILED_IMAGES
 
   return 0;
 }
@@ -7675,7 +7675,7 @@ PREFIX (failed_images) (gfc_descriptor_t *array, int team __attribute__ ((unused
   unsupported_fail_images_message ("FAILED_IMAGES()");
   array->dim[0]._ubound = -1;
   array->base_addr = NULL;
-#endif
+#endif // WITH_FAILED_IMAGES
 
 #ifdef GCC_GE_8
   array->dtype.type = BT_INTEGER;
@@ -7732,7 +7732,7 @@ PREFIX (stopped_images) (gfc_descriptor_t *array, int team __attribute__ ((unuse
   unsupported_fail_images_message ("STOPPED_IMAGES()");
   array->dim[0]._ubound = -1;
   array->base_addr = NULL;
-#endif
+#endif // WITH_FAILED_IMAGES
 
 #ifdef GCC_GE_8
   array->dtype.type = BT_INTEGER;
