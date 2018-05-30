@@ -15,7 +15,7 @@ env:
     - BUILD_TYPES="Debug RelWithDebInfo Release CodeCoverage"
   matrix:
     - GCC=6 OSX_PACKAGES="gcc@6 shellcheck" BUILD_TYPE="InstallScript"
-    - GCC="6 7" OSX_PACKAGES="gcc@7 gcc@6 cmake shellcheck" BUILD_TYPE="cmake"
+#    - GCC="6 7" OSX_PACKAGES="gcc@7 gcc@6 cmake shellcheck" BUILD_TYPE="cmake"
 
 matrix:
   fast_finish: true
