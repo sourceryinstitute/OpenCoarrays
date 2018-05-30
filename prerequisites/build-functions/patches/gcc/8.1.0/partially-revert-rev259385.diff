@@ -26,36 +26,4 @@ index 00edd447bb2..87b3ca72c05 100644
 +  may_require_tmp = gfc_check_dependency (lhs_expr, rhs_expr, true) == 0
  		    ? boolean_false_node : boolean_true_node;
    gfc_init_block (&block);
- 
-diff --git a/gcc/testsuite/gfortran.dg/coarray_dependency_1.f90 b/gcc/testsuite/gfortran.dg/coarray_dependency_1.f90
-new file mode 100644
-index 00000000000..dc4cbacba1e
---- /dev/null
-+++ b/gcc/testsuite/gfortran.dg/coarray_dependency_1.f90
-@@ -0,0 +1,11 @@
-+! { dg-do compile }
-+! { dg-options "-fcoarray=lib -lcaf_single" }
-+!
-+! Check that reffing x on both sides of a coarray send does not ICE. 
-+! PR 85507
-+
-+program check_dependency
-+  integer :: x[*]
-+  x[42] = x
-+end program check_dependency
-+
-diff --git a/gcc/testsuite/gfortran.dg/coarray_lib_comm_1.f90 b/gcc/testsuite/gfortran.dg/coarray_lib_comm_1.f90
-index a7567af7b8f..171a27bd4c3 100644
---- a/gcc/testsuite/gfortran.dg/coarray_lib_comm_1.f90
-+++ b/gcc/testsuite/gfortran.dg/coarray_lib_comm_1.f90
-@@ -38,9 +38,8 @@ B(1:5) = B(3:7)
- if (any (A-B /= 0)) STOP 4
- end
- 
--! { dg-final { scan-tree-dump-times "_gfortran_caf_get \\\(caf_token.0, \\\(integer\\\(kind=\[48\]\\\)\\\) parm.\[0-9\]+.data - \\\(integer\\\(kind=\[48\]\\\)\\\) a, 1, &parm.\[0-9\]+, 0B, &parm.\[0-9\]+, 4, 4, 0, 0B\\\);" 1 "original" } }
--! { dg-final { scan-tree-dump-times "_gfortran_caf_get \\\(caf_token.0, \\\(integer\\\(kind=\[48\]\\\)\\\) parm.\[0-9\]+.data - \\\(integer\\\(kind=\[48\]\\\)\\\) a, 1, &parm.\[0-9\]+, 0B, &parm.\[0-9\]+, 4, 4, 1, 0B\\\);" 1 "original" } }
-+! { dg-final { scan-tree-dump-times "_gfortran_caf_get \\\(caf_token.0, \\\(integer\\\(kind=\[48\]\\\)\\\) parm.\[0-9\]+.data - \\\(integer\\\(kind=\[48\]\\\)\\\) a, 1, &parm.\[0-9\]+, 0B, &parm.\[0-9\]+, 4, 4, 1, 0B\\\);" 2 "original" } }
- ! { dg-final { scan-tree-dump-times "_gfortran_caf_get \\\(caf_token.0, \\\(integer\\\(kind=\[48\]\\\)\\\) parm.\[0-9\]+.data - \\\(integer\\\(kind=\[48\]\\\)\\\) a, 1, &parm.\[0-9\]+, 0B, &p, 4, 4, 1, 0B\\\);" 1 "original" } }
- ! { dg-final { scan-tree-dump-times "_gfortran_caf_get \\\(caf_token.1, \\\(integer\\\(kind=\[48\]\\\)\\\) parm.\[0-9\]+.data - \\\(integer\\\(kind=\[48\]\\\)\\\) b, 1, &parm.\[0-9\]+, 0B, &p, 4, 4, 0, 0B\\\);" 1 "original" } }
--! { dg-final { scan-tree-dump-times "_gfortran_caf_sendget \\\(caf_token.0, \\\(integer\\\(kind=\[48\]\\\)\\\) parm.\[0-9\]+.data - \\\(integer\\\(kind=\[48\]\\\)\\\) a, 1, &parm.\[0-9\]+, 0B, caf_token.0, \\\(integer\\\(kind=\[48\]\\\)\\\) parm.\[0-9\]+.data - \\\(integer\\\(kind=\[48\]\\\)\\\) a, 1, &parm.\[0-9\]+, 0B, 4, 4, 0, 0B\\\);" 1 "original" } }
-+! { dg-final { scan-tree-dump-times "_gfortran_caf_sendget \\\(caf_token.0, \\\(integer\\\(kind=\[48\]\\\)\\\) parm.\[0-9\]+.data - \\\(integer\\\(kind=\[48\]\\\)\\\) a, 1, &parm.\[0-9\]+, 0B, caf_token.0, \\\(integer\\\(kind=\[48\]\\\)\\\) parm.\[0-9\]+.data - \\\(integer\\\(kind=\[48\]\\\)\\\) a, 1, &parm.\[0-9\]+, 0B, 4, 4, 1, 0B\\\);" 1 "original" } }
+
