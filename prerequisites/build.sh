@@ -30,7 +30,6 @@
 # (3) Parse the usage information (default usage file name: current file's name with -usage appended).
 # (4) Parse the command line using the usage information.
 
-
 export OPENCOARRAYS_SRC_DIR="${OPENCOARRAYS_SRC_DIR:-${PWD%prerequisites*}}"
 export __usage=${OPENCOARRAYS_SRC_DIR}/prerequisites/build.sh-usage
 if [[ ! -f "${OPENCOARRAYS_SRC_DIR}/src/libcaf.h" ]]; then
