@@ -414,11 +414,14 @@ int main (void)
       ind = CFI_establish ((CFI_cdesc_t *) &test6, NULL, attribute, type[i],
                            elem_len, rank, extents);
       ind = CFI_allocate ((CFI_cdesc_t *) &test6, lower, upper, base_type_size);
-      ind = CFI_deallocate ((CFI_cdesc_t *) &test6);
-      if (ind != CFI_INVALID_ATTRIBUTE && test6.base_addr != NULL)
+      if (ind == CFI_SUCCESS)
         {
-          printf ("CFI_deallocate: failed to deallocate memory.\n");
-          return 1;
+          ind = CFI_deallocate ((CFI_cdesc_t *) &test6);
+          if (ind != CFI_INVALID_ATTRIBUTE && test6.base_addr != NULL)
+            {
+              printf ("CFI_deallocate: failed to deallocate memory.\n");
+              return 1;
+            }
         }
     }
 
@@ -459,6 +462,10 @@ int main (void)
                                elem_len, rank, extents);
           tmp_ind = CFI_allocate ((CFI_cdesc_t *) &test7, lower, upper,
                                   base_type_size);
+          if (tmp_ind != CFI_SUCCESS)
+            {
+              goto next_attribute4;
+            }
           ind = CFI_is_contiguous ((CFI_cdesc_t *) &test7);
           if (ind != CFI_INVALID_RANK && rank == 0 &&
               tmp_ind != CFI_INVALID_ATTRIBUTE)
@@ -474,6 +481,7 @@ int main (void)
               return 1;
             }
         }
+      next_attribute4:;
     }
 
   /* Test CFI_address. */
@@ -875,7 +883,7 @@ int main (void)
                                CFI_attribute_other, type[i], elem_len, rank,
                                NULL);
           ind = CFI_allocate ((CFI_cdesc_t *) &source, lower, upper, elem_len);
-          if (ind == CFI_ERROR_MEM_ALLOCATION)
+          if (ind != CFI_SUCCESS)
             {
               goto next_type2;
             }
@@ -1036,44 +1044,48 @@ int main (void)
   ind = CFI_establish ((CFI_cdesc_t *) &section, NULL, CFI_attribute_other,
                        type[3], elem_len, rank, NULL);
   ind = CFI_allocate ((CFI_cdesc_t *) &source, lower, upper, elem_len);
-  for (int r = 0; r < rank; r++)
+  if (ind == CFI_SUCCESS)
     {
-      lower[r]   = rank - r - 3;
-      strides[r] = r + 1;
-      upper[r]   = lower[r] + extents[r] - 3;
+      for (int r = 0; r < rank; r++)
+        {
+          lower[r]   = rank - r - 3;
+          strides[r] = r + 1;
+          upper[r]   = lower[r] + extents[r] - 3;
+        }
+      ind = CFI_section ((CFI_cdesc_t *) &section, NULL, lower, upper, strides);
+      if (ind != CFI_INVALID_DESCRIPTOR)
+        {
+          printf ("CFI_section: failed to detect that source is NULL.\n");
+          return 1;
+        }
+      ind = CFI_section (NULL, (CFI_cdesc_t *) &source, lower, upper, strides);
+      if (ind != CFI_INVALID_DESCRIPTOR)
+        {
+          printf ("CFI_section: failed to detect that section is NULL.\n");
+          return 1;
+        }
+      ind =
+          CFI_establish ((CFI_cdesc_t *) &section, NULL, CFI_attribute_allocatable,
+                         type[3], elem_len, rank, NULL);
+      ind = CFI_section ((CFI_cdesc_t *) &section, (CFI_cdesc_t *) &source, lower,
+                         upper, strides);
+      if (ind != CFI_INVALID_ATTRIBUTE)
+        {
+          printf ("CFI_section: failed to detect invalid attribute.\n");
+          return 1;
+        }
+      ind = CFI_establish ((CFI_cdesc_t *) &section, NULL, CFI_attribute_other,
+                           type[3], elem_len, rank, NULL);
+      ind = CFI_deallocate ((CFI_cdesc_t *) &source);
+      ind = CFI_section ((CFI_cdesc_t *) &section, (CFI_cdesc_t *) &source, lower,
+                         upper, strides);
+      if (ind != CFI_ERROR_BASE_ADDR_NULL)
+        {
+          printf ("CFI_section: failed to detect that the base address is NULL.\n");
+          return 1;
+        }
     }
-  ind = CFI_section ((CFI_cdesc_t *) &section, NULL, lower, upper, strides);
-  if (ind != CFI_INVALID_DESCRIPTOR)
-    {
-      printf ("CFI_section: failed to detect that source is NULL.\n");
-      return 1;
-    }
-  ind = CFI_section (NULL, (CFI_cdesc_t *) &source, lower, upper, strides);
-  if (ind != CFI_INVALID_DESCRIPTOR)
-    {
-      printf ("CFI_section: failed to detect that section is NULL.\n");
-      return 1;
-    }
-  ind =
-      CFI_establish ((CFI_cdesc_t *) &section, NULL, CFI_attribute_allocatable,
-                     type[3], elem_len, rank, NULL);
-  ind = CFI_section ((CFI_cdesc_t *) &section, (CFI_cdesc_t *) &source, lower,
-                     upper, strides);
-  if (ind != CFI_INVALID_ATTRIBUTE)
-    {
-      printf ("CFI_section: failed to detect invalid attribute.\n");
-      return 1;
-    }
-  ind = CFI_establish ((CFI_cdesc_t *) &section, NULL, CFI_attribute_other,
-                       type[3], elem_len, rank, NULL);
-  ind = CFI_deallocate ((CFI_cdesc_t *) &source);
-  ind = CFI_section ((CFI_cdesc_t *) &section, (CFI_cdesc_t *) &source, lower,
-                     upper, strides);
-  if (ind != CFI_ERROR_BASE_ADDR_NULL)
-    {
-      printf ("CFI_section: failed to detect that the base address is NULL.\n");
-      return 1;
-    }
+
   CFI_CDESC_T (0) section2, source2;
   ind = CFI_establish ((CFI_cdesc_t *) &source2, &ind, CFI_attribute_other,
                        type[3], 0, 0, NULL);
@@ -1086,33 +1098,37 @@ int main (void)
       printf ("CFI_section: failed to detect invalid rank.\n");
       return 1;
     }
+
   ind = CFI_establish ((CFI_cdesc_t *) &source, NULL, CFI_attribute_allocatable,
                        type[3], 0, rank, extents);
   ind = CFI_establish ((CFI_cdesc_t *) &section, NULL, CFI_attribute_other,
                        type[6], 0, rank, NULL);
   ind = CFI_allocate ((CFI_cdesc_t *) &source, lower, upper, elem_len);
-  for (int r = 0; r < rank; r++)
+  if (ind == CFI_SUCCESS)
     {
-      lower[r]   = rank - r - 3;
-      strides[r] = r + 1;
-      upper[r]   = lower[r] + extents[r] - 3;
-    }
-  ind = CFI_section ((CFI_cdesc_t *) &section, (CFI_cdesc_t *) &source, lower,
-                     upper, strides);
-  if (ind != CFI_INVALID_ELEM_LEN)
-    {
-      printf ("CFI_section: failed to detect incompatible element lengths "
-              "between source and section.\n");
-      return 1;
-    }
-  ind = CFI_establish ((CFI_cdesc_t *) &section, NULL, CFI_attribute_other,
-                       CFI_type_long, 0, rank, NULL);
-  ind = CFI_section ((CFI_cdesc_t *) &section, (CFI_cdesc_t *) &source, lower,
-                     upper, strides);
-  if (ind != CFI_INVALID_TYPE)
-    {
-      printf ("CFI_section: failed to detect invalid type.\n");
-      return 1;
+      for (int r = 0; r < rank; r++)
+        {
+          lower[r]   = rank - r - 3;
+          strides[r] = r + 1;
+          upper[r]   = lower[r] + extents[r] - 3;
+        }
+      ind = CFI_section ((CFI_cdesc_t *) &section, (CFI_cdesc_t *) &source, lower,
+                         upper, strides);
+      if (ind != CFI_INVALID_ELEM_LEN)
+        {
+          printf ("CFI_section: failed to detect incompatible element lengths "
+                  "between source and section.\n");
+          return 1;
+        }
+      ind = CFI_establish ((CFI_cdesc_t *) &section, NULL, CFI_attribute_other,
+                           CFI_type_long, 0, rank, NULL);
+      ind = CFI_section ((CFI_cdesc_t *) &section, (CFI_cdesc_t *) &source, lower,
+                         upper, strides);
+      if (ind != CFI_INVALID_TYPE)
+        {
+          printf ("CFI_section: failed to detect invalid type.\n");
+          return 1;
+        }
     }
 
   for (int i = 1; i < CFI_MAX_RANK; i++)
@@ -1151,7 +1167,7 @@ int main (void)
           CFI_establish ((CFI_cdesc_t *) &source, NULL,
                          CFI_attribute_allocatable, type[3], 0, rank, extents);
       ind = CFI_allocate ((CFI_cdesc_t *) &source, lower, upper, elem_len);
-      if (ind == CFI_ERROR_MEM_ALLOCATION)
+      if (ind != CFI_SUCCESS)
         {
           continue;
         }
@@ -1252,13 +1268,15 @@ int main (void)
   ind = CFI_establish ((CFI_cdesc_t *) &section3, NULL, CFI_attribute_other,
                        type[3], 0, rank, NULL);
   ind = CFI_allocate ((CFI_cdesc_t *) &source3, lower, upper, elem_len);
-
-  ind = CFI_section ((CFI_cdesc_t *) &section3, (CFI_cdesc_t *) &source3, upper,
-                     lower, strides);
-  if (ind != CFI_SUCCESS && ind != CFI_INVALID_STRIDE)
+  if (ind == CFI_SUCCESS)
     {
-      printf ("CFI_section: failed to detect invalid stride.\n");
-      return 1;
+      ind = CFI_section ((CFI_cdesc_t *) &section3, (CFI_cdesc_t *) &source3,
+                         upper, lower, strides);
+      if (ind != CFI_SUCCESS && ind != CFI_INVALID_STRIDE)
+        {
+          printf ("CFI_section: failed to detect invalid stride.\n");
+          return 1;
+        }
     }
 
   /* CFI_select_part */
