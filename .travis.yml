@@ -83,8 +83,7 @@ before_install:
 
 install:
   - pwd
-  - type -a travis_wait
-  - developer-scripts/travis/install.${TRAVIS_OS_NAME}.sh
+  - travis_wait 40 developer-scripts/travis/install.${TRAVIS_OS_NAME}.sh
 
 script:
   - pwd
