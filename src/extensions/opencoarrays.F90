@@ -29,7 +29,7 @@ module opencoarrays
 #ifdef COMPILER_SUPPORTS_ATOMICS
   use iso_fortran_env, only : atomic_int_kind
 #endif
-  use iso_c_binding, only : c_int,c_char,c_ptr,c_loc,c_double,c_int32_t,c_ptrdiff_t,c_sizeof,c_bool,c_funloc
+  use iso_c_binding, only : c_int,c_char,c_ptr,c_loc,c_double,c_int32_t,c_ptrdiff_t,c_sizeof,c_bool,c_funloc, c_size_t, c_short
   implicit none
 
 #ifndef MPI_WORKING_MODULE
@@ -166,6 +166,27 @@ module opencoarrays
      integer(c_ptrdiff_t) :: ubound_
   end type
 
+
+   #ifdef GCC_GE_8
+  ! Type definition from ../libcaf-gfortran-descriptor.h:
+  !  typedef struct dtype_type
+  !  {
+  !    size_t elem_len;
+  !    int version;
+  !    signed char rank;
+  !    signed char type;
+  !    signed short attribute;
+  !  }
+  !  dtype_type;
+   type, bind(C) :: dtype_type
+       integer(c_size_t) :: elem_len
+       integer(c_int) version
+       integer(c_signed_char) rank
+       integer(c_signed_char) type;
+       integer(c_short) attribute;
+    end type
+   #endif
+
   ! Type definition from ../libcaf-gfortran-descriptor.h:
   !typedef struct gfc_descriptor_t {
   !  void *base_addr;
@@ -180,7 +201,12 @@ module opencoarrays
   type, bind(C) :: gfc_descriptor_t
     type(c_ptr) :: base_addr
     integer(c_ptrdiff_t) :: offset
+#ifdef GCC_GE_8
+    type(dtype_type) :: dtype
+    integer(c_ptrdiff_t) :: span
+#else
     integer(c_ptrdiff_t) :: dtype
+#endif
     type(descriptor_dimension) :: dim_(max_dimensions)
   end type
 
