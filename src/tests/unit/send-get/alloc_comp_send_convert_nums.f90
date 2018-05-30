@@ -504,7 +504,7 @@ program alloc_comp_send_convert_nums
 
       print *, obj%int_k1
       if (any(obj%int_k1 /= [INT(-15, 1), INT(-1, 1), INT(-13, 1), INT(-1, 1), INT(-11, 1)])) &
-          call print_and_register( 'strided send int real kind=4 to int kind=1 to image 2 failed')
+          call print_and_register( 'strided send real kind=4 to int kind=1 to image 2 failed')
 
       print *, obj%real_k8
       if (any(abs(obj%real_k8 - [13.0, -1.0, 15.0, -1.0, 17.0]) > tolerance8)) &

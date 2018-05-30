@@ -65,8 +65,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 #define dprint(args...) fprintf (stderr, args)
 #endif
 
-// Remove before flight!
-
 #ifdef GCC_GE_7
 /** The caf-token of the mpi-library.
 
@@ -1221,7 +1219,7 @@ error:
       caf_runtime_error (msg);
   }
 }
-#else // GCC_GE_7
+#else // GCC_LT_7
 void *
 PREFIX (register) (size_t size, caf_register_t type, caf_token_t *token,
                    int *stat, char *errmsg, charlen_t errmsg_len)
@@ -1311,7 +1309,7 @@ error:
   }
   return NULL;
 }
-#endif
+#endif // GCC_GE_7
 
 
 #ifdef GCC_GE_7
@@ -1360,7 +1358,7 @@ PREFIX (deregister) (caf_token_t *token, int *stat, char *errmsg, charlen_t errm
       PREFIX (sync_all) (NULL, NULL, 0);
 #endif
     }
-#endif
+#endif // GCC_GE_7
 
   {
     struct caf_allocated_tokens_t *cur = caf_allocated_tokens, *prev,
@@ -1449,7 +1447,7 @@ PREFIX (deregister) (caf_token_t *token, int *stat, char *errmsg, charlen_t errm
         cur_stok = prev_stok;
       }
   }
-#endif
+#endif // GCC_GE_7
 #ifdef EXTRA_DEBUG_OUTPUT
   fprintf (stderr, "Fortran runtime warning on image %d: Could not find token to free %p",
            caf_this_image, *token);
@@ -2279,7 +2277,7 @@ PREFIX (sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
       MPI_Type_free (&dt_s);
       MPI_Type_free (&dt_d);
     }
-#endif
+#endif // STRIDED
   else
     {
       if ((free_dst_t_buff = ((dst_t_buff = alloca (dst_size * size)) == NULL)))
@@ -2605,7 +2603,7 @@ PREFIX (sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
       MPI_Type_free (&dt_s);
       MPI_Type_free (&dt_d);
     }
-#endif
+#endif // STRIDED
   else
     {
       if (!dst_same_image)
@@ -3044,7 +3042,7 @@ PREFIX (send) (caf_token_t token, size_t offset, int image_index,
       MPI_Type_free (&dt_s);
       MPI_Type_free (&dt_d);
     }
-#endif
+#endif // STRIDED
   else
     {
       if(same_image && mrt)
@@ -3589,7 +3587,7 @@ PREFIX (get) (caf_token_t token, size_t offset, int image_index,
       MPI_Type_free (&dt_s);
       MPI_Type_free (&dt_d);
     }
-#endif
+#endif // STRIDED
   else
     {
       if(same_image && mrt)
@@ -3918,8 +3916,15 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
              int dst_kind, int src_kind, size_t dst_dim, size_t src_dim,
              size_t num, int *stat, int image_index,
              bool sr_global, /* access sr through global_dynamic_win */
-             bool desc_global /* access desc through global_dynamic_win */)
+             bool desc_global /* access desc through global_dynamic_win */
+#ifdef GCC_GE_8
+             , int src_type)
 {
+#else
+             )
+{
+  int src_type = -1;
+#endif
   ptrdiff_t extent_src = 1, array_offset_src = 0, stride_src;
   size_t next_dst_dim, ref_rank;
   gfc_max_dim_descriptor_t src_desc_data;
@@ -3935,7 +3940,6 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
   if (ref->next == NULL)
     {
       size_t dst_size = GFC_DESCRIPTOR_SIZE (dst);
-      int src_type = -1;
 
       switch (ref->type)
         {
@@ -3965,12 +3969,22 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
             sr_byte_offset += ref->u.c.offset;
           if (sr_global)
             get_data (ds, NULL, MPI_Aint_add ((MPI_Aint)sr, sr_byte_offset),
-                      GFC_DESCRIPTOR_TYPE (dst), GFC_DESCRIPTOR_TYPE (dst),
+                      GFC_DESCRIPTOR_TYPE (dst),
+#ifdef GCC_GE_8
+                      src_type != -1 ? src_type : GFC_DESCRIPTOR_TYPE (dst),
+#else
+                      GFC_DESCRIPTOR_TYPE (dst),
+#endif
                       dst_kind, src_kind, dst_size, ref->item_size, 1, stat,
                       image_index);
           else
             get_data (ds, mpi_token, sr_byte_offset,
-                      GFC_DESCRIPTOR_TYPE (dst), GFC_DESCRIPTOR_TYPE (src),
+                      GFC_DESCRIPTOR_TYPE (dst),
+#ifdef GCC_GE_8
+                      src_type,
+#else
+                      GFC_DESCRIPTOR_TYPE (src),
+#endif
                       dst_kind, src_kind, dst_size, ref->item_size, 1, stat,
                       image_index);
           ++(*i);
@@ -3985,14 +3999,22 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
                 get_data (ds + dst_index * dst_size, NULL,
                           MPI_Aint_add ((MPI_Aint)sr, sr_byte_offset),
                           GFC_DESCRIPTOR_TYPE (dst),
+#ifdef GCC_GE_8
+                          src_type != -1 ? src_type : GFC_DESCRIPTOR_TYPE (src),
+#else
                           src_type == -1 ? GFC_DESCRIPTOR_TYPE (src) : src_type,
+#endif
                           dst_kind, src_kind, dst_size, ref->item_size, num,
                           stat, image_index);
               else
                 {
                   get_data (ds + dst_index * dst_size, mpi_token,
                             sr_byte_offset, GFC_DESCRIPTOR_TYPE (dst),
+#ifdef GCC_GE_8
+                            src_type != -1 ? src_type : GFC_DESCRIPTOR_TYPE (src),
+#else
                             src_type == -1 ? GFC_DESCRIPTOR_TYPE (src) : src_type,
+#endif
                             dst_kind, src_kind, dst_size, ref->item_size, num,
                             stat, image_index);
                 }
@@ -4035,7 +4057,11 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
         }
       get_for_ref (ref->next, i, dst_index, mpi_token, dst, NULL, ds,
                    sr, sr_byte_offset, desc_byte_offset, dst_kind, src_kind,
-                   dst_dim, 0, 1, stat, image_index, sr_global, desc_global);
+                   dst_dim, 0, 1, stat, image_index, sr_global, desc_global
+#ifdef GCC_GE_8
+                   ,src_type
+#endif
+                   );
       return;
     case CAF_REF_ARRAY:
       if (ref->u.a.mode[src_dim] == CAF_ARR_REF_NONE)
@@ -4043,7 +4069,11 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
           get_for_ref (ref->next, i, dst_index, mpi_token, dst,
                        src, ds, sr, sr_byte_offset, desc_byte_offset, dst_kind,
                        src_kind, dst_dim, 0, 1, stat, image_index, sr_global,
-                       desc_global);
+                       desc_global
+#ifdef GCC_GE_8
+                       , src_type
+#endif
+                       );
           return;
         }
       /* Only when on the left most index switch the data pointer to
@@ -4116,7 +4146,11 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
                            sr_byte_offset + array_offset_src * ref->item_size,
                            desc_byte_offset + array_offset_src * ref->item_size,
                            dst_kind, src_kind, dst_dim + 1, src_dim + 1,
-                           1, stat, image_index, sr_global, desc_global);
+                           1, stat, image_index, sr_global, desc_global
+#ifdef GCC_GE_8
+                           , src_type
+#endif
+                           );
               dst_index += dst->dim[dst_dim]._stride;
             }
           return;
@@ -4135,7 +4169,11 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
                            sr_byte_offset + array_offset_src * ref->item_size,
                            desc_byte_offset + array_offset_src * ref->item_size,
                            dst_kind, src_kind, dst_dim + 1, src_dim + 1,
-                           1, stat, image_index, sr_global, desc_global);
+                           1, stat, image_index, sr_global, desc_global
+#ifdef GCC_GE_8
+                           , src_type
+#endif
+                           );
               dst_index += dst->dim[dst_dim]._stride;
             }
           return;
@@ -4161,7 +4199,11 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
                            sr_byte_offset + array_offset_src * ref->item_size,
                            desc_byte_offset + array_offset_src * ref->item_size,
                            dst_kind, src_kind, next_dst_dim, src_dim + 1,
-                           1, stat, image_index, sr_global, desc_global);
+                           1, stat, image_index, sr_global, desc_global
+#ifdef GCC_GE_8
+                           , src_type
+#endif
+                           );
               dst_index += dst->dim[dst_dim]._stride;
               array_offset_src += stride_src;
             }
@@ -4174,7 +4216,11 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
                        sr_byte_offset + array_offset_src * ref->item_size,
                        desc_byte_offset + array_offset_src * ref->item_size,
                        dst_kind, src_kind, dst_dim, src_dim + 1, 1,
-                       stat, image_index, sr_global, desc_global);
+                       stat, image_index, sr_global, desc_global
+#ifdef GCC_GE_8
+                       , src_type
+#endif
+                       );
           return;
         case CAF_ARR_REF_OPEN_END:
           COMPUTE_NUM_ITEMS (extent_src,
@@ -4192,7 +4238,11 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
                            sr_byte_offset + array_offset_src * ref->item_size,
                            desc_byte_offset + array_offset_src * ref->item_size,
                            dst_kind, src_kind, dst_dim + 1, src_dim + 1,
-                           1, stat, image_index, sr_global, desc_global);
+                           1, stat, image_index, sr_global, desc_global
+#ifdef GCC_GE_8
+                           , src_type
+#endif
+                           );
               dst_index += dst->dim[dst_dim]._stride;
               array_offset_src += stride_src;
             }
@@ -4211,7 +4261,11 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
                            sr_byte_offset + array_offset_src * ref->item_size,
                            desc_byte_offset + array_offset_src * ref->item_size,
                            dst_kind, src_kind, dst_dim + 1, src_dim + 1,
-                           1, stat, image_index, sr_global, desc_global);
+                           1, stat, image_index, sr_global, desc_global
+#ifdef GCC_GE_8
+                           , src_type
+#endif
+                           );
               dst_index += dst->dim[dst_dim]._stride;
               array_offset_src += stride_src;
             }
@@ -4225,7 +4279,11 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
         {
           get_for_ref (ref->next, i, dst_index, mpi_token, dst, NULL, ds, sr,
                        sr_byte_offset, desc_byte_offset, dst_kind, src_kind,
-                       dst_dim, 0, 1, stat, image_index, sr_global, desc_global);
+                       dst_dim, 0, 1, stat, image_index, sr_global, desc_global
+#ifdef GCC_GE_8
+                       , src_type
+#endif
+                       );
           return;
         }
       switch (ref->u.a.mode[src_dim])
@@ -4258,7 +4316,11 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
                            sr_byte_offset + array_offset_src * ref->item_size,
                            desc_byte_offset + array_offset_src * ref->item_size,
                            dst_kind, src_kind, dst_dim + 1, src_dim + 1,
-                           1, stat, image_index, sr_global, desc_global);
+                           1, stat, image_index, sr_global, desc_global
+#ifdef GCC_GE_8
+                           , src_type
+#endif
+                           );
               dst_index += dst->dim[dst_dim]._stride;
             }
           return;
@@ -4271,7 +4333,11 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
                            sr_byte_offset + array_offset_src * ref->item_size,
                            desc_byte_offset + array_offset_src * ref->item_size,
                            dst_kind, src_kind, dst_dim + 1, src_dim + 1,
-                           1, stat, image_index, sr_global, desc_global);
+                           1, stat, image_index, sr_global, desc_global
+#ifdef GCC_GE_8
+                           , src_type
+#endif
+                           );
               dst_index += dst->dim[dst_dim]._stride;
             }
           return;
@@ -4287,7 +4353,11 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
                            sr_byte_offset + array_offset_src * ref->item_size,
                            desc_byte_offset + array_offset_src * ref->item_size,
                            dst_kind, src_kind, dst_dim + 1, src_dim + 1,
-                           1, stat, image_index, sr_global, desc_global);
+                           1, stat, image_index, sr_global, desc_global
+#ifdef GCC_GE_8
+                           , src_type
+#endif
+                           );
               dst_index += dst->dim[dst_dim]._stride;
               array_offset_src += ref->u.a.dim[src_dim].s.stride;
             }
@@ -4298,7 +4368,11 @@ get_for_ref (caf_reference_t *ref, size_t *i, size_t dst_index,
                        sr_byte_offset + array_offset_src * ref->item_size,
                        desc_byte_offset + array_offset_src * ref->item_size,
                        dst_kind, src_kind, dst_dim, src_dim + 1, 1,
-                       stat, image_index, sr_global, desc_global);
+                       stat, image_index, sr_global, desc_global
+#ifdef GCC_GE_8
+                       , src_type
+#endif
+                       );
           return;
           /* The OPEN_* are mapped to a RANGE and therefore can not occur.  */
         case CAF_ARR_REF_OPEN_END:
@@ -4317,7 +4391,11 @@ PREFIX (get_by_ref) (caf_token_t token, int image_index,
                      gfc_descriptor_t *dst, caf_reference_t *refs,
                      int dst_kind, int src_kind,
                      bool may_require_tmp __attribute__ ((unused)),
-                     bool dst_reallocatable, int *stat)
+                     bool dst_reallocatable, int *stat
+#ifdef GCC_GE_8
+                     , int src_type
+#endif
+                     )
 {
   const char vecrefunknownkind[] = "libcaf_mpi::caf_get_by_ref(): "
                                    "unknown kind in vector-ref.\n";
@@ -4857,7 +4935,11 @@ PREFIX (get_by_ref) (caf_token_t token, int image_index,
           caf_num_images);
   get_for_ref (refs, &i, dst_index, mpi_token, dst, mpi_token->desc,
                dst->base_addr, remote_memptr, 0, 0, dst_kind, src_kind, 0, 0,
-               1, stat, remote_image, false, false);
+               1, stat, remote_image, false, false
+#ifdef GCC_GE_8
+               , src_type
+#endif
+               );
   CAF_Win_unlock (remote_image, global_dynamic_win);
   CAF_Win_unlock (remote_image, mpi_token->memptr_win);
 }
@@ -4948,8 +5030,15 @@ send_by_ref (caf_reference_t *ref, size_t *i, size_t src_index,
              int dst_kind, int src_kind, size_t dst_dim, size_t src_dim,
              size_t num, int *stat, int image_index,
              bool ds_global, /* access ds through global_dynamic_win */
-             bool desc_global /* access desc through global_dynamic_win */)
+             bool desc_global /* access desc through global_dynamic_win */
+#ifdef GCC_GE_8
+             , int dst_type)
 {
+#else
+             )
+{
+  int dst_type = -1;
+#endif
   ptrdiff_t extent_dst = 1, array_offset_dst = 0, dst_stride, src_stride;
   size_t next_dst_dim, ref_rank;
   gfc_max_dim_descriptor_t dst_desc_data;
@@ -4965,7 +5054,6 @@ send_by_ref (caf_reference_t *ref, size_t *i, size_t src_index,
   if (ref->next == NULL)
     {
       size_t src_size = GFC_DESCRIPTOR_SIZE (src);
-      int dst_type = -1;
 
       switch (ref->type)
         {
@@ -4992,14 +5080,22 @@ send_by_ref (caf_reference_t *ref, size_t *i, size_t src_index,
 
           if (ds_global)
             put_data (NULL, MPI_Aint_add ((MPI_Aint)ds, dst_byte_offset), sr,
-                      GFC_DESCRIPTOR_TYPE (src), GFC_DESCRIPTOR_TYPE (src),
-                      dst_kind, src_kind, ref->item_size, src_size, 1, stat,
-                      image_index);
+#ifdef GCC_GE_8
+                      dst_type,
+#else
+                      GFC_DESCRIPTOR_TYPE (src),
+#endif
+                      GFC_DESCRIPTOR_TYPE (src), dst_kind, src_kind,
+                      ref->item_size, src_size, 1, stat, image_index);
           else
             put_data (mpi_token, dst_byte_offset, sr,
-                      GFC_DESCRIPTOR_TYPE (dst), GFC_DESCRIPTOR_TYPE (src),
-                      dst_kind, src_kind, ref->item_size, src_size, 1, stat,
-                      image_index);
+#ifdef GCC_GE_8
+                      dst_type,
+#else
+                      GFC_DESCRIPTOR_TYPE (dst),
+#endif
+                      GFC_DESCRIPTOR_TYPE (src), dst_kind, src_kind,
+                      ref->item_size, src_size, 1, stat, image_index);
           ++(*i);
           return;
         case CAF_REF_STATIC_ARRAY:
@@ -5011,14 +5107,22 @@ send_by_ref (caf_reference_t *ref, size_t *i, size_t src_index,
               if (ds_global)
                 put_data (NULL, MPI_Aint_add ((MPI_Aint)ds,  dst_byte_offset),
                           sr + src_index * src_size,
+#ifdef GCC_GE_8
+                          dst_type, GFC_DESCRIPTOR_TYPE (src),
+#else
                           GFC_DESCRIPTOR_TYPE (dst),
                           dst_type == -1 ? GFC_DESCRIPTOR_TYPE (src) : dst_type,
+#endif
                           dst_kind, src_kind, ref->item_size, src_size, num,
                           stat, image_index);
               else
                 put_data (mpi_token, dst_byte_offset, sr + src_index * src_size,
+#ifdef GCC_GE_8
+                          dst_type, GFC_DESCRIPTOR_TYPE (src),
+#else
                           GFC_DESCRIPTOR_TYPE (dst),
                           dst_type == -1 ? GFC_DESCRIPTOR_TYPE (src) : dst_type,
+#endif
                           dst_kind, src_kind, ref->item_size, src_size, num,
                           stat, image_index);
               *i += num;
@@ -5060,15 +5164,22 @@ send_by_ref (caf_reference_t *ref, size_t *i, size_t src_index,
         }
       send_by_ref (ref->next, i, src_index, mpi_token, dst, src, ds,
                    sr, dst_byte_offset, desc_byte_offset, dst_kind, src_kind,
-                   dst_dim, 0, 1, stat, image_index, ds_global, desc_global);
+                   dst_dim, 0, 1, stat, image_index, ds_global, desc_global
+#ifdef GCC_GE_8
+                   , dst_type
+#endif
+                   );
       return;
     case CAF_REF_ARRAY:
       if (ref->u.a.mode[src_dim] == CAF_ARR_REF_NONE)
         {
-          send_by_ref (ref->next, i, src_index, mpi_token, dst,
-                       src, ds, sr, dst_byte_offset, desc_byte_offset, dst_kind,
-                       src_kind, dst_dim, 0, 1, stat, image_index, ds_global,
-                       desc_global);
+          send_by_ref (ref->next, i, src_index, mpi_token, dst, src, ds,
+                       sr, dst_byte_offset, desc_byte_offset, dst_kind, src_kind,
+                       dst_dim, 0, 1, stat, image_index, ds_global, desc_global
+#ifdef GCC_GE_8
+                       , dst_type
+#endif
+                       );
           return;
         }
       /* Only when on the left most index switch the data pointer to
@@ -5141,7 +5252,11 @@ send_by_ref (caf_reference_t *ref, size_t *i, size_t src_index,
                            dst_byte_offset + array_offset_dst * ref->item_size,
                            desc_byte_offset + array_offset_dst * ref->item_size,
                            dst_kind, src_kind, dst_dim + 1, src_dim + 1,
-                           1, stat, image_index, ds_global, desc_global);
+                           1, stat, image_index, ds_global, desc_global
+#ifdef GCC_GE_8
+                           , dst_type
+#endif
+                           );
               src_index += dst->dim[dst_dim]._stride;
             }
           return;
@@ -5164,7 +5279,11 @@ send_by_ref (caf_reference_t *ref, size_t *i, size_t src_index,
                            dst_byte_offset + array_offset_dst * ref->item_size,
                            desc_byte_offset + array_offset_dst * ref->item_size,
                            dst_kind, src_kind, dst_dim + 1, src_dim + 1,
-                           1, stat, image_index, ds_global, desc_global);
+                           1, stat, image_index, ds_global, desc_global
+#ifdef GCC_GE_8
+                           , dst_type
+#endif
+                           );
               src_index += src_stride;
             }
           return;
@@ -5192,7 +5311,11 @@ send_by_ref (caf_reference_t *ref, size_t *i, size_t src_index,
                            dst_byte_offset + array_offset_dst * ref->item_size,
                            desc_byte_offset + array_offset_dst * ref->item_size,
                            dst_kind, src_kind, next_dst_dim, src_dim + 1,
-                           1, stat, image_index, ds_global, desc_global);
+                           1, stat, image_index, ds_global, desc_global
+#ifdef GCC_GE_8
+                           , dst_type
+#endif
+                           );
               src_index += src_stride;
               array_offset_dst += dst_stride;
             }
@@ -5205,7 +5328,11 @@ send_by_ref (caf_reference_t *ref, size_t *i, size_t src_index,
                        dst_byte_offset + array_offset_dst * ref->item_size,
                        desc_byte_offset + array_offset_dst * ref->item_size,
                        dst_kind, src_kind, dst_dim, src_dim + 1, 1,
-                       stat, image_index, ds_global, desc_global);
+                       stat, image_index, ds_global, desc_global
+#ifdef GCC_GE_8
+                       , dst_type
+#endif
+                       );
           return;
         case CAF_ARR_REF_OPEN_END:
           COMPUTE_NUM_ITEMS (extent_dst,
@@ -5225,7 +5352,11 @@ send_by_ref (caf_reference_t *ref, size_t *i, size_t src_index,
                            dst_byte_offset + array_offset_dst * ref->item_size,
                            desc_byte_offset + array_offset_dst * ref->item_size,
                            dst_kind, src_kind, dst_dim + 1, src_dim + 1,
-                           1, stat, image_index, ds_global, desc_global);
+                           1, stat, image_index, ds_global, desc_global
+#ifdef GCC_GE_8
+                           , dst_type
+#endif
+                           );
               src_index += src_stride;
               array_offset_dst += dst_stride;
             }
@@ -5246,7 +5377,11 @@ send_by_ref (caf_reference_t *ref, size_t *i, size_t src_index,
                            dst_byte_offset + array_offset_dst * ref->item_size,
                            desc_byte_offset + array_offset_dst * ref->item_size,
                            dst_kind, src_kind, dst_dim + 1, src_dim + 1,
-                           1, stat, image_index, ds_global, desc_global);
+                           1, stat, image_index, ds_global, desc_global
+#ifdef GCC_GE_8
+                           , dst_type
+#endif
+                           );
               src_index += src_stride;
               array_offset_dst += dst_stride;
             }
@@ -5260,7 +5395,11 @@ send_by_ref (caf_reference_t *ref, size_t *i, size_t src_index,
         {
           send_by_ref (ref->next, i, src_index, mpi_token, dst, NULL, ds, sr,
                        dst_byte_offset, desc_byte_offset, dst_kind, src_kind,
-                       dst_dim, 0, 1, stat, image_index, ds_global, desc_global);
+                       dst_dim, 0, 1, stat, image_index, ds_global, desc_global
+#ifdef GCC_GE_8
+                       , dst_type
+#endif
+                       );
           return;
         }
       switch (ref->u.a.mode[dst_dim])
@@ -5293,7 +5432,11 @@ send_by_ref (caf_reference_t *ref, size_t *i, size_t src_index,
                            dst_byte_offset + array_offset_dst * ref->item_size,
                            desc_byte_offset + array_offset_dst * ref->item_size,
                            dst_kind, src_kind, dst_dim + 1, src_dim + 1,
-                           1, stat, image_index, ds_global, desc_global);
+                           1, stat, image_index, ds_global, desc_global
+#ifdef GCC_GE_8
+                           , dst_type
+#endif
+                           );
               src_index += src->dim[src_dim]._stride;
             }
           return;
@@ -5308,7 +5451,11 @@ send_by_ref (caf_reference_t *ref, size_t *i, size_t src_index,
                            dst_byte_offset + array_offset_dst * ref->item_size,
                            desc_byte_offset + array_offset_dst * ref->item_size,
                            dst_kind, src_kind, dst_dim + 1, src_dim + 1,
-                           1, stat, image_index, ds_global, desc_global);
+                           1, stat, image_index, ds_global, desc_global
+#ifdef GCC_GE_8
+                           , dst_type
+#endif
+                           );
               src_index += src_stride;
             }
           return;
@@ -5326,7 +5473,11 @@ send_by_ref (caf_reference_t *ref, size_t *i, size_t src_index,
                            dst_byte_offset + array_offset_dst * ref->item_size,
                            desc_byte_offset + array_offset_dst * ref->item_size,
                            dst_kind, src_kind, dst_dim + 1, src_dim + 1,
-                           1, stat, image_index, ds_global, desc_global);
+                           1, stat, image_index, ds_global, desc_global
+#ifdef GCC_GE_8
+                           , dst_type
+#endif
+                           );
               src_index += src_stride;
               array_offset_dst += ref->u.a.dim[dst_dim].s.stride;
             }
@@ -5337,7 +5488,11 @@ send_by_ref (caf_reference_t *ref, size_t *i, size_t src_index,
                        dst_byte_offset + array_offset_dst * ref->item_size,
                        desc_byte_offset + array_offset_dst * ref->item_size,
                        dst_kind, src_kind, dst_dim, src_dim + 1, 1,
-                       stat, image_index, ds_global, desc_global);
+                       stat, image_index, ds_global, desc_global
+#ifdef GCC_GE_8
+                       , dst_type
+#endif
+                       );
           return;
           /* The OPEN_* are mapped to a RANGE and therefore can not occur.  */
         case CAF_ARR_REF_OPEN_END:
@@ -5356,7 +5511,11 @@ void
 PREFIX (send_by_ref) (caf_token_t token, int image_index,
                       gfc_descriptor_t *src, caf_reference_t *refs,
                       int dst_kind, int src_kind, bool may_require_tmp,
-                      bool dst_reallocatable, int *stat)
+                      bool dst_reallocatable, int *stat
+#ifdef GCC_GE_8
+                      , int dst_type
+#endif
+                      )
 {
     const char vecrefunknownkind[] = "libcaf_mpi::caf_send_by_ref(): "
                                      "unknown kind in vector-ref.\n";
@@ -5405,8 +5564,12 @@ PREFIX (send_by_ref) (caf_token_t token, int image_index,
 
     check_image_health (image_index, stat);
 
-    dprint ("%d/%d: Entering send_by_ref(may_require_tmp = %d).\n", caf_this_image,
+    dprint ("%d/%d: Entering send_by_ref(may_require_tmp = %d", caf_this_image,
             caf_num_images, may_require_tmp);
+#ifdef GCC_GE_8
+    dprint (", dst_type = %d", dst_type);
+#endif
+    dprint (").\n");
 
     /* Compute the size of the result.  In the beginning size just counts the
        number of elements.  */
@@ -5803,7 +5966,11 @@ PREFIX (send_by_ref) (caf_token_t token, int image_index,
             caf_num_images, __FUNCTION__);
     send_by_ref (refs, &i, src_index, mpi_token, mpi_token->desc, src,
                  remote_memptr, src->base_addr, 0, 0, dst_kind, src_kind, 0, 0,
-                 1, stat, remote_image, false, false);
+                 1, stat, remote_image, false, false
+#ifdef GCC_GE_8
+                 , dst_type
+#endif
+                 );
     if (free_temp_src)
       {
         free (temp_src.base.base_addr);
@@ -5818,7 +5985,11 @@ PREFIX (sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
                          caf_reference_t *dst_refs, caf_token_t src_token,
                          int src_image_index, caf_reference_t *src_refs,
                          int dst_kind, int src_kind,
-                         bool may_require_tmp, int *dst_stat, int *src_stat)
+                         bool may_require_tmp, int *dst_stat, int *src_stat
+#ifdef GCC_GE_8
+                         , int dst_type, int src_type
+#endif
+                         )
 {
   const char vecrefunknownkind[] = "libcaf_mpi::caf_sendget_by_ref(): "
                                    "unknown kind in vector-ref.\n";
@@ -5836,7 +6007,7 @@ PREFIX (sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
       *dst_mpi_token = (mpi_caf_token_t *) dst_token;
   void *remote_memptr = src_mpi_token->memptr, *remote_base_memptr = NULL;
   gfc_max_dim_descriptor_t src_desc;
-  gfc_dim1_descriptor_t temp_src_desc;
+  gfc_max_dim_descriptor_t temp_src_desc;
   gfc_descriptor_t *src = (gfc_descriptor_t *)&src_desc;
   caf_reference_t *riter = src_refs;
   long delta;
@@ -5850,14 +6021,18 @@ PREFIX (sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
   bool access_data_through_global_win = false;
   /* Set when the remote descriptor is to accessed through the global window. */
   bool access_desc_through_global_win = false;
+#ifndef GCC_GE_8
+  int dst_type = -1, src_type = -1;
+#endif
 
   if (src_stat)
     *src_stat = 0;
 
   check_image_health (src_image_index, src_stat);
 
-  dprint ("%d/%d: Entering get_by_ref(may_require_tmp = %d).\n", caf_this_image,
-          caf_num_images, may_require_tmp);
+  dprint ("%d/%d: Entering get_by_ref(may_require_tmp = %d, dst_type = %d(%d), src_type = %d(%d)).\n",
+          caf_this_image, caf_num_images, may_require_tmp, dst_type, dst_kind,
+          src_type, src_kind);
 
   /* Compute the size of the result.  In the beginning size just counts the
      number of elements.  */
@@ -6110,15 +6285,16 @@ PREFIX (sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
   */
 
   dst_rank = size > 1 ? 1 : 0;
+  memset (&temp_src_desc, 0, sizeof(gfc_dim1_descriptor_t));
 #ifdef GCC_GE_8
-  temp_src_desc.base.dtype.elem_len = GFC_DTYPE_INTEGER_4;
-  temp_src_desc.base.dtype.rank = dst_rank;
-#else
-  temp_src_desc.base.dtype = GFC_DTYPE_INTEGER_4 |
-                             dst_rank;
+  temp_src_desc.base.dtype.elem_len = dst_type != BT_COMPLEX ? dst_kind
+                                                             : (2 * dst_kind);
+  temp_src_desc.base.dtype.rank = 1;
+  temp_src_desc.base.dtype.type = dst_type;
+#else // GCC_GE_7
+  temp_src_desc.base.dtype = GFC_DTYPE_INTEGER_4 | 1;
 #endif
   temp_src_desc.base.offset = 0;
-  temp_src_desc.dim[0].lower_bound = 0;
   temp_src_desc.dim[0]._ubound = size - 1;
   temp_src_desc.dim[0]._stride = 1;
 
@@ -6131,14 +6307,17 @@ PREFIX (sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
       return;
     }
 
+#ifndef GCC_GE_8
   static bool warning_given = false;
   if (!warning_given)
     {
       fprintf(stderr, "lib_caf_mpi::sendget_by_ref(): Warning ! sendget_by_ref() is mostly unfunctional "
                       "due to a design error. Split up your statement with coarray refs on both sides of the "
-                      "assignment when the datatype transfered is non 4-byte-integer compatible.\n");
+                      "assignment when the datatype transfered is non 4-byte-integer compatible\n"
+                      "or use gcc >= 8.\n");
       warning_given = true;
     }
+#endif
   /* Reset the token.  */
   src_mpi_token = (mpi_caf_token_t *) src_token;
   remote_memptr = src_mpi_token->memptr;
@@ -6158,7 +6337,11 @@ PREFIX (sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
                (gfc_descriptor_t *)&temp_src_desc, src_mpi_token->desc,
                temp_src_desc.base.base_addr, remote_memptr, 0, 0,
                dst_kind, src_kind, 0, 0,
-               1, src_stat, src_remote_image, false, false);
+               1, src_stat, src_remote_image, false, false
+#ifdef GCC_GE_8
+               , src_type
+#endif
+               );
   CAF_Win_unlock (src_remote_image, global_dynamic_win);
   CAF_Win_unlock (src_remote_image, src_mpi_token->memptr_win);
   dprint ("%d/%d: %s() calling send_by_ref.\n", caf_this_image,
@@ -6171,7 +6354,11 @@ PREFIX (sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
                dst_mpi_token->desc, (gfc_descriptor_t *)&temp_src_desc,
                dst_mpi_token->memptr, temp_src_desc.base.base_addr, 0, 0,
                dst_kind, src_kind,
-               0, 0, 1, dst_stat, dst_image_index - 1, false, false);
+               0, 0, 1, dst_stat, dst_image_index - 1, false, false
+#ifdef GCC_GE_8
+               , dst_type
+#endif
+               );
   CAF_Win_unlock (dst_remote_image, global_dynamic_win);
   CAF_Win_unlock (dst_remote_image, src_mpi_token->memptr_win);
 }
@@ -6423,7 +6610,7 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
           caf_this_image, caf_num_images, __FUNCTION__, remote_memptr);
   return remote_memptr != NULL;
 }
-#endif
+#endif // GCC_GE_7
 
 
 /* SYNC IMAGES. Note: SYNC IMAGES(*) is passed as count == -1 while
@@ -6566,7 +6753,7 @@ sync_images_internal (int count, int images[], int *stat, char *errmsg,
             }
 #else
             break;
-#endif
+#endif // WITH_FAILED_IMAGES
         }
     }
 
@@ -7574,7 +7761,7 @@ PREFIX (image_status) (int image)
   return image_stati[image - 1];
 #else
   unsupported_fail_images_message ("IMAGE_STATUS()");
-#endif
+#endif // WITH_FAILED_IMAGES
 
   return 0;
 }
@@ -7622,7 +7809,7 @@ PREFIX (failed_images) (gfc_descriptor_t *array, int team __attribute__ ((unused
   unsupported_fail_images_message ("FAILED_IMAGES()");
   array->dim[0]._ubound = -1;
   array->base_addr = NULL;
-#endif
+#endif // WITH_FAILED_IMAGES
 
 #ifdef GCC_GE_8
   array->dtype.type = BT_INTEGER;
@@ -7679,7 +7866,7 @@ PREFIX (stopped_images) (gfc_descriptor_t *array, int team __attribute__ ((unuse
   unsupported_fail_images_message ("STOPPED_IMAGES()");
   array->dim[0]._ubound = -1;
   array->base_addr = NULL;
-#endif
+#endif // WITH_FAILED_IMAGES
 
 #ifdef GCC_GE_8
   array->dtype.type = BT_INTEGER;
