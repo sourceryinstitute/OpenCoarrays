@@ -1,7 +1,7 @@
 add_library(ISO_Fortran_binding SHARED ISO_Fortran_binding.c)
 add_library(ISO_Fortran_binding_static STATIC ISO_Fortran_binding.c)
 
-set_target_properties(ISO_Fortran_binding_static  PROPERTIES OUTPUT_NAME cISO_Fortran_binding)
+set_target_properties(ISO_Fortran_binding_static  PROPERTIES OUTPUT_NAME ISO_Fortran_binding)
 
 set(CFI_SO_VERSION 0)
 if(gfortran_compiler)
