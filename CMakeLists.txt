@@ -826,8 +826,12 @@ else()
   set_property(TEST co_reduce_extension PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
 endif()
 
+# Test bash installation scripts
 include(cmake/AddInstallationScriptTest.cmake )
 add_installation_script_test(installation-scripts.sh src/tests/installation/)
+
+# Test ISO_Fortran_binding library
+add_test(NAME ISO_Fortran_binding_tests COMMAND "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ISO_Fortran_binding_tests")
 
 # Lint the Travis-CI scripts
 set(TRAVIS_SCRIPTS
