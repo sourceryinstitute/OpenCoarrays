@@ -462,7 +462,7 @@ int main (void)
                                elem_len, rank, extents);
           tmp_ind = CFI_allocate ((CFI_cdesc_t *) &test7, lower, upper,
                                   base_type_size);
-          if (tmp_ind != 1)
+          if (tmp_ind != 0)
             {
               goto next_attribute4;
             }
@@ -474,7 +474,7 @@ int main (void)
               return 1;
             }
           else if (ind == CFI_ERROR_BASE_ADDR_NULL && test7.base_addr != NULL &&
-                   tmp_ind != 1)
+                   tmp_ind != 0)
             {
               printf ("CFI_is_contiguous: failed to detect base address is not "
                       "NULL.\n");
