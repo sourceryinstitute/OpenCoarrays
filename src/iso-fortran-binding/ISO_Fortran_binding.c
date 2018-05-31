@@ -383,17 +383,17 @@ int CFI_is_contiguous (const CFI_cdesc_t *dv)
   for (int i = 0; i < dv->rank; i++)
     {
       if (dv->dim[i].sm != dv->elem_len)
-        return CFI_FAILURE;
+        return 0;
     }
 
   /* Allocatable arrays are always contiguous. */
   if (dv->attribute == CFI_attribute_allocatable)
     {
-      return CFI_SUCCESS;
+      return 1;
     }
   else
     {
-      return CFI_FAILURE;
+      return 0;
     }
 }
 
