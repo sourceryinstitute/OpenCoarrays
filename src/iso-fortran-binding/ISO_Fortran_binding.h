@@ -33,22 +33,19 @@ extern "C" {
 #define CFI_attribute_allocatable 1
 #define CFI_attribute_other 2
 
-/* Error codes.
-   CFI_FAILURE and CFI_INVALID_STRIDE should be defined in the standard because they are useful to the implementation of the functions.
- */
-#define CFI_FAILURE 0
-#define CFI_SUCCESS 1
-#define CFI_ERROR_BASE_ADDR_NULL 2
-#define CFI_ERROR_BASE_ADDR_NOT_NULL 3
-#define CFI_INVALID_ELEM_LEN 4
-#define CFI_INVALID_RANK 5
-#define CFI_INVALID_TYPE 6
-#define CFI_INVALID_ATTRIBUTE 7
-#define CFI_INVALID_EXTENT 8
-#define CFI_INVALID_STRIDE 9
-#define CFI_INVALID_DESCRIPTOR 10
-#define CFI_ERROR_MEM_ALLOCATION 11
-#define CFI_ERROR_OUT_OF_BOUNDS 12
+/* Error codes. */
+#define CFI_SUCCESS 0
+#define CFI_ERROR_BASE_ADDR_NULL 1
+#define CFI_ERROR_BASE_ADDR_NOT_NULL 2
+#define CFI_INVALID_ELEM_LEN 3
+#define CFI_INVALID_RANK 4
+#define CFI_INVALID_TYPE 5
+#define CFI_INVALID_ATTRIBUTE 6
+#define CFI_INVALID_EXTENT 7
+#define CFI_INVALID_STRIDE 8
+#define CFI_INVALID_DESCRIPTOR 9
+#define CFI_ERROR_MEM_ALLOCATION 10
+#define CFI_ERROR_OUT_OF_BOUNDS 11
 
 /* CFI type definitions. */
 typedef ptrdiff_t CFI_index_t;
