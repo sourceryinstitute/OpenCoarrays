@@ -26,12 +26,13 @@
 !
 
 program main
+  use IEEE_arithmetic, only : IEEE_is_NaN
   use global_field_module, only : global_field
   implicit none
   type(global_field) :: T,laplacian_T,T_half
   real, parameter :: alpha=1.,dt=0.0001,final_time=1.,tolerance=1.E-3
   real :: time=0.
-  call T%global_field_(internal_values=0.,boundary_values=[1.,0.],domain=[0.,1.],num_global_points=16384)
+  call T%global_field_(internal_values=0.,boundary_values=[1.,0.],domain=[0.,1.],num_global_points=32)
   call T_half%global_field_()
   do while(time<final_time)
     T_half = T + (.laplacian.T)*(alpha*dt/2.)
@@ -40,6 +41,10 @@ program main
   end do
   call laplacian_T%global_field_()
   laplacian_T = .laplacian.T
-  if (any(laplacian_T%state()>tolerance)) error stop "Test failed."
+  block 
+    real, allocatable :: residual(:)
+    residual = laplacian_T%state()
+    if ( any(residual>tolerance) .or. any(IEEE_is_NaN(residual)) .or. any(residual<0) ) error stop "Test failed."
+  end block
   if (this_image()==1) print *,"Test passed."
 end program
