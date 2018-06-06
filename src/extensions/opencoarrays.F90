@@ -27,10 +27,10 @@
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 !
 module opencoarrays
-  use iso_c_binding, only : c_int,c_char,c_ptr,c_loc,c_int32_t,c_ptrdiff_t,c_sizeof
+  use iso_c_binding, only : c_int,c_char,c_ptr,c_loc,c_int32_t,c_sizeof
   implicit none
 
-  include 'mpif.h'
+  include 'mpif.h' ! Let's also try replacing this with 'use mpi_f08'
 
   private
   public :: co_sum
@@ -40,6 +40,8 @@ module opencoarrays
   public :: sync_all
   public :: caf_init
   public :: caf_finalize
+
+  integer, parameter :: c_ptrdiff_t=c_int
 
   interface co_sum
     !! Generic interface to co_sum with implementations for various types, kinds, and ranks
@@ -133,7 +135,8 @@ module opencoarrays
 
   ! --------------------
 
-  integer(c_int), save, volatile, bind(C,name="CAF_COMM_WORLD") :: CAF_COMM_WORLD
+ !integer(c_int), save, volatile, bind(C,name="CAF_COMM_WORLD") :: CAF_COMM_WORLD
+  integer(c_int), bind(C,name="CAF_COMM_WORLD") :: CAF_COMM_WORLD
   integer(c_int32_t), parameter  :: bytes_per_word=4_c_int32_t
 
   interface gfc_descriptor
@@ -221,15 +224,18 @@ contains
   end function
 
   function gfc_descriptor_c_int(a) result(a_descriptor)
-    integer(c_int), intent(in), target, contiguous :: a(..) ! convert to 1D array to test co_sum-transformed.F90
+    integer(c_int), intent(in), target, contiguous :: a(:) ! should be assumed-rank
     type(gfc_descriptor_t) :: a_descriptor
     integer(c_int), parameter :: unit_stride=1,scalar_offset=-1
-    integer(c_int) :: i
+    integer(c_int) :: i, c_sizeof_a
 
-    a_descriptor%dtype = my_dtype(type_=BT_INTEGER,kind_=int(c_sizeof(a)/bytes_per_word,c_int32_t),rank_=rank(a))
+    integer(c_int), parameter :: rank_a=1_c_int
+      !! hardwired workaround for a lack of support for Fortran 2018 "rank" intrinsic function
+
+    a_descriptor%dtype = my_dtype(type_=BT_INTEGER,kind_=int(c_sizeof(a)/bytes_per_word,c_int32_t),rank_=rank_a)
     a_descriptor%offset = scalar_offset
     a_descriptor%base_addr = c_loc(a) ! data
-    do concurrent(i=1:rank(a))
+    do i=1,rank_a ! should be concurrent
       a_descriptor%dim_(i)%stride  = unit_stride
       a_descriptor%dim_(i)%lower_bound = lbound(a,i)
       a_descriptor%dim_(i)%ubound_ = ubound(a,i)
@@ -241,7 +247,7 @@ contains
   ! ____________________________________________________________________________________
 
   subroutine co_sum_c_int(a,result_image,stat,errmsg)
-    integer(c_int), intent(inout), volatile, target, contiguous :: a(..) ! make this a 1D array to test co_sum-transformed
+    integer(c_int), intent(inout), volatile, target, contiguous :: a(:) ! should be assumed-rank
     integer(c_int), intent(in), optional :: result_image
     integer(c_int), intent(out), optional:: stat
     character(kind=1,len=*), intent(out), optional :: errmsg
@@ -266,7 +272,7 @@ contains
       image_num = image_num + 1
     else
       !! alternative, simpler implementation (doesn't work with gfortran)
-      image_num = opencoarrays_this_image(unused)
+      ! image_num = opencoarrays_this_image(unused)
     end if
   end function
 
@@ -279,7 +285,7 @@ contains
       if (ierr/=0) call error_stop
     else
       !! alternative, simpler implementation (doesn't work with gfortran)
-      num_images_ = opencoarrays_num_images(unused_coarray,unused_scalar)
+      ! num_images_ = opencoarrays_num_images(unused_coarray,unused_scalar)
     end if
   end function
 
