@@ -27,7 +27,7 @@
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 !
 module opencoarrays
-  use iso_c_binding, only : c_int,c_char,c_ptr,c_loc,c_int32_t,c_sizeof
+  use iso_c_binding, only : c_int,c_char,c_ptr,c_loc,c_int32_t,c_sizeof, c_size_t
   implicit none
 
   include 'mpif.h' ! Let's also try replacing this with 'use mpi_f08'
@@ -202,6 +202,14 @@ module opencoarrays
 
 contains
 
+   pure function c_sizeof_assumed_rank(a) result(c_sizeof_a)
+     use iso_c_binding, only : c_size_t,c_int32_t
+     class(*), intent(in), target, contiguous :: a(:) ! should be assumed-rank
+     integer(c_size_t) :: c_sizeof_a
+     integer, parameter :: bits_per_byte=storage_size(0_c_int32_t)/c_sizeof(0_c_int32_t)
+     c_sizeof_a= storage_size(a)*size(a)/bits_per_byte  ! Fortran 2008 storage_size intrinsic function
+   end function
+
   ! __________ Descriptor constructors for for each supported type and kind ____________
   ! ____________________________________________________________________________________
 
@@ -227,12 +235,12 @@ contains
     integer(c_int), intent(in), target, contiguous :: a(:) ! should be assumed-rank
     type(gfc_descriptor_t) :: a_descriptor
     integer(c_int), parameter :: unit_stride=1,scalar_offset=-1
-    integer(c_int) :: i, c_sizeof_a
+    integer(c_int) :: i
 
     integer(c_int), parameter :: rank_a=1_c_int
       !! hardwired workaround for a lack of support for Fortran 2018 "rank" intrinsic function
 
-    a_descriptor%dtype = my_dtype(type_=BT_INTEGER,kind_=int(c_sizeof(a)/bytes_per_word,c_int32_t),rank_=rank_a)
+    a_descriptor%dtype = my_dtype(type_=BT_INTEGER,kind_=int(c_sizeof_assumed_rank(a)/bytes_per_word,c_int32_t),rank_=rank_a)
     a_descriptor%offset = scalar_offset
     a_descriptor%base_addr = c_loc(a) ! data
     do i=1,rank_a ! should be concurrent
