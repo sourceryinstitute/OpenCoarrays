@@ -139,10 +139,6 @@ module opencoarrays
   integer(c_int), bind(C,name="CAF_COMM_WORLD") :: CAF_COMM_WORLD
   integer(c_int32_t), parameter  :: bytes_per_word=4_c_int32_t
 
-  interface gfc_descriptor
-    module procedure gfc_descriptor_c_int
-  end interface
-
   interface
     !! Bindings for OpenCoarrays C procedures in the application binary interface (ABI) defined in libcaf*.h
 
@@ -231,8 +227,8 @@ contains
 
   end function
 
-  function gfc_descriptor_c_int(a) result(a_descriptor)
-    integer(c_int), intent(in), target, contiguous :: a(:) ! should be assumed-rank
+  function gfc_descriptor(a) result(a_descriptor)
+    class(*), intent(in), target, contiguous :: a(:) ! should be assumed-rank
     type(gfc_descriptor_t) :: a_descriptor
     integer(c_int), parameter :: unit_stride=1,scalar_offset=-1
     integer(c_int) :: i
@@ -255,7 +251,7 @@ contains
   ! ____________________________________________________________________________________
 
   subroutine co_sum_c_int(a,result_image,stat,errmsg)
-    integer(c_int), intent(inout), volatile, target, contiguous :: a(:) ! should be assumed-rank
+    class(*), intent(inout), volatile, target, contiguous :: a(:) ! should be assumed-rank
     integer(c_int), intent(in), optional :: result_image
     integer(c_int), intent(out), optional:: stat
     character(kind=1,len=*), intent(out), optional :: errmsg
