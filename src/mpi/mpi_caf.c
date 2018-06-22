@@ -5579,8 +5579,8 @@ PREFIX (send_by_ref) (caf_token_t token, int image_index,
     CAF_Win_lock (MPI_LOCK_SHARED, remote_image, mpi_token->memptr_win);
     while (riter)
       {
-        dprint ("%d/%d: %s() offset = %d, remote_mem = %p\n", caf_this_image,
-                caf_num_images, __FUNCTION__, data_offset, remote_memptr);
+        dprint ("%d/%d: %s() remote_image = %d, offset = %d, remote_mem = %p\n", caf_this_image,
+                caf_num_images, __FUNCTION__, remote_image, data_offset, remote_memptr);
         switch (riter->type)
           {
           case CAF_REF_COMPONENT:
@@ -5783,22 +5783,20 @@ PREFIX (send_by_ref) (caf_token_t token, int image_index,
                                                    0);
                                 return;
                               }
-                            dprint ("%d/%d: %s() extent(dst): %d != delta: %d.\n",
+                            dprint ("%d/%d: %s() extent(dst, %d): %d != delta: %d.\n",
                                     caf_this_image, caf_num_images, __FUNCTION__,
-                                    GFC_DESCRIPTOR_EXTENT (dst, src_cur_dim),
+                                    src_cur_dim, GFC_DESCRIPTOR_EXTENT (dst, src_cur_dim),
                                     delta);
                             realloc_dst = true;
                           }
                       }
 
-                    /* Only increase the dim counter, when in an array ref.  */
-                    if (in_array_ref && src_cur_dim < GFC_DESCRIPTOR_RANK (src))
+                    if (src_cur_dim < GFC_DESCRIPTOR_RANK (src))
                       ++src_cur_dim;
                   }
                 size *= (ptrdiff_t)delta;
               }
-            if (in_array_ref)
-              in_array_ref = false;
+            in_array_ref = false;
             break;
           case CAF_REF_STATIC_ARRAY:
             for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
@@ -5895,14 +5893,12 @@ PREFIX (send_by_ref) (caf_token_t token, int image_index,
                             return;
                           }
                       }
-                    /* Only increase the dim counter, when in an array ref.  */
-                    if (in_array_ref && src_cur_dim < GFC_DESCRIPTOR_RANK (src))
+                    if (src_cur_dim < GFC_DESCRIPTOR_RANK (src))
                       ++src_cur_dim;
                   }
                 size *= (ptrdiff_t)delta;
               }
-            if (in_array_ref)
-              in_array_ref = false;
+            in_array_ref = false;
             break;
           default:
             caf_runtime_error (unknownreftype, stat, NULL, 0);
