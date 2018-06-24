@@ -43,7 +43,7 @@ program main
    co % a(1:1, :, :)[remote] = co % b(1:1, :, :) ! setter, (CAF_ARR_REF_RANGE, CAF_ARR_REF_FULL, CAF_ARR_REF_FULL)
 
    ! OK, test pass, without patch
-   ! co % a(1:2, :, :)[remote] = co % b(1:2, :, :) ! setter, (CAF_ARR_REF_FULL,) * 3
+   ! co % a(:, :, :)[remote] = co % b(:, :, :) ! setter, (CAF_ARR_REF_FULL,) * 3
 
    sync all
    co % d(1, :, :) = co % a(1, :, :)[remote] ! check
@@ -77,4 +77,3 @@ program main
    end if
 
 end program
-
