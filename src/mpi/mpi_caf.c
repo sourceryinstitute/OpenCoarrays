@@ -1300,7 +1300,7 @@ PREFIX(register) (size_t size, caf_register_t type, caf_token_t *token,
 {
   void *mem;
   size_t actual_size;
-  int l_var = 0, *init_array = NULL;
+  int l_var = 0, *init_array = NULL, ierr;
 
   if (unlikely(caf_is_finalized))
     goto error;
@@ -2965,8 +2965,8 @@ PREFIX(send) (caf_token_t token, size_t offset, int image_index,
                "stride %d, size %d and offset %d.\n",
                caf_this_image, caf_num_images, dest->dim[0]._stride,
                size, offset);
-        ierr = MPI_Type_vector(size, 1, dest->dim[0]._stride, base_type_dst, &dt_d);
-        CHK_ERR(ierr)
+        ierr = MPI_Type_vector(size, 1, dest->dim[0]._stride, base_type_dst,
+                               &dt_d); CHK_ERR(ierr)
       }
       else
       {
@@ -3859,8 +3859,8 @@ get_data(void *ds, mpi_caf_token_t *token, MPI_Aint offset, int dst_type,
            ds, win, image_index + 1, offset, src_size, dst_size,
            dst_type, dst_kind, src_type, src_kind);
   else
-    dprint("%d/%d: %s() %p = global_win(%d) offset: %zd (%zd) of size %zd -> %zd, "
-           "dst type %d(%d), src type %d(%d)\n",
+    dprint("%d/%d: %s() %p = global_win(%d) offset: %zd (%zd) "
+           "of size %zd -> %zd, dst type %d(%d), src type %d(%d)\n",
            caf_this_image, caf_num_images, __FUNCTION__,
            ds, image_index + 1, offset, offset, src_size, dst_size,
            dst_type, dst_kind, src_type, src_kind);
