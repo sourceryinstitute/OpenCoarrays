@@ -70,6 +70,12 @@ static char* caf_array_ref_str[] = {
   "CAF_ARR_REF_OPEN_START"
 };
 
+static char* caf_ref_type_str[] = {
+  "CAF_REF_COMPONENT",
+  "CAF_REF_ARRAY",
+  "CAF_REF_STATIC_ARRAY",
+};
+
 #ifndef EXTRA_DEBUG_OUTPUT
 #define dprint(...)
 #define chk_err(...)
@@ -3973,9 +3979,11 @@ get_for_ref(caf_reference_t *ref, size_t *i, size_t dst_index,
   int ierr;
 
   if (unlikely(ref == NULL))
+  {
     /* May be we should issue an error here, because this case should not
      * occur. */
     return;
+  }
 
   dprint("sr_offset = %zd, sr = %p, desc_offset = %zd, src = %p, "
          "sr_glb = %d, desc_glb = %d\n",
@@ -4493,7 +4501,7 @@ PREFIX(get_by_ref) (caf_token_t token, int image_index,
   bool access_data_through_global_win = false;
   /* Set when the remote descriptor is to accessed through the global window. */
   bool access_desc_through_global_win = false;
-  caf_array_ref_t mode;
+  caf_array_ref_t array_ref;
 
   realloc_needed = realloc_required = dst->base_addr == NULL;
 
@@ -4597,9 +4605,9 @@ PREFIX(get_by_ref) (caf_token_t token, int image_index,
 #endif
         for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
         {
-          mode = riter->u.a.mode[i];
-          dprint("i = %zd, mode = %s\n", i, caf_array_ref_str[mode]);
-          switch (mode)
+          array_ref = riter->u.a.mode[i];
+          dprint("i = %zd, array_ref = %s\n", i, caf_array_ref_str[array_ref]);
+          switch (array_ref)
           {
             case CAF_ARR_REF_VECTOR:
               delta = riter->u.a.dim[i].v.nvec;
@@ -4785,9 +4793,9 @@ case kind:                                                              \
       case CAF_REF_STATIC_ARRAY:
         for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
         {
-          mode = riter->u.a.mode[i];
-          dprint("i = %zd, mode = %s\n", i, caf_array_ref_str[mode]);
-          switch (mode)
+          array_ref = riter->u.a.mode[i];
+          dprint("i = %zd, array_ref = %s\n", i, caf_array_ref_str[array_ref]);
+          switch (array_ref)
           {
             case CAF_ARR_REF_VECTOR:
               delta = riter->u.a.dim[i].v.nvec;
@@ -5097,23 +5105,28 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
   ptrdiff_t extent_dst = 1, array_offset_dst = 0, dst_stride, src_stride;
   size_t next_dst_dim, ref_rank;
   gfc_max_dim_descriptor_t dst_desc_data;
+  caf_ref_type_t ref_type = ref->type;
+  caf_array_ref_t array_ref_src = ref->u.a.mode[src_dim];
+  caf_array_ref_t array_ref_dst = ref->u.a.mode[dst_dim];
+  size_t src_size = 0;
   int ierr;
 
   if (unlikely(ref == NULL))
+  {
     /* May be we should issue an error here, because this case should not
      * occur. */
     return;
+  }
 
-  dprint("dst_offset = %zd, ds = %p, desc_offset = %zd, dst = %p, "
-         "src = %p, sr = %p, ds_glb = %d, desc_glb = %d\n",
-         dst_byte_offset, ds, desc_byte_offset,
-         dst, src, sr, ds_global, desc_global);
+  dprint("Entering send_for_ref: "
+         "dst_offset = %zd, desc_offset = %zd, ds_glb = %d, desc_glb = %d\n",
+         dst_byte_offset, desc_byte_offset, ds_global, desc_global);
 
   if (ref->next == NULL)
   {
-    size_t src_size = GFC_DESCRIPTOR_SIZE(src);
+    src_size = GFC_DESCRIPTOR_SIZE(src);
 
-    switch (ref->type)
+    switch (ref_type)
     {
       case CAF_REF_COMPONENT:
         dst_byte_offset += ref->u.c.offset;
@@ -5165,7 +5178,7 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
         dst_type = ref->u.a.static_array_type;
         /* Intentionally fall through. */
       case CAF_REF_ARRAY:
-        if (ref->u.a.mode[src_dim] == CAF_ARR_REF_NONE)
+        if (array_ref_src == CAF_ARR_REF_NONE)
         {
           if (ds_global)
           {
@@ -5201,7 +5214,12 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
     }
   }
 
-  switch (ref->type)
+  dprint("image_index = %d, num = %zd, src_size = %zd, "
+         "src_dim = %zd, dst_dim = %zd, ref_type = %s\n",
+         image_index, num, src_size, src_dim, dst_dim,
+         caf_ref_type_str[ref_type]);
+
+  switch (ref_type)
   {
     case CAF_REF_COMPONENT:
       if (ref->u.c.caf_token_offset > 0)
@@ -5239,7 +5257,7 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
                    );
       return;
     case CAF_REF_ARRAY:
-      if (ref->u.a.mode[src_dim] == CAF_ARR_REF_NONE)
+      if (array_ref_src == CAF_ARR_REF_NONE)
       {
         send_for_ref(ref->next, i, src_index, mpi_token, dst, src, ds, sr,
                      dst_byte_offset, desc_byte_offset, dst_kind, src_kind,
@@ -5278,7 +5296,9 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
           dst = (gfc_descriptor_t *)&dst_desc_data;
         }
         else
+        {
           dst = mpi_token->desc;
+        }
         dst_byte_offset = 0;
         desc_byte_offset = 0;
 #ifdef EXTRA_DEBUG_OUTPUT
@@ -5292,7 +5312,10 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
         }
 #endif
       }
-      switch (ref->u.a.mode[dst_dim])
+      dprint("array_ref_dst[%zd] = %s := array_ref_src[%zd] = %s\n",
+             dst_dim, caf_array_ref_str[array_ref_dst], 
+             src_dim, caf_array_ref_str[array_ref_src]);
+      switch (array_ref_dst)
       {
         case CAF_ARR_REF_VECTOR:
           extent_dst = GFC_DESCRIPTOR_EXTENT(dst, dst_dim);
@@ -5345,7 +5368,8 @@ case kind:                                          \
           array_offset_dst = 0;
           src_stride = (GFC_DESCRIPTOR_RANK(src) > 0) ?
             src->dim[src_dim]._stride : 0;
-          dprint("arr ref full src_stride: %zd\n", src_stride);
+          dprint("CAF_ARR_REF_FULL: src_stride = %zd, dst_stride = %zd\n",
+                 src_stride, dst_stride);
           for (ptrdiff_t idx = 0; idx < extent_dst;
                ++idx, array_offset_dst += dst_stride)
             {
@@ -5374,8 +5398,8 @@ case kind:                                          \
           src_stride = (GFC_DESCRIPTOR_RANK(src) > 0) ?
             src->dim[src_dim]._stride : 0;
           /* Increase the dst_dim only, when the src_extent is greater one
-           * or src and dst extent are both one.  Don't increase when the scalar
-           * source is not present in the dst. */
+           * or src and dst extent are both one.  Don't increase when the
+           * scalar source is not present in the dst. */
           next_dst_dim = (extent_dst > 1) ||
             (GFC_DESCRIPTOR_EXTENT(dst, dst_dim) == 1 && extent_dst == 1) ?
               (dst_dim + 1) : dst_dim;
@@ -5465,7 +5489,7 @@ case kind:                                          \
       }
       return;
     case CAF_REF_STATIC_ARRAY:
-      if (ref->u.a.mode[dst_dim] == CAF_ARR_REF_NONE)
+      if (array_ref_dst == CAF_ARR_REF_NONE)
       {
         send_for_ref(ref->next, i, src_index, mpi_token, dst, NULL, ds, sr,
                      dst_byte_offset, desc_byte_offset, dst_kind, src_kind,
@@ -5476,7 +5500,7 @@ case kind:                                          \
                      );
         return;
       }
-      switch (ref->u.a.mode[dst_dim])
+      switch (array_ref_dst)
       {
         case CAF_ARR_REF_VECTOR:
           array_offset_dst = 0;
@@ -5632,7 +5656,7 @@ PREFIX(send_by_ref) (caf_token_t token, int image_index,
   /* Set when the remote descriptor is to accessed through the global window. */
   bool access_desc_through_global_win = false;
   bool free_temp_src = false;
-  caf_array_ref_t mode;
+  caf_array_ref_t array_ref;
 
   if (stat)
     *stat = 0;
@@ -5738,9 +5762,9 @@ PREFIX(send_by_ref) (caf_token_t token, int image_index,
 #endif
         for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
         {
-          mode = riter->u.a.mode[i];
-          dprint("i = %zd, mode = %s\n", i, caf_array_ref_str[mode]);
-          switch (mode)
+          array_ref = riter->u.a.mode[i];
+          dprint("i = %zd, array_ref = %s\n", i, caf_array_ref_str[array_ref]);
+          switch (array_ref)
           {
             case CAF_ARR_REF_VECTOR:
               delta = riter->u.a.dim[i].v.nvec;
@@ -5873,9 +5897,9 @@ case kind:                                                              \
       case CAF_REF_STATIC_ARRAY:
         for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
         {
-          mode = riter->u.a.mode[i];
-          dprint("i = %zd, mode = %s\n", i, caf_array_ref_str[mode]);
-          switch (mode)
+          array_ref = riter->u.a.mode[i];
+          dprint("i = %zd, array_ref = %s\n", i, caf_array_ref_str[array_ref]);
+          switch (array_ref)
           {
             case CAF_ARR_REF_VECTOR:
               delta = riter->u.a.dim[i].v.nvec;
@@ -6092,7 +6116,7 @@ PREFIX(sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
   bool access_data_through_global_win = false;
   /* Set when the remote descriptor is to accessed through the global window. */
   bool access_desc_through_global_win = false;
-  caf_array_ref_t mode;
+  caf_array_ref_t array_ref;
 #ifndef GCC_GE_8
   int dst_type = -1, src_type = -1;
 #endif
@@ -6201,9 +6225,9 @@ PREFIX(sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
 #endif
         for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
         {
-          mode = riter->u.a.mode[i];
-          dprint("i = %zd, mode = %s\n", i, caf_array_ref_str[mode]);
-          switch (mode)
+          array_ref = riter->u.a.mode[i];
+          dprint("i = %zd, array_ref = %s\n", i, caf_array_ref_str[array_ref]);
+          switch (array_ref)
           {
             case CAF_ARR_REF_VECTOR:
               delta = riter->u.a.dim[i].v.nvec;
@@ -6285,9 +6309,9 @@ case kind:                                                              \
       case CAF_REF_STATIC_ARRAY:
         for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
         {
-          mode = riter->u.a.mode[i];
-          dprint("i = %zd, mode = %s\n", i, caf_array_ref_str[mode]);
-          switch (mode)
+          array_ref = riter->u.a.mode[i];
+          dprint("i = %zd, array_ref = %s\n", i, caf_array_ref_str[array_ref]);
+          switch (array_ref)
           {
             case CAF_ARR_REF_VECTOR:
               delta = riter->u.a.dim[i].v.nvec;
@@ -6461,7 +6485,7 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
   size_t i, ref_rank;
   int ierr;
   gfc_max_dim_descriptor_t src_desc;
-  caf_array_ref_t mode;
+  caf_array_ref_t array_ref;
 
   while (carryOn && riter)
   {
@@ -6489,9 +6513,9 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
             (gfc_descriptor_t *)(mpi_token->memptr + local_offset);
           for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
           {
-            mode = riter->u.a.mode[i];
-            dprint("i = %zd, mode = %s\n", i, caf_array_ref_str[mode]);
-            switch (mode)
+            array_ref = riter->u.a.mode[i];
+            dprint("i = %zd, array_ref = %s\n", i, caf_array_ref_str[array_ref]);
+            switch (array_ref)
             {
               case CAF_ARR_REF_FULL:
                 /* The local_offset stays unchanged when ref'ing the first
@@ -6518,9 +6542,9 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
       case CAF_REF_STATIC_ARRAY:
         for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
         {
-          mode = riter->u.a.mode[i];
-          dprint("i = %zd, mode = %s\n", i, caf_array_ref_str[mode]);
-          switch (mode)
+          array_ref = riter->u.a.mode[i];
+          dprint("i = %zd, array_ref = %s\n", i, caf_array_ref_str[array_ref]);
+          switch (array_ref)
           {
             case CAF_ARR_REF_FULL:
               /* The local_offset stays unchanged when ref'ing the first
@@ -6638,9 +6662,9 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
 
         for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
         {
-          mode = riter->u.a.mode[i];
-          dprint("i = %zd, mode = %s\n", i, caf_array_ref_str[mode]);
-          switch (mode)
+          array_ref = riter->u.a.mode[i];
+          dprint("i = %zd, array_ref = %s\n", i, caf_array_ref_str[array_ref]);
+          switch (array_ref)
           {
             case CAF_ARR_REF_FULL:
               /* The local_offset stays unchanged when ref'ing the first 
@@ -6668,9 +6692,9 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
       case CAF_REF_STATIC_ARRAY:
         for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
         {
-          mode = riter->u.a.mode[i];
-          dprint("i = %zd, mode = %s\n", i, caf_array_ref_str[mode]);
-          switch (mode)
+          array_ref = riter->u.a.mode[i];
+          dprint("i = %zd, array_ref = %s\n", i, caf_array_ref_str[array_ref]);
+          switch (array_ref)
           {
             case CAF_ARR_REF_FULL:
               /* The memptr stays unchanged when ref'ing the first element
