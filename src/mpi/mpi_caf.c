@@ -59,6 +59,17 @@
 /* Define GFC_CAF_CHECK to enable run-time checking. */
 /* #define GFC_CAF_CHECK  1 */
 
+/* Debug array referencing  */
+static char* caf_array_ref_str[] = {
+  "CAF_ARR_REF_NONE",
+  "CAF_ARR_REF_VECTOR",
+  "CAF_ARR_REF_FULL",
+  "CAF_ARR_REF_RANGE",
+  "CAF_ARR_REF_SINGLE",
+  "CAF_ARR_REF_OPEN_END",
+  "CAF_ARR_REF_OPEN_START"
+};
+
 #ifndef EXTRA_DEBUG_OUTPUT
 #define dprint(...)
 #define CHK_ERR(...)
@@ -1621,7 +1632,9 @@ assign_char1_from_char4(size_t dst_size, size_t src_size, unsigned char *dst,
   size_t i, n;
   n = (dst_size > src_size) ? src_size : dst_size;
   for (i = 0; i < n; ++i)
+  {
     dst[i] = src[i] > UINT8_MAX ? (unsigned char) '?' : (unsigned char) src[i];
+  }
   if (dst_size > n)
     memset(&dst[n], ' ', dst_size - n);
 }
@@ -2037,6 +2050,7 @@ PREFIX(sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
 {
   int j, ierr = 0;
   size_t i, size;
+  ptrdiff_t dimextent;
   const int
     src_rank = GFC_DESCRIPTOR_RANK(src),
     dst_rank = GFC_DESCRIPTOR_RANK(dest);
@@ -2079,7 +2093,7 @@ PREFIX(sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
   size = 1;
   for (j = 0; j < dst_rank; ++j)
   {
-    ptrdiff_t dimextent = dest->dim[j]._ubound - dest->dim[j].lower_bound + 1;
+    dimextent = dest->dim[j]._ubound - dest->dim[j].lower_bound + 1;
     if (dimextent < 0)
       dimextent = 0;
     size *= dimextent;
@@ -2110,11 +2124,17 @@ PREFIX(sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
                           "for internal buffer in sendget().");
     }
     if (dst_kind == 1)
+    {
       memset(pad_str, ' ', pad_num);
+    }
     else /* dst_kind == 4. */
+    {
       for (int32_t *it = (int32_t *) pad_str,
-        *itEnd = ((int32_t *) pad_str) + pad_num; it < itEnd; ++it)
-          *it = (int32_t) ' ';
+           *itEnd = ((int32_t *) pad_str) + pad_num; it < itEnd; ++it)
+      {
+        *it = (int32_t) ' ';
+      }
+    }
   }
 
   if (src_contiguous && src_vector == NULL)
@@ -2291,7 +2311,9 @@ case kind:                                                              \
       arr_dsp_s = calloc(size, sizeof(int));
 
       for (i = 0; i < size; ++i)
+      {
         arr_bl[i] = 1;
+      }
 
       for (i = 0; i < size; ++i)
       {
@@ -2602,7 +2624,9 @@ case kind:                                                              \
       arr_dsp_d = calloc(size, sizeof(int));
 
       for (i = 0; i < size; ++i)
+      {
         arr_bl[i] = 1;
+      }
 
       for (i = 0; i < size; ++i)
       {
@@ -2787,6 +2811,7 @@ PREFIX(send) (caf_token_t token, size_t offset, int image_index,
 {
   int j, ierr = 0;
   size_t i, size;
+  ptrdiff_t dimextent;
   const int
     src_rank = GFC_DESCRIPTOR_RANK(src),
     dst_rank = GFC_DESCRIPTOR_RANK(dest);
@@ -2824,7 +2849,7 @@ PREFIX(send) (caf_token_t token, size_t offset, int image_index,
   size = 1;
   for (j = 0; j < dst_rank; ++j)
   {
-    ptrdiff_t dimextent = dest->dim[j]._ubound - dest->dim[j].lower_bound + 1;
+    dimextent = dest->dim[j]._ubound - dest->dim[j].lower_bound + 1;
     if (dimextent < 0)
       dimextent = 0;
     size *= dimextent;
@@ -2855,9 +2880,13 @@ PREFIX(send) (caf_token_t token, size_t offset, int image_index,
     if (dst_kind == 1)
       memset(pad_str, ' ', pad_num);
     else /* dst_kind == 4. */
+    {
       for (int32_t *it = (int32_t *) pad_str,
-        *itEnd = ((int32_t *) pad_str) + pad_num; it < itEnd; ++it)
-          *it = (int32_t) ' ';
+           *itEnd = ((int32_t *) pad_str) + pad_num; it < itEnd; ++it)
+      {
+        *it = (int32_t) ' ';
+      }
+    }
   }
 
   if (src_contiguous && dst_contiguous && dst_vector == NULL)
@@ -3012,7 +3041,9 @@ case kind:                                                              \
       arr_dsp_d = calloc(size, sizeof(int));
 
       for (i = 0; i < size; ++i)
+      {
         arr_bl[i] = 1;
+      }
 
       for (i = 0; i < size; ++i)
       {
@@ -3363,7 +3394,7 @@ PREFIX(get) (caf_token_t token, size_t offset, int image_index,
     same_type_and_kind = dst_type == src_type && dst_kind == src_kind;
 
   MPI_Win *p = TOKEN(token);
-  ptrdiff_t src_offset = 0;
+  ptrdiff_t dimextent, src_offset = 0;
   void *pad_str = NULL, *t_buff = NULL;
   bool free_pad_str = false, free_t_buff = false;
   const bool dest_char_array_is_longer
@@ -3383,7 +3414,7 @@ PREFIX(get) (caf_token_t token, size_t offset, int image_index,
   size = 1;
   for (j = 0; j < dst_rank; ++j)
   {
-    ptrdiff_t dimextent = dest->dim[j]._ubound - dest->dim[j].lower_bound + 1;
+    dimextent = dest->dim[j]._ubound - dest->dim[j].lower_bound + 1;
     if (dimextent < 0)
       dimextent = 0;
     size *= dimextent;
@@ -3414,9 +3445,13 @@ PREFIX(get) (caf_token_t token, size_t offset, int image_index,
     if (dst_kind == 1)
       memset(pad_str, ' ', pad_num);
     else /* dst_kind == 4. */
+    {
       for (int32_t *it = (int32_t *) pad_str,
-        *itEnd = ((int32_t *) pad_str) + pad_num; it < itEnd; ++it)
-          *it = (int32_t) ' ';
+           *itEnd = ((int32_t *) pad_str) + pad_num; it < itEnd; ++it)
+      {
+        *it = (int32_t) ' ';
+      }
+    }
   }
 
   if (src_contiguous && dst_contiguous && src_vector == NULL)
@@ -3549,7 +3584,9 @@ case kind:                                                              \
       arr_dsp_d = calloc(size, sizeof(int));
 
       for (i = 0; i < size; ++i)
+      {
         arr_bl[i] = 1;
+      }
 
       for (i = 0; i < size; ++i)
       {
@@ -3874,10 +3911,14 @@ get_data(void *ds, mpi_caf_token_t *token, MPI_Aint offset, int dst_type,
         && dst_size > src_size)
       {
         if (dst_kind == 1)
+        {
           memset((void*)(char*) ds + src_size, ' ', dst_size - src_size);
+        }
         else /* dst_kind == 4. */
+        {
           for (k = src_size / 4; k < dst_size / 4; k++)
             ((int32_t*) ds)[k] = (int32_t) ' ';
+        }
       }
   }
   else if (dst_type == BT_CHARACTER && dst_kind == 1)
@@ -3975,10 +4016,10 @@ get_for_ref(caf_reference_t *ref, size_t *i, size_t dst_index,
             bool sr_global, /* access sr through global_dynamic_win */
             bool desc_global /* access desc through global_dynamic_win */
 #ifdef GCC_GE_8
-             , int src_type)
+            , int src_type)
 {
 #else
-             )
+            )
 {
   int src_type = -1;
 #endif
@@ -4150,7 +4191,7 @@ get_for_ref(caf_reference_t *ref, size_t *i, size_t dst_index,
         if (sr_global)
         {
           for (ref_rank = 0; ref->u.a.mode[ref_rank] != CAF_ARR_REF_NONE;
-            ++ref_rank) ;
+               ++ref_rank) ;
           /* Get the remote descriptor. */
           if (desc_global)
           {
@@ -4180,12 +4221,14 @@ get_for_ref(caf_reference_t *ref, size_t *i, size_t dst_index,
                 caf_this_image, caf_num_images, __FUNCTION__,
                 GFC_DESCRIPTOR_RANK(src), ref_rank);
         for (int r = 0; r < GFC_DESCRIPTOR_RANK(src); ++r)
+        {
           fprintf(stderr,
                   "%d/%d: %s() remote desc "
                   "dim[%d] = (lb = %zd, ub = %zd, stride = %zd)\n",
                   caf_this_image, caf_num_images, __FUNCTION__,
                   r, src->dim[r].lower_bound, src->dim[r]._ubound,
                   src->dim[r]._stride);
+        }
 #endif
       }
       switch (ref->u.a.mode[src_dim])
@@ -4515,6 +4558,7 @@ PREFIX(get_by_ref) (caf_token_t token, int image_index,
   bool access_data_through_global_win = false;
   /* Set when the remote descriptor is to accessed through the global window. */
   bool access_desc_through_global_win = false;
+  caf_array_ref_t mode;
 
   realloc_needed = realloc_required = dst->base_addr == NULL;
 
@@ -4584,7 +4628,7 @@ PREFIX(get_by_ref) (caf_token_t token, int image_index,
         if (access_data_through_global_win)
         {
           for (ref_rank = 0; riter->u.a.mode[ref_rank] != CAF_ARR_REF_NONE;
-            ++ref_rank) ;
+               ++ref_rank) ;
           /* Get the remote descriptor and use the stack to store it. Note,
            * src may be pointing to mpi_token->desc therefore it needs to be
            * reset here. */
@@ -4618,15 +4662,21 @@ PREFIX(get_by_ref) (caf_token_t token, int image_index,
                 caf_this_image, caf_num_images, __FUNCTION__,
                 GFC_DESCRIPTOR_RANK(src), ref_rank);
         for (i = 0; i < GFC_DESCRIPTOR_RANK(src); ++i)
+        {
           fprintf(stderr, "%d/%d: %s() remote desc "
                   "dim[%zd] = (lb = %zd, ub = %zd, stride = %zd)\n",
                   caf_this_image, caf_num_images, __FUNCTION__,
                   i, src->dim[i].lower_bound, src->dim[i]._ubound,
                   src->dim[i]._stride);
+        }
 #endif
         for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
         {
-          switch (riter->u.a.mode[i])
+          mode = riter->u.a.mode[i];
+          dprint("%d/%d: %s() i = %zd mode = %s\n",
+                 caf_this_image, caf_num_images, __FUNCTION__,
+                 i, caf_array_ref_str[mode]);
+          switch (mode)
           {
             case CAF_ARR_REF_VECTOR:
               delta = riter->u.a.dim[i].v.nvec;
@@ -4812,7 +4862,11 @@ case kind:                                                              \
       case CAF_REF_STATIC_ARRAY:
         for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
         {
-          switch (riter->u.a.mode[i])
+          mode = riter->u.a.mode[i];
+          dprint("%d/%d: %s() i = %zd mode = %s\n",
+                 caf_this_image, caf_num_images, __FUNCTION__,
+                 i, caf_array_ref_str[mode]);
+          switch (mode)
           {
             case CAF_ARR_REF_VECTOR:
               delta = riter->u.a.dim[i].v.nvec;
@@ -5004,9 +5058,11 @@ case kind:                                                      \
           caf_this_image, caf_num_images, __FUNCTION__,
           GFC_DESCRIPTOR_RANK(dst));
   for (i = 0; i < GFC_DESCRIPTOR_RANK(dst); ++i)
+  {
     fprintf(stderr, "%d/%d: %s() dst_dim[%zd] = (%zd, %zd)\n",
             caf_this_image, caf_num_images, __FUNCTION__,
             i, dst->dim[i].lower_bound, dst->dim[i]._ubound);
+  }
 #endif
   i = 0;
   dprint("%d/%d: get_by_ref() calling get_for_ref.\n",
@@ -5049,7 +5105,7 @@ put_data(mpi_caf_token_t *token, MPI_Aint offset, void *sr, int dst_type,
     size_t sz = (dst_size > src_size ? src_size : dst_size) * num;
     ierr = MPI_Put(sr, sz, MPI_BYTE, image_index, offset, sz, MPI_BYTE, win);
     CHK_ERR(ierr)
-    dprint("%d/%d: %s() sr[] = %d sz = %zd\n",
+    dprint("%d/%d: %s() sr[] = %d count = %zd\n",
            caf_this_image, caf_num_images, __FUNCTION__,
            (int)((char*)sr)[0], sz);
     if ((dst_type == BT_CHARACTER || src_type == BT_CHARACTER)
@@ -5291,7 +5347,7 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
         if (ds_global)
         {
           for (ref_rank = 0; ref->u.a.mode[ref_rank] != CAF_ARR_REF_NONE;
-            ++ref_rank) ;
+               ++ref_rank) ;
           /* Get the remote descriptor. */
           if (desc_global)
           {
@@ -5320,12 +5376,14 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
                 caf_this_image, caf_num_images, __FUNCTION__,
                 GFC_DESCRIPTOR_RANK(src), ref_rank);
         for (int r = 0; r < GFC_DESCRIPTOR_RANK(src); ++r)
+        {
           fprintf(stderr,
                   "%d/%d: %s() remote desc "
                   "dim[%d] = (lb = %zd, ub = %zd, stride = %zd)\n",
                   caf_this_image, caf_num_images, __FUNCTION__,
                   r, src->dim[r].lower_bound, src->dim[r]._ubound,
                   src->dim[r]._stride);
+        }
 #endif
       }
       switch (ref->u.a.mode[dst_dim])
@@ -5671,6 +5729,7 @@ PREFIX(send_by_ref) (caf_token_t token, int image_index,
   /* Set when the remote descriptor is to accessed through the global window. */
   bool access_desc_through_global_win = false;
   bool free_temp_src = false;
+  caf_array_ref_t mode;
 
   if (stat)
     *stat = 0;
@@ -5737,7 +5796,7 @@ PREFIX(send_by_ref) (caf_token_t token, int image_index,
         if (access_data_through_global_win)
         {
           for (ref_rank = 0; 
-            riter->u.a.mode[ref_rank] != CAF_ARR_REF_NONE; ++ref_rank) ;
+               riter->u.a.mode[ref_rank] != CAF_ARR_REF_NONE; ++ref_rank) ;
           /* Get the remote descriptor and use the stack to store it
            * Note, dst may be pointing to mpi_token->desc therefore it
            * needs to be reset here. */
@@ -5774,16 +5833,22 @@ PREFIX(send_by_ref) (caf_token_t token, int image_index,
                 caf_this_image, caf_num_images, __FUNCTION__,
                 GFC_DESCRIPTOR_RANK(dst), ref_rank);
         for (i = 0; i < GFC_DESCRIPTOR_RANK(dst); ++i)
+        {
           fprintf(stderr,
                   "%d/%d: %s() remote desc "
                   "dim[%zd] = (lb = %zd, ub = %zd, stride = %zd)\n",
                   caf_this_image, caf_num_images,  __FUNCTION__,
                   i, dst->dim[i].lower_bound, dst->dim[i]._ubound,
                   dst->dim[i]._stride);
+        }
 #endif
         for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
         {
-          switch (riter->u.a.mode[i])
+          mode = riter->u.a.mode[i];
+          dprint("%d/%d: %s() i = %zd mode = %s\n",
+                 caf_this_image, caf_num_images, __FUNCTION__,
+                 i, caf_array_ref_str[mode]);
+          switch (mode)
           {
             case CAF_ARR_REF_VECTOR:
               delta = riter->u.a.dim[i].v.nvec;
@@ -5918,7 +5983,11 @@ case kind:                                                              \
       case CAF_REF_STATIC_ARRAY:
         for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
         {
-          switch (riter->u.a.mode[i])
+          mode = riter->u.a.mode[i];
+          dprint("%d/%d: %s() i = %zd mode = %s\n",
+                 caf_this_image, caf_num_images, __FUNCTION__,
+                 i, caf_array_ref_str[mode]);
+          switch (mode)
           {
             case CAF_ARR_REF_VECTOR:
               delta = riter->u.a.dim[i].v.nvec;
@@ -6044,9 +6113,11 @@ case kind:                                                      \
           caf_this_image, caf_num_images, __FUNCTION__,
           GFC_DESCRIPTOR_RANK(src));
   for (i = 0; i < GFC_DESCRIPTOR_RANK(src); ++i)
+  {
     fprintf(stderr, "%d/%d: %s() src_dim[%zd] = (%zd, %zd)\n",
             caf_this_image, caf_num_images, __FUNCTION__,
             i, src->dim[i].lower_bound, src->dim[i]._ubound);
+  }
 #endif
   /* When accessing myself and may_require_tmp is set, then copy the source
    * array. */
@@ -6057,7 +6128,9 @@ case kind:                                                      \
     memcpy(&temp_src, src, sizeof_desc_for_rank(GFC_DESCRIPTOR_RANK(src)));
     size_t cap = 0;
     for (int r = 0; r < GFC_DESCRIPTOR_RANK(src); ++r)
+    {
       cap += GFC_DESCRIPTOR_EXTENT(src, r);
+    }
 
     cap *= GFC_DESCRIPTOR_SIZE(src);
     temp_src.base.base_addr = alloca(cap);
@@ -6135,6 +6208,7 @@ PREFIX(sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
   bool access_data_through_global_win = false;
   /* Set when the remote descriptor is to accessed through the global window. */
   bool access_desc_through_global_win = false;
+  caf_array_ref_t mode;
 #ifndef GCC_GE_8
   int dst_type = -1, src_type = -1;
 #endif
@@ -6203,7 +6277,7 @@ PREFIX(sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
         if (access_data_through_global_win)
         {
           for (ref_rank = 0; riter->u.a.mode[ref_rank] != CAF_ARR_REF_NONE;
-            ++ref_rank) ;
+               ++ref_rank) ;
           /* Get the remote descriptor and use the stack to store it. Note,
            * src may be pointing to mpi_token->desc therefore it needs to be
            * reset here. */
@@ -6241,16 +6315,22 @@ PREFIX(sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
                 caf_this_image, caf_num_images, __FUNCTION__,
                 GFC_DESCRIPTOR_RANK(src), ref_rank);
         for (i = 0; i < GFC_DESCRIPTOR_RANK(src); ++i)
+        {
           fprintf(stderr,
                   "%d/%d: %s() remote desc "
                   "dim[%zd] = (lb = %zd, ub = %zd, stride = %zd)\n",
                   caf_this_image, caf_num_images, __FUNCTION__,
                   i, src->dim[i].lower_bound, src->dim[i]._ubound,
                   src->dim[i]._stride);
+        }
 #endif
         for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
         {
-          switch (riter->u.a.mode[i])
+          mode = riter->u.a.mode[i];
+          dprint("%d/%d: %s() i = %zd mode = %s\n",
+                 caf_this_image, caf_num_images, __FUNCTION__,
+                 i, caf_array_ref_str[mode]);
+          switch (mode)
           {
             case CAF_ARR_REF_VECTOR:
               delta = riter->u.a.dim[i].v.nvec;
@@ -6332,7 +6412,11 @@ case kind:                                                              \
       case CAF_REF_STATIC_ARRAY:
         for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
         {
-          switch (riter->u.a.mode[i])
+          mode = riter->u.a.mode[i];
+          dprint("%d/%d: %s() i = %zd mode = %s\n",
+                 caf_this_image, caf_num_images, __FUNCTION__,
+                 i, caf_array_ref_str[mode]);
+          switch (mode)
           {
             case CAF_ARR_REF_VECTOR:
               delta = riter->u.a.dim[i].v.nvec;
@@ -6453,9 +6537,11 @@ case kind:                                                        \
   fprintf(stderr, "%d/%d: %s() dst_rank: %d\n",
           caf_this_image, caf_num_images, __FUNCTION__, dst_rank);
   for (i = 0; i < dst_rank; ++i)
+  {
     fprintf(stderr, "%d/%d: %s() temp_src_dim[%zd] = (%zd, %zd)\n",
             caf_this_image, caf_num_images, __FUNCTION__,
             i, temp_src_desc.dim[i].lower_bound, temp_src_desc.dim[i]._ubound);
+  }
 #endif
   i = 0;
   dprint("%d/%d: %s() calling get_for_ref.\n",
@@ -6507,6 +6593,7 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
   size_t i, ref_rank;
   int ierr;
   gfc_max_dim_descriptor_t src_desc;
+  caf_array_ref_t mode;
 
   while (carryOn && riter)
   {
@@ -6535,7 +6622,11 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
             (gfc_descriptor_t *)(mpi_token->memptr + local_offset);
           for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
           {
-            switch (riter->u.a.mode[i])
+            mode = riter->u.a.mode[i];
+            dprint("%d/%d: %s() i = %zd mode = %s\n",
+                   caf_this_image, caf_num_images, __FUNCTION__,
+                   i, caf_array_ref_str[mode]);
+            switch (mode)
             {
               case CAF_ARR_REF_FULL:
                 /* The local_offset stays unchanged when ref'ing the first
@@ -6562,7 +6653,11 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
       case CAF_REF_STATIC_ARRAY:
         for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
         {
-          switch (riter->u.a.mode[i])
+          mode = riter->u.a.mode[i];
+          dprint("%d/%d: %s() i = %zd mode = %s\n",
+                 caf_this_image, caf_num_images, __FUNCTION__,
+                 i, caf_array_ref_str[mode]);
+          switch (mode)
           {
             case CAF_ARR_REF_FULL:
               /* The local_offset stays unchanged when ref'ing the first
@@ -6660,7 +6755,7 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
           /* All inner descriptors go by the dynamic window.
            * Count the dims to fetch. */
           for (ref_rank = 0; riter->u.a.mode[ref_rank] != CAF_ARR_REF_NONE;
-            ++ref_rank) ;
+               ++ref_rank) ;
           dprint("%d/%d: %s() Getting remote descriptor of rank %zd "
                  "from: %p, sizeof() %zd\n",
                  caf_this_image, caf_num_images, __FUNCTION__,
@@ -6678,18 +6773,24 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
                   caf_this_image, caf_num_images, __FUNCTION__,
                   GFC_DESCRIPTOR_RANK(src), ref_rank);
           for (i = 0; i < GFC_DESCRIPTOR_RANK(src); ++i)
+          {
             fprintf(stderr,
                     "%d/%d: %s() remote desc "
                     "dim[%zd] = (lb = %zd, ub = %zd, stride = %zd)\n",
                     caf_this_image, caf_num_images, __FUNCTION__,
                     i, src_desc.dim[i].lower_bound, src_desc.dim[i]._ubound,
                     src_desc.dim[i]._stride);
+          }
         }
 #endif
 
         for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
         {
-          switch (riter->u.a.mode[i])
+          mode = riter->u.a.mode[i];
+          dprint("%d/%d: %s() i = %zd mode = %s\n",
+                 caf_this_image, caf_num_images, __FUNCTION__,
+                 i, caf_array_ref_str[mode]);
+          switch (mode)
           {
             case CAF_ARR_REF_FULL:
               /* The local_offset stays unchanged when ref'ing the first 
@@ -6717,7 +6818,11 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
       case CAF_REF_STATIC_ARRAY:
         for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
         {
-          switch (riter->u.a.mode[i])
+          mode = riter->u.a.mode[i];
+          dprint("%d/%d: %s() i = %zd mode = %s\n",
+                 caf_this_image, caf_num_images, __FUNCTION__,
+                 i, caf_array_ref_str[mode]);
+          switch (mode)
           {
             case CAF_ARR_REF_FULL:
               /* The memptr stays unchanged when ref'ing the first element
@@ -6775,8 +6880,7 @@ sync_images_internal(int count, int images[], int *stat, char *errmsg,
 #ifdef WITH_FAILED_IMAGES
   no_stopped_images_check_in_errhandler = true;
 #endif
-  dprint("%d/%d: Entering %s.\n",
-         caf_this_image, caf_num_images, __FUNCTION__);
+  dprint("%d/%d: Entering %s.\n", caf_this_image, caf_num_images, __FUNCTION__);
   if (count == 0 || (count == 1 && images[0] == caf_this_image))
   {
     if (stat)
@@ -6807,8 +6911,7 @@ sync_images_internal(int count, int images[], int *stat, char *errmsg,
     {
       if (images[i] < 1 || images[i] > caf_num_images)
       {
-        fprintf(stderr,
-                "COARRAY ERROR: Invalid image index %d to SYNC IMAGES",
+        fprintf(stderr, "COARRAY ERROR: Invalid image index %d to SYNC IMAGES",
                 images[i]);
         terminate_internal(1, 1);
       }
@@ -6943,7 +7046,9 @@ name(datatype *invec, datatype *inoutvec, int *len,   \
      MPI_Datatype *datatype __attribute__((unused)))  \
 {                                                     \
   for (int i = 0; i < len; ++i)                       \
+  {                                                   \
     operator;                                         \
+  }                                                   \
 }
 
 #define REFERENCE_FUNC(TYPE) TYPE ## _by_reference
@@ -7136,14 +7241,14 @@ internal_co_reduce(MPI_Op op, gfc_descriptor_t *source, int result_image,
 {
   size_t i, size;
   int j, ierr, rank = GFC_DESCRIPTOR_RANK(source);
+  ptrdiff_t dimextent;
 
   MPI_Datatype datatype = get_MPI_datatype(source, src_len);
 
   size = 1;
   for (j = 0; j < rank; ++j)
   {
-    ptrdiff_t dimextent =
-      source->dim[j]._ubound - source->dim[j].lower_bound + 1;
+    dimextent = source->dim[j]._ubound - source->dim[j].lower_bound + 1;
     if (dimextent < 0)
       dimextent = 0;
     size *= dimextent;
@@ -7237,13 +7342,14 @@ PREFIX(co_broadcast) (gfc_descriptor_t *a, int source_image, int *stat,
 {
   size_t i, size;
   int j, ierr, rank = GFC_DESCRIPTOR_RANK(a);
+  ptrdiff_t dimextent;
 
   MPI_Datatype datatype = get_MPI_datatype(a, 0);
 
   size = 1;
   for (j = 0; j < rank; ++j)
   {
-    ptrdiff_t dimextent = a->dim[j]._ubound - a->dim[j].lower_bound + 1;
+    dimextent = a->dim[j]._ubound - a->dim[j].lower_bound + 1;
     if (dimextent < 0)
       dimextent = 0;
     size *= dimextent;
