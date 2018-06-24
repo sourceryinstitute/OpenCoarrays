@@ -15,7 +15,7 @@ program main
 
    if (nimg /= 2) error stop 1
 
-   ni = 1
+   ni = 2
    nj = 8
    nk = 4
    allocate(co % a(ni, nj, nk)[*])
@@ -35,7 +35,15 @@ program main
 
    sync all
    ! singleton on the 1st dimension (delta == 1), triggers the bug
-   co % a(1, :, :)[remote] = co % b(1, :, :) ! setter
+
+   ! FIXME: NOK, test FAILS
+   ! co % a(1, :, :)[remote] = co % b(1, :, :) ! setter, (CAF_ARR_REF_SINGLE, CAF_ARR_REF_FULL, CAF_ARR_REF_FULL)
+
+   ! OK, test pass, with patch
+   co % a(1:1, :, :)[remote] = co % b(1:1, :, :) ! setter, (CAF_ARR_REF_RANGE, CAF_ARR_REF_FULL, CAF_ARR_REF_FULL)
+
+   ! OK, test pass, without patch
+   ! co % a(1:2, :, :)[remote] = co % b(1:2, :, :) ! setter, (CAF_ARR_REF_FULL,) * 3
 
    sync all
    co % d(1, :, :) = co % a(1, :, :)[remote] ! check
@@ -51,7 +59,7 @@ program main
    do j = 1, nj; write(*, *) co % b(1, j, :); end do
    write(*, *) ': : (what I see on remote) : :', me
    do j = 1, nj; write(*, *) co % d(1, j, :); end do
-   write(*, *) ': : (what I sent on remote) : :', me
+   write(*, *) ': : (initial local coarray) : :', me
    do j = 1, nj; write(*, *) co % e(1, j, :); end do
    write(*, *) ': : : :', me
    if (me == 1) sync images(2)
@@ -59,7 +67,7 @@ program main
    sync all
    
    fail = any(abs(co % b(1, :, :) - co % d(1, :, :)) > epsilon(0.))
-   fail = .false. ! <== FIXME: this test is still failing, comment when bug in put_data is found !
+   ! fail = .false. ! <== FIXME: this test is still failing, comment when bug in put_data is found !
    
    if (fail) then
       write(*, *) 'Test failed!'
@@ -70,12 +78,3 @@ program main
 
 end program
 
-! icar output
-! 3/4: Entering send_by_ref(may_require_tmp = 1, dst_type = 3).
-! 3/4: _gfortran_caf_send_by_ref() remote_image = 3, offset = 0, remote_mem = 0x7f4a29422060
-! 3/4: _gfortran_caf_send_by_ref() remote desc rank: 3 (ref_rank: 7297736)
-! 3/4: _gfortran_caf_send_by_ref() remote desc dim[0] = (lb = 1, ub = 1, stride = 1)
-! 3/4: _gfortran_caf_send_by_ref() remote desc dim[1] = (lb = 1, ub = 20, stride = 1)
-! 3/4: _gfortran_caf_send_by_ref() remote desc dim[2] = (lb = 1, ub = 103, stride = 20)
-! 3/4: _gfortran_caf_send_by_ref() extent(dst, 0): 1 != delta: 20.  ! <====== mistmatch src_cur_dim not incremented
-! 3/4: _gfortran_caf_send_by_ref() extent(dst, 1): 20 != delta: 101.
