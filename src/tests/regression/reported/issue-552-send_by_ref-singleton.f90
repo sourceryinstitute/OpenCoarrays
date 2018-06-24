@@ -1,7 +1,7 @@
 program main
    implicit none
 
-   type co_obj ! the test does not fail with pure coarrays, only when using derived types
+   type co_obj ! the test does not fail with pure coarrays, only when using coarrays in derived types
       real, allocatable :: a(:, :, :)[:], b(:, :, :)
    end type
 
@@ -23,8 +23,12 @@ program main
    co % a(1, :, :)[remote] = co % b(1, :, :)
 
    sync all
-   if (any(abs(co % b(1, :, :) - co % a(1, :, :)[remote]) > epsilon(0.))) error stop 1
-   if (me == 1) write(*, *) 'Test passed.'
+   if (any(abs(co % b(1, :, :) - co % a(1, :, :)[remote]) > epsilon(0.))) then
+      write(*, *) 'Test failed!'
+      error stop 5
+   else
+      write(*, *) 'Test passed.'
+   end if
 
 end program
 

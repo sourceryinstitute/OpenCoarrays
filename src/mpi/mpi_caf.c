@@ -22,8 +22,8 @@
 * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
+* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+* THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 
 /****l* mpi/mpi_caf.c
  * NAME
@@ -61,8 +61,20 @@
 
 #ifndef EXTRA_DEBUG_OUTPUT
 #define dprint(...)
+#define CHK_ERR(...)
 #else
 #define dprint(args...) fprintf (stderr, args)
+#define CHK_ERR(ierr)                                         \
+if (ierr != MPI_SUCCESS)                                      \
+{                                                             \
+  int err_class, err_len;                                     \
+  char err_str[MPI_MAX_ERROR_STRING];                         \
+  MPI_Error_class(ierr, &err_class);                          \
+  MPI_Error_string(ierr, err_str, &err_len);                  \
+  dprint("%d/%d: %s() MPI-error: err_class=%d ierr=%d [%s]",  \
+         caf_this_image, caf_num_images, __FUNCTION__,        \
+         err_class, ierr, err_str);                           \
+}
 #endif
 
 #ifdef GCC_GE_7
@@ -241,7 +253,7 @@ MPI_Request alive_request;
 int alive_dummy;
 
 /* The mpi error-handler object associate to CAF_COMM_WORLD. */
-MPI_Errhandler failed_stopped_CAF_COMM_WORLD_mpi_errorhandler;
+MPI_Errhandler failed_CAF_COMM_mpi_err_handler;
 
 /* The monitor comm for detecting failed images. We can not attach the monitor
  * to CAF_COMM_WORLD or the messages send by sync images would be caught by the
@@ -285,7 +297,7 @@ double (*double_by_value)(double, double);
 #define CAF_Win_unlock(img, win) MPI_Win_unlock (img, win)
 #define CAF_Win_lock_all(win)
 #define CAF_Win_unlock_all(win)
-#else //CAF_MPI_LOCK_UNLOCK
+#else // CAF_MPI_LOCK_UNLOCK
 #define CAF_Win_lock(type, img, win)
 #define CAF_Win_unlock(img, win) MPI_Win_flush (img, win)
 #if MPI_VERSION >= 3
@@ -294,7 +306,7 @@ double (*double_by_value)(double, double);
 #define CAF_Win_lock_all(win)
 #endif
 #define CAF_Win_unlock_all(win) MPI_Win_unlock_all (win)
-#endif //CAF_MPI_LOCK_UNLOCK
+#endif // CAF_MPI_LOCK_UNLOCK
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 
@@ -303,10 +315,11 @@ void explicit_flush()
 {
   win_sync *w = pending_puts, *t;
   MPI_Win *p;
+  int ierr;
   while (w != NULL)
   {
     p = w->win;
-    MPI_Win_flush(w->img,*p);
+    ierr = MPI_Win_flush(w->img,*p); CHK_ERR(ierr)
     t = w;
     w = w->next;
     free(t);
@@ -319,7 +332,7 @@ void explicit_flush()
 #ifdef HELPER
 void helperFunction()
 {
-  int i = 0, flag = 0, msgid = 0;
+  int i = 0, flag = 0, msgid = 0, ierr;
   int ndim = 0, position = 0;
 
   s_am = calloc(caf_num_images, sizeof(MPI_Status));
@@ -327,7 +340,10 @@ void helperFunction()
   dts = calloc(caf_num_images, sizeof(MPI_Datatype));
 
   for (i = 0; i < caf_num_images; i++)
-    MPI_Irecv(buff_am[i], 1000, MPI_PACKED, i, 1, CAF_COMM_WORLD, &req_am[i]);
+  {
+    ierr = MPI_Irecv(buff_am[i], 1000, MPI_PACKED, i, 1, CAF_COMM_WORLD,
+                     &req_am[i]); CHK_ERR(ierr)
+  }
 
   while (1)
   {
@@ -336,12 +352,12 @@ void helperFunction()
     {
       if (!caf_is_finalized)
       {
-        MPI_Test(&req_am[i], &flag, &s_am[i]);
+        ierr = MPI_Test(&req_am[i], &flag, &s_am[i]); CHK_ERR(ierr)
         if (flag == 1)
         {
           position = 0;
-          MPI_Unpack(buff_am[i], 1000, &position, &msgid, 1, MPI_INT,
-                     CAF_COMM_WORLD);
+          ierr = MPI_Unpack(buff_am[i], 1000, &position, &msgid, 1, MPI_INT,
+                            CAF_COMM_WORLD); CHK_ERR(ierr)
           /* msgid=2 was initially assigned to strided transfers,
            * it can be reused
            * Strided transfers Msgid=2
@@ -351,8 +367,8 @@ void helperFunction()
           {
             msgid = 0; position = 0;
           }
-          MPI_Irecv(buff_am[i], 1000, MPI_PACKED, i, 1, CAF_COMM_WORLD,
-                    &req_am[i]);
+          ierr = MPI_Irecv(buff_am[i], 1000, MPI_PACKED, i, 1, CAF_COMM_WORLD,
+                           &req_am[i]); CHK_ERR(ierr)
           flag = 0;
         }
       }
@@ -404,8 +420,9 @@ locking_atomic_op(MPI_Win win, int *value, int newval,
                   int compare, int image_index, int index)
 {
   CAF_Win_lock(MPI_LOCK_EXCLUSIVE, image_index - 1, win);
-  MPI_Compare_and_swap(&newval,&compare,value, MPI_INT,image_index - 1,
-                       index * sizeof(int), win);
+  int ierr = MPI_Compare_and_swap(&newval, &compare,value, MPI_INT,
+                                  image_index - 1, index * sizeof(int), win);
+  CHK_ERR(ierr)
   CAF_Win_unlock(image_index - 1, win);
 }
 
@@ -413,13 +430,13 @@ locking_atomic_op(MPI_Win win, int *value, int newval,
 /* Define a helper to check whether the image at the given index is healthy,
  * i.e., it hasn't failed. */
 #ifdef WITH_FAILED_IMAGES
-#define check_image_health(image_index, stat)                     \
-  if (image_stati[image_index - 1] == STAT_FAILED_IMAGE)          \
-  {                                                               \
-    if (stat == NULL) terminate_internal (STAT_FAILED_IMAGE, 0);  \
-    *stat = STAT_FAILED_IMAGE;                                    \
-    return;                                                       \
-  }
+#define check_image_health(image_index, stat)                   \
+if (image_stati[image_index - 1] == STAT_FAILED_IMAGE)          \
+{                                                               \
+  if (stat == NULL) terminate_internal (STAT_FAILED_IMAGE, 0);  \
+  *stat = STAT_FAILED_IMAGE;                                    \
+  return;                                                       \
+}
 #else
 #define check_image_health(image_index, stat)
 #endif
@@ -431,10 +448,10 @@ static void
 failed_stopped_errorhandler_function (MPI_Comm* pcomm, int* perr, ...)
 {
   MPI_Comm comm, shrunk, newcomm;
-  int num_failed_in_group, i, err;
+  int num_failed_in_group, i, err, ierr;
   MPI_Group comm_world_group, failed_group;
   int *ranks_of_failed_in_comm_world, *ranks_failed;
-  int ns, srank, crank, rc, flag, drank, ierr, newrank;
+  int ns, srank, crank, rc, flag, drank, newrank;
   bool stopped = false;
 
   comm = *pcomm;
@@ -458,9 +475,9 @@ failed_stopped_errorhandler_function (MPI_Comm* pcomm, int* perr, ...)
   dprint("%d/%d: %s (error = %d)\n",
          caf_this_image, caf_num_images, __FUNCTION__, err);
 
-  MPIX_Comm_failure_ack(comm);
-  MPIX_Comm_failure_get_acked(comm, &failed_group);
-  MPI_Group_size(failed_group, &num_failed_in_group);
+  ierr = MPIX_Comm_failure_ack(comm); CHK_ERR(ierr)
+  ierr = MPIX_Comm_failure_get_acked(comm, &failed_group); CHK_ERR(ierr)
+  ierr = MPI_Group_size(failed_group, &num_failed_in_group); CHK_ERR(ierr)
 
   dprint("%d/%d: %s: %d images failed.\n",
          caf_this_image, caf_num_images, __FUNCTION__, num_failed_in_group);
@@ -475,15 +492,18 @@ failed_stopped_errorhandler_function (MPI_Comm* pcomm, int* perr, ...)
     return;
   }
 
-  MPI_Comm_group(comm, &comm_world_group);
+  ierr = MPI_Comm_group(comm, &comm_world_group); CHK_ERR(ierr)
   ranks_of_failed_in_comm_world =
     (int *) alloca(sizeof(int) * num_failed_in_group);
   ranks_failed = (int *) alloca(sizeof(int) * num_failed_in_group);
   for (i = 0; i < num_failed_in_group; ++i)
+  {
     ranks_failed[i] = i;
+  }
   /* Now translate the ranks of the failed images into communicator world. */
-  MPI_Group_translate_ranks(failed_group, num_failed_in_group, ranks_failed,
-                            comm_world_group, ranks_of_failed_in_comm_world);
+  ierr = MPI_Group_translate_ranks(failed_group, num_failed_in_group,
+                                   ranks_failed, comm_world_group,
+                                   ranks_of_failed_in_comm_world); CHK_ERR(ierr)
 
   num_images_failed += num_failed_in_group;
 
@@ -496,9 +516,10 @@ failed_stopped_errorhandler_function (MPI_Comm* pcomm, int* perr, ...)
            caf_num_images);
     ierr = MPI_Irecv(&buffer, 1, MPI_INT, MPI_ANY_SOURCE,
                      MPI_TAG_CAF_SYNC_IMAGES, CAF_COMM_WORLD, &req);
+    CHK_ERR(ierr)
     if (ierr == MPI_SUCCESS)
     {
-      ierr = MPI_Test(&req, &flag, &request_status);
+      ierr = MPI_Test(&req, &flag, &request_status); CHK_ERR(ierr)
       if (flag)
       {
         // Received a result
@@ -516,7 +537,7 @@ failed_stopped_errorhandler_function (MPI_Comm* pcomm, int* perr, ...)
       {
         dprint("%d/%d: No stopped images found.\n",
                caf_this_image, caf_num_images);
-        MPI_Cancel(&req);
+        ierr = MPI_Cancel(&req); CHK_ERR(ierr)
       }
     }
     else
@@ -554,7 +575,7 @@ redo:
   dprint("%d/%d: %s: After shrink, rc = %d.\n",
          caf_this_image, caf_num_images, __FUNCTION__, ierr);
   MPI_Comm_set_errhandler(shrunk,
-                          failed_stopped_CAF_COMM_WORLD_mpi_errorhandler);
+                          failed_CAF_COMM_mpi_err_handler);
   MPI_Comm_size(shrunk, &ns);
   MPI_Comm_rank(shrunk, &srank);
   MPI_Comm_rank(*pcomm, &crank);
@@ -564,8 +585,8 @@ redo:
 
   /* Split does the magic: removing spare processes and reordering ranks
    * so that all surviving processes remain at their former place */
-  rc = MPI_Comm_split(shrunk, crank < 0 ? MPI_UNDEFINED : 1, crank, &newcomm);
-  MPI_Comm_rank(newcomm, &newrank);
+  rc = MPI_Comm_split(shrunk, (crank < 0) ? MPI_UNDEFINED : 1, crank, &newcomm);
+  ierr = MPI_Comm_rank(newcomm, &newrank); CHK_ERR(ierr)
   dprint("%d/%d: %s: After split, rc = %d, rank = %d.\n",
          caf_this_image, caf_num_images, __FUNCTION__, rc, newrank);
   flag = (rc == MPI_SUCCESS);
@@ -576,7 +597,7 @@ redo:
   dprint("%d/%d: %s: After agree, flag = %d.\n",
          caf_this_image, caf_num_images, __FUNCTION__, flag);
 
-  MPI_Comm_rank(newcomm, &drank);
+  ierr = MPI_Comm_rank(newcomm, &drank); CHK_ERR(ierr)
   dprint("%d/%d: %s: After rank, drank = %d.\n",
          caf_this_image, caf_num_images, __FUNCTION__, drank);
 
@@ -589,22 +610,22 @@ redo:
 
   {
     int cmpres;
-    ierr = MPI_Comm_compare(*pcomm, CAF_COMM_WORLD, &cmpres);
+    ierr = MPI_Comm_compare(*pcomm, CAF_COMM_WORLD, &cmpres); CHK_ERR(ierr)
     dprint("%d/%d: %s: Comm_compare(*comm, CAF_COMM_WORLD, res = %d) = %d.\n",
            caf_this_image, caf_num_images, __FUNCTION__, cmpres, ierr);
-    ierr = MPI_Comm_compare(*pcomm, alive_comm, &cmpres);
+    ierr = MPI_Comm_compare(*pcomm, alive_comm, &cmpres); CHK_ERR(ierr)
     dprint("%d/%d: %s: Comm_compare(*comm, alive_comm, res = %d) = %d.\n",
            caf_this_image, caf_num_images, __FUNCTION__, cmpres, ierr);
     if (cmpres == MPI_CONGRUENT)
     {
-      MPI_Win_detach(*stat_tok, &img_status);
+      ierr = MPI_Win_detach(*stat_tok, &img_status); CHK_ERR(ierr)
       dprint("%d/%d: %s: detached win img_status.\n",
              caf_this_image, caf_num_images, __FUNCTION__);
-      MPI_Win_free(stat_tok);
+      ierr = MPI_Win_free(stat_tok); CHK_ERR(ierr)
       dprint("%d/%d: %s: freed win img_status.\n",
              caf_this_image, caf_num_images, __FUNCTION__);
-      MPI_Win_create(&img_status, sizeof(int), 1, mpi_info_same_size,
-                      newcomm, stat_tok);
+      ierr = MPI_Win_create(&img_status, sizeof(int), 1, mpi_info_same_size,
+                            newcomm, stat_tok); CHK_ERR(ierr)
       dprint("%d/%d: %s: (re-)created win img_status.\n",
              caf_this_image, caf_num_images, __FUNCTION__);
       CAF_Win_lock_all(*stat_tok);
@@ -613,7 +634,7 @@ redo:
     }
   }
   /* Also free the old communicator before replacing it. */
-  MPI_Comm_free(pcomm);
+  ierr = MPI_Comm_free(pcomm); CHK_ERR(ierr)
   *pcomm = newcomm;
 
   *perr = stopped ? STAT_STOPPED_IMAGE : STAT_FAILED_IMAGE;
@@ -634,7 +655,7 @@ void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
     *stat = 0;
 
 #ifdef WITH_FAILED_IMAGES
-  MPI_Test(&alive_request, &flag, MPI_STATUS_IGNORE);
+  ierr = MPI_Test(&alive_request, &flag, MPI_STATUS_IGNORE); CHK_ERR(ierr)
 #endif
 
   locking_atomic_op(win, &value, newval, compare, image_index, index);
@@ -658,7 +679,7 @@ void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
     if (i == check_failure)
     {
       i = 1;
-      MPI_Test(&alive_request, &flag, MPI_STATUS_IGNORE);
+      ierr = MPI_Test(&alive_request, &flag, MPI_STATUS_IGNORE); CHK_ERR(ierr)
     }
 #endif
 
@@ -669,8 +690,9 @@ void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
       CAF_Win_lock(MPI_LOCK_EXCLUSIVE, image_index - 1, win);
       /* MPI_Fetch_and_op(&zero, &newval, MPI_INT, image_index - 1,
        * index * sizeof(int), MPI_REPLACE, win); */
-      MPI_Compare_and_swap(&zero, &value, &newval, MPI_INT, image_index - 1,
-                           index * sizeof(int), win);
+      ierr = MPI_Compare_and_swap(&zero, &value, &newval, MPI_INT,
+                                  image_index - 1, index * sizeof(int), win);
+      CHK_ERR(ierr)
       CAF_Win_unlock(image_index - 1, win);
       break;
     }
@@ -713,13 +735,13 @@ void mutex_unlock(MPI_Win win, int image_index, int index, int *stat,
 #if MPI_VERSION >= 3
   int value = 1, ierr = 0, newval = 0, flag;
 #ifdef WITH_FAILED_IMAGES
-  MPI_Test(&alive_request, &flag, MPI_STATUS_IGNORE);
+  ierr = MPI_Test(&alive_request, &flag, MPI_STATUS_IGNORE); CHK_ERR(ierr)
 #endif
 
   CAF_Win_lock(MPI_LOCK_EXCLUSIVE, image_index - 1, win);
-  MPI_Fetch_and_op(&newval, &value, MPI_INT, image_index - 1,
-                   index * sizeof(int), MPI_REPLACE, win);
-  CAF_Win_unlock(image_index - 1, win);
+  ierr = MPI_Fetch_and_op(&newval, &value, MPI_INT, image_index - 1,
+                          index * sizeof(int), MPI_REPLACE, win); CHK_ERR(ierr)
+  ierr = CAF_Win_unlock(image_index - 1, win); CHK_ERR(ierr)
 
   /* Temporarily commented */
   /* if (value == 0)
@@ -760,10 +782,12 @@ PREFIX(init) (int *argc, char ***argv)
   {
     int ierr = 0, i = 0, j = 0, rc, prov_lev = 0;
     int is_init = 0, prior_thread_level = MPI_THREAD_FUNNELED;
-    MPI_Initialized(&is_init);
+    ierr = MPI_Initialized(&is_init); CHK_ERR(ierr)
 
     if (is_init)
-      MPI_Query_thread(&prior_thread_level);
+    {
+      ierr = MPI_Query_thread(&prior_thread_level); CHK_ERR(ierr)
+    }
 #ifdef HELPER
     if (is_init)
     {
@@ -772,7 +796,8 @@ PREFIX(init) (int *argc, char ***argv)
     }
     else
     {
-        MPI_Init_thread(argc, argv, MPI_THREAD_MULTIPLE, &prov_lev);
+        ierr = MPI_Init_thread(argc, argv, MPI_THREAD_MULTIPLE, &prov_lev);
+        CHK_ERR(ierr)
         caf_owns_mpi = true;
     }
 
@@ -783,7 +808,8 @@ PREFIX(init) (int *argc, char ***argv)
       caf_owns_mpi = false;
     else
     {
-      MPI_Init_thread(argc, argv, prior_thread_level, &prov_lev);
+      ierr = MPI_Init_thread(argc, argv, prior_thread_level, &prov_lev);
+      CHK_ERR(ierr)
       caf_owns_mpi = true;
       if (caf_this_image == 0 && MPI_THREAD_FUNNELED != prov_lev)
         caf_runtime_error("MPI_THREAD_FUNNELED is not supported: %d", prov_lev);
@@ -798,17 +824,18 @@ PREFIX(init) (int *argc, char ***argv)
 #ifdef WITH_FAILED_IMAGES
     flag = (MPI_SUCCESS == rc);
     rc = MPIX_Comm_agree(MPI_COMM_WORLD, &flag);
-    if (rc != MPI_SUCCESS) {
-        dprint("%d/%d: %s: MPIX_Comm_agree(flag = %d) = %d.\n",
-               caf_this_image, caf_num_images, __FUNCTION__, flag, rc);
-        fflush(stderr);
+    if (rc != MPI_SUCCESS)
+    {
+      dprint("%d/%d: %s: MPIX_Comm_agree(flag = %d) = %d.\n",
+             caf_this_image, caf_num_images, __FUNCTION__, flag, rc);
+      fflush(stderr);
       MPI_Abort(MPI_COMM_WORLD, 10000);
-      }
+    }
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-    MPI_Comm_size(CAF_COMM_WORLD, &caf_num_images);
-    MPI_Comm_rank(CAF_COMM_WORLD, &caf_this_image);
+    ierr = MPI_Comm_size(CAF_COMM_WORLD, &caf_num_images); CHK_ERR(ierr)
+    ierr = MPI_Comm_rank(CAF_COMM_WORLD, &caf_this_image); CHK_ERR(ierr)
 
     ++caf_this_image;
     caf_is_finalized = 0;
@@ -828,13 +855,13 @@ PREFIX(init) (int *argc, char ***argv)
 
     stat_tok = malloc(sizeof(MPI_Win));
 
-    teams_list = (caf_teams_list *) calloc(1, sizeof(caf_teams_list));
+    teams_list = (caf_teams_list *)calloc(1, sizeof(caf_teams_list));
     teams_list->team_id = -1;
-    MPI_Comm *tmp_comm = (MPI_Comm *) calloc(1, sizeof(MPI_Comm));
+    MPI_Comm *tmp_comm = (MPI_Comm *)calloc(1, sizeof(MPI_Comm));
     *tmp_comm = CAF_COMM_WORLD;
     teams_list->team = tmp_comm;
     teams_list->prev = NULL;
-    used_teams = (caf_used_teams_list *) calloc(1, sizeof(caf_used_teams_list));
+    used_teams = (caf_used_teams_list *)calloc(1, sizeof(caf_used_teams_list));
     used_teams->team_list_elem = teams_list;
     used_teams->prev = NULL;
 
@@ -844,17 +871,20 @@ PREFIX(init) (int *argc, char ***argv)
      * on a asynchronous request to each other image.  For a failing image
      * the request will trigger the call of the error handler thus allowing
      * each other image to handle the failed/stopped image. */
-    MPI_Comm_create_errhandler(
-      failed_stopped_errorhandler_function,
-      &failed_stopped_CAF_COMM_WORLD_mpi_errorhandler);
-    MPI_Comm_set_errhandler(CAF_COMM_WORLD,
-                            failed_stopped_CAF_COMM_WORLD_mpi_errorhandler);
-    MPI_Comm_set_errhandler(alive_comm,
-                            failed_stopped_CAF_COMM_WORLD_mpi_errorhandler);
-    MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+    ierr = MPI_Comm_create_errhandler(failed_stopped_errorhandler_function,
+                                      &failed_CAF_COMM_mpi_err_handler);
+    CHK_ERR(ierr)
+    ierr = MPI_Comm_set_errhandler(CAF_COMM_WORLD,
+                                   failed_CAF_COMM_mpi_err_handler);
+    CHK_ERR(ierr)
+    ierr = MPI_Comm_set_errhandler(alive_comm,
+                                   failed_CAF_COMM_mpi_err_handler);
+    CHK_ERR(ierr)
+    ierr = MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+    CHK_ERR(ierr)
 
-    MPI_Irecv(&alive_dummy, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG,
-              alive_comm, &alive_request);
+    ierr = MPI_Irecv(&alive_dummy, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG,
+                     alive_comm, &alive_request); CHK_ERR(ierr)
 
     image_stati = (int *) calloc(caf_num_images, sizeof(int));
 #endif
@@ -885,12 +915,13 @@ PREFIX(init) (int *argc, char ***argv)
 void
 finalize_internal(int status_code)
 {
+  int ierr;
   dprint("%d/%d: %s(status_code = %d)\n",
          caf_this_image, caf_num_images, __FUNCTION__, status_code);
 
 #ifdef WITH_FAILED_IMAGES
   no_stopped_images_check_in_errhandler = true;
-  MPI_Win_flush_all(*stat_tok);
+  ierr = MPI_Win_flush_all(*stat_tok); CHK_ERR(ierr)
 #endif
   /* For future security enclose setting img_status in a lock. */
   CAF_Win_lock(MPI_LOCK_EXCLUSIVE, caf_this_image - 1, *stat_tok);
@@ -913,26 +944,29 @@ finalize_internal(int status_code)
   /* Announce to all other images, that this one has changed its execution
    * status. */
   for (int i = 0; i < caf_num_images - 1; ++i)
-      MPI_Send(&img_status, 1, MPI_INT, images_full[i] - 1,
-               MPI_TAG_CAF_SYNC_IMAGES, CAF_COMM_WORLD);
+  {
+    ierr = MPI_Send(&img_status, 1, MPI_INT, images_full[i] - 1,
+                    MPI_TAG_CAF_SYNC_IMAGES, CAF_COMM_WORLD); CHK_ERR(ierr)
+  }
 
 #ifdef WITH_FAILED_IMAGES
   /* Terminate the async request before revoking the comm, or we will get
    * triggered by the errorhandler, which we don't want here anymore. */
   MPI_Cancel(&alive_request);
 
-  if (status_code == 0) {
-      /* In finalization do not report stopped or failed images any more. */
-      MPI_Errhandler_set(CAF_COMM_WORLD, MPI_ERRORS_RETURN);
-      MPI_Errhandler_set(alive_comm, MPI_ERRORS_RETURN);
-      /* Only add a conventional barrier to prevent images rom quitting too
-       * early, when this images is not failing. */
-      dprint("%d/%d: %s: Before MPI_Barrier(CAF_COMM_WORLD)\n",
-             caf_this_image, caf_num_images, __FUNCTION__);
-      int ierr = MPI_Barrier(CAF_COMM_WORLD);
-      dprint("%d/%d: %s: After MPI_Barrier(CAF_COMM_WORLD) = %d\n",
-             caf_this_image, caf_num_images, __FUNCTION__, ierr);
-    }
+  if (status_code == 0)
+  {
+    /* In finalization do not report stopped or failed images any more. */
+    ierr = MPI_Errhandler_set(CAF_COMM_WORLD, MPI_ERRORS_RETURN); CHK_ERR(ierr)
+    ierr = MPI_Errhandler_set(alive_comm, MPI_ERRORS_RETURN); CHK_ERR(ierr)
+    /* Only add a conventional barrier to prevent images rom quitting too
+     * early, when this images is not failing. */
+    dprint("%d/%d: %s: Before MPI_Barrier(CAF_COMM_WORLD)\n",
+           caf_this_image, caf_num_images, __FUNCTION__);
+    ierr = MPI_Barrier(CAF_COMM_WORLD); CHK_ERR(ierr)
+    dprint("%d/%d: %s: After MPI_Barrier(CAF_COMM_WORLD) = %d\n",
+           caf_this_image, caf_num_images, __FUNCTION__, ierr);
+  }
   else
     return;
 #else
@@ -954,10 +988,11 @@ finalize_internal(int status_code)
   while (cur_stok)
   {
     prev_stok = cur_stok->prev;
-    MPI_Win_detach(global_dynamic_win, cur_stok);
+    ierr = MPI_Win_detach(global_dynamic_win, cur_stok); CHK_ERR(ierr)
     if (cur_stok->token->memptr)
     {
-      MPI_Win_detach(global_dynamic_win, cur_stok->token->memptr);
+      ierr = MPI_Win_detach(global_dynamic_win, cur_stok->token->memptr);
+      CHK_ERR(ierr)
       free(cur_stok->token->memptr);
     }
     free(cur_stok->token);
@@ -984,20 +1019,20 @@ finalize_internal(int status_code)
 #ifdef GCC_GE_7
     /* Unregister the window to the descriptors when freeing the token. */
     dprint("%d/%d: MPI_Win_free(p);\n", caf_this_image, caf_num_images);
-    MPI_Win_free(p);
+    ierr = MPI_Win_free(p); CHK_ERR(ierr)
     free(cur_tok->token);
 #else // GCC_GE_7
-    MPI_Win_free(p);
+    ierr = MPI_Win_free(p); CHK_ERR(ierr)
 #endif // GCC_GE_7
     free(cur_tok);
     cur_tok = prev;
   }
 #if MPI_VERSION >= 3
-  MPI_Info_free(&mpi_info_same_size);
+  ierr = MPI_Info_free(&mpi_info_same_size); CHK_ERR(ierr)
 #endif // MPI_VERSION
 
   /* Free the global dynamic window. */
-  MPI_Win_free(&global_dynamic_win);
+  ierr = MPI_Win_free(&global_dynamic_win); CHK_ERR(ierr)
 #ifdef WITH_FAILED_IMAGES
   if (status_code == 0)
   {
@@ -1006,20 +1041,22 @@ finalize_internal(int status_code)
     CAF_Win_unlock_all(*stat_tok);
     dprint("%d/%d: %s: before Win_free(stat_tok)\n",
            caf_this_image, caf_num_images, __FUNCTION__);
-    MPI_Win_free(stat_tok);
+    ierr = MPI_Win_free(stat_tok); CHK_ERR(ierr)
     dprint("%d/%d: %s: before Comm_free(CAF_COMM_WORLD)\n",
            caf_this_image, caf_num_images, __FUNCTION__);
-    MPI_Comm_free(&CAF_COMM_WORLD);
-    MPI_Comm_free(&alive_comm);
+    ierr = MPI_Comm_free(&CAF_COMM_WORLD); CHK_ERR(ierr)
+    ierr = MPI_Comm_free(&alive_comm); CHK_ERR(ierr)
     dprint("%d/%d: %s: after Comm_free(CAF_COMM_WORLD)\n",
            caf_this_image, caf_num_images, __FUNCTION__);
   }
 
-  MPI_Errhandler_free(&failed_stopped_CAF_COMM_WORLD_mpi_errorhandler);
+  ierr = MPI_Errhandler_free(&failed_CAF_COMM_mpi_err_handler); CHK_ERR(ierr)
 
   /* Only call Finalize if CAF runtime Initialized MPI. */
   if (caf_owns_mpi)
-    MPI_Finalize();
+  {
+    ierr = MPI_Finalize(); CHK_ERR(ierr)
+  }
 #else
   MPI_Comm_free(&CAF_COMM_WORLD);
 
@@ -1028,7 +1065,9 @@ finalize_internal(int status_code)
 
   /* Only call Finalize if CAF runtime Initialized MPI. */
   if (caf_owns_mpi)
-    MPI_Finalize();
+  {
+    ierr = MPI_Finalize(); CHK_ERR(ierr)
+  }
 #endif
 
   pthread_mutex_lock(&lock_am);
@@ -1079,7 +1118,6 @@ PREFIX(register) (size_t size, caf_register_t type, caf_token_t *token,
                   gfc_descriptor_t *desc, int *stat, char *errmsg,
                   charlen_t errmsg_len)
 {
-  /* int ierr; */
   void *mem = NULL;
   size_t actual_size;
   int l_var = 0, *init_array = NULL;
@@ -1140,6 +1178,7 @@ PREFIX(register) (size_t size, caf_register_t type, caf_token_t *token,
           mem = malloc(actual_size);
           slave_token->memptr = mem;
           ierr = MPI_Win_attach(global_dynamic_win, mem, actual_size);
+          CHK_ERR(ierr) 
 #ifdef EXTRA_DEBUG_OUTPUT
           MPI_Get_address(mem, &mpi_address);
 #endif
@@ -1495,7 +1534,9 @@ PREFIX(sync_all) (int *stat, char *errmsg, charlen_t errmsg_len)
 
   dprint("%d/%d: Entering sync all.\n", caf_this_image, caf_num_images);
   if (unlikely(caf_is_finalized))
+  {
     ierr = STAT_STOPPED_IMAGE;
+  }
   else
   {
     int mpi_err;
@@ -1552,7 +1593,7 @@ assign_char4_from_char1(size_t dst_size, size_t src_size, uint32_t *dst,
                         unsigned char *src)
 {
   size_t i, n;
-  n = dst_size > src_size ? src_size : dst_size;
+  n = (dst_size > src_size) ? src_size : dst_size;
   for (i = 0; i < n; ++i)
     dst[i] = (int32_t) src[i];
   for (; i < dst_size; ++i)
@@ -1567,7 +1608,7 @@ assign_char1_from_char4(size_t dst_size, size_t src_size, unsigned char *dst,
                         uint32_t *src)
 {
   size_t i, n;
-  n = dst_size > src_size ? src_size : dst_size;
+  n = (dst_size > src_size) ? src_size : dst_size;
   for (i = 0; i < n; ++i)
     dst[i] = src[i] > UINT8_MAX ? (unsigned char) '?' : (unsigned char) src[i];
   if (dst_size > n)
@@ -1868,7 +1909,7 @@ copy_char_to_self(void *src, int src_type, int src_size, int src_kind,
   const size_t 
       dst_len = dst_size / dst_kind,
       src_len = src_size / src_kind;
-  const size_t min_len = src_len < dst_len ? src_len : dst_len;
+  const size_t min_len = (src_len < dst_len) ? src_len : dst_len;
   /* The address of dest passed by the compiler points on the right  memory
    * location. No offset summation is needed. */
   if (dst_kind == src_kind)
@@ -1942,7 +1983,7 @@ copy_to_self(gfc_descriptor_t *src, int src_kind,
     convert_with_strides(dest->base_addr, GFC_DESCRIPTOR_TYPE(dest), dst_kind,
                          GFC_DESCRIPTOR_SIZE(dest), src->base_addr,
                          GFC_DESCRIPTOR_TYPE(src), src_kind,
-                         GFC_DESCRIPTOR_RANK(src) > 0
+                         (GFC_DESCRIPTOR_RANK(src) > 0)
                          ? GFC_DESCRIPTOR_SIZE(src) : 0, size, stat);
 }
 
@@ -2100,7 +2141,7 @@ PREFIX(sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
         {
           convert_with_strides(dst_t_buff, dst_type, dst_kind, dst_size,
                                src->base_addr, src_type, src_kind,
-                               src_rank > 0 ? src_size : 0, size, stat);
+                               (src_rank > 0) ? src_size : 0, size, stat);
         }
       }
     }
@@ -2138,14 +2179,15 @@ PREFIX(sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
             && (dst_kind == src_kind || dst_type != BT_CHARACTER))
         {
           const size_t trans_size =
-              (dst_size > src_size ? src_size : dst_size) * size;
+            ((dst_size > src_size) ? src_size : dst_size) * size;
           ierr = MPI_Get(dst_t_buff, trans_size, MPI_BYTE, src_remote_image,
-                         offset_g, trans_size, MPI_BYTE, *p);
+                         offset_g, trans_size, MPI_BYTE, *p); CHK_ERR(ierr)
         }
         else
         {
           ierr = MPI_Get(src_t_buff, src_real_size, MPI_BYTE, src_remote_image,
                          offset_g, src_real_size, MPI_BYTE, *p);
+          CHK_ERR(ierr)
           dprint("%d/%d: %s() copy_char_to_self(src_size = %d, src_kind = %d, "
                  "dst_size = %d, dst_kind = %d, size = %d)\n",
                  caf_this_image, caf_num_images, __FUNCTION__,
@@ -2163,7 +2205,7 @@ PREFIX(sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
                        offset_g, src_real_size, MPI_BYTE, *p);
         convert_with_strides(dst_t_buff, dst_type, dst_kind, dst_size,
                              src_t_buff, src_type, src_kind,
-                             src_rank > 0 ? src_size: 0, size, stat);
+                             (src_rank > 0) ? src_size: 0, size, stat);
       }
       CAF_Win_unlock(src_remote_image, *p);
     }
@@ -2387,8 +2429,7 @@ case kind:                                                          \
                dst_size, src_kind, src_size, src->dim[0].lower_bound);
         if (same_type_and_kind)
         {
-          const size_t trans_size = src_size < dst_size ?
-            src_size : dst_size;
+          const size_t trans_size = (src_size < dst_size) ? src_size : dst_size;
           ierr = MPI_Get(dst, trans_size, MPI_BYTE, src_remote_image,
                          offset_g + src_offset, trans_size, MPI_BYTE, *p);
           if (pad_str)
@@ -2846,23 +2887,24 @@ PREFIX(send) (caf_token_t token, size_t offset, int image_index,
                               src_kind, t_buff, dst_type, dst_size,
                               dst_kind, size, src_rank == 0);
             ierr = MPI_Put(t_buff, dst_size, MPI_BYTE, remote_image,
-                           offset, dst_size, MPI_BYTE, *p);
+                           offset, dst_size, MPI_BYTE, *p); CHK_ERR(ierr)
           }
           else
           {
             const size_t trans_size =
-                (dst_size > src_size ? src_size : dst_size) * size;
-            ierr = MPI_Put(src->base_addr, trans_size, MPI_BYTE,
-                           remote_image, offset, trans_size, MPI_BYTE, *p);
+              ((dst_size > src_size) ? src_size : dst_size) * size;
+            ierr = MPI_Put(src->base_addr, trans_size, MPI_BYTE, remote_image,
+                           offset, trans_size, MPI_BYTE, *p);
+            CHK_ERR(ierr)
           }
         }
       else
       {
         convert_with_strides(t_buff, dst_type, dst_kind, dst_size,
                              src->base_addr, src_type, src_kind,
-                             src_rank > 0 ? src_size: 0, size, stat);
+                             (src_rank > 0) ? src_size: 0, size, stat);
         ierr = MPI_Put(t_buff, dst_size * size, MPI_BYTE, remote_image,
-                       offset, dst_size * size, MPI_BYTE, *p);
+                       offset, dst_size * size, MPI_BYTE, *p); CHK_ERR(ierr)
       }
 #ifdef CAF_MPI_LOCK_UNLOCK
       MPI_Win_unlock(remote_image, *p);
@@ -3028,6 +3070,7 @@ case kind:                                                            \
 
     CAF_Win_lock(MPI_LOCK_EXCLUSIVE, remote_image, *p);
     ierr = MPI_Put(src->base_addr, 1, dt_s, remote_image, offset, 1, dt_d, *p);
+    CHK_ERR(ierr)
     CAF_Win_unlock(remote_image, *p);
 
 #ifdef WITH_FAILED_IMAGES
@@ -3143,13 +3186,15 @@ case kind:                                                            \
                dst_size, src_kind, src_size, dest->dim[0].lower_bound);
         if (same_type_and_kind)
         {
-          const size_t trans_size = src_size < dst_size ? src_size : dst_size;
+          const size_t trans_size = (src_size < dst_size) ? src_size : dst_size;
           ierr = MPI_Put(sr, trans_size, MPI_BYTE, remote_image,
                          offset + dst_offset, trans_size, MPI_BYTE, *p);
           if (pad_str)
+          {
             ierr = MPI_Put(pad_str, dst_size - src_size, MPI_BYTE,
                            remote_image, offset + dst_offset + src_size,
-                           dst_size - src_size, MPI_BYTE, *p);
+                           dst_size - src_size, MPI_BYTE, *p); CHK_ERR(ierr)
+          }
         }
         else if (dst_type == BT_CHARACTER)
         {
@@ -3157,6 +3202,7 @@ case kind:                                                            \
                             t_buff, dst_type, dst_size, dst_kind, 1, true);
           ierr = MPI_Put(t_buff, dst_size, MPI_BYTE, remote_image,
                          offset + dst_offset, dst_size, MPI_BYTE, *p);
+          CHK_ERR(ierr)
         }
         else
         {
@@ -3164,6 +3210,7 @@ case kind:                                                            \
                        sr, src_type, src_kind, stat);
           ierr = MPI_Put(t_buff, dst_size, MPI_BYTE, remote_image,
                          offset + dst_offset, dst_size, MPI_BYTE, *p);
+          CHK_ERR(ierr)
         }
       }
       else
@@ -3393,14 +3440,14 @@ PREFIX(get) (caf_token_t token, size_t offset, int image_index,
             && (dst_kind == src_kind || dst_type != BT_CHARACTER))
         {
           const size_t trans_size =
-              (dst_size > src_size ? src_size : dst_size) * size;
+            ((dst_size > src_size) ? src_size : dst_size) * size;
           ierr = MPI_Get(dest->base_addr, trans_size, MPI_BYTE, remote_image,
-                         offset, trans_size, MPI_BYTE, *p);
+                         offset, trans_size, MPI_BYTE, *p); CHK_ERR(ierr)
         }
         else
         {
           ierr = MPI_Get(t_buff, src_size, MPI_BYTE, remote_image,
-                         offset, src_size, MPI_BYTE, *p);
+                         offset, src_size, MPI_BYTE, *p); CHK_ERR(ierr)
           copy_char_to_self(t_buff, src_type, src_size, src_kind,
                             dest->base_addr, dst_type, dst_size,
                             dst_kind, size, src_rank == 0);
@@ -3409,10 +3456,10 @@ PREFIX(get) (caf_token_t token, size_t offset, int image_index,
       else
       {
         ierr = MPI_Get(t_buff, src_size * size, MPI_BYTE, remote_image, offset,
-                       src_size * size, MPI_BYTE, *p);
+                       src_size * size, MPI_BYTE, *p); CHK_ERR(ierr)
         convert_with_strides(dest->base_addr, dst_type, dst_kind, dst_size,
                              t_buff, src_type, src_kind,
-                             src_rank > 0 ? src_size: 0, size, stat);
+                             (src_rank > 0) ? src_size: 0, size, stat);
       }
       CAF_Win_unlock(remote_image, *p);
     }
@@ -3557,6 +3604,7 @@ case kind:                                                            \
 
     CAF_Win_lock(MPI_LOCK_SHARED, remote_image, *p);
     ierr = MPI_Get(dest->base_addr, 1, dt_d, remote_image, offset, 1, dt_s, *p);
+    CHK_ERR(ierr)
     CAF_Win_unlock(remote_image, *p);
 
 #ifdef WITH_FAILED_IMAGES
@@ -3673,9 +3721,10 @@ case kind:                                                          \
                dst_size, src_kind, src_size, src->dim[0].lower_bound);
         if (same_type_and_kind)
         {
-          const size_t trans_size = src_size < dst_size ? src_size : dst_size;
+          const size_t trans_size = (src_size < dst_size) ? src_size : dst_size;
           ierr = MPI_Get(dst, trans_size, MPI_BYTE, remote_image,
                          offset + src_offset, trans_size, MPI_BYTE, *p);
+          CHK_ERR(ierr)
           if (pad_str)
             memcpy((void *)((char *)dst + src_size), pad_str,
                    dst_size - src_size);
@@ -3684,6 +3733,7 @@ case kind:                                                          \
         {
           ierr = MPI_Get(t_buff, src_size, MPI_BYTE, remote_image,
                          offset + src_offset, src_size, MPI_BYTE, *p);
+          CHK_ERR(ierr)
           copy_char_to_self(t_buff, src_type, src_size, src_kind,
                             dst, dst_type, dst_size, dst_kind, 1, true);
         }
@@ -3691,6 +3741,7 @@ case kind:                                                          \
         {
           ierr = MPI_Get(t_buff, src_size, MPI_BYTE, remote_image,
                          offset + src_offset, src_size, MPI_BYTE, *p);
+          CHK_ERR(ierr)
           convert_type(dst, dst_type, dst_kind, t_buff,
                        src_type, src_kind, stat);
         }
@@ -3780,7 +3831,8 @@ get_data(void *ds, mpi_caf_token_t *token, MPI_Aint offset, int dst_type,
          size_t src_size, size_t num, int *stat, int image_index)
 {
   size_t k;
-  MPI_Win win = token == NULL ? global_dynamic_win : token->memptr_win;
+  int ierr;
+  MPI_Win win = (token == NULL) ? global_dynamic_win : token->memptr_win;
 #ifdef EXTRA_DEBUG_OUTPUT
   if (token)
     dprint("%d/%d: %s() %p = win(%d): %p -> offset: %d of size %d -> %d, "
@@ -3797,8 +3849,9 @@ get_data(void *ds, mpi_caf_token_t *token, MPI_Aint offset, int dst_type,
 #endif
   if (dst_type == src_type && dst_kind == src_kind)
   {
-    size_t sz = (dst_size > src_size ? src_size : dst_size) * num;
-    MPI_Get(ds, sz, MPI_BYTE, image_index, offset, sz, MPI_BYTE, win);
+    size_t sz = ((dst_size > src_size) ? src_size : dst_size) * num;
+    ierr = MPI_Get(ds, sz, MPI_BYTE, image_index, offset, sz, MPI_BYTE, win);
+    CHK_ERR(ierr)
     if ((dst_type == BT_CHARACTER || src_type == BT_CHARACTER)
         && dst_size > src_size)
       {
@@ -3813,8 +3866,8 @@ get_data(void *ds, mpi_caf_token_t *token, MPI_Aint offset, int dst_type,
   {
     /* Get the required amount of memory on the stack. */
     void *srh = alloca(src_size);
-    MPI_Get(srh, src_size, MPI_BYTE, image_index, offset, src_size,
-            MPI_BYTE, win);
+    ierr = MPI_Get(srh, src_size, MPI_BYTE, image_index, offset, src_size,
+                   MPI_BYTE, win); CHK_ERR(ierr)
     /* Get of the data needs to be finished before converting the data. */
     MPI_Win_flush(image_index, win);
     assign_char1_from_char4(dst_size, src_size, ds, srh);
@@ -3823,8 +3876,9 @@ get_data(void *ds, mpi_caf_token_t *token, MPI_Aint offset, int dst_type,
   {
     /* Get the required amount of memory on the stack. */
     void *srh = alloca(src_size);
-    MPI_Get(srh, src_size, MPI_BYTE, image_index, offset, src_size,
-            MPI_BYTE, win);
+    ierr = MPI_Get(srh, src_size, MPI_BYTE, image_index, offset, src_size,
+                   MPI_BYTE, win);
+    CHK_ERR(ierr)
     /* Get of the data needs to be finished before converting the data. */
     MPI_Win_flush(image_index, win);
     assign_char4_from_char1(dst_size, src_size, ds, srh);
@@ -3837,8 +3891,8 @@ get_data(void *ds, mpi_caf_token_t *token, MPI_Aint offset, int dst_type,
            "type %d(%d) -> type %d(%d), local buffer: %p\n",
            caf_this_image, caf_num_images, __FUNCTION__,
            num, src_type, src_kind, dst_type, dst_kind, srh);
-    int ierr = MPI_Get(srh, src_size * num, MPI_BYTE, image_index, offset,
-                       src_size * num, MPI_BYTE, win);
+    ierr = MPI_Get(srh, src_size * num, MPI_BYTE, image_index, offset,
+                   src_size * num, MPI_BYTE, win); CHK_ERR(ierr)
     /* Get of the data needs to be finished before converting the data. */
     MPI_Win_flush(image_index, win);
     dprint("%d/%d: %s() srh[0] = %d, ierr = %d\n",
@@ -3859,7 +3913,8 @@ get_data(void *ds, mpi_caf_token_t *token, MPI_Aint offset, int dst_type,
  * Computes the number of items between lower bound (lb) and upper bound (ub)
  * with respect to the stride taking corner cases into account. */
 #define COMPUTE_NUM_ITEMS(num, stride, lb, ub)                  \
-do {                                                            \
+do                                                              \
+{                                                               \
   ptrdiff_t abs_stride = (stride) > 0 ? (stride) : -(stride);   \
   num = (stride) > 0 ? (ub) + 1 - (lb) : (lb) + 1 - (ub);       \
   if (num <= 0 || abs_stride < 1) return;                       \
@@ -3881,12 +3936,14 @@ do {                                                            \
  * 
  *  This typedef is made to allow storing a copy of a remote descriptor on the
  *  stack without having to care about the rank. */
-typedef struct gfc_max_dim_descriptor_t {
+typedef struct gfc_max_dim_descriptor_t
+{
   gfc_descriptor_t base;
   descriptor_dimension dim[GFC_MAX_DIMENSIONS];
 } gfc_max_dim_descriptor_t;
 
-typedef struct gfc_dim1_descriptor_t {
+typedef struct gfc_dim1_descriptor_t
+{
   gfc_descriptor_t base;
   descriptor_dimension dim[1];
 } gfc_dim1_descriptor_t;
@@ -3911,6 +3968,7 @@ get_for_ref(caf_reference_t *ref, size_t *i, size_t dst_index,
   ptrdiff_t extent_src = 1, array_offset_src = 0, stride_src;
   size_t next_dst_dim, ref_rank;
   gfc_max_dim_descriptor_t src_desc_data;
+  int ierr;
 
   if (unlikely(ref == NULL))
     /* May be we should issue an error here, because this case should not
@@ -3937,15 +3995,17 @@ get_for_ref(caf_reference_t *ref, size_t *i, size_t dst_index,
           sr_byte_offset += ref->u.c.offset;
           if (sr_global)
           {
-            MPI_Get(&sr, stdptr_size, MPI_BYTE, image_index,
-                    MPI_Aint_add((MPI_Aint)sr, sr_byte_offset),
-                    stdptr_size, MPI_BYTE, global_dynamic_win);
+            ierr = MPI_Get(&sr, stdptr_size, MPI_BYTE, image_index,
+                           MPI_Aint_add((MPI_Aint)sr, sr_byte_offset),
+                           stdptr_size, MPI_BYTE, global_dynamic_win);
+            CHK_ERR(ierr)
             desc_global = true;
           }
           else
           {
-            MPI_Get(&sr, stdptr_size, MPI_BYTE, image_index, sr_byte_offset,
-                    stdptr_size, MPI_BYTE, mpi_token->memptr_win);
+            ierr = MPI_Get(&sr, stdptr_size, MPI_BYTE, image_index,
+                           sr_byte_offset, stdptr_size, MPI_BYTE,
+                           mpi_token->memptr_win); CHK_ERR(ierr)
             sr_global = true;
           }
           sr_byte_offset = 0;
@@ -4026,15 +4086,17 @@ get_for_ref(caf_reference_t *ref, size_t *i, size_t dst_index,
         desc_byte_offset = sr_byte_offset;
         if (sr_global)
         {
-          MPI_Get(&sr, stdptr_size, MPI_BYTE, image_index,
-                  MPI_Aint_add((MPI_Aint)sr, sr_byte_offset),
-                  stdptr_size, MPI_BYTE, global_dynamic_win);
+          ierr = MPI_Get(&sr, stdptr_size, MPI_BYTE, image_index,
+                         MPI_Aint_add((MPI_Aint)sr, sr_byte_offset),
+                         stdptr_size, MPI_BYTE, global_dynamic_win);
+          CHK_ERR(ierr)
           desc_global = true;
         }
         else
         {
-          MPI_Get(&sr, stdptr_size, MPI_BYTE, image_index,
-                  sr_byte_offset, stdptr_size, MPI_BYTE, mpi_token->memptr_win);
+          ierr = MPI_Get(&sr, stdptr_size, MPI_BYTE, image_index,
+                         sr_byte_offset, stdptr_size, MPI_BYTE,
+                         mpi_token->memptr_win); CHK_ERR(ierr)
           sr_global = true;
         }
         sr_byte_offset = 0;
@@ -4074,16 +4136,20 @@ get_for_ref(caf_reference_t *ref, size_t *i, size_t dst_index,
             ++ref_rank) ;
           /* Get the remote descriptor. */
           if (desc_global)
-            MPI_Get(&src_desc_data, sizeof_desc_for_rank(ref_rank), MPI_BYTE,
-                    image_index, MPI_Aint_add((MPI_Aint)sr, desc_byte_offset),
-                    sizeof_desc_for_rank(ref_rank), MPI_BYTE,
-                    global_dynamic_win);
+          {
+            ierr = MPI_Get(&src_desc_data, sizeof_desc_for_rank(ref_rank),
+                           MPI_BYTE, image_index,
+                           MPI_Aint_add((MPI_Aint)sr, desc_byte_offset),
+                           sizeof_desc_for_rank(ref_rank), MPI_BYTE,
+                           global_dynamic_win); CHK_ERR(ierr)
+          }
           else
           {
-            MPI_Get(&src_desc_data,
-                    sizeof_desc_for_rank(ref_rank), MPI_BYTE, image_index,
-                    desc_byte_offset, sizeof_desc_for_rank(ref_rank),
-                    MPI_BYTE, mpi_token->memptr_win);
+            ierr = MPI_Get(&src_desc_data,
+                           sizeof_desc_for_rank(ref_rank), MPI_BYTE,
+                           image_index, desc_byte_offset,
+                           sizeof_desc_for_rank(ref_rank),
+                           MPI_BYTE, mpi_token->memptr_win); CHK_ERR(ierr)
             desc_global = true;
           }
           src = (gfc_descriptor_t *)&src_desc_data;
@@ -4411,7 +4477,7 @@ PREFIX(get_by_ref) (caf_token_t token, int image_index,
     "libcaf_mpi::caf_get_by_ref(): two or more array part references "
     "are not supported.\n";
   size_t size, i, ref_rank, dst_index, src_size;
-  int dst_rank = GFC_DESCRIPTOR_RANK (dst), dst_cur_dim = 0;
+  int ierr, dst_rank = GFC_DESCRIPTOR_RANK(dst), dst_cur_dim = 0;
   mpi_caf_token_t *mpi_token = (mpi_caf_token_t *) token;
   void *remote_memptr = mpi_token->memptr, *remote_base_memptr = NULL;
   gfc_max_dim_descriptor_t src_desc;
@@ -4464,9 +4530,10 @@ PREFIX(get_by_ref) (caf_token_t token, int image_index,
           {
             data_offset += riter->u.c.offset;
             remote_base_memptr = remote_memptr;
-            MPI_Get(&remote_memptr, stdptr_size, MPI_BYTE, remote_image,
-                    MPI_Aint_add((MPI_Aint)remote_memptr, data_offset),
-                    stdptr_size, MPI_BYTE, global_dynamic_win);
+            ierr = MPI_Get(&remote_memptr, stdptr_size, MPI_BYTE, remote_image,
+                           MPI_Aint_add((MPI_Aint)remote_memptr, data_offset),
+                           stdptr_size, MPI_BYTE, global_dynamic_win);
+            CHK_ERR(ierr)
             /* On the second indirection access also the remote descriptor
              * using the global window. */
             access_desc_through_global_win = true;
@@ -4474,8 +4541,9 @@ PREFIX(get_by_ref) (caf_token_t token, int image_index,
           else
           {
             data_offset += riter->u.c.offset;
-            MPI_Get(&remote_memptr, stdptr_size, MPI_BYTE, remote_image,
-                    data_offset, stdptr_size, MPI_BYTE, mpi_token->memptr_win);
+            ierr = MPI_Get(&remote_memptr, stdptr_size, MPI_BYTE, remote_image,
+                           data_offset, stdptr_size, MPI_BYTE,
+                           mpi_token->memptr_win); CHK_ERR(ierr)
             dprint("%d/%d: %s() get(custom_token %p), offset = %d, "
                    "res. remote_mem = %p\n",
                    caf_this_image, caf_num_images, __FUNCTION__,
@@ -4943,61 +5011,64 @@ put_data(mpi_caf_token_t *token, MPI_Aint offset, void *sr, int dst_type,
          size_t src_size, size_t num, int *stat, int image_index)
 {
   size_t k;
+  int ierr;
   MPI_Win win = token == NULL ? global_dynamic_win : token->memptr_win;
 #ifdef EXTRA_DEBUG_OUTPUT
   if (token)
     dprint("%d/%d: %s() (win: %d, image: %d, offset: %d) <- %p, "
            "num: %d, size %d -> %d, dst type %d(%d), src type %d(%d)\n",
            caf_this_image, caf_num_images, __FUNCTION__,
-           win, (image_index + 1), offset, sr, num, src_size, dst_size,
+           win, image_index + 1, offset, sr, num, src_size, dst_size,
            dst_type, dst_kind, src_type, src_kind);
   else
     dprint("%d/%d: %s() (global_win: %x, image: %d, offset: %d (%p)) <- %p, "
            "num: %d, size %d -> %d, dst type %d(%d), src type %d(%d)\n",
            caf_this_image, caf_num_images, __FUNCTION__,
-           win, (image_index + 1), offset, offset, sr, num, src_size,
+           win, image_index + 1, offset, offset, sr, num, src_size,
            dst_size, dst_type, dst_kind, src_type, src_kind);
 #endif
   if (dst_type == src_type && dst_kind == src_kind)
   {
     size_t sz = (dst_size > src_size ? src_size : dst_size) * num;
-    MPI_Put(sr, sz, MPI_BYTE, image_index, offset, sz, MPI_BYTE, win);
-    dprint("%d/%d: %s() sr[] = %d\n", caf_this_image, caf_num_images,
-           __FUNCTION__, (int)((char*)sr)[0]);
+    ierr = MPI_Put(sr, sz, MPI_BYTE, image_index, offset, sz, MPI_BYTE, win);
+    CHK_ERR(ierr)
+    dprint("%d/%d: %s() sr[] = %d\n",
+           caf_this_image, caf_num_images, __FUNCTION__,
+           (int)((char*)sr)[0]);
     if ((dst_type == BT_CHARACTER || src_type == BT_CHARACTER)
         && dst_size > src_size)
+    {
+      const size_t trans_size = dst_size / dst_kind - src_size / src_kind;
+      void *pad = alloca(trans_size * dst_kind);
+      if (dst_kind == 1)
       {
-        const size_t trans_size = dst_size / dst_kind - src_size / src_kind;
-        void *pad = alloca(trans_size * dst_kind);
-        if (dst_kind == 1)
-        {
-          memset((void*)(char*) pad, ' ', trans_size);
-        }
-        else /* dst_kind == 4. */
-        {
-          for (k = 0; k < trans_size; ++k)
-            ((int32_t*) pad)[k] = (int32_t) ' ';
-        }
-        MPI_Put(pad, trans_size * dst_kind, MPI_BYTE, image_index,
-                offset + (src_size / src_kind) * dst_kind,
-                trans_size * dst_kind, MPI_BYTE, win);
+        memset((void*)(char*) pad, ' ', trans_size);
       }
+      else /* dst_kind == 4. */
+      {
+        for (k = 0; k < trans_size; ++k)
+          ((int32_t*) pad)[k] = (int32_t) ' ';
+      }
+      ierr = MPI_Put(pad, trans_size * dst_kind, MPI_BYTE, image_index,
+                     offset + (src_size / src_kind) * dst_kind,
+                     trans_size * dst_kind, MPI_BYTE, win); CHK_ERR(ierr)
+    }
   }
   else if (dst_type == BT_CHARACTER && dst_kind == 1)
   {
     /* Get the required amount of memory on the stack. */
     void *dsh = alloca(dst_size);
     assign_char1_from_char4(dst_size, src_size, dsh, sr);
-    MPI_Put(dsh, dst_size, MPI_BYTE, image_index, offset, dst_size,
-            MPI_BYTE, win);
+    ierr = MPI_Put(dsh, dst_size, MPI_BYTE, image_index, offset, dst_size,
+                   MPI_BYTE, win); CHK_ERR(ierr)
   }
   else if (dst_type == BT_CHARACTER)
   {
     /* Get the required amount of memory on the stack. */
     void *dsh = alloca(dst_size);
     assign_char4_from_char1(dst_size, src_size, dsh, sr);
-    MPI_Put(dsh, dst_size, MPI_BYTE, image_index, offset, dst_size,
-            MPI_BYTE, win);
+    ierr = MPI_Put(dsh, dst_size, MPI_BYTE, image_index, offset, dst_size,
+                   MPI_BYTE, win); CHK_ERR(ierr)
   }
   else
   {
@@ -5013,12 +5084,12 @@ put_data(mpi_caf_token_t *token, MPI_Aint offset, void *sr, int dst_type,
       dsh_iter += dst_size;
       sr += src_size;
     }
-   // dprint("%d/%d: %s() dsh[0] = %d\n", caf_this_image, caf_num_images,
-   //        __FUNCTION__, ((int *)dsh)[0]);
-    MPI_Put(dsh, dst_size * num, MPI_BYTE, image_index, offset,
-            dst_size * num, MPI_BYTE, win);
+    // dprint("%d/%d: %s() dsh[0] = %d\n",
+    //        caf_this_image, caf_num_images, __FUNCTION__, ((int *)dsh)[0]);
+    ierr = MPI_Put(dsh, dst_size * num, MPI_BYTE, image_index, offset,
+                   dst_size * num, MPI_BYTE, win); CHK_ERR(ierr)
   }
-  MPI_Win_flush(image_index, win);
+  ierr = MPI_Win_flush(image_index, win); CHK_ERR(ierr)
 }
 
 
@@ -5042,6 +5113,7 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
   ptrdiff_t extent_dst = 1, array_offset_dst = 0, dst_stride, src_stride;
   size_t next_dst_dim, ref_rank;
   gfc_max_dim_descriptor_t dst_desc_data;
+  int ierr;
 
   if (unlikely(ref == NULL))
     /* May be we should issue an error here, because this case should not
@@ -5066,21 +5138,24 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
         {
           if (ds_global)
           {
-            MPI_Get(&ds, stdptr_size, MPI_BYTE, image_index,
-                    MPI_Aint_add((MPI_Aint)ds, dst_byte_offset),
-                    stdptr_size, MPI_BYTE, global_dynamic_win);
+            ierr = MPI_Get(&ds, stdptr_size, MPI_BYTE, image_index,
+                           MPI_Aint_add((MPI_Aint)ds, dst_byte_offset),
+                           stdptr_size, MPI_BYTE, global_dynamic_win);
+            CHK_ERR(ierr)
             desc_global = true;
           }
           else
           {
-            MPI_Get(&ds, stdptr_size, MPI_BYTE, image_index, dst_byte_offset,
-                    stdptr_size, MPI_BYTE,  mpi_token->memptr_win);
+            ierr = MPI_Get(&ds, stdptr_size, MPI_BYTE, image_index,
+                           dst_byte_offset, stdptr_size, MPI_BYTE,
+                           mpi_token->memptr_win); CHK_ERR(ierr)
             ds_global = true;
           }
           dst_byte_offset = 0;
         }
 
         if (ds_global)
+        {
           put_data(NULL, MPI_Aint_add((MPI_Aint)ds, dst_byte_offset), sr,
 #ifdef GCC_GE_8
                    dst_type,
@@ -5089,7 +5164,9 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
 #endif
                    GFC_DESCRIPTOR_TYPE(src), dst_kind, src_kind,
                    ref->item_size, src_size, 1, stat, image_index);
+        }
         else
+        {
           put_data(mpi_token, dst_byte_offset, sr,
 #ifdef GCC_GE_8
                    dst_type,
@@ -5098,6 +5175,7 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
 #endif
                    GFC_DESCRIPTOR_TYPE(src), dst_kind, src_kind,
                    ref->item_size, src_size, 1, stat, image_index);
+        }
         ++(*i);
         return;
       case CAF_REF_STATIC_ARRAY:
@@ -5114,7 +5192,7 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
                      dst_type, GFC_DESCRIPTOR_TYPE(src),
 #else
                      GFC_DESCRIPTOR_TYPE(dst),
-                     dst_type == -1 ? GFC_DESCRIPTOR_TYPE(src) : dst_type,
+                     (dst_type == -1) ? GFC_DESCRIPTOR_TYPE(src) : dst_type,
 #endif
                      dst_kind, src_kind, ref->item_size, src_size, num,
                      stat, image_index);
@@ -5126,7 +5204,7 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
                      dst_type, GFC_DESCRIPTOR_TYPE(src),
 #else
                      GFC_DESCRIPTOR_TYPE(dst),
-                     dst_type == -1 ? GFC_DESCRIPTOR_TYPE(src) : dst_type,
+                     (dst_type == -1) ? GFC_DESCRIPTOR_TYPE(src) : dst_type,
 #endif
                      dst_kind, src_kind, ref->item_size, src_size, num,
                      stat, image_index);
@@ -5149,15 +5227,17 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
         desc_byte_offset = dst_byte_offset;
         if (ds_global)
         {
-          MPI_Get(&ds, stdptr_size, MPI_BYTE, image_index,
-                  MPI_Aint_add((MPI_Aint)ds, dst_byte_offset),
-                  stdptr_size, MPI_BYTE, global_dynamic_win);
+          ierr = MPI_Get(&ds, stdptr_size, MPI_BYTE, image_index,
+                         MPI_Aint_add((MPI_Aint)ds, dst_byte_offset),
+                         stdptr_size, MPI_BYTE, global_dynamic_win);
+          CHK_ERR(ierr)
           desc_global = true;
         }
         else
         {
-          MPI_Get(&ds, stdptr_size, MPI_BYTE, image_index, dst_byte_offset,
-                  stdptr_size, MPI_BYTE, mpi_token->memptr_win);
+          ierr = MPI_Get(&ds, stdptr_size, MPI_BYTE, image_index,
+                         dst_byte_offset, stdptr_size, MPI_BYTE,
+                         mpi_token->memptr_win); CHK_ERR(ierr)
           ds_global = true;
         }
         dst_byte_offset = 0;
@@ -5198,17 +5278,18 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
           /* Get the remote descriptor. */
           if (desc_global)
           {
-            MPI_Get(&dst_desc_data, sizeof_desc_for_rank(ref_rank), MPI_BYTE,
-                    image_index, MPI_Aint_add((MPI_Aint)ds, desc_byte_offset),
-                    sizeof_desc_for_rank(ref_rank), MPI_BYTE,
-                    global_dynamic_win);
+            ierr = MPI_Get(&dst_desc_data, sizeof_desc_for_rank(ref_rank),
+                           MPI_BYTE, image_index,
+                           MPI_Aint_add((MPI_Aint)ds, desc_byte_offset),
+                           sizeof_desc_for_rank(ref_rank), MPI_BYTE,
+                           global_dynamic_win); CHK_ERR(ierr)
           }
           else
           {
-            MPI_Get(&dst_desc_data, sizeof_desc_for_rank(ref_rank), MPI_BYTE,
-                    image_index, desc_byte_offset,
-                    sizeof_desc_for_rank(ref_rank),
-                    MPI_BYTE, mpi_token->memptr_win);
+            ierr = MPI_Get(&dst_desc_data, sizeof_desc_for_rank(ref_rank),
+                           MPI_BYTE, image_index, desc_byte_offset,
+                           sizeof_desc_for_rank(ref_rank),
+                           MPI_BYTE, mpi_token->memptr_win); CHK_ERR(ierr)
             desc_global = true;
           }
           dst = (gfc_descriptor_t *)&dst_desc_data;
@@ -5261,8 +5342,8 @@ case kind:                                          \
 #undef KINDCASE
 
             dprint("%d/%d: %s() vector-index computed to: %d\n",
-                  caf_this_image, caf_num_images, __FUNCTION__,
-                  array_offset_dst);
+                   caf_this_image, caf_num_images, __FUNCTION__,
+                   array_offset_dst);
             send_for_ref(ref, i, src_index, mpi_token, dst, src, ds, sr,
                          dst_byte_offset + array_offset_dst * ref->item_size,
                          desc_byte_offset + array_offset_dst * ref->item_size,
@@ -5312,7 +5393,7 @@ case kind:                                          \
             * dst->dim[dst_dim]._stride;
           dst_stride = dst->dim[dst_dim]._stride
                        * ref->u.a.dim[dst_dim].s.stride;
-          src_stride = GFC_DESCRIPTOR_RANK(src) > 0 ?
+          src_stride = (GFC_DESCRIPTOR_RANK(src) > 0) ?
             src->dim[src_dim]._stride : 0;
           /* Increase the dst_dim only, when the src_extent is greater one
            * or src and dst extent are both one.  Don't increase when the scalar
@@ -5552,7 +5633,7 @@ PREFIX(send_by_ref) (caf_token_t token, int image_index,
     "extent of non-allocatable arrays mismatch (%lu != %lu).\n";
   
   size_t size, i, ref_rank = 0, src_index, dst_size;
-  int dst_rank = -1, src_cur_dim = 0;
+  int dst_rank = -1, src_cur_dim = 0, ierr;
   mpi_caf_token_t *mpi_token = (mpi_caf_token_t *) token;
   void *remote_memptr = mpi_token->memptr, *remote_base_memptr = NULL;
   gfc_max_dim_descriptor_t dst_desc, temp_src;
@@ -5606,18 +5687,20 @@ PREFIX(send_by_ref) (caf_token_t token, int image_index,
           {
             data_offset += riter->u.c.offset;
             remote_base_memptr = remote_memptr;
-            MPI_Get(&remote_memptr, stdptr_size, MPI_BYTE, remote_image,
-                    MPI_Aint_add((MPI_Aint)remote_memptr, data_offset),
-                    stdptr_size, MPI_BYTE, global_dynamic_win);
-            /* On the second indirection access also the
-             * remote descriptor using the global window. */
+            ierr = MPI_Get(&remote_memptr, stdptr_size, MPI_BYTE, remote_image,
+                           MPI_Aint_add((MPI_Aint)remote_memptr, data_offset),
+                           stdptr_size, MPI_BYTE, global_dynamic_win);
+            CHK_ERR(ierr)
+            /* On the second indirection access also the remote descriptor
+             * using the global window. */
             access_desc_through_global_win = true;
           }
           else
           {
             data_offset += riter->u.c.offset;
-            MPI_Get(&remote_memptr, stdptr_size, MPI_BYTE, remote_image,
-                    data_offset, stdptr_size, MPI_BYTE, mpi_token->memptr_win);
+            ierr = MPI_Get(&remote_memptr, stdptr_size, MPI_BYTE, remote_image,
+                           data_offset, stdptr_size, MPI_BYTE,
+                           mpi_token->memptr_win); CHK_ERR(ierr)
             /* All future access is through the global dynamic window. */
             access_data_through_global_win = true;
           }
@@ -5647,19 +5730,22 @@ PREFIX(send_by_ref) (caf_token_t token, int image_index,
             dprint("%d/%d: %s() remote desc fetch from %p, offset = %d\n",
                    caf_this_image, caf_num_images, __FUNCTION__,
                    remote_base_memptr, desc_offset);
-            MPI_Get(dst, sizeof_desc_for_rank(ref_rank), MPI_BYTE, remote_image,
-                    MPI_Aint_add((MPI_Aint)remote_base_memptr, desc_offset),
-                    sizeof_desc_for_rank(ref_rank), MPI_BYTE,
-                    global_dynamic_win);
+            ierr = MPI_Get(dst, sizeof_desc_for_rank(ref_rank), MPI_BYTE,
+                           remote_image,
+                           MPI_Aint_add(
+                            (MPI_Aint)remote_base_memptr, desc_offset),
+                           sizeof_desc_for_rank(ref_rank), MPI_BYTE,
+                           global_dynamic_win); CHK_ERR(ierr)
           }
           else
           {
             dprint("%d/%d: %s() remote desc fetch from win %p, offset = %d\n",
                    caf_this_image, caf_num_images, __FUNCTION__,
                    mpi_token->memptr_win, desc_offset);
-            MPI_Get(dst, sizeof_desc_for_rank(ref_rank), MPI_BYTE, remote_image,
-                    desc_offset, sizeof_desc_for_rank(ref_rank), MPI_BYTE,
-                    mpi_token->memptr_win);
+            ierr = MPI_Get(dst, sizeof_desc_for_rank(ref_rank), MPI_BYTE,
+                           remote_image, desc_offset,
+                           sizeof_desc_for_rank(ref_rank), MPI_BYTE,
+                           mpi_token->memptr_win); CHK_ERR(ierr)
             access_desc_through_global_win = true;
           }
         }
@@ -6010,7 +6096,7 @@ PREFIX(sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
   const char cannotallocdst[] =
     "libcaf_mpi::caf_sendget_by_ref(): can not allocate %d bytes of memory.\n";
   size_t size, i, ref_rank, dst_index, src_index = 0, src_size;
-  int dst_rank;
+  int dst_rank, ierr;
   mpi_caf_token_t
     *src_mpi_token = (mpi_caf_token_t *) src_token,
     *dst_mpi_token = (mpi_caf_token_t *) dst_token;
@@ -6066,9 +6152,11 @@ PREFIX(sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
           {
             data_offset += riter->u.c.offset;
             remote_base_memptr = remote_memptr;
-            MPI_Get(&remote_memptr, stdptr_size, MPI_BYTE, src_remote_image,
-                    MPI_Aint_add((MPI_Aint)remote_memptr, data_offset),
-                    stdptr_size, MPI_BYTE, global_dynamic_win);
+            ierr = MPI_Get(&remote_memptr, stdptr_size, MPI_BYTE,
+                           src_remote_image,
+                           MPI_Aint_add((MPI_Aint)remote_memptr, data_offset),
+                           stdptr_size, MPI_BYTE, global_dynamic_win);
+            CHK_ERR(ierr)
             /* On the second indirection access also the remote descriptor
              * using the global window. */
             access_desc_through_global_win = true;
@@ -6076,9 +6164,9 @@ PREFIX(sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
           else
           {
             data_offset += riter->u.c.offset;
-            MPI_Get(&remote_memptr, stdptr_size, MPI_BYTE, src_remote_image,
-                    data_offset, stdptr_size, MPI_BYTE,
-                    src_mpi_token->memptr_win);
+            ierr = MPI_Get(&remote_memptr, stdptr_size, MPI_BYTE,
+                           src_remote_image, data_offset, stdptr_size, MPI_BYTE,
+                           src_mpi_token->memptr_win); CHK_ERR(ierr)
             /* All future access is through the global dynamic window. */
             access_data_through_global_win = true;
           }
@@ -6108,21 +6196,22 @@ PREFIX(sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
             dprint("%d/%d: %s() remote desc fetch from %p, offset = %d\n",
                    caf_this_image, caf_num_images, __FUNCTION__,
                    remote_base_memptr, desc_offset);
-            MPI_Get(src, sizeof_desc_for_rank(ref_rank),
-                    MPI_BYTE, src_remote_image,
-                    MPI_Aint_add((MPI_Aint)remote_base_memptr, desc_offset),
-                    sizeof_desc_for_rank(ref_rank), MPI_BYTE,
-                    global_dynamic_win);
+            ierr = MPI_Get(src, sizeof_desc_for_rank(ref_rank), MPI_BYTE,
+                           src_remote_image,
+                           MPI_Aint_add(
+                            (MPI_Aint)remote_base_memptr, desc_offset),
+                           sizeof_desc_for_rank(ref_rank), MPI_BYTE,
+                           global_dynamic_win); CHK_ERR(ierr)
           }
           else
           {
             dprint("%d/%d: %s() remote desc fetch from win %p, offset = %d\n",
                    caf_this_image, caf_num_images, __FUNCTION__,
                    src_mpi_token->memptr_win, desc_offset);
-            MPI_Get(src, sizeof_desc_for_rank(ref_rank), MPI_BYTE,
-                    src_remote_image, desc_offset,
-                    sizeof_desc_for_rank(ref_rank),
-                    MPI_BYTE, src_mpi_token->memptr_win);
+            ierr = MPI_Get(src, sizeof_desc_for_rank(ref_rank), MPI_BYTE,
+                           src_remote_image, desc_offset,
+                           sizeof_desc_for_rank(ref_rank),
+                           MPI_BYTE, src_mpi_token->memptr_win); CHK_ERR(ierr)
             access_desc_through_global_win = true;
           }
         }
@@ -6302,7 +6391,7 @@ case kind:                                                        \
    * - src_size gives the size in bytes of each item in the destination array.
   */
 
-  dst_rank = size > 1 ? 1 : 0;
+  dst_rank = (size > 1) ? 1 : 0;
   memset(&temp_src_desc, 0, sizeof(gfc_dim1_descriptor_t));
 #ifdef GCC_GE_8
   temp_src_desc.base.dtype.elem_len = (dst_type != BT_COMPLEX) ?
@@ -6399,6 +6488,7 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
   bool carryOn = true, firstDesc = true;
   caf_reference_t *riter = refs, *prev;
   size_t i, ref_rank;
+  int ierr;
   gfc_max_dim_descriptor_t src_desc;
 
   while (carryOn && riter)
@@ -6409,9 +6499,9 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
         if (riter->u.c.caf_token_offset)
         {
           CAF_Win_lock(MPI_LOCK_SHARED, remote_image, mpi_token->memptr_win);
-          MPI_Get(&remote_memptr, ptr_size, MPI_BYTE, remote_image,
-                  local_offset + riter->u.c.offset, ptr_size,
-                  MPI_BYTE, mpi_token->memptr_win);
+          ierr = MPI_Get(&remote_memptr, ptr_size, MPI_BYTE, remote_image,
+                         local_offset + riter->u.c.offset, ptr_size,
+                         MPI_BYTE, mpi_token->memptr_win); CHK_ERR(ierr)
           CAF_Win_unlock(remote_image, mpi_token->memptr_win);
           dprint("%d/%d: %s() Got first remote address %p from offset %d\n",
                  caf_this_image, caf_num_images, __FUNCTION__,
@@ -6508,9 +6598,9 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
         firstDesc = firstDesc && riter->u.c.caf_token_offset == 0;
         local_offset += riter->u.c.offset;
         remote_base_memptr = remote_memptr + local_offset;
-        MPI_Get(&remote_memptr, ptr_size, MPI_BYTE, remote_image,
-                (MPI_Aint)remote_base_memptr, ptr_size,
-                MPI_BYTE, global_dynamic_win);
+        ierr = MPI_Get(&remote_memptr, ptr_size, MPI_BYTE, remote_image,
+                       (MPI_Aint)remote_base_memptr, ptr_size,
+                        MPI_BYTE, global_dynamic_win); CHK_ERR(ierr)
         dprint("%d/%d: %s() Got remote address %p from offset %d "
                "and base memptr %p\n",
                caf_this_image, caf_num_images, __FUNCTION__,
@@ -6542,10 +6632,10 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
                  caf_this_image, caf_num_images, __FUNCTION__,
                  ref_rank, mpi_token->memptr_win,
                  sizeof_desc_for_rank(ref_rank));
-          MPI_Get(&src_desc, sizeof_desc_for_rank(ref_rank),
-                  MPI_BYTE, remote_image, local_offset,
-                  sizeof_desc_for_rank(ref_rank),
-                  MPI_BYTE, mpi_token->memptr_win);
+          ierr = MPI_Get(&src_desc, sizeof_desc_for_rank(ref_rank),
+                         MPI_BYTE, remote_image, local_offset,
+                         sizeof_desc_for_rank(ref_rank),
+                         MPI_BYTE, mpi_token->memptr_win); CHK_ERR(ierr)
           firstDesc = false;
         }
         else
@@ -6559,9 +6649,10 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
                  caf_this_image, caf_num_images, __FUNCTION__,
                  ref_rank, remote_base_memptr,
                  sizeof_desc_for_rank(ref_rank));
-          MPI_Get(&src_desc, sizeof_desc_for_rank(ref_rank), MPI_BYTE,
-                  remote_image, (MPI_Aint)remote_base_memptr,
-                  sizeof_desc_for_rank(ref_rank), MPI_BYTE, global_dynamic_win);
+          ierr = MPI_Get(&src_desc, sizeof_desc_for_rank(ref_rank), MPI_BYTE,
+                         remote_image, (MPI_Aint)remote_base_memptr,
+                         sizeof_desc_for_rank(ref_rank), MPI_BYTE,
+                         global_dynamic_win); CHK_ERR(ierr)
         }
 #ifdef EXTRA_DEBUG_OUTPUT
         {
@@ -6725,7 +6816,7 @@ sync_images_internal(int count, int images[], int *stat, char *errmsg,
 
 #ifdef WITH_FAILED_IMAGES
     /* Provoke detecting process fails. */
-    MPI_Test(&alive_request, &flag, MPI_STATUS_IGNORE);
+    ierr = MPI_Test(&alive_request, &flag, MPI_STATUS_IGNORE); CHK_ERR(ierr)
 #endif
     /* A rather simple way to synchronice:
      * - expect all images to sync with receiving an int,
@@ -6752,13 +6843,13 @@ sync_images_internal(int count, int images[], int *stat, char *errmsg,
       /* Need to have the request handlers contigously in the handlers
        * array or waitany below will trip about the handler as illegal. */
       ierr = MPI_Irecv(&arrived[images[i] - 1], 1, MPI_INT, images[i] - 1,
-                       MPI_TAG_CAF_SYNC_IMAGES,
-                       CAF_COMM_WORLD, &sync_handles[i]);
+                       MPI_TAG_CAF_SYNC_IMAGES, CAF_COMM_WORLD,
+                       &sync_handles[i]); CHK_ERR(ierr)
     }
     for (i = 0; i < count; ++i)
     {
-      MPI_Send(&int_zero, 1, MPI_INT, images[i] - 1, MPI_TAG_CAF_SYNC_IMAGES,
-               CAF_COMM_WORLD);
+      ierr = MPI_Send(&int_zero, 1, MPI_INT, images[i] - 1,
+                      MPI_TAG_CAF_SYNC_IMAGES, CAF_COMM_WORLD); CHK_ERR(ierr)
     }
     done_count = 0;
     while (done_count < count)
@@ -6834,8 +6925,7 @@ static void                                           \
 name(datatype *invec, datatype *inoutvec, int *len,   \
      MPI_Datatype *datatype __attribute__((unused)))  \
 {                                                     \
-  int i;                                              \
-  for (i = 0; i < len; i++)                           \
+  for (int i = 0; i < len; ++i)                       \
     operator;                                         \
 }
 
@@ -6847,8 +6937,7 @@ static void                                                   \
 name##_by_reference_adapter(void *invec, void *inoutvec,      \
                             int *len, MPI_Datatype *datatype) \
 {                                                             \
-  int i;                                                      \
-  for (i = 0; i < *len; i++)                                  \
+  for (int i = 0; i < *len; ++i)                              \
   {                                                           \
     *((dt*)inoutvec) =                                        \
       (dt)(REFERENCE_FUNC(dt)((dt *)invec, (dt *)inoutvec));  \
@@ -6860,8 +6949,7 @@ static void                                                   \
 name##_by_value_adapter(void *invec, void *inoutvec,          \
                         int *len, MPI_Datatype *datatype)     \
 {                                                             \
-  int i;                                                      \
-  for (i = 0; i < *len; i++)                                  \
+  for (int i = 0; i < *len; ++i)                              \
   {                                                           \
     *((dt*)inoutvec) =                                        \
       (dt)(VALUE_FUNC(dt)(*(dt *)invec, *(dt *)inoutvec));    \
@@ -6899,54 +6987,54 @@ for (int i = 0; i < *len; i++)
 #ifndef MPI_INTEGER1
 GEN_REDUCTION(do_sum_int1, int8_t, inoutvec[i] += invec[i])
 GEN_REDUCTION(do_min_int1, int8_t,
-              inoutvec[i] = invec[i] >= inoutvec[i] ? inoutvec[i] : invec[i])
+              inoutvec[i] = (invec[i] >= inoutvec[i] ? inoutvec[i] : invec[i]))
 GEN_REDUCTION(do_max_int1, int8_t,
-              inoutvec[i] = invec[i] <= inoutvec[i] ? inoutvec[i] : invec[i])
+              inoutvec[i] = (invec[i] <= inoutvec[i] ? inoutvec[i] : invec[i]))
 #endif
 
 /*
 #ifndef MPI_INTEGER2 
 GEN_REDUCTION(do_sum_int1, int16_t, inoutvec[i] += invec[i]) 
 GEN_REDUCTION(do_min_int1, int16_t,
-              inoutvec[i] = invec[i] >= inoutvec[i] ? inoutvec[i] : invec[i]) 
+              inoutvec[i] = (invec[i] >= inoutvec[i] ? inoutvec[i] : invec[i])) 
 GEN_REDUCTION(do_max_int1, int16_t, 
-             inoutvec[i] = invec[i] <= inoutvec[i] ? inoutvec[i] : invec[i])
+             inoutvec[i] = (invec[i] <= inoutvec[i] ? inoutvec[i] : invec[i]))
 #endif
 */
 
 #if defined(MPI_INTEGER16) && defined(GFC_INTEGER_16)
 GEN_REDUCTION(do_sum_int1, GFC_INTEGER_16, inoutvec[i] += invec[i])
 GEN_REDUCTION(do_min_int1, GFC_INTEGER_16,
-              inoutvec[i] = invec[i] >= inoutvec[i] ? inoutvec[i] : invec[i])
+              inoutvec[i] = (invec[i] >= inoutvec[i] ? inoutvec[i] : invec[i]))
 GEN_REDUCTION(do_max_int1, GFC_INTEGER_16,
-              inoutvec[i] = invec[i] <= inoutvec[i] ? inoutvec[i] : invec[i])
+              inoutvec[i] = (invec[i] <= inoutvec[i] ? inoutvec[i] : invec[i]))
 #endif
 
 #if defined(GFC_DTYPE_REAL_10) \
     || (!defined(GFC_DTYPE_REAL_10) && defined(GFC_DTYPE_REAL_16))
 GEN_REDUCTION(do_sum_real10, long double, inoutvec[i] += invec[i])
 GEN_REDUCTION(do_min_real10, long double,
-              inoutvec[i] = invec[i] >= inoutvec[i] ? inoutvec[i] : invec[i])
+              inoutvec[i] = (invec[i] >= inoutvec[i] ? inoutvec[i] : invec[i]))
 GEN_REDUCTION(do_max_real10, long double,
-              inoutvec[i] = invec[i] <= inoutvec[i] ? inoutvec[i] : invec[i])
+              inoutvec[i] = (invec[i] <= inoutvec[i] ? inoutvec[i] : invec[i]))
 GEN_REDUCTION(do_sum_complex10, _Complex long double, inoutvec[i] += invec[i])
 GEN_REDUCTION(do_min_complex10, _Complex long double,
-              inoutvec[i] = invec[i] >= inoutvec[i] ? inoutvec[i] : invec[i])
+              inoutvec[i] = (invec[i] >= inoutvec[i] ? inoutvec[i] : invec[i]))
 GEN_REDUCTION(do_max_complex10, _Complex long double,
-              inoutvec[i] = invec[i] <= inoutvec[i] ? inoutvec[i] : invec[i])
+              inoutvec[i] = (invec[i] <= inoutvec[i] ? inoutvec[i] : invec[i]))
 #endif
 
 #if defined(GFC_DTYPE_REAL_10) && defined(GFC_DTYPE_REAL_16)
 GEN_REDUCTION(do_sum_real10, __float128, inoutvec[i] += invec[i])
 GEN_REDUCTION(do_min_real10, __float128,
-              inoutvec[i] = invec[i] >= inoutvec[i] ? inoutvec[i] : invec[i])
+              inoutvec[i] = (invec[i] >= inoutvec[i] ? inoutvec[i] : invec[i]))
 GEN_REDUCTION(do_max_real10, __float128,
-              inoutvec[i] = invec[i] <= inoutvec[i] ? inoutvec[i] : invec[i])
+              inoutvec[i] = (invec[i] <= inoutvec[i] ? inoutvec[i] : invec[i]))
 GEN_REDUCTION(do_sum_complex10, _Complex __float128, inoutvec[i] += invec[i])
 GEN_REDUCTION(do_mincomplexl10, _Complex __float128,
-              inoutvec[i] = invec[i] >= inoutvec[i] ? inoutvec[i] : invec[i])
+              inoutvec[i] = (invec[i] >= inoutvec[i] ? inoutvec[i] : invec[i]))
 GEN_REDUCTION(do_max_complex10, _Complex __float128,
-              inoutvec[i] = invec[i] <= inoutvec[i] ? inoutvec[i] : invec[i])
+              inoutvec[i] = (invec[i] <= inoutvec[i] ? inoutvec[i] : invec[i]))
 #endif
 #undef GEN_REDUCTION
 
@@ -6954,6 +7042,7 @@ GEN_REDUCTION(do_max_complex10, _Complex __float128,
 static MPI_Datatype
 get_MPI_datatype(gfc_descriptor_t *desc, int char_len)
 {
+  int ierr;
   /* FIXME: Better check whether the sizes are okay and supported;
    * MPI3 adds more types, e.g. MPI_INTEGER1. */
   switch (GFC_DTYPE_TYPE_SIZE(desc))
@@ -7010,10 +7099,11 @@ get_MPI_datatype(gfc_descriptor_t *desc, int char_len)
   if ((GFC_DTYPE_TYPE_SIZE(desc) - GFC_DTYPE_CHARACTER) % 64 == 0)
   {
     MPI_Datatype string;
+
     if (char_len == 0)
       char_len = GFC_DESCRIPTOR_SIZE(desc);
-    MPI_Type_contiguous(char_len, MPI_CHARACTER, &string);
-    MPI_Type_commit(&string);
+    ierr = MPI_Type_contiguous(char_len, MPI_CHARACTER, &string); CHK_ERR(ierr)
+    ierr = MPI_Type_commit(&string); CHK_ERR(ierr)
     return string;
   }
 
@@ -7045,14 +7135,20 @@ internal_co_reduce(MPI_Op op, gfc_descriptor_t *source, int result_image,
   if (rank == 0 || PREFIX(is_contiguous) (source))
   {
     if (result_image == 0)
-      ierr = MPI_Allreduce(MPI_IN_PLACE, source->base_addr, size, datatype,
-                           op, CAF_COMM_WORLD);
+    {
+      ierr = MPI_Allreduce(MPI_IN_PLACE, source->base_addr, size, datatype, op,
+                           CAF_COMM_WORLD); CHK_ERR(ierr)
+    }
     else if (result_image == caf_this_image)
+    {
       ierr = MPI_Reduce(MPI_IN_PLACE, source->base_addr, size, datatype, op,
-                        result_image - 1, CAF_COMM_WORLD);
+                        result_image - 1, CAF_COMM_WORLD); CHK_ERR(ierr)
+    }
     else
+    {
       ierr = MPI_Reduce(source->base_addr, NULL, size, datatype, op,
-                        result_image - 1, CAF_COMM_WORLD);
+                        result_image - 1, CAF_COMM_WORLD); CHK_ERR(ierr)
+    }
     if (ierr)
       goto error;
     goto co_reduce_cleanup;
@@ -7071,20 +7167,29 @@ internal_co_reduce(MPI_Op op, gfc_descriptor_t *source, int result_image,
     void *sr = (void *)((char *)source->base_addr
                         + array_offset_sr * GFC_DESCRIPTOR_SIZE(source));
     if (result_image == 0)
+    {
       ierr = MPI_Allreduce(MPI_IN_PLACE, sr, 1, datatype, op, CAF_COMM_WORLD);
+      CHK_ERR(ierr)
+    }
     else if (result_image == caf_this_image)
-      ierr = MPI_Reduce(MPI_IN_PLACE, sr, 1, datatype, op,
-                        result_image - 1, CAF_COMM_WORLD);
+    {
+      ierr = MPI_Reduce(MPI_IN_PLACE, sr, 1, datatype, op, result_image - 1,
+                        CAF_COMM_WORLD); CHK_ERR(ierr)
+    }
     else
+    {
       ierr = MPI_Reduce(sr, NULL, 1, datatype, op, result_image - 1,
-                        CAF_COMM_WORLD);
+                        CAF_COMM_WORLD); CHK_ERR(ierr)
+    }
     if (ierr)
       goto error;
   }
 
 co_reduce_cleanup:
   if (GFC_DESCRIPTOR_TYPE(source) == BT_CHARACTER)
-    MPI_Type_free(&datatype);
+  {
+    ierr = MPI_Type_free(&datatype); CHK_ERR(ierr)
+  }
   if (stat)
     *stat = 0;
   return;
@@ -7104,7 +7209,7 @@ error:
     err_buffer[len == sizeof(err_buffer) ? len - 1 : len] = '\0';
     caf_runtime_error("CO_SUM failed with %s\n", err_buffer);
   }
-  memcpy(errmsg, err_buffer, errmsg_len > len ? len : errmsg_len);
+  memcpy(errmsg, err_buffer, (errmsg_len > len) ? len : errmsg_len);
   if (errmsg_len > len)
     memset(&errmsg[len], '\0', errmsg_len - len);
 }
@@ -7132,7 +7237,7 @@ PREFIX(co_broadcast) (gfc_descriptor_t *a, int source_image, int *stat,
     if (datatype != MPI_CHARACTER)
     {
       ierr = MPI_Bcast(a->base_addr, size, datatype, source_image - 1,
-                       CAF_COMM_WORLD);
+                       CAF_COMM_WORLD); CHK_ERR(ierr)
     }
     else
     {
@@ -7141,11 +7246,12 @@ PREFIX(co_broadcast) (gfc_descriptor_t *a, int source_image, int *stat,
         a_length = strlen(a->base_addr);
       /* Broadcast the string lenth */
       ierr = MPI_Bcast(&a_length, 1, MPI_INT, source_image - 1, CAF_COMM_WORLD);
+      CHK_ERR(ierr)
       if (ierr)
         goto error;
       /* Broadcast the string itself */
       ierr = MPI_Bcast(a->base_addr, a_length, datatype, source_image - 1,
-                       CAF_COMM_WORLD);
+                       CAF_COMM_WORLD); CHK_ERR(ierr)
     }
 
     if (ierr)
@@ -7172,6 +7278,7 @@ PREFIX(co_broadcast) (gfc_descriptor_t *a, int source_image, int *stat,
       (char *)a->base_addr + array_offset_sr * GFC_DESCRIPTOR_SIZE(a));
 
     ierr = MPI_Bcast(sr, 1, datatype, source_image - 1, CAF_COMM_WORLD);
+    CHK_ERR(ierr)
 
     if (ierr)
       goto error;
@@ -7181,7 +7288,9 @@ co_broadcast_exit:
   if (stat)
     *stat = 0;
   if (GFC_DESCRIPTOR_TYPE(a) == BT_CHARACTER)
-    MPI_Type_free(&datatype);
+  {
+    ierr = MPI_Type_free(&datatype); CHK_ERR(ierr)
+  }
   return;
 
 error:
@@ -7200,7 +7309,7 @@ error:
     err_buffer[len == sizeof(err_buffer) ? len - 1 : len] = '\0';
     caf_runtime_error("CO_SUM failed with %s\n", err_buffer);
   }
-  memcpy(errmsg, err_buffer, errmsg_len > len ? len : errmsg_len);
+  memcpy(errmsg, err_buffer, (errmsg_len > len) ? len : errmsg_len);
   if (errmsg_len > len)
     memset(&errmsg[len], '\0', errmsg_len - len);
 }
@@ -7213,7 +7322,7 @@ PREFIX(co_reduce) (gfc_descriptor_t *a, void *(*opr) (void *, void *),
                    int a_len, charlen_t errmsg_len)
 {
   MPI_Op op;
-  int type_a = GFC_DESCRIPTOR_TYPE(a);
+  int type_a = GFC_DESCRIPTOR_TYPE(a), ierr;
   /* Integers and logicals can be treated the same. */
   if (type_a == BT_INTEGER || type_a == BT_LOGICAL)
   {
@@ -7221,11 +7330,12 @@ PREFIX(co_reduce) (gfc_descriptor_t *a, void *(*opr) (void *, void *),
      * arguments to be passed by value. */
     if ((opr_flags & GFC_CAF_ARG_VALUE) > 0)
     {
-#define ifTypeGen(type) \
-if (GFC_DESCRIPTOR_SIZE(a) == sizeof(type ## _t))             \
-{                                                             \
-  type ## _t_by_value = (typeof(VALUE_FUNC(type ## _t)))opr;  \
-  MPI_Op_create(redux_ ## type ## _by_value_adapter, 1, &op); \
+#define ifTypeGen(type)                                                   \
+if (GFC_DESCRIPTOR_SIZE(a) == sizeof(type ## _t))                         \
+{                                                                         \
+  type ## _t_by_value = (typeof(VALUE_FUNC(type ## _t)))opr;              \
+  int ierr = MPI_Op_create(redux_ ## type ## _by_value_adapter, 1, &op);  \
+  CHK_ERR(ierr)                                                           \
 }
       ifTypeGen(int8)
       else ifTypeGen(int16)
@@ -7240,7 +7350,8 @@ if (GFC_DESCRIPTOR_SIZE(a) == sizeof(type ## _t))             \
     else
     {
       int32_t_by_reference = (typeof(REFERENCE_FUNC(int32_t)))opr;
-      MPI_Op_create(redux_int32_by_reference_adapter, 1, &op);
+      ierr = MPI_Op_create(redux_int32_by_reference_adapter, 1, &op);
+      CHK_ERR(ierr)
     }
   }
   /* Treat reals/doubles. */
@@ -7253,12 +7364,14 @@ if (GFC_DESCRIPTOR_SIZE(a) == sizeof(type ## _t))             \
       if ((opr_flags & GFC_CAF_ARG_VALUE) > 0)
       {
         float_by_value = (typeof(VALUE_FUNC(float)))opr;
-        MPI_Op_create(redux_real32_by_value_adapter, 1, &op);
+        ierr = MPI_Op_create(redux_real32_by_value_adapter, 1, &op);
+        CHK_ERR(ierr)
       }
       else
       {
         float_by_reference = (typeof(REFERENCE_FUNC(float)))opr;
-        MPI_Op_create(redux_real32_by_reference_adapter, 1, &op);
+        ierr = MPI_Op_create(redux_real32_by_reference_adapter, 1, &op);
+        CHK_ERR(ierr)
       }
     }
     else
@@ -7268,12 +7381,14 @@ if (GFC_DESCRIPTOR_SIZE(a) == sizeof(type ## _t))             \
       if ((opr_flags & GFC_CAF_ARG_VALUE) > 0)
       {
         double_by_value = (typeof(VALUE_FUNC(double)))opr;
-        MPI_Op_create(redux_real64_by_value_adapter, 1, &op);
+        ierr = MPI_Op_create(redux_real64_by_value_adapter, 1, &op);
+        CHK_ERR(ierr)
       }
       else
       {
         double_by_reference = (typeof(REFERENCE_FUNC(double)))opr;
-        MPI_Op_create(redux_real64_by_reference_adapter, 1, &op);
+        ierr = MPI_Op_create(redux_real64_by_reference_adapter, 1, &op);
+        CHK_ERR(ierr)
       }
     }
   }
@@ -7281,7 +7396,7 @@ if (GFC_DESCRIPTOR_SIZE(a) == sizeof(type ## _t))             \
   {
     /* Char array functions always pass by reference. */
     char_by_reference = (typeof(REFERENCE_FUNC(char)))opr;
-    MPI_Op_create(redux_char_by_reference_adapter, 1, &op);
+    ierr = MPI_Op_create(redux_char_by_reference_adapter, 1, &op); CHK_ERR(ierr)
   }
   else
   {
@@ -7348,18 +7463,19 @@ PREFIX(atomic_define) (caf_token_t token, size_t offset,
 {
   MPI_Win *p = TOKEN(token);
   MPI_Datatype dt;
-  int ierr = 0;
-  int image = (image_index != 0) ? image_index - 1 : caf_this_image - 1;
+  int ierr = 0,
+      image = (image_index != 0) ? image_index - 1 : caf_this_image - 1;
 
   selectType(kind, &dt);
 
 #if MPI_VERSION >= 3
   CAF_Win_lock(MPI_LOCK_EXCLUSIVE, image, *p);
   ierr = MPI_Accumulate(value, 1, dt, image, offset, 1, dt, MPI_REPLACE, *p);
+  CHK_ERR(ierr)
   CAF_Win_unlock(image, *p);
 #else // MPI_VERSION
   CAF_Win_lock(MPI_LOCK_EXCLUSIVE, image, *p);
-  ierr = MPI_Put(value, 1, dt, image, offset, 1, dt, *p);
+  ierr = MPI_Put(value, 1, dt, image, offset, 1, dt, *p); CHK_ERR(ierr)
   CAF_Win_unlock(image, *p);
 #endif // MPI_VERSION
 
@@ -7379,18 +7495,19 @@ PREFIX(atomic_ref) (caf_token_t token, size_t offset,
 {
   MPI_Win *p = TOKEN(token);
   MPI_Datatype dt;
-  int ierr = 0;
-  int image = (image_index != 0) ? image_index - 1 : caf_this_image - 1;
+  int ierr = 0, 
+      image = (image_index != 0) ? image_index - 1 : caf_this_image - 1;
 
   selectType(kind, &dt);
 
 #if MPI_VERSION >= 3
   CAF_Win_lock(MPI_LOCK_EXCLUSIVE, image, *p);
   ierr = MPI_Fetch_and_op(NULL, value, dt, image, offset, MPI_NO_OP, *p);
+  CHK_ERR(ierr)
   CAF_Win_unlock(image, *p);
 #else // MPI_VERSION
   CAF_Win_lock(MPI_LOCK_EXCLUSIVE, image, *p);
-  ierr = MPI_Get(value, 1, dt, image, offset, 1, dt, *p);
+  ierr = MPI_Get(value, 1, dt, image, offset, 1, dt, *p); CHK_ERR(ierr)
   CAF_Win_unlock(image, *p);
 #endif // MPI_VERSION
 
@@ -7409,15 +7526,15 @@ PREFIX(atomic_cas) (caf_token_t token, size_t offset, int image_index,
 {
   MPI_Win *p = TOKEN(token);
   MPI_Datatype dt;
-  int ierr = 0;
-  int image = (image_index != 0) ? image_index - 1 : caf_this_image - 1;
+  int ierr = 0,
+      image = (image_index != 0) ? image_index - 1 : caf_this_image - 1;
 
   selectType(kind, &dt);
 
 #if MPI_VERSION >= 3
   CAF_Win_lock(MPI_LOCK_EXCLUSIVE, image, *p);
-  ierr = MPI_Compare_and_swap(new_val, compare, old, dt, image,
-                              offset, *p);
+  ierr = MPI_Compare_and_swap(new_val, compare, old, dt, image, offset, *p);
+  CHK_ERR(ierr)
   CAF_Win_unlock(image, *p);
 #else // MPI_VERSION
 #warning atomic_cas for MPI-2 is not yet implemented
@@ -7452,15 +7569,19 @@ PREFIX(atomic_op) (int op, caf_token_t token, size_t offset, int image_index,
   switch(op) {
     case 1:
       ierr = MPI_Fetch_and_op(value, old, dt, image, offset, MPI_SUM, *p);
+      CHK_ERR(ierr)
       break;
     case 2:
       ierr = MPI_Fetch_and_op(value, old, dt, image, offset, MPI_BAND, *p);
+      CHK_ERR(ierr)
       break;
     case 4:
       ierr = MPI_Fetch_and_op(value, old, dt, image, offset, MPI_BOR, *p);
+      CHK_ERR(ierr)
       break;
     case 5:
       ierr = MPI_Fetch_and_op(value, old, dt, image, offset, MPI_BXOR, *p);
+      CHK_ERR(ierr)
       break;
     default:
       printf("We apologize but the atomic operation requested for MPI < 3 "
@@ -7499,7 +7620,7 @@ PREFIX(event_post) (caf_token_t token, size_t index, int image_index,
 #if MPI_VERSION >= 3
   CAF_Win_lock(MPI_LOCK_EXCLUSIVE, image, *p);
   ierr = MPI_Accumulate(&value, 1, MPI_INT, image, index * sizeof(int), 1, 
-                        MPI_INT, MPI_SUM, *p);
+                        MPI_INT, MPI_SUM, *p); CHK_ERR(ierr)
   CAF_Win_unlock(image, *p);
 #else // MPI_VERSION
   #warning Events for MPI-2 are not implemented
@@ -7537,11 +7658,11 @@ PREFIX(event_wait) (caf_token_t token, size_t index, int until_count,
   if (stat != NULL)
     *stat = 0;
 
-  MPI_Win_get_attr(*p, MPI_WIN_BASE, &var, &flag);
+  ierr = MPI_Win_get_attr(*p, MPI_WIN_BASE, &var, &flag); CHK_ERR(ierr)
 
   for (i = 0; i < spin_loop_max; ++i)
   {
-    MPI_Win_sync(*p);
+    ierr = MPI_Win_sync(*p); CHK_ERR(ierr)
     count = var[index];
     if (count >= until_count)
       break;
@@ -7550,19 +7671,19 @@ PREFIX(event_wait) (caf_token_t token, size_t index, int until_count,
   i = 1;
   while (count < until_count)
   {
-    MPI_Win_sync(*p);
+    ierr = MPI_Win_sync(*p); CHK_ERR(ierr)
     count = var[index];
     usleep(10 * i);
     ++i;
     /* Needed to enforce MPI progress */
-    MPI_Win_flush(image, *p);
+    ierr = MPI_Win_flush(image, *p); CHK_ERR(ierr)
   }
 
   newval = -until_count;
 
   CAF_Win_lock(MPI_LOCK_EXCLUSIVE, image, *p);
-  ierr = MPI_Fetch_and_op(&newval, &old, MPI_INT, image,
-                          index * sizeof(int), MPI_SUM, *p);
+  ierr = MPI_Fetch_and_op(&newval, &old, MPI_INT, image, index * sizeof(int),
+                          MPI_SUM, *p); CHK_ERR(ierr)
   CAF_Win_unlock(image, *p);
   check_image_health(image, stat);
 
@@ -7594,8 +7715,8 @@ PREFIX(event_query) (caf_token_t token, size_t index,
 
 #if MPI_VERSION >= 3
   CAF_Win_lock(MPI_LOCK_EXCLUSIVE, image, *p);
-  ierr = MPI_Fetch_and_op(NULL, count, MPI_INT, image,
-                          index * sizeof(int), MPI_NO_OP, *p);
+  ierr = MPI_Fetch_and_op(NULL, count, MPI_INT, image, index * sizeof(int),
+                          MPI_NO_OP, *p); CHK_ERR(ierr)
   CAF_Win_unlock(image, *p);
 #else // MPI_VERSION
 #warning Events for MPI-2 are not implemented
@@ -7739,12 +7860,13 @@ PREFIX(image_status) (int image)
      *
      * Do an MPI-operation to learn about failed/stopped images, that have
      * not been detected yet. */
-    ierr = MPI_Test(&alive_request, &status, MPI_STATUSES_IGNORE);
+    ierr = MPI_Test(&alive_request, &status, MPI_STATUSES_IGNORE); CHK_ERR(ierr)
     MPI_Error_class(ierr, &status);
     if (ierr == MPI_SUCCESS)
     {
       CAF_Win_lock(MPI_LOCK_SHARED, image - 1, *stat_tok);
       ierr = MPI_Get(&status, 1, MPI_INT, image - 1, 0, 1, MPI_INT, *stat_tok);
+      CHK_ERR(ierr)
       dprint("%d/%d: Image status of image #%d is: %d\n",
              caf_this_image, caf_num_images, image, status);
       CAF_Win_unlock(image - 1, *stat_tok);
@@ -7932,10 +8054,12 @@ void PREFIX(form_team) (int team_id, caf_team_t *team,
   void * tmp_team;
   MPI_Comm *newcomm;
   MPI_Comm *current_comm = &CAF_COMM_WORLD;
+  int ierr;
 
-  MPI_Barrier(CAF_COMM_WORLD);
+  ierr = MPI_Barrier(CAF_COMM_WORLD); CHK_ERR(ierr)
   newcomm = (MPI_Comm *)calloc(1,sizeof(MPI_Comm));
-  MPI_Comm_split(*current_comm, team_id, caf_this_image, newcomm);
+  ierr = MPI_Comm_split(*current_comm, team_id, caf_this_image, newcomm);
+  CHK_ERR(ierr)
 
   tmp = calloc(1,sizeof(struct caf_teams_list));
   tmp->prev = teams_list;
@@ -7951,9 +8075,10 @@ void PREFIX(change_team) (caf_team_t *team,
   caf_used_teams_list *tmp_used = NULL;
   caf_teams_list * tmp_list = NULL;
   void *tmp_team;
+  int ierr;
   MPI_Comm *tmp_comm;
 
-  MPI_Barrier(CAF_COMM_WORLD);
+  ierr = MPI_Barrier(CAF_COMM_WORLD); CHK_ERR(ierr)
   tmp_list = (struct caf_teams_list *)*team;
   tmp_team = (void *)tmp_list->team;
   tmp_comm = (MPI_Comm *)tmp_team;
@@ -7985,9 +8110,9 @@ void PREFIX(change_team) (caf_team_t *team,
   tmp_team = tmp_used->team_list_elem->team;
   tmp_comm = (MPI_Comm *)tmp_team;
   CAF_COMM_WORLD = *tmp_comm;
-  MPI_Comm_rank(*tmp_comm,&caf_this_image);
+  ierr = MPI_Comm_rank(*tmp_comm,&caf_this_image); CHK_ERR(ierr)
   caf_this_image++;
-  MPI_Comm_size(*tmp_comm,&caf_num_images);
+  ierr = MPI_Comm_size(*tmp_comm,&caf_num_images); CHK_ERR(ierr)
 }
 
 MPI_Fint
@@ -8019,8 +8144,9 @@ void PREFIX(end_team) (caf_team_t *team __attribute__((unused)))
   caf_used_teams_list *tmp_used = NULL;
   void *tmp_team;
   MPI_Comm *tmp_comm;
+  int ierr;
 
-  MPI_Barrier(CAF_COMM_WORLD);
+  ierr = MPI_Barrier(CAF_COMM_WORLD); CHK_ERR(ierr)
   if (used_teams->prev == NULL)
     caf_runtime_error("END TEAM called on initial team");
 
@@ -8031,11 +8157,11 @@ void PREFIX(end_team) (caf_team_t *team __attribute__((unused)))
   tmp_team = tmp_used->team_list_elem->team;
   tmp_comm = (MPI_Comm *)tmp_team;
   CAF_COMM_WORLD = *tmp_comm;
-  MPI_Barrier(CAF_COMM_WORLD);
+  ierr = MPI_Barrier(CAF_COMM_WORLD); CHK_ERR(ierr)
   /* CAF_COMM_WORLD = (MPI_Comm)*tmp_used->team_list_elem->team; */
-  MPI_Comm_rank(CAF_COMM_WORLD,&caf_this_image);
+  ierr = MPI_Comm_rank(CAF_COMM_WORLD,&caf_this_image); CHK_ERR(ierr)
   caf_this_image++;
-  MPI_Comm_size(CAF_COMM_WORLD,&caf_num_images);
+  ierr = MPI_Comm_size(CAF_COMM_WORLD,&caf_num_images); CHK_ERR(ierr)
 }
 
 void PREFIX(sync_team) (caf_team_t *team , int unused __attribute__((unused)))
@@ -8064,5 +8190,5 @@ void PREFIX(sync_team) (caf_team_t *team , int unused __attribute__((unused)))
     caf_runtime_error("SYNC TEAM called on team different from current, "
                       "or ancestor, or descendant");
 
-  MPI_Barrier(*tmp_comm);
+  int ierr = MPI_Barrier(*tmp_comm); CHK_ERR(ierr)
 }
