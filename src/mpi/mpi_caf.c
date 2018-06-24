@@ -2132,7 +2132,7 @@ PREFIX(sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
       }
       else
       {
-        dprint("%d/%d: %s() allocating %d bytes for dst_t_buff.\n",
+        dprint("%d/%d: %s() allocating %zd bytes for dst_t_buff.\n",
                caf_this_image, caf_num_images, __FUNCTION__, dst_size * size);
         if (free_dst_t_buff = ((dst_t_buff = alloca(dst_size * size)) == NULL))
         {
@@ -3246,7 +3246,7 @@ case kind:                                                            \
         }
         else
         {
-          dprint("%d/%d: %s() strided same_image, *WITH* temp, for i = %d.\n",
+          dprint("%d/%d: %s() strided same_image, *WITH* temp, for i = %zd.\n",
                  caf_this_image, caf_num_images, __FUNCTION__, i);
           if (same_type_and_kind)
             memmove(t_buff + i * dst_size, sr, src_size);
@@ -3780,7 +3780,7 @@ case kind:                                                          \
         }
         else
         {
-          dprint("%d/%d: %s() strided same_image, *WITH* temp, for i = %d.\n",
+          dprint("%d/%d: %s() strided same_image, *WITH* temp, for i = %zd.\n",
                  caf_this_image, caf_num_images, __FUNCTION__, i);
           if (same_type_and_kind)
             memmove(t_buff + i * dst_size,
@@ -4217,7 +4217,7 @@ case kind:                                                          \
             }
 #undef KINDCASE
 
-            dprint("%d/%d: %s() vector-index computed to: %d\n",
+            dprint("%d/%d: %s() vector-index computed to: %zd\n",
                    caf_this_image, caf_num_images, __FUNCTION__,
                    array_offset_src);
             get_for_ref(ref, i, dst_index, mpi_token, dst, src, ds, sr,
@@ -5358,7 +5358,7 @@ case kind:                                          \
             }
 #undef KINDCASE
 
-            dprint("%d/%d: %s() vector-index computed to: %d\n",
+            dprint("%d/%d: %s() vector-index computed to: %zd\n",
                    caf_this_image, caf_num_images, __FUNCTION__,
                    array_offset_dst);
             send_for_ref(ref, i, src_index, mpi_token, dst, src, ds, sr,
@@ -5383,7 +5383,7 @@ case kind:                                          \
           array_offset_dst = 0;
           src_stride = (GFC_DESCRIPTOR_RANK(src) > 0) ?
             src->dim[src_dim]._stride : 0;
-          dprint("%d/%d: %s() arr ref full src_stride: %d\n",
+          dprint("%d/%d: %s() arr ref full src_stride: %zd\n",
                  caf_this_image, caf_num_images, __FUNCTION__, src_stride);
           for (ptrdiff_t idx = 0; idx < extent_dst;
                ++idx, array_offset_dst += dst_stride)
@@ -5900,7 +5900,7 @@ case kind:                                                              \
                   caf_runtime_error(extentoutofrange, stat, NULL, 0);
                   return;
                 }
-                dprint("%d/%d: %s() extent(dst, %d): %d != delta: %ld.\n",
+                dprint("%d/%d: %s() extent(dst, %d): %zd != delta: %ld.\n",
                        caf_this_image, caf_num_images, __FUNCTION__,
                        src_cur_dim, GFC_DESCRIPTOR_EXTENT(
                          dst, src_cur_dim), delta);
@@ -6222,7 +6222,7 @@ PREFIX(sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
           }
           else
           {
-            dprint("%d/%d: %s() remote desc fetch from win %p, offset = %zd\n",
+            dprint("%d/%d: %s() remote desc fetch from win %d, offset = %zd\n",
                    caf_this_image, caf_num_images, __FUNCTION__,
                    src_mpi_token->memptr_win, desc_offset);
             ierr = MPI_Get(src, sizeof_desc_for_rank(ref_rank), MPI_BYTE,
@@ -6645,7 +6645,7 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
           for (ref_rank = 0; riter->u.a.mode[ref_rank] != CAF_ARR_REF_NONE;
                ++ref_rank) ;
           dprint("%d/%d: %s() Getting remote descriptor of rank %zd "
-                 "from win: %zd, sizeof() %d\n",
+                 "from win: %d, sizeof() %zd\n",
                  caf_this_image, caf_num_images, __FUNCTION__,
                  ref_rank, mpi_token->memptr_win,
                  sizeof_desc_for_rank(ref_rank));
