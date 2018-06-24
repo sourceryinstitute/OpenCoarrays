@@ -77,7 +77,7 @@ static char* caf_array_ref_str[] = {
 #define dprint(format, ...)                      \
 fprintf(stderr, "%d/%d: %s() " format,           \
         caf_this_image, caf_num_images,          \
-        __FUNCTION__ __VA_OPT__(,) __VA_ARGS__)
+        __FUNCTION__, ## __VA_ARGS__)
 #define chk_err(ierr)                               \
 do                                                  \
 {                                                   \
@@ -519,7 +519,8 @@ failed_stopped_errorhandler_function (MPI_Comm* pcomm, int* perr, ...)
   /* Now translate the ranks of the failed images into communicator world. */
   ierr = MPI_Group_translate_ranks(failed_group, num_failed_in_group,
                                    ranks_failed, comm_world_group,
-                                   ranks_of_failed_in_comm_world); chk_err(ierr);
+                                   ranks_of_failed_in_comm_world);
+  chk_err(ierr);
 
   num_images_failed += num_failed_in_group;
 
@@ -582,8 +583,8 @@ redo:
   dprint("Before shrink. \n");
   ierr = MPIX_Comm_shrink(*pcomm, &shrunk);
   dprint("After shrink, rc = %d.\n", ierr);
-  ierr = MPI_Comm_set_errhandler(shrunk,
-                                 failed_CAF_COMM_mpi_err_handler); chk_err(ierr);
+  ierr = MPI_Comm_set_errhandler(shrunk, failed_CAF_COMM_mpi_err_handler);
+  chk_err(ierr);
   ierr = MPI_Comm_size(shrunk, &ns); chk_err(ierr);
   ierr = MPI_Comm_rank(shrunk, &srank); chk_err(ierr);
   ierr = MPI_Comm_rank(*pcomm, &crank); chk_err(ierr);
@@ -7333,7 +7334,7 @@ if (GFC_DESCRIPTOR_SIZE(a) == sizeof(type ## _t))                         \
 {                                                                         \
   type ## _t_by_value = (typeof(VALUE_FUNC(type ## _t)))opr;              \
   int ierr = MPI_Op_create(redux_ ## type ## _by_value_adapter, 1, &op);  \
-  chk_err(ierr);                                                           \
+  chk_err(ierr);                                                          \
 }
       ifTypeGen(int8)
       else ifTypeGen(int16)
@@ -7394,7 +7395,8 @@ if (GFC_DESCRIPTOR_SIZE(a) == sizeof(type ## _t))                         \
   {
     /* Char array functions always pass by reference. */
     char_by_reference = (typeof(REFERENCE_FUNC(char)))opr;
-    ierr = MPI_Op_create(redux_char_by_reference_adapter, 1, &op); chk_err(ierr);
+    ierr = MPI_Op_create(redux_char_by_reference_adapter, 1, &op);
+    chk_err(ierr);
   }
   else
   {
@@ -7858,7 +7860,8 @@ PREFIX(image_status) (int image)
      *
      * Do an MPI-operation to learn about failed/stopped images, that have
      * not been detected yet. */
-    ierr = MPI_Test(&alive_request, &status, MPI_STATUSES_IGNORE); chk_err(ierr);
+    ierr = MPI_Test(&alive_request, &status, MPI_STATUSES_IGNORE);
+    chk_err(ierr);
     MPI_Error_class(ierr, &status);
     if (ierr == MPI_SUCCESS)
     {
