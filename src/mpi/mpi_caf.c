@@ -74,10 +74,10 @@ static char* caf_array_ref_str[] = {
 #define dprint(...)
 #define chk_err(...)
 #else
-#define dprint(format, ...)                      \
-fprintf(stderr, "%d/%d: %s() " format,           \
-        caf_this_image, caf_num_images,          \
-        __FUNCTION__, ## __VA_ARGS__)
+#define dprint(format, ...)                     \
+fprintf(stderr, "%d/%d: %s(%d) " format,        \
+        caf_this_image, caf_num_images,         \
+        __FUNCTION__, __LINE__, ## __VA_ARGS__)
 #define chk_err(ierr)                               \
 do                                                  \
 {                                                   \
@@ -4158,17 +4158,13 @@ get_for_ref(caf_reference_t *ref, size_t *i, size_t dst_index,
         sr_byte_offset = 0;
         desc_byte_offset = 0;
 #ifdef EXTRA_DEBUG_OUTPUT
-        fprintf(stderr, "%d/%d: %s() remote desc rank: %zd (ref_rank: %zd)\n",
-                caf_this_image, caf_num_images, __FUNCTION__,
-                GFC_DESCRIPTOR_RANK(src), ref_rank);
+        dprint("remote desc rank: %zd (ref_rank: %zd)\n",
+               GFC_DESCRIPTOR_RANK(src), ref_rank);
         for (int r = 0; r < GFC_DESCRIPTOR_RANK(src); ++r)
         {
-          fprintf(stderr,
-                  "%d/%d: %s() remote desc "
-                  "dim[%d] = (lb = %zd, ub = %zd, stride = %zd)\n",
-                  caf_this_image, caf_num_images, __FUNCTION__,
-                  r, src->dim[r].lower_bound, src->dim[r]._ubound,
-                  src->dim[r]._stride);
+          dprint("remote desc dim[%d] = (lb = %zd, ub = %zd, stride = %zd)\n",
+                 r, src->dim[r].lower_bound, src->dim[r]._ubound,
+                 src->dim[r]._stride);
         }
 #endif
       }
@@ -4590,16 +4586,13 @@ PREFIX(get_by_ref) (caf_token_t token, int image_index,
           src = mpi_token->desc;
 
 #ifdef EXTRA_DEBUG_OUTPUT
-        fprintf(stderr, "%d/%d: %s() remote desc rank: %zd (ref_rank: %zd)\n",
-                caf_this_image, caf_num_images, __FUNCTION__,
-                GFC_DESCRIPTOR_RANK(src), ref_rank);
+        dprint("remote desc rank: %zd (ref_rank: %zd)\n",
+               GFC_DESCRIPTOR_RANK(src), ref_rank);
         for (i = 0; i < GFC_DESCRIPTOR_RANK(src); ++i)
         {
-          fprintf(stderr, "%d/%d: %s() remote desc "
-                  "dim[%zd] = (lb = %zd, ub = %zd, stride = %zd)\n",
-                  caf_this_image, caf_num_images, __FUNCTION__,
-                  i, src->dim[i].lower_bound, src->dim[i]._ubound,
-                  src->dim[i]._stride);
+          dprint("remote desc dim[%zd] = (lb = %zd, ub = %zd, stride = %zd)\n",
+                 i, src->dim[i].lower_bound, src->dim[i]._ubound,
+                 src->dim[i]._stride);
         }
 #endif
         for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
@@ -4982,14 +4975,11 @@ case kind:                                                      \
   remote_memptr = mpi_token->memptr;
   dst_index = 0;
 #ifdef EXTRA_DEBUG_OUTPUT
-  fprintf(stderr, "%d/%d: %s() dst_rank: %zd\n",
-          caf_this_image, caf_num_images, __FUNCTION__,
-          GFC_DESCRIPTOR_RANK(dst));
+  dprint("dst_rank: %zd\n", GFC_DESCRIPTOR_RANK(dst));
   for (i = 0; i < GFC_DESCRIPTOR_RANK(dst); ++i)
   {
-    fprintf(stderr, "%d/%d: %s() dst_dim[%zd] = (%zd, %zd)\n",
-            caf_this_image, caf_num_images, __FUNCTION__,
-            i, dst->dim[i].lower_bound, dst->dim[i]._ubound);
+    dprint("dst_dim[%zd] = (%zd, %zd)\n",
+           i, dst->dim[i].lower_bound, dst->dim[i]._ubound);
   }
 #endif
   i = 0;
@@ -5292,17 +5282,13 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
         dst_byte_offset = 0;
         desc_byte_offset = 0;
 #ifdef EXTRA_DEBUG_OUTPUT
-        fprintf(stderr, "%d/%d: %s() remote desc rank: %zd (ref_rank: %zd)\n",
-                caf_this_image, caf_num_images, __FUNCTION__,
-                GFC_DESCRIPTOR_RANK(src), ref_rank);
+        dprint("remote desc rank: %zd (ref_rank: %zd)\n",
+               GFC_DESCRIPTOR_RANK(src), ref_rank);
         for (int r = 0; r < GFC_DESCRIPTOR_RANK(src); ++r)
         {
-          fprintf(stderr,
-                  "%d/%d: %s() remote desc "
-                  "dim[%d] = (lb = %zd, ub = %zd, stride = %zd)\n",
-                  caf_this_image, caf_num_images, __FUNCTION__,
-                  r, src->dim[r].lower_bound, src->dim[r]._ubound,
-                  src->dim[r]._stride);
+          dprint("remote desc dim[%d] = (lb = %zd, ub = %zd, stride = %zd)\n",
+                 r, src->dim[r].lower_bound, src->dim[r]._ubound,
+                 src->dim[r]._stride);
         }
 #endif
       }
@@ -5741,18 +5727,13 @@ PREFIX(send_by_ref) (caf_token_t token, int image_index,
         else
           dst = mpi_token->desc;
 #ifdef EXTRA_DEBUG_OUTPUT
-        fprintf(stderr,
-                "%d/%d: %s() remote desc rank: %zd (ref_rank: %zd)\n",
-                caf_this_image, caf_num_images, __FUNCTION__,
-                GFC_DESCRIPTOR_RANK(dst), ref_rank);
+        dprint("remote desc rank: %zd (ref_rank: %zd)\n",
+               GFC_DESCRIPTOR_RANK(dst), ref_rank);
         for (i = 0; i < GFC_DESCRIPTOR_RANK(dst); ++i)
         {
-          fprintf(stderr,
-                  "%d/%d: %s() remote desc "
-                  "dim[%zd] = (lb = %zd, ub = %zd, stride = %zd)\n",
-                  caf_this_image, caf_num_images,  __FUNCTION__,
-                  i, dst->dim[i].lower_bound, dst->dim[i]._ubound,
-                  dst->dim[i]._stride);
+          dprint("remote desc dim[%zd] = (lb = %zd, ub = %zd, stride = %zd)\n",
+                 i, dst->dim[i].lower_bound, dst->dim[i]._ubound,
+                 dst->dim[i]._stride);
         }
 #endif
         for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
@@ -6016,14 +5997,11 @@ case kind:                                                      \
   remote_memptr = mpi_token->memptr;
   src_index = 0;
 #ifdef EXTRA_DEBUG_OUTPUT
-  fprintf(stderr, "%d/%d: %s() src_rank: %zd\n",
-          caf_this_image, caf_num_images, __FUNCTION__,
-          GFC_DESCRIPTOR_RANK(src));
+  dprint("src_rank: %zd\n", GFC_DESCRIPTOR_RANK(src));
   for (i = 0; i < GFC_DESCRIPTOR_RANK(src); ++i)
   {
-    fprintf(stderr, "%d/%d: %s() src_dim[%zd] = (%zd, %zd)\n",
-            caf_this_image, caf_num_images, __FUNCTION__,
-            i, src->dim[i].lower_bound, src->dim[i]._ubound);
+    dprint("src_dim[%zd] = (%zd, %zd)\n",
+           i, src->dim[i].lower_bound, src->dim[i]._ubound);
   }
 #endif
   /* When accessing myself and may_require_tmp is set, then copy the source
@@ -6212,17 +6190,13 @@ PREFIX(sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
           src = src_mpi_token->desc;
         }
 #ifdef EXTRA_DEBUG_OUTPUT
-        fprintf(stderr, "%d/%d: %s() remote desc rank: %zd (ref_rank: %zd)\n",
-                caf_this_image, caf_num_images, __FUNCTION__,
-                GFC_DESCRIPTOR_RANK(src), ref_rank);
+        dprint("remote desc rank: %zd (ref_rank: %zd)\n",
+               GFC_DESCRIPTOR_RANK(src), ref_rank);
         for (i = 0; i < GFC_DESCRIPTOR_RANK(src); ++i)
         {
-          fprintf(stderr,
-                  "%d/%d: %s() remote desc "
-                  "dim[%zd] = (lb = %zd, ub = %zd, stride = %zd)\n",
-                  caf_this_image, caf_num_images, __FUNCTION__,
-                  i, src->dim[i].lower_bound, src->dim[i]._ubound,
-                  src->dim[i]._stride);
+          dprint("remote desc dim[%zd] = (lb = %zd, ub = %zd, stride = %zd)\n",
+                 i, src->dim[i].lower_bound, src->dim[i]._ubound,
+                 src->dim[i]._stride);
         }
 #endif
         for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
@@ -6431,13 +6405,11 @@ case kind:                                                        \
   remote_memptr = src_mpi_token->memptr;
   dst_index = 0;
 #ifdef EXTRA_DEBUG_OUTPUT
-  fprintf(stderr, "%d/%d: %s() dst_rank: %d\n",
-          caf_this_image, caf_num_images, __FUNCTION__, dst_rank);
+  dprint("dst_rank: %d\n", dst_rank);
   for (i = 0; i < dst_rank; ++i)
   {
-    fprintf(stderr, "%d/%d: %s() temp_src_dim[%zd] = (%zd, %zd)\n",
-            caf_this_image, caf_num_images, __FUNCTION__,
-            i, temp_src_desc.dim[i].lower_bound, temp_src_desc.dim[i]._ubound);
+    dprint("temp_src_dim[%zd] = (%zd, %zd)\n",
+           i, temp_src_desc.dim[i].lower_bound, temp_src_desc.dim[i]._ubound);
   }
 #endif
   i = 0;
@@ -6652,17 +6624,14 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
 #ifdef EXTRA_DEBUG_OUTPUT
         {
           gfc_descriptor_t * src = (gfc_descriptor_t *)(&src_desc);
-          fprintf(stderr, "%d/%d: %s() remote desc rank: %zd (ref_rank: %zd)\n",
-                  caf_this_image, caf_num_images, __FUNCTION__,
-                  GFC_DESCRIPTOR_RANK(src), ref_rank);
+          dprint("remote desc rank: %zd (ref_rank: %zd)\n",
+                 GFC_DESCRIPTOR_RANK(src), ref_rank);
           for (i = 0; i < GFC_DESCRIPTOR_RANK(src); ++i)
           {
-            fprintf(stderr,
-                    "%d/%d: %s() remote desc "
-                    "dim[%zd] = (lb = %zd, ub = %zd, stride = %zd)\n",
-                    caf_this_image, caf_num_images, __FUNCTION__,
-                    i, src_desc.dim[i].lower_bound, src_desc.dim[i]._ubound,
-                    src_desc.dim[i]._stride);
+            dprint("remote desc dim[%zd] = "
+                   "(lb = %zd, ub = %zd, stride = %zd)\n",
+                   i, src_desc.dim[i].lower_bound, src_desc.dim[i]._ubound,
+                   src_desc.dim[i]._stride);
           }
         }
 #endif
