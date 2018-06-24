@@ -30,7 +30,7 @@ program main
    co % c(1, :, :) = co % a(1, :, :)[remote] ! getter
 
    sync all
-   co % e(1, :, :) = dble(1111111111111111_8 * me) / 10**12
+   co % e(1, :, :) = dble(111111111111111_8 * me) / 10**8
    co % a(1, :, :) = co % e(1, :, :)
 
    sync all
@@ -67,7 +67,6 @@ program main
    sync all
    
    fail = any(abs(co % b(1, :, :) - co % d(1, :, :)) > epsilon(0.))
-   ! fail = .false. ! <== FIXME: this test is still failing, comment when bug in put_data is found !
    
    if (fail) then
       write(*, *) 'Test failed!'

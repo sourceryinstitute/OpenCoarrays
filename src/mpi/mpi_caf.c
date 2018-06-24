@@ -5115,7 +5115,6 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
   gfc_max_dim_descriptor_t dst_desc_data;
   caf_ref_type_t ref_type = ref->type;
   caf_array_ref_t array_ref_src = ref->u.a.mode[src_dim];
-  caf_array_ref_t array_ref_dst = ref->u.a.mode[dst_dim];
   int ierr;
 
   if (unlikely(ref == NULL))
@@ -5133,10 +5132,8 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
   if (ref->next == NULL)
   {
     size_t src_size = GFC_DESCRIPTOR_SIZE(src);
-    dprint("[next == NULL]: src_size = %zd, ref_type = %s, "
-           "array_ref_src = %s\n",
-           src_size, caf_ref_type_str[ref_type],
-           caf_array_ref_str[array_ref_src]);
+    dprint("[next == NULL]: src_size = %zd, ref_type = %s\n",
+           src_size, caf_ref_type_str[ref_type]);
 
     switch (ref_type)
     {
@@ -5225,10 +5222,15 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
         caf_runtime_error(unreachable);
     }
   }
+  caf_array_ref_t array_ref_dst = ref->u.a.mode[dst_dim];
 
-  dprint("image_index = %d, num = %zd, "
-         "src_dim = %zd, dst_dim = %zd, ref_type = %s\n",
-         image_index, num, src_dim, dst_dim, caf_ref_type_str[ref_type]);
+#if 0
+  dprint("image_index = %d, num = %zd, src_dim = %zd, dst_dim = %zd, "
+         "ref_type = %s, array_ref_src = %s\n",
+         image_index, num, src_dim, dst_dim,
+         caf_ref_type_str[ref_type],
+         caf_array_ref_str[array_ref_src]);
+#endif
 
   switch (ref_type)
   {
