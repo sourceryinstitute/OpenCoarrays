@@ -74,14 +74,11 @@ static char* caf_array_ref_str[] = {
 #define dprint(...)
 #define chk_err(...)
 #else
-#define dprint(format, ...)                               \
-do                                                        \
-{                                                         \
-  fprintf(stderr, "%d/%d: %s() ",                         \
-          caf_this_image, caf_num_images, __FUNCTION__);  \
-  fprintf(stderr, format __VA_OPT__(,) __VA_ARGS__);      \
-} while(0)
-#define chk_err(ierr);                              \
+#define dprint(format, ...)                      \
+fprintf(stderr, "%d/%d: %s() " format,           \
+        caf_this_image, caf_num_images,          \
+        __FUNCTION__ __VA_OPT__(,) __VA_ARGS__)
+#define chk_err(ierr)                               \
 do                                                  \
 {                                                   \
   if (ierr != MPI_SUCCESS)                          \
@@ -93,7 +90,7 @@ do                                                  \
     dprint("MPI-error: err_class=%d ierr=%d [%s]",  \
            err_class, ierr, err_str);               \
   }                                                 \
-} while(0)
+} while (0)
 #endif
 
 #ifdef GCC_GE_7
