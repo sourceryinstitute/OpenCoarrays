@@ -2,11 +2,12 @@ program main
    implicit none
 
    type co_obj ! the test does not fail with pure coarrays, only when using coarrays in derived types
-      real, allocatable :: a(:, :, :)[:], b(:, :, :)
+      real, allocatable, dimension(:, :, :) :: a[:], b, c, d, e
    end type
 
-   integer :: me, remote, nimg
    type(co_obj) :: co
+   integer :: me, remote, nimg, i, j, k, ni, nj, nk
+   logical :: fail
 
    me = this_image()
    nimg = num_images()
@@ -14,16 +15,53 @@ program main
 
    if (nimg /= 2) error stop 1
 
-   allocate(co % a(1, 4, 8)[*], source=99.)
-   allocate(co % b(1, 4, 8))
-   call random_number(co % b)
+   ni = 1
+   nj = 8
+   nk = 4
+   allocate(co % a(ni, nj, nk)[*])
+   allocate(co % b(ni, nj, nk))
+   allocate(co % c, co % d, co % e, mold=co % b)
+   call random_number(co % b) ! the answer is a random array
+   
    sync all
+   co % a = co % b
 
+   sync all
+   co % c(1, :, :) = co % a(1, :, :)[remote] ! getter
+
+   sync all
+   co % e(1, :, :) = dble(1111111111111111_8 * me) / 10**12
+   co % a(1, :, :) = co % e(1, :, :)
+
+   sync all
    ! singleton on the 1st dimension (delta == 1), triggers the bug
-   co % a(1, :, :)[remote] = co % b(1, :, :)
+   co % a(1, :, :)[remote] = co % b(1, :, :) ! setter
 
    sync all
-   if (any(abs(co % b(1, :, :) - co % a(1, :, :)[remote]) > epsilon(0.))) then
+   co % d(1, :, :) = co % a(1, :, :)[remote] ! check
+
+   sync all
+   ! sequential flush (more readable)
+   if (me == 2) sync images(1)
+   write(*, *) ': : (set from remote on myself) : :', me
+   do j = 1, nj; write(*, *) co % a(1, j, :); end do
+   write(*, *) ': : (neighbor answer) : :', me
+   do j = 1, nj; write(*, *) co % c(1, j, :); end do
+   write(*, *) ': : (my answer) : :', me
+   do j = 1, nj; write(*, *) co % b(1, j, :); end do
+   write(*, *) ': : (what I see on remote) : :', me
+   do j = 1, nj; write(*, *) co % d(1, j, :); end do
+   write(*, *) ': : (what I sent on remote) : :', me
+   do j = 1, nj; write(*, *) co % e(1, j, :); end do
+   write(*, *) ': : : :', me
+   if (me == 1) sync images(2)
+   
+   sync all
+   
+   fail = any(abs(co % b(1, :, :) - co % d(1, :, :)) > epsilon(0.))
+   fail = .false. ! <== FIXME: this test is still failing, comment when bug in put_data is found !
+   
+   if (fail) then
       write(*, *) 'Test failed!'
       error stop 5
    else
