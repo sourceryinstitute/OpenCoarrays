@@ -50,7 +50,7 @@ int main (void)
   int    ind;
   size_t base_type;
   size_t base_type_size;
-  size_t errno;
+  size_t iso_errno;
 
   /* Test function establish. */
   /* Fresh descriptor, base address is NULL. */
@@ -77,7 +77,7 @@ int main (void)
           /* Loop through rank. */
           for (int k = 0; k <= CFI_MAX_RANK; k++)
             {
-              errno = 1;
+              iso_errno = 1;
               rank  = k;
               CFI_CDESC_T (rank) test1;
               /* We do this because C sometimes doesn't make the structures with
@@ -154,7 +154,7 @@ int main (void)
           /* Loop through rank. */
           for (int k = 0; k <= CFI_MAX_RANK; k++)
             {
-              errno = 1;
+              iso_errno = 1;
               rank  = k;
               if (extents != NULL)
                 {
@@ -284,7 +284,7 @@ int main (void)
           /* Loop through rank. */
           for (int k = 0; k <= CFI_MAX_RANK; k++)
             {
-              errno = 1;
+              iso_errno = 1;
               rank  = k;
               if (extents != NULL)
                 {
@@ -358,7 +358,7 @@ int main (void)
     }
 
   rank  = 1;
-  errno = 1;
+  iso_errno = 1;
   CFI_CDESC_T (rank) test4;
   base_type      = type[3] & CFI_type_mask;
   base_type_size = (type[3] - base_type) >> CFI_type_kind_shift;
@@ -373,7 +373,7 @@ int main (void)
     }
 
   rank  = 1;
-  errno = 1;
+  iso_errno = 1;
   CFI_CDESC_T (rank) test5;
   base_type      = type[3] & CFI_type_mask;
   base_type_size = (type[3] - base_type) >> CFI_type_kind_shift;
@@ -389,7 +389,7 @@ int main (void)
 
   /* Test CFI_deallocate. */
   rank           = 1;
-  errno          = 1;
+  iso_errno          = 1;
   base_type      = type[3] & CFI_type_mask;
   base_type_size = (type[3] - base_type) >> CFI_type_kind_shift;
   for (int i = 1; i <= 3; i++)
@@ -434,7 +434,7 @@ int main (void)
       attribute = i;
       for (int j = 0; j <= 4; j++)
         {
-          errno = 1;
+          iso_errno = 1;
           rank  = j;
           if (extents != NULL)
             {
@@ -529,7 +529,7 @@ int main (void)
           /* Loop through rank. */
           for (int k = 1; k <= CFI_MAX_RANK; k++)
             {
-              errno = 1;
+              iso_errno = 1;
               rank  = k;
               CFI_CDESC_T (rank) source;
               if (extents != NULL)
@@ -616,7 +616,7 @@ int main (void)
   for (int i = 0; i < CFI_MAX_RANK; i++)
     {
       rank           = i;
-      errno          = 1;
+      iso_errno          = 1;
       base_type      = type[3] & CFI_type_mask;
       base_type_size = (type[3] - base_type) >> CFI_type_kind_shift;
       attribute      = CFI_attribute_other;
@@ -643,7 +643,7 @@ int main (void)
         {
           extents[r] = r + 2;
         }
-      ind = CFI_establish ((CFI_cdesc_t *) &test8b, &errno, attribute, type[3],
+      ind = CFI_establish ((CFI_cdesc_t *) &test8b, &iso_errno, attribute, type[3],
                            base_type_size, rank, extents);
       ind = CFI_setpointer ((CFI_cdesc_t *) &test8a, (CFI_cdesc_t *) &test8b,
                             lower);
@@ -684,7 +684,7 @@ int main (void)
 
   /* NULL source. */
   rank           = 10;
-  errno          = 1;
+  iso_errno          = 1;
   base_type      = type[3] & CFI_type_mask;
   base_type_size = (type[3] - base_type) >> CFI_type_kind_shift;
   CFI_CDESC_T (rank) test9;
@@ -719,7 +719,7 @@ int main (void)
     }
 
   rank      = 3;
-  errno     = 1;
+  iso_errno     = 1;
   attribute = CFI_attribute_other;
   CFI_CDESC_T (rank) test10a, test10b;
   if (extents != NULL)
@@ -747,7 +747,7 @@ int main (void)
     }
   base_type      = CFI_type_double & CFI_type_mask;
   base_type_size = (CFI_type_double - base_type) >> CFI_type_kind_shift;
-  ind            = CFI_establish ((CFI_cdesc_t *) &test10b, &errno, attribute,
+  ind            = CFI_establish ((CFI_cdesc_t *) &test10b, &iso_errno, attribute,
                        CFI_type_double, base_type_size, rank, extents);
   ind = CFI_setpointer ((CFI_cdesc_t *) &test10a, (CFI_cdesc_t *) &test10b,
                         lower);
@@ -757,14 +757,14 @@ int main (void)
       return 1;
     }
 
-  errno          = 1;
+  iso_errno          = 1;
   base_type      = CFI_type_other & CFI_type_mask;
   base_type_size = 666;
   ind            = CFI_establish ((CFI_cdesc_t *) &test10a, &ind, attribute,
                        CFI_type_other, base_type_size, rank, extents);
   base_type      = CFI_type_other & CFI_type_mask;
   base_type_size = 69;
-  ind            = CFI_establish ((CFI_cdesc_t *) &test10b, &errno, attribute,
+  ind            = CFI_establish ((CFI_cdesc_t *) &test10b, &iso_errno, attribute,
                        CFI_type_other, base_type_size, rank, extents);
   ind = CFI_setpointer ((CFI_cdesc_t *) &test10a, (CFI_cdesc_t *) &test10b,
                         lower);
@@ -774,7 +774,7 @@ int main (void)
       return 1;
     }
 
-  errno          = 1;
+  iso_errno          = 1;
   base_type      = type[3] & CFI_type_mask;
   base_type_size = (CFI_type_long - base_type) >> CFI_type_kind_shift;
   ind = CFI_establish ((CFI_cdesc_t *) &test10a, &ind, attribute, type[3],
@@ -798,7 +798,7 @@ int main (void)
     }
   base_type      = CFI_type_other & CFI_type_mask;
   base_type_size = (CFI_type_long - base_type) >> CFI_type_kind_shift;
-  ind = CFI_establish ((CFI_cdesc_t *) &test10c, &errno, attribute, type[3],
+  ind = CFI_establish ((CFI_cdesc_t *) &test10c, &iso_errno, attribute, type[3],
                        base_type_size, rank, extents);
   ind = CFI_setpointer ((CFI_cdesc_t *) &test10a, (CFI_cdesc_t *) &test10c,
                         lower);
@@ -847,7 +847,7 @@ int main (void)
       /* Loop through rank. */
       for (int k = 1; k <= CFI_MAX_RANK; k++)
         {
-          errno = 1;
+          iso_errno = 1;
           rank  = k;
           CFI_CDESC_T (rank) section, source;
           if (extents != NULL)
@@ -1010,7 +1010,7 @@ int main (void)
     next_type2:;
     }
 
-  errno = 1;
+  iso_errno = 1;
   rank  = 1;
   CFI_CDESC_T (rank) section, source;
   if (extents != NULL)
@@ -1089,7 +1089,7 @@ int main (void)
   CFI_CDESC_T (0) section2, source2;
   ind = CFI_establish ((CFI_cdesc_t *) &source2, &ind, CFI_attribute_other,
                        type[3], 0, 0, NULL);
-  ind = CFI_establish ((CFI_cdesc_t *) &section2, &errno, CFI_attribute_other,
+  ind = CFI_establish ((CFI_cdesc_t *) &section2, &iso_errno, CFI_attribute_other,
                        type[3], 0, 0, NULL);
   ind = CFI_section ((CFI_cdesc_t *) &section2, (CFI_cdesc_t *) &source2, lower,
                      upper, strides);
@@ -1133,7 +1133,7 @@ int main (void)
 
   for (int i = 1; i < CFI_MAX_RANK; i++)
     {
-      errno   = 1;
+      iso_errno   = 1;
       rank    = i;
       int ctr = 0;
       CFI_CDESC_T (rank) source;
@@ -1233,7 +1233,7 @@ int main (void)
     }
 
   /* CFI_section negative strides. */
-  errno = 1;
+  iso_errno = 1;
   rank  = 8;
   if (extents != NULL)
     {
