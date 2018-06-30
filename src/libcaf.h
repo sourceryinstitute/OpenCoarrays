@@ -34,7 +34,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 #include "libcaf-version-def.h"
 #include "libcaf-gfortran-descriptor.h"
 
+#ifdef HAVE_MPI
 #include <mpi.h>
+#endif
 
 #ifndef __GNUC__
 #define __attribute__(x)
