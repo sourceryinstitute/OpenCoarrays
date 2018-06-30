@@ -78,6 +78,7 @@ endif()
 string(REGEX REPLACE "-rc[0-9]+$"
        ".0" OPENCOARRAYS_CMAKE_PROJECT_VERSION
        "${OpenCoarraysVersion}")
+
 project(opencoarrays VERSION "${OPENCOARRAYS_CMAKE_PROJECT_VERSION}" LANGUAGES C Fortran)
 message( STATUS "Building OpenCoarrays version: ${full_git_describe}" )
 set(OpenCoarrays_dist_string "OpenCoarrays-${full_git_describe}")
@@ -832,7 +833,9 @@ include(cmake/AddInstallationScriptTest.cmake )
 add_installation_script_test(installation-scripts.sh src/tests/installation/)
 
 # Test ISO_Fortran_binding library
-add_test(NAME ISO_Fortran_binding_tests COMMAND "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ISO_Fortran_binding_tests")
+if( "${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" )
+  add_test(NAME ISO_Fortran_binding_tests COMMAND "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ISO_Fortran_binding_tests")
+endif()
 
 # Lint the Travis-CI scripts
 set(TRAVIS_SCRIPTS
