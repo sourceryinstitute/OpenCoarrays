@@ -78,6 +78,7 @@ endif()
 string(REGEX REPLACE "-rc[0-9]+$"
        ".0" OPENCOARRAYS_CMAKE_PROJECT_VERSION
        "${OpenCoarraysVersion}")
+
 project(opencoarrays VERSION "${OPENCOARRAYS_CMAKE_PROJECT_VERSION}" LANGUAGES C Fortran)
 message( STATUS "Building OpenCoarrays version: ${full_git_describe}" )
 set(OpenCoarrays_dist_string "OpenCoarrays-${full_git_describe}")
@@ -645,7 +646,12 @@ if(opencoarrays_aware_compiler)
   add_caf_test(register_vector 2 register_vector)
   add_caf_test(register_alloc_vector 2 register_alloc_vector)
   add_caf_test(allocate_as_barrier 2 allocate_as_barrier)
-  add_caf_test(allocate_as_barrier_proc 8 allocate_as_barrier_proc)
+  if(gfortran_compiler AND (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
+    if( CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0 )
+      message( AUTHOR_WARNING "Developer tests requested and GFortran < 7: test allocate_as_barrier_proc may fail" )
+    endif()
+    add_caf_test(allocate_as_barrier_proc 8 allocate_as_barrier_proc)
+  endif()
   if (gfortran_compiler AND (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
     message( STATUS "Allocatable components of coarray derived types only supported in GFortran >= 7 with OpenCoarrays > 1.8.4" )
     message( STATUS "(but full support not anticipated until OpenCoarrays 2.0 release)" )
@@ -832,7 +838,9 @@ include(cmake/AddInstallationScriptTest.cmake )
 add_installation_script_test(installation-scripts.sh src/tests/installation/)
 
 # Test ISO_Fortran_binding library
-add_test(NAME ISO_Fortran_binding_tests COMMAND "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ISO_Fortran_binding_tests")
+if( "${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" )
+  add_test(NAME ISO_Fortran_binding_tests COMMAND "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ISO_Fortran_binding_tests")
+endif()
 
 # Lint the Travis-CI scripts
 set(TRAVIS_SCRIPTS
