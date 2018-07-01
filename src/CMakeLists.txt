@@ -1,9 +1,4 @@
-set(directories_to_build mpi tests)
-
-if( "${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" )
-  LIST( APPEND directories_to_build iso-fortran-binding )
-endif()
-
+set(directories_to_build mpi tests iso-fortran-binding)
 foreach(directory ${directories_to_build})
   add_subdirectory(${directory})
 endforeach()
