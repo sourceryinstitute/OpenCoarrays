@@ -21,7 +21,7 @@ if (mpi_version_out MATCHES "[Oo]pen[ -][Mm][Pp][Ii]")
   message( STATUS "OpenMPI detected")
   set ( openmpi true PARENT_SCOPE)
   # Write out a host file because OMPI's mpiexec is dumb
-  file(APPEND ${CMAKE_BINARY_DIR}/hostfile "${HOST_NAME} slots=${N_CPU}\n")
+  file(WRITE ${CMAKE_BINARY_DIR}/hostfile "${HOST_NAME} slots=${N_CPU}\n")
 endif ()
 
 if("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
