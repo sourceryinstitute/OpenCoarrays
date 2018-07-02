@@ -12,6 +12,9 @@ message( STATUS
 ============================================================
 ")
 
+message( STATUS "Running with CMake from: ${CMAKE_COMMAND}" )
+message( STATUS "Current source dir (for OpenCoarrays): ${CMAKE_CURRENT_SOURCE_DIR}")
+
 # Add option and check environment to determine if developer tests should be run
 if($ENV{OPENCOARRAYS_DEVELOPER})
   option(CAF_RUN_DEVELOPER_TESTS "Run tests intended only for developers" ON)
@@ -82,6 +85,7 @@ string(REGEX REPLACE "-rc[0-9]+$"
 project(opencoarrays VERSION "${OPENCOARRAYS_CMAKE_PROJECT_VERSION}" LANGUAGES C Fortran)
 message( STATUS "Building OpenCoarrays version: ${full_git_describe}" )
 set(OpenCoarrays_dist_string "OpenCoarrays-${full_git_describe}")
+message( STATUS "Building for target architecture: ${CMAKE_SYSTEM_PROCESSOR}" )
 
 #Print an error message on an attempt to build inside the source directory tree:
 if ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
