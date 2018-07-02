@@ -83,6 +83,7 @@ string(REGEX REPLACE "-rc[0-9]+$"
        "${OpenCoarraysVersion}")
 
 project(opencoarrays VERSION "${OPENCOARRAYS_CMAKE_PROJECT_VERSION}" LANGUAGES C Fortran)
+
 message( STATUS "Building OpenCoarrays version: ${full_git_describe}" )
 set(OpenCoarrays_dist_string "OpenCoarrays-${full_git_describe}")
 message( STATUS "Building for target architecture: ${CMAKE_SYSTEM_PROCESSOR}" )
@@ -842,7 +843,9 @@ include(cmake/AddInstallationScriptTest.cmake )
 add_installation_script_test(installation-scripts.sh src/tests/installation/)
 
 # Test ISO_Fortran_binding library
-if( "${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" )
+if( (( "${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" ) AND ( "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64" ))
+    OR ( CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER} ) )
+  # See https://github.com/sourceryinstitute/OpenCoarrays/issues/523#issuecomment-401613209
   add_test(NAME ISO_Fortran_binding_tests COMMAND "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ISO_Fortran_binding_tests")
 endif()
 
