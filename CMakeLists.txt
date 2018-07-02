@@ -12,6 +12,9 @@ message( STATUS
 ============================================================
 ")
 
+message( STATUS "Running with CMake from: ${CMAKE_COMMAND}" )
+message( STATUS "Current source dir (for OpenCoarrays): ${CMAKE_CURRENT_SOURCE_DIR}")
+
 # Add option and check environment to determine if developer tests should be run
 if($ENV{OPENCOARRAYS_DEVELOPER})
   option(CAF_RUN_DEVELOPER_TESTS "Run tests intended only for developers" ON)
@@ -80,8 +83,10 @@ string(REGEX REPLACE "-rc[0-9]+$"
        "${OpenCoarraysVersion}")
 
 project(opencoarrays VERSION "${OPENCOARRAYS_CMAKE_PROJECT_VERSION}" LANGUAGES C Fortran)
+
 message( STATUS "Building OpenCoarrays version: ${full_git_describe}" )
 set(OpenCoarrays_dist_string "OpenCoarrays-${full_git_describe}")
+message( STATUS "Building for target architecture: ${CMAKE_SYSTEM_PROCESSOR}" )
 
 #Print an error message on an attempt to build inside the source directory tree:
 if ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
@@ -838,7 +843,9 @@ include(cmake/AddInstallationScriptTest.cmake )
 add_installation_script_test(installation-scripts.sh src/tests/installation/)
 
 # Test ISO_Fortran_binding library
-if( "${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" )
+if( (( "${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" ) AND ( "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64" ))
+    OR ( CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER} ) )
+  # See https://github.com/sourceryinstitute/OpenCoarrays/issues/523#issuecomment-401613209
   add_test(NAME ISO_Fortran_binding_tests COMMAND "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ISO_Fortran_binding_tests")
 endif()
 
