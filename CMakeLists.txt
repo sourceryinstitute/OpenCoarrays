@@ -16,16 +16,19 @@ message( STATUS "Running with CMake from: ${CMAKE_COMMAND}" )
 message( STATUS "Current source dir (for OpenCoarrays): ${CMAKE_CURRENT_SOURCE_DIR}")
 
 # Add option and check environment to determine if developer tests should be run
-if($ENV{OPENCOARRAYS_DEVELOPER})
-  option(CAF_RUN_DEVELOPER_TESTS "Run tests intended only for developers" ON)
-else()
-  option(CAF_RUN_DEVELOPER_TESTS "Run tests intended only for developers" OFF)
-endif()
-mark_as_advanced(CAF_RUN_DEVELOPER_TESTS)
-
+set( _TF OFF )
 if( NOT DEFINED ENV{OPENCOARRAYS_DEVELOPER})
   set ( ENV{OPENCOARRAYS_DEVELOPER} FALSE )
 endif()
+if($ENV{OPENCOARRAYS_DEVELOPER})
+  set( _TF ON )
+endif()
+option(CAF_RUN_DEVELOPER_TESTS "Run tests intended only for developers" ${_TF})
+mark_as_advanced(CAF_RUN_DEVELOPER_TESTS)
+option( CAF_ENABLE_ISO_Fortran_BINDING
+  "Build and install F2018 C interop iso_fortran_binding.h header; experimental!"
+  ${_TF} )
+
 
 # Name project and specify source languages
 # Parse version from .VERSION file so that more info can be added and easier to get from scripts
@@ -842,9 +845,17 @@ endif()
 include(cmake/AddInstallationScriptTest.cmake )
 add_installation_script_test(installation-scripts.sh src/tests/installation/)
 
+if( CAF_ENABLE_FAILED_IMAGES AND ( NOT
+      (	"${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" ) AND ( "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64" ) )
+    )
+  message ( WARNING
+    "ISO_Fortran_BINDING has only been tested with recent GCC C compilers on x86_64 architectures!
+     Some people have reported problems on other architectures or using other C compilers (Clang).
+     There are likely bugs present; use at your own risk!")
+endif()
+
 # Test ISO_Fortran_binding library
-if( (( "${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" ) AND ( "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64" ))
-    OR ( CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER} ) )
+if( CAF_ENABLE_ISO_Fortran_BINDING OR ( CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER} ) )
   # See https://github.com/sourceryinstitute/OpenCoarrays/issues/523#issuecomment-401613209
   add_test(NAME ISO_Fortran_binding_tests COMMAND "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ISO_Fortran_binding_tests")
 endif()

@@ -16,7 +16,6 @@ if (${opencoarrays_aware_compiler})
 else()
   add_subdirectory(extensions)
 endif()
-if( "${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" OR
-    (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
+if( CAF_ENABLE_ISO_Fortran_BINDING OR ( CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER} ) )
   add_subdirectory(iso-fortran-binding)
 endif()
