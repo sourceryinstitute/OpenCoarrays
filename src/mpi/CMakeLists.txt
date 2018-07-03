@@ -110,7 +110,8 @@ foreach(symbol ${NEEDED_SYMBOLS})
   CHECK_SYMBOL_EXISTS(${symbol} "${MPI_HEADERS}" HAVE_${symbol})
   if(NOT HAVE_${symbol})
     message( STATUS "\${HAVE_${symbol}} = ${HAVE_${symbol}}")
-    message( WARNING "Disabling Failed Image support due to lack of support in the current MPI implementation.")
+    message( WARNING
+      "Note: Failed Images not supported by the current MPI implementation! (Needs MPIX experimental features--as of MPI3)")
     set(MPI_HAS_FAULT_TOL_EXT NO)
     break() # no need to keep looking
   endif()
@@ -122,7 +123,11 @@ set(CMAKE_REQUIRED_LIBRARIES ${old_cmake_required_libraries})
 if(MPI_HAS_FAULT_TOL_EXT) # AND (NOT openmpi))
   option(CAF_ENABLE_FAILED_IMAGES "Enable failed images support" TRUE)
 else()
-  set(CAF_ENABLE_FAILED_IMAGES FALSE CACHE BOOL "Enable failed images support" FORCE)
+  set(CAF_ENABLE_FAILED_IMAGES FALSE
+    CACHE
+    BOOL
+    "Enable failed images support (no support in the selected MPI implementation)"
+    FORCE)
 endif()
 
 if(CAF_ENABLE_FAILED_IMAGES)
