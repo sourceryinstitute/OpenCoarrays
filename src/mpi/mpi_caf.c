@@ -1,8 +1,8 @@
 /* One-sided MPI implementation of Libcaf
-* 
+*
 * Copyright (c) 2012-2018, Sourcery, Inc.
 * All rights reserved.
-* 
+*
 * Redistribution and use in source and binary forms, with or without
 * modification, are permitted provided that the following conditions are met:
 *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
 *     * Neither the name of the Sourcery, Inc., nor the
 *       names of its contributors may be used to endorse or promote products
 *       derived from this software without specific prior written permission.
-* 
+*
 * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -5659,7 +5659,7 @@ PREFIX(send_by_ref) (caf_token_t token, int image_index,
   const char nonallocextentmismatch[] =
     "libcaf_mpi::caf_send_by_ref(): "
     "extent of non-allocatable arrays mismatch (%lu != %lu).\n";
-  
+
   size_t size, i, ref_rank = 0, src_index, dst_size;
   int dst_rank = -1, src_cur_dim = 0, ierr;
   mpi_caf_token_t *mpi_token = (mpi_caf_token_t *) token;
@@ -5689,11 +5689,12 @@ PREFIX(send_by_ref) (caf_token_t token, int image_index,
 
   check_image_health(image_index, stat);
 
-  dprint("Entering send_by_ref(may_require_tmp = %d", may_require_tmp);
 #ifdef GCC_GE_8
-  fprintf(stderr, ", dst_type = %d", dst_type);
+  dprint("Entering send_by_ref(may_require_tmp = %d, dst_type = %d)\n",
+         may_require_tmp, dst_type);
+#else
+  dprint("Entering send_by_ref(may_require_tmp = %d)\n", may_require_tmp);
 #endif
-  fprintf(stderr, ").\n");
 
   /* Compute the size of the result.  In the beginning size just counts the
    * number of elements. */
