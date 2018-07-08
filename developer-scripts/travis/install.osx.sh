@@ -33,9 +33,10 @@ done
 brew uninstall --force --ignore-dependencies openmpi || true
 brew uninstall --force --ignore-dependencies mpich || true
 
-if [[ "${BUILD_TYPE:-}" == InstallScript ]]; then # uninstall some stuff if present
-    brew uninstall --force --ignore-dependencies cmake || true
-fi
+# Building CMake from source is very slow. We should be using binaries instead
+# if [[ "${BUILD_TYPE:-}" == InstallScript ]]; then # uninstall some stuff if present
+#     brew uninstall --force --ignore-dependencies cmake || true
+# fi
 
 {
     mpif90 --version && mpif90 -show

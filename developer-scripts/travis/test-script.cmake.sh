@@ -21,32 +21,33 @@ trap '__caf_err_report "${FUNCNAME:-.}" ${LINENO}' ERR
 
 echo "Performing Travis-CI script phase for the OpenCoarrays direct cmake build..."
 
-mkdir cmake-build
-
 for version in ${GCC}; do
+    mkdir "cmake-build-gcc${GCC}"
+    export BLD_DIR="cmake-build-gcc${GCC}"
     export FC=gfortran-${version}
     export CC=gcc-${version}
+    if [[ ${OSTYPE} == [Dd]arwin* ]]; then
+	# Use clang on macOS because that's what homebrew and everyone else does
+	export CC=clang
+	for mpi in "mpich" "open-mpi"; do
+	    brew unlink "${mpi}" || true
+	    brew ls --versions "${mpi}" >/dev/null || brew install "${mpi}"
+	    brew outdated "${mpi}" || brew upgrade "${mpi}"
+	    brew unlink "${mpi}"
+	done
+	brew link open-mpi
+    fi
     ${FC} --version
     ${CC} --version
-    if [[ ${OSTYPE} == [Dd]arwin* ]]; then
-	# Ideally this stuff would be in the `install:` section
-	# but puting it here simplifies the Travis code a lot
-	MPICH_BOT_URL_HEAD=MPICH_GCC${version}_BOT_URL_HEAD
-	brew uninstall --force --ignore-dependencies mpich || true
-	echo "Downloading Custom MPICH bottle ${!MPICH_BOT_URL_HEAD}${MPICH_BOT_URL_TAIL} ..."
-	wget "${!MPICH_BOT_URL_HEAD}${MPICH_BOT_URL_TAIL}" > wget_mpichbottle.log 2>&1 || cat wget_mpichbottle.log
-	brew install --force-bottle "${MPICH_BOT_URL_TAIL}"
-	brew ls --versions mpich >/dev/null || brew install --force-bottle mpich
-	rm "${MPICH_BOT_URL_TAIL}"
-    fi
     mpif90 --version && mpif90 -show
     mpicc --version && mpicc -show
 
     # shellcheck disable=SC2153
     for BUILD_TYPE in ${BUILD_TYPES}; do
-	rm -rf cmake-build/* || true
+	# shellcheck disable=SC2015
+	[[ -d "${BLD_DIR}" ]] && rm -rf "${BLD_DIR:?}"/* || true
 	(
-	    cd cmake-build
+	    cd "${BLD_DIR}"
 	    cmake -DCMAKE_INSTALL_PREFIX:PATH="${HOME}/OpenCoarrays" -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" ..
 	    make -j 4
 	    ctest --output-on-failure --schedule-random --repeat-until-fail "${NREPEAT:-5}" --timeout "${TEST_TIMEOUT:-200}"
