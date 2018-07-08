@@ -27,13 +27,6 @@ matrix:
           OSX_PACKAGES="gcc@6 shellcheck cmake"
           # cmake should be removed, but we should be installing binaries
           # because building from source takes forever
-    -
-      <<: *macOS
-      env:
-        - BUILD_TYPE="cmake"
-          GCC=6
-          OSX_PACKAGES="gcc@6 shellcheck cmake"
-
     - &ubuntu
       os: linux
       sudo: false
