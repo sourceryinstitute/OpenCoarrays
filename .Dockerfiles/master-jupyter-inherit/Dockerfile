@@ -1,37 +1,33 @@
-FROM jupyter/minimal-notebook:da2c5a4d00fa
-
-MAINTAINER Izaak Beekman <izaak@izaakbeekman.com>
+FROM jupyter/minimal-notebook:f3652d3f58f2
 
 USER root
-ENV GCC_VERSION 7.2.0
-
-ENV NB_USER jovyan
-ENV NB_UID 1000
-ENV HOME /home/${NB_USER}
+ENV GCC_VERSION 7.3.0
 
 RUN DEBIAN_FRONTEND=noninteractive transientBuildDeps="file" \
+    && echo "NB_USER=${NB_USER}" \
     && set -v \
     && cat /etc/issue \
     && uname -a \
     && echo "${DEBIAN_FRONTEND}" \
     && apt-get update -y \
-    && apt-get install -y \
+    && apt-get install -y --no-install-recommends \
     software-properties-common \
     && add-apt-repository ppa:ubuntu-toolchain-r/test -y \
     && apt-get update -y \
-    && apt-get install -y \
+    && apt-get install -y --no-install-recommends \
     build-essential \
-    gcc-7=${GCC_VERSION}-1ubuntu1~16.04 \
-    gfortran-7=${GCC_VERSION}-1ubuntu1~16.04 \
-    g++-7=${GCC_VERSION}-1ubuntu1~16.04 \
-    mpich \
+    gcc-7>=7.3.0 \
+    gfortran-7>=7.3.0 \
+    g++-7>=7.3.0 \
+    mpich>=3.2 \
+    libmpich-dev>=3.2 \
     ${transientBuildDeps} \
     && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 60 --slave /usr/bin/gfortran gfortran /usr/bin/gfortran-7 \
     && update-alternatives --set gcc "/usr/bin/gcc-7" \
     && gcc --version \
     && gfortran --version \
     && mpiexec --version \
-    && mpifort --version \
+    && mpif90 --version \
     && mpicc --version \
     && apt-get clean \
     && apt-get purge -y --auto-remove ${transientBuildDeps} \
@@ -52,14 +48,14 @@ RUN DEBIAN_FRONTEND=noninteractive transientBuildDeps="file" \
           org.label-schema.version="${VCS_VERSION}" \
           org.label-schema.vendor="SourceryInstitute" \
           org.label-schema.license="BSD" \
-          org.label-schema.docker.cmd="docker run -i -t -p 8888:8888 sourceryinstitute/opencoarrays-notebook"
+          org.label-schema.docker.cmd="docker run -i -t -p 8888:8888 sourceryinstitute/opencoarrays_jupyter"
 
 ARG RUN_TESTS=false
 
-RUN DEBIAN_FRONTEND=noninteractive transientBuildDeps="cmake git" \
+RUN DEBIAN_FRONTEND=noninteractive transientBuildDeps="cmake cmake-data git" \
     && set -v \
     && echo "${DEBIAN_FRONTEND}" \
-    && apt-get update && apt-get install -y \
+    && apt-get update && apt-get install -y --no-install-recommends \
     ${transientBuildDeps} \
     && cmake --version \
     && gcc --version \
@@ -67,13 +63,15 @@ RUN DEBIAN_FRONTEND=noninteractive transientBuildDeps="cmake git" \
     && git clone --single-branch https://github.com/sourceryinstitute/OpenCoarrays \
     && mkdir OpenCoarrays/build \
     && cd OpenCoarrays/build \
-    && FC="$(which gfortran)" CC="$(which gcc)" cmake -DCMAKE_BUILD_TYPE=Release .. \
+    && FC="$(command -v gfortran)" CC="$(command -v gcc)" cmake -DCAF_ENABLE_FAILED_IMAGES=FALSE -DCMAKE_BUILD_TYPE=Release .. \
     && make -j "$(nproc)" install \
-    && if [ "${RUN_TESTS}" = "true" ] ; then ctest --output-on-failure ; fi \
-    && cd ../.. \
+    && if "${RUN_TESTS}" ; then ctest --output-on-failure ; fi \
     && caf --version \
     && cafrun --version \
-    && rm -rf OpenCoarrays \
+    && cd ../.. \
+    && rm -rf ../../OpenCoarrays \
     && apt-get clean \
     && apt-get purge -y --auto-remove ${transientBuildDeps} \
     && rm -rf /var/lib/apt/lists/* /var/log/* /tmp/*
+
+USER "${NB_USER}"
