@@ -11,10 +11,8 @@ opencoarrays.o: opencoarrays.F90
 	cd ../mpi && make
 
 clean:
-	rm -f *.o *.mod 
-	rm -f ../common/caf_auxiliary.o
+	rm -f *.o *.mod co_sum-transformed ../common/caf_auxiliary.o
 	cd ../mpi && make clean
-	
 
 distclean: clean
-	rm -f *.o && cd ../mpi && make distclean
+	cd ../mpi && make distclean
