@@ -1,6 +1,11 @@
-/* One-sided MPI implementation of Libcaf
+/* OpenCoarrays application binary interface (ABI) 
 
-Copyright (c) 2012-2016, Sourcery, Inc.
+This same interface can be used for any choice of underlying communication
+protocol, including the current default option of the Message Passing 
+Interface (MPI) or the alternative OpenSHMEM. 
+
+Copyright (c) 2015-2018, Sourcery Institute
+Copyright (c) 2012-2018, Sourcery, Inc.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without

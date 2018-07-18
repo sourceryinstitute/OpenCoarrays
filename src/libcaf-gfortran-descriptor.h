@@ -1,6 +1,7 @@
 /* One-sided MPI implementation of Libcaf
 
-Copyright (c) 2012-2016, Sourcery, Inc.
+Copyright (c) 2015-2018, Sourcery Institute
+Copyright (c) 2012-2018, Sourcery, Inc.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -30,9 +31,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 
 #include "libcaf-version-def.h"
 
-/* GNU Fortran's array descriptor.  Keep in sync with libgfortran.h.  To be
-   replaced by TS29113's ISO_Fortran_binding.h with CFI_cdesc_t.  */
-
 enum
 { BT_UNKNOWN = 0, BT_INTEGER, BT_LOGICAL, BT_REAL, BT_COMPLEX,
   BT_DERIVED, BT_CHARACTER, BT_CLASS, BT_PROCEDURE, BT_HOLLERITH, BT_VOID,
@@ -58,6 +56,12 @@ descriptor_dimension;
   }
   dtype_type;
 #endif
+
+/* OpenCoarrays variable descriptor:
+   The descriptor defined here conforms with the definition of CFI_cdesc_t
+   in the Fortran 2018 ISO_Fortran_binding.h header file.
+   Keep in sync with libgfortran.h.
+*/
 
 typedef struct gfc_descriptor_t {
   void *base_addr;
