@@ -26,20 +26,18 @@
 
 ! Unit tests for co_sum
 program main
-  use iso_fortran_env, only : error_unit
-  use iso_c_binding, only : c_int,c_double,c_loc,c_char
+  use iso_c_binding, only : c_int,c_loc,c_char
   use opencoarrays_API
   implicit none
 
-  integer(c_int) :: image_count(1)=1,argc
+  integer(c_int) :: image_count(1)=1,argc=0
   character(kind=c_char) :: argv(1)
  
   call caf_init(c_loc(argc),c_loc(argv))
-
   ! Verify collective sum of integer data by tallying image numbers
   call co_sum(image_count)
   if ( image_count(1) /= num_images() ) call error_stop
-   
+
   ! Wait for every image to pass
   call sync_all
   if (this_image()==1) print *, "Test passed."

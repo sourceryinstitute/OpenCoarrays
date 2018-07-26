@@ -273,19 +273,25 @@ contains
   ! ____________________________________________________________________________________
 
   subroutine co_sum_c_int(a,result_image,stat,errmsg)
-   !class(*), intent(inout), volatile, target, contiguous :: a(:) ! should be assumed-rank
     integer(c_int), intent(inout), volatile, target, contiguous :: a(:) ! should be assumed-rank
+
+   ! TODO: Replace the above line with the one below after the integer version works
+   !class(*), intent(inout), volatile, target, contiguous :: a(:) ! should be assumed-rank
+
     integer(c_int), intent(in), optional :: result_image
     integer(c_int), intent(out), optional:: stat
     character(kind=1,len=*), intent(out), optional :: errmsg
     ! Local variables and constants:
-    integer(c_int), parameter :: default_result_image=0
+    integer(c_int) :: result_image_
     type(opencoarrays_descriptor_t), target :: a_descriptor
-    integer(c_int) :: result_image_ ! Local replacement for the corresponding intent(in) dummy argument
-
-    return
+    
     a_descriptor = opencoarrays_descriptor(a)
-    result_image_ = merge(result_image,default_result_image,present(result_image))
+
+    if (present(result_image)) then
+      result_image_ = result_image
+    else
+      result_image_ = 0
+    end if
     call opencoarrays_co_sum(c_loc(a_descriptor),result_image_, stat, errmsg, len(errmsg))
 
   end subroutine
@@ -305,17 +311,24 @@ contains
   subroutine error_stop(stop_code)
     !! Halt the execution of all images
     integer(c_int32_t), intent(in), optional :: stop_code
-    integer(c_int32_t), parameter :: default_code=-1_c_int32_t
-    integer(c_int32_t) :: code
-    code = merge(stop_code,default_code,present(stop_code))
-    call opencoarrays_error_stop(code)
+    integer(c_int32_t) :: stop_code_
+    if (present(stop_code)) then
+      stop_code_ = stop_code
+    else
+      stop_code_ = -1_c_int32_t
+    end if
+    call opencoarrays_error_stop(stop_code_)
   end subroutine
 
   subroutine sync_all(stat,errmsg,unused)
     !! Globally common segment boundary
     integer(c_int), intent(out), optional :: stat,unused
+    integer(c_int) :: stat_
     character(c_char), intent(out), optional :: errmsg
-    call opencoarrays_sync_all(stat,errmsg,unused)
+    character(c_char) :: errmsg_
+    call opencoarrays_sync_all(stat_,errmsg_,unused)
+    if (present(stat)) stat=stat_
+    if (present(errmsg)) errmsg=errmsg_
   end subroutine
 
 end module
