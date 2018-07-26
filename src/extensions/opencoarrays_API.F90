@@ -26,7 +26,7 @@
 ! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 !
-module opencoarrays
+module opencoarrays_API
   use iso_c_binding, only : c_int,c_char,c_ptr,c_loc,c_int32_t,c_sizeof, c_size_t
   implicit none
 
@@ -77,17 +77,17 @@ module opencoarrays
   end type
 
   ! Type definition from ../libcaf-gfortran-descriptor.h:
-  !typedef struct gfc_descriptor_t {
+  !typedef struct opencoarrays_descriptor_t {
   !  void *base_addr;
   !  size_t offset;
   !  ptrdiff_t dtype;
   !  descriptor_dimension dim[];
-  !} gfc_descriptor_t;
+  !} opencoarrays_descriptor_t;
 
   integer, parameter :: max_dimensions=15
 
   ! Fortran derived type interoperable with like-named C type:
-  type, bind(C) :: gfc_descriptor_t
+  type, bind(C) :: opencoarrays_descriptor_t
     type(c_ptr) :: base_addr
     integer(c_ptrdiff_t) :: offset
     integer(c_ptrdiff_t) :: dtype
@@ -141,7 +141,7 @@ module opencoarrays
 #ifdef __GFORTRAN__
     subroutine caf_init(argc,argv) bind(C,name="_gfortran_caf_init")
 #else
-    subroutine caf_init(argc,argv) bind(C,name="_opencoarrays_init")
+    subroutine caf_init(argc,argv) bind(C,name="_opencoarrays_ABI_init")
 #endif
       !! C prototype (../mpi/mpi_caf.c): void init (int *argc, char ***argv)
       import :: c_int,c_ptr
@@ -152,7 +152,7 @@ module opencoarrays
 #ifdef __GFORTRAN__
     subroutine caf_finalize() bind(C,name="_gfortran_caf_finalize")
 #else
-    subroutine caf_finalize() bind(C,name="_opencoarrays_finalize")
+    subroutine caf_finalize() bind(C,name="_opencoarrays_ABI_finalize")
 #endif
       !! C prototype (../mpi/mpi_caf.c): void PREFIX (finalize) (void)
     end subroutine
@@ -160,10 +160,10 @@ module opencoarrays
 #ifdef __GFORTRAN__
     subroutine opencoarrays_co_sum(a, result_image, stat, errmsg, errmsg_len) bind(C,name="_gfortran_caf_co_sum")
 #else
-    subroutine opencoarrays_co_sum(a, result_image, stat, errmsg, errmsg_len) bind(C,name="_opencoarrays_co_sum")
+    subroutine opencoarrays_co_sum(a, result_image, stat, errmsg, errmsg_len) bind(C,name="_opencoarrays_ABI_co_sum")
 #endif
       !! C prototype (../mpi/mpi_caf.c): 
-      !! void co_sum (gfc_descriptor_t *a, int result_image, int *stat, char *errmsg, int errmsg_len)
+      !! void co_sum (opencoarrays_descriptor_t *a, int result_image, int *stat, char *errmsg, int errmsg_len)
       import :: c_int,c_char,c_ptr
       type(c_ptr), intent(in), value :: a
       integer(c_int), intent(in),  value :: result_image,errmsg_len
@@ -174,7 +174,7 @@ module opencoarrays
 #ifdef __GFORTRAN__
     function opencoarrays_this_image(coarray) bind(C,name="_gfortran_caf_this_image") result(image_num)
 #else
-    function opencoarrays_this_image(coarray) bind(C,name="_opencoarrays_this_image") result(image_num)
+    function opencoarrays_this_image(coarray) bind(C,name="_opencoarrays_ABI_this_image") result(image_num)
 #endif
       !! C prototype (../mpi/mpi_caf.c): int PREFIX (this_image) (int);
       import :: c_int
@@ -185,7 +185,7 @@ module opencoarrays
 #ifdef __GFORTRAN__
     function opencoarrays_num_images(coarray,dim_) bind(C,name="_gfortran_caf_num_images") result(num_images_)
 #else
-    function opencoarrays_num_images(coarray,dim_) bind(C,name="_opencoarrays_num_images") result(num_images_)
+    function opencoarrays_num_images(coarray,dim_) bind(C,name="_opencoarrays_ABI_num_images") result(num_images_)
 #endif
       !! C prototype (../mpi/mpi_caf.c): int PREFIX (num_images) (int, int);
       import :: c_int
@@ -196,7 +196,7 @@ module opencoarrays
 #ifdef __GFORTRAN__
     subroutine opencoarrays_error_stop(stop_code) bind(C,name="_gfortran_caf_error_stop")
 #else
-    subroutine opencoarrays_error_stop(stop_code) bind(C,name="_opencoarrays_error_stop")
+    subroutine opencoarrays_error_stop(stop_code) bind(C,name="_opencoarrays_ABI_error_stop")
 #endif
       !! C prototype (../mpi_caf.c): void PREFIX (error_stop) (int32_t) __attribute__ ((noreturn));
       import :: c_int32_t
@@ -207,7 +207,7 @@ module opencoarrays
 #ifdef __GFORTRAN__
     subroutine opencoarrays_sync_all(stat,errmsg,unused) bind(C,name="_gfortran_caf_sync_all")
 #else
-    subroutine opencoarrays_sync_all(stat,errmsg,unused) bind(C,name="_opencoarrays_sync_all")
+    subroutine opencoarrays_sync_all(stat,errmsg,unused) bind(C,name="_opencoarrays_ABI_sync_all")
 #endif
       !! C prototype (../mpi_caf.c): void PREFIX (sync_all) (int *, char *, int);
       import :: c_int,c_char
@@ -249,9 +249,9 @@ contains
 
   end function
 
-  function gfc_descriptor(a) result(a_descriptor)
+  function opencoarrays_descriptor(a) result(a_descriptor)
     class(*), intent(in), target, contiguous :: a(:) ! should be assumed-rank
-    type(gfc_descriptor_t) :: a_descriptor
+    type(opencoarrays_descriptor_t) :: a_descriptor
     integer(c_int), parameter :: unit_stride=1,scalar_offset=-1
     integer(c_int) :: i
 
@@ -273,23 +273,25 @@ contains
   ! ____________________________________________________________________________________
 
   subroutine co_sum_c_int(a,result_image,stat,errmsg)
-    class(*), intent(inout), volatile, target, contiguous :: a(:) ! should be assumed-rank
+   !class(*), intent(inout), volatile, target, contiguous :: a(:) ! should be assumed-rank
+    integer(c_int), intent(inout), volatile, target, contiguous :: a(:) ! should be assumed-rank
     integer(c_int), intent(in), optional :: result_image
     integer(c_int), intent(out), optional:: stat
     character(kind=1,len=*), intent(out), optional :: errmsg
     ! Local variables and constants:
     integer(c_int), parameter :: default_result_image=0
-    type(gfc_descriptor_t), target :: a_descriptor
+    type(opencoarrays_descriptor_t), target :: a_descriptor
     integer(c_int) :: result_image_ ! Local replacement for the corresponding intent(in) dummy argument
 
-    a_descriptor = gfc_descriptor(a)
+    return
+    a_descriptor = opencoarrays_descriptor(a)
     result_image_ = merge(result_image,default_result_image,present(result_image))
     call opencoarrays_co_sum(c_loc(a_descriptor),result_image_, stat, errmsg, len(errmsg))
 
   end subroutine
 
   function this_image()  result(image_num)
-    !! Return the image number (MPI rank + 1)
+    !! Return the image number
     integer(c_int) :: image_num,ierr, unused
     image_num = opencoarrays_this_image(unused)
   end function

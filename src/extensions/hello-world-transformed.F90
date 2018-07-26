@@ -28,7 +28,7 @@
 ! for compilation with a compiler that does not yet support coarray Fortran
 program main
   use iso_c_binding, only : c_int,c_loc,c_char
-  use opencoarrays
+  use opencoarrays_API
     !! Automatic source transformation would insert the above use statements
   implicit none
 

@@ -28,7 +28,7 @@
 program main
   use iso_fortran_env, only : error_unit
   use iso_c_binding, only : c_int,c_double,c_loc,c_char
-  use opencoarrays
+  use opencoarrays_API
   implicit none
 
   integer(c_int) :: image_count(1)=1,argc

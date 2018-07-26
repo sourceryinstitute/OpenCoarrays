@@ -49,7 +49,7 @@ endif
 ifeq ($(COMPILER),gnu)
   PREFIX_NAME := _gfortran_caf_
 else
-  PREFIX_NAME := _opencoarrays_
+  PREFIX_NAME := _opencoarrays_ABI_
 endif
 
 ifeq ($(COMPILER),gnu)
