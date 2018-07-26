@@ -138,18 +138,30 @@ module opencoarrays
   interface
     !! Bindings for OpenCoarrays C procedures in the application binary interface (ABI) defined in libcaf*.h
 
+#ifdef __GFORTRAN__
     subroutine caf_init(argc,argv) bind(C,name="_gfortran_caf_init")
+#else
+    subroutine caf_init(argc,argv) bind(C,name="_opencoarrays_init")
+#endif
       !! C prototype (../mpi/mpi_caf.c): void init (int *argc, char ***argv)
       import :: c_int,c_ptr
       type(c_ptr), value :: argc
       type(c_ptr), value :: argv
     end subroutine
 
+#ifdef __GFORTRAN__
     subroutine caf_finalize() bind(C,name="_gfortran_caf_finalize")
+#else
+    subroutine caf_finalize() bind(C,name="_opencoarrays_finalize")
+#endif
       !! C prototype (../mpi/mpi_caf.c): void PREFIX (finalize) (void)
     end subroutine
 
+#ifdef __GFORTRAN__
     subroutine opencoarrays_co_sum(a, result_image, stat, errmsg, errmsg_len) bind(C,name="_gfortran_caf_co_sum")
+#else
+    subroutine opencoarrays_co_sum(a, result_image, stat, errmsg, errmsg_len) bind(C,name="_opencoarrays_co_sum")
+#endif
       !! C prototype (../mpi/mpi_caf.c): 
       !! void co_sum (gfc_descriptor_t *a, int result_image, int *stat, char *errmsg, int errmsg_len)
       import :: c_int,c_char,c_ptr
@@ -159,30 +171,44 @@ module opencoarrays
       character(kind=c_char), intent(out), optional :: errmsg(*)
     end subroutine
 
+#ifdef __GFORTRAN__
     function opencoarrays_this_image(coarray) bind(C,name="_gfortran_caf_this_image") result(image_num)
+#else
+    function opencoarrays_this_image(coarray) bind(C,name="_opencoarrays_this_image") result(image_num)
+#endif
       !! C prototype (../mpi/mpi_caf.c): int PREFIX (this_image) (int);
       import :: c_int
       integer(c_int), value, intent(in) :: coarray
       integer(c_int)  :: image_num
     end function
-
     
+#ifdef __GFORTRAN__
     function opencoarrays_num_images(coarray,dim_) bind(C,name="_gfortran_caf_num_images") result(num_images_)
+#else
+    function opencoarrays_num_images(coarray,dim_) bind(C,name="_opencoarrays_num_images") result(num_images_)
+#endif
       !! C prototype (../mpi/mpi_caf.c): int PREFIX (num_images) (int, int);
       import :: c_int
       integer(c_int), value, intent(in) :: coarray,dim_
       integer(c_int) :: num_images_
     end function
 
-    
+#ifdef __GFORTRAN__
     subroutine opencoarrays_error_stop(stop_code) bind(C,name="_gfortran_caf_error_stop")
+#else
+    subroutine opencoarrays_error_stop(stop_code) bind(C,name="_opencoarrays_error_stop")
+#endif
       !! C prototype (../mpi_caf.c): void PREFIX (error_stop) (int32_t) __attribute__ ((noreturn));
       import :: c_int32_t
       integer(c_int32_t), value, intent(in) :: stop_code
     end subroutine
 
     
+#ifdef __GFORTRAN__
     subroutine opencoarrays_sync_all(stat,errmsg,unused) bind(C,name="_gfortran_caf_sync_all")
+#else
+    subroutine opencoarrays_sync_all(stat,errmsg,unused) bind(C,name="_opencoarrays_sync_all")
+#endif
       !! C prototype (../mpi_caf.c): void PREFIX (sync_all) (int *, char *, int);
       import :: c_int,c_char
       integer(c_int), intent(out) :: stat,unused

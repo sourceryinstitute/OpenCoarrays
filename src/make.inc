@@ -35,17 +35,8 @@
 #
 # Usage:
 #
-#    export COMPILER=gnu 
-#    make PREFIX=_gfortran_caf_ # Defaults to _gfortran_caf_ if not provided
-
-# Example of printing a variable named "var" delimited by square braces
-# $(info $$var is [${var}])
-
-ifeq ($(PREFIX_NAME),)
-  PREFIX_NAME := _gfortran_caf_
-else
-  PREFIX_NAME := _opencoarrays_caf_
-endif
+#    export COMPILER=arm
+#    make
 
 # Example of printing a variable named "var" delimited by square braces
 # $(info $$var is [${var}])
@@ -53,6 +44,12 @@ endif
 # Options: cray, gnu, intel, arm
 ifndef COMPILER
         COMPILER := gnu
+endif
+
+ifeq ($(COMPILER),gnu)
+  PREFIX_NAME := _gfortran_caf_
+else
+  PREFIX_NAME := _opencoarrays_
 endif
 
 ifeq ($(COMPILER),gnu)
