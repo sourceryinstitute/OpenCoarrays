@@ -24,26 +24,22 @@
 ! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-! Unit tests for co_sum
+! Demonstrate what "Hello, world!" would look like after a source transformation
+! for compilation with a compiler that does not yet support coarray Fortran
 program main
-  use iso_fortran_env, only : error_unit
-  use iso_c_binding, only : c_int,c_double,c_loc,c_char
+  use iso_c_binding, only : c_int,c_loc,c_char
   use opencoarrays
+    !! Automatic source transformation would insert the above use statements
   implicit none
 
-  integer(c_int) :: image_count,argc=0
+  integer(c_int) :: argc=0
   character(kind=c_char) :: argv(1)
  
   call caf_init(c_loc(argc),c_loc(argv))
+    !! Source transformation would insert the above call
 
-  ! Verify collective sum of integer data by tallying image numbers
-  image_count=1
-  call co_sum(image_count)
-  if ( image_count /= num_images() ) call error_stop
-   
-  ! Wait for every image to pass
-  call sync_all
-  if (this_image()==1) print *, "Test passed."
+  print *,"Hello from image ",this_image()," of ",num_images() 
 
   call caf_finalize()
+    !! Source transformation would insert the above call
 end program

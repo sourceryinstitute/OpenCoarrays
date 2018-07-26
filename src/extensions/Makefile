@@ -1,8 +1,16 @@
-co_sum-transformed: co_sum-transformed.o opencoarrays.o ../mpi/libcaf_mpi.a
-	mpifort co_sum-transformed.o opencoarrays.o ../mpi/libcaf_mpi.a -o co_sum-transformed 
+all: co_sum-test hello-world
+
+hello-world: hello-world-transformed.o opencoarrays.o ../mpi/libcaf_mpi.a
+	mpifort hello-world-transformed.o opencoarrays.o ../mpi/libcaf_mpi.a -o hello-world
+
+co_sum-test: co_sum-transformed.o opencoarrays.o ../mpi/libcaf_mpi.a
+	mpifort co_sum-transformed.o opencoarrays.o ../mpi/libcaf_mpi.a -o co_sum-test
 
 co_sum-transformed.o: co_sum-transformed.F90 opencoarrays.o ../mpi/libcaf_mpi.a
 	mpifort -c co_sum-transformed.F90
+
+hello-world-transformed.o: hello-world-transformed.F90 opencoarrays.o ../mpi/libcaf_mpi.a
+	mpifort -c hello-world-transformed.F90
 
 opencoarrays.o: opencoarrays.F90
 	mpifort -c opencoarrays.F90

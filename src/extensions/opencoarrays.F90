@@ -268,29 +268,14 @@ contains
 
   function this_image()  result(image_num)
     !! Return the image number (MPI rank + 1)
-    use mpi, only : MPI_Comm_rank
-    integer(c_int) :: image_num,ierr
-    if (.true.) then
-      call MPI_Comm_rank(CAF_COMM_WORLD,image_num,ierr)
-      if (ierr/=0) call error_stop
-      image_num = image_num + 1
-    else
-      !! alternative, simpler implementation (doesn't work with gfortran)
-      ! image_num = opencoarrays_this_image(unused)
-    end if
+    integer(c_int) :: image_num,ierr, unused
+    image_num = opencoarrays_this_image(unused)
   end function
 
   function num_images()  result(num_images_)
     !! Result is the total number of images
-    use mpi, only : MPI_Comm_size
-    integer(c_int) :: num_images_,ierr
-    if (.true.) then
-      call MPI_Comm_size(CAF_COMM_WORLD,num_images_,ierr)
-      if (ierr/=0) call error_stop
-    else
-      !! alternative, simpler implementation (doesn't work with gfortran)
-      ! num_images_ = opencoarrays_num_images(unused_coarray,unused_scalar)
-    end if
+    integer(c_int) :: num_images_, unused_coarray,unused_scalar
+    num_images_ = opencoarrays_num_images(unused_coarray,unused_scalar)
   end function
 
   subroutine error_stop(stop_code)

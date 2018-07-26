@@ -32,10 +32,30 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
-# Edit the following line to choose the compiler (Options: gnu, cray)
-compiler=gnu
+#
+# Usage:
+#
+#    export COMPILER=gnu 
+#    make PREFIX=_gfortran_caf_ # Defaults to _gfortran_caf_ if not provided
 
-ifeq ($(compiler),gnu)
+# Example of printing a variable named "var" delimited by square braces
+# $(info $$var is [${var}])
+
+ifeq ($(PREFIX),)
+  PREFIX := _gfortran_caf_
+else
+  PREFIX := _opencoarrays_caf_
+endif
+
+# Example of printing a variable named "var" delimited by square braces
+# $(info $$var is [${var}])
+
+# Options: cray, gnu, intel, arm
+ifndef COMPILER
+        COMPILER := gnu
+endif
+
+ifeq ($(COMPILER),gnu)
   FC=gfortran
   CC=mpicc
   MPFC = mpifort
@@ -44,16 +64,22 @@ ifeq ($(compiler),gnu)
   FFLAGS_EXTRA = -fcoarray=lib
   MPI_EXTRA_FLAGS = -Wall -Wextra -Wno-error=cpp -Wno-error=unused-parameter -DSTRIDED -DUSE_FAILED_IMAGES  #-DNONBLOCKING_PUT -DCAF_MPI_LOCK_UNLOCK
   MPI_RUN = mpiexec -np 2
+  PREFIX_NAME=_gfortran_caf_
 else
-  ifeq ($(compiler),cray)
+  ifeq ($(COMPILER),cray)
     FC=ftn
     CC=cc
     MPFC=ftn
     MPICC = cc
+    PREFIX_NAME=_gfortran_caf_
+  else
+    ifeq ($(COMPILER),arm)
+      MPFC = mpifort
+      MPICC = mpicc
+      PREFIX_NAME=_opencoarrays_caf_
+    endif
   endif
 endif
-
-PREFIX_NAME=_gfortran_caf_
 
 FFLAGS = -O2 -g
 CFLAGS = -O2 -g
