@@ -1,3 +1,5 @@
+include ../make.inc
+
 all: co_sum-test hello-world
 
 hello-world: hello-world-transformed.o opencoarrays.o ../mpi/libcaf_mpi.a
@@ -16,11 +18,11 @@ opencoarrays.o: opencoarrays.F90
 	mpifort -c opencoarrays.F90
 
 ../mpi/libcaf_mpi.a: ../mpi/mpi_caf.c
-	cd ../mpi && make
+	make -C ../mpi
 
 clean:
-	rm -f *.o *.mod co_sum-transformed ../common/caf_auxiliary.o
-	cd ../mpi && make clean
+	rm -f *.o *.mod co_sum-test hello-world ../common/caf_auxiliary.o
+	make -C ../mpi clean
 
 distclean: clean
-	cd ../mpi && make distclean
+	make -C ../mpi distclean

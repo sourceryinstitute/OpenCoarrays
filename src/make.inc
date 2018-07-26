@@ -41,10 +41,10 @@
 # Example of printing a variable named "var" delimited by square braces
 # $(info $$var is [${var}])
 
-ifeq ($(PREFIX),)
-  PREFIX := _gfortran_caf_
+ifeq ($(PREFIX_NAME),)
+  PREFIX_NAME := _gfortran_caf_
 else
-  PREFIX := _opencoarrays_caf_
+  PREFIX_NAME := _opencoarrays_caf_
 endif
 
 # Example of printing a variable named "var" delimited by square braces
@@ -64,19 +64,16 @@ ifeq ($(COMPILER),gnu)
   FFLAGS_EXTRA = -fcoarray=lib
   MPI_EXTRA_FLAGS = -Wall -Wextra -Wno-error=cpp -Wno-error=unused-parameter -DSTRIDED -DUSE_FAILED_IMAGES  #-DNONBLOCKING_PUT -DCAF_MPI_LOCK_UNLOCK
   MPI_RUN = mpiexec -np 2
-  PREFIX_NAME=_gfortran_caf_
 else
   ifeq ($(COMPILER),cray)
     FC=ftn
     CC=cc
     MPFC=ftn
     MPICC = cc
-    PREFIX_NAME=_gfortran_caf_
   else
     ifeq ($(COMPILER),arm)
       MPFC = mpifort
       MPICC = mpicc
-      PREFIX_NAME=_opencoarrays_caf_
     endif
   endif
 endif
@@ -85,6 +82,7 @@ FFLAGS = -O2 -g
 CFLAGS = -O2 -g
 
 CFLAGS_EXTRA = -DPREFIX_NAME=$(PREFIX_NAME) -DHAVE_INT128_T
+FFLAGS_EXTRA = -DPREFIX_NAME=$(PREFIX_NAME) -DHAVE_INT128_T
 FFLAGS += $(FFLAGS_EXTRA)
 CFLAGS += $(CFLAGS_EXTRA)
 LDFLAGS +=
