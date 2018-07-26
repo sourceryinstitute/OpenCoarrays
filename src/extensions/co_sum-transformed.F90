@@ -31,15 +31,14 @@ program main
   use opencoarrays
   implicit none
 
-  integer(c_int) :: image_count,argc=0
+  integer(c_int) :: image_count(1)=1,argc
   character(kind=c_char) :: argv(1)
  
   call caf_init(c_loc(argc),c_loc(argv))
 
   ! Verify collective sum of integer data by tallying image numbers
-  image_count=1
   call co_sum(image_count)
-  if ( image_count /= num_images() ) call error_stop
+  if ( image_count(1) /= num_images() ) call error_stop
    
   ! Wait for every image to pass
   call sync_all
