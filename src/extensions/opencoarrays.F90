@@ -30,8 +30,6 @@ module opencoarrays
   use iso_c_binding, only : c_int,c_char,c_ptr,c_loc,c_int32_t,c_sizeof, c_size_t
   implicit none
 
-  include 'mpif.h' ! Let's also try replacing this with 'use mpi_f08'
-
   private
   public :: co_sum
   public :: this_image
@@ -135,8 +133,6 @@ module opencoarrays
 
   ! --------------------
 
- !integer(c_int), save, volatile, bind(C,name="CAF_COMM_WORLD") :: CAF_COMM_WORLD
-  integer(c_int), bind(C,name="CAF_COMM_WORLD") :: CAF_COMM_WORLD
   integer(c_int32_t), parameter  :: bytes_per_word=4_c_int32_t
 
   interface
