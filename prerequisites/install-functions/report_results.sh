@@ -44,12 +44,14 @@ report_results()
     echo "                                                                                " | tee -a setup.csh setup.sh
     if [[ -x "${cmake_install_path}/cmake" ]]; then
       echo "# Prepend the CMake path to the PATH environment variable:" | tee -a setup.sh setup.csh
-      echo "if [[ -z \"\${PATH}\" ]]; then                                         " >> setup.sh
-      echo "  export PATH=\"${cmake_install_path%/}/\"                            " >> setup.sh
+      echo "if [[ -z \"\${PATH}\" ]]; then                                       " >> setup.sh
+      echo "  export PATH=\"${cmake_install_path%/}\"                            " >> setup.sh
       echo "else                                                                 " >> setup.sh
-      echo "  export PATH=\"${cmake_install_path%/}/\":\${PATH}                     " >> setup.sh
+      echo "  if ! [[ \"\${PATH}\" =~ \"${cmake_install_path}\" ]] ; then        " >> setup.sh
+      echo "    export PATH=\"${cmake_install_path%/}\":\${PATH}                 " >> setup.sh
+      echo "  fi                                                                 "  >> setup.sh
       echo "fi                                                                   " >> setup.sh
-      echo "set path = (\"${cmake_install_path%/}\"/\"\$path\")                      " >> setup.csh
+      echo "set path = (\"${cmake_install_path%/}\" \"\$path\")                  " >> setup.csh
     fi
     if [[ -x "${fully_qualified_FC}" ]]; then
       echo "# Prepend the compiler path to the PATH environment variable:" | tee -a setup.sh setup.csh
@@ -60,15 +62,19 @@ report_results()
       echo "fi                                                                            " >> setup.sh
       echo "set path = (\"${compiler_install_root%/}\"/bin \"\$path\")                    " >> setup.csh
     fi
+    LD_LIB_P_VAR=LD_LIBRARY_PATH
+    if [[ "${OSTYPE:-}" =~ [Dd]arwin ]]; then
+      LD_LIB_P_VAR=DYLD_LIBRARY_PATH
+    fi
     if [[ -d "${compiler_install_root%/}/lib" || -d "${compiler_install_root%/}/lib64" ]]; then
-      echo "# Prepend the compiler library paths to the LD_LIBRARY_PATH environment variable:" | tee -a setup.sh setup.csh
+      echo "# Prepend the compiler library paths to the ${LD_LIB_P_VAR} environment variable:" | tee -a setup.sh setup.csh
       compiler_lib_paths="${compiler_install_root%/}/lib64/:${compiler_install_root%/}/lib"
-      echo "if [[ -z \"\${LD_LIBRARY_PATH}\" ]]; then                                       " >> setup.sh
-      echo "  export LD_LIBRARY_PATH=\"${compiler_lib_paths%/}\"                          " >> setup.sh
+      echo "if [[ -z \"\${!LD_LIB_P_VAR}\" ]]; then                                       " >> setup.sh
+      echo "  export ${LD_LIB_P_VAR}=\"${compiler_lib_paths%/}\"                          " >> setup.sh
       echo "else                                                                          " >> setup.sh
-      echo "  export LD_LIBRARY_PATH=\"${compiler_lib_paths%/}:\${LD_LIBRARY_PATH}\"        " >> setup.sh
+      echo "  export ${LD_LIB_P_VAR}=\"${compiler_lib_paths%/}:\${!LD_LIB_P_VAR}\"        " >> setup.sh
       echo "fi                                                                            " >> setup.sh
-      echo "set LD_LIBRARY_PATH = (\"${compiler_lib_paths%/}\"/bin \"\$LD_LIBRARY_PATH\") " >> setup.csh
+      echo "set LD_LIBRARY_PATH = (\"${compiler_lib_paths%/}\" \"\${LD_LIBRARY_PATH}\") " >> setup.csh
     fi
     echo "                                                                       " >> setup.sh
     if [[ -x "${mpi_install_root}/bin/mpifort" ]]; then
