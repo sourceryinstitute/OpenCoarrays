@@ -217,7 +217,7 @@ usage() {
   echo "   --help, -h               Show this help message and exit"
   echo "   --version, -v, -V        Report version and copyright information and exit"
   echo "   --wrapping, -w, --wraps  Report the name of the wrapped compiler and exit"
-  echo "   --show, -s               Show how this wrapper will call the compiler and exit (dry run)"
+  echo "   --show, -s, -show        Show how this wrapper will call the compiler and exit (dry run)"
   echo ""
   echo " Example usage:"
   echo ""
@@ -277,7 +277,7 @@ if [[ ${1} == -[vV] || ${1} == '--version' ]]; then
 elif [[ ${1} == '-w' || ${1} == '--wraps' || ${1} == '--wrapping' ]]; then
   echo "${cmd} wraps ${cafc}"
   exit 0
-elif [[ ${1} == '-s' || ${1} == '--show' ]]; then
+elif [[ ${1} == '-s' || ${1} == '--show' || ${1} == '-show' ]]; then
   if (($# > 1)); then
     args="${*:2:$((${#} - 1))}"
   else
