@@ -822,8 +822,8 @@ PREFIX(init) (int *argc, char ***argv)
       ierr = MPI_Init_thread(argc, argv, prior_thread_level, &prov_lev);
       chk_err(ierr);
       caf_owns_mpi = true;
-      if (caf_this_image == 0 && MPI_THREAD_FUNNELED != prov_lev)
-        caf_runtime_error("MPI_THREAD_FUNNELED is not supported: %d", prov_lev);
+      if (caf_this_image == 0 && MPI_THREAD_FUNNELED > prov_lev)
+        caf_runtime_error("MPI_THREAD_FUNNELED is not supported: %d %d", MPI_THREAD_FUNNELED, prov_lev);
     }
 #endif
     if (unlikely ((ierr != MPI_SUCCESS)))
