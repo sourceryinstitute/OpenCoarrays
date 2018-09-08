@@ -23,10 +23,15 @@ matrix:
       os: osx
       env:
         - BUILD_TYPE="InstallScript"
-          GCC=6
-          OSX_PACKAGES="gcc@6 shellcheck cmake"
+          GCC=8
+          OSX_PACKAGES="gcc shellcheck cmake"
           # cmake should be removed, but we should be installing binaries
           # because building from source takes forever
+    -
+      <<: *macOS
+      env:
+        - GCC=8
+          OSX_PACKAGES="gcc openmpi chellcheck cmake"
     - &ubuntu
       os: linux
       sudo: false
