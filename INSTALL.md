@@ -85,9 +85,9 @@ source.
 
 ### macOS ###
 
-* [Homebrew]:  
-  [![homebrew][Homebrew badge]][braumeister link]  
-  This is the recommend OpenCoarrays installation method on macOS.
+* [Homebrew]:
+  [![homebrew][Homebrew badge]][braumeister link]
+  This is the recommended OpenCoarrays installation method on macOS.
   Basic Homebrew installation steps:
 
   ```
@@ -106,7 +106,7 @@ source.
   brew bundle
   ```
 
-* [MacPorts]:  
+* [MacPorts]:
   An unmaintained [OpenCoarrays Portfile] exists for the [MacPorts] package
   manager.  Although the current OpenCoarrays contributors have no plans to
   update the portfile, new contributors are welcome to asssume the port
@@ -140,8 +140,12 @@ or pre-installed copies:
    distributions
 
 [linuxbrew] does not require `sudo` privileges and will generally
-provide the most up-to-date OpenCoarrays release because linxubrew
+provide the most up-to-date OpenCoarrays release because linuxbrew
 pulls directly from macOS homebrew, which updates automatically.
+
+Note that distributions are often split into two parts: a "binary" package with the
+runtime libraries and a "development" package for developing programs yourself.
+Be sure to install both packages.
 
 <a name="easybuild"></a>
 With [EasyBuild], the following bash commands install OpenCoarrays:
@@ -175,9 +179,9 @@ spack spec opencoarrays
 # to be installed to compile OpenMPI)
 spack install opencoarrays
 
-# Or, To install with customisations (e.g., to install OpenCoarrays [version 1.9.0]
+# Or, To install with customisations (e.g., to install OpenCoarrays [version 2.2.0]
 # with MPICH [version default] and GCC [version 7.1.0]).
-spack install opencoarrays@1.9.0 ^mpich %gcc@7.1.0
+spack install opencoarrays@2.2.0 ^mpich %gcc@7.1.0
 ```
 
 In the previous example, it was assumed that GCC [version 7.1.0] is
@@ -275,6 +279,7 @@ of flags. Each flag also has a single-character version not shown here.
    ```
 
 4. Install only a specific prerequisite package (the default version):
+
    ```
    ./install.sh --package mpich
    ```
@@ -352,7 +357,7 @@ this document [here][Developer Build and Install].
 Unlike the Makefiles that CMake generates automatically for the chosen
 platform, static Makefiles require a great deal more maintenance and are
 less portable.  Also, the static Makefiles provided in [src] lack several
-several important capabilities.  In particular, they will not build the tests;
+important capabilities.  In particular, they will not build the tests;
 they will not generate the `caf` compiler wrapper that ensures correct linking
 and `cafrun` program launcher that ensures support for advanced features such
 as Fortran 2015 failed images; they will not build the [opencoarrays] module
