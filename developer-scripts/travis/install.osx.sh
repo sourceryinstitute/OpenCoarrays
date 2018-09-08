@@ -30,8 +30,8 @@ for pkg in ${OSX_PACKAGES}; do
 done
 
 # Uninstall mpich and openmpi so that we can install our own version
-brew uninstall --force --ignore-dependencies openmpi || true
-brew uninstall --force --ignore-dependencies mpich || true
+#brew uninstall --force --ignore-dependencies openmpi || true
+#brew uninstall --force --ignore-dependencies mpich || true
 
 # Building CMake from source is very slow. We should be using binaries instead
 # if [[ "${BUILD_TYPE:-}" == InstallScript ]]; then # uninstall some stuff if present

@@ -31,6 +31,7 @@ matrix:
       <<: *macOS
       env:
         - GCC=8
+          BUILD_TYPES="debug RelWithDebInfo Release"
           OSX_PACKAGES="gcc openmpi shellcheck cmake"
     - &ubuntu
       os: linux
