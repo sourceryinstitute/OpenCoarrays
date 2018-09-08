@@ -31,7 +31,7 @@ matrix:
       <<: *macOS
       env:
         - GCC=8
-          OSX_PACKAGES="gcc openmpi chellcheck cmake"
+          OSX_PACKAGES="gcc openmpi shellcheck cmake"
     - &ubuntu
       os: linux
       sudo: false
@@ -73,9 +73,9 @@ matrix:
         apt:
           sources: *linuxsrcs
           packages:
-            - gcc-6
-            - gfortran-6
-            - g++-6
+            - gcc-7
+            - gfortran-7
+            - g++-7
     - &linux_allowed_failure
       <<: *ubuntu
       env:
