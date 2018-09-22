@@ -269,7 +269,7 @@ caf_runtime_error (const char *message, ...)
 /*        being used, we could add something of the form "#ifdef _CMAKE" to remove the */
 /*        keyword only when building with CMake */
 /* inline */ void locking_atomic_op(MPI_Win win, int *value, int newval,
-			      int compare, int image_index, int index)
+			      int compare, int image_index, size_t index)
 {
       CAF_Win_lock (MPI_LOCK_EXCLUSIVE, image_index-1, win);
       MPI_Compare_and_swap (&newval,&compare,value, MPI_INT,image_index-1,
@@ -277,7 +277,7 @@ caf_runtime_error (const char *message, ...)
       CAF_Win_unlock (image_index-1, win);
 }
 
-void mutex_lock(MPI_Win win, int image_index, int index, int *stat,
+void mutex_lock(MPI_Win win, int image_index, size_t index, int *stat,
 		int *acquired_lock, char *errmsg, int errmsg_len)
 {
   const char msg[] = "Already locked";
@@ -326,7 +326,7 @@ stat_error:
 #endif // MPI_VERSION
 }
 
-void mutex_unlock(MPI_Win win, int image_index, int index, int *stat,
+void mutex_unlock(MPI_Win win, int image_index, size_t index, int *stat,
 		  char* errmsg, int errmsg_len)
 {
   const char msg[] = "Variable is not locked";
