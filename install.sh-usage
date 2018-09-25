@@ -9,7 +9,7 @@
   -h --help                   Print this page.
   -i --install-prefix [arg]   Install package in specified path. Default="${OPENCOARRAYS_SRC_DIR}/prerequisites/installations/${package_name:-}/${version_to_build:-}"
   -I --install-version [arg]  Install package version (Example: -I 7.2.0).
-  -j --num-threads [arg]      Number of threads to use when invoking make (Example: -j 4). Default="1"
+  -j --num-threads [arg]      Number of threads to use when invoking make (Example: -j 8). Default="4"
   -l --list-packages          Print packages this script can install.
   -m --with-cmake [arg]       Use specified CMake installation (Example: -m /usr/local/bin/cmake).
   -M --with-mpi [arg]         Use specified MPI installation (Examples: -M /usr/local/ or -m /opt/mpich-3.2/).
