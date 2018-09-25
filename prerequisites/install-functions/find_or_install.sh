@@ -599,9 +599,13 @@ find_or_install()
       yes_to_all="-y"
     fi
 
+    if [[ "${arg_Z}" == "${__flag_present}" ]]; then
+      bootstrap="-Z"
+    fi
+
     echo -e "$this_script: Downloading, building, and installing $package \n"
-    echo "$this_script: Build command: FC=$FC CC=$CC CXX=$CXX ./build.sh -p $package -i $package_install_prefix -j $num_threads ${yes_to_all:-}"
-    FC="$FC" CC="$CC" CXX="$CXX" ./build.sh -p "$package" -i "$package_install_prefix" -j "$num_threads" "${yes_to_all:-}"
+    echo "$this_script: Build command: FC=$FC CC=$CC CXX=$CXX ./build.sh -p $package -i $package_install_prefix -j $num_threads ${yes_to_all:-} ${bootstrap:-}"
+    FC="$FC" CC="$CC" CXX="$CXX" ./build.sh -p "$package" -i "$package_install_prefix" -j "$num_threads" "${yes_to_all:-}" "${bootstrap:-}"
 
     if [[ -x "$package_install_path/bin/$executable" ]]; then
       echo -e "$this_script: Installation successful.\n"
