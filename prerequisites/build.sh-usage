@@ -9,7 +9,7 @@
   -h --help                   This page.
   -i --install-prefix [arg]   Install package in specified path. Default="${OPENCOARRAYS_SRC_DIR%/}/prerequisites/installations/"
   -I --install-version [arg]  Package version to install. (To see default, use -V or --print-version)
-  -j --num-threads [arg]      Number of threads to use when invoking make. Default="1"
+  -j --num-threads [arg]      Number of threads to use when invoking make. Default="4"
   -l --list-packages          List the packages this script can install.
   -m --with-cmake [arg]       Use the specified CMake installation. Default="cmake"
   -M --with-mpi [arg]         Use the specified MPI installation. 
@@ -24,4 +24,4 @@
   -v --version                Print OpenCoarrays version number.
   -V --print-version [arg]    Print installation version for package specified in argument.
   -y --yes-to-all             Build non-interactively by assuming affirmative user responses.
-  -z --disable-bootstrap      Disabling bootstrap build of GCC for speed when a recent GCC is already installed.
+  -Z --bootstrap              Enable bootstrap build for robustness when building the required GCC version with an old GCC version.

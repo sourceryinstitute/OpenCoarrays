@@ -16,6 +16,9 @@ build_and_install()
 
   set_SUDO_if_needed_to_write_to_directory "${build_path}"
   set_SUDO_if_needed_to_write_to_directory "${install_path}"
+  if [[ -d "${build_path}" ]]; then
+    rm -rf "${build_path}"
+  fi
   mkdir -p "${build_path}"
   info "pushd ${build_path}"
   pushd "${build_path}"

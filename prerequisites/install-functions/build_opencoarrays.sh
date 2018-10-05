@@ -8,6 +8,9 @@ build_opencoarrays()
   info "Invoking find_or_install cmake"
   find_or_install cmake
   build_path="${build_path}"/opencoarrays/$("${opencoarrays_src_dir}"/install.sh -V opencoarrays)
+  if [[ -d "${build_path}" ]]; then
+    rm -rf "${build_path}"
+  fi
   mkdir -p "$build_path"
   pushd "$build_path"
   if [[ -z ${MPIFC:-} || -z ${MPICC:-} ]]; then

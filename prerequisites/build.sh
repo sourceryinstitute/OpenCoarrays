@@ -103,7 +103,7 @@ info "-l (--list-packages):    ${arg_l} "
 info "-m (--with-cmake):       ${arg_m} "
 info "-M (--with-mpi):         ${arg_M} "
 info "-n (--no-color):         ${arg_n} "
-info "-p (--package):          ${arg_p}"
+info "-p (--package):          ${arg_p} "
 info "-P (--print-path):       ${arg_P} "
 info "-t (--with-tau):         ${arg_t} "
 info "-u (--from-url):         ${arg_u} "
@@ -111,7 +111,7 @@ info "-U (--print-url):        ${arg_U} "
 info "-v (--version):          ${arg_v} "
 info "-V (--print-version):    ${arg_V} "
 info "-y (--yes-to-all):       ${arg_y} "
-info "-z (--disable-bootstrap):${arg_z} "
+info "-Z (--bootstrap):        ${arg_Z} "
 }
 
 if [[ -z "${arg_B}" ]]; then
@@ -148,8 +148,9 @@ if [[ ${arg_o:-} == "${__flag_present}" ]]; then
    exit 0
 fi
 
-# If -z or --disable-bootstrap was specified, disable bootstrap configure & build
-if [[ ${arg_z:-} == "${__flag_present}" ]]; then
+# If -Z or --bootstrap was specified, enable bootstrap configure & build
+if [[ ${arg_Z:-} != "${__flag_present}" ]]; then
+   info "Disabling bootstrap. If the gcc/g++/gfortran build fails, try './install.sh --bootstrap'."
    export bootstrap_configure="--disable-bootstrap"
    export bootstrap_build=""
 else
