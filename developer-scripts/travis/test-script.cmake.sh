@@ -29,11 +29,13 @@ for version in ${GCC}; do
     if [[ ${OSTYPE} == [Dd]arwin* ]]; then
 	# Use clang on macOS because that's what homebrew and everyone else does
 	export CC=clang
+	brew unlink openmpi || true
+	brew unlink mpich || true
 	for mpi in "mpich" "open-mpi"; do
 	    brew unlink "${mpi}" || true
 	    brew ls --versions "${mpi}" >/dev/null || brew install "${mpi}"
 	    brew outdated "${mpi}" || brew upgrade "${mpi}"
-	    brew unlink "${mpi}"
+	    brew unlink "${mpi}" || true
 	done
 	brew link open-mpi
     fi
@@ -50,7 +52,12 @@ for version in ${GCC}; do
 	    cd "${BLD_DIR}"
 	    cmake -DCMAKE_INSTALL_PREFIX:PATH="${HOME}/OpenCoarrays" -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" ..
 	    make -j 4
-	    ctest --output-on-failure --schedule-random --repeat-until-fail "${NREPEAT:-5}" --timeout "${TEST_TIMEOUT:-200}"
+	    CTEST_FLAGS=(--output-on-failure --schedule-random --repeat-until-fail "${NREPEAT:-5}" --timeout "${TEST_TIMEOUT:-200}")
+	    if [[ "${BUILD_TYPE}" =~ Deb ]]; then
+		ctest "${CTEST_FLAGS[@]}" > "${BUILD_TYPE}.log" || cat "${BUILD_TYPE}.log"
+	    else
+		ctest "${CTEST_FLAGS[@]}"
+	    fi
 	    make install
 	    make uninstall
 	)
