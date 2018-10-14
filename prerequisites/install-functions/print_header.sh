@@ -44,7 +44,7 @@ EOF
   echo "*** './install.sh --yes-to-all' without quotes to instruct the script to       ***"
   echo "*** assume affirmative answers to all user queries.                            ***"
   echo ""
-  printf "%s will be installed in %s\n" "${arg_p}" "${install_path}"
+  printf "%s will be installed in %s\n" "${arg_p}" "${prefix_root:-${install_path}}"
   echo ""
   if [[ "${arg_y}" == "${__flag_present}" ]]; then
     info "-y or --yes-to-all flag present. Proceeding with non-interactive build."

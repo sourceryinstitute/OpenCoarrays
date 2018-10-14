@@ -41,10 +41,10 @@ find_or_install()
     package_in_path=false
   fi
 
-  package_install_path=$(./build.sh -P "$package")
+  export default_package_install_path=$(./build.sh -P "$package")
 
-  printf "Checking whether %s is in %s..." "$executable" "$package_install_path"
-  if [[ -x "$package_install_path/bin/$executable" ]]; then
+  printf "Checking whether %s is in %s..." "$executable" "$default_package_install_path"
+  if [[ -x "$default_package_install_path/bin/$executable" ]]; then
     printf "yes.\n"
     script_installed_package=true
     stack_push script_installed "$package" "$executable"
@@ -78,7 +78,7 @@ find_or_install()
 
     elif [[ "$script_installed_package" == true ]]; then
       echo -e "$this_script: Using the $package installed by $this_script\n"
-      export CMAKE=$package_install_path/bin/$executable
+      export CMAKE=$default_package_install_path/bin/$executable
       stack_push dependency_pkg "none"
       stack_push dependency_exe "none"
       stack_push dependency_path "none"
@@ -136,9 +136,9 @@ find_or_install()
     elif [[ "$script_installed_package" == true ]]; then
 
       echo -e "$this_script: Using the $package installed by $this_script\n"
-      export MPIFC=$package_install_path/bin/mpifort
-      export MPICC=$package_install_path/bin/mpicc
-      export MPICXX=$package_install_path/bin/mpicxx
+      export MPIFC=$default_package_install_path/bin/mpifort
+      export MPICC=$default_package_install_path/bin/mpicc
+      export MPICXX=$default_package_install_path/bin/mpicxx
       # Halt the recursion
       stack_push dependency_pkg "none"
       stack_push dependency_exe "none"
@@ -248,10 +248,10 @@ find_or_install()
 
     elif [[ "$script_installed_package" == true ]]; then
       echo -e "$this_script: Using the $package executable $executable installed by $this_script\n"
-      export FC=$package_install_path/bin/gfortran
-      export CC=$package_install_path/bin/gcc
-      export CXX=$package_install_path/bin/g++
-      gfortran_lib_paths="$package_install_path/lib64/:$package_install_path/lib"
+      export FC=$default_package_install_path/bin/gfortran
+      export CC=$default_package_install_path/bin/gcc
+      export CXX=$default_package_install_path/bin/g++
+      gfortran_lib_paths="$default_package_install_path/lib64/:$default_package_install_path/lib"
       if [[ -z "${LD_LIBRARY_PATH:-}" ]]; then
         echo "$this_script: export LD_LIBRARY_PATH=\"$gfortran_lib_paths\""
                             export LD_LIBRARY_PATH="$gfortran_lib_paths"
@@ -327,7 +327,7 @@ find_or_install()
 
     if [[ "$script_installed_package" == true ]]; then
       echo -e "$this_script: Using the $executable installed by $this_script\n"
-      export FLEX=$package_install_path/bin/$executable
+      export FLEX=$default_package_install_path/bin/$executable
       # Remove flex from the dependency stack
       stack_pop dependency_pkg package_done
       stack_pop dependency_exe executable_done
@@ -347,7 +347,7 @@ find_or_install()
       if ! ./check_version.sh "$package" "$(./build.sh -V "$package")"; then
         printf "yes\n"
 
-        export FLEX="$package_install_path/bin/$executable"
+        export FLEX="$default_package_install_path/bin/$executable"
         # Trigger 'find_or_install bison' and subsequent build of $package
         stack_push dependency_pkg "bison"
         stack_push dependency_exe "yacc"
@@ -387,7 +387,7 @@ find_or_install()
 
     if [[ "$script_installed_package" == true ]]; then
       echo -e "$this_script: Using the $package executable $executable installed by $this_script\n"
-      export YACC=$package_install_path/bin/yacc
+      export YACC=$default_package_install_path/bin/yacc
       # Remove bison from the dependency stack
       stack_pop dependency_pkg package_done
       stack_pop dependency_exe executable_done
@@ -405,7 +405,7 @@ find_or_install()
       echo -e "$this_script: Checking whether $package executable $executable in PATH is version < $minimum_version... "
       if ! ./check_version.sh "$package" "$(./build.sh -V "$package")"; then
         printf "yes.\n"
-        export YACC="$package_install_path/bin/$executable"
+        export YACC="$default_package_install_path/bin/$executable"
         # Trigger 'find_or_install m4' and subsequent build of $package
         stack_push dependency_pkg "m4"
         stack_push dependency_exe "m4"
@@ -445,7 +445,7 @@ find_or_install()
 
     if [[ "$script_installed_package" == true ]]; then
       echo -e "$this_script: Using the $package executable $executable installed by $this_script\n"
-      export M4=$package_install_path/bin/m4
+      export M4=$default_package_install_path/bin/m4
       # Remove m4 from the dependency stack
       stack_pop dependency_pkg package_done
       stack_pop dependency_exe executable_done
@@ -463,7 +463,7 @@ find_or_install()
       echo -e "$this_script: Checking whether $package executable $executable in PATH is version < $minimum_version... "
       if ! ./check_version.sh "$package" "$(./build.sh -V "$package")"; then
         printf "yes.\n"
-        export M4="$package_install_path/bin/m4"
+        export M4="$default_package_install_path/bin/m4"
         # Halt the recursion and signal that there are no prerequisites to build
         stack_push dependency_pkg "none"
         stack_push dependency_exe "none"
@@ -488,7 +488,7 @@ find_or_install()
 
     else # $package not in PATH and not yet installed by this script
       # Halt the recursion and signal that there are no prerequisites to build
-      export M4="$package_install_path/bin/m4"
+      export M4="$default_package_install_path/bin/m4"
       stack_push dependency_pkg  "none"
       stack_push dependency_exe  "none"
       stack_push dependency_path "none"
@@ -532,15 +532,29 @@ find_or_install()
 
   stack_pop dependency_pkg package
   stack_pop dependency_exe executable
-  stack_pop dependency_path package_install_path
+  stack_pop dependency_path default_package_install_path
 
   if [[ $package != "none" ]]; then
 
-    if [[ "$package" == "$executable" ]]; then
-      echo "$this_script: Ready to install $executable in $package_install_path"
+    export default_package_version=$(./build.sh -V "${package}")
+    export package_version_to_install=${arg_I:-${default_package_version}}
+
+    prefix_root="${prefix_root:-${default_package_install_path%${package}/${package_version_to_install}}}"
+
+    if [[ ${package} == "gcc" ]]; then
+      export package_directory_name="gnu"
     else
-      echo "$this_script: Ready to install $package executable $executable in $package_install_path"
+      export package_directory_name=${package}
     fi
+
+    package_install_prefix="${prefix_root}/${package_directory_name}/${package_version_to_install}"
+
+    if [[ "$package" == "$executable" ]]; then
+      echo "$this_script: Ready to install $executable in $package_install_prefix"
+    else
+      echo "$this_script: Ready to install $package executable $executable in $package_install_prefix"
+    fi
+
 
     if [[ "${arg_y}" == "${__flag_present}" ]]; then
       info "-y or --yes-to-all flag present. Proceeding with non-interactive build."
@@ -590,11 +604,6 @@ find_or_install()
       FC=gfortran
     fi
 
-
-    # Strip trailing package name and version number, if present, from installation path
-    default_package_version=$(./build.sh -V "${package}")
-    package_install_prefix="${package_install_path%${package}/${arg_I:-${default_package_version}}*}"
-
     if [[ "${arg_y}" == "${__flag_present}" ]]; then
       yes_to_all="-y"
     fi
@@ -605,48 +614,54 @@ find_or_install()
 
     echo -e "$this_script: Downloading, building, and installing $package \n"
     echo "$this_script: Build command: FC=$FC CC=$CC CXX=$CXX ./build.sh -p $package -i $package_install_prefix -j $num_threads ${yes_to_all:-} ${bootstrap:-}"
+
     FC="$FC" CC="$CC" CXX="$CXX" ./build.sh -p "$package" -i "$package_install_prefix" -j "$num_threads" "${yes_to_all:-}" "${bootstrap:-}"
 
-    if [[ -x "$package_install_path/bin/$executable" ]]; then
+    if [[ ! -x "$package_install_prefix/bin/$executable" ]]; then
+
+      echo -e "$this_script: Installation unsuccessful. "
+      emergency "$executable is not in the path ($package_install_prefix/bin) or the user lacks executable permission."
+
+    else
       echo -e "$this_script: Installation successful.\n"
       if [[ "$package" == "$executable" ]]; then
-        echo -e "$this_script: $executable is in $package_install_path/bin \n"
+        echo -e "$this_script: $executable is in $default_package_install_path/bin \n"
       else
-        echo -e "$this_script: $package executable $executable is in $package_install_path/bin \n"
+        echo -e "$this_script: $package executable $executable is in $default_package_install_path/bin \n"
       fi
-     # TODO Merge all applicable branches under one 'if [[ $package == $executable ]]; then'
+
       if [[ $package == "cmake" ]]; then
-        echo "$this_script: export CMAKE=$package_install_path/bin/$executable"
-                            export CMAKE="$package_install_path/bin/$executable"
+        echo "$this_script: export CMAKE=$default_package_install_path/bin/$executable"
+                            export CMAKE="$default_package_install_path/bin/$executable"
       elif [[ $package == "bison" ]]; then
-        echo "$this_script: export YACC=$package_install_path/bin/$executable"
-                            export YACC="$package_install_path/bin/$executable"
+        echo "$this_script: export YACC=$default_package_install_path/bin/$executable"
+                            export YACC="$default_package_install_path/bin/$executable"
       elif [[ $package == "flex" ]]; then
-        echo "$this_script: export FLEX=$package_install_path/bin/$executable"
-                            export FLEX="$package_install_path/bin/$executable"
+        echo "$this_script: export FLEX=$default_package_install_path/bin/$executable"
+                            export FLEX="$default_package_install_path/bin/$executable"
       elif [[ $package == "m4" ]]; then
-        echo "$this_script: export M4=$package_install_path/bin/$executable"
-                            export M4="$package_install_path/bin/$executable"
+        echo "$this_script: export M4=$default_package_install_path/bin/$executable"
+                            export M4="$default_package_install_path/bin/$executable"
       elif [[ $package == "gcc" ]]; then
-        echo "$this_script: export FC=$package_install_path/bin/gfortran"
-                            export FC="$package_install_path/bin/gfortran"
-        echo "$this_script: export CC=$package_install_path/bin/gcc"
-                            export CC="$package_install_path/bin/gcc"
-        echo "$this_script: export CXX=$package_install_path/bin/g++"
-                            export CXX="$package_install_path/bin/g++"
-        gfortran_lib_paths="$package_install_path/lib64/:$package_install_path/lib"
+        echo "$this_script: export FC=$default_package_install_path/bin/gfortran"
+                            export FC="$default_package_install_path/bin/gfortran"
+        echo "$this_script: export CC=$default_package_install_path/bin/gcc"
+                            export CC="$default_package_install_path/bin/gcc"
+        echo "$this_script: export CXX=$default_package_install_path/bin/g++"
+                            export CXX="$default_package_install_path/bin/g++"
+        gfortran_lib_paths="$default_package_install_path/lib64/:$default_package_install_path/lib"
         if [[ -z "${LD_LIBRARY_PATH:-}" ]]; then
           export LD_LIBRARY_PATH="$gfortran_lib_paths"
           else
             export LD_LIBRARY_PATH="$gfortran_lib_paths:$LD_LIBRARY_PATH"
           fi
         elif [[ $package == "mpich" ]]; then
-          echo "$this_script: export MPIFC=$package_install_path/bin/mpifort"
-                              export MPIFC="$package_install_path/bin/mpifort"
-          echo "$this_script: export MPICC= $package_install_path/bin/mpicc"
-                              export MPICC="$package_install_path/bin/mpicc"
-          echo "$this_script: export MPICXX=$package_install_path/bin/mpicxx"
-                              export MPICXX="$package_install_path/bin/mpicxx"
+          echo "$this_script: export MPIFC=$default_package_install_path/bin/mpifort"
+                              export MPIFC="$default_package_install_path/bin/mpifort"
+          echo "$this_script: export MPICC= $default_package_install_path/bin/mpicc"
+                              export MPICC="$default_package_install_path/bin/mpicc"
+          echo "$this_script: export MPICXX=$default_package_install_path/bin/mpicxx"
+                              export MPICXX="$default_package_install_path/bin/mpicxx"
         else
           echo -e "$this_script: WARNING: $package executable $executable installed correctly but the \n"
           echo -e "$this_script:          corresponding environment variable(s) have not been set. This \n"
@@ -654,17 +669,10 @@ find_or_install()
           echo -e "$this_script:          issue at https://github.com/sourceryinstitute/opencoarrays/issues\n"
         fi
         if [[ -z "${PATH:-}" ]]; then
-          export PATH="$package_install_path/bin"
+          export PATH="$default_package_install_path/bin"
         else
-          export PATH="$package_install_path/bin:$PATH"
+          export PATH="$default_package_install_path/bin:$PATH"
         fi
-      else
-        echo -e "$this_script: Installation unsuccessful. "
-        echo -e "$executable is not in the following expected path or the user lacks executable permission for it:\n"
-        echo -e "$package_install_path/bin \n"
-        printf "Aborting. [exit 80]"
-        exit 80
-      fi # End 'if [[ -x "$package_install_path/bin/$executable" ]]'
-
-  fi # End 'if [[ "$package" != "none" ]]; then'
+      fi 
+    fi # End 'if [[ ! -x "$package_install_prefix/bin/$executable" ]]; then'
 }
