@@ -627,43 +627,43 @@ find_or_install()
     else
       echo -e "$this_script: Installation successful.\n"
       if [[ "$package" == "$executable" ]]; then
-        echo -e "$this_script: $executable is in $default_package_install_path/bin \n"
+        echo -e "$this_script: $executable is in $package_install_prefix/bin \n"
       else
-        echo -e "$this_script: $package executable $executable is in $default_package_install_path/bin \n"
+        echo -e "$this_script: $package executable $executable is in $package_install_prefix/bin \n"
       fi
 
       if [[ $package == "cmake" ]]; then
-        echo "$this_script: export CMAKE=$default_package_install_path/bin/$executable"
-                            export CMAKE="$default_package_install_path/bin/$executable"
+        echo "$this_script: export CMAKE=$package_install_prefix/bin/$executable"
+                            export CMAKE="$package_install_prefix/bin/$executable"
       elif [[ $package == "bison" ]]; then
-        echo "$this_script: export YACC=$default_package_install_path/bin/$executable"
-                            export YACC="$default_package_install_path/bin/$executable"
+        echo "$this_script: export YACC=$package_install_prefix/bin/$executable"
+                            export YACC="$package_install_prefix/bin/$executable"
       elif [[ $package == "flex" ]]; then
-        echo "$this_script: export FLEX=$default_package_install_path/bin/$executable"
-                            export FLEX="$default_package_install_path/bin/$executable"
+        echo "$this_script: export FLEX=$package_install_prefix/bin/$executable"
+                            export FLEX="$package_install_prefix/bin/$executable"
       elif [[ $package == "m4" ]]; then
-        echo "$this_script: export M4=$default_package_install_path/bin/$executable"
-                            export M4="$default_package_install_path/bin/$executable"
+        echo "$this_script: export M4=$package_install_prefix/bin/$executable"
+                            export M4="$package_install_prefix/bin/$executable"
       elif [[ $package == "gcc" ]]; then
-        echo "$this_script: export FC=$default_package_install_path/bin/gfortran"
-                            export FC="$default_package_install_path/bin/gfortran"
-        echo "$this_script: export CC=$default_package_install_path/bin/gcc"
-                            export CC="$default_package_install_path/bin/gcc"
-        echo "$this_script: export CXX=$default_package_install_path/bin/g++"
-                            export CXX="$default_package_install_path/bin/g++"
-        gfortran_lib_paths="$default_package_install_path/lib64/:$default_package_install_path/lib"
+        echo "$this_script: export FC=$package_install_prefix/bin/gfortran"
+                            export FC="$package_install_prefix/bin/gfortran"
+        echo "$this_script: export CC=$package_install_prefix/bin/gcc"
+                            export CC="$package_install_prefix/bin/gcc"
+        echo "$this_script: export CXX=$package_install_prefix/bin/g++"
+                            export CXX="$package_install_prefix/bin/g++"
+        gfortran_lib_paths="$package_install_prefix/lib64/:$package_install_prefix/lib"
         if [[ -z "${LD_LIBRARY_PATH:-}" ]]; then
           export LD_LIBRARY_PATH="$gfortran_lib_paths"
           else
             export LD_LIBRARY_PATH="$gfortran_lib_paths:$LD_LIBRARY_PATH"
           fi
         elif [[ $package == "mpich" ]]; then
-          echo "$this_script: export MPIFC=$default_package_install_path/bin/mpifort"
-                              export MPIFC="$default_package_install_path/bin/mpifort"
-          echo "$this_script: export MPICC= $default_package_install_path/bin/mpicc"
-                              export MPICC="$default_package_install_path/bin/mpicc"
-          echo "$this_script: export MPICXX=$default_package_install_path/bin/mpicxx"
-                              export MPICXX="$default_package_install_path/bin/mpicxx"
+          echo "$this_script: export MPIFC=$package_install_prefix/bin/mpifort"
+                              export MPIFC="$package_install_prefix/bin/mpifort"
+          echo "$this_script: export MPICC= $package_install_prefix/bin/mpicc"
+                              export MPICC="$package_install_prefix/bin/mpicc"
+          echo "$this_script: export MPICXX=$package_install_prefix/bin/mpicxx"
+                              export MPICXX="$package_install_prefix/bin/mpicxx"
         else
           echo -e "$this_script: WARNING: $package executable $executable installed correctly but the \n"
           echo -e "$this_script:          corresponding environment variable(s) have not been set. This \n"
@@ -671,9 +671,9 @@ find_or_install()
           echo -e "$this_script:          issue at https://github.com/sourceryinstitute/opencoarrays/issues\n"
         fi
         if [[ -z "${PATH:-}" ]]; then
-          export PATH="$default_package_install_path/bin"
+          export PATH="$package_install_prefix/bin"
         else
-          export PATH="$default_package_install_path/bin:$PATH"
+          export PATH="$package_install_prefix/bin:$PATH"
         fi
       fi 
     fi # End 'if [[ ! -x "$package_install_prefix/bin/$executable" ]]; then'
