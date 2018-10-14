@@ -25,39 +25,17 @@ path. This is an experimental script with limited but useful capabilities that w
 grow over time.  Please submit bug reports and feature requests via our [Issues] page.
 
 The `caf` script liberates the source code and workflow from explicit dependence on the
-underlying compiler and communication library in the following ways:
-
-1. With an OpenCoarrays-aware (OCA) CAF compiler, the `caf` script passes the unmodified
-   source code to the underlying compiler with the necessary arguments for building a
-   CAF program, embedding the paths to OpenCoarrays libraries (e.g., `libcaf_mpi.a`) installed
-   in the `lib` subdirectory of the OpenCoarrays installation path.  The `caf` script also
-   embeds the path to the relevant module file in the `mod` subdirectory of the installation
-   path (e.g., `opencoarrays.mod`).  This supports use association with module entities via
-   `use opencoarrays`.
-2. With a non-CAF compiler (including gfortran 4.9), `caf` supports a subset of CAF by
-   replacing CAF statements with calls to procedures in the [opencoarrays module] before
-   passing the source code to the compiler.
-
-When using GCC 4.9, we recommend using the `use` statement's `only` clause to
-avoid inadvertent procedure name clashes between OpenCoarrays procedures and their
-GCC counterparts.  For example, use `use opencoarrays, only : co_reduce`.
-
-With a non-OCA and OCA CAF compilers, the extensions that `caf` imports include the collective
-subroutines proposed for Fortran 2015 in the draft Technical Specification [TS 18508]
-_Additional Parallel Features in Fortran_.
-
-The latter use case provides an opportunity to mix a compiler's CAF support with that of OpenCoarrays.
-For example, a non-OCA CAF compiler, such as the Cray or Intel compilers, might support all of a
-program's coarray square-bracket syntax, while OpenCoarrays supports the same program's calls to
-collective subroutine such as `co_sum` and `co_reduce`.
+underlying compiler and communication library by passing the unmodified source code to 
+the compiler with the necessary arguments for building a parallel Fortran 2018 program,
+embedding the paths to OpenCoarrays libraries (e.g., `libcaf_mpi.a`) installed
+in the `lib` subdirectory of the OpenCoarrays installation path.  
 
 A sample basic workflow
 -----------------------
 
 The following program listing, compilation, and execution workflow exemplify
-the use of an OCA compiler (e.g., gfortran 5.1.0 or later) in a Linux bash shell
-with the `bin` directory of the chosen installation path in the user's PATH
-environment variable:
+the use of OpenCoarrays with GCC in a Linux bash shell with the `bin`
+directory of the chosen installation path in the user's `PATH` environment variable:
 
 ```fortran
 $ cat tally.f90
@@ -89,31 +67,15 @@ where "4" is the number of images to be launched at program start-up.
 An advanced workflow
 --------------------
 
-To extend the capabilities of a non-OCA CAF compiler (e.g., the Intel or Cray compilers),
-access the types and procedures of the [opencoarrays module] by use association.  We
-recommend using a `use` statement with an `only` clause to reduce the likelihood of a
-name clash with the compiler's native CAf support.  For example, insert the following
-at line 2 of `tally.f90` above:
-
-```fortran
-use opencoarrays, only : co_sum
-```
-
-To extend the capabilities of a non-CAF compiler (e.g., GCC 4.9), use an unqualified
-`use` statement with no `only` clause.  The latter practice reduces the likelihood of
-name clashes with the compiler's or programs existing capabilities.
-
-If the `caf` compiler wrapper cannot process the source code in question, invoke
-the underlying communication library directly:
+If prefer to invoke the compiler directly, first run `caf` and `cafrun` with the `--show` flag 
+to see the proper linking and file includes.  For example, on a macOS system where OpenCoarrays 
+was installed via the [homebrew] package manager, the following results:
 
 ```bash
-mpifort -fcoarray=lib -L/opt/opencoarrays/ tally.f90 \ -lcaf_mpi -o htally -I<OpenCoarrays-install-path>/mod
-```
-
-and also run the program with the lower-level communication library:
-
-```bash
-mpiexec -np <number-of-images> ./tally
+$ caf --show
+/usr/local/bin/gfortran -I/usr/local/Cellar/opencoarrays/2.2.0/include/OpenCoarrays-2.2.0_GNU-8.2.0 -fcoarray=lib -Wl,-flat_namespace -Wl,-commons,use_dylibs -L/usr/local/Cellar/libevent/2.1.8/lib -L/usr/local/Cellar/open-mpi/3.1.1/lib ${@} /usr/local/Cellar/opencoarrays/2.2.0/lib/libcaf_mpi.a /usr/local/lib/libmpi_usempif08.dylib /usr/local/lib/libmpi_usempi_ignore_tkr.dylib /usr/local/lib/libmpi_mpifh.dylib /usr/local/lib/libmpi.dylib
+$ cafrun --show
+/usr/local/bin/mpiexec -n <number_of_images> /path/to/coarray_Fortran_program [arg4 [arg5 [...]]]
 ```
 
 ---
