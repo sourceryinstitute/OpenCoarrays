@@ -35,5 +35,19 @@
 program main
   use iso_fortran_env, only : compiler_version
   implicit none
-  print *,(compiler_version() >= "GCC version 6.1.0 ")
+  integer, parameter :: first_argument=1
+  integer stat
+  character(len=9) version_number
+  call get_command_argument(first_argument,version_number,status=stat)
+  select case(stat)
+    case(-1)
+       error stop "acceptable_compiler.f90: insufficient string length in attempt to read command argument"
+    case(0)
+      ! successful command argument read
+    case(1:)
+       error stop "acceptable_compiler.f90: no version-number supplied"
+    case default
+       error stop "invalid status"
+  end select
+  print *,(compiler_version() >= "GCC version "//adjustl(trim(version_number))//" ")
 end program

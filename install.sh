@@ -164,6 +164,7 @@ info  "-n (--no-color):         ${arg_n}"
 info  "-o (--only-download):    ${arg_o}"
 info  "-p (--package):          ${arg_p}"
 info  "-P (--print-path):       ${arg_P}"
+info  "-r (--prefix-root):      ${arg_r}"
 info  "-u (--from-url):         ${arg_u}"
 info  "-U (--print-url):        ${arg_U}"
 info  "-v (--version):          ${arg_v}"
@@ -197,8 +198,8 @@ info  "-Z (--bootstrap):        ${arg_Z}"
 this_script="$(basename "$0")"
 export this_script
 
-export install_path="${arg_i%/}"
-info "install_path=\"${install_path}\""
+export install_path=${arg_i%/}
+export prefix_root="${arg_r:-}"
 
 export num_threads="${arg_j}"
 info "num_threads=\"${arg_j}\""
@@ -316,7 +317,12 @@ elif [[ "${arg_p:-}" == "opencoarrays" ]]; then
     # shellcheck source=./prerequisites/build-functions/set_SUDO_if_needed_to_write_to_directory.sh
     source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/set_SUDO_if_needed_to_write_to_directory.sh"
     version="$("${opencoarrays_src_dir}/install.sh" -V opencoarrays)"
-    set_SUDO_if_needed_to_write_to_directory "${install_path}"
+
+    if [[ -z "${prefix_root:-}" ]]; then
+      set_SUDO_if_needed_to_write_to_directory "${install_path}"
+    else
+      set_SUDO_if_needed_to_write_to_directory "${prefix_root}"
+    fi
 
     if grep -s -q Microsoft /proc/version  ; then
       info "Windows Subsystem for Linux detected.  Invoking windows-install.sh with the following command:"

@@ -39,6 +39,10 @@ build_opencoarrays()
   else
     MPIEXEC="${MPIEXEC_CANDIDATES[0]}"
   fi
+
+  source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/set_or_print_installation_path.sh"
+  set_or_print_installation_path
+
   info "Configuring OpenCoarrays in ${PWD} with the command:"
   info "CC=\"${CC}\" FC=\"${FC}\" $CMAKE \"${opencoarrays_src_dir}\" \"${WDEVFLAG}\" -DCMAKE_INSTALL_PREFIX=\"${install_path}\" -DMPIEXEC=\"${MPIEXEC}\" -DMPI_C_COMPILER=\"${MPICC}\" -DMPI_Fortran_COMPILER=\"${MPIFC}\""
   CC="${CC}" FC="${FC}" $CMAKE "${opencoarrays_src_dir}" "${WDEVFLAG}" -DCMAKE_INSTALL_PREFIX="${install_path}" -DMPIEXEC="${MPIEXEC}" -DMPI_C_COMPILER="${MPICC}" -DMPI_Fortran_COMPILER="${MPIFC}"
