@@ -273,16 +273,18 @@ find_or_install()
       stack_push dependency_path "none"
 
     elif [[ "$package_in_path" == "true" ]]; then
-      info "$this_script: Checking whether $executable in PATH is version $(./build.sh -V gcc) or later..."
+      export minimum_acceptable_version=$(./build.sh -V gcc)
+      info "$this_script: Checking whether $executable in PATH is version $minimum_acceptable_version or later..."
       $executable -o acceptable_compiler acceptable_compiler.f90 || true;
       $executable -o print_true print_true.f90 || true;
       if [[ -f ./acceptable_compiler && -f ./print_true ]]; then
         is_true=$(./print_true)
-        acceptable=$(./acceptable_compiler)
+        acceptable=$(./acceptable_compiler $minimum_acceptable_version)
         rm acceptable_compiler print_true
       else
         acceptable=false
       fi
+
       if [[ "$acceptable" == "${is_true:-}" ]]; then
         printf "yes.\n"
         echo -e "$this_script: Using the $executable found in the PATH.\n"
