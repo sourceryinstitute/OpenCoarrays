@@ -257,7 +257,7 @@ of flags. Each flag also has a single-character version not shown here.
    ```
 
 2. Or build faster by multithreading, skipping user queries, and also specify
-    a destination for all packages that must be built:
+    an installation destination for all packages that must be built:
 
    ```
    ./install.sh \

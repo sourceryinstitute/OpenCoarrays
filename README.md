@@ -42,7 +42,7 @@ parallel application binary interface (ABI) that abstracts away the
 underlying parallel programming model, which can be the Message
 Passing Interface ([MPI]) or [OpenSHMEM].  Parallel Fortran 2018 
 programs may be written and compiled into object files once, and 
-then linked or relinked to either MPI or OpenSHMEM without modifying
+then linked or relinked to either MPI or [OpenSHMEM] without modifying
 or recompiling the Fortran source.  Not a single line of source code 
 need change to switch parallel programming models.  The default MPI, 
 which we expect to provide the broadest support for Fortran 2018 for 
@@ -77,7 +77,7 @@ Building OpenCoarrays requires
 * An MPI implementation (default: [MPICH]).
 * CMake.
 * A Fortran compiler (default: [GCC]).
-* _Optional_: An OpenSHMEM implementation.
+* _Optional_: An [OpenSHMEM] implementation.
 
 If you use a package manager or the OpenCoarrays installer, any
 missing prerequisites will be built for you.
@@ -174,6 +174,7 @@ to aid in development efforts.
 [Writing Fortran 2018 Today]: https://writing-fortran-2018-today.eventbrite.com
 [Intel Speakerships at SC18]: https://easychair.org/cfp/IntelSpeakershipsatSC18
 
+[OpenSHMEM]: http://www.openshmem.org
 [sourcery-institute logo]: http://www.sourceryinstitute.org/uploads/4/9/9/6/49967347/sourcery-logo-rgb-hi-rez-1.png
 [OpenCoarrays]: http://www.opencoarrays.org
 [ABI]: https://gcc.gnu.org/onlinedocs/gfortran/Coarray-Programming.html#Coarray-Programming

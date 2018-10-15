@@ -67,7 +67,7 @@ where "4" is the number of images to be launched at program start-up.
 An advanced workflow
 --------------------
 
-If prefer to invoke the compiler directly, first run `caf` and `cafrun` with the `--show` flag 
+If you prefer to invoke the compiler directly, first run `caf` and `cafrun` with the `--show` flag 
 to see the proper linking and file includes.  For example, on a macOS system where OpenCoarrays 
 was installed via the [homebrew] package manager, the following results:
 
@@ -99,3 +99,4 @@ $ cafrun --show
 [The caf compiler wrapper]: #the-caf-compiler-wrapper
 [The cafrun program launcher]: #the-cafrun-program-launcher
 [pdf img]: https://img.shields.io/badge/PDF-GETTING_STARTED.md-6C2DC7.svg?style=flat-square "Download as PDF"
+[homebrew]: https://brew.sh
