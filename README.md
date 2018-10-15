@@ -51,7 +51,7 @@ need change to switch parallel programming models.  The default MPI,
 which we expect to provide the broadest support for Fortran 2018 for 
 the foreseeable future.  However, having the option to parallel
 programming models at link-time aids portability and performance 
-(see [Rouson et al. 2017] and [Rasmussen et al. 2018]).
+(see [Rouson et al. (2017)] and [Rasmussen et al. (2018)]).
 
 OpenCoarrays provides a compiler wrapper (`caf`), parallel runtime
 libraries (`libcaf_mpi` and `libcaf_openshmem`), and a parallel 
@@ -75,11 +75,13 @@ way around incorporating OpenCoarrays into other compilers.
 Prerequisites
 -------------
 
-Buildin OpenCoarrays requires the following packages:
-* MPI
-* CMake
-* A Fortran 2018 compiler (currently only GCC is supported).
-* _Optional_: OpenSHMEM
+OpenCoarrays requires the following packages:
+
+* An MPI implementation (default: [MPICH]).
+* CMake.
+* A Fortran compiler (default: [GCC]).
+* _Optional_: An OpenSHMEM implementation.
+
 If you use a package manager or the OpenCoarrays installer, any
 missing prerequisites will be built for you.
 
@@ -115,6 +117,7 @@ Acknowledgements
 
 We gratefully acknowledge support from the following institutions:
 
+* [Arm] for approving compiler engineer contributions of code. 
 * [National Center for Atmospheric Research] for access to the
   Yellowstone/Caldera supercomputers and for logistics support during
   the initial development of OpenCoarrays.
@@ -159,6 +162,11 @@ to aid in development efforts.
 [Installation]: #installation
 [Contributing]: #contributing
 [Acknowledgements]: #acknowledgements
+
+[Fortran 2018]: http://isotc.iso.org/livelink/livelink?func=ll&objId=19442438&objAction=Open&viewType=1
+[Rouson et al. (2017)]: https://github.com/sourceryinstitute/coarray-icar-paw17/blob/master/main.pdf
+[Rasmussen et al. (2018)]: https://github.com/scrasmussen/coarray-icar-paw18/blob/master/main.pdf
+[Arm]: https://www.arm.com
 
 [sourcery-institute logo]: http://www.sourceryinstitute.org/uploads/4/9/9/6/49967347/sourcery-logo-rgb-hi-rez-1.png
 [OpenCoarrays]: http://www.opencoarrays.org
