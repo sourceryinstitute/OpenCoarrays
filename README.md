@@ -29,13 +29,10 @@ OpenCoarrays
 
 News
 ----
-
-You can now [try OpenCoarrays online] as a [Jupyter] [notebook kernel]
-using [Binder]! No downloads, configuration or installation required!
-Please note: the default [index.ipynb] notebook is read only. You can
-execute it, but if you want to make changes you should create a copy
-of it or create an entirely new [CAF kernel][notebook kernel]
-notebook.
+### Upcoming events ###
+* Nov. 5-8, 2018: "[Writing Fortran 2018 Today]" course by OpenCoarrays contributors Damian Rouson and Izaak Beekman.
+* Nov. 13, 2018: _Intel Speakership at SC18_ presentation by Damian Rouson and Sameer Shende
+* Nov. 16, 2018: SC18 [PAW-ATM Workshop] presentation by OpenCoarrays contributor Soren Rasmussen.
 
 Overview
 --------
@@ -90,6 +87,12 @@ Installation
 ------------
 
 Please see the [INSTALL.md] file.
+
+Or [try OpenCoarrays online] as a [Jupyter] [notebook kernel]
+using [Binder] with no downloads, configuration or installation required.
+The default [index.ipynb] notebook is read only, but you can
+execute it, copy it to make changes, or create an entirely 
+new [CAF kernel][notebook kernel] notebook.
 
 Getting Started
 ---------------
@@ -167,6 +170,7 @@ to aid in development efforts.
 [Rouson et al. (2017)]: https://github.com/sourceryinstitute/coarray-icar-paw17/blob/master/main.pdf
 [Rasmussen et al. (2018)]: https://github.com/scrasmussen/coarray-icar-paw18/blob/master/main.pdf
 [Arm]: https://www.arm.com
+[] http://sourceryinstitute.github.io/PAW/
 
 [sourcery-institute logo]: http://www.sourceryinstitute.org/uploads/4/9/9/6/49967347/sourcery-logo-rgb-hi-rez-1.png
 [OpenCoarrays]: http://www.opencoarrays.org
@@ -210,5 +214,7 @@ to aid in development efforts.
 [release img]: https://img.shields.io/github/release/sourceryinstitute/OpenCoarrays.svg?style=flat-square "Latest release badge"
 [pdf img]: https://img.shields.io/badge/PDF-README.md-6C2DC7.svg?style=flat-square "Download this readme as a PDF"
 [twitter img]: https://img.shields.io/twitter/url/http/shields.io.svg?style=social
+https://www.eventbrite.com/e/writing-fortran-2018-today-object-oriented-parallel-programming-tickets-48982176007
+[Writing Fortran 2018 Today]: https://writing-fortran-2018-today.eventbrite.com
 
 [default tweet]: https://twitter.com/intent/tweet?hashtags=HPC,Fortran,PGAS&related=zbeekman,gnutools,HPCwire,HPC_Guru,hpcprogrammer,SciNetHPC,DegenerateConic,jeffdotscience,travisci&text=Stop%20programming%20w%2F%20the%20%23MPI%20docs%20in%20your%20lap%2C%20try%20Coarray%20Fortran%20w%2F%20OpenCoarrays%20%26%20GFortran!&url=https%3A//github.com/sourceryinstitute/OpenCoarrays
