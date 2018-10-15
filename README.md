@@ -31,7 +31,7 @@ News
 ----
 ### Upcoming events ###
 * Nov. 5-8, 2018: "[Writing Fortran 2018 Today]" course by OpenCoarrays contributors Damian Rouson and Izaak Beekman.
-* Nov. 13, 2018: _Intel Speakership at SC18_ presentation by Damian Rouson and Sameer Shende
+* Nov. 13, 2018: [Intel Speakerships at SC18] presentation by Damian Rouson and Sameer Shende
 * Nov. 16, 2018: SC18 [PAW-ATM Workshop] presentation by OpenCoarrays contributor Soren Rasmussen.
 
 Overview
@@ -72,7 +72,7 @@ way around incorporating OpenCoarrays into other compilers.
 Prerequisites
 -------------
 
-OpenCoarrays requires the following packages:
+Building OpenCoarrays requires
 
 * An MPI implementation (default: [MPICH]).
 * CMake.
@@ -170,7 +170,9 @@ to aid in development efforts.
 [Rouson et al. (2017)]: https://github.com/sourceryinstitute/coarray-icar-paw17/blob/master/main.pdf
 [Rasmussen et al. (2018)]: https://github.com/scrasmussen/coarray-icar-paw18/blob/master/main.pdf
 [Arm]: https://www.arm.com
-[] http://sourceryinstitute.github.io/PAW/
+[PAW-ATM Workshop]: http://sourceryinstitute.github.io/PAW/
+[Writing Fortran 2018 Today]: https://writing-fortran-2018-today.eventbrite.com
+[Intel Speakerships at SC18]: https://easychair.org/cfp/IntelSpeakershipsatSC18
 
 [sourcery-institute logo]: http://www.sourceryinstitute.org/uploads/4/9/9/6/49967347/sourcery-logo-rgb-hi-rez-1.png
 [OpenCoarrays]: http://www.opencoarrays.org
