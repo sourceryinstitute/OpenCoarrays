@@ -22,7 +22,7 @@ OpenCoarrays
 [News](#news) | [Overview](#overview) | [Downloads](#downloads) |
 [Compatibility](#compatibility) | [Prerequisites](#prerequisites) |
 [Installation](#installation) | [Getting Started](#getting-started) |
-[Contributing](#contributing) | [Status](#status)  
+[Contributing](#contributing) | [Status](#status)
 [Support](#support) | [Acknowledgements](#acknowledgements) | [Donate](#donate)
 
 </div>
@@ -37,21 +37,21 @@ News
 Overview
 --------
 
-[OpenCoarrays] supports [Fortran 2018] compilers by providing a 
-parallel application binary interface (ABI) that abstracts away the 
+[OpenCoarrays] supports [Fortran 2018] compilers by providing a
+parallel application binary interface (ABI) that abstracts away the
 underlying parallel programming model, which can be the Message
-Passing Interface ([MPI]) or [OpenSHMEM].  Parallel Fortran 2018 
-programs may be written and compiled into object files once and 
+Passing Interface ([MPI]) or [OpenSHMEM].  Parallel Fortran 2018
+programs may be written and compiled into object files once and
 then linked or relinked to either MPI or [OpenSHMEM] without modifying
-or recompiling the Fortran source.  Not a single line of source code 
-need change to switch parallel programming models.  The default 
-programming model is MPI because it provides the broadest capability 
-for supporting Fortran 2018  features.  However, having the option to 
-change parallel programming models at link-time may enhance portability 
+or recompiling the Fortran source.  Not a single line of source code
+need change to switch parallel programming models.  The default
+programming model is MPI because it provides the broadest capability
+for supporting Fortran 2018  features.  However, having the option to
+change parallel programming models at link-time may enhance portability
 and performance (see [Rouson et al. (2017)] and [Rasmussen et al. (2018)]).
 
 OpenCoarrays provides a compiler wrapper (`caf`), parallel runtime
-libraries (`libcaf_mpi` and `libcaf_openshmem`), and a parallel 
+libraries (`libcaf_mpi` and `libcaf_openshmem`), and a parallel
 executable file launcher (`cafrun`).  The wrapper and launcher
 provide a uniform abstraction for compiling and executing parallel
 Fortran 2018 programs without direct reference to the underlying
@@ -91,7 +91,7 @@ Please see the [INSTALL.md] file.
 Or [try OpenCoarrays online] as a [Jupyter] [notebook kernel]
 using [Binder] with no downloads, configuration or installation required.
 The default [index.ipynb] notebook is read only, but you can
-execute it, copy it to make changes, or create an entirely 
+execute it, copy it to make changes, or create an entirely
 new [CAF kernel][notebook kernel] notebook.
 
 Getting Started
@@ -120,7 +120,7 @@ Acknowledgements
 
 We gratefully acknowledge support from the following institutions:
 
-* [Arm] for approving compiler engineer contributions of code. 
+* [Arm] for approving compiler engineer contributions of code.
 * [National Center for Atmospheric Research] for access to the
   Yellowstone/Caldera supercomputers and for logistics support during
   the initial development of OpenCoarrays.
@@ -217,7 +217,6 @@ to aid in development efforts.
 [release img]: https://img.shields.io/github/release/sourceryinstitute/OpenCoarrays.svg?style=flat-square "Latest release badge"
 [pdf img]: https://img.shields.io/badge/PDF-README.md-6C2DC7.svg?style=flat-square "Download this readme as a PDF"
 [twitter img]: https://img.shields.io/twitter/url/http/shields.io.svg?style=social
-https://www.eventbrite.com/e/writing-fortran-2018-today-object-oriented-parallel-programming-tickets-48982176007
 [Writing Fortran 2018 Today]: https://writing-fortran-2018-today.eventbrite.com
 
 [default tweet]: https://twitter.com/intent/tweet?hashtags=HPC,Fortran,PGAS&related=zbeekman,gnutools,HPCwire,HPC_Guru,hpcprogrammer,SciNetHPC,DegenerateConic,jeffdotscience,travisci&text=Stop%20programming%20w%2F%20the%20%23MPI%20docs%20in%20your%20lap%2C%20try%20Coarray%20Fortran%20w%2F%20OpenCoarrays%20%26%20GFortran!&url=https%3A//github.com/sourceryinstitute/OpenCoarrays
