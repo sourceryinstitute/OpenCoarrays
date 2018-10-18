@@ -41,14 +41,14 @@ Overview
 parallel application binary interface (ABI) that abstracts away the 
 underlying parallel programming model, which can be the Message
 Passing Interface ([MPI]) or [OpenSHMEM].  Parallel Fortran 2018 
-programs may be written and compiled into object files once, and 
+programs may be written and compiled into object files once and 
 then linked or relinked to either MPI or [OpenSHMEM] without modifying
 or recompiling the Fortran source.  Not a single line of source code 
-need change to switch parallel programming models.  The default MPI, 
-which we expect to provide the broadest support for Fortran 2018 for 
-the foreseeable future.  However, having the option to parallel
-programming models at link-time aids portability and performance 
-(see [Rouson et al. (2017)] and [Rasmussen et al. (2018)]).
+need change to switch parallel programming models.  The default 
+programming model is MPI because it provides the broadest capability 
+for supporting Fortran 2018  features.  However, having the option to 
+change parallel programming models at link-time may enhance portability 
+and performance (see [Rouson et al. (2017)] and [Rasmussen et al. (2018)]).
 
 OpenCoarrays provides a compiler wrapper (`caf`), parallel runtime
 libraries (`libcaf_mpi` and `libcaf_openshmem`), and a parallel 
