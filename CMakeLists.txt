@@ -734,6 +734,7 @@ if(opencoarrays_aware_compiler)
 
   add_caf_test(co_sum 4 co_sum_test)
   add_caf_test(co_broadcast 4 co_broadcast_test)
+  add_caf_test(co_broadcast_derived_type 4 co_broadcast_derived_type_test)
   add_caf_test(co_min 4 co_min_test)
   add_caf_test(co_max 4 co_max_test)
   add_caf_test(syncall 8 syncall)
