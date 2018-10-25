@@ -24,8 +24,8 @@ echo "Performing Travis-CI installation phase on macOS..."
 # Update and install via Homebrew on macOS
 brew update > /dev/null
 
-brew install gcc
-brew link --overwrite gcc
+brew install gcc || true
+brew link --overwrite gcc || true
 
 for pkg in ${OSX_PACKAGES}; do
     brew ls --versions "${pkg}" >/dev/null || brew install "${pkg}" || brew link --overwrite "${pkg}"
