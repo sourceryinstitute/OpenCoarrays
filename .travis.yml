@@ -1,5 +1,5 @@
 ---
-language: generic
+language: c
 
 os: osx
 
@@ -97,11 +97,11 @@ before_install:
 
 install:
   - pwd
-  - travis_wait 40 developer-scripts/travis/install.${TRAVIS_OS_NAME}.sh
+  - ./developer-scripts/travis/install.${TRAVIS_OS_NAME}.sh
 
 script:
   - pwd
-  - developer-scripts/travis/test-script.${BUILD_TYPE:-cmake}.sh
+  - ./developer-scripts/travis/test-script.${BUILD_TYPE:-cmake}.sh
 
 after_script:
   - find . -name '*.gcno' -print

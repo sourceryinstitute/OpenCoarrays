@@ -244,8 +244,14 @@ endif()
 
 find_package( MPI )
 
-if ( (NOT MPI_C_FOUND) OR (NOT MPI_Fortran_FOUND) OR (NOT MPIEXEC))
+if ( (NOT MPI_C_FOUND) OR (NOT MPI_Fortran_FOUND) OR (NOT MPIEXEC_EXECUTABLE))
   # Get default install location of MPICH from install.sh
+  message(WARNING "Could not find all MPI components!")
+  message(WARNING "
+MPI_C_FOUND        = ${MPI_C_FOUND}
+MPI_Fortran_FOUND  = ${MPI_Fortran_FOUND}
+MPIEXEC_EXECUTABLE = ${MPIEXEC_EXECUTABLE}
+")
   execute_process( COMMAND "./install.sh" -P mpich
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
     OUTPUT_VARIABLE DEFAULT_MPICH_INSTALL_LOC
@@ -262,7 +268,7 @@ endif()
 list(REMOVE_DUPLICATES MPI_Fortran_INCLUDE_PATH)
 
 # Test for consistent MPI environment
-if (NOT MPIEXEC)
+if (NOT MPIEXEC_EXECUTABLE)
   message ( ERROR "CMake failed to find `mpiexec` or similar. If building with `./install.sh` please
 report this bug to the OpenCoarrays developers at
 https://github.com/sourceryinstitute/opencoarrays/issues, otherwise point CMake
@@ -271,7 +277,7 @@ else()
   add_definitions(-DHAVE_MPI)
 endif()
 
-get_filename_component(MPIEXEC_RELATIVE_LOC "${MPIEXEC}"
+get_filename_component(MPIEXEC_RELATIVE_LOC "${MPIEXEC_EXECUTABLE}"
   PROGRAM)
 get_filename_component(MPIEXEC_ABS_LOC "${MPIEXEC_RELATIVE_LOC}"
   REALPATH)

@@ -37,7 +37,11 @@ for version in ${GCC}; do
 	    brew outdated "${mpi}" || brew upgrade "${mpi}"
 	    brew unlink "${mpi}" || true
 	done
-	brew link open-mpi
+	brew link --overwrite open-mpi
+	otool -L "$(brew --prefix open-mpi)/lib/libmpi.dylib"
+	otool -L "$(brew --prefix libevent)/lib/libevent.dylib"
+	OMPI_CC="$(prew --prefix gcc)/bin/gcc-${version}"
+	export OMPI_CC
     fi
     ${FC} --version
     ${CC} --version
@@ -50,7 +54,12 @@ for version in ${GCC}; do
 	[[ -d "${BLD_DIR}" ]] && rm -rf "${BLD_DIR:?}"/* || true
 	(
 	    cd "${BLD_DIR}"
-	    cmake -DCMAKE_INSTALL_PREFIX:PATH="${HOME}/OpenCoarrays" -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" ..
+	    cmake -Wdev \
+		  -DCMAKE_INSTALL_PREFIX:PATH="${HOME}/OpenCoarrays" \
+		  -DCMAKE_BUILD_TYPE:STRING="${BUILD_TYPE}" \
+		  -DMPI_CXX_SKIP_MPICXX:BOOL=ON \
+		  -DMPI_ASSUME_NO_BUILTIN_MPI:BOOL=ON \
+		  -DMPI_SKIP_GUESSING ..
 	    make -j 4
 	    CTEST_FLAGS=(--output-on-failure --schedule-random --repeat-until-fail "${NREPEAT:-5}" --timeout "${TEST_TIMEOUT:-200}")
 	    if [[ "${BUILD_TYPE}" =~ Deb ]]; then

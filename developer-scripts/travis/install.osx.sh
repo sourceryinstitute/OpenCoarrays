@@ -24,9 +24,12 @@ echo "Performing Travis-CI installation phase on macOS..."
 # Update and install via Homebrew on macOS
 brew update > /dev/null
 
+brew install gcc
+brew link --overwrite gcc
+
 for pkg in ${OSX_PACKAGES}; do
-    brew ls --versions "${pkg}" >/dev/null || brew install --force-bottle "${pkg}" || brew link --overwrite "${pkg}"
-    brew outdated "${pkg}" || brew upgrade --force-bottle "${pkg}"
+    brew ls --versions "${pkg}" >/dev/null || brew install "${pkg}" || brew link --overwrite "${pkg}"
+    brew outdated "${pkg}" || brew upgrade "${pkg}"
 done
 
 # Uninstall mpich and openmpi so that we can install our own version
