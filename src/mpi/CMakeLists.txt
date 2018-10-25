@@ -15,7 +15,7 @@ cmake_host_system_information(RESULT N_CPU QUERY NUMBER_OF_LOGICAL_CORES)
 set(N_CPU ${N_CPU} PARENT_SCOPE)
 cmake_host_system_information(RESULT HOST_NAME QUERY HOSTNAME)
 set(HOSTNAME ${HOSTNAME} PARENT_SCOPE)
-execute_process(COMMAND ${MPIEXEC_EXECUTABLE} --version
+execute_process(COMMAND ${MPIEXEC} --version
   OUTPUT_VARIABLE mpi_version_out)
 if (mpi_version_out MATCHES "[Oo]pen[ -][Mm][Pp][Ii]")
   message( STATUS "OpenMPI detected")
@@ -249,7 +249,7 @@ configure_file("${CMAKE_SOURCE_DIR}/src/extensions/caf.in" "${CMAKE_BINARY_DIR}/
 
 # List of carrun.in variables needing configuration:
 #
-# @CAF_VERSION@ @MPIEXEC_EXECUTABLE@ @MPIEXEC_NUMPROC_FLAG@ @MPIEXEC_PREFLAGS@ @MPIEXEC_POSTFLAGS@
+# @CAF_VERSION@ @MPIEXEC@ @MPIEXEC_NUMPROC_FLAG@ @MPIEXEC_PREFLAGS@ @MPIEXEC_POSTFLAGS@
 # @HAVE_FAILED_IMG@
 #
 
