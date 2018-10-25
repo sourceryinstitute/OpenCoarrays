@@ -59,7 +59,8 @@ for version in ${GCC}; do
 		  -DCMAKE_BUILD_TYPE:STRING="${BUILD_TYPE}" \
 		  -DMPI_CXX_SKIP_MPICXX:BOOL=ON \
 		  -DMPI_ASSUME_NO_BUILTIN_MPI:BOOL=ON \
-		  -DMPI_SKIP_GUESSING ..
+		  -DMPI_SKIP_GUESSING:BOOL=ON\
+		  ..
 	    make -j 4
 	    CTEST_FLAGS=(--output-on-failure --schedule-random --repeat-until-fail "${NREPEAT:-5}" --timeout "${TEST_TIMEOUT:-200}")
 	    if [[ "${BUILD_TYPE}" =~ Deb ]]; then
