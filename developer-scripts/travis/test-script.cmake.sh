@@ -40,7 +40,7 @@ for version in ${GCC}; do
 	brew link --overwrite open-mpi
 	otool -L "$(brew --prefix open-mpi)/lib/libmpi.dylib"
 	otool -L "$(brew --prefix libevent)/lib/libevent.dylib"
-	OMPI_CC="$(prew --prefix gcc)/bin/gcc-${version}"
+	OMPI_CC="$(brew --prefix gcc)/bin/gcc-${version}"
 	export OMPI_CC
     fi
     ${FC} --version
