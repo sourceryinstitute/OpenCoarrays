@@ -28,7 +28,6 @@ for version in ${GCC}; do
     export CC=gcc-${version}
     if [[ ${OSTYPE} == [Dd]arwin* ]]; then
 	# We should use clang on macOS because that's what homebrew and everyone else does
-	export CC=gcc-8
 	brew unlink openmpi || true
 	brew unlink mpich || true
 	for mpi in "mpich" "open-mpi"; do
