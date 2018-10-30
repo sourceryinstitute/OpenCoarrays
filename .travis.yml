@@ -27,18 +27,18 @@ matrix:
           OSX_PACKAGES="gcc shellcheck cmake mpich"
           # cmake should be removed, but we should be installing binaries
           # because building from source takes forever
-    -
-      <<: *macOS
-      env:
-        - GCC=8
-          BUILD_TYPES="debug RelWithDebInfo Release"
-          OSX_PACKAGES="gcc openmpi shellcheck cmake"
+    # -
+    #   <<: *macOS
+    #   env:
+    #     - GCC=8
+    #       BUILD_TYPES="debug RelWithDebInfo Release"
+    #       OSX_PACKAGES="gcc openmpi shellcheck cmake"
     - &ubuntu
       os: linux
       sudo: false
       dist: trusty
       env:
-        - GCC=6
+        - GCC=8
       cache:
         apt: true
         directories:
@@ -48,10 +48,10 @@ matrix:
           sources: &linuxsrcs
             - ubuntu-toolchain-r-test
             - george-edison55-precise-backports
-          packages: &gcc6pkgs
-            - gcc-6
-            - gfortran-6
-            - g++-6
+          packages: &gcc8pkgs
+            - gcc-8
+            - gfortran-8
+            - g++-8
             - cmake
     -
       <<: *ubuntu
@@ -69,23 +69,23 @@ matrix:
       <<: *ubuntu
       env:
         - BUILD_TYPE="InstallScript"
-          GCC=7
+          GCC=8
       addons:
         apt:
           sources: *linuxsrcs
           packages:
-            - gcc-7
-            - gfortran-7
-            - g++-7
+            - gcc-8
+            - gfortran-8
+            - g++-8
     - &linux_allowed_failure
       <<: *ubuntu
       env:
-        - GCC=7
+        - GCC=8
           OPENCOARRAYS_DEVELOPER=ON
       addons:
         apt:
           sources: *linuxsrcs
-          packages: *gcc7pkgs
+          packages: *gcc8pkgs
 
   allow_failures:
     - *linux_allowed_failure
