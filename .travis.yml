@@ -105,7 +105,7 @@ script:
 
 after_script:
   - find . -name '*.gcno' -print
-  - for version in ${GCC}; do bash <(curl -s https://codecov.io/bash) -x $(type -P gcov-${GCC}) ; done
+  - for version in ${GCC}; do bash <(curl -s https://codecov.io/bash) -x $(type -P gcov-${GCC}) || true ; done
   - |
     if [[ "${TRAVIS_TAG}" ]]; then
       if [[ "v${TRAVIS_TAG}" != "v$(sed -n '/[0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}/{s/^\([^.]*\)\([0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}\)\(.*\)/\2/p;q;}' .VERSION)" ]]; then
