@@ -1,8 +1,6 @@
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 3.4)
 
-if(POLICY CMP0075)
-  cmake_policy(SET CMP0075 NEW)
-endif()
+cmake_policy(VERSION 3.4...3.12)
 
 # Set the type/configuration of build to perform
 set ( CMAKE_CONFIGURATION_TYPES "Debug" "Release" "MinSizeRel" "RelWithDebInfo" "CodeCoverage" )
@@ -65,9 +63,8 @@ if((NOT (OpenCoarraysVersion MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+(-rc[0-9]+)?")) AN
     endif()
     # Create a source distribution target using git archive
     # e.g., `make dist` will package a release using current git state
-    add_custom_target(dist # OUTPUT "${CMAKE_BINARY_DIR}/${_OC_stem_name}.tar.gz"
+    add_custom_target(dist
       COMMAND "${CMAKE_COMMAND}" -P "${CMAKE_SOURCE_DIR}/cmake/makeDist.cmake" "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}"
-      COMMENT "Creating source release asset, ${_OC_stem_name}.tar.gz, from ${git_full_describe} using the `git archive` command."
       VERBATIM)
   else()
     message( WARNING "Could not find git executable!")
@@ -113,6 +110,17 @@ if ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
     "  $ CC=gcc FC=gfortran cmake -DBUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/path/to/install/dir /path/to/opencoarrays/src/dir \n"
     "\nsubstituting the appropriate syntax for your shell (the above line assumes the bash shell)."
     )
+endif()
+
+# Silence warnings about dereferencing unset variables
+if(NOT CMAKE_REQUIRED_FLAGS)
+  set(CMAKE_REQUIRED_FLAGS "")
+endif()
+if(NOT CMAKE_REQUIRED_LIBRARIES)
+  set(CMAKE_REQUIRED_LIBRARIES "")
+endif()
+if(NOT CMAKE_REQUIRED_INCLUDES)
+  set(CMAKE_REQUIRED_INCLUDES "")
 endif()
 
 #Report untested Fortran compiler unless explicitly directed to build all examples.
@@ -203,7 +211,7 @@ endif()
 
 if(gfortran_compiler)
   set(OLD_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
-  set(CMAKE_REQUIRED_FLAGS "-fcoarray=single -ffree-form")
+  set(CMAKE_REQUIRED_FLAGS $<$<COMPILE_LANGUAGE:Fortran>:"-fcoarray=single -ffree-form">)
 endif()
 include(CheckFortranSourceCompiles)
 CHECK_Fortran_SOURCE_COMPILES("
@@ -459,6 +467,18 @@ endif()
 #----------------
 # Setup MPI flags
 #----------------
+if(NOT CMAKE_C_COMPILE_FLAGS)
+  set(CMAKE_C_COMPILE_FLAGS "")
+endif()
+if(NOT CMAKE_C_LINK_FLAGS)
+  set(CMAKE_C_LINK_FLAGS "")
+endif()
+if(NOT CMAKE_Fortran_COMPILE_FLAGS)
+  set(CMAKE_Fortran_COMPILE_FLAGS "")
+endif()
+if(NOT CMAKE_Fortran_LINK_FLAGS)
+  set(CMAKE_Fortran_LINK_FLAGS "")
+endif()
 set(CMAKE_C_COMPILE_FLAGS "${CMAKE_C_COMPILE_FLAGS} ${MPI_C_COMPILE_FLAGS}")
 set(CMAKE_C_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} ${MPI_C_LINK_FLAGS}")
 set(CMAKE_Fortran_COMPILE_FLAGS "${CMAKE_Fortran_COMPILE_FLAGS} ${MPI_Fortran_COMPILE_FLAGS}")
@@ -485,9 +505,14 @@ install(FILES "${CMAKE_SOURCE_DIR}/doc/man/man1/caf.1" "${CMAKE_SOURCE_DIR}/doc/
 #---------------------------------------------------
 # Define macro for compiling with caf wrapper script
 #---------------------------------------------------
+if(APPLE)
+  find_program(CODESIGN codesign)
+endif()
+
 function(caf_compile_executable target main_depend)
-  foreach(includedir IN LISTS MPI_Fortran_INCLUDE_PATH)
-    set(includes ${includes} -I ${includedir})
+  set(includes "")
+  foreach(includedir ${MPI_Fortran_INCLUDE_PATH})
+    list(APPEND includes "-I${includedir}")
   endforeach()
   string(TOUPPER "${CMAKE_BUILD_TYPE}" build_type)
   separate_arguments(config_Fortran_flags UNIX_COMMAND "${CMAKE_Fortran_FLAGS_${build_type}}")
@@ -496,11 +521,14 @@ function(caf_compile_executable target main_depend)
   foreach(d ${DirDefs})
     list(APPEND localDefs "-D${d}")
   endforeach()
-  add_custom_command(OUTPUT "${target}"
-    COMMAND "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf" ${includes} ${localDefs} ${config_Fortran_flags} -o "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target}" "${CMAKE_CURRENT_SOURCE_DIR}/${main_depend}" ${ARGN}
-    DEPENDS "${main_depend}" ${ARGN} caf_mpi_static
-    VERBATIM
-    )
+    add_custom_command(OUTPUT "${target}"
+      COMMAND "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf"
+                 ${includes} ${localDefs} ${config_Fortran_flags}
+                 -o "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target}"
+                 "${CMAKE_CURRENT_SOURCE_DIR}/${main_depend}" ${ARGN}
+      DEPENDS "${main_depend}" ${ARGN} caf_mpi_static
+      VERBATIM
+      )
   add_custom_target("build_${target}" ALL
     DEPENDS "${target}")
 endfunction(caf_compile_executable)
@@ -592,7 +620,7 @@ install(
 )
 
 add_library(OpenCoarrays INTERFACE)
-target_compile_options(OpenCoarrays INTERFACE -fcoarray=lib)
+target_compile_options(OpenCoarrays INTERFACE $<$<COMPILE_LANGUAGE:Fortran>:"-fcoarray=lib")
 target_link_libraries(OpenCoarrays INTERFACE caf_mpi)
 
 #------------------------------------------
