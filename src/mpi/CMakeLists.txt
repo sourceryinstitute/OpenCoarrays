@@ -87,6 +87,10 @@ if (gfortran_compiler)
   target_compile_options(caf_mpi_static INTERFACE $<$<COMPILE_LANGUAGE:Fortran>:"-fcoarray=lib">)
 endif()
 
+install(TARGETS opencoarrays_mod EXPORT OpenCoarraysTargets
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+)
 install(TARGETS caf_mpi EXPORT OpenCoarraysTargets
   DESTINATION "${CMAKE_INSTALL_LIBDIR}"
   LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
