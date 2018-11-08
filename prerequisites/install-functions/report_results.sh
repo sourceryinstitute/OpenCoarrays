@@ -34,10 +34,10 @@ report_results()
     # Prepend the OpenCoarrays license to the setup.sh script:
     while IFS='' read -r line || [[ -n "${line}" ]]; do
         echo "# ${line}" >> setup.sh
-    done < "${OpenCoarrays_src_dir}/LICENSE"
+    done < "${OPENCOARRAYS_SRC_DIR}/LICENSE"
     while IFS='' read -r line || [[ -n "${line}" ]]; do
         echo "# ${line}" >> setup.csh
-    done < "${opencoarrays_src_dir}/LICENSE"
+    done < "${OPENCOARRAYS_SRC_DIR}/LICENSE"
     echo "#                                                                               " | tee -a setup.csh setup.sh
     echo "# Execute this script via the following command:                                " | tee -a setup.csh setup.sh
     echo "# source ${install_path%/}/setup.sh                                             " | tee -a setup.csh setup.sh
