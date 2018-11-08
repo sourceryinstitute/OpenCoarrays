@@ -21,7 +21,7 @@ else
     major_minor="${version_to_build%.*}"
   elif [[ "${package_to_build}" == "gcc" ]]; then
     if [[ -z "${arg_b:-${arg_B}}" ]]; then
-      gcc_url_head="https://ftpmirror.gnu.org/gcc/gcc-${version_to_build}/gcc-${version_to_build}.tar.xz/"
+      gcc_url_head="https://ftpmirror.gnu.org/gcc/gcc-${version_to_build}/"
     else
       gcc_url_head="svn://gcc.gnu.org/svn/gcc/"
     fi
