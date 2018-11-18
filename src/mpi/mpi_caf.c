@@ -8098,7 +8098,6 @@ void PREFIX(change_team) (caf_team_t *team,
   caf_teams_list * tmp_list = NULL;
   void *tmp_team;
   MPI_Comm *tmp_comm;
-  int ierr = MPI_Barrier(CAF_COMM_WORLD); chk_err(ierr);
 
   tmp_list = (struct caf_teams_list *)*team;
   tmp_team = (void *)tmp_list->team;
@@ -8131,9 +8130,10 @@ void PREFIX(change_team) (caf_team_t *team,
   tmp_team = tmp_used->team_list_elem->team;
   tmp_comm = (MPI_Comm *)tmp_team;
   CAF_COMM_WORLD = *tmp_comm;
-  ierr = MPI_Comm_rank(*tmp_comm,&caf_this_image); chk_err(ierr);
+  int ierr = MPI_Comm_rank(*tmp_comm,&caf_this_image); chk_err(ierr);
   caf_this_image++;
   ierr = MPI_Comm_size(*tmp_comm,&caf_num_images); chk_err(ierr);
+  ierr = MPI_Barrier(*tmp_comm); chk_err(ierr);
 }
 
 MPI_Fint
@@ -8178,7 +8178,6 @@ void PREFIX(end_team) (caf_team_t *team __attribute__((unused)))
   tmp_team = tmp_used->team_list_elem->team;
   tmp_comm = (MPI_Comm *)tmp_team;
   CAF_COMM_WORLD = *tmp_comm;
-  ierr = MPI_Barrier(CAF_COMM_WORLD); chk_err(ierr);
   /* CAF_COMM_WORLD = (MPI_Comm)*tmp_used->team_list_elem->team; */
   ierr = MPI_Comm_rank(CAF_COMM_WORLD,&caf_this_image); chk_err(ierr);
   caf_this_image++;
