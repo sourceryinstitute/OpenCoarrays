@@ -9,7 +9,7 @@ program teams_subset
   type(team_type) team
 
   associate( initial_team_image => this_image())
-  associate( myteam => merge(1,2,any(initial_team_image==[1,num_images()]) )
+  associate( myteam => merge(1,2,any(initial_team_image==[1,num_images()])) )
 
     form team (myteam, team)
 
@@ -22,7 +22,7 @@ program teams_subset
           min_image = [initial_team_image, this_image()]
           call co_min(min_image)
         end team
-        call assert( all(min_image==1), "team minimum image number is 1" )
+        call assert( all(min_image==1), "minimum image number in team is 1" )
         call assert( all(max_image==[num_images(), 2]), "team maximum images numbers is num_images() or 2")
       end block
     end if
