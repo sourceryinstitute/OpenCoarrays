@@ -1,4 +1,3 @@
 caf_compile_executable(team_number team-number.f90)
 caf_compile_executable(teams_subset teams_subset.f90)
-target_link_libraries(teams_subset opencoarrays_test_utilities)
 caf_compile_executable(get_communicator get-communicator.f90)

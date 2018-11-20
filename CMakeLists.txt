@@ -525,8 +525,10 @@ function(caf_compile_executable target main_depend)
       COMMAND "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf"
                  ${includes} ${localDefs} ${config_Fortran_flags}
                  -o "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target}"
-                 "${CMAKE_CURRENT_SOURCE_DIR}/${main_depend}" ${ARGN}
-      DEPENDS "${main_depend}" ${ARGN} caf_mpi_static
+                 "${CMAKE_CURRENT_SOURCE_DIR}/${main_depend}"
+		 "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libopencoarrays_test_utilities.a"
+		 ${ARGN}
+      DEPENDS "${main_depend}" ${ARGN} caf_mpi_static opencoarrays_test_utilities
       VERBATIM
       )
   add_custom_target("build_${target}" ALL
