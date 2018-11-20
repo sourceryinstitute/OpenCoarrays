@@ -1,4 +1,9 @@
-# Check support Fortran 2018 error termination in a pure procedure
+if ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "GNU" )
+  set(OLD_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
+  set(CMAKE_REQUIRED_FLAGS "-fcoarray=single -ffree-form")
+endif()
+
+# Check support for Fortran 2018 error termination in a pure procedure
 check_fortran_source_compiles("
   program main
   contains
@@ -14,7 +19,7 @@ if(HAVE_ERROR_STOP_IN_PURE)
   add_definitions(-DHAVE_ERROR_STOP_IN_PURE)
 endif()
 
-# Check support Fortran 2018 variable stop code
+# Check support for Fortran 2018 variable stop code
 check_fortran_source_compiles("
   program main
     integer i
@@ -28,16 +33,23 @@ if(HAVE_VARIABLE_STOP_CODE)
   add_definitions(-DHAVE_VARIABLE_STOP_CODE)
 endif()
 
-#Toggle C preprocessor macro for turning assertions on or off
-if(NO_ASSERTIONS)
-  set_source_files_properties(assertions_interface.f90 PROPERTIES COMPILE_FLAGS "-cpp -DUSE_ASSERTIONS=.false.")
-else()
-  set_source_files_properties(assertions_interface.f90 PROPERTIES COMPILE_FLAGS "-cpp -DUSE_ASSERTIONS=.true.")
+if ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "GNU" )
+  set(CMAKE_REQUIRED_FLAGS ${OLD_REQUIRED_FLAGS})
 endif()
 
-add_library( OpenCoarraysTestUtilities
+#Toggle C preprocessor macro for turning assertions on or off
+if(NO_ASSERTIONS)
+  target_compile_definitions( opencoarrays_test_utilities
+    PUBLIC "-DUSE_ASSERTIONS=.false."
+  )
+else()
+  target_compile_definitions( opencoarrays_test_utilities
+    PUBLIC "-DUSE_ASSERTIONS=.true."
+  )
+endif()
+
+add_library( opencoarrays_test_utilities
   object_interface.f90
   assertions_interface.F90
   assertions_implementation.F90
 )
-
