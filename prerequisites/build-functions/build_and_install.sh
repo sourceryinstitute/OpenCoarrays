@@ -23,7 +23,7 @@ build_and_install()
   info "pushd ${build_path}"
   pushd "${build_path}"
 
-  if [[ "${package_to_build}" != "gcc" && "${package_to_build}" != "cmake" ]]; then
+  if [[ "${package_to_build}" != "gcc" ]]; then
 
     if [[ "${package_to_build}" == "mpich" && "${version_to_build}" == "3.2" ]]; then
       info "Patching MPICH 3.2 on Mac OS due to segfault bug (see http://lists.mpich.org/pipermail/discuss/2016-May/004764.html)."
@@ -32,23 +32,32 @@ build_and_install()
       cp "${download_path}/${package_source_directory}/src/include/mpiimpl.h.patched" "${download_path}/${package_source_directory}/src/include/mpiimpl.h"
     fi
 
-    info "Configuring ${package_to_build} ${version_to_build} with the following command:"
-    info "FC=\"${FC:-'gfortran'}\" CC=\"${CC:-'gcc'}\" CXX=\"${CXX:-'g++'}\" \"${download_path}/${package_source_directory}\"/configure --prefix=\"${install_path}\""
-    FC="${FC:-'gfortran'}" CC="${CC:-'gcc'}" CXX="${CXX:-'g++'}" "${download_path}/${package_source_directory}"/configure --prefix="${install_path}"
-    info "Building with the following command:"
-    info "FC=\"${FC:-'gfortran'}\" CC=\"${CC:-'gcc'}\" CXX=\"${CXX:-'g++'}\" make -j\"${num_threads}\""
-    FC="${FC:-'gfortran'}" CC="${CC:-'gcc'}" CXX="${CXX:-'g++'}" make "-j${num_threads}"
-    info "Installing ${package_to_build} in ${install_path}"
-    if [[ ! -z "${SUDO:-}" ]]; then
-      info "You do not have write permissions to the installation path ${install_path}"
-      info "If you have administrative privileges, enter your password to install ${package_to_build}"
+    if [[ "${package_to_build}" == "cmake"  && $(uname) == "Linux" ]]; then
+
+      export cmake_binary_installer="${download_path}/cmake-${version_to_build}-Linux-x86_64.sh"
+      ${SUDO:-} mkdir -p "$install_path"
+      chmod u+x "${cmake_binary_installer}"
+      info "Installing Cmake with the following command: "
+      info "\"${cmake_binary_installer}\" --prefix=\"$install_path\" --exclude-subdir"
+      "${cmake_binary_installer}" --prefix="$install_path" --exclude-subdir
+
+    else # build from source
+
+      info "Configuring ${package_to_build} ${version_to_build} with the following command:"
+      info "FC=\"${FC:-'gfortran'}\" CC=\"${CC:-'gcc'}\" CXX=\"${CXX:-'g++'}\" \"${download_path}/${package_source_directory}\"/configure --prefix=\"${install_path}\""
+      FC="${FC:-'gfortran'}" CC="${CC:-'gcc'}" CXX="${CXX:-'g++'}" "${download_path}/${package_source_directory}"/configure --prefix="${install_path}"
+      info "Building with the following command:"
+      info "FC=\"${FC:-'gfortran'}\" CC=\"${CC:-'gcc'}\" CXX=\"${CXX:-'g++'}\" make -j\"${num_threads}\""
+      FC="${FC:-'gfortran'}" CC="${CC:-'gcc'}" CXX="${CXX:-'g++'}" make "-j${num_threads}"
+      info "Installing ${package_to_build} in ${install_path}"
+      if [[ ! -z "${SUDO:-}" ]]; then
+        info "You do not have write permissions to the installation path ${install_path}"
+        info "If you have administrative privileges, enter your password to install ${package_to_build}"
+      fi
+      info "Installing with the following command: ${SUDO:-} make install"
+      ${SUDO:-} make install
+
     fi
-    info "Installing with the following command: ${SUDO:-} make install"
-    ${SUDO:-} make install
-
-  elif [[ ${package_to_build} == "cmake" ]]; then
-
-    emergency "Ready to install cmake binary in ${PWD}"
 
   elif [[ ${package_to_build} == "gcc" ]]; then
 

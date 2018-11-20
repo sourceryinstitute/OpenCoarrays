@@ -5,13 +5,17 @@ unpack_if_necessary()
   if [[ "${fetch}" == "svn" || "${fetch}" == "git" ]]; then
     package_source_directory="${version_to_build}"
   else
-    info "Unpacking ${url_tail}."
-    info "pushd ${download_path}"
-    pushd "${download_path}"
-    info "Unpack command: tar xf ${url_tail}"
-    tar xf "${url_tail}"
-    info "popd"
-    popd
+    if [[ ${url_tail} == "*tar.gz" || ${url_tail} == "*tar.bz2" || ${url_tail} == "*.tar.xz" ]]; then
+      info "Unpacking ${url_tail}."
+      info "pushd ${download_path}"
+      pushd "${download_path}"
+      info "Unpack command: tar xf ${url_tail}"
+      tar xf "${url_tail}"
+      info "popd"
+      popd
+    else
+      info "Skipping unpacking because ${url_tail} is not a compressed archive (*.gz, *.bz2, or *.xz). "
+    fi
     # shellcheck disable=SC2034
     package_source_directory="${package_name}-${version_to_build}"
   fi
