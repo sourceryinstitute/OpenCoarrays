@@ -23,7 +23,7 @@ build_and_install()
   info "pushd ${build_path}"
   pushd "${build_path}"
 
-  if [[ "${package_to_build}" != "gcc" ]]; then
+  if [[ "${package_to_build}" != "gcc" && "${package_to_build}" != "cmake" ]]; then
 
     if [[ "${package_to_build}" == "mpich" && "${version_to_build}" == "3.2" ]]; then
       info "Patching MPICH 3.2 on Mac OS due to segfault bug (see http://lists.mpich.org/pipermail/discuss/2016-May/004764.html)."
@@ -46,7 +46,11 @@ build_and_install()
     info "Installing with the following command: ${SUDO:-} make install"
     ${SUDO:-} make install
 
-  else # ${package_to_build} == "gcc"
+  elif [[ ${package_to_build} == "cmake" ]]; then
+
+    emergency "Ready to install cmake binary in ${PWD}"
+
+  elif [[ ${package_to_build} == "gcc" ]]; then
 
     info "pushd ${download_path}/${package_source_directory} "
     pushd "${download_path}/${package_source_directory}"
@@ -83,7 +87,10 @@ build_and_install()
     info "Installing with the following command: ${SUDO:-} make install"
     ${SUDO:-} make install
 
-  fi # end if [[ "${package_to_build}" != "gcc" ]]; then
+  else
+     emergency "This branch should never be reached."
+  fi # end if [[ "${package_to_build}" != "gcc"  && "${package_to_build}" != "cmake"  ]]; then
+
 
   info "popd"
   popd
