@@ -27,13 +27,6 @@ OpenCoarrays
 
 </div>
 
-News
-----
-### Upcoming events ###
-* Nov. 5-8, 2018: "[Writing Fortran 2018 Today]" course by OpenCoarrays contributors Damian Rouson and Izaak Beekman.
-* Nov. 13, 2018: [Intel Speakerships at SC18] presentation by Damian Rouson and Sameer Shende
-* Nov. 16, 2018: SC18 [PAW-ATM Workshop] presentation by OpenCoarrays contributor Soren Rasmussen.
-
 Overview
 --------
 
@@ -167,25 +160,17 @@ to aid in development efforts.
 [Contributing]: #contributing
 [Acknowledgments]: #acknowledgments
 
-[Fortran 2018]: https://isotc.iso.org/livelink/livelink/nfetch/-8919044/8919782/8919787/18770498/ISO%2DIECJTC1%2DSC22%2DWG5_N2146_Fortran_2018_Draft_International_Standard_for_Ballot.pdf?nodeid=19442438&vernum=0
-[Rouson et al. (2017)]: https://github.com/sourceryinstitute/coarray-icar-paw17/blob/master/main.pdf
-<!--[Rasmussen et al. (2018)]: https://github.com/scrasmussen/coarray-icar-paw18/blob/master/main.pdf-->
+[Fortran 2018]: https://j3-fortran.org/doc/year/18/18-007r1.pdf 
 [Arm]: https://www.arm.com
-[PAW-ATM Workshop]: https://sourceryinstitute.github.io/PAW/
-[Intel Speakerships at SC18]: https://easychair.org/cfp/IntelSpeakershipsatSC18
 
 [OpenSHMEM]: http://www.openshmem.org/site/
 [sourcery-institute logo]: http://www.sourceryinstitute.org/uploads/4/9/9/6/49967347/sourcery-logo-rgb-hi-rez-1.png
 [OpenCoarrays]: http://www.opencoarrays.org
 [ABI]: https://gcc.gnu.org/onlinedocs/gfortran/Coarray-Programming.html#Coarray-Programming
-[TS 18508]: https://isotc.iso.org/livelink/livelink/nfetch/-8919044/8919782/8919787/16681398/ISO%2DIECJTC1%2DSC22%2DWG5_N2027_Draft_TS_18508_Additional_Paralle.pdf?nodeid=16769292&vernum=0
 [MPI]: https://www.mpi-forum.org/
 [GCC]: https://gcc.gnu.org
 [gfortran]: https://gcc.gnu.org/wiki/GFortran
-[opencoarrays module]: ./src/extensions/opencoarrays.F90
 [MPICH]: https://www.mpich.org
-[MVAPICH]: http://mvapich.cse.ohio-state.edu
-[OpenMPI]: https://www.open-mpi.org
 [Sourcery, Inc.]: http://www.sourceryinstitute.org
 [Google]: https://www.google.com
 [CINECA]: https://www.cineca.it/en
@@ -195,10 +180,6 @@ to aid in development efforts.
 [GASNet]: https://gasnet.lbl.gov
 [CONTRIBUTING.md]: ./CONTRIBUTING.md
 [GETTING_STARTED.md]: ./GETTING_STARTED.md
-[Google Groups]: https://groups.google.com/forum/#!homeredir
-[Google Group]: https://groups.google.com/forum/#!forum/opencoarrays
-[subscribing]: https://groups.google.com/forum/#!forum/opencoarrays/join
-[opencoarrays@googlegroups.com]: mailto:opencoarrays@googlegroups.com
 [Google Summer of Code]: https://www.google-melange.com/archive/gsoc/2014/orgs/gcc
 
 [Issues]: https://github.com/sourceryinstitute/OpenCoarrays/issues
