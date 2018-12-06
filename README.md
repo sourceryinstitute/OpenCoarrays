@@ -41,8 +41,7 @@ need change to switch parallel programming models.  The default
 programming model is MPI because it provides the broadest capability
 for supporting Fortran 2018  features.  However, having the option to
 change parallel programming models at link-time may enhance portability
-and performance (see [Rouson et al. (2017)]).<!-- and [Rasmussen et al. (2018)]). -->
-<!-- Rasmussen et al. link is to a private repo that no one can access -->
+and performance (see [Rouson et al. (2017)]).
 
 OpenCoarrays provides a compiler wrapper (`caf`), parallel runtime
 libraries (`libcaf_mpi` and `libcaf_openshmem`), and a parallel
@@ -199,5 +198,6 @@ to aid in development efforts.
 [pdf img]: https://img.shields.io/badge/PDF-README.md-6C2DC7.svg?style=flat-square "Download this readme as a PDF"
 [twitter img]: https://img.shields.io/twitter/url/http/shields.io.svg?style=social
 [Writing Fortran 2018 Today]: https://www.eventbrite.com/e/writing-fortran-2018-today-object-oriented-parallel-programming-tickets-48982176007
+[Rouson et al. (2017)]: http://www.opencoarrays.org/uploads/6/9/7/4/69747895/a4-rouson.pdf
 
 [default tweet]: https://twitter.com/intent/tweet?hashtags=HPC,Fortran,PGAS&related=zbeekman,gnutools,HPCwire,HPC_Guru,hpcprogrammer,SciNetHPC,DegenerateConic,jeffdotscience,travisci&text=Stop%20programming%20w%2F%20the%20%23MPI%20docs%20in%20your%20lap%2C%20try%20Coarray%20Fortran%20w%2F%20OpenCoarrays%20%26%20GFortran!&url=https%3A//github.com/sourceryinstitute/OpenCoarrays
