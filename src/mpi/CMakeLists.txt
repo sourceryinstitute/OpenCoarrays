@@ -221,7 +221,13 @@ set(CMAKE_REQUIRED_FLAGS ${old_cmake_required_flags})
 set(CMAKE_REQUIRED_LIBRARIES ${old_cmake_required_libraries})
 
 if(MPI_HAS_FAULT_TOL_EXT) # AND (NOT openmpi))
-  option(CAF_ENABLE_FAILED_IMAGES "Enable failed images support" TRUE)
+  option(CAF_ENABLE_FAILED_IMAGES "Enable failed images support" FALSE)
+  message(STATUS "The MPI implementation appears to have the experimental features for ULFM
+that will allow you to build OpenCoarrays with failed images support. However,
+ULFM support did not make it into the MPI-4 standard, and it is known to
+trigger some bugs. Because of this we have disabled it by default. You may
+add the `-DCAF_ENABLE_FAILED_IMAGES:BOOL=ON` CMake flag or edit the value
+with ccmake or cmake-gui if you would like to experiment with failed images.")
 else()
   set(CAF_ENABLE_FAILED_IMAGES FALSE
     CACHE

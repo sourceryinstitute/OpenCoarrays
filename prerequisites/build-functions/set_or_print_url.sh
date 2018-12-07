@@ -71,9 +71,13 @@ else
     "flex;flex-${version_to_build-}.tar.bz2"
     "bison;bison-${version_to_build-}.tar.gz"
     "make;make-${version_to_build-}.tar.bz2"
-    "cmake;cmake-${version_to_build-}.tar.gz"
     "subversion;subversion-${version_to_build-}.tar.gz"
   )
+  if [[ $(uname) == "Linux" ]]; then
+    package_url_tail+=("cmake;cmake-${version_to_build}-Linux-x86_64.sh")
+  else
+    package_url_tail+=("cmake;cmake-${version_to_build-}.tar.gz")
+  fi
   for package in "${package_url_tail[@]}" ; do
      KEY="${package%%;*}"
      VALUE="${package##*;}"
@@ -83,6 +87,7 @@ else
        break
      fi
   done
+
 
   if [[ -z "${url_head:-}" || -z "${url_tail}" ]]; then
     emergency "Package ${package_name:-} not recognized.  Use --l or --list-packages to list the allowable names."

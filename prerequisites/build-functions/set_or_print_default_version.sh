@@ -26,7 +26,7 @@ set_or_print_default_version()
   # denominator because, for licensing reasons, OS X only has bash 3 by default.)
   # See http://stackoverflow.com/questions/1494178/how-to-define-hash-tables-in-bash
   package_version=(
-    "cmake:3.4.0"
+    "cmake:3.10.0"
     "gcc:8.2.0"
     "mpich:3.2"
     "wget:1.16.3"
