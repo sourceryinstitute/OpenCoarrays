@@ -13,6 +13,7 @@ env:
     - MPICH_GCC7_BOT_URL_HEAD="https://github.com/sourceryinstitute/OpenCoarrays/files/1956441/"
     - MPICH_BOT_URL_TAIL="mpich-3.2.1_1.high_sierra.bottle.1.tar.gz"
     - BUILD_TYPES="Debug RelWithDebInfo Release CodeCoverage"
+    - PATH="${HOME}/.local/bin:$PATH"
   # matrix:
   #   - GCC="6 7" OSX_PACKAGES="gcc@7 gcc@6 cmake shellcheck" BUILD_TYPE="cmake"
 
