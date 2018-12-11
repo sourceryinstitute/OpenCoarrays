@@ -3094,8 +3094,8 @@ static void \
 redux_char_by_reference_adapter (void *invec, void *inoutvec, int *len,
       MPI_Datatype *datatype)
 {
-  long int string_len;
-  MPI_Type_extent(*datatype, &string_len);
+  long int lb, string_len; // this should be MPI_Aint
+  MPI_Type_extent(*datatype, &lb, &string_len);
   for(int i = 0; i < *len; i++)
     {
       /* The length of the result is fixed, i.e., no deferred string length is
