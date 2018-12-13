@@ -210,7 +210,7 @@ foreach(symbol ${NEEDED_SYMBOLS})
   CHECK_SYMBOL_EXISTS(${symbol} "${MPI_HEADERS}" HAVE_${symbol})
   if(NOT HAVE_${symbol})
     message( STATUS "\${HAVE_${symbol}} = ${HAVE_${symbol}}")
-    message( WARNING
+    message( STATUS
       "Note: Failed Images not supported by the current MPI implementation! (Needs MPIX experimental features--as of MPI3)")
     set(MPI_HAS_FAULT_TOL_EXT NO)
     break() # no need to keep looking
