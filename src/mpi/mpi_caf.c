@@ -1009,8 +1009,8 @@ finalize_internal(int status_code)
   if (status_code == 0)
   {
     /* In finalization do not report stopped or failed images any more. */
-    ierr = MPI_Errhandler_set(CAF_COMM_WORLD, MPI_ERRORS_RETURN); chk_err(ierr);
-    ierr = MPI_Errhandler_set(alive_comm, MPI_ERRORS_RETURN); chk_err(ierr);
+    ierr = MPI_Comm_set_errhandler(CAF_COMM_WORLD, MPI_ERRORS_RETURN); chk_err(ierr);
+    ierr = MPI_Comm_set_errhandler(alive_comm, MPI_ERRORS_RETURN); chk_err(ierr);
     /* Only add a conventional barrier to prevent images rom quitting too
      * early, when this images is not failing. */
     dprint("Before MPI_Barrier(CAF_COMM_WORLD)\n");
