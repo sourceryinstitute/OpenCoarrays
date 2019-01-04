@@ -156,13 +156,15 @@ usage() {
   echo "   --wraps, -w,             Report info about the wrapped MPI launcher"
   echo "   -np <N>,                 Number of images, N, to execute, N must be a positive integer"
   echo "   -n <N>,                  Same as -np"
-  echo "   --reenable-auto-cleanup  Turn off failed images support (if library support is present)"
-  echo "                            This option re-enables MPI auto cleanup, which is disabled by"
-  echo "                            by default if GFortran/OpenCoarrays/MPI all support failed"
-  echo "                            images through MPI ULFM. When MPI auto cleanup is disabled and"
-  echo "                            failed image support is present, OpenCoarrays triggers cleanup"
-  echo "                            explicitly when a failed/stopped image is encountered in an"
-  echo "                            image control statement without a \`stat=\` clause."
+  if [[ ${have_failed_img} != 'false' ]]; then
+    echo "   --disable-failed-images  Turn off failed images support (if library support is present)"
+    echo "                            This option re-enables MPI auto cleanup, which is disabled by"
+    echo "                            by default if GFortran/OpenCoarrays/MPI all support failed"
+    echo "                            images through MPI ULFM. When MPI auto cleanup is disabled and"
+    echo "                            failed image support is present, OpenCoarrays triggers cleanup"
+    echo "                            explicitly when a failed/stopped image is encountered in an"
+    echo "                            image control statement without a \`stat=\` clause."
+  fi
   echo "   --show, -s,              Show the command that the wrapper will execute. You can pass"
   echo "                            this as the first argument and then the additional arguments"
   echo "                            that you're planning to pass to perform a dry run."
@@ -175,7 +177,9 @@ usage() {
   echo "   ${cmd} --help"
   echo "   ${cmd} --show"
   echo "   ${cmd} -s -np 4 my_exe"
-  echo "   ${cmd} -np 4 --reenable-auto-cleanup ./my_exe arg1 arg2"
+  if [[ ${have_failed_img} != 'false' ]]; then
+    echo "   ${cmd} -np 4 --disable-failed-images ./my_exe arg1 arg2"
+  fi
   echo ""
   echo " Notes:"
   echo "   [options] must be a CAF executable file, one of the above arguments,"
@@ -187,25 +191,32 @@ i=0
 disable_failed_images=false
 for arg in "${@}"; do
   ((i+=1))
-  if [[ "${arg}" == "--reenable-auto-cleanup" ]]; then
+  if [[ "${arg}" == "--disable-failed-images" ]]; then
     # Strip "--reenable-auto-cleanup" from args
     set -- "${@:1:$((i - 1))}" "${@:$((i+1)):$((${#} - i))}"
-    if ! ${have_failed_img}; then
-      echo "Library was not built with failed image support, so passing \`--reenable-auto-cleanup\` is a noop" >&2
+    if [[ ${have_failed_img} == 'false' ]]; then
+      echo "Library was not built with failed image support, so passing \`--disable-failed-images\` is a noop" >&2
     fi
     disable_failed_images=true
   fi
 done
 
 if ! ${disable_failed_images}; then
-  if ${have_failed_img}; then
+  if [[ ${have_failed_img} == 'mpich' ]]; then
     if [[ -n "${preflags:-}" ]]; then
       preflags+=(--disable-auto-cleanup)
     else
       preflags=(--disable-auto-cleanup)
     fi
   fi
+elif [[ ${have_failed_img} == 'ulfm2' ]]; then
+  if [[ -n "${preflags:-}" ]]; then
+    preflags+=(--disable-recovery)
+  else
+    preflags=(--disable-recovery)
+  fi
 fi
+
 
 # Print useage information if caf is invoked without arguments
 if ((${#} == 0)); then
