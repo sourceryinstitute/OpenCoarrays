@@ -173,12 +173,12 @@ find_or_install()
 
         else
 
-          export minimum_acceptable_version=$(./build.sh -V gcc)
-          info "$this_script: Checking whether $executable in PATH wraps gfortran version >= $minimum_acceptable_version... "
+          export minimum_compiler_version=$(./build.sh -V gcc)
+          info "$this_script: Checking whether $executable in PATH wraps gfortran version >= $minimum_compiler_version... "
           $executable acceptable_compiler.f90 -o acceptable_compiler || true;
           $executable print_true.f90 -o print_true || true;
           if [[ -f ./acceptable_compiler && -f ./print_true ]]; then
-            acceptable=$(./acceptable_compiler $minimum_acceptable_version)
+            acceptable=$(./acceptable_compiler $minimum_compiler_version)
             is_true=$(./print_true)
             rm acceptable_compiler print_true
           else
@@ -279,8 +279,8 @@ find_or_install()
       $executable -o print_true print_true.f90 || true;
       if [[ -f ./acceptable_compiler && -f ./print_true ]]; then
         is_true=$(./print_true)
-        info "Executing './acceptable_compiler $minimum_acceptable_version'"
-        acceptable=$(./acceptable_compiler $minimum_acceptable_version)
+        info "Executing './acceptable_compiler $minimum_version'"
+        acceptable=$(./acceptable_compiler $minimum_version)
         rm acceptable_compiler print_true
       else
         acceptable=false
