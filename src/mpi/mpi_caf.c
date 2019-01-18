@@ -8152,12 +8152,10 @@ PREFIX(get_communicator) (caf_team_t *team)
 int
 PREFIX(team_number) (caf_team_t *team)
 {
-  if (team != NULL) caf_runtime_error("team_number does not yet support "
-                                      "the optional team argument");
-
-  // if (used_teams->prev == NULL) 
-  //   return -1;
-  return used_teams->team_list_elem->team_id;
+  if (team != NULL)
+    return ((caf_teams_list *)team)->team_id;
+  else
+    return used_teams->team_list_elem->team_id; /* current team */
 }
 
 void PREFIX(end_team) (caf_team_t *team __attribute__((unused)))

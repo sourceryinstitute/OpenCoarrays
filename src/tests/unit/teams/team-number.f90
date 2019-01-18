@@ -36,7 +36,9 @@ program main
 
   integer, parameter :: standard_initial_value=-1
 
-  type(team_type), target :: home
+  type(team_type) :: parent, child
+
+  if (num_images() < 8) error stop "I need at least 8 images to function."
 
   call assert(team_number()==standard_initial_value,"initial team number conforms with Fortran standard before 'change team'")
 
@@ -46,11 +48,17 @@ program main
    !! TODO: uncomment the above assertion after implementing support for team_number's optional argument:
 
   after_change_team: block
-    associate(my_team=>mod(this_image(),2)+1)
+    associate(parent_team_number => 100 + (num_images()-1)/4, child_team_number => 1000 + mod(num_images()-1,4)/2)
       !! Prepare for forming two teams: my_team = 1 for even image numbers in the initial team; 2 for odd image numbers
-      form team(my_team,home)
-      change team(home)
-        call assert(team_number()==my_team,"team number conforms with Fortran standard after 'change team'")
+      form team(parent_team_number,parent)
+      change team(parent)
+        call assert(team_number()==parent_team_number,"team number conforms with Fortran standard after 'change team'")
+        form team (child_team_number, child)
+        change team(child)
+          call assert(team_number()==child_team_number,"team number conforms with Fortran standard after 'change team'")
+          call assert(team_number(child)==child_team_number,"team_number(child) conforms with Fortran standard after 'change team'")
+          call assert(team_number(parent)==parent_team_number,"team_number(parent) conforms with Fortran standard")
+        end team
       end team
       call assert(team_number()==standard_initial_value,"initial team number conforms with Fortran standard")
     end associate
