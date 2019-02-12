@@ -31,7 +31,7 @@ program main
   !! summary: Test team_number intrinsic function
   use iso_fortran_env, only : team_type
   use iso_c_binding, only : c_loc
-  use opencoarrays_assertions_interface, only : assert
+  use oc_assertions_interface, only : assert
 
   implicit none
 

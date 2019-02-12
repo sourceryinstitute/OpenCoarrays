@@ -1,7 +1,7 @@
 #ifndef USE_ASSERTIONS
 # define USE_ASSERTIONS .false.
 #endif
-module opencoarrays_assertions_interface
+module oc_assertions_interface
   !! author: Damian Rouson
   !!
   !! Utility for runtime checking of logical assertions.
@@ -61,4 +61,4 @@ module opencoarrays_assertions_interface
         !! Optional informational message allocated only if assertion==.false. .and. present(success)
     end subroutine
   end interface
-end module opencoarrays_assertions_interface
+end module oc_assertions_interface

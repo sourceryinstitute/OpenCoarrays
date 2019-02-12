@@ -1,4 +1,4 @@
-submodule(opencoarrays_assertions_interface) opencoarrays_assertions_implementation
+submodule(oc_assertions_interface) oc_assertions_implementation
   !! Define the assert procedure
 
   implicit none
@@ -67,4 +67,4 @@ contains
 
   end procedure
 
-end submodule opencoarrays_assertions_implementation
+end submodule oc_assertions_implementation
