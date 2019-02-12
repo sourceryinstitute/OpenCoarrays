@@ -29,7 +29,7 @@ contains
 
     pure subroutine set(msg)
 
-      use object_interface, only : object
+      use opencoarrays_object_interface, only : object
         !! import abstract type with generic binding supporting user-defined derived type output
 
       character(len=:), intent(out),  allocatable :: msg

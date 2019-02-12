@@ -32,7 +32,7 @@ if ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "GNU" )
 endif()
 
 add_library( oc_test_interfaces OBJECT
-  object_interface.f90
+  opencoarrays_object_interface.f90
   opencoarrays_assertions_interface.F90
   )
 add_library( opencoarrays_test_utilities
