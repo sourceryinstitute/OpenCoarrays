@@ -1,6 +1,6 @@
 ! BSD 3-Clause License
 !
-! Copyright (c) 2018, Sourcery Institute
+! Copyright (c) 2018-2019, Sourcery Institute
 ! All rights reserved.
 !
 ! Redistribution and use in source and binary forms, with or without
@@ -31,6 +31,7 @@ program main
   !! summary: Test team_number intrinsic function
   use iso_fortran_env, only : team_type
   use iso_c_binding, only : c_loc
+  use oc_assertions_interface, only : assert
 
   implicit none
 
@@ -58,19 +59,5 @@ program main
 
   sync all
   if (this_image()==1) print *,"Test passed."
-
-contains
-
-  elemental subroutine assert(assertion,description)
-    !! TODO: move this to a common place for all tests to use
-    logical, intent(in) :: assertion
-    character(len=*), intent(in) :: description
-    integer, parameter :: max_digits=12
-    character(len=max_digits) :: image_number
-    if (.not.assertion) then
-      write(image_number,*) this_image()
-      error stop "Assertion " // description // "failed on image " // trim(image_number)
-    end if
-  end subroutine
 
 end program

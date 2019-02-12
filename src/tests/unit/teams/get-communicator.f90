@@ -30,6 +30,7 @@
 program main
   !! summary: Test get_commiunicator function, an OpenCoarrays-specific language extension
   use opencoarrays, only : get_communicator
+  use oc_assertions_interface, only : assert
 
   implicit none
 
@@ -97,18 +98,6 @@ contains
     call assert( ierror==0 , "successful call MPI_COMM_RANK" )
     call assert( irank==this_image()-1 , "correct rank/image-number correspondence" )
 
-  end subroutine
-
-  elemental subroutine assert(assertion,description)
-    !! TODO: move this to a common place for all tests to use
-    logical, intent(in) :: assertion
-    character(len=*), intent(in) :: description
-    integer, parameter :: max_digits=12
-    character(len=max_digits) :: image_number
-    if (.not.assertion) then
-      write(image_number,*) this_image()
-      error stop "Assertion '" // description // "' failed on image " // trim(image_number)
-    end if
   end subroutine
 
 end program
