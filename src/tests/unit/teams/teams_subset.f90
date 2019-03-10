@@ -3,7 +3,7 @@ program teams_subset
   !!
   !! Regression test for prior potential deadlock in change team/end team
   use iso_fortran_env, only : team_type
-  use assertions_interface, only : assert
+  use oc_assertions_interface, only : assert
   implicit none
 
   type(team_type) team

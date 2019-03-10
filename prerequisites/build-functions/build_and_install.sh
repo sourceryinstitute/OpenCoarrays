@@ -37,9 +37,13 @@ build_and_install()
       export cmake_binary_installer="${download_path}/cmake-${version_to_build}-Linux-x86_64.sh"
       ${SUDO:-} mkdir -p "$install_path"
       chmod u+x "${cmake_binary_installer}"
+      if [[ ! -z "${SUDO:-}" ]]; then
+        info "You do not have write permissions to the installation path ${install_path}"
+        info "If you have administrative privileges, enter your password to install ${package_to_build}"
+      fi
       info "Installing Cmake with the following command: "
-      info "\"${cmake_binary_installer}\" --prefix=\"$install_path\" --exclude-subdir"
-      "${cmake_binary_installer}" --prefix="$install_path" --exclude-subdir
+      info "${SUDO:-} \"${cmake_binary_installer}\" --prefix=\"$install_path\" --exclude-subdir"
+      ${SUDO:-} "${cmake_binary_installer}" --prefix="$install_path" --exclude-subdir
 
     else # build from source
 

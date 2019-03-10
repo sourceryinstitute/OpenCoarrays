@@ -1,4 +1,4 @@
-submodule(assertions_interface) assertions_implementation
+submodule(oc_assertions_interface) oc_assertions_implementation
   !! Define the assert procedure
 
   implicit none
@@ -29,7 +29,7 @@ contains
 
     pure subroutine set(msg)
 
-      use object_interface, only : object
+      use opencoarrays_object_interface, only : object
         !! import abstract type with generic binding supporting user-defined derived type output
 
       character(len=:), intent(out),  allocatable :: msg
@@ -67,4 +67,4 @@ contains
 
   end procedure
 
-end submodule
+end submodule oc_assertions_implementation

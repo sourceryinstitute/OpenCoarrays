@@ -1,7 +1,7 @@
 #ifndef USE_ASSERTIONS
 # define USE_ASSERTIONS .false.
 #endif
-module assertions_interface
+module oc_assertions_interface
   !! author: Damian Rouson
   !!
   !! Utility for runtime checking of logical assertions.
@@ -24,7 +24,7 @@ module assertions_interface
   !! ----------
   !!    Pass the optional success argument & check for false return value as an indication of assertion failure:
   !!
-  !!    use assertions_interface, only : assert,assertions
+  !!    use opencoarrays_assertions_interface, only : assert, assertions
   !!    if (assertions) call assert( 2 > 1, "always true inequality", success)
   !!    if (error_code/=0) call my_error_handler()
   !!
@@ -32,7 +32,7 @@ module assertions_interface
   !! ----------
   !!    Error-terminate if the assertion fails:
   !!
-  !!    use assertions_interface, only : assert,assertions
+  !!    use opencoarrays_assertions_interface, only : assert,assertions
   !!    if (assertions) call assert( 2 > 1, "always true inequality")
   !!
   implicit none
@@ -61,4 +61,4 @@ module assertions_interface
         !! Optional informational message allocated only if assertion==.false. .and. present(success)
     end subroutine
   end interface
-end module
+end module oc_assertions_interface
