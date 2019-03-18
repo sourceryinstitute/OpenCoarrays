@@ -39,6 +39,9 @@ target_link_libraries(caf_mpi_static
   PUBLIC ${MPI_C_LINK_FLAGS}
   PUBLIC ${MPI_C_LIBRARIES}
   PRIVATE opencoarrays_mod)
+set_target_properties(caf_mpi_static
+  PROPERTIES
+  POSITION_INDEPENDENT_CODE TRUE)
 target_include_directories(caf_mpi
   PUBLIC $<$<COMPILE_LANGUAGE:C>:${MPI_C_INCLUDE_PATH}>)
 target_include_directories(caf_mpi_static
