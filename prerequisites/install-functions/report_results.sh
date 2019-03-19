@@ -69,10 +69,10 @@ report_results()
     if [[ -d "${compiler_install_root%/}/lib" || -d "${compiler_install_root%/}/lib64" ]]; then
       echo "# Prepend the compiler library paths to the ${LD_LIB_P_VAR} environment variable:" | tee -a setup.sh setup.csh
       compiler_lib_paths="${compiler_install_root%/}/lib64/:${compiler_install_root%/}/lib"
-      echo "if [[ -z \"\${!${LD_LIB_P_VAR}}\" ]]; then                                    " >> setup.sh
+      echo "if [[ -z \"\${${LD_LIB_P_VAR}}\" ]]; then                                    " >> setup.sh
       echo "  export ${LD_LIB_P_VAR}=\"${compiler_lib_paths%/}\"                          " >> setup.sh
       echo "else                                                                          " >> setup.sh
-      echo "  export ${LD_LIB_P_VAR}=\"${compiler_lib_paths%/}:\${!${LD_LIB_P_VAR}}\"     " >> setup.sh
+      echo "  export ${LD_LIB_P_VAR}=\"${compiler_lib_paths%/}:\${${LD_LIB_P_VAR}}\"     " >> setup.sh
       echo "fi                                                                            " >> setup.sh
       echo "setenv LD_LIBRARY_PATH \"${compiler_lib_paths%/}:\${LD_LIBRARY_PATH}\"        " >> setup.csh
     fi
