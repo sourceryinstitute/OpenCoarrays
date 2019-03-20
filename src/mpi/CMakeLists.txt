@@ -26,8 +26,10 @@ target_compile_options(opencoarrays_mod
 target_link_libraries(opencoarrays_mod
   PUBLIC ${MPI_Fortran_LINK_FLAGS}
   PUBLIC ${MPI_Fortran_LIBRARIES})
-target_include_directories(opencoarrays_mod
-  PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:${MPI_Fortran_INCLUDE_PATH}>)
+target_include_directories(opencoarrays_mod PUBLIC
+  $<$<COMPILE_LANGUAGE:Fortran>:${MPI_Fortran_INCLUDE_PATH}>
+  $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_INCLUDEDIR}/${mod_dir_tail}>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${mod_dir_tail}>)
 
 add_library(caf_mpi SHARED mpi_caf.c ../common/caf_auxiliary.c)
 add_library(caf_mpi_static STATIC  mpi_caf.c ../common/caf_auxiliary.c)
@@ -42,10 +44,14 @@ target_link_libraries(caf_mpi_static
 set_target_properties(caf_mpi_static
   PROPERTIES
   POSITION_INDEPENDENT_CODE TRUE)
-target_include_directories(caf_mpi
-  PUBLIC $<$<COMPILE_LANGUAGE:C>:${MPI_C_INCLUDE_PATH}>)
-target_include_directories(caf_mpi_static
-  PUBLIC $<$<COMPILE_LANGUAGE:C>:${MPI_C_INCLUDE_PATH}>)
+target_include_directories(caf_mpi PUBLIC
+  $<$<COMPILE_LANGUAGE:C>:${MPI_C_INCLUDE_PATH}>
+  $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+target_include_directories(caf_mpi_static PUBLIC
+  $<$<COMPILE_LANGUAGE:C>:${MPI_C_INCLUDE_PATH}>
+  $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 target_compile_options(caf_mpi
   PUBLIC $<$<COMPILE_LANGUAGE:C>:${MPI_C_COMPILE_FLAGS}>)
 target_compile_options(caf_mpi_static

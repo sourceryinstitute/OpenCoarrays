@@ -1,7 +1,13 @@
 cmake_minimum_required(VERSION 3.10)
 
-cmake_policy(VERSION 3.10...3.12)
+cmake_policy(VERSION 3.10...3.14)
 
+set(CMAKE_SKIP_RPATH ON
+  CACHE BOOL "Don't add a build-dir rpath")
+set(CMAKE_BUILD_WITH_INSTALL_RPATH ON
+  CACHE BOOL "Build using the install rpath")
+set(CMAKE_BUILD_RPATH_USE_ORIGIN ON
+  CACHE BOOL "Use relative rpaths")
 # Set the type/configuration of build to perform
 set ( CMAKE_CONFIGURATION_TYPES "Debug" "Release" "MinSizeRel" "RelWithDebInfo" "CodeCoverage" )
 set ( CMAKE_BUILD_TYPE "Release"
@@ -87,6 +93,11 @@ string(REGEX REPLACE "-rc[0-9]+$"
        "${OpenCoarraysVersion}")
 
 project(opencoarrays VERSION "${OPENCOARRAYS_CMAKE_PROJECT_VERSION}" LANGUAGES C Fortran)
+
+if(DEFINED CMAKE_BUILD_TYPE AND "${CMAKE_BUILD_TYPE}" MATCHES "[Rr][Ee][Ll]")
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fno-working-directory")
+  set(CMAKE_C_FLAGS       "${CMAKE_C_FLAGS} -fno-working-directory")
+endif()
 
 message( STATUS "Building OpenCoarrays version: ${full_git_describe}" )
 set(OpenCoarrays_dist_string "OpenCoarrays-${full_git_describe}")
@@ -483,7 +494,6 @@ set(CMAKE_C_COMPILE_FLAGS "${CMAKE_C_COMPILE_FLAGS} ${MPI_C_COMPILE_FLAGS}")
 set(CMAKE_C_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} ${MPI_C_LINK_FLAGS}")
 set(CMAKE_Fortran_COMPILE_FLAGS "${CMAKE_Fortran_COMPILE_FLAGS} ${MPI_Fortran_COMPILE_FLAGS}")
 set(CMAKE_Fortran_LINK_FLAGS "${CMAKE_Fortran_LINK_FLAGS} ${MPI_Fortran_LINK_FLAGS}")
-include_directories(BEFORE ${MPI_C_INCLUDE_PATH} ${MPI_Fortran_INCLUDE_PATH})
 
 #---------------------------------------------------
 # Use standardized GNU install directory conventions
@@ -591,8 +601,6 @@ define_property(TARGET
 #-------------------------------
 # Recurse into the src directory
 #-------------------------------
-include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR}/src)
-
 add_subdirectory(src)
 
 #-----------------------------------------------------
