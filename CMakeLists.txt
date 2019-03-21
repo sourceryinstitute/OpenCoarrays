@@ -537,8 +537,9 @@ function(caf_compile_executable target main_depend)
                  -o "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target}"
                  "${CMAKE_CURRENT_SOURCE_DIR}/${main_depend}"
 		 "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libopencoarrays_test_utilities.a"
+		 "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libopencoarrays_mod.a"
 		 ${ARGN}
-      DEPENDS "${main_depend}" ${ARGN} caf_mpi_static opencoarrays_test_utilities
+      DEPENDS "${main_depend}" ${ARGN} caf_mpi_static opencoarrays_test_utilities opencoarrays_mod
       VERBATIM
       )
   add_custom_target("build_${target}" ALL
