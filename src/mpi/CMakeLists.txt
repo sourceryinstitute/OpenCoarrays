@@ -26,6 +26,8 @@ target_compile_options(opencoarrays_mod
 target_link_libraries(opencoarrays_mod
   PUBLIC ${MPI_Fortran_LINK_FLAGS}
   PUBLIC ${MPI_Fortran_LIBRARIES})
+target_link_libraries(opencoarrays_mod
+  PUBLIC caf_mpi_static)
 target_include_directories(opencoarrays_mod PUBLIC
   $<$<COMPILE_LANGUAGE:Fortran>:${MPI_Fortran_INCLUDE_PATH}>
   $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_INCLUDEDIR}/${mod_dir_tail}>
@@ -35,12 +37,10 @@ add_library(caf_mpi SHARED mpi_caf.c ../common/caf_auxiliary.c)
 add_library(caf_mpi_static STATIC  mpi_caf.c ../common/caf_auxiliary.c)
 target_link_libraries(caf_mpi
   PUBLIC ${MPI_C_LINK_FLAGS}
-  PUBLIC ${MPI_C_LIBRARIES}
-  PRIVATE opencoarrays_mod)
+  PUBLIC ${MPI_C_LIBRARIES})
 target_link_libraries(caf_mpi_static
   PUBLIC ${MPI_C_LINK_FLAGS}
-  PUBLIC ${MPI_C_LIBRARIES}
-  PRIVATE opencoarrays_mod)
+  PUBLIC ${MPI_C_LIBRARIES})
 set_target_properties(caf_mpi_static
   PROPERTIES
   POSITION_INDEPENDENT_CODE TRUE)
@@ -83,7 +83,7 @@ if(UNIX)
 endif()
 
 install(DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_INCLUDEDIR}/" DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
-  FILES_MATCHING PATTERN "*.mod")
+  FILES_MATCHING PATTERN "opencoarrays.mod")
 
 set_target_properties( caf_mpi_static
   PROPERTIES
@@ -92,22 +92,15 @@ set_target_properties( caf_mpi_static
 )
 
 if (gfortran_compiler)
-  target_compile_options(caf_mpi INTERFACE $<$<COMPILE_LANGUAGE:Fortran>:"-fcoarray=lib">)
-  target_compile_options(caf_mpi_static INTERFACE $<$<COMPILE_LANGUAGE:Fortran>:"-fcoarray=lib">)
+  target_compile_options(caf_mpi INTERFACE $<$<COMPILE_LANGUAGE:Fortran>:-fcoarray=lib>)
+  target_compile_options(caf_mpi_static INTERFACE $<$<COMPILE_LANGUAGE:Fortran>:-fcoarray=lib>)
 endif()
 
-install(TARGETS opencoarrays_mod EXPORT OpenCoarraysTargets
+install(TARGETS opencoarrays_mod caf_mpi caf_mpi_static EXPORT OpenCoarraysTargets
   DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-)
-install(TARGETS caf_mpi EXPORT OpenCoarraysTargets
-  DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-)
-install(TARGETS caf_mpi_static EXPORT OpenCoarraysTargets
   ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
   LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-  )
+)
 
 #----------------------------------
 # Determine if we're using Open MPI
@@ -134,12 +127,14 @@ elseif("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "PGI")
 endif()
 
 if(gfortran_compiler AND (NOT opencoarrays_aware_compiler))
-  target_compile_definitions(opencoarrays_mod PUBLIC -DCOMPILER_SUPPORTS_CAF_INTRINSICS)
+  target_compile_definitions(opencoarrays_mod
+    PUBLIC -DCOMPILER_SUPPORTS_CAF_INTRINSICS)
 endif()
 
 option(CAF_EXPOSE_INIT_FINALIZE "Expose caf_init and caf_finalize in opencoarrays module" FALSE)
 if(CAF_EXPOSE_INIT_FINALIZE)
-  target_compile_definitions(opencoarrays_mod PRIVATE -DEXPOSE_INIT_FINALIZE)
+  target_compile_definitions(opencoarrays_mod
+    PRIVATE -DEXPOSE_INIT_FINALIZE)
 endif()
 
 include(CheckIncludeFile)

@@ -222,7 +222,7 @@ endif()
 
 if(gfortran_compiler)
   set(OLD_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
-  set(CMAKE_REQUIRED_FLAGS $<$<COMPILE_LANGUAGE:Fortran>:"-fcoarray=single -ffree-form">)
+  set(CMAKE_REQUIRED_FLAGS $<$<COMPILE_LANGUAGE:Fortran>:-fcoarray=single -ffree-form>)
 endif()
 include(CheckFortranSourceCompiles)
 CHECK_Fortran_SOURCE_COMPILES("
@@ -628,10 +628,6 @@ install(
   DESTINATION
     "${CMAKE_INSTALL_LIBDIR}/cmake/opencoarrays"
 )
-
-add_library(OpenCoarrays INTERFACE)
-target_compile_options(OpenCoarrays INTERFACE $<$<COMPILE_LANGUAGE:Fortran>:"-fcoarray=lib")
-target_link_libraries(OpenCoarrays INTERFACE caf_mpi)
 
 #------------------------------------------
 # Add portable unistall command to makefile
