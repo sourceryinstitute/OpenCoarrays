@@ -68,6 +68,8 @@ for version in ${GCC}; do
 		ctest "${CTEST_FLAGS[@]}"
 	    fi
 	    make install
+	    make hash_installed
+	    make install
 	    make uninstall
 	)
     done
