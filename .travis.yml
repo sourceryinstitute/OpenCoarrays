@@ -7,7 +7,6 @@ env:
   global:
     - ZERO_AR_DATE=1
     - TZ=UTC
-    - LC_ALL=C
     - CACHE="${HOME}/.local"
     - MPICH_VER="3.2.1"
     - MPICH_URL_HEAD="https://www.mpich.org/static/downloads/${MPICH_VER}"
