@@ -5,7 +5,7 @@ os: osx
 
 env:
   global:
-    - ZERO_AR_DATE=1
+#    - ZERO_AR_DATE=1
     - TZ=UTC
     - CACHE="${HOME}/.local"
     - MPICH_VER="3.2.1"
@@ -105,7 +105,7 @@ install:
 script:
   - pwd
   - export SOURCE_DATE_EPOCH=$(git show -s --format=%ct $TRAVIS_COMMIT)
-  - echo "SOURCE_DATE_EPOCH = ${COURCE_DATE_EPOCH}"
+  - echo "SOURCE_DATE_EPOCH = ${SOURCE_DATE_EPOCH}"
   - ./developer-scripts/travis/test-script.${BUILD_TYPE:-cmake}.sh
 
 after_script:
