@@ -647,6 +647,14 @@ add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure)
 # See JSON-Fortran's CMakeLists.txt file to find out how to get the check target to depend
 # on the test executables
 
+#------------------------------------
+# Add command to hash installed files
+#------------------------------------
+configure_file( "${CMAKE_SOURCE_DIR}/cmake/hash-installed.cmake.in" "${CMAKE_BINARY_DIR}/hash-installed.cmake"
+  @ONLY)
+add_custom_target( hash_installed
+  COMMAND ${CMAKE_COMMAND} -P "${CMAKE_BINARY_DIR}/hash-installed.cmake")
+
 #---------------------------------------------------------------------------------------
 # Define macro for adding CAF tests, and ensuring proper flags are passed to MPI runtime
 #---------------------------------------------------------------------------------------
@@ -924,3 +932,7 @@ foreach(SCRIPT ${TRAVIS_SCRIPTS})
     lint_script("${CMAKE_SOURCE_DIR}/developer-scripts/travis" ${SCRIPT})
   endif()
 endforeach()
+
+install(FILES "${CMAKE_BINARY_DIR}/sha256_install_manifest.txt"
+  DESTINATION "${CMAKE_INSTALL_DATADIR}/opencoarrays"
+  OPTIONAL)
