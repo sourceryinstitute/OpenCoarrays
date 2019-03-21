@@ -1,7 +1,13 @@
 cmake_minimum_required(VERSION 3.10)
 
-cmake_policy(VERSION 3.10...3.12)
+cmake_policy(VERSION 3.10...3.14)
 
+set(CMAKE_SKIP_RPATH ON
+  CACHE BOOL "Don't add a build-dir rpath")
+set(CMAKE_BUILD_WITH_INSTALL_RPATH ON
+  CACHE BOOL "Build using the install rpath")
+set(CMAKE_BUILD_RPATH_USE_ORIGIN ON
+  CACHE BOOL "Use relative rpaths")
 # Set the type/configuration of build to perform
 set ( CMAKE_CONFIGURATION_TYPES "Debug" "Release" "MinSizeRel" "RelWithDebInfo" "CodeCoverage" )
 set ( CMAKE_BUILD_TYPE "Release"
@@ -87,6 +93,11 @@ string(REGEX REPLACE "-rc[0-9]+$"
        "${OpenCoarraysVersion}")
 
 project(opencoarrays VERSION "${OPENCOARRAYS_CMAKE_PROJECT_VERSION}" LANGUAGES C Fortran)
+
+if(DEFINED CMAKE_BUILD_TYPE AND "${CMAKE_BUILD_TYPE}" MATCHES "[Rr][Ee][Ll]")
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fno-working-directory")
+  set(CMAKE_C_FLAGS       "${CMAKE_C_FLAGS} -fno-working-directory")
+endif()
 
 message( STATUS "Building OpenCoarrays version: ${full_git_describe}" )
 set(OpenCoarrays_dist_string "OpenCoarrays-${full_git_describe}")
@@ -211,7 +222,7 @@ endif()
 
 if(gfortran_compiler)
   set(OLD_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
-  set(CMAKE_REQUIRED_FLAGS $<$<COMPILE_LANGUAGE:Fortran>:"-fcoarray=single -ffree-form">)
+  set(CMAKE_REQUIRED_FLAGS $<$<COMPILE_LANGUAGE:Fortran>:-fcoarray=single -ffree-form>)
 endif()
 include(CheckFortranSourceCompiles)
 CHECK_Fortran_SOURCE_COMPILES("
@@ -483,7 +494,6 @@ set(CMAKE_C_COMPILE_FLAGS "${CMAKE_C_COMPILE_FLAGS} ${MPI_C_COMPILE_FLAGS}")
 set(CMAKE_C_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} ${MPI_C_LINK_FLAGS}")
 set(CMAKE_Fortran_COMPILE_FLAGS "${CMAKE_Fortran_COMPILE_FLAGS} ${MPI_Fortran_COMPILE_FLAGS}")
 set(CMAKE_Fortran_LINK_FLAGS "${CMAKE_Fortran_LINK_FLAGS} ${MPI_Fortran_LINK_FLAGS}")
-include_directories(BEFORE ${MPI_C_INCLUDE_PATH} ${MPI_Fortran_INCLUDE_PATH})
 
 #---------------------------------------------------
 # Use standardized GNU install directory conventions
@@ -591,8 +601,6 @@ define_property(TARGET
 #-------------------------------
 # Recurse into the src directory
 #-------------------------------
-include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR}/src)
-
 add_subdirectory(src)
 
 #-----------------------------------------------------
@@ -621,10 +629,6 @@ install(
     "${CMAKE_INSTALL_LIBDIR}/cmake/opencoarrays"
 )
 
-add_library(OpenCoarrays INTERFACE)
-target_compile_options(OpenCoarrays INTERFACE $<$<COMPILE_LANGUAGE:Fortran>:"-fcoarray=lib")
-target_link_libraries(OpenCoarrays INTERFACE caf_mpi)
-
 #------------------------------------------
 # Add portable unistall command to makefile
 #------------------------------------------
@@ -638,6 +642,14 @@ add_custom_target ( uninstall
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure)
 # See JSON-Fortran's CMakeLists.txt file to find out how to get the check target to depend
 # on the test executables
+
+#------------------------------------
+# Add command to hash installed files
+#------------------------------------
+configure_file( "${CMAKE_SOURCE_DIR}/cmake/hash-installed.cmake.in" "${CMAKE_BINARY_DIR}/hash-installed.cmake"
+  @ONLY)
+add_custom_target( hash_installed
+  COMMAND ${CMAKE_COMMAND} -P "${CMAKE_BINARY_DIR}/hash-installed.cmake")
 
 #---------------------------------------------------------------------------------------
 # Define macro for adding CAF tests, and ensuring proper flags are passed to MPI runtime
@@ -916,3 +928,7 @@ foreach(SCRIPT ${TRAVIS_SCRIPTS})
     lint_script("${CMAKE_SOURCE_DIR}/developer-scripts/travis" ${SCRIPT})
   endif()
 endforeach()
+
+install(FILES "${CMAKE_BINARY_DIR}/sha256_install_manifest.txt"
+  DESTINATION "${CMAKE_INSTALL_DATADIR}/opencoarrays"
+  OPTIONAL)
