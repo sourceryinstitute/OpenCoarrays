@@ -60,7 +60,7 @@ report_results()
       echo "else                                                                          " >> setup.sh
       echo "  export PATH=\"${compiler_install_root%/}/bin:\${PATH}\"                     " >> setup.sh
       echo "fi                                                                            " >> setup.sh
-      echo "set path (\"${compiler_install_root%/}\"/bin \$path)                          " >> setup.csh
+      echo "set path = (\"${compiler_install_root%/}\"/bin \$path)                        " >> setup.csh
     fi
     LD_LIB_P_VAR=LD_LIBRARY_PATH
     if [[ "${OSTYPE:-}" =~ [Dd]arwin ]]; then
