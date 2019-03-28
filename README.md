@@ -190,7 +190,7 @@ to aid in development efforts.
 [Jupyter]: https://jupyter.org
 [index.ipynb]: https://nbviewer.jupyter.org/github/sourceryinstitute/jupyter-CAF-kernel/blob/master/index.ipynb
 
-[build img]: https://img.shields.io/travis-ci/sourceryinstitute/OpenCoarrays/master.svg?style=flat-square "Travis-CI build badge"
+[build img]: https://img.shields.io/travis/sourceryinstitute/OpenCoarrays.svg?style=flat-square "Build badge"
 [CI Master Branch]: https://travis-ci.org/sourceryinstitute/OpenCoarrays?branch=master "View Travis-CI builds"
 [download img]: https://img.shields.io/github/downloads/sourceryinstitute/OpenCoarrays/total.svg?style=flat-square "Download count badge"
 [license img]: https://img.shields.io/badge/license-BSD--3-blue.svg?style=flat-square "BSD-3 License badge"
