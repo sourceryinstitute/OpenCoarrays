@@ -42,5 +42,5 @@ before submitting a new issue.
 
 
 [links]:#
-[fenced codeblocks]: https://help.github.com/articles/creating-and-highlighting-code-blocks/
+[fenced code blocks]: https://help.github.com/articles/creating-and-highlighting-code-blocks/
 [CONTRIBUTING.md]: https://github.com/sourceryinstitute/OpenCoarrays/blob/master/CONTRIBUTING.md
