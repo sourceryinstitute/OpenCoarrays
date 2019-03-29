@@ -1901,8 +1901,11 @@ convert_with_strides(void *dst, int dst_type, int dst_kind,
   for (size_t i = 0; i < num; ++i)
   {
     convert_type(dst, dst_type, dst_kind, src, src_type, src_kind, stat);
-    dst += byte_dst_stride;
-    src += byte_src_stride;
+    //    dst += byte_dst_stride;
+    // TODO::: char* conversion is also correct here?
+    dst = (void *)((char *)dst + byte_dst_stride);
+    //    src += byte_src_stride;
+    src = (void *)((char *)src + byte_src_stride);
   }
 }
 
@@ -1930,6 +1933,7 @@ copy_char_to_self(void *src, int src_type, int src_size, int src_kind,
       /* Fill dest when source is too short. */
       if (dst_len > src_len)
       {
+         // TODO::: Fix arithmetic on pointer to void error
         int32_t * dest_addr = (int32_t *)(dst + dst_kind * src_len);
         const size_t pad_num = dst_len - src_len;
         if (dst_kind == 1)
@@ -2886,7 +2890,7 @@ PREFIX(send) (caf_token_t token, size_t offset, int image_index,
                           cfi_dest.get_base_addr(), dst_type, dst_size, dst_kind,
                           size, src_rank == 0);
       else
-        copy_to_self(cfi_src.get_desc(), src_kind, cfi_dest, dst_kind, size, stat);
+        copy_to_self(cfi_src.get_desc(), src_kind, cfi_dest.get_desc(), dst_kind, size, stat);
       return;
     }
     else
@@ -3259,8 +3263,10 @@ case kind:                                                              \
         {
           dprint("strided same_image, *WITH* temp, for i = %zd.\n", i);
           if (same_type_and_kind)
+            // TODO::: char* conversion for this void pointer arithmetic correct?
             memmove(t_buff + i * dst_size, sr, src_size);
           else
+            // TODO::: char* conversion for this void pointer arithmetic correct?
             convert_type(t_buff + i * dst_size, dst_type, dst_kind,
                          sr, src_type, src_kind, stat);
         }
@@ -3449,7 +3455,7 @@ PREFIX(get) (caf_token_t token, size_t offset, int image_index,
                           cfi_dest.get_base_addr(), dst_type, dst_size, dst_kind,
                           size, src_rank == 0);
       else
-        copy_to_self(cfi_src.get_desc(), src_kind, cfi_dest, dst_kind, size, stat);
+        copy_to_self(cfi_src.get_desc(), src_kind, cfi_dest.get_desc(), dst_kind, size, stat);
       return;
     }
     else
@@ -3694,7 +3700,7 @@ case kind:                                                             \
       {
         for (j = 0; j < src_rank - 1; ++j)
         {
-          extent = cfi_src.get_extent();
+          extent = cfi_src.get_extent(j);
           array_offset_sr += ((i / tot_ext) % extent) * cfi_src.get_sm(j);
           tot_ext *= extent;
         }
@@ -3703,10 +3709,10 @@ case kind:                                                             \
       }
       else
       {
-#define KINDCASE(kind, type)                                          \
-case kind:                                                            \
-  array_offset_sr = ((ptrdiff_t)                                      \
-    ((type *)src_vector->u.v.vector)[i] - cfi_src.get_lower_bound(0); \
+#define KINDCASE(kind, type)                                           \
+case kind:                                                             \
+  array_offset_sr = ((ptrdiff_t)                                       \
+    ((type *)src_vector->u.v.vector)[i] - cfi_src.get_lower_bound(0)); \
   break
         switch (src_vector->u.v.kind)
         {
@@ -3735,7 +3741,7 @@ case kind:                                                            \
           tot_ext = 1;
           for (j = 0; j < dst_rank - 1; ++j)
           {
-            extent = cfi_dest.get_extent();
+            extent = cfi_dest.get_extent(j);
             array_offset_dst += ((i / tot_ext) % extent) * cfi_dest.get_sm(j);
             tot_ext *= extent;
           }
