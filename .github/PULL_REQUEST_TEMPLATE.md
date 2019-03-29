@@ -35,19 +35,20 @@ This pull request (PR) is a:
 
 ### I certify that ###
 
-- [ ] I have reviewed and followed the [contributing guidelines]
-- [ ] I will wait at least 24 hours before self-approving the PR to give another
-        OpenCoarrays developer a chance to review my proposed code
-- [ ] I have not introduced errant white space (no trailing white space or white space errors may
-        be introduced)
-- [ ] I have added an explanation of what these changes do and why they should be included
-- [ ] I have checked to ensure there aren't other open [Pull Requests] for the same change
-- [ ] I have you written new tests for these changes
-- [ ] I have successfully tested these changes locally
-- [ ] I have commented any non-trivial, non-obvious code changes
-- [ ] The commits are logically atomic, self consistent and coherent
-- [ ] The [commit messages] follow [best practices]
-- [ ] Test coverage is maintained or increased after this is merged
+- [ ] I certify that:
+  - I have reviewed and followed the [contributing guidelines]
+  - I will wait at least 24 hours before self-approving the PR to give another
+    OpenCoarrays developer a chance to review my proposed code
+  - I have not introduced errant white space (no trailing white space or white space errors may
+    be introduced)
+  - I have added an explanation of what these changes do and why they should be included
+  - I have checked to ensure there aren't other open [Pull Requests] for the same change
+  - I have you written new tests for these changes
+  - I have successfully tested these changes locally
+  - I have commented any non-trivial, non-obvious code changes
+  - The commits are logically atomic, self consistent and coherent
+  - The [commit messages] follow [best practices]
+  - Test coverage is maintained or increased after this is merged
 
 
 ## Code coverage data
