@@ -1196,11 +1196,11 @@ PREFIX(register) (size_t size, caf_register_t type, caf_token_t *token,
           {
             slave_token->desc = cfi_desc;
 #ifdef EXTRA_DEBUG_OUTPUT
-            ierr = MPI_Get_address(cfi_desc, &mpi_address); chk_err(ierr);
+            ierr = MPI_Get_address(cfi_desc.get_desc(), &mpi_address); chk_err(ierr);
 #endif
             dprint("Attached descriptor %p (mpi-address: %zd) to "
                    "global_dynamic_window %d at address %p, ierr = %d.\n",
-                   cfi_desc, mpi_address, global_dynamic_win, &slave_token->desc,
+                   cfi_desc.get_desc(), mpi_address, global_dynamic_win, &slave_token->desc,
                    ierr);
           }
         }
@@ -2053,8 +2053,8 @@ PREFIX(sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
     src_type =  cfi_src.get_type(),
     dst_type = cfi_dest.get_type();
   const bool
-    src_contiguous = PREFIX(is_contiguous) (cfi_src),
-    dst_contiguous = PREFIX(is_contiguous) (cfi_dest);
+    src_contiguous = PREFIX(is_contiguous) (cfi_src.get_desc()),
+    dst_contiguous = PREFIX(is_contiguous) (cfi_dest.get_desc());
   const bool
     src_same_image = caf_this_image == image_index_g,
     dst_same_image = caf_this_image == image_index_s,
@@ -2808,8 +2808,8 @@ PREFIX(send) (caf_token_t token, size_t offset, int image_index,
     src_type =  cfi_src.get_type(),
     dst_type = cfi_dest.get_type();
   const bool
-    src_contiguous = PREFIX(is_contiguous) (cfi_src),
-    dst_contiguous = PREFIX(is_contiguous) (cfi_dest);
+    src_contiguous = PREFIX(is_contiguous) (cfi_src.get_desc()),
+    dst_contiguous = PREFIX(is_contiguous) (cfi_dest.get_desc());
   const bool
     same_image = caf_this_image == image_index,
     same_type_and_kind = dst_type == src_type && dst_kind == src_kind;
@@ -2886,7 +2886,7 @@ PREFIX(send) (caf_token_t token, size_t offset, int image_index,
                           cfi_dest.get_base_addr(), dst_type, dst_size, dst_kind,
                           size, src_rank == 0);
       else
-        copy_to_self(cfi_src, src_kind, cfi_dest, dst_kind, size, stat);
+        copy_to_self(cfi_src.get_desc(), src_kind, cfi_dest, dst_kind, size, stat);
       return;
     }
     else
@@ -3369,8 +3369,8 @@ PREFIX(get) (caf_token_t token, size_t offset, int image_index,
     src_type = cfi_src.get_type(),
     dst_type = cfi_dest.get_type();
   const bool
-    src_contiguous = PREFIX(is_contiguous) (cfi_src),
-    dst_contiguous = PREFIX(is_contiguous) (cfi_dest);
+    src_contiguous = PREFIX(is_contiguous) (cfi_src.get_desc()),
+    dst_contiguous = PREFIX(is_contiguous) (cfi_dest.get_desc());
   const bool
     same_image = caf_this_image == image_index,
     same_type_and_kind = dst_type == src_type && dst_kind == src_kind;
@@ -3449,7 +3449,7 @@ PREFIX(get) (caf_token_t token, size_t offset, int image_index,
                           cfi_dest.get_base_addr(), dst_type, dst_size, dst_kind,
                           size, src_rank == 0);
       else
-        copy_to_self(cfi_src, src_kind, cfi_dest, dst_kind, size, stat);
+        copy_to_self(cfi_src.get_desc(), src_kind, cfi_dest, dst_kind, size, stat);
       return;
     }
     else
@@ -3995,7 +3995,7 @@ get_for_ref(caf_reference_t *ref, size_t *i, size_t dst_index,
 
   dprint("sr_offset = %zd, sr = %p, desc_offset = %zd, src = %p, "
          "sr_glb = %d, desc_glb = %d\n",
-         sr_byte_offset, sr, desc_byte_offset, cfi_src, sr_global, desc_global);
+         sr_byte_offset, sr, desc_byte_offset, cfi_src.get_desc(), sr_global, desc_global);
 
   if (ref->next == NULL)
   {
@@ -4131,7 +4131,7 @@ get_for_ref(caf_reference_t *ref, size_t *i, size_t dst_index,
         sr_byte_offset += ref->u.c.offset;
         desc_byte_offset += ref->u.c.offset;
       }
-      get_for_ref(ref->next, i, dst_index, mpi_token, cfi_dst, NULL, ds,
+      get_for_ref(ref->next, i, dst_index, mpi_token, cfi_dst.get_desc(), NULL, ds,
                   sr, sr_byte_offset, desc_byte_offset, dst_kind, src_kind,
                   dst_dim, 0, 1, stat, image_index, sr_global, desc_global
 #ifdef GCC_GE_8
@@ -4142,7 +4142,7 @@ get_for_ref(caf_reference_t *ref, size_t *i, size_t dst_index,
     case CAF_REF_ARRAY:
       if (ref->u.a.mode[src_dim] == CAF_ARR_REF_NONE)
       {
-        get_for_ref(ref->next, i, dst_index, mpi_token, cfi_dst, cfi_src, ds, sr,
+        get_for_ref(ref->next, i, dst_index, mpi_token, cfi_dst.get_desc(), cfi_src.get_desc(), ds, sr,
                     sr_byte_offset, desc_byte_offset, dst_kind, src_kind,
                     dst_dim, 0, 1, stat, image_index, sr_global, desc_global
 #ifdef GCC_GE_8
@@ -4235,7 +4235,7 @@ case kind:                                                          \
 #undef KINDCASE
 
             dprint("vector-index computed to: %zd\n", array_offset_src);
-            get_for_ref(ref, i, dst_index, mpi_token, cfi_dst, cfi_src, ds, sr,
+            get_for_ref(ref, i, dst_index, mpi_token, cfi_dst.get_desc(), cfi_src.get_desc(), ds, sr,
                         sr_byte_offset + array_offset_src * ref->item_size,
                         desc_byte_offset + array_offset_src * ref->item_size,
                         dst_kind, src_kind, dst_dim + 1, src_dim + 1,
@@ -4261,7 +4261,7 @@ case kind:                                                          \
           for (ptrdiff_t idx = 0; idx < extent_src;
                ++idx, array_offset_src += stride_src)
             {
-              get_for_ref(ref, i, dst_index, mpi_token, cfi_dst, cfi_src, ds, sr,
+              get_for_ref(ref, i, dst_index, mpi_token, cfi_dst.get_desc(), cfi_src.get_desc(), ds, sr,
                           sr_byte_offset + array_offset_src * ref->item_size,
                           desc_byte_offset + array_offset_src * ref->item_size,
                           dst_kind, src_kind, dst_dim + 1, src_dim + 1,
@@ -4295,7 +4295,7 @@ case kind:                                                          \
           ) ? (dst_dim + 1) : dst_dim;
           for (ptrdiff_t idx = 0; idx < extent_src; ++idx)
           {
-            get_for_ref(ref, i, dst_index, mpi_token, cfi_dst, cfi_src, ds, sr,
+            get_for_ref(ref, i, dst_index, mpi_token, cfi_dst.get_desc(), cfi_src.get_desc(), ds, sr,
                         sr_byte_offset + array_offset_src * ref->item_size,
                         desc_byte_offset + array_offset_src * ref->item_size,
                         dst_kind, src_kind, next_dst_dim, src_dim + 1,
@@ -4314,7 +4314,7 @@ case kind:                                                          \
             (ref->u.a.dim[src_dim].s.start - cfi_src.get_lower_bound(src_dim))
          // * src->dim[src_dim]._stride;
             * cfi_src->get_sm(src_dim);
-          get_for_ref(ref, i, dst_index, mpi_token, cfi_dst, cfi_src, ds, sr,
+          get_for_ref(ref, i, dst_index, mpi_token, cfi_dst.get_desc(), cfi_src.get_desc(), ds, sr,
                       sr_byte_offset + array_offset_src * ref->item_size,
                       desc_byte_offset + array_offset_src * ref->item_size,
                       dst_kind, src_kind, dst_dim, src_dim + 1, 1,
@@ -4340,7 +4340,7 @@ case kind:                                                          \
                              * cfi_src.get_sm(src_dim);
           for (ptrdiff_t idx = 0; idx < extent_src; ++idx)
           {
-            get_for_ref(ref, i, dst_index, mpi_token, cfi_dst, cfi_src, ds, sr,
+            get_for_ref(ref, i, dst_index, mpi_token, cfi_dst.get_desc(), cfi_src.get_desc(), ds, sr,
                         sr_byte_offset + array_offset_src * ref->item_size,
                         desc_byte_offset + array_offset_src * ref->item_size,
                         dst_kind, src_kind, dst_dim + 1, src_dim + 1,
@@ -4365,7 +4365,7 @@ case kind:                                                          \
           array_offset_src = 0;
           for (ptrdiff_t idx = 0; idx < extent_src; ++idx)
           {
-            get_for_ref(ref, i, dst_index, mpi_token, cfi_dst, cfi_src, ds, sr,
+            get_for_ref(ref, i, dst_index, mpi_token, cfi_dst.get_desc(), cfi_src.get_desc(), ds, sr,
                         sr_byte_offset + array_offset_src * ref->item_size,
                         desc_byte_offset + array_offset_src * ref->item_size,
                         dst_kind, src_kind, dst_dim + 1, src_dim + 1,
@@ -4385,7 +4385,7 @@ case kind:                                                          \
     case CAF_REF_STATIC_ARRAY:
       if (ref->u.a.mode[src_dim] == CAF_ARR_REF_NONE)
       {
-        get_for_ref(ref->next, i, dst_index, mpi_token, cfi_dst, NULL, ds, sr,
+        get_for_ref(ref->next, i, dst_index, mpi_token, cfi_dst.get_desc(), NULL, ds, sr,
                     sr_byte_offset, desc_byte_offset, dst_kind, src_kind,
                     dst_dim, 0, 1, stat, image_index, sr_global, desc_global
 #ifdef GCC_GE_8
@@ -4420,7 +4420,7 @@ case kind:                                                          \
           }
 #undef KINDCASE
 
-          get_for_ref(ref, i, dst_index, mpi_token, cfi_dst, NULL, ds, sr,
+          get_for_ref(ref, i, dst_index, mpi_token, cfi_dst.get_desc(), NULL, ds, sr,
                       sr_byte_offset + array_offset_src * ref->item_size,
                       desc_byte_offset + array_offset_src * ref->item_size,
                       dst_kind, src_kind, dst_dim + 1, src_dim + 1,
@@ -4437,7 +4437,7 @@ case kind:                                                          \
              array_offset_src <= ref->u.a.dim[src_dim].s.end;
              array_offset_src += ref->u.a.dim[src_dim].s.stride)
         {
-          get_for_ref(ref, i, dst_index, mpi_token, cfi_dst, NULL, ds, sr,
+          get_for_ref(ref, i, dst_index, mpi_token, cfi_dst.get_desc(), NULL, ds, sr,
                       sr_byte_offset + array_offset_src * ref->item_size,
                       desc_byte_offset + array_offset_src * ref->item_size,
                       dst_kind, src_kind, dst_dim + 1, src_dim + 1,
@@ -4457,7 +4457,7 @@ case kind:                                                          \
         array_offset_src = ref->u.a.dim[src_dim].s.start;
         for (ptrdiff_t idx = 0; idx < extent_src; ++idx)
         {
-          get_for_ref(ref, i, dst_index, mpi_token, cfi_dst, NULL, ds, sr,
+          get_for_ref(ref, i, dst_index, mpi_token, cfi_dst.get_desc(), NULL, ds, sr,
                       sr_byte_offset + array_offset_src * ref->item_size,
                       desc_byte_offset + array_offset_src * ref->item_size,
                       dst_kind, src_kind, dst_dim + 1, src_dim + 1,
@@ -4472,7 +4472,7 @@ case kind:                                                          \
         return;
       case CAF_ARR_REF_SINGLE:
         array_offset_src = ref->u.a.dim[src_dim].s.start;
-        get_for_ref(ref, i, dst_index, mpi_token, cfi_dst, NULL, ds, sr,
+        get_for_ref(ref, i, dst_index, mpi_token, cfi_dst.get_desc(), NULL, ds, sr,
                     sr_byte_offset + array_offset_src * ref->item_size,
                     desc_byte_offset + array_offset_src * ref->item_size,
                     dst_kind, src_kind, dst_dim, src_dim + 1, 1,
@@ -5071,7 +5071,7 @@ case kind:                                                      \
   dprint("get_by_ref() calling get_for_ref.\n");
 //get_for_ref(refs, &i, dst_index, mpi_token, dst, mpi_token->desc,
 //            dst->base_addr, remote_memptr, 0, 0, dst_kind, src_kind, 0, 0,
-  get_for_ref(refs, &i, dst_index, mpi_token, cfi_dst, mpi_token->desc,
+  get_for_ref(refs, &i, dst_index, mpi_token, cfi_dst.get_desc(), mpi_token->desc,
               cfi_dst.get_base_addr(), remote_memptr, 0, 0, dst_kind, src_kind, 0, 0,
               1, stat, remote_image, false, false
 #ifdef GCC_GE_8
@@ -5339,7 +5339,7 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
         dst_byte_offset += ref->u.c.offset;
         desc_byte_offset += ref->u.c.offset;
       }
-      send_for_ref(ref->next, i, src_index, mpi_token, cfi_dst, cfi_src, ds,
+      send_for_ref(ref->next, i, src_index, mpi_token, cfi_dst.get_desc(), cfi_src.get_desc(), ds,
                    sr, dst_byte_offset, desc_byte_offset, dst_kind, src_kind,
                    dst_dim, 0, 1, stat, image_index, ds_global, desc_global
 #ifdef GCC_GE_8
@@ -5350,7 +5350,7 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
     case CAF_REF_ARRAY:
       if (array_ref_src == CAF_ARR_REF_NONE)
       {
-        send_for_ref(ref->next, i, src_index, mpi_token, cfi_dst, cfi_src, ds, sr,
+        send_for_ref(ref->next, i, src_index, mpi_token, cfi_dst.get_desc(), cfi_src.get_desc(), ds, sr,
                      dst_byte_offset, desc_byte_offset, dst_kind, src_kind,
                      dst_dim, 0, 1, stat, image_index, ds_global, desc_global
 #ifdef GCC_GE_8
@@ -5437,7 +5437,7 @@ case kind:                                          \
 #undef KINDCASE
 
             dprint("vector-index computed to: %zd\n", array_offset_dst);
-            send_for_ref(ref, i, src_index, mpi_token, cfi_dst, cfi_src, ds, sr,
+            send_for_ref(ref, i, src_index, mpi_token, cfi_dst.get_desc(), cfi_src.get_desc(), ds, sr,
                          dst_byte_offset + array_offset_dst * ref->item_size,
                          desc_byte_offset + array_offset_dst * ref->item_size,
                          dst_kind, src_kind, dst_dim + 1, src_dim + 1,
@@ -5464,7 +5464,7 @@ case kind:                                          \
           for (ptrdiff_t idx = 0; idx < extent_dst;
                ++idx, array_offset_dst += dst_stride)
           {
-            send_for_ref(ref, i, src_index, mpi_token, cfi_dst, cfi_src, ds, sr,
+            send_for_ref(ref, i, src_index, mpi_token, cfi_dst.get_desc(), cfi_src.get_desc(), ds, sr,
                          dst_byte_offset + array_offset_dst * ref->item_size,
                          desc_byte_offset + array_offset_dst * ref->item_size,
                          dst_kind, src_kind, dst_dim + 1, src_dim + 1,
@@ -5499,7 +5499,7 @@ case kind:                                          \
           ) ? (dst_dim + 1) : dst_dim;
           for (ptrdiff_t idx = 0; idx < extent_dst; ++idx)
           {
-            send_for_ref(ref, i, src_index, mpi_token, cfi_dst, cfi_src, ds, sr,
+            send_for_ref(ref, i, src_index, mpi_token, cfi_dst.get_desc(), cfi_src.get_desc(), ds, sr,
                          dst_byte_offset + array_offset_dst * ref->item_size,
                          desc_byte_offset + array_offset_dst * ref->item_size,
                          dst_kind, src_kind, next_dst_dim, src_dim + 1, 
@@ -5524,7 +5524,7 @@ case kind:                                          \
           //   (cfi_src.get_extent(src_dim) == 1 && extent_dst == 1)
           // ) ? (dst_dim + 1) : dst_dim;
           next_dst_dim = dst_dim;
-          send_for_ref(ref, i, src_index, mpi_token, cfi_dst, cfi_src, ds, sr,
+          send_for_ref(ref, i, src_index, mpi_token, cfi_dst.get_desc(), cfi_src.get_desc(), ds, sr,
                        dst_byte_offset + array_offset_dst * ref->item_size,
                        desc_byte_offset + array_offset_dst * ref->item_size,
                        dst_kind, src_kind, next_dst_dim, src_dim + 1,
@@ -5550,7 +5550,7 @@ case kind:                                          \
             * cfi_dst.get_sm(dst_dim);
           for (ptrdiff_t idx = 0; idx < extent_dst; ++idx)
           {
-            send_for_ref(ref, i, src_index, mpi_token, cfi_dst, cfi_src, ds, sr,
+            send_for_ref(ref, i, src_index, mpi_token, cfi_dst.get_desc(), cfi_src.get_desc(), ds, sr,
                          dst_byte_offset + array_offset_dst * ref->item_size,
                          desc_byte_offset + array_offset_dst * ref->item_size,
                          dst_kind, src_kind, dst_dim + 1, src_dim + 1,
@@ -5575,7 +5575,7 @@ case kind:                                          \
           array_offset_dst = 0;
           for (ptrdiff_t idx = 0; idx < extent_dst; ++idx)
           {
-            send_for_ref(ref, i, src_index, mpi_token, cfi_dst, cfi_src, ds, sr,
+            send_for_ref(ref, i, src_index, mpi_token, cfi_dst.get_desc(), cfi_src.get_desc(), ds, sr,
                          dst_byte_offset + array_offset_dst * ref->item_size,
                          desc_byte_offset + array_offset_dst * ref->item_size,
                          dst_kind, src_kind, dst_dim + 1, src_dim + 1,
@@ -5595,7 +5595,7 @@ case kind:                                          \
     case CAF_REF_STATIC_ARRAY:
       if (array_ref_dst == CAF_ARR_REF_NONE)
       {
-        send_for_ref(ref->next, i, src_index, mpi_token, cfi_dst, NULL, ds, sr,
+        send_for_ref(ref->next, i, src_index, mpi_token, cfi_dst.get_desc(), NULL, ds, sr,
                      dst_byte_offset, desc_byte_offset, dst_kind, src_kind,
                      dst_dim, 0, 1, stat, image_index, ds_global, desc_global
 #ifdef GCC_GE_8
@@ -5630,7 +5630,7 @@ case kind:                                                          \
             }
 #undef KINDCASE
 
-            send_for_ref(ref, i, src_index, mpi_token, cfi_dst, NULL, ds, sr,
+            send_for_ref(ref, i, src_index, mpi_token, cfi_dst.get_desc(), NULL, ds, sr,
                          dst_byte_offset + array_offset_dst * ref->item_size,
                          desc_byte_offset + array_offset_dst * ref->item_size,
                          dst_kind, src_kind, dst_dim + 1, src_dim + 1,
@@ -5649,7 +5649,7 @@ case kind:                                                          \
                array_offset_dst <= ref->u.a.dim[dst_dim].s.end;
                array_offset_dst += ref->u.a.dim[dst_dim].s.stride)
           {
-            send_for_ref(ref, i, src_index, mpi_token, cfi_dst, NULL, ds, sr,
+            send_for_ref(ref, i, src_index, mpi_token, cfi_dst.get_desc(), NULL, ds, sr,
                          dst_byte_offset + array_offset_dst * ref->item_size,
                          desc_byte_offset + array_offset_dst * ref->item_size,
                          dst_kind, src_kind, dst_dim + 1, src_dim + 1,
@@ -5671,7 +5671,7 @@ case kind:                                                          \
           array_offset_dst = ref->u.a.dim[dst_dim].s.start;
           for (ptrdiff_t idx = 0; idx < extent_dst; ++idx)
           {
-            send_for_ref(ref, i, src_index, mpi_token, cfi_dst, NULL, ds, sr,
+            send_for_ref(ref, i, src_index, mpi_token, cfi_dst.get_desc(), NULL, ds, sr,
                          dst_byte_offset + array_offset_dst * ref->item_size,
                          desc_byte_offset + array_offset_dst * ref->item_size,
                          dst_kind, src_kind, dst_dim + 1, src_dim + 1,
@@ -5686,7 +5686,7 @@ case kind:                                                          \
           return;
         case CAF_ARR_REF_SINGLE:
           array_offset_dst = ref->u.a.dim[dst_dim].s.start;
-          send_for_ref(ref, i, src_index, mpi_token, cfi_dst, NULL, ds, sr,
+          send_for_ref(ref, i, src_index, mpi_token, cfi_dst.get_desc(), NULL, ds, sr,
                        dst_byte_offset + array_offset_dst * ref->item_size,
                        desc_byte_offset + array_offset_dst * ref->item_size,
                        dst_kind, src_kind, dst_dim, src_dim + 1,
@@ -6140,7 +6140,7 @@ case kind:                                                      \
   if (caf_this_image == image_index && may_require_tmp)
   {
     dprint("preparing temporary source.\n");
-    memcpy(&temp_src, cfi_src, sizeof_desc_for_rank(cfi_src.get_rank()));
+    memcpy(&temp_src, cfi_src.get_desc(), sizeof_desc_for_rank(cfi_src.get_rank()));
     size_t cap = 0;
     for (int r = 0; r < cfi_src.get_rank(); ++r)
     {
@@ -6165,7 +6165,7 @@ case kind:                                                      \
   i = 0;
   dprint("calling send_for_ref. num elems: size = %zd, elem size in bytes: "
          "dst_size = %zd\n", size, dst_size);
-  send_for_ref(refs, &i, src_index, mpi_token, mpi_token->desc, cfi_src,
+  send_for_ref(refs, &i, src_index, mpi_token, mpi_token->desc, cfi_src.get_desc(),
                remote_memptr, cfi_src.get_base_addr(), 0, 0, dst_kind, src_kind, 0, 0,
                1, stat, remote_image, false, false
 #ifdef GCC_GE_8
