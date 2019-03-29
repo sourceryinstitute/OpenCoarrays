@@ -2482,19 +2482,19 @@ case kind:                                                             \
                  "src_offset = %zd, offset = %zd.\n",
                  i, src_offset, offset_g);
           if (same_type_and_kind)
-             memmove(dst, cfi_src.get_base_addr() + src_offset), src_size);
+            memmove(dst, (void *)((char *)cfi_src.get_base_addr() + src_offset), src_size);
           else
             convert_type(dst, dst_type, dst_kind,
-                         cfi_src.get_base_addr() + src_offset, src_type, src_kind, stat);
+                         (void *)((char *)cfi_src.get_base_addr() + src_offset), src_type, src_kind, stat);
         }
         else
         {
           dprint("strided same_image, *WITH* temp, for i = %zd.\n", i);
           if (same_type_and_kind)
-            memmove(dst, cfi_src.get_base_addr() + src_offset, src_size);
+            memmove(dst, (void *)((char *)cfi_src.get_base_addr() + src_offset), src_size);
           else
-            convert_type(dst, dst_type, dst_kind,
-                         cfi_src.get_base_addr() + src_offset, src_type, src_kind, stat);
+            convert_type(dst, dst_type, dst_kind, (void *)((char *)cfi_src.get_base_addr() + src_offset),
+                         src_type, src_kind, stat);
         }
       }
 
@@ -2737,7 +2737,7 @@ case kind:                                                              \
          chk_err(ierr);
       }
       else
-        memmove(cfi_dest.get_base_addr() + dst_offset, sr, dst_size);
+        memmove((void *)((char *)cfi_dest.get_base_addr() + dst_offset), sr, dst_size);
 
 #ifndef WITH_FAILED_IMAGES
       if (ierr != 0)
@@ -3167,7 +3167,7 @@ case kind:                                                              \
 #define KINDCASE(kind, type)                                            \
 case kind:                                                              \
   array_offset_dst = ((ptrdiff_t)                                       \
-    ((type *)dst_vector->u.v.vector)[i] - cfi_dest.get_lower_vound(0)); \
+    ((type *)dst_vector->u.v.vector)[i] - cfi_dest.get_lower_bound(0)); \
   break
           switch (dst_vector->u.v.kind)
           {
@@ -3250,9 +3250,9 @@ case kind:                                                              \
                  "dst_offset = %zd, offset = %zd.\n",
                  i, dst_offset, offset);
           if (same_type_and_kind)
-            memmove(cfi_dest.get_base_addr() + dst_offset, sr, src_size);
+            memmove((void *)((char *)cfi_dest.get_base_addr() + dst_offset), sr, src_size);
           else
-            convert_type(cfi_dest.get_base_addr() + dst_offset, dst_type,
+            convert_type((void *)((char *)cfi_dest.get_base_addr() + dst_offset), dst_type,
                          dst_kind, sr, src_type, src_kind, stat);
         }
         else
@@ -3312,7 +3312,7 @@ case kind:                                                              \
 #undef KINDCASE
         }
         dst_offset = array_offset_dst * dst_size;
-        memmove(cfi_dest.get_base_addr() + dst_offset, t_buff + i * dst_size, dst_size);
+        memmove((void *)((char *)cfi_dest.get_base_addr() + dst_offset), t_buff + i * dst_size, dst_size);
       }
     }
   }
@@ -3367,7 +3367,7 @@ PREFIX(get) (caf_token_t token, size_t offset, int image_index,
     dst_size = cfi_dest.get_elem_len();
   const int
     src_type = cfi_src.get_type(),
-    dst_type = cfi_desc.get_type();
+    dst_type = cfi_dest.get_type();
   const bool
     src_contiguous = PREFIX(is_contiguous) (cfi_src),
     dst_contiguous = PREFIX(is_contiguous) (cfi_dest);
@@ -3788,20 +3788,20 @@ case kind:                                                            \
                  "src_offset = %zd, offset = %zd.\n",
                  i, src_offset, offset);
           if (same_type_and_kind)
-            memmove(dst, cfi_src.get_base_addr() + src_offset, src_size);
+            memmove(dst, (void *)((char *)cfi_src.get_base_addr() + src_offset), src_size);
           else
-            convert_type(dst, dst_type, dst_kind,
-                         cfi_src.get_base_addr() + src_offset, src_type, src_kind, stat);
+            convert_type(dst, dst_type, dst_kind, (void *)((char *)cfi_src.get_base_addr() + src_offset),
+                         src_type, src_kind, stat);
         }
         else
         {
           dprint("strided same_image, *WITH* temp, for i = %zd.\n", i);
           if (same_type_and_kind)
             memmove(t_buff + i * dst_size,
-                    cfi_src.get_base_addr() + src_offset, src_size);
+                    (void *)((char *)cfi_src.get_base_addr() + src_offset), src_size);
           else
             convert_type(t_buff + i * dst_size, dst_type, dst_kind,
-                         cfi_src.get_base_addr() + src_offset, src_type, src_kind, stat);
+                         (void *)((char *)cfi_src.get_base_addr() + src_offset), src_type, src_kind, stat);
         }
       }
 
