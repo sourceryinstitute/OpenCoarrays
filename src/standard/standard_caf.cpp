@@ -54,14 +54,14 @@
   #define WITH_FAILED_IMAGES 1
 #endif
 
-#include "libcaf_standard.h"
+#include "libcaf_min.h"
 //#include "cfi-descriptor.h"
 
 /* Define GFC_CAF_CHECK to enable run-time checking. */
 /* #define GFC_CAF_CHECK  1 */
 
 /* Debug array referencing  */
-static char* caf_array_ref_str[] = {
+static const char* caf_array_ref_str[] = {
   "CAF_ARR_REF_NONE",
   "CAF_ARR_REF_VECTOR",
   "CAF_ARR_REF_FULL",
@@ -71,7 +71,7 @@ static char* caf_array_ref_str[] = {
   "CAF_ARR_REF_OPEN_START"
 };
 
-static char* caf_ref_type_str[] = {
+static const char* caf_ref_type_str[] = {
   "CAF_REF_COMPONENT",
   "CAF_REF_ARRAY",
   "CAF_REF_STATIC_ARRAY",
@@ -860,8 +860,8 @@ PREFIX(init) (int *argc, char ***argv)
         images_full[j++] = i;
     }
 
-    arrived = calloc(caf_num_images, sizeof(int));
-    sync_handles = malloc(caf_num_images * sizeof(MPI_Request));
+    arrived = (int *)(calloc(caf_num_images, sizeof(int)));
+    sync_handles = (MPI_Request *)(malloc(caf_num_images * sizeof(MPI_Request)));
     /* END SYNC IMAGE preparation. */
 
     stat_tok = malloc(sizeof(MPI_Win));
@@ -1119,7 +1119,7 @@ PREFIX(num_images) (int distance __attribute__((unused)),
  * compiler also does not make use of it, but it is contrary to the
  * documentation. */
 void
-PREFIX(register) (size_t size, caf_register_t type, caf_token_t *token,
+PREFIX(register_func) (size_t size, caf_register_t type, caf_token_t *token,
                   CFI_cdesc_t *desc, int *stat, char *errmsg,
                   charlen_t errmsg_len)
 {
@@ -1291,7 +1291,7 @@ error:
 }
 #else // GCC_LT_7
 void *
-PREFIX(register) (size_t size, caf_register_t type, caf_token_t *token,
+PREFIX(register_func) (size_t size, caf_register_t type, caf_token_t *token,
                   int *stat, char *errmsg, charlen_t errmsg_len)
 {
   void *mem;
