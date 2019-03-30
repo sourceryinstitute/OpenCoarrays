@@ -8,6 +8,8 @@ daysUntilClose: 21
 exemptLabels:
   - help wanted
   - in progress
+  - in-progress
+  - help-wanted
 # Label to use when marking as stale
 staleLabel: stale
 # Comment to post when marking as stale. Set to `false` to disable
