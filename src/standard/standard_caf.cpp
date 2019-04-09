@@ -180,7 +180,7 @@ static void terminate_internal (int stat_code, int exit_code)
 static void sync_images_internal (int count, int images[], int *stat,
                                   char *errmsg, size_t errmsg_len,
                                   bool internal);
-static void error_stop_str (const char *string, size_t len, bool quiet)
+static void internal_error_stop_str (const char *string, size_t len, bool quiet)
             __attribute__((noreturn));
 
 /* Global variables. */
@@ -1290,99 +1290,6 @@ error:
   }
 }
 #else // GCC_LT_7
-void *
-PREFIX(register_func) (size_t size, caf_register_t type, caf_token_t *token,
-                  int *stat, char *errmsg, charlen_t errmsg_len)
-{
-  void *mem;
-  size_t actual_size;
-  int l_var = 0, *init_array = NULL, ierr;
-
-  if (unlikely(caf_is_finalized))
-     // TODO:::
-    goto error;
-
-  /* Start GASNET if not already started. */
-  if (caf_num_images == 0)
-#ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
-    _gfortran_caf_init(NULL, NULL);
-#else
-    PREFIX(init) (NULL, NULL);
-#endif
-
-  /* Token contains only a list of pointers. */
-  *token = malloc(sizeof(MPI_Win));
-  MPI_Win *p = (MPI_Win *)*token;
-  // TODO:::
-  //  MPI_Win *p = (MPI_Win *)token;
-
-  if (type == CAF_REGTYPE_LOCK_STATIC || type == CAF_REGTYPE_LOCK_ALLOC ||
-      type == CAF_REGTYPE_CRITICAL || type == CAF_REGTYPE_EVENT_STATIC ||
-      type == CAF_REGTYPE_EVENT_ALLOC)
-  {
-    actual_size = size * sizeof(int);
-    l_var = 1;
-  }
-  else
-    actual_size = size;
-
-#if MPI_VERSION >= 3
-  ierr = MPI_Win_allocate(actual_size, 1, mpi_info_same_size, CAF_COMM_WORLD,
-                          &mem, p); chk_err(ierr);
-  CAF_Win_lock_all(*p);
-#else // MPI_VERSION
-  ierr = MPI_Alloc_mem(actual_size, MPI_INFO_NULL, &mem); chk_err(ierr);
-  ierr = MPI_Win_create(mem, actual_size, 1, MPI_INFO_NULL,
-                        CAF_COMM_WORLD, p); chk_err(ierr);
-#endif // MPI_VERSION
-
-  if (l_var)
-  {
-    init_array = (int *)calloc(size, sizeof(int));
-    CAF_Win_lock(MPI_LOCK_EXCLUSIVE, caf_this_image - 1, *p);
-    ierr = MPI_Put(init_array, size, MPI_INT, caf_this_image - 1, 0, size,
-                   MPI_INT, *p); chk_err(ierr);
-    CAF_Win_unlock(caf_this_image - 1, *p);
-    free(init_array);
-  }
-
-  PREFIX(sync_all) (NULL, NULL, 0);
-
-  struct caf_allocated_tokens_t *tmp =
-     (caf_allocated_tokens_t *)(malloc(sizeof(struct caf_allocated_tokens_t)));
-  //     malloc(sizeof(struct caf_allocated_tokens_t));
-  tmp->prev  = caf_allocated_tokens;
-  tmp->token = *token;
-  caf_allocated_tokens = tmp;
-
-  if (stat)
-    *stat = 0;
-  return mem;
-
-error:
-  {
-    char msg[80];
-    strcpy(msg, "Failed to allocate coarray");
-    if (caf_is_finalized)
-      strcat(msg, " - there are stopped images");
-
-    if (stat)
-    {
-      *stat = caf_is_finalized ? STAT_STOPPED_IMAGE : 1;
-      if (errmsg_len > 0)
-      {
-        size_t len = (strlen(msg) > (size_t) errmsg_len) ?
-                     (size_t) errmsg_len : strlen (msg);
-        memcpy(errmsg, msg, len);
-        if (errmsg_len > len)
-          memset(&errmsg[len], ' ', errmsg_len - len);
-      }
-    }
-    else
-      caf_runtime_error(msg);
-  }
-  return NULL;
-}
 #endif // GCC_GE_7
 
 
@@ -2788,7 +2695,7 @@ case kind:                                                              \
       char error_str[error_len];
       strcpy(error_str, "MPI-error: ");
       MPI_Error_string(mpi_error, &error_str[11], &error_len);
-      error_stop_str(error_str, error_len + 11, false);
+      internal_error_stop_str(error_str, error_len + 11, false);
     }
   }
 }
@@ -3351,7 +3258,7 @@ case kind:                                                              \
       char error_str[error_len];
       strcpy(error_str, "MPI-error: ");
       MPI_Error_string(mpi_error, &error_str[11], &error_len);
-      error_stop_str(error_str, error_len + 11, false);
+      internal_error_stop_str(error_str, error_len + 11, false);
     }
   }
 }
@@ -3857,7 +3764,7 @@ case kind:                                                             \
       char error_str[error_len + 11];
       strcpy(error_str, "MPI-error: ");
       MPI_Error_string(mpi_error, &error_str[11], &error_len);
-      error_stop_str(error_str, error_len + 11, false);
+      internal_error_stop_str(error_str, error_len + 11, false);
     }
   }
 }
@@ -7188,7 +7095,7 @@ get_MPI_datatype(CFI_cdesc_t *desc, int char_len)
 #endif
       // TODO:::
     case CFI_type_Bool:
-      return MPI_INT;
+      return MPI_C_BOOL;
 
     case CFI_type_float:
 #ifdef MPI_REAL4
@@ -7210,12 +7117,18 @@ get_MPI_datatype(CFI_cdesc_t *desc, int char_len)
       return MPI_COMPLEX;
     case CFI_type_double_Complex:
       return MPI_DOUBLE_COMPLEX;
+
+    case CFI_type_char:
+      return MPI_CHAR;
+
   }
+
+#if 0
+  // This implementation is designed for the gfortran compiler
 
 /* gfortran passes character string arguments with a
  * GFC_DTYPE_TYPE_SIZE == GFC_TYPE_CHARACTER + 64*strlen */
 
-  // TODO::: Deal with this macro
   //  if ((GFC_DTYPE_TYPE_SIZE(desc) - GFC_DTYPE_CHARACTER) % 64 == 0)
   if ((cfi_desc.get_type() - GFC_DTYPE_CHARACTER) % 64 == 0)
   {
@@ -7227,11 +7140,9 @@ get_MPI_datatype(CFI_cdesc_t *desc, int char_len)
     ierr = MPI_Type_commit(&string); chk_err(ierr);
     return string;
   }
+#endif
 
   caf_runtime_error("Unsupported data type in collective: %zd\n",
-
-                    // TODO::: Deal with this macro
-                 // GFC_DTYPE_TYPE_SIZE(desc));
                     cfi_desc.get_type());
 
   return 0;
@@ -7880,19 +7791,11 @@ terminate_internal(int stat_code, int exit_code)
 }
 
 
-#ifdef GCC_GE_8
-#undef QUIETARG
-#define QUIETARG , bool quiet
-#endif
-
 /* STOP function for integer arguments. */
 
 void
-PREFIX(stop_numeric) (int stop_code QUIETARG)
+PREFIX(stop_numeric) (int stop_code, bool quiet)
 {
-#ifndef GCC_GE_8
-  bool quiet = false;
-#endif
   if (!quiet)
     fprintf(stderr, "STOP %d\n", stop_code);
 
@@ -7905,11 +7808,8 @@ PREFIX(stop_numeric) (int stop_code QUIETARG)
 /* STOP function for string arguments. */
 
 void
-PREFIX(stop_str) (const char *string, charlen_t len QUIETARG)
+PREFIX(stop_str) (const char *string, charlen_t len, bool quiet)
 {
-#ifndef GCC_GE_8
-  bool quiet = false;
-#endif
   if (!quiet)
   {
     fputs("STOP ", stderr);
@@ -7925,7 +7825,7 @@ PREFIX(stop_str) (const char *string, charlen_t len QUIETARG)
 /* ERROR STOP function for string arguments. */
 
 static void
-error_stop_str(const char *string, size_t len, bool quiet)
+internal_error_stop_str(const char *string, size_t len, bool quiet)
 {
   if (!quiet)
   {
@@ -7939,23 +7839,17 @@ error_stop_str(const char *string, size_t len, bool quiet)
 
 
 void
-PREFIX(error_stop_str) (const char *string, charlen_t len QUIETARG)
+PREFIX(error_stop_str) (const char *string, charlen_t len, bool quiet)
 {
-#ifndef GCC_GE_8
-  bool quiet = false;
-#endif
-  error_stop_str(string, len, quiet);
+  internal_error_stop_str(string, len, quiet);
 }
 
 
 /* ERROR STOP function for numerical arguments. */
 
 void
-PREFIX(error_stop) (int error QUIETARG)
+PREFIX(error_stop) (int error, bool quiet)
 {
-#ifndef GCC_GE_8
-  bool quiet = false;
-#endif
   if (!quiet)
     fprintf(stderr, "ERROR STOP %d\n", error);
 
