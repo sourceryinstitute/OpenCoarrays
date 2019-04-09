@@ -7157,49 +7157,46 @@ static MPI_Datatype
 get_MPI_datatype(CFI_cdesc_t *desc, int char_len)
 {
   CFIDescriptor cfi_desc(desc);
-
   int ierr;
   /* FIXME: Better check whether the sizes are okay and supported;
    * MPI3 adds more types, e.g. MPI_INTEGER1. */
 
-
-
-  // TODO::: deal with this macro
-  switch (GFC_DTYPE_TYPE_SIZE(desc))
+  switch (cfi_desc.get_type())
   {
+
 #ifdef MPI_INTEGER1
-    case GFC_DTYPE_INTEGER_1:
+    case CFI_type_int8_t:
       return MPI_INTEGER1;
 #endif
 #ifdef MPI_INTEGER2
-    case GFC_DTYPE_INTEGER_2:
+    case CFI_type_int16_t:
       return MPI_INTEGER2;
 #endif
-    case GFC_DTYPE_INTEGER_4:
+    case CFI_type_int32_t:
 #ifdef MPI_INTEGER4
       return MPI_INTEGER4;
 #else
       return MPI_INTEGER;
 #endif
 #ifdef MPI_INTEGER8
-    case GFC_DTYPE_INTEGER_8:
+    case CFI_type_int64_t:
       return MPI_INTEGER8;
 #endif
-#if defined(MPI_INTEGER16) && defined(GFC_DTYPE_INTEGER_16)
-    case GFC_DTYPE_INTEGER_16:
+#if defined(MPI_INTEGER16) && defined(CFI_type_int128_t)
+    case CFI_type_int128_t:
       return MPI_INTEGER16;
 #endif
-
-    case GFC_DTYPE_LOGICAL_4:
+      // TODO:::
+    case CFI_type_Bool:
       return MPI_INT;
 
-    case GFC_DTYPE_REAL_4:
+    case CFI_type_float:
 #ifdef MPI_REAL4
       return MPI_REAL4;
 #else
-      return MPI_REAL;
+     return MPI_REAL;
 #endif
-    case GFC_DTYPE_REAL_8:
+    case CFI_type_double:
 #ifdef MPI_REAL8
       return MPI_REAL8;
 #else
@@ -7209,16 +7206,18 @@ get_MPI_datatype(CFI_cdesc_t *desc, int char_len)
 /* Note that we cannot use REAL_16 as we do not know whether it matches REAL(10)
  * or REAL(16), which have both the same bitsize and only make use of less
  * bits. */
-    case GFC_DTYPE_COMPLEX_4:
+    case CFI_type_float_Complex:
       return MPI_COMPLEX;
-    case GFC_DTYPE_COMPLEX_8:
+    case CFI_type_double_Complex:
       return MPI_DOUBLE_COMPLEX;
   }
+
 /* gfortran passes character string arguments with a
  * GFC_DTYPE_TYPE_SIZE == GFC_TYPE_CHARACTER + 64*strlen */
 
   // TODO::: Deal with this macro
-  if ((GFC_DTYPE_TYPE_SIZE(desc) - GFC_DTYPE_CHARACTER) % 64 == 0)
+  //  if ((GFC_DTYPE_TYPE_SIZE(desc) - GFC_DTYPE_CHARACTER) % 64 == 0)
+  if ((cfi_desc.get_type() - GFC_DTYPE_CHARACTER) % 64 == 0)
   {
     MPI_Datatype string;
 
@@ -7232,7 +7231,9 @@ get_MPI_datatype(CFI_cdesc_t *desc, int char_len)
   caf_runtime_error("Unsupported data type in collective: %zd\n",
 
                     // TODO::: Deal with this macro
-                    GFC_DTYPE_TYPE_SIZE(desc));
+                 // GFC_DTYPE_TYPE_SIZE(desc));
+                    cfi_desc.get_type());
+
   return 0;
 }
 
