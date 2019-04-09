@@ -49,6 +49,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 #define STAT_STOPPED_IMAGE      6000
 #define STAT_FAILED_IMAGE       6001
 
+#define GFC_CAF_ARG_VALUE  (1<<2)
+
+
 
 /* Describes what type of array we are registerring. Keep in sync with
    gcc/fortran/trans.h.  */
@@ -113,6 +116,10 @@ typedef size_t charlen_t;
 #else
 #error "This code should not compile"
 #endif
+
+
+void PREFIX (sync_all) (int *, char *, charlen_t);
+bool PREFIX (is_contiguous) (CFI_cdesc_t *);
 
 
 #endif  /* LIBCAF_MIN_H  */

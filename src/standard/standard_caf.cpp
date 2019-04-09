@@ -864,7 +864,7 @@ PREFIX(init) (int *argc, char ***argv)
     sync_handles = (MPI_Request *)(malloc(caf_num_images * sizeof(MPI_Request)));
     /* END SYNC IMAGE preparation. */
 
-    stat_tok = malloc(sizeof(MPI_Win));
+    stat_tok = (MPI_Win *)(malloc(sizeof(MPI_Win)));
 
     teams_list = (caf_teams_list *)calloc(1, sizeof(caf_teams_list));
     teams_list->team_id = -1;
@@ -1299,6 +1299,7 @@ PREFIX(register_func) (size_t size, caf_register_t type, caf_token_t *token,
   int l_var = 0, *init_array = NULL, ierr;
 
   if (unlikely(caf_is_finalized))
+     // TODO:::
     goto error;
 
   /* Start GASNET if not already started. */
@@ -1311,7 +1312,9 @@ PREFIX(register_func) (size_t size, caf_register_t type, caf_token_t *token,
 
   /* Token contains only a list of pointers. */
   *token = malloc(sizeof(MPI_Win));
-  MPI_Win *p = *token;
+  MPI_Win *p = (MPI_Win *)*token;
+  // TODO:::
+  //  MPI_Win *p = (MPI_Win *)token;
 
   if (type == CAF_REGTYPE_LOCK_STATIC || type == CAF_REGTYPE_LOCK_ALLOC ||
       type == CAF_REGTYPE_CRITICAL || type == CAF_REGTYPE_EVENT_STATIC ||
@@ -1346,7 +1349,8 @@ PREFIX(register_func) (size_t size, caf_register_t type, caf_token_t *token,
   PREFIX(sync_all) (NULL, NULL, 0);
 
   struct caf_allocated_tokens_t *tmp =
-         malloc(sizeof(struct caf_allocated_tokens_t));
+     (caf_allocated_tokens_t *)(malloc(sizeof(struct caf_allocated_tokens_t)));
+  //     malloc(sizeof(struct caf_allocated_tokens_t));
   tmp->prev  = caf_allocated_tokens;
   tmp->token = *token;
   caf_allocated_tokens = tmp;
@@ -1934,7 +1938,8 @@ copy_char_to_self(void *src, int src_type, int src_size, int src_kind,
       if (dst_len > src_len)
       {
          // TODO::: Fix arithmetic on pointer to void error
-        int32_t * dest_addr = (int32_t *)(dst + dst_kind * src_len);
+         //        int32_t * dest_addr = (int32_t *)(dst + dst_kind * src_len);
+        int32_t * dest_addr = ((int32_t *)dst + dst_kind * src_len);
         const size_t pad_num = dst_len - src_len;
         if (dst_kind == 1)
           memset(dest_addr, ' ', pad_num);
@@ -1958,7 +1963,8 @@ copy_char_to_self(void *src, int src_type, int src_size, int src_kind,
     if (dst_kind == 1 && src_kind == 4)
       for (size_t c = 0; c < size; ++c)
       {
-        assign_char1_from_char4(dst_len, src_len, dst, src);
+         //        assign_char1_from_char4(dst_len, src_len, dst, src);
+        assign_char1_from_char4(dst_len, src_len, (unsigned char *)dst, (uint32_t *)src);
         dst = (void *)((ptrdiff_t)(dst) + dst_size);
         if (!src_is_scalar)
           src = (void *)((ptrdiff_t)(src) + src_size);
@@ -1966,7 +1972,8 @@ copy_char_to_self(void *src, int src_type, int src_size, int src_kind,
     else if (dst_kind == 4 && src_kind == 1)
       for (size_t c = 0; c < size; ++c)
       {
-        assign_char4_from_char1(dst_len, src_len, dst, src);
+         //        assign_char4_from_char1(dst_len, src_len, dst, src);
+        assign_char4_from_char1(dst_len, src_len, (uint32_t *)dst, (unsigned char *)src);
         dst = (void *)((ptrdiff_t)(dst) + dst_size);
         if (!src_is_scalar)
           src = (void *)((ptrdiff_t)(src) + src_size);
@@ -2148,7 +2155,7 @@ PREFIX(sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
       else
       {
         dprint("allocating %zd bytes for dst_t_buff.\n", dst_size * size);
-        if (free_dst_t_buff = ((dst_t_buff = alloca(dst_size * size)) == NULL))
+        if ((free_dst_t_buff = ((dst_t_buff = alloca(dst_size * size))) == NULL))
         {
           dst_t_buff = malloc(dst_size * size);
           if (dst_t_buff == NULL)
@@ -2175,7 +2182,7 @@ PREFIX(sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
       /* When replication is needed, only access the scalar on the remote. */
       const size_t src_real_size = src_rank > 0 ?
         (src_size * size) : src_size;
-      if (free_dst_t_buff = ((dst_t_buff = alloca(dst_size * size)) == NULL))
+      if ((free_dst_t_buff = ((dst_t_buff = alloca(dst_size * size))) == NULL))
       {
         dst_t_buff = malloc(dst_size * size);
         if (dst_t_buff == NULL)
@@ -2185,7 +2192,7 @@ PREFIX(sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
 
       if (dst_kind != src_kind || src_rank == 0 || dest_char_array_is_longer)
       {
-        if (free_src_t_buff = ((src_t_buff = alloca(src_size * size)) == NULL))
+        if ((free_src_t_buff = ((src_t_buff = alloca(src_size * size))) == NULL))
         {
           src_t_buff = malloc(src_size * size);
           if (src_t_buff == NULL)
@@ -3263,11 +3270,9 @@ case kind:                                                              \
         {
           dprint("strided same_image, *WITH* temp, for i = %zd.\n", i);
           if (same_type_and_kind)
-            // TODO::: char* conversion for this void pointer arithmetic correct?
-            memmove(t_buff + i * dst_size, sr, src_size);
+            memmove((void *)((char *)t_buff + i * dst_size), sr, src_size);
           else
-            // TODO::: char* conversion for this void pointer arithmetic correct?
-            convert_type(t_buff + i * dst_size, dst_type, dst_kind,
+            convert_type((void *)((char *)t_buff + i * dst_size), dst_type, dst_kind,
                          sr, src_type, src_kind, stat);
         }
       }
@@ -3318,7 +3323,7 @@ case kind:                                                              \
 #undef KINDCASE
         }
         dst_offset = array_offset_dst * dst_size;
-        memmove((void *)((char *)cfi_dest.get_base_addr() + dst_offset), t_buff + i * dst_size, dst_size);
+        memmove((void *)((char *)cfi_dest.get_base_addr() + dst_offset), (void *)((char *)t_buff + i * dst_size), dst_size);
       }
     }
   }
@@ -3803,10 +3808,10 @@ case kind:                                                             \
         {
           dprint("strided same_image, *WITH* temp, for i = %zd.\n", i);
           if (same_type_and_kind)
-            memmove(t_buff + i * dst_size,
+            memmove((void *)((char *)t_buff + i * dst_size),
                     (void *)((char *)cfi_src.get_base_addr() + src_offset), src_size);
           else
-            convert_type(t_buff + i * dst_size, dst_type, dst_kind,
+            convert_type((void *)((char *)t_buff + i * dst_size), dst_type, dst_kind,
                          (void *)((char *)cfi_src.get_base_addr() + src_offset), src_type, src_kind, stat);
         }
       }
@@ -7047,8 +7052,8 @@ name##_by_reference_adapter(void *invec, void *inoutvec,      \
   {                                                           \
     *((dt*)inoutvec) =                                        \
       (dt)(REFERENCE_FUNC(dt)((dt *)invec, (dt *)inoutvec));  \
-    invec += sizeof(dt);                                      \
-    inoutvec += sizeof(dt);                                   \
+    invec = (void *)((char *)invec + sizeof(dt));             \
+    inoutvec = (void *)((char *)inoutvec + sizeof(dt));       \
   }                                                           \
 }                                                             \
 static void                                                   \
@@ -7059,8 +7064,8 @@ name##_by_value_adapter(void *invec, void *inoutvec,          \
   {                                                           \
     *((dt*)inoutvec) =                                        \
       (dt)(VALUE_FUNC(dt)(*(dt *)invec, *(dt *)inoutvec));    \
-    invec += sizeof(dt);                                      \
-    inoutvec += sizeof(dt);                                   \
+    invec = (void *)((char *)invec + sizeof(dt));             \
+    inoutvec = (void *)((char *)inoutvec + sizeof(dt));       \
   }                                                           \
 }
 
@@ -7085,8 +7090,11 @@ redux_char_by_reference_adapter(void *invec, void *inoutvec, int *len,
       (char *)inoutvec, string_len, (char *)invec,
       (char *)inoutvec, string_len, string_len
     );
-    invec += sizeof(char) * string_len;
-    inoutvec += sizeof(char) * string_len;
+    //    invec += sizeof(char) * string_len;
+    //    inoutvec += sizeof(char) * string_len;
+    // TODO:::
+    invec = (void *)((char *)invec + sizeof(char) * string_len);
+    inoutvec = (void *)((char *)inoutvec + sizeof(char) * string_len);
   }
 }
 
@@ -7153,6 +7161,8 @@ get_MPI_datatype(CFI_cdesc_t *desc, int char_len)
   int ierr;
   /* FIXME: Better check whether the sizes are okay and supported;
    * MPI3 adds more types, e.g. MPI_INTEGER1. */
+
+
 
   // TODO::: deal with this macro
   switch (GFC_DTYPE_TYPE_SIZE(desc))
@@ -7237,7 +7247,7 @@ internal_co_reduce(MPI_Op op, CFI_cdesc_t *source, int result_image,
   int j, ierr, rank = cfi_source.get_rank();
   ptrdiff_t dimextent;
 
-  MPI_Datatype datatype = get_MPI_datatype(cfi_source, src_len);
+  MPI_Datatype datatype = get_MPI_datatype(cfi_source.get_desc(), src_len);
 
   size = 1;
   for (j = 0; j < rank; ++j)
@@ -7248,7 +7258,7 @@ internal_co_reduce(MPI_Op op, CFI_cdesc_t *source, int result_image,
     size *= dimextent;
   }
 
-  if (rank == 0 || PREFIX(is_contiguous) (cfi_source))
+  if (rank == 0 || PREFIX(is_contiguous) (cfi_source.get_desc()))
   {
     if (result_image == 0)
     {
@@ -7340,7 +7350,7 @@ PREFIX(co_broadcast) (CFI_cdesc_t *a, int source_image, int *stat,
   int j, ierr, rank = cfi_a.get_rank();
   ptrdiff_t dimextent;
 
-  MPI_Datatype datatype = get_MPI_datatype(cfi_a, 0);
+  MPI_Datatype datatype = get_MPI_datatype(cfi_a.get_desc(), 0);
 
   size = 1;
   for (j = 0; j < rank; ++j)
@@ -7362,7 +7372,9 @@ PREFIX(co_broadcast) (CFI_cdesc_t *a, int source_image, int *stat,
     {
       int a_length;
       if (caf_this_image == source_image)
-        a_length = strlen(cfi_a.get_base_addr());
+         // TODO:::
+         //        a_length = strlen(cfi_a.get_base_addr());
+        a_length = strlen((char *)cfi_a.get_base_addr());
       /* Broadcast the string lenth */
       ierr = MPI_Bcast(&a_length, 1, MPI_INT, source_image - 1, CAF_COMM_WORLD);
       chk_err(ierr);
@@ -7525,7 +7537,7 @@ if (cfi_a.get_elem_len() == sizeof(type ## _t)) \
     caf_runtime_error("Data type not yet supported for co_reduce\n");
   }
 
-  internal_co_reduce(op, cfi_a, result_image, stat, errmsg, a_len, errmsg_len);
+  internal_co_reduce(op, cfi_a.get_desc(), result_image, stat, errmsg, a_len, errmsg_len);
 }
 
 void
@@ -8159,8 +8171,8 @@ PREFIX(stopped_images) (CFI_cdesc_t *array,
 #endif
   // array->dim[0].lower_bound = 0;
   // array->dim[0]._stride = 1;
-  cfi_array.get_lower_bound(0, 0);
-  cfi_array.get_sm(0, 1);
+  cfi_array.set_lower_bound(0, 0);
+  cfi_array.set_sm(0, 1);
   // TODO:::
   // no offset
   // array->offset = 0;
@@ -8214,7 +8226,7 @@ void PREFIX(form_team) (int team_id, caf_team_t *team,
   ierr = MPI_Comm_split(*current_comm, team_id, caf_this_image, newcomm);
   chk_err(ierr);
 
-  tmp = calloc(1,sizeof(struct caf_teams_list));
+  tmp = (struct caf_teams_list *)(calloc(1,sizeof(struct caf_teams_list)));
   tmp->prev = teams_list;
   teams_list = tmp;
   teams_list->team_id = team_id;
@@ -8273,7 +8285,7 @@ PREFIX(get_communicator) (caf_team_t *team)
   if (team != NULL) caf_runtime_error("get_communicator does not yet support "
                                       "the optional team argument");
 
-  MPI_Comm* comm_ptr = teams_list->team;
+  MPI_Comm* comm_ptr = (MPI_Comm *)(teams_list->team);
   MPI_Fint ret = MPI_Comm_c2f(*comm_ptr);
 
   return ret;
