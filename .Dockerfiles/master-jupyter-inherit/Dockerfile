@@ -1,4 +1,4 @@
-FROM jupyter/minimal-notebook:latest
+FROM jupyter/minimal-notebook:4cdbc9cdb7d1
 
 USER root
 ENV GCC_VERSION 8.2.0
