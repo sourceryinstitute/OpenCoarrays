@@ -19,7 +19,7 @@ OpenCoarrays
 [![Download as PDF][pdf img]](https://md2pdf.herokuapp.com/sourceryinstitute/OpenCoarrays/blob/master/README.pdf)
 [![Twitter URL][twitter img]][default tweet]
 
-[News](#news) | [Overview](#overview) | [Downloads](#downloads) |
+[Overview](#overview) | [Downloads](#downloads) |
 [Compatibility](#compatibility) | [Prerequisites](#prerequisites) |
 [Installation](#installation) | [Getting Started](#getting-started) |
 [Contributing](#contributing) | [Status](#status)
@@ -150,7 +150,6 @@ to aid in development efforts.
 
 [Hyperlinks]:#
 
-[News]: #news
 [Overview]: #overview
 [Downloads]: #downloads
 [Compatibility]: #compatibility
