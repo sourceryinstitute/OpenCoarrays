@@ -15,13 +15,15 @@ git fetch -v --all --depth=9999999 --update-shallow
 git tag --list
 git branch
 
+echo "Info: value of IMAGE_NAME = ${IMAGE_NAME:-<unset>}"
+
 d_repo='sourceryinstitute/OpenCoarrays'
 d_git_remotes=("$(git remote show)")
 echo "${#d_git_remotes[@]} git remotes found."
 n_remotes=${#d_git_remotes[@]}
 if (( n_remotes > 0 )) ; then
     echo "Using remote: ${d_git_remotes[0]}"
-    d_vcs_url="$(git remote -v | awk 'FNR == 1 {print $2}')"
+    d_vcs_url="$(git remote -v | awk '/origin/ {print $2; exit}')"
 fi
 
 if [[ -z "${d_vcs_url:-}" ]]; then
@@ -56,5 +58,5 @@ docker build --build-arg OPENCOARRAYS_VERSION="${opencoarrays_version}" \
 	     --build-arg VCS_VERSION="${d_vcs_describe:-${d_tag}}" \
 	     --rm \
 	     --pull \
-             -t "${IMAGE_NAME:-$(tr '[:upper:]' '[:lower:]' <<< "${d_repo}")}:latest" .
-docker tag "${IMAGE_NAME:-$(tr '[:upper:]' '[:lower:]' <<< "${d_repo}")}:latest" "${IMAGE_NAME:-$(tr '[:upper:]' '[:lower:]' <<< "${d_repo}")}:${d_vcs_tag}"
+             -t "${IMAGE_NAME:-$(tr '[:upper:]' '[:lower:]' <<< "${d_repo}_jupyter")}:latest" .
+docker tag "${IMAGE_NAME:-$(tr '[:upper:]' '[:lower:]' <<< "${d_repo}_jupyter")}:latest" "${IMAGE_NAME:-$(tr '[:upper:]' '[:lower:]' <<< "${d_repo}_jupyter")}:${d_vcs_tag}"
