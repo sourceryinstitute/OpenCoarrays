@@ -1,7 +1,7 @@
-FROM jupyter/minimal-notebook:f3652d3f58f2
+FROM jupyter/minimal-notebook:latest
 
 USER root
-ENV GCC_VERSION 7.3.0
+ENV GCC_VERSION 8.2.0
 
 RUN DEBIAN_FRONTEND=noninteractive transientBuildDeps="file" \
     && echo "NB_USER=${NB_USER}" \
@@ -16,14 +16,14 @@ RUN DEBIAN_FRONTEND=noninteractive transientBuildDeps="file" \
     && apt-get update -y \
     && apt-get install -y --no-install-recommends \
     build-essential \
-    gcc-7>=7.3.0 \
-    gfortran-7>=7.3.0 \
-    g++-7>=7.3.0 \
+    gcc-8>=8.2.0 \
+    gfortran-8>=8.2.0 \
+    g++-8>=8.2.0 \
     mpich>=3.2 \
     libmpich-dev>=3.2 \
     ${transientBuildDeps} \
-    && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 60 --slave /usr/bin/gfortran gfortran /usr/bin/gfortran-7 \
-    && update-alternatives --set gcc "/usr/bin/gcc-7" \
+    && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 60 --slave /usr/bin/gfortran gfortran /usr/bin/gfortran-8 \
+    && update-alternatives --set gcc "/usr/bin/gcc-8" \
     && gcc --version \
     && gfortran --version \
     && mpiexec --version \
