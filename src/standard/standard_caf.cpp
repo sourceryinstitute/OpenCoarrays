@@ -1118,12 +1118,13 @@ PREFIX(num_images) (int distance __attribute__((unused)),
  * its data_ptr is NULL. This is still missing here.  At the moment the
  * compiler also does not make use of it, but it is contrary to the
  * documentation. */
-void
+
+template <class Desc> void
 PREFIX(register_func) (size_t size, caf_register_t type, caf_token_t *token,
-                  CFI_cdesc_t *desc, int *stat, char *errmsg,
+                  Desc *desc, int *stat, char *errmsg,
                   charlen_t errmsg_len)
 {
-  CFIDescriptor cfi_desc(desc);
+  Descriptor<Desc> cfi_desc(desc);
 
   void *mem = NULL;
   size_t actual_size;
@@ -1892,12 +1893,12 @@ copy_char_to_self(void *src, int src_type, int src_size, int src_kind,
   }
 }
 
-static void
-copy_to_self(CFI_cdesc_t *src, int src_kind,
-              CFI_cdesc_t *dest, int dst_kind, size_t size, int *stat)
+template <class Desc> static void
+copy_to_self(Desc *src, int src_kind,
+              Desc *dest, int dst_kind, size_t size, int *stat)
 {
-  CFIDescriptor cfi_src(src);
-  CFIDescriptor cfi_dest(dest);
+  Descriptor<Desc> cfi_src(src);
+  Descriptor<Desc> cfi_dest(dest);
 
 #ifdef GFC_CAF_CHECK
   if (cfi_dest.get_type() == BT_CHARACTER
@@ -1948,15 +1949,15 @@ if (t_s == size)                                  \
 #undef SELTYPE
 }
 
-void
+template <class Desc> void
 PREFIX(sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
-                 CFI_cdesc_t *dest, caf_vector_t *dst_vector,
+                 Desc *dest, caf_vector_t *dst_vector,
                  caf_token_t token_g, size_t offset_g, int image_index_g,
-                 CFI_cdesc_t *src , caf_vector_t *src_vector,
+                 Desc *src , caf_vector_t *src_vector,
                  int dst_kind, int src_kind, bool mrt, int *pstat)
 {
-  CFIDescriptor cfi_dest(dest);
-  CFIDescriptor cfi_src(src);
+  Descriptor<Desc> cfi_dest(dest);
+  Descriptor<Desc> cfi_src(src);
 
   int j, ierr = 0;
   size_t i, size;
@@ -2704,14 +2705,14 @@ case kind:                                                              \
 /* Send array data from src to dest on a remote image.
  * The argument mrt means may_require_temporary */
 
-void
+template <class Desc> void
 PREFIX(send) (caf_token_t token, size_t offset, int image_index,
-              CFI_cdesc_t *dest, caf_vector_t *dst_vector,
-              CFI_cdesc_t *src, int dst_kind, int src_kind,
+              Desc *dest, caf_vector_t *dst_vector,
+              Desc *src, int dst_kind, int src_kind,
               bool mrt, int *pstat)
 {
-  CFIDescriptor cfi_dest(dest);
-  CFIDescriptor cfi_src(src);
+  Descriptor<Desc> cfi_dest(dest);
+  Descriptor<Desc> cfi_src(src);
 
   int j, ierr = 0;
   size_t i, size;
@@ -3266,14 +3267,14 @@ case kind:                                                              \
 
 /* Get array data from a remote src to a local dest. */
 
-void
+template <class Desc> void
 PREFIX(get) (caf_token_t token, size_t offset, int image_index,
-             CFI_cdesc_t *src, caf_vector_t *src_vector,
-             CFI_cdesc_t *dest, int src_kind, int dst_kind,
+             Desc *src, caf_vector_t *src_vector,
+             Desc *dest, int src_kind, int dst_kind,
              bool mrt, int *pstat)
 {
-  CFIDescriptor cfi_src(src);
-  CFIDescriptor cfi_dest(dest);
+  Descriptor<Desc> cfi_src(src);
+  Descriptor<Desc> cfi_dest(dest);
 
   int j, ierr = 0;
   size_t i, size;
@@ -3879,10 +3880,10 @@ do                                                              \
 #define sizeof_desc_for_rank(rank) \
 (sizeof(CFI_cdesc_t) + (rank) * sizeof(descriptor_dimension))
 
-static void
+template <class Desc> static void
 get_for_ref(caf_reference_t *ref, size_t *i, size_t dst_index,
-            mpi_caf_token_t *mpi_token, CFI_cdesc_t *dst,
-            CFI_cdesc_t *src, void *ds, void *sr,
+            mpi_caf_token_t *mpi_token, Desc *dst,
+            Desc *src, void *ds, void *sr,
             ptrdiff_t sr_byte_offset, ptrdiff_t desc_byte_offset,
             int dst_kind, int src_kind, size_t dst_dim, size_t src_dim,
             size_t num, int *stat, int image_index,
@@ -3901,8 +3902,8 @@ get_for_ref(caf_reference_t *ref, size_t *i, size_t dst_index,
   cfi_max_dim_descriptor_t src_desc_data;
   int ierr;
 
-  CFIDescriptor cfi_dst(dst);
-  CFIDescriptor cfi_src(src);
+  Descriptor<Desc> cfi_dst(dst);
+  Descriptor<Desc> cfi_src(src);
 
   if (unlikely(ref == NULL))
   {
@@ -4412,9 +4413,9 @@ case kind:                                                          \
   }
 }
 
-void
+template <class Desc> void
 PREFIX(get_by_ref) (caf_token_t token, int image_index,
-                    CFI_cdesc_t *dst, caf_reference_t *refs,
+                    Desc *dst, caf_reference_t *refs,
                     int dst_kind, int src_kind,
                     bool may_require_tmp __attribute__((unused)),
                     bool dst_reallocatable, int *stat
@@ -4423,10 +4424,7 @@ PREFIX(get_by_ref) (caf_token_t token, int image_index,
 #endif
                     )
 {
-     // construct cdesc wrapper class from dst pointer
-  //
-
-  CFIDescriptor cfi_dst(dst);
+  Descriptor<Desc> cfi_dst(dst);
 
   const char vecrefunknownkind[] =
     "libcaf_mpi::caf_get_by_ref(): unknown kind in vector-ref.\n";
@@ -5085,10 +5083,10 @@ put_data(mpi_caf_token_t *token, MPI_Aint offset, void *sr, int dst_type,
 }
 
 
-static void
+template <class Desc> static void
 send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
-             mpi_caf_token_t *mpi_token, CFI_cdesc_t *dst,
-             CFI_cdesc_t *src, void *ds, void *sr,
+             mpi_caf_token_t *mpi_token, Desc *dst,
+             Desc *src, void *ds, void *sr,
              ptrdiff_t dst_byte_offset, ptrdiff_t desc_byte_offset,
              int dst_kind, int src_kind, size_t dst_dim, size_t src_dim,
              size_t num, int *stat, int image_index,
@@ -5103,8 +5101,8 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
   int dst_type = -1;
 #endif
 
-  CFIDescriptor cfi_dst(dst);
-  CFIDescriptor cfi_src(src);
+  Descriptor<Desc> cfi_dst(dst);
+  Descriptor<Desc> cfi_src(src);
 
   ptrdiff_t extent_dst = 1, array_offset_dst = 0, dst_stride, src_stride;
   size_t next_dst_dim, ref_rank;
@@ -5627,9 +5625,9 @@ case kind:                                                          \
 }
 
 
-void
+template <class Desc> void
 PREFIX(send_by_ref) (caf_token_t token, int image_index,
-                     CFI_cdesc_t *src, caf_reference_t *refs,
+                     Desc *src, caf_reference_t *refs,
                      int dst_kind, int src_kind, bool may_require_tmp,
                      bool dst_reallocatable, int *stat
 #ifdef GCC_GE_8
@@ -5637,7 +5635,7 @@ PREFIX(send_by_ref) (caf_token_t token, int image_index,
 #endif
                      )
 {
-  CFIDescriptor cfi_src(src);
+  Descriptor<Desc> cfi_src(src);
 
   const char vecrefunknownkind[] =
     "libcaf_mpi::caf_send_by_ref(): unknown kind in vector-ref.\n";
@@ -7060,10 +7058,10 @@ GEN_REDUCTION(do_max_complex10, _Complex __float128,
 #undef GEN_REDUCTION
 
 
-static MPI_Datatype
-get_MPI_datatype(CFI_cdesc_t *desc, int char_len)
+template <class Desc> static MPI_Datatype
+get_MPI_datatype(Desc *desc, int char_len)
 {
-  CFIDescriptor cfi_desc(desc);
+  Descriptor<Desc> cfi_desc(desc);
   int ierr;
   /* FIXME: Better check whether the sizes are okay and supported;
    * MPI3 adds more types, e.g. MPI_INTEGER1. */
@@ -7149,11 +7147,11 @@ get_MPI_datatype(CFI_cdesc_t *desc, int char_len)
 }
 
 
-static void
-internal_co_reduce(MPI_Op op, CFI_cdesc_t *source, int result_image,
+template <class Desc> static void
+internal_co_reduce(MPI_Op op, Desc *source, int result_image,
                    int *stat, char *errmsg, int src_len, size_t errmsg_len)
 {
-  CFIDescriptor cfi_source(source);
+  Descriptor<Desc> cfi_source(source);
 
   size_t i, size;
   int j, ierr, rank = cfi_source.get_rank();
@@ -7252,11 +7250,11 @@ error:
     memset(&errmsg[len], '\0', errmsg_len - len);
 }
 
-void
-PREFIX(co_broadcast) (CFI_cdesc_t *a, int source_image, int *stat,
+template <class Desc> void
+PREFIX(co_broadcast) (Desc *a, int source_image, int *stat,
                       char *errmsg, charlen_t errmsg_len)
 {
-  CFIDescriptor cfi_a(a);
+  Descriptor<Desc> cfi_a(a);
 
   size_t i, size;
   int j, ierr, rank = cfi_a.get_rank();
@@ -7359,12 +7357,12 @@ error:
 
 /* The front-end function for co_reduce functionality.  It sets up the MPI_Op
  * for use in MPI_*Reduce functions. */
-void
-PREFIX(co_reduce) (CFI_cdesc_t *a, void *(*opr) (void *, void *),
+template <class Desc> void
+PREFIX(co_reduce) (Desc *a, void *(*opr) (void *, void *),
                    int opr_flags, int result_image, int *stat, char *errmsg,
                    int a_len, charlen_t errmsg_len)
 {
-  CFIDescriptor cfi_a(a);
+  Descriptor<Desc> cfi_a(a);
 
   MPI_Op op;
   int type_a = cfi_a.get_type(), ierr;
@@ -7926,11 +7924,11 @@ PREFIX(image_status) (int image)
   return 0;
 }
 
-void
-PREFIX(failed_images) (CFI_cdesc_t *array,
+template <class Desc> void
+PREFIX(failed_images) (Desc *array,
                        int team __attribute__((unused)), int * kind)
 {
-  CFIDescriptor cfi_array(array);
+  Descriptor<Desc> cfi_array(array);
 
   int local_kind = kind ? *kind : 4; /* GFC_DEFAULT_INTEGER_KIND = 4*/
 
@@ -8002,11 +8000,11 @@ PREFIX(failed_images) (CFI_cdesc_t *array,
   //  array->offset = 0;
 }
 
-void
-PREFIX(stopped_images) (CFI_cdesc_t *array,
+template <class Desc> void
+PREFIX(stopped_images) (Desc *array,
                         int team __attribute__((unused)), int * kind)
 {
-  CFIDescriptor cfi_array(array);
+  Descriptor<Desc> cfi_array(array);
 
   int local_kind = kind ? *kind : 4; /* GFC_DEFAULT_INTEGER_KIND = 4*/
 
