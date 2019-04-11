@@ -58,5 +58,5 @@ docker build --build-arg OPENCOARRAYS_VERSION="${opencoarrays_version}" \
 	     --build-arg VCS_VERSION="${d_vcs_describe:-${d_tag}}" \
 	     --rm \
 	     --pull \
-             -t "${IMAGE_NAME:-$(tr '[:upper:]' '[:lower:]' <<< "${d_repo}_jupyter")}:latest" .
-docker tag "${IMAGE_NAME:-$(tr '[:upper:]' '[:lower:]' <<< "${d_repo}_jupyter")}:latest" "${IMAGE_NAME:-$(tr '[:upper:]' '[:lower:]' <<< "${d_repo}_jupyter")}:${d_vcs_tag}"
+             -t "${IMAGE_NAME:-$(tr '[:upper:]' '[:lower:]' <<< "${d_repo}_jupyter"):latest}" .
+docker tag "${IMAGE_NAME:-$(tr '[:upper:]' '[:lower:]' <<< "${d_repo}_jupyter"):latest}" "${IMAGE_NAME:-$(tr '[:upper:]' '[:lower:]' <<< "${d_repo}_jupyter"):${d_vcs_tag}}"
