@@ -172,6 +172,40 @@ __only_compiling () {
 # End configured variables, now process them and build compile/link command
 #--------------------------------------------------------------------------
 
+
+substitute_lib () {
+  # Try to substitute a shared or static library if requested library is missing
+  # Some package managers only install dynamic or static libs
+  if ! [[ -f "${1}" ]] ; then
+      case "${1##*.}" in
+          a|lib)
+              for suff in so dylib dll ; do
+                  if [[ -f "${1%%.*}.${suff}" ]] ; then
+                      echo "${1%%.*}.${suff}"
+                      return
+                  fi
+              done
+              # If we get here, original lib DNE, and no alternates found
+              echo "Failed to find static library ${1} or shared library alternatives." >&2
+              exit 1
+          ;;
+          so|dylib|dll)
+              for suff in a lib ; do
+                  if [[ -f "${1%%.*}.${suff}" ]] ; then
+                      echo "${1%%.*}.${suff}"
+                      return
+                  fi
+              done
+              # If we get here, original lib DNE, and no alternates found
+              echo "Failed to find shared library ${1} or static library alternatives." >&2
+              exit 1
+          ;;
+      esac
+  else
+    echo "${1}"
+  fi
+}
+
 # Always make extensions module available, user can choose whether to `use` it or not
 caf_pre_flags=("${mod_dir_flag}${prefix%/}/${caf_mod_dir}")
 
@@ -198,12 +232,12 @@ fi
 # Now do libraries, IN CORRECT ORDER, to append to command
 if [[ -n "${caf_libs[*]:-}" ]]; then
   for lib in "${caf_libs[@]:-}"; do
-    caf_added_libs+=("${prefix%/}/${lib}")
+    caf_added_libs+=("$(substitute_lib "${prefix%/}/${lib}")")
   done
 fi
 if [[ -n "${mpi_libs[*]:-}" ]]; then
   for lib in "${mpi_libs[@]:-}"; do
-    caf_added_libs+=("${lib}")
+    caf_added_libs+=("$(substitute_lib "${lib}")")
   done
 fi
 

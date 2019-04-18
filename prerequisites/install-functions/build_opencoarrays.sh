@@ -7,7 +7,7 @@ build_opencoarrays()
   find_or_install mpich
   info "Invoking find_or_install cmake"
   find_or_install cmake
-  build_path="${build_path}"/opencoarrays/$("${opencoarrays_src_dir}"/install.sh -V opencoarrays)
+  build_path="${build_path}"/opencoarrays/$("${OPENCOARRAYS_SRC_DIR}"/install.sh -V opencoarrays)
   if [[ -d "${build_path}" ]]; then
     rm -rf "${build_path}"
   fi
@@ -44,8 +44,8 @@ build_opencoarrays()
   set_or_print_installation_path
 
   info "Configuring OpenCoarrays in ${PWD} with the command:"
-  info "CC=\"${CC}\" FC=\"${FC}\" $CMAKE \"${opencoarrays_src_dir}\" \"${WDEVFLAG}\" -DCMAKE_INSTALL_PREFIX=\"${install_path}\" -DMPIEXEC=\"${MPIEXEC}\" -DMPI_C_COMPILER=\"${MPICC}\" -DMPI_Fortran_COMPILER=\"${MPIFC}\""
-  CC="${CC}" FC="${FC}" $CMAKE "${opencoarrays_src_dir}" "${WDEVFLAG}" -DCMAKE_INSTALL_PREFIX="${install_path}" -DMPIEXEC="${MPIEXEC}" -DMPI_C_COMPILER="${MPICC}" -DMPI_Fortran_COMPILER="${MPIFC}"
+  info "CC=\"${CC}\" FC=\"${FC}\" $CMAKE \"${OPENCOARRAYS_SRC_DIR}\" \"${WDEVFLAG}\" -DCMAKE_INSTALL_PREFIX=\"${install_path}\" -DMPIEXEC=\"${MPIEXEC}\" -DMPI_C_COMPILER=\"${MPICC}\" -DMPI_Fortran_COMPILER=\"${MPIFC}\""
+  CC="${CC}" FC="${FC}" $CMAKE "${OPENCOARRAYS_SRC_DIR}" "${WDEVFLAG}" -DCMAKE_INSTALL_PREFIX="${install_path}" -DMPIEXEC="${MPIEXEC}" -DMPI_C_COMPILER="${MPICC}" -DMPI_Fortran_COMPILER="${MPIFC}"
   info "Building OpenCoarrays in ${PWD} with the command make -j${num_threads}"
   make "-j${num_threads}"
   if [[ ! -z ${SUDO:-} ]]; then

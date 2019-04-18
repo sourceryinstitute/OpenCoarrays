@@ -19,20 +19,13 @@ OpenCoarrays
 [![Download as PDF][pdf img]](https://md2pdf.herokuapp.com/sourceryinstitute/OpenCoarrays/blob/master/README.pdf)
 [![Twitter URL][twitter img]][default tweet]
 
-[News](#news) | [Overview](#overview) | [Downloads](#downloads) |
+[Overview](#overview) | [Downloads](#downloads) |
 [Compatibility](#compatibility) | [Prerequisites](#prerequisites) |
 [Installation](#installation) | [Getting Started](#getting-started) |
 [Contributing](#contributing) | [Status](#status)
 [Support](#support) | [Acknowledgments](#acknowledgments) | [Donate](#donate)
 
 </div>
-
-News
-----
-### Upcoming events ###
-* Nov. 5-8, 2018: "[Writing Fortran 2018 Today]" course by OpenCoarrays contributors Damian Rouson and Izaak Beekman.
-* Nov. 13, 2018: [Intel Speakerships at SC18] presentation by Damian Rouson and Sameer Shende
-* Nov. 16, 2018: SC18 [PAW-ATM Workshop] presentation by OpenCoarrays contributor Soren Rasmussen.
 
 Overview
 --------
@@ -48,8 +41,7 @@ need change to switch parallel programming models.  The default
 programming model is MPI because it provides the broadest capability
 for supporting Fortran 2018  features.  However, having the option to
 change parallel programming models at link-time may enhance portability
-and performance (see [Rouson et al. (2017)]).<!-- and [Rasmussen et al. (2018)]). -->
-<!-- Rasmussen et al. link is to a private repo that no one can access -->
+and performance (see [Rouson et al. (2017)]).
 
 OpenCoarrays provides a compiler wrapper (`caf`), parallel runtime
 libraries (`libcaf_mpi` and `libcaf_openshmem`), and a parallel
@@ -158,7 +150,6 @@ to aid in development efforts.
 
 [Hyperlinks]:#
 
-[News]: #news
 [Overview]: #overview
 [Downloads]: #downloads
 [Compatibility]: #compatibility
@@ -167,25 +158,17 @@ to aid in development efforts.
 [Contributing]: #contributing
 [Acknowledgments]: #acknowledgments
 
-[Fortran 2018]: https://isotc.iso.org/livelink/livelink/nfetch/-8919044/8919782/8919787/18770498/ISO%2DIECJTC1%2DSC22%2DWG5_N2146_Fortran_2018_Draft_International_Standard_for_Ballot.pdf?nodeid=19442438&vernum=0
-[Rouson et al. (2017)]: https://github.com/sourceryinstitute/coarray-icar-paw17/blob/master/main.pdf
-<!--[Rasmussen et al. (2018)]: https://github.com/scrasmussen/coarray-icar-paw18/blob/master/main.pdf-->
+[Fortran 2018]: https://j3-fortran.org/doc/year/18/18-007r1.pdf 
 [Arm]: https://www.arm.com
-[PAW-ATM Workshop]: https://sourceryinstitute.github.io/PAW/
-[Intel Speakerships at SC18]: https://easychair.org/cfp/IntelSpeakershipsatSC18
 
 [OpenSHMEM]: http://www.openshmem.org/site/
 [sourcery-institute logo]: http://www.sourceryinstitute.org/uploads/4/9/9/6/49967347/sourcery-logo-rgb-hi-rez-1.png
 [OpenCoarrays]: http://www.opencoarrays.org
 [ABI]: https://gcc.gnu.org/onlinedocs/gfortran/Coarray-Programming.html#Coarray-Programming
-[TS 18508]: https://isotc.iso.org/livelink/livelink/nfetch/-8919044/8919782/8919787/16681398/ISO%2DIECJTC1%2DSC22%2DWG5_N2027_Draft_TS_18508_Additional_Paralle.pdf?nodeid=16769292&vernum=0
 [MPI]: https://www.mpi-forum.org/
 [GCC]: https://gcc.gnu.org
 [gfortran]: https://gcc.gnu.org/wiki/GFortran
-[opencoarrays module]: ./src/extensions/opencoarrays.F90
 [MPICH]: https://www.mpich.org
-[MVAPICH]: http://mvapich.cse.ohio-state.edu
-[OpenMPI]: https://www.open-mpi.org
 [Sourcery, Inc.]: http://www.sourceryinstitute.org
 [Google]: https://www.google.com
 [CINECA]: https://www.cineca.it/en
@@ -195,10 +178,6 @@ to aid in development efforts.
 [GASNet]: https://gasnet.lbl.gov
 [CONTRIBUTING.md]: ./CONTRIBUTING.md
 [GETTING_STARTED.md]: ./GETTING_STARTED.md
-[Google Groups]: https://groups.google.com/forum/#!homeredir
-[Google Group]: https://groups.google.com/forum/#!forum/opencoarrays
-[subscribing]: https://groups.google.com/forum/#!forum/opencoarrays/join
-[opencoarrays@googlegroups.com]: mailto:opencoarrays@googlegroups.com
 [Google Summer of Code]: https://www.google-melange.com/archive/gsoc/2014/orgs/gcc
 
 [Issues]: https://github.com/sourceryinstitute/OpenCoarrays/issues
@@ -210,7 +189,7 @@ to aid in development efforts.
 [Jupyter]: https://jupyter.org
 [index.ipynb]: https://nbviewer.jupyter.org/github/sourceryinstitute/jupyter-CAF-kernel/blob/master/index.ipynb
 
-[build img]: https://img.shields.io/travis-ci/sourceryinstitute/OpenCoarrays/master.svg?style=flat-square "Travis-CI build badge"
+[build img]: https://img.shields.io/travis/sourceryinstitute/OpenCoarrays.svg?style=flat-square "Build badge"
 [CI Master Branch]: https://travis-ci.org/sourceryinstitute/OpenCoarrays?branch=master "View Travis-CI builds"
 [download img]: https://img.shields.io/github/downloads/sourceryinstitute/OpenCoarrays/total.svg?style=flat-square "Download count badge"
 [license img]: https://img.shields.io/badge/license-BSD--3-blue.svg?style=flat-square "BSD-3 License badge"
@@ -218,5 +197,6 @@ to aid in development efforts.
 [pdf img]: https://img.shields.io/badge/PDF-README.md-6C2DC7.svg?style=flat-square "Download this readme as a PDF"
 [twitter img]: https://img.shields.io/twitter/url/http/shields.io.svg?style=social
 [Writing Fortran 2018 Today]: https://www.eventbrite.com/e/writing-fortran-2018-today-object-oriented-parallel-programming-tickets-48982176007
+[Rouson et al. (2017)]: http://www.opencoarrays.org/uploads/6/9/7/4/69747895/a4-rouson.pdf
 
 [default tweet]: https://twitter.com/intent/tweet?hashtags=HPC,Fortran,PGAS&related=zbeekman,gnutools,HPCwire,HPC_Guru,hpcprogrammer,SciNetHPC,DegenerateConic,jeffdotscience,travisci&text=Stop%20programming%20w%2F%20the%20%23MPI%20docs%20in%20your%20lap%2C%20try%20Coarray%20Fortran%20w%2F%20OpenCoarrays%20%26%20GFortran!&url=https%3A//github.com/sourceryinstitute/OpenCoarrays

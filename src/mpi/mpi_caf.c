@@ -6989,8 +6989,8 @@ static void
 redux_char_by_reference_adapter(void *invec, void *inoutvec, int *len,
                                 MPI_Datatype *datatype)
 {
-  MPI_Aint string_len;
-  MPI_Type_extent(*datatype, &string_len);
+  MPI_Aint lb, string_len;
+  MPI_Type_get_extent(*datatype, &lb, &string_len);
   for (int i = 0; i < *len; i++)
   {
     /* The length of the result is fixed, i.e., no deferred string length is
@@ -8098,7 +8098,6 @@ void PREFIX(change_team) (caf_team_t *team,
   caf_teams_list * tmp_list = NULL;
   void *tmp_team;
   MPI_Comm *tmp_comm;
-  int ierr = MPI_Barrier(CAF_COMM_WORLD); chk_err(ierr);
 
   tmp_list = (struct caf_teams_list *)*team;
   tmp_team = (void *)tmp_list->team;
@@ -8131,9 +8130,10 @@ void PREFIX(change_team) (caf_team_t *team,
   tmp_team = tmp_used->team_list_elem->team;
   tmp_comm = (MPI_Comm *)tmp_team;
   CAF_COMM_WORLD = *tmp_comm;
-  ierr = MPI_Comm_rank(*tmp_comm,&caf_this_image); chk_err(ierr);
+  int ierr = MPI_Comm_rank(*tmp_comm,&caf_this_image); chk_err(ierr);
   caf_this_image++;
   ierr = MPI_Comm_size(*tmp_comm,&caf_num_images); chk_err(ierr);
+  ierr = MPI_Barrier(*tmp_comm); chk_err(ierr);
 }
 
 MPI_Fint
@@ -8152,12 +8152,10 @@ PREFIX(get_communicator) (caf_team_t *team)
 int
 PREFIX(team_number) (caf_team_t *team)
 {
-  if (team != NULL) caf_runtime_error("team_number does not yet support "
-                                      "the optional team argument");
-
-  // if (used_teams->prev == NULL) 
-  //   return -1;
-  return used_teams->team_list_elem->team_id;
+  if (team != NULL)
+    return ((caf_teams_list *)team)->team_id;
+  else
+    return used_teams->team_list_elem->team_id; /* current team */
 }
 
 void PREFIX(end_team) (caf_team_t *team __attribute__((unused)))
@@ -8178,7 +8176,6 @@ void PREFIX(end_team) (caf_team_t *team __attribute__((unused)))
   tmp_team = tmp_used->team_list_elem->team;
   tmp_comm = (MPI_Comm *)tmp_team;
   CAF_COMM_WORLD = *tmp_comm;
-  ierr = MPI_Barrier(CAF_COMM_WORLD); chk_err(ierr);
   /* CAF_COMM_WORLD = (MPI_Comm)*tmp_used->team_list_elem->team; */
   ierr = MPI_Comm_rank(CAF_COMM_WORLD,&caf_this_image); chk_err(ierr);
   caf_this_image++;

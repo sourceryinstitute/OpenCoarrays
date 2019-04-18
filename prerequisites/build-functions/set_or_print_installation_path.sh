@@ -19,8 +19,9 @@ set_or_print_installation_path()
       export install_path="${arg_r%/}/${arg_p:-${arg_D:-${arg_P:-${arg_U:-${arg_V}}}}}/${version_to_build}"
     fi
   else
-    [ ! -z "${arg_r}" ] && 
+    if [[ ! "${arg_i%/}" != "${arg_r}" ]]; then
       emergency "Please pass only one of {-i,-r} or a longer equivalent (multiple detected). [exit 105]"
+    fi
     install_path="${arg_i%/}"
   fi
 

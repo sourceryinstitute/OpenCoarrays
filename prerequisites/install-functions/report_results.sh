@@ -34,10 +34,10 @@ report_results()
     # Prepend the OpenCoarrays license to the setup.sh script:
     while IFS='' read -r line || [[ -n "${line}" ]]; do
         echo "# ${line}" >> setup.sh
-    done < "${opencoarrays_src_dir}/LICENSE"
+    done < "${OPENCOARRAYS_SRC_DIR}/LICENSE"
     while IFS='' read -r line || [[ -n "${line}" ]]; do
         echo "# ${line}" >> setup.csh
-    done < "${opencoarrays_src_dir}/LICENSE"
+    done < "${OPENCOARRAYS_SRC_DIR}/LICENSE"
     echo "#                                                                               " | tee -a setup.csh setup.sh
     echo "# Execute this script via the following command:                                " | tee -a setup.csh setup.sh
     echo "# source ${install_path%/}/setup.sh                                             " | tee -a setup.csh setup.sh
@@ -49,18 +49,18 @@ report_results()
       echo "else                                                                 " >> setup.sh
       echo "  if ! [[ \"\${PATH}\" =~ \"${cmake_install_path}\" ]] ; then        " >> setup.sh
       echo "    export PATH=\"${cmake_install_path%/}\":\${PATH}                 " >> setup.sh
-      echo "  fi                                                                 "  >> setup.sh
+      echo "  fi                                                                 " >> setup.sh
       echo "fi                                                                   " >> setup.sh
-      echo "set path = (\"${cmake_install_path%/}\" \"\$path\")                  " >> setup.csh
+      echo "set path = (\"${cmake_install_path%/}\" \$path)                      " >> setup.csh
     fi
     if [[ -x "${fully_qualified_FC}" ]]; then
       echo "# Prepend the compiler path to the PATH environment variable:" | tee -a setup.sh setup.csh
-      echo "if [[ -z \"\${PATH}\" ]]; then                                                  " >> setup.sh
+      echo "if [[ -z \"\${PATH}\" ]]; then                                                " >> setup.sh
       echo "  export PATH=\"${compiler_install_root%/}/bin\"                              " >> setup.sh
       echo "else                                                                          " >> setup.sh
-      echo "  export PATH=\"${compiler_install_root%/}/bin:\${PATH}\"                       " >> setup.sh
+      echo "  export PATH=\"${compiler_install_root%/}/bin:\${PATH}\"                     " >> setup.sh
       echo "fi                                                                            " >> setup.sh
-      echo "set path = (\"${compiler_install_root%/}\"/bin \"\$path\")                    " >> setup.csh
+      echo "set path = (\"${compiler_install_root%/}\"/bin \$path)                        " >> setup.csh
     fi
     LD_LIB_P_VAR=LD_LIBRARY_PATH
     if [[ "${OSTYPE:-}" =~ [Dd]arwin ]]; then
@@ -69,28 +69,28 @@ report_results()
     if [[ -d "${compiler_install_root%/}/lib" || -d "${compiler_install_root%/}/lib64" ]]; then
       echo "# Prepend the compiler library paths to the ${LD_LIB_P_VAR} environment variable:" | tee -a setup.sh setup.csh
       compiler_lib_paths="${compiler_install_root%/}/lib64/:${compiler_install_root%/}/lib"
-      echo "if [[ -z \"\${!LD_LIB_P_VAR}\" ]]; then                                       " >> setup.sh
+      echo "if [[ -z \"\${${LD_LIB_P_VAR}}\" ]]; then                                    " >> setup.sh
       echo "  export ${LD_LIB_P_VAR}=\"${compiler_lib_paths%/}\"                          " >> setup.sh
       echo "else                                                                          " >> setup.sh
-      echo "  export ${LD_LIB_P_VAR}=\"${compiler_lib_paths%/}:\${!LD_LIB_P_VAR}\"        " >> setup.sh
+      echo "  export ${LD_LIB_P_VAR}=\"${compiler_lib_paths%/}:\${${LD_LIB_P_VAR}}\"     " >> setup.sh
       echo "fi                                                                            " >> setup.sh
-      echo "set LD_LIBRARY_PATH = (\"${compiler_lib_paths%/}\" \"\${LD_LIBRARY_PATH}\") " >> setup.csh
+      echo "setenv LD_LIBRARY_PATH \"${compiler_lib_paths%/}:\${LD_LIBRARY_PATH}\"        " >> setup.csh
     fi
-    echo "                                                                       " >> setup.sh
+    echo "                                                                                " >> setup.sh
     if [[ -x "${mpi_install_root}/bin/mpifort" ]]; then
       echo "# Prepend the MPI path to the PATH environment variable:" | tee -a setup.sh setup.csh
-      echo "if [[ -z \"\${PATH}\" ]]; then                                         " >> setup.sh
-      echo "  export PATH=\"${mpi_install_root%/}/bin\"                        " >> setup.sh
+      echo "if [[ -z \"\${PATH}\" ]]; then                                       " >> setup.sh
+      echo "  export PATH=\"${mpi_install_root%/}/bin\"                          " >> setup.sh
       echo "else                                                                 " >> setup.sh
       echo "  export PATH=\"${mpi_install_root%/}/bin\":\${PATH}                 " >> setup.sh
       echo "fi                                                                   " >> setup.sh
-      echo "set path = (\"${mpi_install_root%/}\"/bin \"\$path\")              " >> setup.csh
+      echo "set path = (\"${mpi_install_root%/}/bin\" \$path)                    " >> setup.csh
     fi
     # In all likelihood, the following paths are only needed if OpenCoarrays built them,
     # In by far the most common such use case, they would have been built in a recursive
     # build of all the OpenCoarrays dependency tree (rather than built indvidually via
     # ./install --package) so we only need check the default location in which OpenCoarrays
-    # would install them.  If they are not there, then it is very likely the case that the 
+    # would install them.  If they are not there, then it is very likely the case that the
     # the system versions of these packages are present and in the user's path or that the
     # user doesn't need them at all (e.g. there was no need to build gfortran from source).
     flex_install_path=$("${build_script}" -P flex)
@@ -100,7 +100,7 @@ report_results()
       echo "  export PATH=\"${flex_install_path}/bin\"                             " >> setup.sh
       echo "else                                                                 " >> setup.sh
       echo "  export PATH=\"${flex_install_path}/bin\":\${PATH}                      " >> setup.sh
-      echo "set path = (\"$flex_install_path\"/bin \"\$path\")                      " >> setup.csh
+      echo "set path = (\"$flex_install_path\"/bin \$path)                      " >> setup.csh
       echo "fi                                                                   " >> setup.sh
     fi
     bison_install_path=$("${build_script}" -P bison)
@@ -111,7 +111,7 @@ report_results()
       echo "else                                                                 " >> setup.sh
       echo "  export PATH=\"${bison_install_path}/bin\":\${PATH}                     " >> setup.sh
       echo "fi                                                                   " >> setup.sh
-      echo "set path = (\"$bison_install_path\"/bin \"\$path\")                      " >> setup.csh
+      echo "set path = (\"$bison_install_path\"/bin \$path)                      " >> setup.csh
     fi
     m4_install_path=$("${build_script}" -P m4)
     if [[ -x "${m4_install_path}/bin/m4" ]]; then
@@ -121,7 +121,7 @@ report_results()
       echo "else                                                                 " >> setup.sh
       echo "  export PATH=\"${m4_install_path}/bin\":\${PATH}                        " >> setup.sh
       echo "fi                                                                   " >> setup.sh
-      echo "set path = (\"$m4_install_path\"/bin \"\$path\")                      " >> setup.csh
+      echo "set path = (\"$m4_install_path\"/bin \$path)                      " >> setup.csh
     fi
     opencoarrays_install_path="${install_path}"
     if [[ -x "${opencoarrays_install_path}/bin/caf" ]]; then
@@ -131,7 +131,7 @@ report_results()
       echo "else                                                                 " >> setup.sh
       echo "  export PATH=\"${opencoarrays_install_path%/}/bin\":\${PATH}              " >> setup.sh
       echo "fi                                                                   " >> setup.sh
-      echo "set path = (\"${opencoarrays_install_path%/}\"/bin \"\$path\")                      " >> setup.csh
+      echo "set path = (\"${opencoarrays_install_path%/}\"/bin \$path)                      " >> setup.csh
     fi
     if ${SUDO:-} mv setup.sh "${opencoarrays_install_path}"; then
        setup_sh_location=${opencoarrays_install_path}

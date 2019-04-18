@@ -2,11 +2,6 @@ if("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
   set(gfortran_compiler true)
 endif()
 
-if("${gfortran_compiler}" AND (NOT "${opencoarrays_aware_compiler}"))
-  # This applied to gfortran 4.9 and some earlier versions (TODO: find out which)
-  add_definitions(-DCOMPILER_SUPPORTS_CAF_INTRINSICS)
-endif()
-
 function(generate_test_script base_name num_images)
   set(source ${base_name}.F90)
   configure_file(
