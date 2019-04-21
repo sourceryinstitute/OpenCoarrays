@@ -2058,9 +2058,32 @@ PREFIX(sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
   bool free_src_t_buff = false, free_dst_t_buff = false;
   const bool
     dest_char_array_is_longer = dst_type == BT_CHARACTER && dst_size > src_size;
-  const int
+  int
     src_remote_image = image_index_g - 1,
     dst_remote_image = image_index_s - 1;
+
+  if (!src_same_image)
+  {
+    MPI_Group current_team_group, win_group;
+    ierr = MPI_Comm_group(CAF_COMM_WORLD, &current_team_group); chk_err(ierr);
+    ierr = MPI_Win_get_group(*p, &win_group); chk_err(ierr);
+    ierr = MPI_Group_translate_ranks(current_team_group, 1,
+                                     (int[]){src_remote_image}, win_group,
+                                     &src_remote_image); chk_err(ierr);
+    ierr = MPI_Group_free(&current_team_group); chk_err(ierr);
+    ierr = MPI_Group_free(&win_group); chk_err(ierr);
+  }
+  if (!dst_same_image)
+  {
+    MPI_Group current_team_group, win_group;
+    ierr = MPI_Comm_group(CAF_COMM_WORLD, &current_team_group); chk_err(ierr);
+    ierr = MPI_Win_get_group(*p, &win_group); chk_err(ierr);
+    ierr = MPI_Group_translate_ranks(current_team_group, 1,
+                                     (int[]){dst_remote_image}, win_group,
+                                     &dst_remote_image); chk_err(ierr);
+    ierr = MPI_Group_free(&current_team_group); chk_err(ierr);
+    ierr = MPI_Group_free(&win_group); chk_err(ierr);
+  }
 
   /* Ensure stat is always set. */
 #ifdef GCC_GE_7
@@ -2807,7 +2830,18 @@ PREFIX(send) (caf_token_t token, size_t offset, int image_index,
   bool free_pad_str = false, free_t_buff = false;
   const bool dest_char_array_is_longer
       = dst_type == BT_CHARACTER && dst_size > src_size && !same_image;
-  const int remote_image = image_index - 1;
+  int remote_image = image_index - 1;
+  if (!same_image)
+  {
+    MPI_Group current_team_group, win_group;
+    ierr = MPI_Comm_group(CAF_COMM_WORLD, &current_team_group); chk_err(ierr);
+    ierr = MPI_Win_get_group(*p, &win_group); chk_err(ierr);
+    ierr = MPI_Group_translate_ranks(current_team_group, 1,
+                                     (int[]){remote_image}, win_group,
+                                     &remote_image); chk_err(ierr);
+    ierr = MPI_Group_free(&current_team_group); chk_err(ierr);
+    ierr = MPI_Group_free(&win_group); chk_err(ierr);
+  }
 
   /* Ensure stat is always set. */
 #ifdef GCC_GE_7
@@ -3365,7 +3399,18 @@ PREFIX(get) (caf_token_t token, size_t offset, int image_index,
   bool free_pad_str = false, free_t_buff = false;
   const bool dest_char_array_is_longer
       = dst_type == BT_CHARACTER && dst_size > src_size && !same_image;
-  const int remote_image = image_index - 1;
+  int remote_image = image_index - 1;
+  if (!same_image)
+  {
+    MPI_Group current_team_group, win_group;
+    ierr = MPI_Comm_group(CAF_COMM_WORLD, &current_team_group); chk_err(ierr);
+    ierr = MPI_Win_get_group(*p, &win_group); chk_err(ierr);
+    ierr = MPI_Group_translate_ranks(current_team_group, 1,
+                                     (int[]){remote_image}, win_group,
+                                     &remote_image); chk_err(ierr);
+    ierr = MPI_Group_free(&current_team_group); chk_err(ierr);
+    ierr = MPI_Group_free(&win_group); chk_err(ierr);
+  }
 
   /* Ensure stat is always set. */
 #ifdef GCC_GE_7
@@ -3966,7 +4011,8 @@ get_for_ref(caf_reference_t *ref, size_t *i, size_t dst_index,
             gfc_descriptor_t *src, void *ds, void *sr,
             ptrdiff_t sr_byte_offset, ptrdiff_t desc_byte_offset,
             int dst_kind, int src_kind, size_t dst_dim, size_t src_dim,
-            size_t num, int *stat, int image_index,
+            size_t num, int *stat,
+            int global_dynamic_win_rank, int memptr_win_rank,
             bool sr_global, /* access sr through global_dynamic_win */
             bool desc_global /* access desc through global_dynamic_win */
 #ifdef GCC_GE_8
@@ -4006,7 +4052,7 @@ get_for_ref(caf_reference_t *ref, size_t *i, size_t dst_index,
           sr_byte_offset += ref->u.c.offset;
           if (sr_global)
           {
-            ierr = MPI_Get(&sr, stdptr_size, MPI_BYTE, image_index,
+            ierr = MPI_Get(&sr, stdptr_size, MPI_BYTE, global_dynamic_win_rank,
                            MPI_Aint_add((MPI_Aint)sr, sr_byte_offset),
                            stdptr_size, MPI_BYTE, global_dynamic_win);
             chk_err(ierr);
@@ -4014,7 +4060,7 @@ get_for_ref(caf_reference_t *ref, size_t *i, size_t dst_index,
           }
           else
           {
-            ierr = MPI_Get(&sr, stdptr_size, MPI_BYTE, image_index,
+            ierr = MPI_Get(&sr, stdptr_size, MPI_BYTE, memptr_win_rank,
                            sr_byte_offset, stdptr_size, MPI_BYTE,
                            mpi_token->memptr_win); chk_err(ierr);
             sr_global = true;
@@ -4033,7 +4079,7 @@ get_for_ref(caf_reference_t *ref, size_t *i, size_t dst_index,
                    GFC_DESCRIPTOR_TYPE(dst),
 #endif
                    dst_kind, src_kind, dst_size, ref->item_size, 1, stat,
-                   image_index);
+                   global_dynamic_win_rank);
         }
         else
         {
@@ -4044,7 +4090,7 @@ get_for_ref(caf_reference_t *ref, size_t *i, size_t dst_index,
                    GFC_DESCRIPTOR_TYPE(src),
 #endif
                    dst_kind, src_kind, dst_size, ref->item_size, 1, stat,
-                   image_index);
+                   memptr_win_rank);
         }
         ++(*i);
         return;
@@ -4065,7 +4111,7 @@ get_for_ref(caf_reference_t *ref, size_t *i, size_t dst_index,
                      (src_type == -1) ? GFC_DESCRIPTOR_TYPE(src) : src_type,
 #endif
                      dst_kind, src_kind, dst_size, ref->item_size, num,
-                     stat, image_index);
+                     stat, global_dynamic_win_rank);
           }
           else
           {
@@ -4077,7 +4123,7 @@ get_for_ref(caf_reference_t *ref, size_t *i, size_t dst_index,
                      (src_type == -1) ? GFC_DESCRIPTOR_TYPE(src) : src_type,
 #endif
                      dst_kind, src_kind, dst_size, ref->item_size, num,
-                     stat, image_index);
+                     stat, memptr_win_rank);
           }
           *i += num;
           return;
@@ -4097,7 +4143,7 @@ get_for_ref(caf_reference_t *ref, size_t *i, size_t dst_index,
         desc_byte_offset = sr_byte_offset;
         if (sr_global)
         {
-          ierr = MPI_Get(&sr, stdptr_size, MPI_BYTE, image_index,
+          ierr = MPI_Get(&sr, stdptr_size, MPI_BYTE, global_dynamic_win_rank,
                          MPI_Aint_add((MPI_Aint)sr, sr_byte_offset),
                          stdptr_size, MPI_BYTE, global_dynamic_win);
           chk_err(ierr);
@@ -4105,7 +4151,7 @@ get_for_ref(caf_reference_t *ref, size_t *i, size_t dst_index,
         }
         else
         {
-          ierr = MPI_Get(&sr, stdptr_size, MPI_BYTE, image_index,
+          ierr = MPI_Get(&sr, stdptr_size, MPI_BYTE, memptr_win_rank,
                          sr_byte_offset, stdptr_size, MPI_BYTE,
                          mpi_token->memptr_win); chk_err(ierr);
           sr_global = true;
@@ -4119,7 +4165,8 @@ get_for_ref(caf_reference_t *ref, size_t *i, size_t dst_index,
       }
       get_for_ref(ref->next, i, dst_index, mpi_token, dst, NULL, ds,
                   sr, sr_byte_offset, desc_byte_offset, dst_kind, src_kind,
-                  dst_dim, 0, 1, stat, image_index, sr_global, desc_global
+                  dst_dim, 0, 1, stat, global_dynamic_win_rank, memptr_win_rank,
+                  sr_global, desc_global
 #ifdef GCC_GE_8
                   , src_type
 #endif
@@ -4130,7 +4177,8 @@ get_for_ref(caf_reference_t *ref, size_t *i, size_t dst_index,
       {
         get_for_ref(ref->next, i, dst_index, mpi_token, dst, src, ds, sr,
                     sr_byte_offset, desc_byte_offset, dst_kind, src_kind,
-                    dst_dim, 0, 1, stat, image_index, sr_global, desc_global
+                    dst_dim, 0, 1, stat, global_dynamic_win_rank, memptr_win_rank,
+                    sr_global, desc_global
 #ifdef GCC_GE_8
                     , src_type
 #endif
@@ -4149,7 +4197,7 @@ get_for_ref(caf_reference_t *ref, size_t *i, size_t dst_index,
           if (desc_global)
           {
             ierr = MPI_Get(&src_desc_data, sizeof_desc_for_rank(ref_rank),
-                           MPI_BYTE, image_index,
+                           MPI_BYTE, global_dynamic_win_rank,
                            MPI_Aint_add((MPI_Aint)sr, desc_byte_offset),
                            sizeof_desc_for_rank(ref_rank), MPI_BYTE,
                            global_dynamic_win); chk_err(ierr);
@@ -4158,7 +4206,7 @@ get_for_ref(caf_reference_t *ref, size_t *i, size_t dst_index,
           {
             ierr = MPI_Get(&src_desc_data,
                            sizeof_desc_for_rank(ref_rank), MPI_BYTE,
-                           image_index, desc_byte_offset,
+                           memptr_win_rank, desc_byte_offset,
                            sizeof_desc_for_rank(ref_rank),
                            MPI_BYTE, mpi_token->memptr_win); chk_err(ierr);
             desc_global = true;
@@ -4214,7 +4262,8 @@ case kind:                                                          \
                         sr_byte_offset + array_offset_src * ref->item_size,
                         desc_byte_offset + array_offset_src * ref->item_size,
                         dst_kind, src_kind, dst_dim + 1, src_dim + 1,
-                        1, stat, image_index, sr_global, desc_global
+                        1, stat, global_dynamic_win_rank, memptr_win_rank,
+                        sr_global, desc_global
 #ifdef GCC_GE_8
                         , src_type
 #endif
@@ -4237,7 +4286,8 @@ case kind:                                                          \
                           sr_byte_offset + array_offset_src * ref->item_size,
                           desc_byte_offset + array_offset_src * ref->item_size,
                           dst_kind, src_kind, dst_dim + 1, src_dim + 1,
-                          1, stat, image_index, sr_global, desc_global
+                          1, stat, global_dynamic_win_rank, memptr_win_rank,
+                          sr_global, desc_global
 #ifdef GCC_GE_8
                           , src_type
 #endif
@@ -4268,7 +4318,8 @@ case kind:                                                          \
                         sr_byte_offset + array_offset_src * ref->item_size,
                         desc_byte_offset + array_offset_src * ref->item_size,
                         dst_kind, src_kind, next_dst_dim, src_dim + 1,
-                        1, stat, image_index, sr_global, desc_global
+                        1, stat, global_dynamic_win_rank, memptr_win_rank,
+                        sr_global, desc_global
 #ifdef GCC_GE_8
                         , src_type
 #endif
@@ -4285,7 +4336,8 @@ case kind:                                                          \
                       sr_byte_offset + array_offset_src * ref->item_size,
                       desc_byte_offset + array_offset_src * ref->item_size,
                       dst_kind, src_kind, dst_dim, src_dim + 1, 1,
-                      stat, image_index, sr_global, desc_global
+                      stat, global_dynamic_win_rank, memptr_win_rank,
+                      sr_global, desc_global
 #ifdef GCC_GE_8
                       , src_type
 #endif
@@ -4307,7 +4359,8 @@ case kind:                                                          \
                         sr_byte_offset + array_offset_src * ref->item_size,
                         desc_byte_offset + array_offset_src * ref->item_size,
                         dst_kind, src_kind, dst_dim + 1, src_dim + 1,
-                        1, stat, image_index, sr_global, desc_global
+                        1, stat, global_dynamic_win_rank, memptr_win_rank,
+                        sr_global, desc_global
 #ifdef GCC_GE_8
                         , src_type
 #endif
@@ -4330,7 +4383,8 @@ case kind:                                                          \
                         sr_byte_offset + array_offset_src * ref->item_size,
                         desc_byte_offset + array_offset_src * ref->item_size,
                         dst_kind, src_kind, dst_dim + 1, src_dim + 1,
-                        1, stat, image_index, sr_global, desc_global
+                        1, stat, global_dynamic_win_rank, memptr_win_rank,
+                        sr_global, desc_global
 #ifdef GCC_GE_8
                         , src_type
 #endif
@@ -4348,7 +4402,8 @@ case kind:                                                          \
       {
         get_for_ref(ref->next, i, dst_index, mpi_token, dst, NULL, ds, sr,
                     sr_byte_offset, desc_byte_offset, dst_kind, src_kind,
-                    dst_dim, 0, 1, stat, image_index, sr_global, desc_global
+                    dst_dim, 0, 1, stat, global_dynamic_win_rank, memptr_win_rank,
+                    sr_global, desc_global
 #ifdef GCC_GE_8
                     , src_type
 #endif
@@ -4385,7 +4440,8 @@ case kind:                                                          \
                       sr_byte_offset + array_offset_src * ref->item_size,
                       desc_byte_offset + array_offset_src * ref->item_size,
                       dst_kind, src_kind, dst_dim + 1, src_dim + 1,
-                      1, stat, image_index, sr_global, desc_global
+                      1, stat, global_dynamic_win_rank, memptr_win_rank,
+                      sr_global, desc_global
 #ifdef GCC_GE_8
                       , src_type
 #endif
@@ -4402,7 +4458,8 @@ case kind:                                                          \
                       sr_byte_offset + array_offset_src * ref->item_size,
                       desc_byte_offset + array_offset_src * ref->item_size,
                       dst_kind, src_kind, dst_dim + 1, src_dim + 1,
-                      1, stat, image_index, sr_global, desc_global
+                      1, stat, global_dynamic_win_rank, memptr_win_rank,
+                      sr_global, desc_global
 #ifdef GCC_GE_8
                        , src_type
 #endif
@@ -4422,7 +4479,8 @@ case kind:                                                          \
                       sr_byte_offset + array_offset_src * ref->item_size,
                       desc_byte_offset + array_offset_src * ref->item_size,
                       dst_kind, src_kind, dst_dim + 1, src_dim + 1,
-                      1, stat, image_index, sr_global, desc_global
+                      1, stat, global_dynamic_win_rank, memptr_win_rank,
+                      sr_global, desc_global
 #ifdef GCC_GE_8
                       , src_type
 #endif
@@ -4437,7 +4495,8 @@ case kind:                                                          \
                     sr_byte_offset + array_offset_src * ref->item_size,
                     desc_byte_offset + array_offset_src * ref->item_size,
                     dst_kind, src_kind, dst_dim, src_dim + 1, 1,
-                    stat, image_index, sr_global, desc_global
+                    stat, global_dynamic_win_rank, memptr_win_rank,
+                    sr_global, desc_global
 #ifdef GCC_GE_8
                     , src_type
 #endif
@@ -4493,7 +4552,6 @@ PREFIX(get_by_ref) (caf_token_t token, int image_index,
   caf_reference_t *riter = refs;
   long delta;
   ptrdiff_t data_offset = 0, desc_offset = 0;
-  const int remote_image = image_index - 1;
   /* Reallocation of dst.data is needed (e.g., array to small). */
   bool realloc_needed;
   /* Reallocation of dst.data is required, because data is not alloced at
@@ -4513,7 +4571,22 @@ PREFIX(get_by_ref) (caf_token_t token, int image_index,
   if (stat)
     *stat = 0;
 
-  check_image_health(image_index, stat);
+  MPI_Group current_team_group, win_group;
+  int global_dynamic_win_rank, memptr_win_rank;
+  ierr = MPI_Comm_group(CAF_COMM_WORLD, &current_team_group); chk_err(ierr);
+  ierr = MPI_Win_get_group(global_dynamic_win, &win_group); chk_err(ierr);
+  ierr = MPI_Group_translate_ranks(current_team_group, 1,
+                                   (int[]){image_index - 1}, win_group,
+                                   &global_dynamic_win_rank); chk_err(ierr);
+  ierr = MPI_Group_free(&win_group); chk_err(ierr);
+  ierr = MPI_Win_get_group(mpi_token->memptr_win, &win_group); chk_err(ierr);
+  ierr = MPI_Group_translate_ranks(current_team_group, 1,
+                                   (int[]){image_index - 1}, win_group,
+                                   &memptr_win_rank); chk_err(ierr);
+  ierr = MPI_Group_free(&current_team_group); chk_err(ierr);
+  ierr = MPI_Group_free(&win_group); chk_err(ierr);
+
+  check_image_health(global_dynamic_win_rank, stat);
 
   dprint("Entering get_by_ref(may_require_tmp = %d).\n", may_require_tmp);
 
@@ -4521,8 +4594,8 @@ PREFIX(get_by_ref) (caf_token_t token, int image_index,
    * number of elements. */
   size = 1;
   /* Shared lock both windows to prevent bother in the sub-routines. */
-  CAF_Win_lock(MPI_LOCK_SHARED, remote_image, global_dynamic_win);
-  CAF_Win_lock(MPI_LOCK_SHARED, remote_image, mpi_token->memptr_win);
+  CAF_Win_lock(MPI_LOCK_SHARED, global_dynamic_win_rank, global_dynamic_win);
+  CAF_Win_lock(MPI_LOCK_SHARED, memptr_win_rank, mpi_token->memptr_win);
   while (riter)
   {
     dprint("offset = %zd, remote_mem = %p, access_data(global_win) = %d\n",
@@ -4536,7 +4609,7 @@ PREFIX(get_by_ref) (caf_token_t token, int image_index,
           {
             data_offset += riter->u.c.offset;
             remote_base_memptr = remote_memptr;
-            ierr = MPI_Get(&remote_memptr, stdptr_size, MPI_BYTE, remote_image,
+            ierr = MPI_Get(&remote_memptr, stdptr_size, MPI_BYTE, global_dynamic_win_rank,
                            MPI_Aint_add((MPI_Aint)remote_memptr, data_offset),
                            stdptr_size, MPI_BYTE, global_dynamic_win);
             chk_err(ierr);
@@ -4547,7 +4620,7 @@ PREFIX(get_by_ref) (caf_token_t token, int image_index,
           else
           {
             data_offset += riter->u.c.offset;
-            ierr = MPI_Get(&remote_memptr, stdptr_size, MPI_BYTE, remote_image,
+            ierr = MPI_Get(&remote_memptr, stdptr_size, MPI_BYTE, memptr_win_rank,
                            data_offset, stdptr_size, MPI_BYTE,
                            mpi_token->memptr_win); chk_err(ierr);
             dprint("get(custom_token %d), offset = %zd, res. remote_mem = %p\n",
@@ -4580,7 +4653,7 @@ PREFIX(get_by_ref) (caf_token_t token, int image_index,
           {
             dprint("remote desc fetch from %p, offset = %zd\n",
                    remote_base_memptr, desc_offset);
-            MPI_Get(src, sizeof_desc_for_rank(ref_rank), MPI_BYTE, remote_image,
+            MPI_Get(src, sizeof_desc_for_rank(ref_rank), MPI_BYTE, global_dynamic_win_rank,
                     MPI_Aint_add((MPI_Aint)remote_base_memptr, desc_offset),
                     sizeof_desc_for_rank(ref_rank), MPI_BYTE,
                     global_dynamic_win);
@@ -4589,7 +4662,7 @@ PREFIX(get_by_ref) (caf_token_t token, int image_index,
           {
             dprint("remote desc fetch from win %d, offset = %zd\n",
                    mpi_token->memptr_win, desc_offset);
-            MPI_Get(src, sizeof_desc_for_rank(ref_rank), MPI_BYTE, remote_image,
+            MPI_Get(src, sizeof_desc_for_rank(ref_rank), MPI_BYTE, memptr_win_rank,
                     desc_offset, sizeof_desc_for_rank(ref_rank), MPI_BYTE,
                     mpi_token->memptr_win);
             access_desc_through_global_win = true;
@@ -4999,13 +5072,13 @@ case kind:                                                      \
   dprint("get_by_ref() calling get_for_ref.\n");
   get_for_ref(refs, &i, dst_index, mpi_token, dst, mpi_token->desc,
               dst->base_addr, remote_memptr, 0, 0, dst_kind, src_kind, 0, 0,
-              1, stat, remote_image, false, false
+              1, stat, global_dynamic_win_rank, memptr_win_rank, false, false
 #ifdef GCC_GE_8
                , src_type
 #endif
                );
-  CAF_Win_unlock(remote_image, global_dynamic_win);
-  CAF_Win_unlock(remote_image, mpi_token->memptr_win);
+  CAF_Win_unlock(global_dynamic_win_rank, global_dynamic_win);
+  CAF_Win_unlock(memptr_win_rank, mpi_token->memptr_win);
 }
 
 static void
@@ -5099,7 +5172,7 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
              gfc_descriptor_t *src, void *ds, void *sr,
              ptrdiff_t dst_byte_offset, ptrdiff_t desc_byte_offset,
              int dst_kind, int src_kind, size_t dst_dim, size_t src_dim,
-             size_t num, int *stat, int image_index,
+             size_t num, int *stat, int global_dynamic_win_rank, int memptr_win_rank,
              bool ds_global, /* access ds through global_dynamic_win */
              bool desc_global /* access desc through global_dynamic_win */
 #ifdef GCC_GE_8
@@ -5143,7 +5216,7 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
         {
           if (ds_global)
           {
-            ierr = MPI_Get(&ds, stdptr_size, MPI_BYTE, image_index,
+            ierr = MPI_Get(&ds, stdptr_size, MPI_BYTE, global_dynamic_win_rank,
                            MPI_Aint_add((MPI_Aint)ds, dst_byte_offset),
                            stdptr_size, MPI_BYTE, global_dynamic_win);
             chk_err(ierr);
@@ -5151,7 +5224,7 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
           }
           else
           {
-            ierr = MPI_Get(&ds, stdptr_size, MPI_BYTE, image_index,
+            ierr = MPI_Get(&ds, stdptr_size, MPI_BYTE, memptr_win_rank,
                            dst_byte_offset, stdptr_size, MPI_BYTE,
                            mpi_token->memptr_win); chk_err(ierr);
             ds_global = true;
@@ -5168,7 +5241,7 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
                    GFC_DESCRIPTOR_TYPE(src),
 #endif
                    GFC_DESCRIPTOR_TYPE(src), dst_kind, src_kind,
-                   ref->item_size, src_size, 1, stat, image_index);
+                   ref->item_size, src_size, 1, stat, global_dynamic_win_rank);
         }
         else
         {
@@ -5179,7 +5252,7 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
                    GFC_DESCRIPTOR_TYPE(dst),
 #endif
                    GFC_DESCRIPTOR_TYPE(src), dst_kind, src_kind,
-                   ref->item_size, src_size, 1, stat, image_index);
+                   ref->item_size, src_size, 1, stat, memptr_win_rank);
         }
         ++(*i);
         return;
@@ -5200,7 +5273,7 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
                      (dst_type == -1) ? GFC_DESCRIPTOR_TYPE(src) : dst_type,
 #endif
                      dst_kind, src_kind, ref->item_size, src_size, num,
-                     stat, image_index);
+                     stat, global_dynamic_win_rank);
           }
           else
           {
@@ -5212,7 +5285,7 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
                      (dst_type == -1) ? GFC_DESCRIPTOR_TYPE(src) : dst_type,
 #endif
                      dst_kind, src_kind, ref->item_size, src_size, num,
-                     stat, image_index);
+                     stat, memptr_win_rank);
           }
           *i += num;
           return;
@@ -5241,7 +5314,7 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
         desc_byte_offset = dst_byte_offset;
         if (ds_global)
         {
-          ierr = MPI_Get(&ds, stdptr_size, MPI_BYTE, image_index,
+          ierr = MPI_Get(&ds, stdptr_size, MPI_BYTE, global_dynamic_win_rank,
                          MPI_Aint_add((MPI_Aint)ds, dst_byte_offset),
                          stdptr_size, MPI_BYTE, global_dynamic_win);
           chk_err(ierr);
@@ -5249,7 +5322,7 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
         }
         else
         {
-          ierr = MPI_Get(&ds, stdptr_size, MPI_BYTE, image_index,
+          ierr = MPI_Get(&ds, stdptr_size, MPI_BYTE, memptr_win_rank,
                          dst_byte_offset, stdptr_size, MPI_BYTE,
                          mpi_token->memptr_win); chk_err(ierr);
           ds_global = true;
@@ -5263,7 +5336,8 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
       }
       send_for_ref(ref->next, i, src_index, mpi_token, dst, src, ds,
                    sr, dst_byte_offset, desc_byte_offset, dst_kind, src_kind,
-                   dst_dim, 0, 1, stat, image_index, ds_global, desc_global
+                   dst_dim, 0, 1, stat, global_dynamic_win_rank, memptr_win_rank,
+                   ds_global, desc_global
 #ifdef GCC_GE_8
                    , dst_type
 #endif
@@ -5274,7 +5348,8 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
       {
         send_for_ref(ref->next, i, src_index, mpi_token, dst, src, ds, sr,
                      dst_byte_offset, desc_byte_offset, dst_kind, src_kind,
-                     dst_dim, 0, 1, stat, image_index, ds_global, desc_global
+                     dst_dim, 0, 1, stat, global_dynamic_win_rank, memptr_win_rank,
+                     ds_global, desc_global
 #ifdef GCC_GE_8
                      , dst_type
 #endif
@@ -5293,7 +5368,7 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
           if (desc_global)
           {
             ierr = MPI_Get(&dst_desc_data, sizeof_desc_for_rank(ref_rank),
-                           MPI_BYTE, image_index,
+                           MPI_BYTE, global_dynamic_win_rank,
                            MPI_Aint_add((MPI_Aint)ds, desc_byte_offset),
                            sizeof_desc_for_rank(ref_rank), MPI_BYTE,
                            global_dynamic_win); chk_err(ierr);
@@ -5301,7 +5376,7 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
           else
           {
             ierr = MPI_Get(&dst_desc_data, sizeof_desc_for_rank(ref_rank),
-                           MPI_BYTE, image_index, desc_byte_offset,
+                           MPI_BYTE, memptr_win_rank, desc_byte_offset,
                            sizeof_desc_for_rank(ref_rank),
                            MPI_BYTE, mpi_token->memptr_win); chk_err(ierr);
             desc_global = true;
@@ -5363,7 +5438,8 @@ case kind:                                          \
                          dst_byte_offset + array_offset_dst * ref->item_size,
                          desc_byte_offset + array_offset_dst * ref->item_size,
                          dst_kind, src_kind, dst_dim + 1, src_dim + 1,
-                         1, stat, image_index, ds_global, desc_global
+                         1, stat, global_dynamic_win_rank, memptr_win_rank,
+                         ds_global, desc_global
 #ifdef GCC_GE_8
                          , dst_type
 #endif
@@ -5390,7 +5466,8 @@ case kind:                                          \
                          dst_byte_offset + array_offset_dst * ref->item_size,
                          desc_byte_offset + array_offset_dst * ref->item_size,
                          dst_kind, src_kind, dst_dim + 1, src_dim + 1,
-                         1, stat, image_index, ds_global, desc_global
+                         1, stat, global_dynamic_win_rank, memptr_win_rank,
+                         ds_global, desc_global
 #ifdef GCC_GE_8
                          , dst_type
 #endif
@@ -5425,7 +5502,8 @@ case kind:                                          \
                          dst_byte_offset + array_offset_dst * ref->item_size,
                          desc_byte_offset + array_offset_dst * ref->item_size,
                          dst_kind, src_kind, next_dst_dim, src_dim + 1, 
-                         1, stat, image_index, ds_global, desc_global
+                         1, stat, global_dynamic_win_rank, memptr_win_rank,
+                         ds_global, desc_global
 #ifdef GCC_GE_8
                          , dst_type
 #endif
@@ -5450,7 +5528,8 @@ case kind:                                          \
                        dst_byte_offset + array_offset_dst * ref->item_size,
                        desc_byte_offset + array_offset_dst * ref->item_size,
                        dst_kind, src_kind, next_dst_dim, src_dim + 1,
-                       1, stat, image_index, ds_global, desc_global
+                       1, stat, global_dynamic_win_rank, memptr_win_rank,
+                       ds_global, desc_global
 #ifdef GCC_GE_8
                        , dst_type
 #endif
@@ -5476,7 +5555,8 @@ case kind:                                          \
                          dst_byte_offset + array_offset_dst * ref->item_size,
                          desc_byte_offset + array_offset_dst * ref->item_size,
                          dst_kind, src_kind, dst_dim + 1, src_dim + 1,
-                         1, stat, image_index, ds_global, desc_global
+                         1, stat, global_dynamic_win_rank, memptr_win_rank,
+                         ds_global, desc_global
 #ifdef GCC_GE_8
                          , dst_type
 #endif
@@ -5501,7 +5581,8 @@ case kind:                                          \
                          dst_byte_offset + array_offset_dst * ref->item_size,
                          desc_byte_offset + array_offset_dst * ref->item_size,
                          dst_kind, src_kind, dst_dim + 1, src_dim + 1,
-                         1, stat, image_index, ds_global, desc_global
+                         1, stat, global_dynamic_win_rank, memptr_win_rank,
+                         ds_global, desc_global
 #ifdef GCC_GE_8
                          , dst_type
 #endif
@@ -5519,7 +5600,8 @@ case kind:                                          \
       {
         send_for_ref(ref->next, i, src_index, mpi_token, dst, NULL, ds, sr,
                      dst_byte_offset, desc_byte_offset, dst_kind, src_kind,
-                     dst_dim, 0, 1, stat, image_index, ds_global, desc_global
+                     dst_dim, 0, 1, stat, global_dynamic_win_rank, memptr_win_rank,
+                     ds_global, desc_global
 #ifdef GCC_GE_8
                      , dst_type
 #endif
@@ -5556,7 +5638,8 @@ case kind:                                                          \
                          dst_byte_offset + array_offset_dst * ref->item_size,
                          desc_byte_offset + array_offset_dst * ref->item_size,
                          dst_kind, src_kind, dst_dim + 1, src_dim + 1,
-                         1, stat, image_index, ds_global, desc_global
+                         1, stat, global_dynamic_win_rank, memptr_win_rank,
+                         ds_global, desc_global
 #ifdef GCC_GE_8
                          , dst_type
 #endif
@@ -5575,7 +5658,8 @@ case kind:                                                          \
                          dst_byte_offset + array_offset_dst * ref->item_size,
                          desc_byte_offset + array_offset_dst * ref->item_size,
                          dst_kind, src_kind, dst_dim + 1, src_dim + 1,
-                         1, stat, image_index, ds_global, desc_global
+                         1, stat, global_dynamic_win_rank, memptr_win_rank,
+                         ds_global, desc_global
 #ifdef GCC_GE_8
                          , dst_type
 #endif
@@ -5597,7 +5681,8 @@ case kind:                                                          \
                          dst_byte_offset + array_offset_dst * ref->item_size,
                          desc_byte_offset + array_offset_dst * ref->item_size,
                          dst_kind, src_kind, dst_dim + 1, src_dim + 1,
-                         1, stat, image_index, ds_global, desc_global
+                         1, stat, global_dynamic_win_rank, memptr_win_rank,
+                         ds_global, desc_global
 #ifdef GCC_GE_8
                          , dst_type
 #endif
@@ -5612,7 +5697,8 @@ case kind:                                                          \
                        dst_byte_offset + array_offset_dst * ref->item_size,
                        desc_byte_offset + array_offset_dst * ref->item_size,
                        dst_kind, src_kind, dst_dim, src_dim + 1,
-                       1, stat, image_index, ds_global, desc_global
+                       1, stat, global_dynamic_win_rank, memptr_win_rank,
+                       ds_global, desc_global
 #ifdef GCC_GE_8
                        , dst_type
 #endif
@@ -5669,7 +5755,6 @@ PREFIX(send_by_ref) (caf_token_t token, int image_index,
   caf_reference_t *riter = refs;
   long delta;
   ptrdiff_t data_offset = 0, desc_offset = 0;
-  const int remote_image = image_index - 1;
   /* Reallocation of data on remote is needed (e.g., array to small).  This is
    * used for error tracking only.  It is not (yet) possible to allocate memory
    * on the remote image. */
@@ -5687,7 +5772,22 @@ PREFIX(send_by_ref) (caf_token_t token, int image_index,
   if (stat)
     *stat = 0;
 
-  check_image_health(image_index, stat);
+  MPI_Group current_team_group, win_group;
+  int global_dynamic_win_rank, memptr_win_rank;
+  ierr = MPI_Comm_group(CAF_COMM_WORLD, &current_team_group); chk_err(ierr);
+  ierr = MPI_Win_get_group(global_dynamic_win, &win_group); chk_err(ierr);
+  ierr = MPI_Group_translate_ranks(current_team_group, 1,
+                                   (int[]){image_index - 1}, win_group,
+                                   &global_dynamic_win_rank); chk_err(ierr);
+  ierr = MPI_Group_free(&win_group); chk_err(ierr);
+  ierr = MPI_Win_get_group(mpi_token->memptr_win, &win_group); chk_err(ierr);
+  ierr = MPI_Group_translate_ranks(current_team_group, 1,
+                                   (int[]){image_index - 1}, win_group,
+                                   &memptr_win_rank); chk_err(ierr);
+  ierr = MPI_Group_free(&current_team_group); chk_err(ierr);
+  ierr = MPI_Group_free(&win_group); chk_err(ierr);
+
+  check_image_health(global_dynamic_win_rank, stat);
 
 #ifdef GCC_GE_8
   dprint("Entering send_by_ref(may_require_tmp = %d, dst_type = %d)\n",
@@ -5700,12 +5800,12 @@ PREFIX(send_by_ref) (caf_token_t token, int image_index,
    * number of elements. */
   size = 1;
   /* Shared lock both windows to prevent bother in the sub-routines. */
-  CAF_Win_lock(MPI_LOCK_SHARED, remote_image, global_dynamic_win);
-  CAF_Win_lock(MPI_LOCK_SHARED, remote_image, mpi_token->memptr_win);
+  CAF_Win_lock(MPI_LOCK_SHARED, global_dynamic_win_rank, global_dynamic_win);
+  CAF_Win_lock(MPI_LOCK_SHARED, memptr_win_rank, mpi_token->memptr_win);
   while (riter)
   {
     dprint("remote_image = %d, offset = %zd, remote_mem = %p\n",
-           remote_image, data_offset, remote_memptr);
+           global_dynamic_win_rank, data_offset, remote_memptr);
     switch (riter->type)
     {
       case CAF_REF_COMPONENT:
@@ -5715,7 +5815,7 @@ PREFIX(send_by_ref) (caf_token_t token, int image_index,
           {
             data_offset += riter->u.c.offset;
             remote_base_memptr = remote_memptr;
-            ierr = MPI_Get(&remote_memptr, stdptr_size, MPI_BYTE, remote_image,
+            ierr = MPI_Get(&remote_memptr, stdptr_size, MPI_BYTE, global_dynamic_win_rank,
                            MPI_Aint_add((MPI_Aint)remote_memptr, data_offset),
                            stdptr_size, MPI_BYTE, global_dynamic_win);
             chk_err(ierr);
@@ -5726,7 +5826,7 @@ PREFIX(send_by_ref) (caf_token_t token, int image_index,
           else
           {
             data_offset += riter->u.c.offset;
-            ierr = MPI_Get(&remote_memptr, stdptr_size, MPI_BYTE, remote_image,
+            ierr = MPI_Get(&remote_memptr, stdptr_size, MPI_BYTE, memptr_win_rank,
                            data_offset, stdptr_size, MPI_BYTE,
                            mpi_token->memptr_win); chk_err(ierr);
             /* All future access is through the global dynamic window. */
@@ -5758,7 +5858,7 @@ PREFIX(send_by_ref) (caf_token_t token, int image_index,
             dprint("remote desc fetch from %p, offset = %zd\n",
                    remote_base_memptr, desc_offset);
             ierr = MPI_Get(dst, sizeof_desc_for_rank(ref_rank), MPI_BYTE,
-                           remote_image,
+                           global_dynamic_win_rank,
                            MPI_Aint_add(
                             (MPI_Aint)remote_base_memptr, desc_offset),
                            sizeof_desc_for_rank(ref_rank), MPI_BYTE,
@@ -5769,7 +5869,7 @@ PREFIX(send_by_ref) (caf_token_t token, int image_index,
             dprint("remote desc fetch from win %d, offset = %zd\n",
                    mpi_token->memptr_win, desc_offset);
             ierr = MPI_Get(dst, sizeof_desc_for_rank(ref_rank), MPI_BYTE,
-                           remote_image, desc_offset,
+                           memptr_win_rank, desc_offset,
                            sizeof_desc_for_rank(ref_rank), MPI_BYTE,
                            mpi_token->memptr_win); chk_err(ierr);
             access_desc_through_global_win = true;
@@ -6087,7 +6187,8 @@ case kind:                                                      \
          "dst_size = %zd\n", size, dst_size);
   send_for_ref(refs, &i, src_index, mpi_token, mpi_token->desc, src,
                remote_memptr, src->base_addr, 0, 0, dst_kind, src_kind, 0, 0,
-               1, stat, remote_image, false, false
+               1, stat, global_dynamic_win_rank, memptr_win_rank,
+               false, false
 #ifdef GCC_GE_8
                , dst_type
 #endif
@@ -6096,8 +6197,8 @@ case kind:                                                      \
   {
     free(temp_src.base.base_addr);
   }
-  CAF_Win_unlock(remote_image, global_dynamic_win);
-  CAF_Win_unlock(remote_image, mpi_token->memptr_win);
+  CAF_Win_unlock(global_dynamic_win_rank, global_dynamic_win);
+  CAF_Win_unlock(memptr_win_rank, mpi_token->memptr_win);
 }
 
 
@@ -6132,9 +6233,8 @@ PREFIX(sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
   caf_reference_t *riter = src_refs;
   long delta;
   ptrdiff_t data_offset = 0, desc_offset = 0;
-  const int
-    src_remote_image = src_image_index - 1,
-    dst_remote_image = dst_image_index - 1;
+  MPI_Group current_team_group, win_group;
+  int global_dst_rank, global_src_rank, memptr_dst_rank, memptr_src_rank;
   /* Set when the first non-scalar array reference is encountered. */
   bool in_array_ref = false;
   bool array_extent_fixed = false;
@@ -6151,7 +6251,30 @@ PREFIX(sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
   if (src_stat)
     *src_stat = 0;
 
-  check_image_health(src_image_index, src_stat);
+  ierr = MPI_Comm_group(CAF_COMM_WORLD, &current_team_group); chk_err(ierr);
+
+  ierr = MPI_Win_get_group(global_dynamic_win, &win_group); chk_err(ierr);
+  ierr = MPI_Group_translate_ranks(current_team_group, 1,
+                                  (int[]){src_image_index - 1}, win_group,
+                                  &global_src_rank); chk_err(ierr);
+  ierr = MPI_Group_translate_ranks(current_team_group, 1,
+                                  (int[]){dst_image_index - 1}, win_group,
+                                  &global_dst_rank); chk_err(ierr);
+  ierr = MPI_Group_free(&win_group); chk_err(ierr);
+
+  ierr = MPI_Win_get_group(src_mpi_token->memptr_win, &win_group); chk_err(ierr);
+  ierr = MPI_Group_translate_ranks(current_team_group, 1,
+                                  (int[]){src_image_index - 1}, win_group,
+                                  &memptr_src_rank); chk_err(ierr);
+  ierr = MPI_Group_free(&win_group); chk_err(ierr);
+  ierr = MPI_Win_get_group(dst_mpi_token->memptr_win, &win_group); chk_err(ierr);
+  ierr = MPI_Group_translate_ranks(current_team_group, 1,
+                                  (int[]){dst_image_index - 1}, win_group,
+                                  &memptr_dst_rank); chk_err(ierr);
+  ierr = MPI_Group_free(&win_group); chk_err(ierr);
+  ierr = MPI_Group_free(&current_team_group); chk_err(ierr);
+
+  check_image_health(global_src_rank, src_stat);
 
   dprint("Entering get_by_ref(may_require_tmp = %d, dst_type = %d(%d), "
          "src_type = %d(%d)).\n",
@@ -6161,8 +6284,8 @@ PREFIX(sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
    * number of elements. */
   size = 1;
   /* Shared lock both windows to prevent bother in the sub-routines. */
-  CAF_Win_lock(MPI_LOCK_SHARED, src_remote_image, global_dynamic_win);
-  CAF_Win_lock(MPI_LOCK_SHARED, src_remote_image, src_mpi_token->memptr_win);
+  CAF_Win_lock(MPI_LOCK_SHARED, global_src_rank, global_dynamic_win);
+  CAF_Win_lock(MPI_LOCK_SHARED, memptr_src_rank, src_mpi_token->memptr_win);
   while (riter)
   {
     dprint("offset = %zd, remote_mem = %p\n", data_offset, remote_memptr);
@@ -6176,7 +6299,7 @@ PREFIX(sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
             data_offset += riter->u.c.offset;
             remote_base_memptr = remote_memptr;
             ierr = MPI_Get(&remote_memptr, stdptr_size, MPI_BYTE,
-                           src_remote_image,
+                           global_src_rank,
                            MPI_Aint_add((MPI_Aint)remote_memptr, data_offset),
                            stdptr_size, MPI_BYTE, global_dynamic_win);
             chk_err(ierr);
@@ -6188,7 +6311,7 @@ PREFIX(sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
           {
             data_offset += riter->u.c.offset;
             ierr = MPI_Get(&remote_memptr, stdptr_size, MPI_BYTE,
-                           src_remote_image, data_offset, stdptr_size, MPI_BYTE,
+                           memptr_src_rank, data_offset, stdptr_size, MPI_BYTE,
                            src_mpi_token->memptr_win); chk_err(ierr);
             /* All future access is through the global dynamic window. */
             access_data_through_global_win = true;
@@ -6219,7 +6342,7 @@ PREFIX(sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
             dprint("remote desc fetch from %p, offset = %zd\n",
                    remote_base_memptr, desc_offset);
             ierr = MPI_Get(src, sizeof_desc_for_rank(ref_rank), MPI_BYTE,
-                           src_remote_image,
+                           global_src_rank,
                            MPI_Aint_add(
                             (MPI_Aint)remote_base_memptr, desc_offset),
                            sizeof_desc_for_rank(ref_rank), MPI_BYTE,
@@ -6230,7 +6353,7 @@ PREFIX(sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
             dprint("remote desc fetch from win %d, offset = %zd\n",
                    src_mpi_token->memptr_win, desc_offset);
             ierr = MPI_Get(src, sizeof_desc_for_rank(ref_rank), MPI_BYTE,
-                           src_remote_image, desc_offset,
+                           memptr_src_rank, desc_offset,
                            sizeof_desc_for_rank(ref_rank),
                            MPI_BYTE, src_mpi_token->memptr_win); chk_err(ierr);
             access_desc_through_global_win = true;
@@ -6468,29 +6591,30 @@ case kind:                                                        \
   get_for_ref(src_refs, &i, dst_index, src_mpi_token,
               (gfc_descriptor_t *)&temp_src_desc, src_mpi_token->desc,
               temp_src_desc.base.base_addr, remote_memptr, 0, 0, dst_kind,
-              src_kind, 0, 0, 1, src_stat, src_remote_image, false, false
+              src_kind, 0, 0, 1, src_stat, global_src_rank, memptr_src_rank,
+              false, false
 #ifdef GCC_GE_8
               , src_type
 #endif
               );
-  CAF_Win_unlock(src_remote_image, global_dynamic_win);
-  CAF_Win_unlock(src_remote_image, src_mpi_token->memptr_win);
+  CAF_Win_unlock(global_src_rank, global_dynamic_win);
+  CAF_Win_unlock(memptr_src_rank, src_mpi_token->memptr_win);
   dprint("calling send_for_ref. num elems: size = %zd, elem size in bytes: "
          "src_size = %zd\n", size, src_size);
   i = 0;
 
-  CAF_Win_lock(MPI_LOCK_EXCLUSIVE, dst_remote_image, global_dynamic_win);
-  CAF_Win_lock(MPI_LOCK_EXCLUSIVE, dst_remote_image, dst_mpi_token->memptr_win);
+  CAF_Win_lock(MPI_LOCK_EXCLUSIVE, global_dst_rank, global_dynamic_win);
+  CAF_Win_lock(MPI_LOCK_EXCLUSIVE, memptr_dst_rank, dst_mpi_token->memptr_win);
   send_for_ref(dst_refs, &i, src_index, dst_mpi_token, dst_mpi_token->desc,
                (gfc_descriptor_t *)&temp_src_desc, dst_mpi_token->memptr,
                temp_src_desc.base.base_addr, 0, 0, dst_kind, src_kind, 0, 0,
-               1, dst_stat, dst_image_index - 1, false, false
+               1, dst_stat, global_dst_rank, memptr_dst_rank, false, false
 #ifdef GCC_GE_8
                , dst_type
 #endif
                );
-  CAF_Win_unlock(dst_remote_image, global_dynamic_win);
-  CAF_Win_unlock(dst_remote_image, src_mpi_token->memptr_win);
+  CAF_Win_unlock(global_dst_rank, global_dynamic_win);
+  CAF_Win_unlock(memptr_dst_rank, src_mpi_token->memptr_win);
 }
 
 int
