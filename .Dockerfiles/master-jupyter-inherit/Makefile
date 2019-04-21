@@ -19,7 +19,7 @@ build: $(subst /,_,$(NAME))-build.stamp ## Build docker file. Depending on which
 
 $(subst /,_,$(NAME))-build.stamp: Dockerfile .dockerignore hooks/build ## Target for doing & timestamping the build
 	touch $@
-	hooks/build 2>&1 | tee $(subst stamp,log,$@) || rm -rf $@
+	IMAGE_NAME=$(IMAGE_NAME) hooks/build 2>&1 | tee $(subst stamp,log,$@) || rm -rf $@
 	docker tag $(NAME) $(NAME):$(GIT_MASTER_HEAD_SHA)
 	docker tag $(NAME) $(NAME):latest
 

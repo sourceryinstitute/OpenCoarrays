@@ -34,6 +34,10 @@ program main
 
   implicit none
 
+#ifndef MPI_WORKING_MODULE
+  include 'mpif.h'
+#endif
+
   call mpi_matches_caf(get_communicator())
     !! verify # ranks = # images and image number = rank + 1
 
@@ -83,8 +87,10 @@ contains
      team = mod(image+1,numTeams)+1
    end function
 
-  subroutine mpi_matches_caf(comm)
+subroutine mpi_matches_caf(comm)
+#ifdef MPI_WORKING_MODULE
     use mpi
+#endif
     use iso_c_binding, only : c_int
     integer(c_int), intent(in) :: comm
       !! MPI communicator
