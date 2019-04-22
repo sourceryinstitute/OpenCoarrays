@@ -95,8 +95,14 @@ string(REGEX REPLACE "-rc[0-9]+$"
 project(opencoarrays VERSION "${OPENCOARRAYS_CMAKE_PROJECT_VERSION}" LANGUAGES C Fortran)
 
 if(DEFINED CMAKE_BUILD_TYPE AND "${CMAKE_BUILD_TYPE}" MATCHES "[Rr][Ee][Ll]")
-  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fno-working-directory")
-  set(CMAKE_C_FLAGS       "${CMAKE_C_FLAGS} -fno-working-directory")
+  if(CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fno-working-directory")
+  endif()
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fdebug-prefix-map=${CMAKE_SOURCE_DIR}=.")
+  if(CMAKE_C_COMPILER_ID MATCHES "GNU")
+    set(CMAKE_C_FLAGS       "${CMAKE_C_FLAGS} -fno-working-directory")
+  endif()
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fdebug-prefix-map=${CMAKE_SOURCE_DIR}=.")
 endif()
 
 message( STATUS "Building OpenCoarrays version: ${full_git_describe}" )
