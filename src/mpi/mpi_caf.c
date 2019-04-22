@@ -2157,7 +2157,7 @@ PREFIX(sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
       else
       {
         dprint("allocating %zd bytes for dst_t_buff.\n", dst_size * size);
-        if (free_dst_t_buff = ((dst_t_buff = alloca(dst_size * size)) == NULL))
+        if ((free_dst_t_buff = ((dst_t_buff = alloca(dst_size * size)) == NULL)))
         {
           dst_t_buff = malloc(dst_size * size);
           if (dst_t_buff == NULL)
@@ -2184,7 +2184,7 @@ PREFIX(sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
       /* When replication is needed, only access the scalar on the remote. */
       const size_t src_real_size = src_rank > 0 ?
         (src_size * size) : src_size;
-      if (free_dst_t_buff = ((dst_t_buff = alloca(dst_size * size)) == NULL))
+      if ((free_dst_t_buff = ((dst_t_buff = alloca(dst_size * size)) == NULL)))
       {
         dst_t_buff = malloc(dst_size * size);
         if (dst_t_buff == NULL)
@@ -2194,7 +2194,7 @@ PREFIX(sendget) (caf_token_t token_s, size_t offset_s, int image_index_s,
 
       if (dst_kind != src_kind || src_rank == 0 || dest_char_array_is_longer)
       {
-        if (free_src_t_buff = ((src_t_buff = alloca(src_size * size)) == NULL))
+        if ((free_src_t_buff = ((src_t_buff = alloca(src_size * size)) == NULL)))
         {
           src_t_buff = malloc(src_size * size);
           if (src_t_buff == NULL)
@@ -6169,7 +6169,7 @@ case kind:                                                      \
 
     cap *= GFC_DESCRIPTOR_SIZE(src);
     temp_src.base.base_addr = alloca(cap);
-    if (free_temp_src = (temp_src.base.base_addr == NULL))
+    if ((free_temp_src = (temp_src.base.base_addr == NULL)))
     {
       temp_src.base.base_addr = malloc(cap);
       if (temp_src.base.base_addr == NULL)
@@ -6772,7 +6772,8 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
           /* The first descriptor is accessible by the mpi_token->memptr_win.
            * Count the dims to fetch. */
           for (ref_rank = 0; riter->u.a.mode[ref_rank] != CAF_ARR_REF_NONE;
-               ++ref_rank) ;
+               ++ref_rank)
+	    ;
           dprint("Getting remote descriptor of rank %zd from win: %d, "
                  "sizeof() %zd\n", ref_rank, mpi_token->memptr_win,
                  sizeof_desc_for_rank(ref_rank));
@@ -6787,7 +6788,8 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
           /* All inner descriptors go by the dynamic window.
            * Count the dims to fetch. */
           for (ref_rank = 0; riter->u.a.mode[ref_rank] != CAF_ARR_REF_NONE;
-               ++ref_rank) ;
+               ++ref_rank)
+	    ;
           dprint("Getting remote descriptor of rank %zd from: %p, "
                  "sizeof() %zd\n", ref_rank, remote_base_memptr,
                  sizeof_desc_for_rank(ref_rank));
