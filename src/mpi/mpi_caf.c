@@ -8324,24 +8324,25 @@ void PREFIX(sync_team) (caf_team_t *team , int unused __attribute__((unused)))
   void *tmp_team;
   MPI_Comm *tmp_comm;
 
-  /* Check if the team is the current, and ancestor or a descendant.
-   * To be implemented. */
-
   tmp_used = used_teams;
   tmp_list = (struct caf_teams_list *)*team;
   tmp_team = (void *)tmp_list->team;
   tmp_comm = (MPI_Comm *)tmp_team;
 
-  while (tmp_used)
-  {
-    if (tmp_used->team_list_elem == tmp_list)
-      break;
-    tmp_used = tmp_used->prev;
-  }
+  /* if the team is not a child */
+  if (tmp_used->team_list_elem != tmp_list->prev)
+  /* then search backwards through the team list, first checking if it's the
+   * current team, then if it is an ancestor team */
+    while (tmp_used)
+    {
+      if (tmp_used->team_list_elem == tmp_list)
+        break;
+      tmp_used = tmp_used->prev;
+    }
 
   if (tmp_used == NULL)
     caf_runtime_error("SYNC TEAM called on team different from current, "
-                      "or ancestor, or descendant");
+                      "or ancestor, or child");
 
   int ierr = MPI_Barrier(*tmp_comm); chk_err(ierr);
 }
