@@ -1,10 +1,12 @@
 ---
-language: generic
+language: c
 
 os: osx
 
 env:
   global:
+#    - ZERO_AR_DATE=1
+    - TZ=UTC
     - CACHE="${HOME}/.local"
     - MPICH_VER="3.2.1"
     - MPICH_URL_HEAD="https://www.mpich.org/static/downloads/${MPICH_VER}"
@@ -13,6 +15,7 @@ env:
     - MPICH_GCC7_BOT_URL_HEAD="https://github.com/sourceryinstitute/OpenCoarrays/files/1956441/"
     - MPICH_BOT_URL_TAIL="mpich-3.2.1_1.high_sierra.bottle.1.tar.gz"
     - BUILD_TYPES="Debug RelWithDebInfo Release CodeCoverage"
+    - PATH="${HOME}/.local/bin:$PATH"
   # matrix:
   #   - GCC="6 7" OSX_PACKAGES="gcc@7 gcc@6 cmake shellcheck" BUILD_TYPE="cmake"
 
@@ -23,16 +26,22 @@ matrix:
       os: osx
       env:
         - BUILD_TYPE="InstallScript"
-          GCC=6
-          OSX_PACKAGES="gcc@6 shellcheck cmake"
+          GCC=8
+          OSX_PACKAGES="gcc shellcheck cmake mpich"
           # cmake should be removed, but we should be installing binaries
           # because building from source takes forever
+    # -
+    #   <<: *macOS
+    #   env:
+    #     - GCC=8
+    #       BUILD_TYPES="debug RelWithDebInfo Release"
+    #       OSX_PACKAGES="gcc openmpi shellcheck cmake"
     - &ubuntu
       os: linux
       sudo: false
       dist: trusty
       env:
-        - GCC=6
+        - GCC=8
       cache:
         apt: true
         directories:
@@ -42,10 +51,10 @@ matrix:
           sources: &linuxsrcs
             - ubuntu-toolchain-r-test
             - george-edison55-precise-backports
-          packages: &gcc6pkgs
-            - gcc-6
-            - gfortran-6
-            - g++-6
+          packages: &gcc8pkgs
+            - gcc-8
+            - gfortran-8
+            - g++-8
             - cmake
     -
       <<: *ubuntu
@@ -63,23 +72,23 @@ matrix:
       <<: *ubuntu
       env:
         - BUILD_TYPE="InstallScript"
-          GCC=6
+          GCC=8
       addons:
         apt:
           sources: *linuxsrcs
           packages:
-            - gcc-6
-            - gfortran-6
-            - g++-6
+            - gcc-8
+            - gfortran-8
+            - g++-8
     - &linux_allowed_failure
       <<: *ubuntu
       env:
-        - GCC=7
+        - GCC=8
           OPENCOARRAYS_DEVELOPER=ON
       addons:
         apt:
           sources: *linuxsrcs
-          packages: *gcc7pkgs
+          packages: *gcc8pkgs
 
   allow_failures:
     - *linux_allowed_failure
@@ -91,15 +100,19 @@ before_install:
 
 install:
   - pwd
-  - travis_wait 40 developer-scripts/travis/install.${TRAVIS_OS_NAME}.sh
+  - ./developer-scripts/travis/install.${TRAVIS_OS_NAME}.sh
 
 script:
   - pwd
-  - developer-scripts/travis/test-script.${BUILD_TYPE:-cmake}.sh
+  - export SOURCE_DATE_EPOCH=$(git show -s --format=%ct $TRAVIS_COMMIT)
+  - echo "SOURCE_DATE_EPOCH = ${SOURCE_DATE_EPOCH}"
+  - ./developer-scripts/travis/test-script.${BUILD_TYPE:-cmake}.sh
 
 after_script:
   - find . -name '*.gcno' -print
-  - for version in ${GCC}; do bash <(curl -s https://codecov.io/bash) -x $(type -P gcov-${GCC}) ; done
+  - for version in ${GCC}; do bash <(curl -s https://codecov.io/bash) -x $(type -P gcov-${GCC}) >> coverage.log 2>> coverage.err || true ; done
+  - tail coverage.log || true
+  - tail coverage.err || true
   - |
     if [[ "${TRAVIS_TAG}" ]]; then
       if [[ "v${TRAVIS_TAG}" != "v$(sed -n '/[0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}/{s/^\([^.]*\)\([0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}\)\(.*\)/\2/p;q;}' .VERSION)" ]]; then

@@ -66,7 +66,7 @@ Before you start
  * Your environment is setup to use the compilers you wish to build and use
    OpenCoarrays with. (LD_LIBRARY_PATH is set, if needed, etc.)
 
- Also, you will need the OpenCoarrays source, which, you presumably already
+ Also, you will need the OpenCoarrays source, which you presumably already
  have if you are reading this. The latest stable OpenCoarrays release can be
  obtained at:
 
@@ -81,7 +81,7 @@ Before you start
 Configure, build and install OpenCoarrays
 -----------------------------------------
 
- OpenCoarrays does *NOT* allow in source builds. Once you have obtained the
+ OpenCoarrays does *NOT* allow in-source builds. Once you have obtained the
  source code, you must create a build directory. This may be a subdirectory of
  the top level source directory, or in a completely un-related location.
 
@@ -113,7 +113,7 @@ Configure, build and install OpenCoarrays
 Configure options
 -----------------
 
- The OpenCoarrays build system attempts to set the best possible defailt
+ The OpenCoarrays build system attempts to set the best possible default
  settings for your Fortran compiler and MPI implementation through intro-
  spection. However, some bugs or use cases may warrant tweaking the config-
  uration. Each of the following options may be set using the `-D` flag to
@@ -125,7 +125,7 @@ Configure options
 
  CMAKE_INSTALL_PREFIX
 	Tell cmake where to install OpenCoarrays. Default=/usr/local
-	Example: cmake .. -DCMAKE_INSTALL_PREFIX=/opt/OpenCoarrays/1.9.1
+	Example: cmake .. -DCMAKE_INSTALL_PREFIX=/opt/OpenCoarrays/2.2.0
 
  CMAKE_BUILD_TYPE
 	Specify the build type. Default value: Release
@@ -140,7 +140,7 @@ Configure options
  CAF_ENABLE_FAILED_IMAGES
 	Enable failed image support. Defaults to TRUE if experimental fault
 	tolerance features are detected to be present in the MPI
-	implementation. FALSE/unavailable if no MPI support is present
+	implementation. FALSE/unavailable if the MPI installation does not support it
 	Example: cmake .. -DCAF_ENABLE_FAILED_IMAGES=FALSE
 
  CAF_EXPOSE_INIT_FINALIZE

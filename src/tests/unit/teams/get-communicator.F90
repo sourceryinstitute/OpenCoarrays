@@ -30,8 +30,13 @@
 program main
   !! summary: Test get_commiunicator function, an OpenCoarrays-specific language extension
   use opencoarrays, only : get_communicator
+  use oc_assertions_interface, only : assert
 
   implicit none
+
+#ifndef MPI_WORKING_MODULE
+  include 'mpif.h'
+#endif
 
   call mpi_matches_caf(get_communicator())
     !! verify # ranks = # images and image number = rank + 1
@@ -82,8 +87,10 @@ contains
      team = mod(image+1,numTeams)+1
    end function
 
-  subroutine mpi_matches_caf(comm)
+subroutine mpi_matches_caf(comm)
+#ifdef MPI_WORKING_MODULE
     use mpi
+#endif
     use iso_c_binding, only : c_int
     integer(c_int), intent(in) :: comm
       !! MPI communicator
@@ -97,18 +104,6 @@ contains
     call assert( ierror==0 , "successful call MPI_COMM_RANK" )
     call assert( irank==this_image()-1 , "correct rank/image-number correspondence" )
 
-  end subroutine
-
-  elemental subroutine assert(assertion,description)
-    !! TODO: move this to a common place for all tests to use
-    logical, intent(in) :: assertion
-    character(len=*), intent(in) :: description
-    integer, parameter :: max_digits=12
-    character(len=max_digits) :: image_number
-    if (.not.assertion) then
-      write(image_number,*) this_image()
-      error stop "Assertion '" // description // "' failed on image " // trim(image_number)
-    end if
   end subroutine
 
 end program
