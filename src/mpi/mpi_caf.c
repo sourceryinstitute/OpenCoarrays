@@ -7127,9 +7127,10 @@ get_MPI_datatype(gfc_descriptor_t *desc, int char_len)
     return string;
   }
 
-  caf_runtime_error("Unsupported data type in collective: %zd\n",
-                    GFC_DTYPE_TYPE_SIZE(desc));
-  return 0;
+  return MPI_BYTE;
+  /* caf_runtime_error("Unsupported data type in collective: %zd\n", */
+  /*                   GFC_DTYPE_TYPE_SIZE(desc)); */
+  /* return 0; */
 }
 
 
@@ -7253,9 +7254,17 @@ PREFIX(co_broadcast) (gfc_descriptor_t *a, int source_image, int *stat,
     size *= dimextent;
   }
 
+  printf("DTYPE Size: %d\n",GFC_DESCRIPTOR_SIZE(a));
+
   if (rank == 0)
   {
-    if (datatype != MPI_CHARACTER)
+    if( datatype == MPI_BYTE)
+      {
+	ierr = MPI_Bcast(a->base_addr, size*GFC_DESCRIPTOR_SIZE(a),
+			 datatype, source_image - 1,
+			 CAF_COMM_WORLD); chk_err(ierr);
+      }
+    else if (datatype != MPI_CHARACTER)
     {
       ierr = MPI_Bcast(a->base_addr, size, datatype, source_image - 1,
                        CAF_COMM_WORLD); chk_err(ierr);
