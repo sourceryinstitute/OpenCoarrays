@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.10)
 
 cmake_policy(VERSION 3.10...3.14)
 
+if(DEFINED ENV{SOURCE_DATE_EPOCH})
+  set(SOURCE_DATE_EPOCH "$ENV{SOURCE_DATE_EPOCH}")
+endif()
+
 set(CMAKE_SKIP_RPATH ON
   CACHE BOOL "Don't add a build-dir rpath")
 set(CMAKE_BUILD_WITH_INSTALL_RPATH ON
@@ -941,6 +945,8 @@ foreach(SCRIPT ${TRAVIS_SCRIPTS})
   endif()
 endforeach()
 
-install(FILES "${CMAKE_BINARY_DIR}/sha256_install_manifest.txt"
-  DESTINATION "${CMAKE_INSTALL_DATADIR}/opencoarrays"
-  OPTIONAL)
+# Create and install a manifest of installed files, and another containing their sha256 hashes
+foreach(VAR CMAKE_BINARY_DIR CMAKE_INSTALL_DATADIR PROJECT_NAME SOURCE_DATE_EPOCH)
+  install(CODE "set(${VAR} \"${${VAR}}\")")
+endforeach()
+install(SCRIPT "${CMAKE_CURRENT_LIST_DIR}/cmake/InstallFileManifest.cmake")
