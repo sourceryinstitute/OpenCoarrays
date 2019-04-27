@@ -1,95 +1,102 @@
-module object_interface
-  implicit none
-  private
-  public :: object
-
-  type object
-    private
-    integer :: foo=0
-    logical :: bar=.false.
-  contains
-    procedure :: initialize
-    procedure :: co_broadcast_me
-    procedure :: not_equal
-    procedure :: copy
-    generic :: operator(/=)=>not_equal
-    generic :: assignment(=)=>copy
-  end type
-
-  interface
-    elemental impure module subroutine initialize(this,foo_,bar_)
-      implicit none
-      class(object), intent(out) :: this
-      integer, intent(in) :: foo_
-      logical, intent(in) :: bar_
-    end subroutine
-
-    elemental impure module subroutine co_broadcast_me(this,source_image)
-      implicit none
-      class(object), intent(inout) :: this
-      integer, intent(in) :: source_image
-    end subroutine
-
-    elemental module function not_equal(lhs,rhs) result(lhs_ne_rhs)
-      implicit none
-      class(object), intent(in) :: lhs,rhs
-      logical lhs_ne_rhs
-    end function
-
-    elemental impure module subroutine copy(lhs,rhs)
-      implicit none
-      class(object), intent(inout) :: lhs
-      class(object), intent(in) :: rhs
-    end subroutine
-  end interface
-
-end module
-
-submodule(object_interface) object_implementation
-  implicit none
-contains
-    module procedure co_broadcast_me
-      call co_broadcast(this%foo,source_image)
-      call co_broadcast(this%bar,source_image)
-    end procedure
-
-    module procedure initialize
-      this%foo = foo_
-      this%bar = bar_
-    end procedure
-
-    module procedure not_equal
-      lhs_ne_rhs = (lhs%foo /= rhs%foo) .or. (lhs%bar .neqv. rhs%bar)
-    end procedure
-
-    module procedure copy
-       lhs%foo = rhs%foo
-       lhs%bar = rhs%bar
-    end procedure
-end submodule
-
 program main
-  use object_interface, only : object
+  !! author: Damian Rouson
+  !!
+  !! Test co_broadcast with derived-type actual arguments
   implicit none
-  type(object) message
 
-  call message%initialize(foo_=1,bar_=.true.)
+  integer, parameter :: sender=1 !! co_broadcast source_image
+  character(len=*), parameter :: text="text" !! character message data
 
-  emulate_co_broadcast: block
-    type(object) foobar
-    if (this_image()==1) foobar = message
-    call foobar%co_broadcast_me(source_image=1)
-    if ( foobar /= message ) error stop "Test failed."
-  end block emulate_co_broadcast
+  associate(me=>this_image())
 
-  desired_co_broadcast: block
-    type(object) barfoo
-    if (this_image()==1) barfoo = message
-    call co_broadcast(barfoo,source_image=1)  ! OpenCoarrays terminates here with the message "Unsupported data type"
-    if ( barfoo /= message ) error stop "Test failed."
-  end block desired_co_broadcast
+    test_non_allocatable: block
+      type parent
+        integer :: heritable=0
+      end type
 
-  sync all  ! Wait for each image to pass the test
-  if (this_image()==1) print *,"Test passed."
+      type component
+        integer :: subcomponent=0
+      end type
+
+      type, extends(parent) :: child
+        type(component) a
+        character(len=len(text)) :: c="", z(0)
+        complex :: i=(0.,0.), j(1)=(0.,0.)
+        integer :: k=0,       l(2,3)=0
+        real    :: r=0.,      s(3,2,1)=0.
+        logical :: t=.false., u(1,2,3, 1,2,3, 1,2,3, 1,2,3, 1,2,3)=.false.
+      end type
+
+      type(child) message
+      type(child) :: content = child( &
+        parent=parent(heritable=-2), a=component(-1), c=text, z=[character(len=len(text))::],  &
+        i=(0.,1.), j=(2.,3.), k=4, l=5, r=7., s=8., t=.true., u=.true.  &
+      )
+      if (me==sender) message = content
+
+      call co_broadcast(message,source_image=sender)
+
+      associate( failures => [                                &
+        message%parent%heritable /= content%parent%heritable, &
+        message%a%subcomponent /= content%a%subcomponent,     &
+        message%c /= content%c,                               &
+        message%z /= content%z,                               &
+        message%i /= content%i,                               &
+        message%j /= content%j,                               &
+        message%k /= content%k,                               &
+        message%l /= content%l,                               &
+        message%r /= content%r,                               &
+        message%s /= content%s,                               &
+        message%t .neqv. content%t,                           &
+        any( message%u .neqv. content%u )                     &
+      ] )
+
+        if ( any(failures) ) error stop "Test failed in non-allocatable block."
+
+      end associate
+
+    end block test_non_allocatable
+
+     test_allocatable: block
+       type dynamic
+         character(len=:), allocatable :: string
+         complex, allocatable :: scalar
+         integer, allocatable :: vector(:)
+         logical, allocatable :: matrix(:,:)
+         real, allocatable ::  superstring(:,:,:, :,:,:, :,:,:, :,:,:, :,:,: )
+       end type
+
+       type(dynamic) alloc_message, alloc_content
+
+       alloc_content = dynamic(                                               &
+         string=text,                                                         &
+         scalar=(0.,1.),                                                      &
+         vector=reshape( [integer::], [0]),                                   &
+         matrix=reshape( [.true.], [1,1]),                                         &
+         superstring=reshape([1,2,3,4], [2,1,2, 1,1,1, 1,1,1, 1,1,1, 1,1,1 ]) &
+       )
+
+       if (me==sender) alloc_message = alloc_content
+
+       call co_broadcast(alloc_message,source_image=sender)
+
+       associate( failures => [                                 &
+         alloc_message%string /= alloc_content%string,          &
+         alloc_message%scalar /= alloc_content%scalar,          &
+         alloc_message%vector /= alloc_content%vector,          &
+         alloc_message%matrix .neqv. alloc_content%matrix,      &
+         alloc_message%superstring /= alloc_content%superstring &
+       ] )
+
+         if ( any(failures) ) error stop "Test failed in allocatable block."
+
+       end associate
+
+     end block test_allocatable
+
+    sync all  ! Wait for each image to pass the test
+    if (me==sender) print *,"Test passed."
+
+  end associate
 
 end program main
