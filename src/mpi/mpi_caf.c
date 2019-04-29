@@ -8213,7 +8213,6 @@ void PREFIX(form_team) (int team_id, caf_team_t *team,
   MPI_Comm *current_comm = &CAF_COMM_WORLD;
   int ierr;
 
-  ierr = MPI_Barrier(CAF_COMM_WORLD); chk_err(ierr);
   newcomm = (MPI_Comm *)calloc(1,sizeof(MPI_Comm));
   ierr = MPI_Comm_split(*current_comm, team_id, caf_this_image, newcomm);
   chk_err(ierr);
