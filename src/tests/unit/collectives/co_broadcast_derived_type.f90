@@ -81,10 +81,10 @@ program main
         message%j /= content%j,                               &
         message%k /= content%k,                               &
         message%l /= content%l,                               &
-        message%r .neqv. content%r,                               &
-        message%s .neqv. content%s,                               &
-        message%t /= content%t,                           &
-        any( message%u /= content%u )                     &
+        message%r .neqv. content%r,                           &
+        message%s .neqv. content%s,                           &
+        message%t /= content%t,                               &
+        any( message%u /= content%u )                         &
       ] )
 
         if ( any(failures) ) error stop "Test failed in non-allocatable block."
@@ -110,22 +110,22 @@ program main
         string_array=[text],                                                 &
         scalar=(0.,1.),                                                      &
         vector=reshape( [integer::], [0]),                                   &
-        matrix=reshape( [.true.], [1,1]),                                         &
+        matrix=reshape( [.true.], [1,1]),                                    &
         superstring=reshape([1,2,3,4], [2,1,2, 1,1,1, 1,1,1, 1,1,1, 1,1,1 ]) &
       )
 
       if (me==sender) alloc_message = alloc_content
 
-      call co_broadcast(alloc_message,source_image=sender)
+     call co_broadcast(alloc_message,source_image=sender)
 
-      associate( failures => [                                 &
-        alloc_message%string /= alloc_content%string,          &
-        alloc_message%string_array /= alloc_content%string_array,          &
-        alloc_message%scalar /= alloc_content%scalar,          &
-        alloc_message%vector /= alloc_content%vector,          &
-        alloc_message%matrix .neqv. alloc_content%matrix,      &
-        alloc_message%superstring /= alloc_content%superstring &
-      ] )
+     associate( failures => [                                    &
+       alloc_message%string /= alloc_content%string,             &
+       alloc_message%string_array /= alloc_content%string_array, &
+       alloc_message%scalar /= alloc_content%scalar,             &
+       alloc_message%vector /= alloc_content%vector,             &
+       alloc_message%matrix .neqv. alloc_content%matrix,         &
+       alloc_message%superstring /= alloc_content%superstring    &
+     ] )
 
         if ( any(failures) ) error stop "Test failed in allocatable block."
 
