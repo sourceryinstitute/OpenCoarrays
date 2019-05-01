@@ -7,6 +7,12 @@ program main
   integer, parameter :: sender=1 !! co_broadcast source_image
   character(len=*), parameter :: text="text" !! character message data
 
+  interface
+     function f(x) result(y)
+       real x, y
+     end function
+  end interface
+
   associate(me=>this_image())
 
     test_non_allocatable: block
@@ -19,23 +25,53 @@ program main
       end type
 
       type, extends(parent) :: child
-        type(component) a
+
+        ! Scalar and array derived-type components
+        type(component) a, b(1,2,1, 1,1,1, 1,1,1, 1,1,1, 1,1,1)
+
+        ! Scalar and array intrinsic-type components
         character(len=len(text)) :: c="", z(0)
         complex :: i=(0.,0.), j(1)=(0.,0.)
         integer :: k=0,       l(2,3)=0
-        real    :: r=0.,      s(3,2,1)=0.
-        logical :: t=.false., u(1,2,3, 1,2,3, 1,2,3, 1,2,3, 1,2,3)=.false.
+        logical :: r=.false., s(1,2,3, 1,2,3, 1,2,3, 1,2,3, 1,2,3)=.false.
+        real    :: t=0.,      u(3,2,1)=0.
+
+        ! Scalar and array pointer components
+        character(len=len(text)), pointer :: &
+                            char_ptr=>null(), char_ptr_maxdim(:,:,:, :,:,:, :,:,:, :,:,:, :,:,:)=>null()
+        complex, pointer :: cplx_ptr=>null(), cplx_ptr_maxdim(:,:,:, :,:,:, :,:,:, :,:,:, :,:,:)=>null()
+        integer, pointer :: int_ptr =>null(), int_ptr_maxdim (:,:,:, :,:,:, :,:,:, :,:,:, :,:,:)=>null()
+        logical, pointer :: bool_ptr=>null(), bool_ptr_maxdim(:,:,:, :,:,:, :,:,:, :,:,:, :,:,:)=>null()
+        real, pointer    :: real_ptr=>null(), real_ptr_maxdim(:,:,:, :,:,:, :,:,:, :,:,:, :,:,:)=>null()
+        procedure(f), pointer :: procedure_pointer=>null()
       end type
 
       type(child) message
-      type(child) :: content = child( &
-        parent=parent(heritable=-2), a=component(-1), c=text, z=[character(len=len(text))::],  &
-        i=(0.,1.), j=(2.,3.), k=4, l=5, r=7., s=8., t=.true., u=.true.  &
+      type(child) :: content = child( & ! define content using the insrinsic structure constructor
+        parent=parent(heritable=-4),                                                                           & ! parent
+        a=component(-3), b=reshape([component(-2),component(-1)], [1,2,1, 1,1,1, 1,1,1, 1,1,1, 1,1,1]),        & ! derived types
+        c=text, z=[character(len=len(text))::], i=(0.,1.), j=(2.,3.), k=4, l=5, r=.true., s=.true., t=7., u=8. & ! intrinsic types
       )
-      if (me==sender) message = content
+      if (me==sender) then
+        message = content
+        allocate(message%char_ptr, message%char_ptr_maxdim(1,1,2, 1,1,1, 1,1,1, 1,1,1, 1,1,1), source=text   )
+        allocate(message%cplx_ptr, message%cplx_ptr_maxdim(1,1,1, 1,1,2, 1,1,1, 1,1,1, 1,1,1), source=(0.,1.))
+        allocate(message%int_ptr , message%int_ptr_maxdim (1,1,1, 1,1,1, 1,1,2, 1,1,1, 1,1,1), source=2      )
+        allocate(message%bool_ptr, message%bool_ptr_maxdim(1,1,1, 1,2,1, 1,1,1, 1,1,2, 1,1,1), source=.true. )
+        allocate(message%real_ptr, message%real_ptr_maxdim(1,1,1, 1,1,1, 1,1,1, 1,1,1, 1,1,2), source=3.     )
+      end if
 
       call co_broadcast(message,source_image=sender)
 
+      if (me==sender) then
+        deallocate(message%char_ptr, message%char_ptr_maxdim)
+        deallocate(message%cplx_ptr, message%cplx_ptr_maxdim)
+        deallocate(message%int_ptr , message%int_ptr_maxdim )
+        deallocate(message%bool_ptr, message%bool_ptr_maxdim)
+        deallocate(message%real_ptr, message%real_ptr_maxdim)
+      end if
+
+      !! Verify correct broadcast of all non-pointer components (pointers become undefined on the receiving image).
       associate( failures => [                                &
         message%parent%heritable /= content%parent%heritable, &
         message%a%subcomponent /= content%a%subcomponent,     &
@@ -45,10 +81,10 @@ program main
         message%j /= content%j,                               &
         message%k /= content%k,                               &
         message%l /= content%l,                               &
-        message%r /= content%r,                               &
-        message%s /= content%s,                               &
-        message%t .neqv. content%t,                           &
-        any( message%u .neqv. content%u )                     &
+        message%r .neqv. content%r,                               &
+        message%s .neqv. content%s,                               &
+        message%t /= content%t,                           &
+        any( message%u /= content%u )                     &
       ] )
 
         if ( any(failures) ) error stop "Test failed in non-allocatable block."
@@ -57,40 +93,43 @@ program main
 
     end block test_non_allocatable
 
-     test_allocatable: block
-       type dynamic
-         character(len=:), allocatable :: string
-         complex, allocatable :: scalar
-         integer, allocatable :: vector(:)
-         logical, allocatable :: matrix(:,:)
-         real, allocatable ::  superstring(:,:,:, :,:,:, :,:,:, :,:,:, :,:,: )
-       end type
+    test_allocatable: block
+      type dynamic
+        character(len=:), allocatable :: string
+        character(len=len(text)), allocatable :: string_array(:)
+        complex, allocatable :: scalar
+        integer, allocatable :: vector(:)
+        logical, allocatable :: matrix(:,:)
+        real, allocatable ::  superstring(:,:,:, :,:,:, :,:,:, :,:,:, :,:,: )
+      end type
 
-       type(dynamic) alloc_message, alloc_content
+      type(dynamic) alloc_message, alloc_content
 
-       alloc_content = dynamic(                                               &
-         string=text,                                                         &
-         scalar=(0.,1.),                                                      &
-         vector=reshape( [integer::], [0]),                                   &
-         matrix=reshape( [.true.], [1,1]),                                         &
-         superstring=reshape([1,2,3,4], [2,1,2, 1,1,1, 1,1,1, 1,1,1, 1,1,1 ]) &
-       )
+      alloc_content = dynamic(                                               &
+        string=text,                                                         &
+        string_array=[text],                                                 &
+        scalar=(0.,1.),                                                      &
+        vector=reshape( [integer::], [0]),                                   &
+        matrix=reshape( [.true.], [1,1]),                                         &
+        superstring=reshape([1,2,3,4], [2,1,2, 1,1,1, 1,1,1, 1,1,1, 1,1,1 ]) &
+      )
 
-       if (me==sender) alloc_message = alloc_content
+      if (me==sender) alloc_message = alloc_content
 
-       call co_broadcast(alloc_message,source_image=sender)
+      call co_broadcast(alloc_message,source_image=sender)
 
-       associate( failures => [                                 &
-         alloc_message%string /= alloc_content%string,          &
-         alloc_message%scalar /= alloc_content%scalar,          &
-         alloc_message%vector /= alloc_content%vector,          &
-         alloc_message%matrix .neqv. alloc_content%matrix,      &
-         alloc_message%superstring /= alloc_content%superstring &
-       ] )
+      associate( failures => [                                 &
+        alloc_message%string /= alloc_content%string,          &
+        alloc_message%string_array /= alloc_content%string_array,          &
+        alloc_message%scalar /= alloc_content%scalar,          &
+        alloc_message%vector /= alloc_content%vector,          &
+        alloc_message%matrix .neqv. alloc_content%matrix,      &
+        alloc_message%superstring /= alloc_content%superstring &
+      ] )
 
-         if ( any(failures) ) error stop "Test failed in allocatable block."
+        if ( any(failures) ) error stop "Test failed in allocatable block."
 
-       end associate
+      end associate
 
      end block test_allocatable
 
