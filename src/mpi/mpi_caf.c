@@ -55,7 +55,7 @@
 #endif
 
 #include "libcaf.h"
-
+#include "mpi_swin_keys.h"
 /* Define GFC_CAF_CHECK to enable run-time checking. */
 /* #define GFC_CAF_CHECK  1 */
 
@@ -183,10 +183,11 @@ static void error_stop_str (const char *string, size_t len, bool quiet)
             __attribute__((noreturn));
 
 /* Global variables. */
-static int caf_this_image;
+static int caf_this_image = 0;
 static int caf_num_images = 0;
 static int caf_is_finalized = 0;
 static MPI_Win global_dynamic_win;
+static int win_num = 0;
 
 #if MPI_VERSION >= 3
   MPI_Info mpi_info_same_size;
@@ -782,6 +783,41 @@ stat_error:
 #endif // MPI_VERSION
 }
 
+int setStorageInfo(int impl_type, MPI_Info* info, size_t segsize)
+{
+    char str[256];
+    
+    MPI_Info_create(info);
+    MPI_Info_set(*info, MPI_SWIN_ALLOC_TYPE, "storage");
+    MPI_Info_set(*info, MPI_SWIN_OFFSET,     "0");
+    MPI_Info_set(*info, MPI_SWIN_UNLINK,     "false");
+    /* MPI_Info_set(*info, MPI_SWIN_SEG_SIZE,   "16777216"); // << Important */
+    sprintf(str,  "%zu", segsize);
+    MPI_Info_set(*info, MPI_SWIN_SEG_SIZE, str); // << Important
+    // CHK(MPI_Info_set(*info, MPI_SWIN_FLUSH_INT,  "921921"));
+    MPI_Info_set(*info, MPI_SWIN_READ_FILE,  "false");    // << Important
+    // CHK(MPI_Info_set(*info, MPI_SWIN_PTYPE,      "fifo"));
+    // CHK(MPI_Info_set(*info, MPI_SWIN_ORDER,      "mem_first"));
+    // CHK(MPI_Info_set(*info, MPI_SWIN_FACTOR,     "1.0"));
+    
+    // Define the path according to the rank of the process
+    sprintf(str,  "./mpi_swin_%d_%d.win", caf_this_image, win_num);
+    MPI_Info_set(*info, MPI_SWIN_FILENAME, str);
+    
+    // Convert the implementation type to set the hint
+    sprintf(str, "%s", ((impl_type) ? "ummap" : "mmap"));
+    MPI_Info_set(*info, MPI_SWIN_IMPL_TYPE, str);
+    
+    // CHK(MPI_Info_set(*info, MPI_IO_ACCESS_STYLE,    "write_mostly"));
+    // CHK(MPI_Info_set(*info, MPI_IO_FILE_PERM,       "S_IRUSR | S_IWUSR"));
+    // CHK(MPI_Info_set(*info, MPI_IO_STRIPING_FACTOR, "2"));
+    // CHK(MPI_Info_set(*info, MPI_IO_STRIPING_UNIT,   "65536"));
+
+    win_num++;
+    
+    return 0;
+}
+
 /* Initialize coarray program.  This routine assumes that no other
  * MPI initialization happened before. */
 
@@ -789,6 +825,7 @@ void
 PREFIX(init) (int *argc, char ***argv)
 {
   int flag;
+
   if (caf_num_images == 0)
   {
     int ierr = 0, i = 0, j = 0, rc, prov_lev = 0;
@@ -904,7 +941,7 @@ PREFIX(init) (int *argc, char ***argv)
     ierr = MPI_Info_set(mpi_info_same_size, "same_size", "true"); chk_err(ierr);
 
     /* Setting img_status */
-    ierr = MPI_Win_create(&img_status, sizeof(int), 1, mpi_info_same_size,
+    ierr = MPI_Win_create(&img_status, sizeof(int), 1, MPI_INFO_NULL,
                           CAF_COMM_WORLD, stat_tok); chk_err(ierr);
     CAF_Win_lock_all(*stat_tok);
 #else
@@ -1210,13 +1247,31 @@ PREFIX(register) (size_t size, caf_register_t type, caf_token_t *token,
       {
         mpi_caf_token_t *mpi_token;
         MPI_Win *p;
+	MPI_Info info = MPI_INFO_NULL;
+	size_t segsize = 16777216;
 
         *token = calloc(1, sizeof(mpi_caf_token_t));
         mpi_token = (mpi_caf_token_t *) (*token);
         p = TOKEN(mpi_token);
 
+	/* if(actual_size >= 4096 &&  actual_size < 16777216) */
+	/*   { */
+	/*     segsize = actual_size; */
+	/*   } */
+	/* else if (actual_size < 4096) */
+	/*   { */
+	/*     segsize = 4096; */
+	/*     actual_size = segsize; */
+	/*   } */
+	/* else if ( (actual_size % segsize) ) */
+	/*   { */
+	/*     actual_size = (size_t)(actual_size + segsize - 1) / segsize; */
+	/*   } */
+
+	setStorageInfo(0, &info, segsize);
+
 #if MPI_VERSION >= 3
-        ierr = MPI_Win_allocate(actual_size, 1, MPI_INFO_NULL, CAF_COMM_WORLD,
+        ierr = MPI_Win_allocate(actual_size, 1, info, CAF_COMM_WORLD,
                                 &mem, p); chk_err(ierr);
         CAF_Win_lock_all(*p);
 #else // MPI_VERSION
@@ -1549,6 +1604,17 @@ PREFIX(sync_all) (int *stat, char *errmsg, charlen_t errmsg_len)
     ierr = MPI_Barrier(alive_comm); chk_err(ierr);
 #else
     ierr = MPI_Barrier(CAF_COMM_WORLD); chk_err(ierr);
+    // Sync required by MPI Storage Windows
+    struct caf_allocated_tokens_t *tmp = caf_allocated_tokens;
+    MPI_Win *p;
+    mpi_caf_token_t *mpi_token;
+    while(tmp)
+      {
+    	mpi_token = (mpi_caf_token_t *) (tmp->token);
+    	p = TOKEN(mpi_token);
+    	MPI_Win_sync(*p);
+    	tmp = tmp->prev;
+      }
 #endif
     dprint("MPI_Barrier = %d.\n", err);
     if (ierr == STAT_FAILED_IMAGE)
