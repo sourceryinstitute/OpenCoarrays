@@ -46,6 +46,14 @@
 #include <mpi.h>
 #include <pthread.h>
 #include <signal.h>     /* For raise */
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <sys/sysinfo.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <errno.h>
+#include <limits.h>
+#include <linux/limits.h>
 
 #ifdef HAVE_MPI_EXT_H
 #include <mpi-ext.h>
@@ -56,6 +64,7 @@
 
 #include "libcaf.h"
 #include "mpi_swin_keys.h"
+
 /* Define GFC_CAF_CHECK to enable run-time checking. */
 /* #define GFC_CAF_CHECK  1 */
 
@@ -187,7 +196,6 @@ static int caf_this_image = 0;
 static int caf_num_images = 0;
 static int caf_is_finalized = 0;
 static MPI_Win global_dynamic_win;
-static int win_num = 0;
 
 #if MPI_VERSION >= 3
   MPI_Info mpi_info_same_size;
@@ -311,6 +319,211 @@ int (*int32_t_by_value)(int32_t, int32_t);
 int64_t (*int64_t_by_value)(int64_t, int64_t);
 float (*float_by_value)(float, float);
 double (*double_by_value)(double, double);
+
+
+/////////////////////////////////////////////////////
+// MPI STORAGE WINDOWS ## Supporting functionality //
+/////////////////////////////////////////////////////
+                                          // Begin //
+
+#define PCAF_DEFAULT_PATH   "."
+#define PCAF_DEFAULT_PREFIX "OpenCoarrays"
+
+typedef struct timeval timeval_t;
+
+typedef struct
+{
+    int8_t   enabled;
+    int8_t   impl_type;
+    int8_t   shared_file;
+    int8_t   unlink;
+    int8_t   read_file;
+    uint32_t sync_freq;
+    size_t   seg_size;
+    size_t   stripe_size;
+    int32_t  stripe_count;
+    char     path[PATH_MAX];
+    char     prefix[NAME_MAX];
+} pcaf_settings_t;
+
+typedef struct
+{
+    uint32_t  id;
+    off_t     offset;
+    timeval_t tv;
+} pcaf_state_t;
+
+static pcaf_settings_t pcaf_cfg   = { .enabled = SCHAR_MAX,
+                                      .path    = PCAF_DEFAULT_PATH,
+                                      .prefix  = PCAF_DEFAULT_PREFIX };
+static pcaf_state_t    pcaf_state = { 0 };
+
+/**
+ * Helper method that allows to retrieve an envorinment variable, if it exists.
+ */
+static int get_env(const char *name, const char *format, void *target)
+{
+  const char *buffer = getenv(name);
+  return (buffer != NULL && sscanf(buffer, format, target) != 1) * EINVAL;
+}
+
+/**
+ * Helper method that sets a given time value to the current timestamp.
+ */
+inline static void tv_set(timeval_t *tv)
+{
+  gettimeofday(tv, NULL);
+}
+
+/**
+ * Helper method that calculates the delta with a reference timestamp (in ms).
+ */
+static uint32_t tv_diff(timeval_t *tv_1)
+{
+  timeval_t tv_2 = { 0 };
+  tv_set(&tv_2);
+  
+  return ((tv_2.tv_sec  - tv_1->tv_sec)  * 1000) +
+         ((tv_2.tv_usec - tv_1->tv_usec) / 1000);
+}
+
+/**
+ * Helper method that allows to initialize the settings for persistent coarrays.
+ */
+static int pcaf_init()
+{
+  int  ierr          = 0;
+  char str[PATH_MAX] = { 0 };
+  
+  ierr = get_env("PCAF_ENABLED", "%s", (void *)str); chk_err(ierr);
+  pcaf_cfg.enabled = !strcmp(str, "true");
+  
+  // Retrieve the path and prefix, and configure them accordingly
+  ierr = get_env("PCAF_PATH",   "%s", (void *)pcaf_cfg.path);   chk_err(ierr);
+  ierr = get_env("PCAF_PREFIX", "%s", (void *)pcaf_cfg.prefix); chk_err(ierr);
+  
+  // Define the implementation type (0 = MMAP-IO, 1 = uMMAP-IO)
+  str[0] = '\0'; // Reset the string
+  ierr = get_env("PCAF_IMPLTYPE", "%s", (void *)str); chk_err(ierr);
+  pcaf_cfg.impl_type = !strcmp(str, "ummap");
+  
+  // Ensure that the segment size is at least a single page (e.g., 4KB)
+  ierr = get_env("PCAF_SEGSIZE", "%zu", (void *)&pcaf_cfg.seg_size);
+         chk_err(ierr);
+  
+  if (!pcaf_cfg.seg_size)
+  {
+    pcaf_cfg.seg_size = sysconf(_SC_PAGESIZE);
+  }
+  
+  // Retrieve the rest of the settings
+  str[0] = '\0'; // Reset the string
+  ierr = get_env("PCAF_SHAREDFILE", "%s", (void *)str); chk_err(ierr);
+  pcaf_cfg.shared_file = !strcmp(str, "true");
+  
+  str[0] = '\0'; // Reset the string
+  ierr = get_env("PCAF_UNLINK", "%s", (void *)str); chk_err(ierr);
+  pcaf_cfg.unlink = !strcmp(str, "true");
+  
+  str[0] = '\0'; // Reset the string
+  ierr = get_env("PCAF_READFILE", "%s", (void *)str); chk_err(ierr);
+  pcaf_cfg.read_file = !strcmp(str, "true");
+  
+  ierr = get_env("PCAF_SYNCFREQ", "%u", (void *)&pcaf_cfg.sync_freq);
+         chk_err(ierr);
+  
+  ierr = get_env("PCAF_STRIPESIZE", "%zu", (void *)&pcaf_cfg.stripe_size);
+         chk_err(ierr);
+  ierr = get_env("PCAF_STRIPECOUNT", "%d", (void *)&pcaf_cfg.stripe_count);
+         chk_err(ierr);
+  
+  // Reset the timestamp to estimate the synchronization frequency
+  tv_set(&pcaf_state.tv);
+  
+  return 0;
+}
+
+/**
+ * Helper method that allows to print the settings for persistent coarrays.
+ */
+static void pcaf_print()
+{
+  printf("PCAF Settings\n-------------\n");
+  printf("enabled\t\t%d\n",    (int)pcaf_cfg.enabled);
+  printf("impl_type\t%d\n",    (int)pcaf_cfg.impl_type);
+  printf("shared_file\t%d\n",  (int)pcaf_cfg.shared_file);
+  printf("unlink\t\t%d\n",     (int)pcaf_cfg.unlink);
+  printf("read_file\t%d\n",    (int)pcaf_cfg.read_file);
+  printf("sync_freq\t%u\n",    pcaf_cfg.sync_freq);
+  printf("seg_size\t%zu\n",    pcaf_cfg.seg_size);
+  printf("stripe_size\t%zu\n", pcaf_cfg.stripe_size);
+  printf("stripe_count\t%d\n", pcaf_cfg.stripe_count);
+  printf("path\t\t\"%s\"\n",   pcaf_cfg.path);
+  printf("prefix\t\t\"%s\"\n", pcaf_cfg.prefix);
+  
+  printf("\nPCAF State\n----------n");
+  printf("id\t%u\n",           pcaf_state.id);
+  printf("offset\t%zu\n",      pcaf_state.offset);
+  printf("tv\t[%ld,%ld]\n\n",  pcaf_state.tv.tv_sec, pcaf_state.tv.tv_usec);
+}
+
+/**
+ * Helper method that allows to create a default MPI_Info object that sets the
+ * allocation of the window to the storage device.
+ */
+static int set_storage_info(int img_id, size_t alloc_size, MPI_Info* info)
+{
+  char str[PATH_MAX << 1] = { 0 };
+  
+  MPI_Info_create(info);
+  
+  // Configure the allocation and implementation type
+  MPI_Info_set(*info, MPI_SWIN_ALLOC_TYPE, "storage");
+  MPI_Info_set(*info, MPI_SWIN_IMPL_TYPE,  (pcaf_cfg.impl_type) ? "ummap" :
+                                                                  "mmap");
+  
+  // Set the offset to be used for the target file (0 by default)
+  sprintf(str, "%zu", pcaf_state.offset);
+  MPI_Info_set(*info, MPI_SWIN_OFFSET, str);
+  
+  // Define the path according to the "shared file" setting
+  if (pcaf_cfg.shared_file)
+  {
+    sprintf(str, "%s/%s_%d.win", pcaf_cfg.path, pcaf_cfg.prefix, img_id);
+    
+    // Update the offset for the next allocation
+    pcaf_state.offset += alloc_size;
+  }
+  else
+  {
+    sprintf(str, "%s/%s_%d_%d.win", pcaf_cfg.path, pcaf_cfg.prefix, img_id,
+                                    pcaf_state.id++);
+  }
+  
+  MPI_Info_set(*info, MPI_SWIN_FILENAME, str);
+  
+  // Define the rest of the settings for the window
+  MPI_Info_set(*info, MPI_SWIN_UNLINK, (pcaf_cfg.unlink) ? "true": "false");
+  
+  sprintf(str, "%zu", pcaf_cfg.seg_size);
+  MPI_Info_set(*info, MPI_SWIN_SEG_SIZE, str);
+  
+  MPI_Info_set(*info, MPI_SWIN_READ_FILE, (pcaf_cfg.read_file) ? "true":
+                                                                 "false");
+  
+  sprintf(str, "%zu", pcaf_cfg.stripe_size);
+  MPI_Info_set(*info, MPI_IO_STRIPING_UNIT, str);
+  
+  sprintf(str, "%d", pcaf_cfg.stripe_count);
+  MPI_Info_set(*info, MPI_IO_STRIPING_FACTOR, str);
+
+  return 0;
+}
+                                            // End //
+/////////////////////////////////////////////////////
+// MPI STORAGE WINDOWS ## Supporting functionality //
+/////////////////////////////////////////////////////
+
 
 /* Define shortcuts for Win_lock and _unlock depending on whether the primitives
  * are available in the MPI implementation.  When they are not available the
@@ -783,41 +996,6 @@ stat_error:
 #endif // MPI_VERSION
 }
 
-int setStorageInfo(int impl_type, MPI_Info* info, size_t segsize)
-{
-    char str[256];
-    
-    MPI_Info_create(info);
-    MPI_Info_set(*info, MPI_SWIN_ALLOC_TYPE, "storage");
-    MPI_Info_set(*info, MPI_SWIN_OFFSET,     "0");
-    MPI_Info_set(*info, MPI_SWIN_UNLINK,     "false");
-    /* MPI_Info_set(*info, MPI_SWIN_SEG_SIZE,   "16777216"); // << Important */
-    sprintf(str,  "%zu", segsize);
-    MPI_Info_set(*info, MPI_SWIN_SEG_SIZE, str); // << Important
-    // CHK(MPI_Info_set(*info, MPI_SWIN_FLUSH_INT,  "921921"));
-    MPI_Info_set(*info, MPI_SWIN_READ_FILE,  "false");    // << Important
-    // CHK(MPI_Info_set(*info, MPI_SWIN_PTYPE,      "fifo"));
-    // CHK(MPI_Info_set(*info, MPI_SWIN_ORDER,      "mem_first"));
-    // CHK(MPI_Info_set(*info, MPI_SWIN_FACTOR,     "1.0"));
-    
-    // Define the path according to the rank of the process
-    sprintf(str,  "./mpi_swin_%d_%d.win", caf_this_image, win_num);
-    MPI_Info_set(*info, MPI_SWIN_FILENAME, str);
-    
-    // Convert the implementation type to set the hint
-    sprintf(str, "%s", ((impl_type) ? "ummap" : "mmap"));
-    MPI_Info_set(*info, MPI_SWIN_IMPL_TYPE, str);
-    
-    // CHK(MPI_Info_set(*info, MPI_IO_ACCESS_STYLE,    "write_mostly"));
-    // CHK(MPI_Info_set(*info, MPI_IO_FILE_PERM,       "S_IRUSR | S_IWUSR"));
-    // CHK(MPI_Info_set(*info, MPI_IO_STRIPING_FACTOR, "2"));
-    // CHK(MPI_Info_set(*info, MPI_IO_STRIPING_UNIT,   "65536"));
-
-    win_num++;
-    
-    return 0;
-}
-
 /* Initialize coarray program.  This routine assumes that no other
  * MPI initialization happened before. */
 
@@ -825,7 +1003,6 @@ void
 PREFIX(init) (int *argc, char ***argv)
 {
   int flag;
-
   if (caf_num_images == 0)
   {
     int ierr = 0, i = 0, j = 0, rc, prov_lev = 0;
@@ -886,6 +1063,13 @@ PREFIX(init) (int *argc, char ***argv)
 
     ++caf_this_image;
     caf_is_finalized = 0;
+    
+    // Retrieve the global settings for persistent coarrays, if necessary
+    if (pcaf_cfg.enabled == SCHAR_MAX)
+    {
+        ierr = pcaf_init(); chk_err(ierr);
+        // Optional: Use pcaf_print() here to print the settings
+    }
 
     /* BEGIN SYNC IMAGE preparation
      * Prepare memory for syncing images. */
@@ -941,7 +1125,7 @@ PREFIX(init) (int *argc, char ***argv)
     ierr = MPI_Info_set(mpi_info_same_size, "same_size", "true"); chk_err(ierr);
 
     /* Setting img_status */
-    ierr = MPI_Win_create(&img_status, sizeof(int), 1, MPI_INFO_NULL,
+    ierr = MPI_Win_create(&img_status, sizeof(int), 1, mpi_info_same_size,
                           CAF_COMM_WORLD, stat_tok); chk_err(ierr);
     CAF_Win_lock_all(*stat_tok);
 #else
@@ -1247,29 +1431,22 @@ PREFIX(register) (size_t size, caf_register_t type, caf_token_t *token,
       {
         mpi_caf_token_t *mpi_token;
         MPI_Win *p;
-	MPI_Info info = MPI_INFO_NULL;
-	size_t segsize = 16777216;
+        MPI_Info info = MPI_INFO_NULL;
 
         *token = calloc(1, sizeof(mpi_caf_token_t));
         mpi_token = (mpi_caf_token_t *) (*token);
         p = TOKEN(mpi_token);
+        
+        if (pcaf_cfg.enabled)
+        {
+          // Ensure that the alloc. size is a multiple of the segment size
+          actual_size = ((actual_size + (pcaf_cfg.seg_size - 1)) /
+                         pcaf_cfg.seg_size) * pcaf_cfg.seg_size;
 
-	/* if(actual_size >= 4096 &&  actual_size < 16777216) */
-	/*   { */
-	/*     segsize = actual_size; */
-	/*   } */
-	/* else if (actual_size < 4096) */
-	/*   { */
-	/*     segsize = 4096; */
-	/*     actual_size = segsize; */
-	/*   } */
-	/* else if ( (actual_size % segsize) ) */
-	/*   { */
-	/*     actual_size = (size_t)(actual_size + segsize - 1) / segsize; */
-	/*   } */
-
-	setStorageInfo(0, &info, segsize);
-
+          ierr = set_storage_info(caf_this_image, actual_size, &info);
+                 chk_err(ierr);
+        }
+        
 #if MPI_VERSION >= 3
         ierr = MPI_Win_allocate(actual_size, 1, info, CAF_COMM_WORLD,
                                 &mem, p); chk_err(ierr);
@@ -1604,17 +1781,26 @@ PREFIX(sync_all) (int *stat, char *errmsg, charlen_t errmsg_len)
     ierr = MPI_Barrier(alive_comm); chk_err(ierr);
 #else
     ierr = MPI_Barrier(CAF_COMM_WORLD); chk_err(ierr);
-    // Sync required by MPI Storage Windows
-    struct caf_allocated_tokens_t *tmp = caf_allocated_tokens;
-    MPI_Win *p;
-    mpi_caf_token_t *mpi_token;
-    while(tmp)
+    
+    // Synchronize with storage if the elapsed time between intervals is valid
+    if (tv_diff(&pcaf_state.tv) >= pcaf_cfg.sync_freq)
+    {
+      struct caf_allocated_tokens_t *tmp = caf_allocated_tokens;
+      MPI_Win *p;
+      mpi_caf_token_t *mpi_token;
+      
+      while(tmp)
       {
-    	mpi_token = (mpi_caf_token_t *) (tmp->token);
-    	p = TOKEN(mpi_token);
-    	MPI_Win_sync(*p);
-    	tmp = tmp->prev;
+        mpi_token = (mpi_caf_token_t *) (tmp->token);
+        p = TOKEN(mpi_token);
+        MPI_Win_sync(*p);
+        tmp = tmp->prev;
       }
+      
+      ierr = MPI_Barrier(CAF_COMM_WORLD); chk_err(ierr);
+      tv_set(&pcaf_state.tv);
+    }
+    
 #endif
     dprint("MPI_Barrier = %d.\n", err);
     if (ierr == STAT_FAILED_IMAGE)
