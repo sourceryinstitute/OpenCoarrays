@@ -30,12 +30,12 @@ matrix:
           OSX_PACKAGES="gcc shellcheck cmake mpich"
           # cmake should be removed, but we should be installing binaries
           # because building from source takes forever
-    # -
-    #   <<: *macOS
-    #   env:
-    #     - GCC=8
-    #       BUILD_TYPES="debug RelWithDebInfo Release"
-    #       OSX_PACKAGES="gcc openmpi shellcheck cmake"
+    -
+      <<: *macOS
+      env:
+        - GCC=9
+          BUILD_TYPES="debug RelWithDebInfo Release"
+          OSX_PACKAGES="gcc openmpi shellcheck cmake"
     - &ubuntu
       os: linux
       sudo: false
