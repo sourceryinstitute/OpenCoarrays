@@ -88,10 +88,10 @@ string(REGEX REPLACE "-rc[0-9]+$"
 
 file(READ "${CMAKE_CURRENT_LIST_DIR}/cmake/Banner.txt.in" OC_BANNER)
 string(CONFIGURE "${OC_BANNER}" OC_BANNER @ONLY)
-
+string(STRIP "${OC_BANNER}" OC_BANNER)
 message(STATUS "${OC_BANNER}")
 
-if((NOT (OpenCoarraysVersion MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+(-rc[0-9]+)?")) AND (EXISTS "${CMAKE_SOURCE_DIR}/.git"))
+if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/.git")
   message( STATUS "Build from git repository detected")
 endif()
 
