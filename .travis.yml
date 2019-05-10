@@ -1,45 +1,64 @@
 ---
-language: c
+language: minimal
 
 os: osx
 
 env:
   global:
-#    - ZERO_AR_DATE=1
+    - ZERO_AR_DATE=1
     - TZ=UTC
     - CACHE="${HOME}/.local"
-    - MPICH_VER="3.2.1"
+    - MPICH_VER="3.3"
     - MPICH_URL_HEAD="https://www.mpich.org/static/downloads/${MPICH_VER}"
     - MPICH_URL_TAIL="mpich-${MPICH_VER}.tar.gz"
-    - MPICH_GCC6_BOT_URL_HEAD="https://github.com/sourceryinstitute/OpenCoarrays/files/1956499/"
-    - MPICH_GCC7_BOT_URL_HEAD="https://github.com/sourceryinstitute/OpenCoarrays/files/1956441/"
-    - MPICH_BOT_URL_TAIL="mpich-3.2.1_1.high_sierra.bottle.1.tar.gz"
     - BUILD_TYPES="Debug RelWithDebInfo Release CodeCoverage"
     - PATH="${HOME}/.local/bin:$PATH"
-  # matrix:
-  #   - GCC="6 7" OSX_PACKAGES="gcc@7 gcc@6 cmake shellcheck" BUILD_TYPE="cmake"
 
 matrix:
   fast_finish: true
   include:
     - &macOS
       os: osx
+      osx_image: xcode10.2
       env:
         - BUILD_TYPE="InstallScript"
           GCC=9
-          OSX_PACKAGES="gcc shellcheck cmake mpich"
-          # cmake should be removed, but we should be installing binaries
-          # because building from source takes forever
+          CC=gcc-9
+          CXX=g++-9
+      addons:
+        homebrew:
+          packages:
+            - gcc
+            - mpich
+            - shellcheck
+          update: true
     -
       <<: *macOS
       env:
         - GCC=9
-          BUILD_TYPES="debug RelWithDebInfo Release"
-          OSX_PACKAGES="gcc openmpi shellcheck cmake"
+          FC=gcc-${GCC}
+      addons:
+        homebrew:
+          packages:
+            - cmake
+            - gcc
+            - openmpi
+            - shellcheck
+          update: true
+    -
+      <<: *macOS
+      env:
+        - GCC=9
+          FC=gcc-${GCC}
+          CC=gcc-${GCC}
+      addons:
+        homebrew:
+          brewfile: true
+          update: true
     - &ubuntu
       os: linux
       sudo: false
-      dist: trusty
+      dist: xenial
       env:
         - GCC=8
       cache:
@@ -92,11 +111,9 @@ matrix:
 
   allow_failures:
     - *linux_allowed_failure
-    - osx
 
 before_install:
   - source developer-scripts/travis/before_install.all.sh
-  - developer-scripts/travis/before_install.${TRAVIS_OS_NAME}.sh
 
 install:
   - pwd
@@ -113,56 +130,6 @@ after_script:
   - for version in ${GCC}; do bash <(curl -s https://codecov.io/bash) -x $(type -P gcov-${GCC}) >> coverage.log 2>> coverage.err || true ; done
   - tail coverage.log || true
   - tail coverage.err || true
-  - |
-    if [[ "${TRAVIS_TAG}" ]]; then
-      if [[ "v${TRAVIS_TAG}" != "v$(sed -n '/[0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}/{s/^\([^.]*\)\([0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}\)\(.*\)/\2/p;q;}' .VERSION)" ]]; then
-        echo "ERROR: You are trying to tag a new release but have a version missmatch in \`.VERSION\`"
-        false # throw an error
-      fi
-    fi
-
-# before_deploy:
-#   - git archive -v --prefix "OpenCoarrays-${TRAVIS_TAG}/" -o "OpenCoarrays-${TRAVIS_TAG}.tar.gz" ${TRAVIS_TAG}
-#   - |
-#     echo '# To verify cryptographic checksums `shasum -c opencoarrays-'"${TRAVIS_TAG}"'-SHA256.txt` on Mac OS X,' > "opencoarrays-${TRAVIS_TAG}-SHA256.txt
-#     echo '# `sha256sum -c  opencoarrays-'"${TRAVIS_TAG}"'-SHA256.txt` on Linux.' >> "opencoarrays-${TRAVIS_TAG}-SHA256.txt
-#     if [[ $(uname -s) == Darwin ]]; then
-#       shasum -a 256 "OpenCoarrays-${TRAVIS_TAG}.tar.gz" >> "opencoarrays-${TRAVIS_TAG}-SHA256.txt
-#     else
-#       sha256sum  "OpenCoarrays-${TRAVIS_TAG}.tar.gz" >> "opencoarrays-${TRAVIS_TAG}-SHA256.txt
-#     fi
-#   - |
-#     openssl aes-256-cbc -K ${encrypted_ef4535c39461_key} -iv ${encrypted_ef4535c39461_iv} -in subkey-328B3A0E-secret.asc.enc -out ./subkey-328B3A0E-secret.asc -d
-#     gpg --allow-secret-key-import --import ./subkey-328B3A0E-secret.asc && rm subkey-328B3A0E-secret.asc
-#     rm subkey-328B3A0E-secret.* || true
-#     unset encrypted_ef4535c39461_key || true
-#     unset encrypted_ef4535c39461_iv || true
-#     gpg --armor --detach-sign -u 328B3A0E --comment 'Mac users can use GPGTools - https://gpgtools.org' \
-#       --comment "Download Izaak Beekman's GPG public key from your" \
-#       --comment 'trusted key server or from' \
-#       --comment 'https://izaakbeekman.com/izaak.pubkey.txt' \
-#       --comment 'Next add it to your GPG keyring, e.g.,' \
-#       --comment '`curl https://izaakbeekman.com/izaak.pubkey.txt | gpg --import`' \
-#       --comment "Make sure you have verified that the release archive's" \
-#       --comment 'SHA256 checksum matches the provided' \
-#       --comment "opencoarrays-${TRAVIS_TAG}-SHA256.txt and ensure that this file" \
-#       --comment "and it's signature are in the same directory. Then" \
-#       --comment 'verify with:' \
-#       --comment '`gpg --verify opencoarrays-'"${TRAVIS_TAG}"'-SHA256.txt.asc`' \
-#       "opencoarrays-${TRAVIS_TAG}-SHA256.txt"
-
-# deploy:
-#   provider: releases
-#   api_key:
-#     secure: lBj4VgKhU74xfzPc0CDIji6cFrN/xEQIHLHjMcnDPWEF5JQe79aunMS5qiYu5ttve6khGI1WMFEe7clUO3TXiDUPyRMS4M8B2q3fuvUIsIbYgWcKq7ut+x6+dEQDj4DE3yWpPb8IDugWFp4vno1eQ2Rid1yr6Vn+rjnbE2i6z5SkXPnIv1ziQ9G+TF4ChUA8IOd1T78gJmML86P0rbt6nW8eVuJbza2y1ggHAY//q/b6rrbOFw5PqiOBqZ/BRrKJ5d2U2mvsoZtNn4OYyXw4eKEvNDIydwaIZROXfPRmN9zJ5G7+01QA5jlXpq17KfPBr7MXkn7nrQ5q9Z2ji4hRHk/AFzM/etfl1k4WCshYs13NlORpnU0vZtCMmmmsXWxj2kpsOHLWZQKdUAPs3olMPIG6aVnO5Abk1vrVSNy/ZeknbBTKCGScET1qRSaj6d43ynBwGkqHgaJdLBAwGe0Dpap6SsLGsAg56ZqHTngGlXB1KsbJKMkUsSC5RAgEuh9m55nsMaRlTYTrv+YADAQts7lV8yMCciMeJlrd3EYryyn4ZY1O82eOofhZZ5vQUktbXHtg6YnzguFwQyn+9yY/CQfi/vu2Aoq79NJEO/9UJ82ogn6gOoIebzb0xgIONjw4M68luR2U1CXtibzSYKWLGTeOj43khqZdbOpp6xncIv0=
-#   file:
-#     - "OpenCoarrays-${TRAVIS_TAG}.tar.gz"
-#     - "opencoarrays-${TRAVIS_TAG}-SHA256.txt"
-#     - "opencoarrays-${TRAVIS_TAG}-SHA256.txt.asc"
-#   skip_cleanup: true
-#   on:
-#     tags: true
-#    repo: sourceryinstitute/opencoarrays
 
 notifications:
   webhooks:
