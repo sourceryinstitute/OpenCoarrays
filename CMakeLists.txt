@@ -17,15 +17,6 @@ set ( CMAKE_CONFIGURATION_TYPES "Debug" "Release" "MinSizeRel" "RelWithDebInfo" 
 set ( CMAKE_BUILD_TYPE "Release"
   CACHE STRING "Select which configuration to build." )
 set_property ( CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${CMAKE_CONFIGURATION_TYPES} )
-message( STATUS
-  "
-============================================================
-   Building OpenCoarrays configuration: ${CMAKE_BUILD_TYPE}
-============================================================
-")
-
-message( STATUS "Running with CMake from: ${CMAKE_COMMAND}" )
-message( STATUS "Current source dir (for OpenCoarrays): ${CMAKE_CURRENT_SOURCE_DIR}")
 
 # Add option and check environment to determine if developer tests should be run
 set( _TF OFF )
@@ -52,8 +43,7 @@ string(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+(-rc[0-9]+)?"
   OpenCoarraysVersion "${first_line}")
 
 if((NOT (OpenCoarraysVersion MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+(-rc[0-9]+)?")) AND (EXISTS "${CMAKE_SOURCE_DIR}/.git"))
-  message( STATUS "Build from git repository detected")
-  find_package(Git)
+  find_package(Git QUIET)
   if(GIT_FOUND)
     execute_process(COMMAND "${GIT_EXECUTABLE}" describe --abbrev=0
       WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
@@ -95,6 +85,18 @@ endif()
 string(REGEX REPLACE "-rc[0-9]+$"
        ".0" OPENCOARRAYS_CMAKE_PROJECT_VERSION
        "${OpenCoarraysVersion}")
+
+file(READ "${CMAKE_CURRENT_LIST_DIR}/cmake/Banner.txt.in" OC_BANNER)
+string(CONFIGURE "${OC_BANNER}" OC_BANNER @ONLY)
+
+message(STATUS "${OC_BANNER}")
+
+if((NOT (OpenCoarraysVersion MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+(-rc[0-9]+)?")) AND (EXISTS "${CMAKE_SOURCE_DIR}/.git"))
+  message( STATUS "Build from git repository detected")
+endif()
+
+message( STATUS "Running with CMake from: ${CMAKE_COMMAND}" )
+message( STATUS "Current source dir (for OpenCoarrays): ${CMAKE_CURRENT_SOURCE_DIR}")
 
 project(opencoarrays VERSION "${OPENCOARRAYS_CMAKE_PROJECT_VERSION}" LANGUAGES C Fortran)
 
