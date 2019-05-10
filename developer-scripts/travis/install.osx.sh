@@ -36,12 +36,12 @@ brew outdated
 type -a cmake || echo "CMake not installed"
 cmake --version || true
 
-echo "CC: ${CC}"
+echo "CC: ${CC:-none defined}"
 echo "\$CC --version:"
-$CC --version || true
+${CC:-} --version || true
 
-echo "FC: ${FC}"
+echo "FC: ${FC:-none-defined}"
 echo "\$FC --version:"
-$FC --version || true
+${FC:-} --version || true
 
 echo "Done."

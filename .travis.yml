@@ -25,6 +25,7 @@ matrix:
           GCC=9
           CC=gcc-9
           CXX=g++-9
+          FC=gfortran-9
       addons:
         homebrew:
           packages:
@@ -51,6 +52,7 @@ matrix:
         - GCC=9
           FC=gcc-${GCC}
           CC=gcc-${GCC}
+          CXX=gcc-${GCC}
       addons:
         homebrew:
           brewfile: true
