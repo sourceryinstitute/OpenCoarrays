@@ -37,7 +37,7 @@ matrix:
       <<: *macOS
       env:
         - GCC=9
-          FC=gcc-${GCC}
+          FC=gfortran-${GCC}
       addons:
         homebrew:
           packages:
@@ -52,7 +52,7 @@ matrix:
         - GCC=9
           FC=gcc-${GCC}
           CC=gcc-${GCC}
-          CXX=gcc-${GCC}
+          CXX=g++-${GCC}
       addons:
         homebrew:
           brewfile: true

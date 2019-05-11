@@ -14,6 +14,6 @@
 brew 'cmake'
 brew 'gcc'
 brew 'mpich', args: ['cc=gcc-9', 'build-from-source']
-# brew 'opencoarrays', args: ['cc=gcc-9', 'build-from-source']
+# brew 'opencoarrays', args: ['cc=gcc-9', 'build-from-source', 'verbose']
 
 # [Homebrew]: http://brew.sh

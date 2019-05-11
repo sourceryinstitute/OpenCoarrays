@@ -27,7 +27,7 @@ for version in ${GCC}; do
     export FC=gfortran-${version}
 
     ${FC} --version
-    ${CC} --version || true
+    ${CC:-} --version || true
     mpif90 --version && mpif90 -show
     mpicc --version && mpicc -show
 
