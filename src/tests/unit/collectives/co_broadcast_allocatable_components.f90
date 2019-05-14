@@ -13,44 +13,44 @@ program main
      end function
   end interface
 
-      type dynamic
-        character(len=:), allocatable :: string
-        character(len=len(text)), allocatable :: string_array(:)
-        complex, allocatable :: scalar
-        integer, allocatable :: vector(:)
-        logical, allocatable :: matrix(:,:)
-        real, allocatable ::  superstring(:,:,:, :,:,:, :,:,:, :,:,:, :,:,: )
-      end type
+  type dynamic
+    character(len=:), allocatable :: string
+    character(len=len(text)), allocatable :: string_array(:)
+    complex, allocatable :: scalar
+    integer, allocatable :: vector(:)
+    logical, allocatable :: matrix(:,:)
+    real, allocatable ::  superstring(:,:,:, :,:,:, :,:,:, :,:,:, :,:,: )
+  end type
 
-      type(dynamic) alloc_message, alloc_content
+  type(dynamic) alloc_message, alloc_content
 
   associate(me=>this_image())
 
-      alloc_content = dynamic(                                               &
-        string=text,                                                         &
-        string_array=[text],                                                 &
-        scalar=(0.,1.),                                                      &
-        vector=reshape( [integer::], [0]),                                   &
-        matrix=reshape( [.true.], [1,1]),                                    &
-        superstring=reshape([1,2,3,4], [2,1,2, 1,1,1, 1,1,1, 1,1,1, 1,1,1 ]) &
-      )
+    alloc_content = dynamic(                                               &
+      string=text,                                                         &
+      string_array=[text],                                                 &
+      scalar=(0.,1.),                                                      &
+      vector=reshape( [integer::], [0]),                                   &
+      matrix=reshape( [.true.], [1,1]),                                    &
+      superstring=reshape([1,2,3,4], [2,1,2, 1,1,1, 1,1,1, 1,1,1, 1,1,1 ]) &
+    )
 
-      if (me==sender) alloc_message = alloc_content
+    if (me==sender) alloc_message = alloc_content
 
-     call co_broadcast(alloc_message,source_image=sender)
+   call co_broadcast(alloc_message,source_image=sender)
 
-     associate( failures => [                                    &
-       alloc_message%string /= alloc_content%string,             &
-       alloc_message%string_array /= alloc_content%string_array, &
-       alloc_message%scalar /= alloc_content%scalar,             &
-       alloc_message%vector /= alloc_content%vector,             &
-       alloc_message%matrix .neqv. alloc_content%matrix,         &
-       alloc_message%superstring /= alloc_content%superstring    &
-     ] )
+   associate( failures => [                                    &
+     alloc_message%string /= alloc_content%string,             &
+     alloc_message%string_array /= alloc_content%string_array, &
+     alloc_message%scalar /= alloc_content%scalar,             &
+     alloc_message%vector /= alloc_content%vector,             &
+     alloc_message%matrix .neqv. alloc_content%matrix,         &
+     alloc_message%superstring /= alloc_content%superstring    &
+   ] )
 
-        if ( any(failures) ) error stop "Test failed."
+      if ( any(failures) ) error stop "Test failed."
 
-      end associate
+    end associate
 
     sync all  ! Wait for each image to pass the test
     if (me==sender) print *,"Test passed."
