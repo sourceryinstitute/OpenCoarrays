@@ -13,9 +13,6 @@ program main
      end function
   end interface
 
-  associate(me=>this_image())
-
-    test_non_allocatable: block
       type parent
         integer :: heritable=0
       end type
@@ -52,6 +49,9 @@ program main
         a=component(-3), b=reshape([component(-2),component(-1)], [1,2,1, 1,1,1, 1,1,1, 1,1,1, 1,1,1]),        & ! derived types
         c=text, z=[character(len=len(text))::], i=(0.,1.), j=(2.,3.), k=4, l=5, r=.true., s=.true., t=7., u=8. & ! intrinsic types
       )
+
+  associate(me=>this_image())
+
       if (me==sender) then
         message = content
         allocate(message%char_ptr, message%char_ptr_maxdim(1,1,2, 1,1,1, 1,1,1, 1,1,1, 1,1,1), source=text   )
@@ -87,51 +87,9 @@ program main
         any( message%u /= content%u )                         &
       ] )
 
-        if ( any(failures) ) error stop "Test failed in non-allocatable block."
+        if ( any(failures) ) error stop "Test failed. "
 
       end associate
-
-    end block test_non_allocatable
-
-    test_allocatable: block
-      type dynamic
-        character(len=:), allocatable :: string
-        character(len=len(text)), allocatable :: string_array(:)
-        complex, allocatable :: scalar
-        integer, allocatable :: vector(:)
-        logical, allocatable :: matrix(:,:)
-        real, allocatable ::  superstring(:,:,:, :,:,:, :,:,:, :,:,:, :,:,: )
-      end type
-
-      type(dynamic) alloc_message, alloc_content
-
-      alloc_content = dynamic(                                               &
-        string=text,                                                         &
-        string_array=[text],                                                 &
-        scalar=(0.,1.),                                                      &
-        vector=reshape( [integer::], [0]),                                   &
-        matrix=reshape( [.true.], [1,1]),                                    &
-        superstring=reshape([1,2,3,4], [2,1,2, 1,1,1, 1,1,1, 1,1,1, 1,1,1 ]) &
-      )
-
-      if (me==sender) alloc_message = alloc_content
-
-     call co_broadcast(alloc_message,source_image=sender)
-
-     associate( failures => [                                    &
-       alloc_message%string /= alloc_content%string,             &
-       alloc_message%string_array /= alloc_content%string_array, &
-       alloc_message%scalar /= alloc_content%scalar,             &
-       alloc_message%vector /= alloc_content%vector,             &
-       alloc_message%matrix .neqv. alloc_content%matrix,         &
-       alloc_message%superstring /= alloc_content%superstring    &
-     ] )
-
-        if ( any(failures) ) error stop "Test failed in allocatable block."
-
-      end associate
-
-     end block test_allocatable
 
     sync all  ! Wait for each image to pass the test
     if (me==sender) print *,"Test passed."
