@@ -7,12 +7,6 @@ program main
   integer, parameter :: sender=1 !! co_broadcast source_image
   character(len=*), parameter :: text="text" !! character message data
 
-  interface
-     function f(x) result(y)
-       real x, y
-     end function
-  end interface
-
   type dynamic
     character(len=:), allocatable :: string
     character(len=len(text)), allocatable :: string_array(:)
