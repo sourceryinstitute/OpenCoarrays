@@ -32,6 +32,7 @@ matrix:
             - gcc
             - mpich
             - shellcheck
+          update: true
     -
       <<: *macOS
       env:
@@ -44,6 +45,7 @@ matrix:
             - gcc
             - openmpi
             - shellcheck
+          update: true
     -
       <<: *macOS
       env:
@@ -54,6 +56,7 @@ matrix:
       addons:
         homebrew:
           brewfile: true
+          update: true
     - &ubuntu
       os: linux
       sudo: false
