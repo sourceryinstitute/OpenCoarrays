@@ -21,6 +21,10 @@ trap '__caf_err_report "${FUNCNAME:-.}" ${LINENO}' ERR
 
 echo "Performing Travis-CI installation phase on Linux..."
 
+echo "Installing CMake binaries using install.sh..."
+
+./install.sh --package=cmake --install-prefix="${HOME}/.local"
+
 if [[ "${BUILD_TYPE:-}" != InstallScript ]]; then # Ubuntu on Travis-CI, NOT testing install.sh
     if ! [[ -x "${HOME}/.local/bin/mpif90" && -x "${HOME}/.local/bin/mpicc" ]]; then
         # mpich install not cached

@@ -1,5 +1,8 @@
 SHELL := /usr/local/bin/bash -o pipefail
-NAME = sourceryinstitute/opencoarrays-notebook
+NAME = sourceryinstitute/opencoarrays_jupyter
+IMAGE_NAME=$(NAME)
+RUN_TESTS=true
+
 #UBADGER_ENDPOINT = "https://hooks.microbadger.com/images/sourceryinstitute/jupyter-caf-kernel/CEL6DIVw-OVbUIXieZhZwvDXl3I="
 GIT_MASTER_HEAD_SHA:=$(shell git rev-parse --short=12 --verify HEAD)
 
@@ -16,8 +19,9 @@ build: $(subst /,_,$(NAME))-build.stamp ## Build docker file. Depending on which
 
 $(subst /,_,$(NAME))-build.stamp: Dockerfile .dockerignore hooks/build ## Target for doing & timestamping the build
 	touch $@
-	hooks/build 2>&1 | tee $(subst stamp,log,$@) || rm -rf $@
-	docker tag $(NAME):latest $(NAME):$(GIT_MASTER_HEAD_SHA)
+	IMAGE_NAME=$(IMAGE_NAME) hooks/build 2>&1 | tee $(subst stamp,log,$@) || rm -rf $@
+	docker tag $(NAME) $(NAME):$(GIT_MASTER_HEAD_SHA)
+	docker tag $(NAME) $(NAME):latest
 
 push: $(subst /,_,$(NAME))-push.stamp ## Push prebuild docker image up to hub.docker.com
 

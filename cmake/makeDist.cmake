@@ -76,4 +76,14 @@ with status: ${gpg_status} and output: ${gpg_output}")
       "${CMAKE_ARGV4}/${l_archive}-SHA256.txt.asc")
     message(STATUS "GPG signed SHA256 checksum created: ${CMAKE_ARGV4}/${l_archive}-SHA256.txt.asc")
   endif()
+  execute_process(
+    COMMAND "${GPG_EXECUTABLE}" --armor --detach-sign --comment "Detached signature of ${archive}.tar.gz." "${release_asset}"
+    RESULT_VARIABLE gpg_status
+    RESULT_VARIABLE gpg_output
+    WORKING_DIRECTORY "${CMAKE_ARGV4}"
+    )
+    if(NOT (gpg_status STREQUAL "0"))
+      message( WARNING "GPG signing of ${release_asset} appears to have failed
+with status: ${gpg_status} and output: ${gpg_output}")
+    endif()
 endif()

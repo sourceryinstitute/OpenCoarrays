@@ -24,18 +24,22 @@ echo "Performing Travis-CI installation phase on macOS..."
 # Update and install via Homebrew on macOS
 brew update > /dev/null
 
+brew install gcc || true
+brew link --overwrite gcc || true
+
 for pkg in ${OSX_PACKAGES}; do
-    brew ls --versions "${pkg}" >/dev/null || brew install --force-bottle "${pkg}" || brew link --overwrite "${pkg}"
-    brew outdated "${pkg}" || brew upgrade --force-bottle "${pkg}"
+    brew ls --versions "${pkg}" >/dev/null || brew install "${pkg}" || brew link --overwrite "${pkg}"
+    brew outdated "${pkg}" || brew upgrade "${pkg}"
 done
 
 # Uninstall mpich and openmpi so that we can install our own version
-brew uninstall --force --ignore-dependencies openmpi || true
-brew uninstall --force --ignore-dependencies mpich || true
+#brew uninstall --force --ignore-dependencies openmpi || true
+#brew uninstall --force --ignore-dependencies mpich || true
 
-if [[ "${BUILD_TYPE:-}" == InstallScript ]]; then # uninstall some stuff if present
-    brew uninstall --force --ignore-dependencies cmake || true
-fi
+# Building CMake from source is very slow. We should be using binaries instead
+# if [[ "${BUILD_TYPE:-}" == InstallScript ]]; then # uninstall some stuff if present
+#     brew uninstall --force --ignore-dependencies cmake || true
+# fi
 
 {
     mpif90 --version && mpif90 -show

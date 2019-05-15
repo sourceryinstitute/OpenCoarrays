@@ -85,9 +85,9 @@ source.
 
 ### macOS ###
 
-* [Homebrew]:  
-  [![homebrew][Homebrew badge]][braumeister link]  
-  This is the recommend OpenCoarrays installation method on macOS.
+* [Homebrew]:
+  [![homebrew][Homebrew badge]][braumeister link]
+  This is the recommended OpenCoarrays installation method on macOS.
   Basic Homebrew installation steps:
 
   ```
@@ -106,7 +106,7 @@ source.
   brew bundle
   ```
 
-* [MacPorts]:  
+* [MacPorts]:
   An unmaintained [OpenCoarrays Portfile] exists for the [MacPorts] package
   manager.  Although the current OpenCoarrays contributors have no plans to
   update the portfile, new contributors are welcome to asssume the port
@@ -140,8 +140,12 @@ or pre-installed copies:
    distributions
 
 [linuxbrew] does not require `sudo` privileges and will generally
-provide the most up-to-date OpenCoarrays release because linxubrew
+provide the most up-to-date OpenCoarrays release because linuxbrew
 pulls directly from macOS homebrew, which updates automatically.
+
+Note that distributions are often split into two parts: a "binary" package with the
+runtime libraries and a "development" package for developing programs yourself.
+Be sure to install both packages.
 
 <a name="easybuild"></a>
 With [EasyBuild], the following bash commands install OpenCoarrays:
@@ -175,9 +179,9 @@ spack spec opencoarrays
 # to be installed to compile OpenMPI)
 spack install opencoarrays
 
-# Or, To install with customisations (e.g., to install OpenCoarrays [version 1.9.0]
+# Or, To install with customisations (e.g., to install OpenCoarrays [version 2.2.0]
 # with MPICH [version default] and GCC [version 7.1.0]).
-spack install opencoarrays@1.9.0 ^mpich %gcc@7.1.0
+spack install opencoarrays@2.2.0 ^mpich %gcc@7.1.0
 ```
 
 In the previous example, it was assumed that GCC [version 7.1.0] is
@@ -250,23 +254,23 @@ Execute `./install.sh --help` or `./install.sh -h` to see a list of flags
 that can be passed to the installer.  Below are examples of useful combinations
 of flags. Each flag also has a single-character version not shown here.
 
-1. Install after building any missing prerequisites -- all source, build,
-   and installation files will be inside the OpenCoarrays source tree under
-   prerequisites/installations:
+1. If you don't care about tailoring installation locations,use
 
    ```
    ./install.sh
    ```
 
-1. Install non-interactively by assuming a "yes" answer to all
-   questions
+2. Or build faster by multithreading, skipping user queries, and also specify
+    an installation destination for all packages that must be built:
 
    ```
-   ./install.sh --yes-to-all
+   ./install.sh \
+     --prefix-root ${HOME}/software \
+     --num-threads 4 \
+     --yes-to-all
    ```
 
-1. Install with the specified compilers, overriding the default
-   compilers:
+3. Specify the compilers to be used (overriding what is in your `PATH`) as follows:
 
    ```
    ./install.sh --with-fortran <path-to-gcc-bin>/gfortran \
@@ -274,31 +278,26 @@ of flags. Each flag also has a single-character version not shown here.
                 --with-c <path-to-gcc-bin>/gcc
    ```
 
-   Without the latter arguments, [`install.sh`] will attempt to install the
-   default GCC version even if a newer version is available.  This happens
-   to protect users from instability in cases when known one or more
-   known regressions exist in the newer compiler.
-
-1. Install only a specific prerequisite package (the default version):
+4. Install only a specific prerequisite package (the default version):
 
    ```
    ./install.sh --package mpich
    ```
 
-1. Install a specific version of a prerequisite:
+5. Install a specific version of a prerequisite:
 
    ```
    ./install.sh --package cmake --install-version 3.7.0
    ```
 
-1. Download a prerequisite package (e.g., gcc/gfortran/g++ below) but
+6. Download a prerequisite package (e.g., gcc/gfortran/g++ below) but
    don't build or install it:
 
    ```
    ./install.sh --only-download gcc
    ```
 
-1. Print the default URL, version, or download mechanism that the
+7. Print the default URL, version, or download mechanism that the
    script will use for a given prerequisite package (e.g., mpich
    below) on this system:
 
@@ -308,50 +307,11 @@ of flags. Each flag also has a single-character version not shown here.
    ./install.sh --print-downloader mpich
    ```
 
-1. Install a prerelease branch (e.g., trunk below) of the GCC repository:
+8. Install a prerelease branch (e.g., trunk below) of the GCC repository:
 
    ```
    ./install.sh --package gcc --install-branch trunk
    ```
-
-1. Install to a specific location:
-
-   ```
-   ./install.sh --install-prefix /opt/gnu/
-   ```
-
-   If the path provided in the install prefix requires sudo privileges,
-   the user will be prompted for a password after the package download
-   and build complete and just before installing to the specified path.
-
-1. Install a prerequisite package from a non-default URL:
-
-   ```
-   ./install.sh --package gcc \
-     --from-url https://github.com/sourceryinstitute/gcc/archive/teams-20170919.tar.gz \
-     --install-version teams-20170919
-   ```
-
-   The latter command will install the Sourcery Institute GCC fork that provides
-   experimental support for the Fortran 2015 teams feature.
-
-1. Speed up a GCC build at a higher risk of a faild build:
-
-   ```
-   ./install.sh --package gcc --disable-bootstrap
-   ```
-
-   If the latter command works, it could reduce GCC's build time from
-   hours down to minutes.
-
-1. Speed up a GCC build with multithreading at a risk of a failed build:
-
-   ```
-   ./install.sh --package gcc --num-threads 4
-   ```
-
-   The latter command sometimes fails if the GCC build system has not fully
-   specified dependencies between source files.
 
 [top]
 
@@ -397,7 +357,7 @@ this document [here][Developer Build and Install].
 Unlike the Makefiles that CMake generates automatically for the chosen
 platform, static Makefiles require a great deal more maintenance and are
 less portable.  Also, the static Makefiles provided in [src] lack several
-several important capabilities.  In particular, they will not build the tests;
+important capabilities.  In particular, they will not build the tests;
 they will not generate the `caf` compiler wrapper that ensures correct linking
 and `cafrun` program launcher that ensures support for advanced features such
 as Fortran 2015 failed images; they will not build the [opencoarrays] module

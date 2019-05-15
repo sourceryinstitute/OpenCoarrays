@@ -15,7 +15,13 @@ if (HIGH_RESOLUTION_TIMER)
     )
 endif()
 
-add_subdirectory(integration)
-add_subdirectory(unit)
-add_subdirectory(installation)
-add_subdirectory(regression)
+set( directory_list
+ utilities
+ integration
+ unit
+ installation
+ regression
+)
+foreach(directory ${directory_list})
+  add_subdirectory(${directory})
+endforeach()

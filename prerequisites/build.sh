@@ -97,21 +97,22 @@ info "-e (--verbose):          ${arg_e} "
 info "-f (--with-fortran):     ${arg_f} "
 info "-h (--help):             ${arg_h} "
 info "-i (--install-prefix):   ${arg_i} "
-info "-j (--num-threads):      ${arg_j} "
 info "-I (--install-version):  ${arg_I} "
+info "-j (--num-threads):      ${arg_j} "
 info "-l (--list-packages):    ${arg_l} "
 info "-m (--with-cmake):       ${arg_m} "
 info "-M (--with-mpi):         ${arg_M} "
 info "-n (--no-color):         ${arg_n} "
-info "-p (--package):          ${arg_p}"
+info "-o (--only-download):    ${arg_o} "
+info "-p (--package):          ${arg_p} "
 info "-P (--print-path):       ${arg_P} "
-info "-t (--with-tau):         ${arg_t} "
+info "-r (--prefix-root):      ${arg_r} "
 info "-u (--from-url):         ${arg_u} "
 info "-U (--print-url):        ${arg_U} "
 info "-v (--version):          ${arg_v} "
 info "-V (--print-version):    ${arg_V} "
 info "-y (--yes-to-all):       ${arg_y} "
-info "-z (--disable-bootstrap):${arg_z} "
+info "-Z (--bootstrap):        ${arg_Z} "
 }
 
 if [[ -z "${arg_B}" ]]; then
@@ -148,8 +149,9 @@ if [[ ${arg_o:-} == "${__flag_present}" ]]; then
    exit 0
 fi
 
-# If -z or --disable-bootstrap was specified, disable bootstrap configure & build
-if [[ ${arg_z:-} == "${__flag_present}" ]]; then
+# If -Z or --bootstrap was specified, enable bootstrap configure & build
+if [[ ${arg_Z:-} != "${__flag_present}" ]]; then
+   info "Disabling bootstrap. If the gcc/g++/gfortran build fails, try './install.sh --bootstrap'."
    export bootstrap_configure="--disable-bootstrap"
    export bootstrap_build=""
 else

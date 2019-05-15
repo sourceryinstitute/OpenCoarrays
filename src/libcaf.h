@@ -33,13 +33,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 #ifndef LIBCAF_H
 #define LIBCAF_H
 
-#include <stddef.h>	/* For size_t.  */
+#include <stddef.h>     /* For size_t.  */
 #include <stdbool.h>
 
-#include  "libcaf-version-def.h"
+#include "libcaf-version-def.h"
 #include "libcaf-gfortran-descriptor.h"
 
+#ifdef HAVE_MPI
 #include <mpi.h>
+#endif
 
 #ifndef __GNUC__
 #define __attribute__(x)
@@ -61,11 +63,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 
 /* Definitions of the Fortran 2008 standard; need to kept in sync with
    ISO_FORTRAN_ENV, cf. libgfortran.h.  */
-#define STAT_UNLOCKED		0
-#define STAT_LOCKED		1
-#define STAT_LOCKED_OTHER_IMAGE	2
+#define STAT_UNLOCKED           0
+#define STAT_LOCKED             1
+#define STAT_LOCKED_OTHER_IMAGE 2
 #define STAT_DUP_SYNC_IMAGES    3
-#define STAT_STOPPED_IMAGE 	6000
+#define STAT_STOPPED_IMAGE      6000
 #define STAT_FAILED_IMAGE       6001
 
 /* Describes what type of array we are registerring. Keep in sync with
@@ -100,14 +102,12 @@ typedef struct caf_teams_list {
   caf_team_t team;
   int team_id;
   struct caf_teams_list *prev;
-}
-caf_teams_list;
+} caf_teams_list;
 
 typedef struct caf_used_teams_list {
   struct caf_teams_list *team_list_elem;
   struct caf_used_teams_list *prev;
-}
-caf_used_teams_list;
+} caf_used_teams_list;
 
 
 /* When there is a vector subscript in this dimension, nvec == 0, otherwise,
@@ -124,8 +124,7 @@ typedef struct caf_vector_t {
       ptrdiff_t lower_bound, upper_bound, stride;
     } triplet;
   } u;
-}
-caf_vector_t;
+} caf_vector_t;
 
 
 #ifdef GCC_GE_7
@@ -179,30 +178,30 @@ typedef struct caf_reference_t {
       /* The offset (in bytes) of the component in the derived type.  */
       ptrdiff_t offset;
       /* The offset (in bytes) to the caf_token associated with this
-	 component.  NULL, when not allocatable/pointer ref.  */
+         component.  NULL, when not allocatable/pointer ref.  */
       ptrdiff_t caf_token_offset;
     } c;
     struct {
       /* The mode of the array ref.  See CAF_ARR_REF_*.  */
       /* caf_array_ref_t, replaced by unsigend char to allow specification in
-	 fortran FE.  */
+         fortran FE.  */
       unsigned char mode[GFC_MAX_DIMENSIONS];
       /* The type of a static array.  Unset for array's with descriptors.  */
       int static_array_type;
       /* Subscript refs (s) or vector refs (v).  */
       union {
-	struct {
-	  /* The start and end boundary of the ref and the stride.  */
-	  ptrdiff_t start, end, stride;
-	} s;
-	struct {
-	  /* nvec entries of kind giving the elements to reference.  */
-	  void *vector;
-	  /* The number of entries in vector.  */
-	  size_t nvec;
-	  /* The integer kind used for the elements in vector.  */
-	  int kind;
-	} v;
+        struct {
+          /* The start and end boundary of the ref and the stride.  */
+          ptrdiff_t start, end, stride;
+        } s;
+        struct {
+          /* nvec entries of kind giving the elements to reference.  */
+          void *vector;
+          /* The number of entries in vector.  */
+          size_t nvec;
+          /* The integer kind used for the elements in vector.  */
+          int kind;
+        } v;
       } dim[GFC_MAX_DIMENSIONS];
     } a;
   } u;
@@ -240,7 +239,7 @@ int PREFIX (num_images) (int, int);
 
 #ifdef GCC_GE_7
 void PREFIX (register) (size_t, caf_register_t, caf_token_t *,
-			gfc_descriptor_t *, int *, char *, charlen_t);
+                        gfc_descriptor_t *, int *, char *, charlen_t);
 void PREFIX (deregister) (caf_token_t *, int, int *, char *, charlen_t);
 #else
 void * PREFIX (register) (size_t, caf_register_t, caf_token_t *, int *, char *,
@@ -298,17 +297,18 @@ void PREFIX (co_broadcast) (gfc_descriptor_t *, int, int *, char *, charlen_t);
 void PREFIX (co_max) (gfc_descriptor_t *, int, int *, char *, int, charlen_t);
 void PREFIX (co_min) (gfc_descriptor_t *, int, int *, char *, int, charlen_t);
 void PREFIX (co_reduce) (gfc_descriptor_t *, void *(*opr) (void *, void *),
-			 int, int, int *, char *, int , charlen_t);
+                         int, int, int *, char *, int , charlen_t);
 void PREFIX (co_sum) (gfc_descriptor_t *, int, int *, char *, charlen_t);
 
 void PREFIX (sync_all) (int *, char *, charlen_t);
 void PREFIX (sync_images) (int, int[], int *, char *, charlen_t);
 void PREFIX (sync_memory) (int *, char *, charlen_t);
 
-void PREFIX (stop_str) (const char *, charlen_t QUIETARG) __attribute__ ((noreturn));
+void PREFIX (stop_str) (const char *, charlen_t QUIETARG)
+                        __attribute__ ((noreturn));
 void PREFIX (stop) (int QUIETARG) __attribute__ ((noreturn));
 void PREFIX (error_stop_str) (const char *, charlen_t QUIETARG)
-     __attribute__ ((noreturn));
+                              __attribute__ ((noreturn));
 void PREFIX (error_stop) (int QUIETARG) __attribute__ ((noreturn));
 
 void PREFIX (fail_image) (void) __attribute__ ((noreturn));
@@ -326,9 +326,9 @@ void PREFIX (stopped_images) (gfc_descriptor_t *, int, int *);
 void PREFIX (atomic_define) (caf_token_t, size_t, int, void *, int *, int, int);
 void PREFIX (atomic_ref) (caf_token_t, size_t, int, void *, int *, int, int);
 void PREFIX (atomic_cas) (caf_token_t, size_t, int, void *, void *,
-			  void *, int *, int, int);
+                          void *, int *, int, int);
 void PREFIX (atomic_op) (int, caf_token_t, size_t, int, void *, void *,
-			 int *, int, int);
+                         int *, int, int);
 
 void PREFIX (lock) (caf_token_t, size_t, int, int *, int *, char *, charlen_t);
 void PREFIX (unlock) (caf_token_t, size_t, int, int *, char *, charlen_t);
