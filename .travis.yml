@@ -71,7 +71,8 @@ matrix:
         apt:
           sources: &linuxsrcs
             - ubuntu-toolchain-r-test
-            - george-edison55-precise-backports
+            - sourceline: 'deb https://apt.kitware.com/ubuntu/ xenial main'
+              key_url: 'https://apt.kitware.com/keys/kitware-archive-latest.asc'
           packages: &gcc8pkgs
             - gcc-8
             - gfortran-8
