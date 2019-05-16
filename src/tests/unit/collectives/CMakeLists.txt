@@ -1,5 +1,6 @@
 caf_compile_executable(co_sum_test co_sum.F90)
 caf_compile_executable(co_broadcast_test co_broadcast.F90)
+caf_compile_executable(co_broadcast_derived_type_test co_broadcast_derived_type.f90)
 caf_compile_executable(co_min_test co_min.F90)
 caf_compile_executable(co_max_test co_max.F90)
 caf_compile_executable(co_reduce_test co_reduce.F90)

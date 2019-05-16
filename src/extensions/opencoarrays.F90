@@ -581,13 +581,15 @@ contains
     character(kind=1,len=*), intent(out), optional :: errmsg
     ! Local variables and constants:
     integer(c_int), allocatable :: a_cast_to_integer_array(:)
+    character(len=len(a)) :: dummy
 
     ! Convert "a" to an integer(c_int) array where each 32-bit integer element holds four 1-byte characters
     a_cast_to_integer_array = transfer(a,[0_c_int])
     ! Broadcast the integer(c_int) array
     call co_broadcast_c_int(a_cast_to_integer_array,source_image, stat, errmsg)
     ! Recover the characters from the broadcasted integer(c_int) array
-    a = transfer(a_cast_to_integer_array,repeat(' ',len(a)))
+    dummy = ' '
+    a = transfer(a_cast_to_integer_array,dummy)
 
   end subroutine
 

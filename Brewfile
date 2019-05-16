@@ -13,8 +13,8 @@
 
 brew 'cmake'
 brew 'gcc'
-brew 'mpich', args: ['cc=gcc-7', 'build-from-source']
-brew 'opencoarrays', args: ['cc=gcc-7', 'build-from-source']
+brew 'mpich', args: ['cc=gcc-8', 'build-from-source']
+brew 'opencoarrays', args: ['cc=gcc-8', 'build-from-source']
 
 # [Homebrew]: http://brew.sh
 # [Linuxbrew]: http://linuxbrew.sh

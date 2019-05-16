@@ -1,21 +1,22 @@
 cmake_minimum_required(VERSION 3.10)
 
-cmake_policy(VERSION 3.10...3.12)
+cmake_policy(VERSION 3.10...3.14)
 
+if(DEFINED ENV{SOURCE_DATE_EPOCH})
+  set(SOURCE_DATE_EPOCH "$ENV{SOURCE_DATE_EPOCH}")
+endif()
+
+set(CMAKE_SKIP_RPATH ON
+  CACHE BOOL "Don't add a build-dir rpath")
+set(CMAKE_BUILD_WITH_INSTALL_RPATH ON
+  CACHE BOOL "Build using the install rpath")
+set(CMAKE_BUILD_RPATH_USE_ORIGIN ON
+  CACHE BOOL "Use relative rpaths")
 # Set the type/configuration of build to perform
 set ( CMAKE_CONFIGURATION_TYPES "Debug" "Release" "MinSizeRel" "RelWithDebInfo" "CodeCoverage" )
 set ( CMAKE_BUILD_TYPE "Release"
   CACHE STRING "Select which configuration to build." )
 set_property ( CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${CMAKE_CONFIGURATION_TYPES} )
-message( STATUS
-  "
-============================================================
-   Building OpenCoarrays configuration: ${CMAKE_BUILD_TYPE}
-============================================================
-")
-
-message( STATUS "Running with CMake from: ${CMAKE_COMMAND}" )
-message( STATUS "Current source dir (for OpenCoarrays): ${CMAKE_CURRENT_SOURCE_DIR}")
 
 # Add option and check environment to determine if developer tests should be run
 set( _TF OFF )
@@ -42,8 +43,7 @@ string(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+(-rc[0-9]+)?"
   OpenCoarraysVersion "${first_line}")
 
 if((NOT (OpenCoarraysVersion MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+(-rc[0-9]+)?")) AND (EXISTS "${CMAKE_SOURCE_DIR}/.git"))
-  message( STATUS "Build from git repository detected")
-  find_package(Git)
+  find_package(Git QUIET)
   if(GIT_FOUND)
     execute_process(COMMAND "${GIT_EXECUTABLE}" describe --abbrev=0
       WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
@@ -86,7 +86,30 @@ string(REGEX REPLACE "-rc[0-9]+$"
        ".0" OPENCOARRAYS_CMAKE_PROJECT_VERSION
        "${OpenCoarraysVersion}")
 
+file(READ "${CMAKE_CURRENT_LIST_DIR}/cmake/Banner.txt.in" OC_BANNER)
+string(CONFIGURE "${OC_BANNER}" OC_BANNER @ONLY)
+string(STRIP "${OC_BANNER}" OC_BANNER)
+message(STATUS "${OC_BANNER}")
+
+if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/.git")
+  message( STATUS "Build from git repository detected")
+endif()
+
+message( STATUS "Running with CMake from: ${CMAKE_COMMAND}" )
+message( STATUS "Current source dir (for OpenCoarrays): ${CMAKE_CURRENT_SOURCE_DIR}")
+
 project(opencoarrays VERSION "${OPENCOARRAYS_CMAKE_PROJECT_VERSION}" LANGUAGES C Fortran)
+
+if(DEFINED CMAKE_BUILD_TYPE AND "${CMAKE_BUILD_TYPE}" MATCHES "[Rr][Ee][Ll]")
+  if(CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fno-working-directory")
+  endif()
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fdebug-prefix-map=${CMAKE_SOURCE_DIR}=.")
+  if(CMAKE_C_COMPILER_ID MATCHES "GNU")
+    set(CMAKE_C_FLAGS       "${CMAKE_C_FLAGS} -fno-working-directory")
+  endif()
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fdebug-prefix-map=${CMAKE_SOURCE_DIR}=.")
+endif()
 
 message( STATUS "Building OpenCoarrays version: ${full_git_describe}" )
 set(OpenCoarrays_dist_string "OpenCoarrays-${full_git_describe}")
@@ -211,7 +234,7 @@ endif()
 
 if(gfortran_compiler)
   set(OLD_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
-  set(CMAKE_REQUIRED_FLAGS $<$<COMPILE_LANGUAGE:Fortran>:"-fcoarray=single -ffree-form">)
+  set(CMAKE_REQUIRED_FLAGS $<$<COMPILE_LANGUAGE:Fortran>:-fcoarray=single -ffree-form>)
 endif()
 include(CheckFortranSourceCompiles)
 CHECK_Fortran_SOURCE_COMPILES("
@@ -483,7 +506,6 @@ set(CMAKE_C_COMPILE_FLAGS "${CMAKE_C_COMPILE_FLAGS} ${MPI_C_COMPILE_FLAGS}")
 set(CMAKE_C_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} ${MPI_C_LINK_FLAGS}")
 set(CMAKE_Fortran_COMPILE_FLAGS "${CMAKE_Fortran_COMPILE_FLAGS} ${MPI_Fortran_COMPILE_FLAGS}")
 set(CMAKE_Fortran_LINK_FLAGS "${CMAKE_Fortran_LINK_FLAGS} ${MPI_Fortran_LINK_FLAGS}")
-include_directories(BEFORE ${MPI_C_INCLUDE_PATH} ${MPI_Fortran_INCLUDE_PATH})
 
 #---------------------------------------------------
 # Use standardized GNU install directory conventions
@@ -527,8 +549,9 @@ function(caf_compile_executable target main_depend)
                  -o "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target}"
                  "${CMAKE_CURRENT_SOURCE_DIR}/${main_depend}"
 		 "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libopencoarrays_test_utilities.a"
+		 "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libopencoarrays_mod.a"
 		 ${ARGN}
-      DEPENDS "${main_depend}" ${ARGN} caf_mpi_static opencoarrays_test_utilities
+      DEPENDS "${main_depend}" ${ARGN} caf_mpi_static opencoarrays_test_utilities opencoarrays_mod
       VERBATIM
       )
   add_custom_target("build_${target}" ALL
@@ -591,8 +614,6 @@ define_property(TARGET
 #-------------------------------
 # Recurse into the src directory
 #-------------------------------
-include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR}/src)
-
 add_subdirectory(src)
 
 #-----------------------------------------------------
@@ -621,10 +642,6 @@ install(
     "${CMAKE_INSTALL_LIBDIR}/cmake/opencoarrays"
 )
 
-add_library(OpenCoarrays INTERFACE)
-target_compile_options(OpenCoarrays INTERFACE $<$<COMPILE_LANGUAGE:Fortran>:"-fcoarray=lib")
-target_link_libraries(OpenCoarrays INTERFACE caf_mpi)
-
 #------------------------------------------
 # Add portable unistall command to makefile
 #------------------------------------------
@@ -638,6 +655,14 @@ add_custom_target ( uninstall
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure)
 # See JSON-Fortran's CMakeLists.txt file to find out how to get the check target to depend
 # on the test executables
+
+#------------------------------------
+# Add command to hash installed files
+#------------------------------------
+configure_file( "${CMAKE_SOURCE_DIR}/cmake/hash-installed.cmake.in" "${CMAKE_BINARY_DIR}/hash-installed.cmake"
+  @ONLY)
+add_custom_target( hash_installed
+  COMMAND ${CMAKE_COMMAND} -P "${CMAKE_BINARY_DIR}/hash-installed.cmake")
 
 #---------------------------------------------------------------------------------------
 # Define macro for adding CAF tests, and ensuring proper flags are passed to MPI runtime
@@ -705,8 +730,6 @@ if(opencoarrays_aware_compiler)
     add_caf_test(allocate_as_barrier_proc 8 allocate_as_barrier_proc)
   endif()
   if (gfortran_compiler AND (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
-    message( STATUS "Allocatable components of coarray derived types only supported in GFortran >= 7 with OpenCoarrays > 1.8.4" )
-    message( STATUS "(but full support not anticipated until OpenCoarrays 2.0 release)" )
     if (CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0)
       message( AUTHOR_WARNING "Allocatable components of coarray derived type developer tests enabled, despite lack of support in GFortran < 7\n These tests should fail." )
     endif()
@@ -722,6 +745,12 @@ if(opencoarrays_aware_compiler)
       add_caf_test(team_number 8 team_number)
       add_caf_test(teams_subset 3 teams_subset)
       add_caf_test(get_communicator 3  get_communicator)
+      add_caf_test(teams_coarray_get 5 teams_coarray_get)
+      add_caf_test(teams_coarray_get_by_ref 5 teams_coarray_get_by_ref)
+      add_caf_test(teams_coarray_send 5 teams_coarray_send)
+      add_caf_test(teams_coarray_send_by_ref 5 teams_coarray_send_by_ref)
+      add_caf_test(teams_coarray_sendget 5 teams_coarray_sendget)
+      add_caf_test(sync_team 8 sync_team)
       add_caf_test(alloc_comp_multidim_shape 2 alloc_comp_multidim_shape)
     endif()
   endif()
@@ -775,6 +804,7 @@ if(opencoarrays_aware_compiler)
 
   add_caf_test(co_sum 4 co_sum_test)
   add_caf_test(co_broadcast 4 co_broadcast_test)
+  add_caf_test(co_broadcast_derived_type 4 co_broadcast_derived_type_test)
   add_caf_test(co_min 4 co_min_test)
   add_caf_test(co_max 4 co_max_test)
   add_caf_test(syncall 8 syncall)
@@ -916,3 +946,9 @@ foreach(SCRIPT ${TRAVIS_SCRIPTS})
     lint_script("${CMAKE_SOURCE_DIR}/developer-scripts/travis" ${SCRIPT})
   endif()
 endforeach()
+
+# Create and install a manifest of installed files, and another containing their sha256 hashes
+foreach(VAR CMAKE_BINARY_DIR CMAKE_INSTALL_DATADIR PROJECT_NAME SOURCE_DATE_EPOCH)
+  install(CODE "set(${VAR} \"${${VAR}}\")")
+endforeach()
+install(SCRIPT "${CMAKE_CURRENT_LIST_DIR}/cmake/InstallFileManifest.cmake")

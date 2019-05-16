@@ -13,6 +13,6 @@ if(openmpi)
   set(openmpi ${openmpi} PARENT_SCOPE)
 endif()
 
-install( FILES libcaf.h libcaf-gfortran-descriptor.h
+install( FILES libcaf.h libcaf-gfortran-descriptor.h libcaf-version-def.h
   DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
 )

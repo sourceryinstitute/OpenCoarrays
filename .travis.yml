@@ -5,6 +5,8 @@ os: osx
 
 env:
   global:
+#    - ZERO_AR_DATE=1
+    - TZ=UTC
     - CACHE="${HOME}/.local"
     - MPICH_VER="3.2.1"
     - MPICH_URL_HEAD="https://www.mpich.org/static/downloads/${MPICH_VER}"
@@ -24,7 +26,7 @@ matrix:
       os: osx
       env:
         - BUILD_TYPE="InstallScript"
-          GCC=8
+          GCC=9
           OSX_PACKAGES="gcc shellcheck cmake mpich"
           # cmake should be removed, but we should be installing binaries
           # because building from source takes forever
@@ -102,6 +104,8 @@ install:
 
 script:
   - pwd
+  - export SOURCE_DATE_EPOCH=$(git show -s --format=%ct $TRAVIS_COMMIT)
+  - echo "SOURCE_DATE_EPOCH = ${SOURCE_DATE_EPOCH}"
   - ./developer-scripts/travis/test-script.${BUILD_TYPE:-cmake}.sh
 
 after_script:
