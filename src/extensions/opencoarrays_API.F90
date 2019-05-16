@@ -260,13 +260,29 @@ contains
 
     a_descriptor%dtype = my_dtype(type_=BT_INTEGER,kind_=int(c_sizeof_assumed_rank(a)/bytes_per_word,c_int32_t),rank_=rank_a)
     a_descriptor%offset = scalar_offset
-    a_descriptor%base_addr = c_loc(a) ! data
+    a_descriptor%base_addr = c_loc_of(a) ! data
     do i=1,rank_a ! should be concurrent
       a_descriptor%dim_(i)%stride  = unit_stride
       a_descriptor%dim_(i)%lower_bound = lbound(a,i)
       a_descriptor%dim_(i)%ubound_ = ubound(a,i)
     end do
 
+  contains
+     pure function c_loc_of(x) result(c_loc_x)
+       use iso_c_binding, only : c_int, c_float, c_double, c_loc, c_ptr
+       class(*), intent(in), target, contiguous :: x(:)
+       type(c_ptr) c_loc_x
+       select type(a)
+         type is (integer(c_int)) 
+           c_loc_x = c_loc(a)
+         type is (real(c_float)) 
+           c_loc_x = c_loc(a)
+         type is (real(c_double)) 
+           c_loc_x = c_loc(a)
+         class default
+           error stop "opencoarrays_API: unsupported type"
+       end select
+     end function
   end function
 
   ! ________ Assumed-rank co_sum wrappers for each supported type and kind _____________

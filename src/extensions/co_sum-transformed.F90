@@ -30,8 +30,9 @@ program main
   use opencoarrays_API
   implicit none
 
-  integer(c_int) :: image_count(1)=1,argc=0
-  character(kind=c_char) :: argv(1)
+  integer(c_int) :: image_count(1)=1
+  integer(c_int), target :: argc=0
+  character(kind=c_char), target :: argv(1)
  
   call caf_init(c_loc(argc),c_loc(argv))
   ! Verify collective sum of integer data by tallying image numbers

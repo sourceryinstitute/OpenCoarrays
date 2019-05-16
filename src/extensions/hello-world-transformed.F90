@@ -32,8 +32,8 @@ program main
     !! Automatic source transformation would insert the above use statements
   implicit none
 
-  integer(c_int) :: argc=0
-  character(kind=c_char) :: argv(1)
+  integer(c_int), target :: argc=0
+  character(kind=c_char), target :: argv(1)
  
   call caf_init(c_loc(argc),c_loc(argv))
     !! Source transformation would insert the above call
