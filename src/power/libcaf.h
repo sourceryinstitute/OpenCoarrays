@@ -1,4 +1,4 @@
-/* Libcaf: Application Binary Interface for parallel Fortran
+/* Libcaf: Application Binary Interface for parallel Fortran compilers
 
 Copyright (c) 2012-2019, Sourcery, Inc.
 All rights reserved.
@@ -28,10 +28,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 #ifndef LIBCAF_H
 #define LIBCAF_H
 
-
 void caf_init(int *, char ***);
 void caf_finalize();
-
-
 
 #endif

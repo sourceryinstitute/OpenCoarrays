@@ -1,6 +1,7 @@
 /* Libcaf: Application Binary Interface for parallel Fortran
 *
 * Copyright (c) 2012-2019, Sourcery, Inc.
+* Copyright (c) 2012-2019, Sourcery Institute
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -25,30 +26,19 @@
 * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 
-/***** power/mpi_caf_core.cpp
- * NAME
- *   mpi_caf_core
- * SYNOPSIS
- *   This program implements the LIBCAF_MPI transport layer.
-******
-*/
-
 #include "libcaf.h"
 
 // Global variables
 static int caf_this_image;
 static int caf_num_images = 0;
 static int caf_is_finalized = 0;
-static MPI_Win global_dynamic_win;
 
-
-// Initialize coarray program. This routine assumes
-// that no other MPI initialization happened before.
+// Create images -- assuming no other MPI initialization happened before.
 void caf_init (int *argc, char ***argv)
 {
 }
 
-// Internal finalize of coarray program.
+// Execute normal termination of an image.
 void caf_finalize()
 {
 }
