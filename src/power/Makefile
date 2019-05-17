@@ -1,15 +1,11 @@
-CC = mpic++ -std=c++11
+MPICXX := mpic++ -std=c++17
 
-CafInitFinalize: caf_init_finalize.o
-        $(CC) -o CafInitFinalize caf_init_finalize.o
+caf_init_finalize: caf_init_finalize.o
 
-caf_init_finalize.o: caf_init_finalize.cpp
-        $(CC) -c caf_init_finalize.cpp
-
-check:
-        make
-        ./CafInitFinalize
+# Compile object files
+%.o: %.cpp
+	$(MPICXX)  -c $< -L ./  -lcaf_mpi
 
 clean:
-        rm -f *.o
-        rm CafInitFinalize
+	rm -f *.o
+	rm CafInitFinalize
