@@ -34,6 +34,7 @@ static int caf_num_images = 0;
 static int caf_is_finalized = 0;
 
 // Create images -- assuming no other MPI initialization happened before.
+// TODO:: Assert that no other MPI initialization has happened before
 void caf_init (int *argc, char ***argv)
 {
 }
@@ -41,4 +42,15 @@ void caf_init (int *argc, char ***argv)
 // Execute normal termination of an image.
 void caf_finalize()
 {
+}
+
+// ERROR STOP function for numerical arguments.
+void error_stop(int error, bool quiet)
+{
+}
+
+// Return number of images
+int num_images(int team_number)
+{
+   return caf_num_images;
 }
