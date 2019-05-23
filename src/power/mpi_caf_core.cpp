@@ -27,6 +27,7 @@
 * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 
 #include "libcaf.h"
+#include "mpi.h"
 
 // Global variables
 static int caf_this_image;
@@ -37,11 +38,13 @@ static int caf_is_finalized = 0;
 // TODO:: Assert that no other MPI initialization has happened before
 void caf_init (int *argc, char ***argv)
 {
+   MPI_Init(argc, argv);
 }
 
 // Execute normal termination of an image.
 void caf_finalize()
 {
+   MPI_Finalize();
 }
 
 // ERROR STOP function for numerical arguments.
