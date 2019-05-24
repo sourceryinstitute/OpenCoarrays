@@ -1,15 +1,16 @@
 // Test retrieving number of images
 
+#include <cassert>
 #include "libcaf.h"
-#include <iostream>
 
 int main(int argc, char* argv[])
 {
-   caf_init(&argc, &argv);   // initialize image
+   caf_init(&argc, &argv);    // initialize image
 
-   std::cout << "num_images() is " << num_images() << std::endl;
+   int images = num_images(); // get number of images
+   assert(images > 0);
 
-   caf_finalize();           // finalize image
+   caf_finalize();            // finalize image
 
    return 0;
 }
