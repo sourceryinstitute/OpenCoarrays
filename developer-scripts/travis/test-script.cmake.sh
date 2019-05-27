@@ -27,7 +27,7 @@ for version in ${GCC}; do
     export FC=gfortran-${version}
 
     ${FC} --version
-    ${CC:-} --version || true
+    ${CC:-cc} --version || true
     mpif90 --version && mpif90 -show
     mpicc --version && mpicc -show
 
@@ -41,12 +41,13 @@ for version in ${GCC}; do
 		  -DCMAKE_INSTALL_PREFIX:PATH="${HOME}/OpenCoarrays" \
 		  -DCMAKE_BUILD_TYPE:STRING="${BUILD_TYPE}" \
 		  ..
-	    make -j 4
+	    ${TRAVIS:+ travis_wait} make -j 4
+	    printf '\nDone compiling OpenCoarrays and tests!\n\n'
 	    CTEST_FLAGS=(--output-on-failure --schedule-random --repeat-until-fail "${NREPEAT:-5}" --timeout "${TEST_TIMEOUT:-200}")
 	    if [[ "${BUILD_TYPE}" =~ Deb ]]; then
-		ctest "${CTEST_FLAGS[@]}" > "${BUILD_TYPE}.log" || cat "${BUILD_TYPE}.log"
+		${TRAVIS:+ travis_wait} ctest "${CTEST_FLAGS[@]}" > "${BUILD_TYPE}.log" || cat "${BUILD_TYPE}.log"
 	    else
-		ctest "${CTEST_FLAGS[@]}"
+		${TRAVIS:+ travis_wait} ctest "${CTEST_FLAGS[@]}"
 	    fi
 	    make install
 	    make uninstall

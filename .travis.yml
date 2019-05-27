@@ -126,7 +126,7 @@ script:
   - pwd
   - export SOURCE_DATE_EPOCH=$(git show -s --format=%ct $TRAVIS_COMMIT)
   - echo "SOURCE_DATE_EPOCH = ${SOURCE_DATE_EPOCH}"
-  - ./developer-scripts/travis/test-script.${BUILD_TYPE:-cmake}.sh
+  - travis_wait ./developer-scripts/travis/test-script.${BUILD_TYPE:-cmake}.sh
 
 after_script:
   - find . -name '*.gcno' -print
