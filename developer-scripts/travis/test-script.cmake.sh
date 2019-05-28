@@ -42,11 +42,17 @@ for version in ${GCC}; do
 		  -DCMAKE_BUILD_TYPE:STRING="${BUILD_TYPE}" \
 		  ..
 	    make -j 4
-	    printf '\nDone compiling OpenCoarrays and tests!\n\n'
+	    printf '\nDone compiling OpenCoarrays and tests!\n'
 	    CTEST_FLAGS=(--output-on-failure --schedule-random --repeat-until-fail "${NREPEAT:-5}" --timeout "${TEST_TIMEOUT:-200}")
+	    printf "\nctest flags: %s\n" "${CTEST_FLAGS[*]}"
 	    if [[ "${BUILD_TYPE}" =~ Deb ]]; then
-		ctest "${CTEST_FLAGS[@]}" > "${BUILD_TYPE}.log" || cat "${BUILD_TYPE}.log"
+		printf "\nRunning ctest for a debug build...\n\n"
+		if ! ctest "${CTEST_FLAGS[@]}" > "${BUILD_TYPE}.log" ; then
+		    cat "${BUILD_TYPE}.log"
+		    false
+		fi
 	    else
+		printf "\nRunning ctest for a non-debug build...\n\n"
 		ctest "${CTEST_FLAGS[@]}"
 	    fi
 	    make install
