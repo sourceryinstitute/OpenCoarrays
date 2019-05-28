@@ -47,14 +47,11 @@ for version in ${GCC}; do
 	    printf "\nctest flags: %s\n" "${CTEST_FLAGS[*]}"
 	    if [[ "${BUILD_TYPE}" =~ Deb ]]; then
 		printf "\nRunning ctest for a debug build...\n\n"
-		if ! ctest "${CTEST_FLAGS[@]}" > "${BUILD_TYPE}.log" ; then
-		    cat "${BUILD_TYPE}.log"
-		    false
-		fi
+		export NREPEAT=1
 	    else
 		printf "\nRunning ctest for a non-debug build...\n\n"
-		ctest "${CTEST_FLAGS[@]}"
 	    fi
+	    ctest "${CTEST_FLAGS[@]}"
 	    make install
 	    make uninstall
 	)
