@@ -41,13 +41,13 @@ for version in ${GCC}; do
 		  -DCMAKE_INSTALL_PREFIX:PATH="${HOME}/OpenCoarrays" \
 		  -DCMAKE_BUILD_TYPE:STRING="${BUILD_TYPE}" \
 		  ..
-	    ${TRAVIS:+ travis_wait} make -j 4
+	    make -j 4
 	    printf '\nDone compiling OpenCoarrays and tests!\n\n'
 	    CTEST_FLAGS=(--output-on-failure --schedule-random --repeat-until-fail "${NREPEAT:-5}" --timeout "${TEST_TIMEOUT:-200}")
 	    if [[ "${BUILD_TYPE}" =~ Deb ]]; then
-		${TRAVIS:+ travis_wait} ctest "${CTEST_FLAGS[@]}" > "${BUILD_TYPE}.log" || cat "${BUILD_TYPE}.log"
+		ctest "${CTEST_FLAGS[@]}" > "${BUILD_TYPE}.log" || cat "${BUILD_TYPE}.log"
 	    else
-		${TRAVIS:+ travis_wait} ctest "${CTEST_FLAGS[@]}"
+		ctest "${CTEST_FLAGS[@]}"
 	    fi
 	    make install
 	    make uninstall
