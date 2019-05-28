@@ -33,12 +33,12 @@ matrix:
             - mpich
             - shellcheck
           update: true
-    -
+    - &macOS_allowed_failure
       <<: *macOS
       env:
         - GCC=9
           FC=gfortran-${GCC}
-          BUILD_TYPES="RelWithDebInfo Release CodeCoverage"
+          BUILD_TYPES="Release CodeCoverage"
       addons:
         homebrew:
           packages:
@@ -115,6 +115,9 @@ matrix:
 
   allow_failures:
     - *linux_allowed_failure
+    - *macOS_allowed_failure
+
+    # macOS allowed failure due to random test timeouts w/ clang & OpenMPI
 
 before_install:
   - source developer-scripts/travis/before_install.all.sh
