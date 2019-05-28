@@ -38,6 +38,7 @@ matrix:
       env:
         - GCC=9
           FC=gfortran-${GCC}
+          BUILD_TYPES="RelWithDebInfo Release CodeCoverage"
       addons:
         homebrew:
           packages:
@@ -125,6 +126,9 @@ install:
 script:
   - pwd
   - export SOURCE_DATE_EPOCH=$(git show -s --format=%ct $TRAVIS_COMMIT)
+  - export LC_ALL=C
+  - export TZ=UTC
+  - export ZERO_AR_DATE=1
   - echo "SOURCE_DATE_EPOCH = ${SOURCE_DATE_EPOCH}"
   - ./developer-scripts/travis/test-script.${BUILD_TYPE:-cmake}.sh
 
