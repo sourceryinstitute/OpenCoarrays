@@ -26,6 +26,7 @@
 * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 
+#include <cassert>
 #include "libcaf.h"
 #include "mpi.h"
 
@@ -38,7 +39,9 @@ static int caf_is_finalized = 0;
 // TODO:: Assert that no other MPI initialization has happened before
 void caf_init (int *argc, char ***argv)
 {
-   MPI_Init(argc, argv);
+   int ierr = MPI_Init(argc, argv);
+
+   assert(ierr == MPI_SUCCESS);
 }
 
 // Execute normal termination of an image.
@@ -59,4 +62,14 @@ int num_images(int team_number)
    MPI_Comm_size(MPI_COMM_WORLD, &images);
 
    return images;
+}
+
+// return id of this image
+int this_image()
+{
+   int image;
+   MPI_Comm_rank(MPI_COMM_WORLD, &image);
+
+   // incrementing image to represent Fortran indexing
+   return ++image;
 }

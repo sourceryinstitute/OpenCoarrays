@@ -5,8 +5,9 @@ LIBRARY_TARGET := libcaf_mpi.a
 init_finalize_test := caf_init_finalize
 error_stop_test := error_stop
 num_images_test := num_images
+this_image_test := this_image
 
-tests := $(init_finalize_test) $(error_stop_test) $(num_images_test)
+tests := $(init_finalize_test) $(error_stop_test) $(num_images_test) $(this_image_test)
 
 all: $(tests)
 
@@ -19,6 +20,9 @@ $(error_stop_test): test_error_stop.o $(LIBRARY_TARGET)
 
 $(num_images_test): test_num_images.o $(LIBRARY_TARGET)
 	$(MPICXX)  $< -L ./ -lcaf_mpi -o $(num_images_test)
+
+$(this_image_test): test_this_image.o $(LIBRARY_TARGET)
+	$(MPICXX)  $< -L ./ -lcaf_mpi -o $(this_image_test)
 
 # Build library
 # $@  expands to the target

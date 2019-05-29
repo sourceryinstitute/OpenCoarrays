@@ -32,5 +32,6 @@ void caf_init(int *, char ***);
 void caf_finalize();
 void error_stop(int, bool);
 int num_images(int = 0);
+int this_image();
 
 #endif
