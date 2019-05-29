@@ -55,5 +55,8 @@ void error_stop(int error, bool quiet)
 // Return number of images
 int num_images(int team_number)
 {
-   return caf_num_images;
+   int images;
+   MPI_Comm_size(MPI_COMM_WORLD, &images);
+
+   return images;
 }
