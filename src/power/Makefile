@@ -6,8 +6,9 @@ init_finalize_test := caf_init_finalize
 error_stop_test := error_stop
 num_images_test := num_images
 this_image_test := this_image
+sync_all_test := sync_all
 
-tests := $(init_finalize_test) $(error_stop_test) $(num_images_test) $(this_image_test)
+tests := $(init_finalize_test) $(error_stop_test) $(num_images_test) $(this_image_test) $(sync_all_test)
 
 all: $(tests)
 
@@ -24,6 +25,9 @@ $(num_images_test): test_num_images.o $(LIBRARY_TARGET)
 $(this_image_test): test_this_image.o $(LIBRARY_TARGET)
 	$(MPICXX)  $< -L ./ -lcaf_mpi -o $(this_image_test)
 
+$(sync_all_test): test_sync_all.o $(LIBRARY_TARGET)
+	$(MPICXX)  $< -L ./ -lcaf_mpi -o $(sync_all_test)
+
 # Build library
 # $@  expands to the target
 # $^  expands to all prerequisites
@@ -36,6 +40,15 @@ mpi_caf_core.o: mpi_caf_core.cpp
 # Compile object files
 %.o: %.cpp
 	$(MPICXX)  -c $<
+
+check:
+	mpirun ./caf_init_finalize
+	mpirun -np 3 ./num_images
+	mpirun ./num_images
+	mpirun -np 8 ./this_image
+	mpirun ./this_image
+	mpirun -np 8 ./sync_all
+	mpirun ./sync_all
 
 clean:
 	rm -f *.o a.out

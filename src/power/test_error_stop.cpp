@@ -7,12 +7,10 @@ int main(int argc, char* argv[])
    caf_init(&argc, &argv);   // initialize image
 
    // arbitrarily initializing values for test purposes
-   int error = 1;
+   int error_code = 1;
    bool quiet = false;
 
-   error_stop(error, quiet);
+   error_stop(error_code, quiet);
 
-   caf_finalize();           // finalize image
-
-   return 0;
+   return error_code;
 }

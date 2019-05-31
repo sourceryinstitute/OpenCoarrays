@@ -27,13 +27,14 @@
 * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 
 #include <cassert>
+#include <iostream>
 #include "libcaf.h"
 #include "mpi.h"
 
 // Global variables
 static int caf_this_image;
 static int caf_num_images = 0;
-static int caf_is_finalized = 0;
+static bool caf_is_finalized = false;
 
 // Create images -- assuming no other MPI initialization happened before.
 // TODO:: Assert that no other MPI initialization has happened before
@@ -47,12 +48,23 @@ void caf_init (int *argc, char ***argv)
 // Execute normal termination of an image.
 void caf_finalize()
 {
-   MPI_Finalize();
+   int ierr = MPI_Finalize();
+
+   if (ierr == MPI_SUCCESS) {
+      caf_is_finalized = true;
+   }
 }
 
 // ERROR STOP function for numerical arguments.
 void error_stop(int error, bool quiet)
 {
+   if (!quiet)
+      std::cerr << "ERROR STOP " << error << "\n";
+
+   MPI_Abort(MPI_COMM_WORLD, error);
+
+   //   exit(error);
+
 }
 
 // Return number of images
@@ -72,4 +84,9 @@ int this_image()
 
    // incrementing image to represent Fortran indexing
    return ++image;
+}
+
+void sync_all()
+{
+   MPI_Barrier(MPI_COMM_WORLD);
 }
