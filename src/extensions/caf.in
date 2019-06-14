@@ -180,8 +180,8 @@ substitute_lib () {
       case "${1##*.}" in
           a|lib)
               for suff in so dylib dll ; do
-                  if [[ -f "${1%%.*}.${suff}" ]] ; then
-                      echo "${1%%.*}.${suff}"
+                  if [[ -f "${1%.*}.${suff}" ]] ; then
+                      echo "${1%.*}.${suff}"
                       return
                   fi
               done
@@ -191,8 +191,8 @@ substitute_lib () {
           ;;
           so|dylib|dll)
               for suff in a lib ; do
-                  if [[ -f "${1%%.*}.${suff}" ]] ; then
-                      echo "${1%%.*}.${suff}"
+                  if [[ -f "${1%.*}.${suff}" ]] ; then
+                      echo "${1%.*}.${suff}"
                       return
                   fi
               done
