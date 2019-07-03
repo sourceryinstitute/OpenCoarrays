@@ -37,6 +37,8 @@ program main
        alloc_message%superstring = 0
     endif
 
+    sync all
+
    call co_broadcast(alloc_message,source_image=sender)
 
    associate( failures => [                                    &
