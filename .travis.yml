@@ -26,7 +26,7 @@ matrix:
       os: osx
       env:
         - BUILD_TYPE="InstallScript"
-          GCC=8
+          GCC=9
           OSX_PACKAGES="gcc shellcheck cmake mpich"
           # cmake should be removed, but we should be installing binaries
           # because building from source takes forever

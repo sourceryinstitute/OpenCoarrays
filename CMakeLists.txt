@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.10)
 
 cmake_policy(VERSION 3.10...3.14)
 
+if(DEFINED ENV{SOURCE_DATE_EPOCH})
+  set(SOURCE_DATE_EPOCH "$ENV{SOURCE_DATE_EPOCH}")
+endif()
+
 set(CMAKE_SKIP_RPATH ON
   CACHE BOOL "Don't add a build-dir rpath")
 set(CMAKE_BUILD_WITH_INSTALL_RPATH ON
@@ -13,15 +17,6 @@ set ( CMAKE_CONFIGURATION_TYPES "Debug" "Release" "MinSizeRel" "RelWithDebInfo" 
 set ( CMAKE_BUILD_TYPE "Release"
   CACHE STRING "Select which configuration to build." )
 set_property ( CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${CMAKE_CONFIGURATION_TYPES} )
-message( STATUS
-  "
-============================================================
-   Building OpenCoarrays configuration: ${CMAKE_BUILD_TYPE}
-============================================================
-")
-
-message( STATUS "Running with CMake from: ${CMAKE_COMMAND}" )
-message( STATUS "Current source dir (for OpenCoarrays): ${CMAKE_CURRENT_SOURCE_DIR}")
 
 # Add option and check environment to determine if developer tests should be run
 set( _TF OFF )
@@ -48,8 +43,7 @@ string(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+(-rc[0-9]+)?"
   OpenCoarraysVersion "${first_line}")
 
 if((NOT (OpenCoarraysVersion MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+(-rc[0-9]+)?")) AND (EXISTS "${CMAKE_SOURCE_DIR}/.git"))
-  message( STATUS "Build from git repository detected")
-  find_package(Git)
+  find_package(Git QUIET)
   if(GIT_FOUND)
     execute_process(COMMAND "${GIT_EXECUTABLE}" describe --abbrev=0
       WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
@@ -91,6 +85,18 @@ endif()
 string(REGEX REPLACE "-rc[0-9]+$"
        ".0" OPENCOARRAYS_CMAKE_PROJECT_VERSION
        "${OpenCoarraysVersion}")
+
+file(READ "${CMAKE_CURRENT_LIST_DIR}/cmake/Banner.txt.in" OC_BANNER)
+string(CONFIGURE "${OC_BANNER}" OC_BANNER @ONLY)
+string(STRIP "${OC_BANNER}" OC_BANNER)
+message(STATUS "${OC_BANNER}")
+
+if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/.git")
+  message( STATUS "Build from git repository detected")
+endif()
+
+message( STATUS "Running with CMake from: ${CMAKE_COMMAND}" )
+message( STATUS "Current source dir (for OpenCoarrays): ${CMAKE_CURRENT_SOURCE_DIR}")
 
 project(opencoarrays VERSION "${OPENCOARRAYS_CMAKE_PROJECT_VERSION}" LANGUAGES C Fortran)
 
@@ -744,6 +750,7 @@ if(opencoarrays_aware_compiler)
       add_caf_test(teams_coarray_send 5 teams_coarray_send)
       add_caf_test(teams_coarray_send_by_ref 5 teams_coarray_send_by_ref)
       add_caf_test(teams_coarray_sendget 5 teams_coarray_sendget)
+      add_caf_test(sync_team 8 sync_team)
       add_caf_test(alloc_comp_multidim_shape 2 alloc_comp_multidim_shape)
     endif()
   endif()
@@ -943,6 +950,8 @@ foreach(SCRIPT ${TRAVIS_SCRIPTS})
   endif()
 endforeach()
 
-install(FILES "${CMAKE_BINARY_DIR}/sha256_install_manifest.txt"
-  DESTINATION "${CMAKE_INSTALL_DATADIR}/opencoarrays"
-  OPTIONAL)
+# Create and install a manifest of installed files, and another containing their sha256 hashes
+foreach(VAR CMAKE_BINARY_DIR CMAKE_INSTALL_DATADIR PROJECT_NAME SOURCE_DATE_EPOCH)
+  install(CODE "set(${VAR} \"${${VAR}}\")")
+endforeach()
+install(SCRIPT "${CMAKE_CURRENT_LIST_DIR}/cmake/InstallFileManifest.cmake")
