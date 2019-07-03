@@ -27,9 +27,15 @@ program main
       vector=reshape( [integer::], [0]),                                   &
       matrix=reshape( [.true.], [1,1]),                                    &
       superstring=reshape([1,2,3,4], [2,1,2, 1,1,1, 1,1,1, 1,1,1, 1,1,1 ]) &
-    )
+      )
 
-    if (me==sender) alloc_message = alloc_content
+    alloc_message = alloc_content
+
+    if(me /= sender) then
+       alloc_message%vector = 0
+       alloc_message%matrix = .false.
+       alloc_message%superstring = 0
+    endif
 
    call co_broadcast(alloc_message,source_image=sender)
 
