@@ -100,8 +100,8 @@ build_and_install()
     info "Configuring gcc/g++/gfortran builds with the following command:"
     info "${download_path}/${package_source_directory}/configure --prefix=${install_path} --enable-languages=c,c++,fortran,lto --disable-multilib --disable-werror ${bootstrap_configure}"
     "${download_path}/${package_source_directory}/configure" --prefix="${install_path}" --enable-languages=c,c++,fortran,lto --disable-multilib --disable-werror "${bootstrap_configure}"
-    info "Building with the following command: 'make -j${num_threads} ${bootstrap_build}'"
-    make "-j${num_threads}" "${bootstrap_build}"
+    info "Building with the following command: make -j ${num_threads} ${bootstrap_build}"
+    make -j ${num_threads} ${bootstrap_build:-}
     if [[ -n "${SUDO:-}" ]]; then
       info "You do not have write permissions to the installation path ${install_path}"
       info "If you have administrative privileges, enter your password to install ${package_to_build}"
