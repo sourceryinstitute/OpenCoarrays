@@ -116,6 +116,10 @@ if (mpi_version_out MATCHES "[Oo]pen[ -][Mm][Pp][Ii]")
   set ( openmpi true PARENT_SCOPE)
   # Write out a host file because OMPI's mpiexec is dumb
   file(WRITE ${CMAKE_BINARY_DIR}/hostfile "${HOST_NAME} slots=${N_CPU}\n")
+  message( STATUS "hostfile written to: ${CMAKE_BINARY_DIR}/hostfile")
+  if(NOT DEFINED ENV{TRAVIS})
+    message( STATUS "Open-MPI back end detected, passing --allow-run-as-root to allow tests to pass when run with sudo or as root." )
+  endif()
 endif ()
 
 if("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")

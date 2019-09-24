@@ -25,25 +25,9 @@ for version in ${GCC}; do
     mkdir "cmake-build-gcc${GCC}"
     export BLD_DIR="cmake-build-gcc${GCC}"
     export FC=gfortran-${version}
-    export CC=gcc-${version}
-    if [[ ${OSTYPE} == [Dd]arwin* ]]; then
-	# We should use clang on macOS because that's what homebrew and everyone else does
-	brew unlink openmpi || true
-	brew unlink mpich || true
-	for mpi in "mpich" "open-mpi"; do
-	    brew unlink "${mpi}" || true
-	    brew ls --versions "${mpi}" >/dev/null || brew install "${mpi}"
-	    brew outdated "${mpi}" || brew upgrade "${mpi}"
-	    brew unlink "${mpi}" || true
-	done
-	brew link --overwrite open-mpi
-	otool -L "$(brew --prefix open-mpi)/lib/libmpi.dylib"
-	otool -L "$(brew --prefix libevent)/lib/libevent.dylib"
-	OMPI_CC="$(brew --prefix gcc)/bin/gcc-${version}"
-	export OMPI_CC
-    fi
+
     ${FC} --version
-    ${CC} --version
+    ${CC:-cc} --version || true
     mpif90 --version && mpif90 -show
     mpicc --version && mpicc -show
 
@@ -56,19 +40,18 @@ for version in ${GCC}; do
 	    cmake -Wdev \
 		  -DCMAKE_INSTALL_PREFIX:PATH="${HOME}/OpenCoarrays" \
 		  -DCMAKE_BUILD_TYPE:STRING="${BUILD_TYPE}" \
-		  -DMPI_CXX_SKIP_MPICXX:BOOL=ON \
-		  -DMPI_ASSUME_NO_BUILTIN_MPI:BOOL=ON \
-		  -DMPI_SKIP_GUESSING:BOOL=ON\
 		  ..
 	    make -j 4
+	    printf '\nDone compiling OpenCoarrays and tests!\n'
 	    CTEST_FLAGS=(--output-on-failure --schedule-random --repeat-until-fail "${NREPEAT:-5}" --timeout "${TEST_TIMEOUT:-200}")
+	    printf "\nctest flags: %s\n" "${CTEST_FLAGS[*]}"
 	    if [[ "${BUILD_TYPE}" =~ Deb ]]; then
-		ctest "${CTEST_FLAGS[@]}" > "${BUILD_TYPE}.log" || cat "${BUILD_TYPE}.log"
+		printf "\nRunning ctest for a debug build...\n\n"
+		export NREPEAT=1
 	    else
-		ctest "${CTEST_FLAGS[@]}"
+		printf "\nRunning ctest for a non-debug build...\n\n"
 	    fi
-	    make install
-	    make hash_installed
+	    ctest "${CTEST_FLAGS[@]}"
 	    make install
 	    make uninstall
 	)
