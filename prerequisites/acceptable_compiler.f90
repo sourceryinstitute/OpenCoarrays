@@ -103,7 +103,7 @@ contains
 
   end function
 
- pure function minor(version_string) result(minor_value)
+  pure function minor(version_string) result(minor_value)
     character(len=*), intent(in) :: version_string
     integer minor_value
     character(len=:), allocatable :: middle_digits
@@ -117,20 +117,30 @@ contains
 
   end function
 
- pure function patch(version_string) result(patch_value)
+  pure function patch(version_string) result(patch_value)
     character(len=*), intent(in) :: version_string
     integer patch_value
     character(len=:), allocatable :: trailing_digits
 
     associate( first_dot => scan(version_string, '.') )
       associate( second_dot => first_dot + scan(version_string(first_dot+1:), '.') )
-        associate( first_non_digit=> second_dot + scan(version_string(second_dot+1:), ' ') )
+        associate( first_non_digit=> second_dot + first_printable_non_digit(version_string(second_dot+1:)) )
           trailing_digits = version_string( second_dot+1 : first_non_digit-1 )
           read(trailing_digits,*) patch_value
         end associate
       end associate
     end associate
 
+  end function
+
+  pure function first_printable_non_digit( string ) result(location)
+    character(len=*), intent(in) :: string
+    integer i, location
+    integer, parameter :: ASCII_non_digit(*)=[(i,i=32,47),(i,i=58,126)]
+    character(len=1), parameter :: non_digit(*)=[( char(ASCII_non_digit(i)) , i=1, size(ASCII_non_digit) )]
+    character(len=size(non_digit)) non_digit_string
+    write(non_digit_string,'(85a)') non_digit
+    location = scan(string,non_digit_string)
   end function
 
 end program
