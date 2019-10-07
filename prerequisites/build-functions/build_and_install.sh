@@ -82,11 +82,12 @@ build_and_install()
       export Mojave="18.7.0"
       if [ $(version $kernel) -ge $(version $Mojave) ]; then
         info ""
-        info "____________"
+        info "______________________________________________________________________________"
         info "Detected Darwin $kernel >= $Mojave (Mojave).  If $package_to_build build fails"
-        info "due to missing a header (*.h) file, please try the following bash command: "
-        info "cd /Library/Developer/CommandLineTools/Packages/ && open ."
-        info "Then restart $this_script. See https://bit.ly/build-gcc-on-mojave for more details."
+        info "due to a missing header (*.h) file, please try something the following bash command:"
+        info "open /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg"
+        info "Follow the prompts to install the missing headers. Then restart this $this_script."
+        info "See https://bit.ly/build-gcc-on-mojave for more details."
         if [[ "${arg_y}" == "${__flag_present}" ]]; then
           info "-y or --yes-to-all flag present. Proceeding with non-interactive build."
         else
