@@ -5,6 +5,8 @@
 # shellcheck source=prerequisites/build-functions/edit_GCC_download_prereqs_file_if_necessary.sh
 source "${OPENCOARRAYS_SRC_DIR}/prerequisites/build-functions/edit_GCC_download_prereqs_file_if_necessary.sh"
 
+function version { echo "$@" | awk -F. '{ printf("%d%03d%03d%03d\n", $1,$2,$3,$4); }'; }
+
 build_and_install()
 {
   num_threads=${arg_j}
@@ -73,6 +75,33 @@ build_and_install()
     fi
 
   elif [[ ${package_to_build} == "gcc" ]]; then
+
+    # Warn about header prerequisite on macOS Mojave or subsequent versions
+    if [[ $(uname) == "Darwin" ]]; then
+      export kernel=$(uname -r)
+      export Mojave="18.7.0"
+      if [ $(version $kernel) -ge $(version $Mojave) ]; then
+        info ""
+        info "______________________________________________________________________________"
+        info "Detected Darwin $kernel >= $Mojave (Mojave).  If $package_to_build build fails"
+        info "due to a missing header (*.h) file, please try something like the following bash command:"
+        info "open /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg"
+        info "Follow the prompts to install the missing headers. Then restart this $this_script."
+        info "See https://bit.ly/build-gcc-on-mojave for more details."
+        if [[ "${arg_y}" == "${__flag_present}" ]]; then
+          info "-y or --yes-to-all flag present. Proceeding with non-interactive build."
+        else
+          info "Would you like to proceed anyway? (Y/n)"
+          read -r proceed
+          if [[ "${proceed}" == "n" || "${proceed}" == "N" || "${proceed}" == "no"  ]]; then
+            info "n"
+            emergency "Aborting. [exit 80]"
+          else
+            info "y"
+          fi
+        fi
+      fi
+    fi
 
     info "pushd ${download_path}/${package_source_directory} "
     pushd "${download_path}/${package_source_directory}" || emergency "build_and_install.sh: pushd failed"
