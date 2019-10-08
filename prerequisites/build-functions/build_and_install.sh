@@ -84,7 +84,7 @@ build_and_install()
         info ""
         info "______________________________________________________________________________"
         info "Detected Darwin $kernel >= $Mojave (Mojave).  If $package_to_build build fails"
-        info "due to a missing header (*.h) file, please try something the following bash command:"
+        info "due to a missing header (*.h) file, please try something like the following bash command:"
         info "open /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg"
         info "Follow the prompts to install the missing headers. Then restart this $this_script."
         info "See https://bit.ly/build-gcc-on-mojave for more details."
