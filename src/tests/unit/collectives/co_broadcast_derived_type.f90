@@ -1,95 +1,99 @@
-module object_interface
+program main
+  !! author: Damian Rouson
+  !!
+  !! Test co_broadcast with derived-type actual arguments
   implicit none
-  private
-  public :: object
 
-  type object
-    private
-    integer :: foo=0
-    logical :: bar=.false.
-  contains
-    procedure :: initialize
-    procedure :: co_broadcast_me
-    procedure :: not_equal
-    procedure :: copy
-    generic :: operator(/=)=>not_equal
-    generic :: assignment(=)=>copy
-  end type
+  integer, parameter :: sender=1 !! co_broadcast source_image
+  character(len=*), parameter :: text="text" !! character message data
 
   interface
-    elemental impure module subroutine initialize(this,foo_,bar_)
-      implicit none
-      class(object), intent(out) :: this
-      integer, intent(in) :: foo_
-      logical, intent(in) :: bar_
-    end subroutine
-
-    elemental impure module subroutine co_broadcast_me(this,source_image)
-      implicit none
-      class(object), intent(inout) :: this
-      integer, intent(in) :: source_image
-    end subroutine
-
-    elemental module function not_equal(lhs,rhs) result(lhs_ne_rhs)
-      implicit none
-      class(object), intent(in) :: lhs,rhs
-      logical lhs_ne_rhs
-    end function
-
-    elemental impure module subroutine copy(lhs,rhs)
-      implicit none
-      class(object), intent(inout) :: lhs
-      class(object), intent(in) :: rhs
-    end subroutine
+     function f(x) result(y)
+       real x, y
+     end function
   end interface
 
-end module
+  type parent
+    integer :: heritable=0
+  end type
 
-submodule(object_interface) object_implementation
-  implicit none
-contains
-    module procedure co_broadcast_me
-      call co_broadcast(this%foo,source_image)
-      call co_broadcast(this%bar,source_image)
-    end procedure
+  type component
+    integer :: subcomponent=0
+  end type
 
-    module procedure initialize
-      this%foo = foo_
-      this%bar = bar_
-    end procedure
+  type, extends(parent) :: child
 
-    module procedure not_equal
-      lhs_ne_rhs = (lhs%foo /= rhs%foo) .or. (lhs%bar .neqv. rhs%bar)
-    end procedure
+    ! Scalar and array derived-type components
+    type(component) a, b(1,2,1, 1,1,1, 1)
 
-    module procedure copy
-       lhs%foo = rhs%foo
-       lhs%bar = rhs%bar
-    end procedure
-end submodule
+    ! Scalar and array intrinsic-type components
+    character(len=len(text)) :: c="", z(0)
+    complex :: i=(0.,0.), j(1)=(0.,0.)
+    integer :: k=0,       l(2,3)=0
+    logical :: r=.false., s(1,2,3, 1,2,3, 1)=.false.
+    real    :: t=0.,      u(3,2,1)=0.
 
-program main
-  use object_interface, only : object
-  implicit none
-  type(object) message
+    ! Scalar and array pointer components
+    character(len=len(text)), pointer :: &
+                        char_ptr=>null(), char_ptr_maxdim(:,:,:, :,:,:, :)=>null()
+    complex, pointer :: cplx_ptr=>null(), cplx_ptr_maxdim(:,:,:, :,:,:, :)=>null()
+    integer, pointer :: int_ptr =>null(), int_ptr_maxdim (:,:,:, :,:,:, :)=>null()
+    logical, pointer :: bool_ptr=>null(), bool_ptr_maxdim(:,:,:, :,:,:, :)=>null()
+    real, pointer    :: real_ptr=>null(), real_ptr_maxdim(:,:,:, :,:,:, :)=>null()
+    procedure(f), pointer :: procedure_pointer=>null()
+  end type
 
-  call message%initialize(foo_=1,bar_=.true.)
+  type(child) message
+  type(child) :: content = child( & ! define content using the insrinsic structure constructor
+    parent=parent(heritable=-4),                                                                           & ! parent
+    a=component(-3), b=reshape([component(-2),component(-1)], [1,2,1, 1,1,1, 1]),        & ! derived types
+    c=text, z=[character(len=len(text))::], i=(0.,1.), j=(2.,3.), k=4, l=5, r=.true., s=.true., t=7., u=8. & ! intrinsic types
+  )
 
-  emulate_co_broadcast: block
-    type(object) foobar
-    if (this_image()==1) foobar = message
-    call foobar%co_broadcast_me(source_image=1)
-    if ( foobar /= message ) error stop "Test failed."
-  end block emulate_co_broadcast
+  associate(me=>this_image())
 
-  desired_co_broadcast: block
-    type(object) barfoo
-    if (this_image()==1) barfoo = message
-    call co_broadcast(barfoo,source_image=1)  ! OpenCoarrays terminates here with the message "Unsupported data type"
-    if ( barfoo /= message ) error stop "Test failed."
-  end block desired_co_broadcast
+    if (me==sender) then
+      message = content
+      allocate(message%char_ptr, message%char_ptr_maxdim(1,1,2, 1,1,1, 1), source=text   )
+      allocate(message%cplx_ptr, message%cplx_ptr_maxdim(1,1,1, 1,1,2, 1), source=(0.,1.))
+      allocate(message%int_ptr , message%int_ptr_maxdim (1,1,1, 1,1,1, 1), source=2      )
+      allocate(message%bool_ptr, message%bool_ptr_maxdim(1,1,1, 1,2,1, 1), source=.true. )
+      allocate(message%real_ptr, message%real_ptr_maxdim(1,1,1, 1,1,1, 1), source=3.     )
+    end if
 
-  sync all  ! Wait for each image to pass the test
-  if (this_image()==1) print *,"Test passed."
+    call co_broadcast(message,source_image=sender)
+
+    if (me==sender) then
+      deallocate(message%char_ptr, message%char_ptr_maxdim)
+      deallocate(message%cplx_ptr, message%cplx_ptr_maxdim)
+      deallocate(message%int_ptr , message%int_ptr_maxdim )
+      deallocate(message%bool_ptr, message%bool_ptr_maxdim)
+      deallocate(message%real_ptr, message%real_ptr_maxdim)
+    end if
+
+    !! Verify correct broadcast of all non-pointer components (pointers become undefined on the receiving image).
+    associate( failures => [                                &
+      message%parent%heritable /= content%parent%heritable, &
+      message%a%subcomponent /= content%a%subcomponent,     &
+      message%c /= content%c,                               &
+      message%z /= content%z,                               &
+      message%i /= content%i,                               &
+      message%j /= content%j,                               &
+      message%k /= content%k,                               &
+      message%l /= content%l,                               &
+      message%r .neqv. content%r,                           &
+      message%s .neqv. content%s,                           &
+      message%t /= content%t,                               &
+      any( message%u /= content%u )                         &
+    ] )
+
+      if ( any(failures) ) error stop "Test failed. "
+
+    end associate
+
+    sync all  ! Wait for each image to pass the test
+    if (me==sender) print *,"Test passed."
+
+  end associate
 
 end program main

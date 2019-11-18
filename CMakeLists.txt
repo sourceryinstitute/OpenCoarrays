@@ -697,8 +697,9 @@ function(add_caf_test name num_caf_img test_target)
     endif()
   endif()
   if( openmpi)
-    set (test_parameters ${test_parameters} --allow-run-as-root)
-    message( STATUS "Open-MPI back end detected, passing --allow-run-as-root to allow tests to pass when run with sudo or as root." )
+    if(NOT DEFINED ENV{TRAVIS})
+      set (test_parameters ${test_parameters} --allow-run-as-root)
+    endif()
   endif()
   set(test_parameters -np ${num_caf_img} ${test_parameters})
   if(DEFINED ARGN)
@@ -801,16 +802,15 @@ if(opencoarrays_aware_compiler)
   add_caf_test(strided_sendget 3 strided_sendget)
   add_caf_test(get_with_vector_index 4 get_with_vector_index)
 
-
+  # Collective subroutine tests
   add_caf_test(co_sum 4 co_sum_test)
   add_caf_test(co_broadcast 4 co_broadcast_test)
   add_caf_test(co_broadcast_derived_type 4 co_broadcast_derived_type_test)
+  if((gfortran_compiler AND (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 10.0.0)) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
+    add_caf_test(co_broadcast_allocatable_components 4 co_broadcast_allocatable_components_test)
+  endif()
   add_caf_test(co_min 4 co_min_test)
   add_caf_test(co_max 4 co_max_test)
-  add_caf_test(syncall 8 syncall)
-  add_caf_test(syncimages 8 syncimages)
-  add_caf_test(syncimages2 8 syncimages2)
-  add_caf_test(duplicate_syncimages 8 duplicate_syncimages)
   add_caf_test(co_reduce 4 co_reduce_test)
   add_caf_test(co_reduce_res_im 4 co_reduce_res_im)
   add_caf_test(co_reduce_string 4 co_reduce_string)
@@ -818,6 +818,13 @@ if(opencoarrays_aware_compiler)
   add_caf_test(sync_ring_abort_np3 3 sync_image_ring_abort_on_stopped_image)
   add_caf_test(sync_ring_abort_np7 7 sync_image_ring_abort_on_stopped_image)
   add_caf_test(simpleatomics 8 atomics)
+
+  # Synchronization tests
+  add_caf_test(syncall 8 syncall)
+  add_caf_test(syncimages 8 syncimages)
+  add_caf_test(syncimages2 8 syncimages2)
+  add_caf_test(duplicate_syncimages 8 duplicate_syncimages)
+
   # possible logic error in the following test
 #  add_caf_test(increment_my_neighbor 32 increment_my_neighbor)
 
@@ -826,7 +833,6 @@ if(opencoarrays_aware_compiler)
   add_caf_test(coarray_burgers_pde 2 coarray_burgers_pde)
   add_caf_test(co_heat 2 co_heat)
   add_caf_test(asynchronous_hello_world 3 asynchronous_hello_world)
-
 
   # Regression tests based on reported issues
   if((gfortran_compiler AND (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0)) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))

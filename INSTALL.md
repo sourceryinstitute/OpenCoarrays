@@ -75,7 +75,16 @@ and re-running CMake.
 ## End-User Installation ##
 
 Most users will find it easiest and fastest to use package management
-software to install OpenCoarrays.  Package management options for
+software to install OpenCoarrays. Below is the status of OpenCoarrays
+in various package managers. If you do not see your favorite package
+manager listed or it is badly out of date, please reach out and ask
+for it to be included or updated, or contribute it yourself. We are
+happy to work with package managers to resolve issues, and adapt our
+build system to play nicely so they don't have to maintain patches.
+
+[![Packaging status][repology-badge]][OC-on-repology]
+
+Package management options for
 macOS, Windows, and Linux are described first below. Also described
 below are options for installing via the Sourcery Institute virtual
 machine or via the bash scripts included that are in the OpenCoarrays
@@ -422,6 +431,9 @@ file.
 [`INSTALL`]: ./INSTALL
 
 [URLs]: #
+
+[OC-on-repology]: https://repology.org/project/opencoarrays/versions
+[repology-badge]: https://repology.org/badge/vertical-allrepos/opencoarrays.svg
 
 [FreeBSD ports/packages installation information]: https://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/ports.html
 [GH all releases badge]: https://img.shields.io/github/downloads/sourceryinstitute/OpenCoarrays/total.svg?style=flat-square

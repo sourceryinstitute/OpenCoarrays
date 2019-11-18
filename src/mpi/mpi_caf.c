@@ -7380,8 +7380,6 @@ PREFIX(co_broadcast) (gfc_descriptor_t *a, int source_image, int *stat,
     size *= dimextent;
   }
 
-  printf("DTYPE Size: %zd\n",GFC_DESCRIPTOR_SIZE(a));
-
   if (rank == 0)
   {
     if( datatype == MPI_BYTE)

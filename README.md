@@ -87,6 +87,17 @@ The default [index.ipynb] notebook is read only, but you can
 execute it, copy it to make changes, or create an entirely
 new [CAF kernel][notebook kernel] notebook.
 
+Packaged Version
+----------------
+
+If you would like to be able to install OpenCoarrays through your
+favorite package manager, please ask them to add it, or contribute it
+yourself. If you see your favorite package manager has an outdated
+version, please ask them to update it, or contribute an update
+yourself.
+
+[![Packaging status][repology-badge]][OC-on-repology]
+
 Getting Started
 ---------------
 
@@ -188,6 +199,9 @@ to aid in development efforts.
 [Binder]: https://mybinder.org
 [Jupyter]: https://jupyter.org
 [index.ipynb]: https://nbviewer.jupyter.org/github/sourceryinstitute/jupyter-CAF-kernel/blob/master/index.ipynb
+
+[OC-on-repology]: https://repology.org/project/opencoarrays/versions
+[repology-badge]: https://repology.org/badge/vertical-allrepos/opencoarrays.svg
 
 [build img]: https://img.shields.io/travis/sourceryinstitute/OpenCoarrays.svg?style=flat-square "Build badge"
 [CI Master Branch]: https://travis-ci.org/sourceryinstitute/OpenCoarrays?branch=master "View Travis-CI builds"
