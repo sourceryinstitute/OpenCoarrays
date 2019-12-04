@@ -30,7 +30,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 
 #include <mpi.h>
 
-#include "/Users/katherinearasmussen/f18/f18-master/include/flang/ISO_Fortran_binding.h"
+#include <ISO_Fortran_binding.h>
 using Fortran::ISO::Fortran_2018::CFI_cdesc_t;
 using Fortran::ISO::Fortran_2018::CFI_rank_t;
 using Fortran::ISO::Fortran_2018::CFI_index_t;
