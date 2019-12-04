@@ -1,4 +1,4 @@
-/* Libcaf: Application Binary Interface for parallel Fortran
+/* Core caf functions
 *
 * Copyright (c) 2012-2019, Sourcery, Inc.
 * Copyright (c) 2012-2019, Sourcery Institute
@@ -28,12 +28,12 @@
 
 #include <cassert>
 #include <iostream>
+
 #include "libcaf.h"
-#include "mpi.h"
 
 // Global variables
-static int caf_this_image;
-static int caf_num_images = 0;
+static int caf_this_img;
+static int caf_num_imgs = 0;
 static bool caf_is_finalized = false;
 
 // Create images -- assuming no other MPI initialization happened before.
@@ -56,7 +56,7 @@ void caf_finalize()
 }
 
 // ERROR STOP function for numerical arguments.
-void error_stop(int error, bool quiet)
+void caf_error_stop(int error, bool quiet)
 {
    if (!quiet)
       std::cerr << "ERROR STOP " << error << "\n";
@@ -68,7 +68,7 @@ void error_stop(int error, bool quiet)
 }
 
 // Return number of images
-int num_images(int team_number)
+int caf_num_images(int team_number)
 {
    int images;
    MPI_Comm_size(MPI_COMM_WORLD, &images);
@@ -77,7 +77,7 @@ int num_images(int team_number)
 }
 
 // return id of this image
-int this_image()
+int caf_this_image()
 {
    int image;
    MPI_Comm_rank(MPI_COMM_WORLD, &image);
@@ -86,7 +86,7 @@ int this_image()
    return ++image;
 }
 
-void sync_all()
+void caf_sync_all()
 {
    MPI_Barrier(MPI_COMM_WORLD);
 }
