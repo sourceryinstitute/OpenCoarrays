@@ -10,7 +10,7 @@ int main(int argc, char* argv[])
    int error_code = 1;
    bool quiet = false;
 
-   error_stop(error_code, quiet);
+   caf_error_stop(error_code, quiet);
 
    return error_code;
 }
