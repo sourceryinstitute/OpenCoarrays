@@ -4222,7 +4222,7 @@ get_for_ref(caf_reference_t *ref, size_t *i, size_t dst_index,
                GFC_DESCRIPTOR_RANK(src), ref_rank);
         for (int r = 0; r < GFC_DESCRIPTOR_RANK(src); ++r)
         {
-          dprint("remote desc dim[%d] = (lb = %zd, ub = %zd, stride = %zd)\n",
+          dprint("remote desc dim[%d] = (lb=%zd, ub=%zd, stride=%zd)\n",
                  r, src->dim[r].lower_bound, src->dim[r]._ubound,
                  src->dim[r]._stride);
         }
@@ -4676,7 +4676,7 @@ PREFIX(get_by_ref) (caf_token_t token, int image_index,
                GFC_DESCRIPTOR_RANK(src), ref_rank);
         for (i = 0; i < GFC_DESCRIPTOR_RANK(src); ++i)
         {
-          dprint("remote desc dim[%zd] = (lb = %zd, ub = %zd, stride = %zd)\n",
+          dprint("remote desc dim[%zd] = (lb=%zd, ub=%zd, stride=%zd)\n",
                  i, src->dim[i].lower_bound, src->dim[i]._ubound,
                  src->dim[i]._stride);
         }
@@ -4684,7 +4684,6 @@ PREFIX(get_by_ref) (caf_token_t token, int image_index,
         for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
         {
           array_ref = riter->u.a.mode[i];
-          dprint("i = %zd, array_ref = %s\n", i, caf_array_ref_str[array_ref]);
           switch (array_ref)
           {
             case CAF_ARR_REF_VECTOR:
@@ -4755,6 +4754,8 @@ case kind:                                                              \
               caf_runtime_error(unknownarrreftype, stat, NULL, 0);
               return;
           }
+          dprint("i = %zd, array_ref = %s, delta = %ld\n", i,
+                 caf_array_ref_str[array_ref], delta);
           if (delta <= 0)
             return;
           /* Check the various properties of the destination array.
@@ -4776,7 +4777,7 @@ case kind:                                                              \
               return;
             }
             /* Do further checks, when the source is not scalar. */
-            else if (delta != 1)
+            else if (delta != 1 || realloc_required)
             {
               /* Check that the extent is not scalar and we are not in an array
                * ref for the dst side. */
@@ -4820,7 +4821,7 @@ case kind:                                                              \
                 GFC_DESCRIPTOR_EXTENT(dst, dst_cur_dim) != delta;
               /* When it already known, that a realloc is needed or the extent
                * does not match the needed one. */
-              if (realloc_required || realloc_needed || extent_mismatch)
+              if (realloc_needed || extent_mismatch)
               {
                 /* Check whether dst is reallocatable. */
                 if (unlikely(!dst_reallocatable))
@@ -4872,7 +4873,6 @@ case kind:                                                              \
         for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
         {
           array_ref = riter->u.a.mode[i];
-          dprint("i = %zd, array_ref = %s\n", i, caf_array_ref_str[array_ref]);
           switch (array_ref)
           {
             case CAF_ARR_REF_VECTOR:
@@ -4927,6 +4927,8 @@ case kind:                                                      \
               caf_runtime_error(unknownarrreftype, stat, NULL, 0);
               return;
           }
+          dprint("i = %zd, array_ref = %s, delta = %ld\n",
+                 i, caf_array_ref_str[array_ref], delta);
           if (delta <= 0)
             return;
           /* Check the various properties of the destination array.
@@ -4940,7 +4942,7 @@ case kind:                                                      \
           /* When dst is an array. */
           if (dst_rank > 0)
           {
-            /* Check that dst_cur_dim is valid for dst.  Can be superceeded
+            /* Check that dst_cur_dim is valid for dst. Can be superceeded
              * only by scalar data. */
             if (dst_cur_dim >= dst_rank && delta != 1)
             {
@@ -4948,7 +4950,7 @@ case kind:                                                      \
               return;
             }
             /* Do further checks, when the source is not scalar. */
-            else if (delta != 1)
+            else if (delta != 1 || realloc_required)
             {
               /* Check that the extent is not scalar and we are not in an array
                * ref for the dst side. */
@@ -4975,7 +4977,7 @@ case kind:                                                      \
                 GFC_DESCRIPTOR_EXTENT(dst, dst_cur_dim) != delta;
               /* When it is already known, that a realloc is needed or
                * the extent does not match the needed one. */
-              if (realloc_required || realloc_needed || extent_mismatch)
+              if (realloc_needed || extent_mismatch)
               {
                 /* Check whether dst is reallocatable. */
                 if (unlikely(!dst_reallocatable))
@@ -5061,8 +5063,8 @@ case kind:                                                      \
   remote_memptr = mpi_token->memptr;
   dst_index = 0;
 #ifdef EXTRA_DEBUG_OUTPUT
-  dprint("dst_rank: %zd\n", GFC_DESCRIPTOR_RANK(dst));
-  for (i = 0; i < GFC_DESCRIPTOR_RANK(dst); ++i)
+  dprint("dst_rank: %zd\n", dst_rank);
+  for (i = 0; i < dst_rank; ++i)
   {
     dprint("dst_dim[%zd] = (%zd, %zd)\n",
            i, dst->dim[i].lower_bound, dst->dim[i]._ubound);
@@ -5394,7 +5396,7 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
                GFC_DESCRIPTOR_RANK(src), ref_rank);
         for (int r = 0; r < GFC_DESCRIPTOR_RANK(src); ++r)
         {
-          dprint("remote desc dim[%d] = (lb = %zd, ub = %zd, stride = %zd)\n",
+          dprint("remote desc dim[%d] = (lb=%zd, ub=%zd, stride=%zd)\n",
                  r, src->dim[r].lower_bound, src->dim[r]._ubound,
                  src->dim[r]._stride);
         }
@@ -5882,7 +5884,7 @@ PREFIX(send_by_ref) (caf_token_t token, int image_index,
                GFC_DESCRIPTOR_RANK(dst), ref_rank);
         for (i = 0; i < GFC_DESCRIPTOR_RANK(dst); ++i)
         {
-          dprint("remote desc dim[%zd] = (lb = %zd, ub = %zd, stride = %zd)\n",
+          dprint("remote desc dim[%zd] = (lb=%zd, ub=%zd, stride=%zd)\n",
                  i, dst->dim[i].lower_bound, dst->dim[i]._ubound,
                  dst->dim[i]._stride);
         }
@@ -5890,7 +5892,6 @@ PREFIX(send_by_ref) (caf_token_t token, int image_index,
         for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
         {
           array_ref = riter->u.a.mode[i];
-          dprint("i = %zd, array_ref = %s\n", i, caf_array_ref_str[array_ref]);
           switch (array_ref)
           {
             case CAF_ARR_REF_VECTOR:
@@ -5960,6 +5961,8 @@ case kind:                                                              \
               caf_runtime_error(unknownarrreftype, stat, NULL, 0);
               return;
           } // switch
+          dprint("i = %zd, array_ref = %s, delta = %ld\n",
+                 i, caf_array_ref_str[array_ref], delta);
           if (delta <= 0)
             return;
           if (dst != NULL)
@@ -5975,7 +5978,7 @@ case kind:                                                              \
           /* When dst is an array. */
           if (dst_rank > 0)
           {
-            /* Check that src_cur_dim is valid for dst.  Can be superceeded
+            /* Check that src_cur_dim is valid for dst. Can be superceeded
              * only by scalar data. */
             if (src_cur_dim >= dst_rank && delta != 1)
             {
@@ -6025,7 +6028,6 @@ case kind:                                                              \
         for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
         {
           array_ref = riter->u.a.mode[i];
-          dprint("i = %zd, array_ref = %s\n", i, caf_array_ref_str[array_ref]);
           switch (array_ref)
           {
             case CAF_ARR_REF_VECTOR:
@@ -6079,6 +6081,8 @@ case kind:                                                      \
               caf_runtime_error(unknownarrreftype, stat, NULL, 0);
               return;
           } // switch
+          dprint("i = %zd, array_ref = %s, delta = %ld\n",
+                 i, caf_array_ref_str[array_ref], delta);
           if (delta <= 0)
             return;
           if (dst != NULL)
@@ -6094,8 +6098,8 @@ case kind:                                                      \
           /* When dst is an array. */
           if (dst_rank > 0)
           {
-            /* Check that src_cur_dim is valid for dst.  Can be
-             * superceeded only by scalar data. */
+            /* Check that src_cur_dim is valid for dst. Can be superceeded
+             * only by scalar data. */
             if (src_cur_dim >= dst_rank && delta != 1)
             {
               caf_runtime_error(rankoutofrange, stat, NULL, 0);
@@ -6368,7 +6372,7 @@ PREFIX(sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
                GFC_DESCRIPTOR_RANK(src), ref_rank);
         for (i = 0; i < GFC_DESCRIPTOR_RANK(src); ++i)
         {
-          dprint("remote desc dim[%zd] = (lb = %zd, ub = %zd, stride = %zd)\n",
+          dprint("remote desc dim[%zd] = (lb=%zd, ub=%zd, stride=%zd)\n",
                  i, src->dim[i].lower_bound, src->dim[i]._ubound,
                  src->dim[i]._stride);
         }
@@ -6376,7 +6380,6 @@ PREFIX(sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
         for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
         {
           array_ref = riter->u.a.mode[i];
-          dprint("i = %zd, array_ref = %s\n", i, caf_array_ref_str[array_ref]);
           switch (array_ref)
           {
             case CAF_ARR_REF_VECTOR:
@@ -6446,6 +6449,8 @@ case kind:                                                              \
               caf_runtime_error(unknownarrreftype, src_stat, NULL, 0);
               return;
           } // switch
+          dprint("i = %zd, array_ref = %s, delta = %ld\n",
+                 i, caf_array_ref_str[array_ref], delta);
           if (delta <= 0)
             return;
           size *= (ptrdiff_t)delta;
@@ -6460,7 +6465,6 @@ case kind:                                                              \
         for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
         {
           array_ref = riter->u.a.mode[i];
-          dprint("i = %zd, array_ref = %s\n", i, caf_array_ref_str[array_ref]);
           switch (array_ref)
           {
             case CAF_ARR_REF_VECTOR:
@@ -6513,6 +6517,8 @@ case kind:                                                        \
               caf_runtime_error(unknownarrreftype, src_stat, NULL, 0);
               return;
           } // switch
+          dprint("i = %zd, array_ref = %s, delta = %ld\n",
+                 i, caf_array_ref_str[array_ref], delta);
           if (delta <= 0)
             return;
           size *= (ptrdiff_t)delta;
@@ -6665,7 +6671,8 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
           for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
           {
             array_ref = riter->u.a.mode[i];
-            dprint("i = %zd, array_ref = %s\n", i, caf_array_ref_str[array_ref]);
+            dprint("i = %zd, array_ref = %s\n",
+                   i, caf_array_ref_str[array_ref]);
             switch (array_ref)
             {
               case CAF_ARR_REF_FULL:
@@ -6805,8 +6812,7 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
                  GFC_DESCRIPTOR_RANK(src), ref_rank);
           for (i = 0; i < GFC_DESCRIPTOR_RANK(src); ++i)
           {
-            dprint("remote desc dim[%zd] = "
-                   "(lb = %zd, ub = %zd, stride = %zd)\n",
+            dprint("remote desc dim[%zd] = (lb=%zd, ub=%zd, stride=%zd)\n",
                    i, src_desc.dim[i].lower_bound, src_desc.dim[i]._ubound,
                    src_desc.dim[i]._stride);
           }
