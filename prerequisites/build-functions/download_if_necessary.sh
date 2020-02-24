@@ -22,18 +22,8 @@ download_if_necessary()
       args=("-n")
       ;;
     "git" )
-      args=("clone")
+      args=("clone" "-b" "${arg_b}")
       ;;
-    "svn" )
-       case "${arg_B:-}" in
-         "gcc")
-           args=("ls")
-           ;;
-         *)
-           args=("checkout")
-         ;;
-       esac
-       ;;
     "curl" )
       first_three_characters=$(echo "${package_url}" | cut -c1-3)
       case "${first_three_characters}" in
@@ -95,7 +85,7 @@ download_if_necessary()
     emergency "Aborting [exit 90]"
   else
 
-    if [[ "${fetch}" == "svn" || "${fetch}" == "git" ]]; then
+    if [[ "${fetch}" == "git" ]]; then
       package_source_directory="${url_tail}"
     else
       package_source_directory="${package_name}-${version_to_build}"
@@ -110,7 +100,7 @@ download_if_necessary()
     if [[ ! -z "${arg_B:-}" ]]; then
       return
     else
-      if [[ "${fetch}" == "svn" ]]; then
+      if [[ "${fetch}" == "git" ]]; then
         search_path="${download_path}/${version_to_build}"
       else
         search_path="${download_path}/${url_tail}"

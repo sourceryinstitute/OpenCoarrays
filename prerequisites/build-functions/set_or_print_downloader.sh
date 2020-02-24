@@ -17,7 +17,7 @@ set_or_print_downloader()
   fi
 
   # Choose the first available download mechanism, prioritizing first any absolute requirement
-  # (svn for gcc development branches) and second robustness:
+  # (git for gcc development branches) and second robustness:
   info "Checking available download mechanisms: ftp, wget, and curl."
   info "\${package_name}=${package_name}  \${arg_b:-\${arg_B:-}}=${arg_b:-${arg_B:-}}"
 
@@ -35,10 +35,10 @@ set_or_print_downloader()
   fi
 
   if [[ "${package_name}" == "gcc" && ! -z "${arg_b:-${arg_B:-}}" ]]; then
-    if type svn &> /dev/null; then
-      fetch=svn
+    if type git &> /dev/null; then
+      fetch=git
     else
-      tried="svn"
+      tried="git"
     fi
   else
     fetch=${gcc_prereqs_fetch}

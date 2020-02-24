@@ -23,7 +23,7 @@ else
     if [[ -z "${arg_b:-${arg_B}}" ]]; then
       gcc_url_head="https://ftpmirror.gnu.org/gcc/gcc-${version_to_build}/"
     else
-      gcc_url_head="svn://gcc.gnu.org/svn/gcc/"
+      gcc_url_head="git://gcc.gnu.org/git/"
     fi
   fi
   package_url_head=(
@@ -52,12 +52,8 @@ else
 
   # Set differing tails for GCC release downloads versus development branch checkouts
   if [[ "${package_to_build}" == 'gcc' ]]; then
-    if [[ "${fetch}" == 'svn' ]]; then
-      if [[ "${version_to_build:-}" == "trunk" ]]; then
-        gcc_tail="${version_to_build}"
-      else
-        gcc_tail="branches/${version_to_build:-}"
-      fi
+    if [[ "${fetch}" == 'git' ]]; then
+      gcc_tail="gcc.git"
     else
       gcc_tail="gcc-${version_to_build}.tar.gz"
     fi
