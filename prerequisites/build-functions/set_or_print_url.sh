@@ -53,7 +53,7 @@ else
   # Set differing tails for GCC release downloads versus development branch checkouts
   if [[ "${package_to_build}" == 'gcc' ]]; then
     if [[ "${fetch}" == 'git' ]]; then
-      gcc_tail="gcc.git"
+      gcc_tail="gcc"
     else
       gcc_tail="gcc-${version_to_build}.tar.gz"
     fi

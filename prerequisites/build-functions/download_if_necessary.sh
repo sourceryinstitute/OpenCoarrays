@@ -58,7 +58,6 @@ download_if_necessary()
       ;;
    esac
 
-
   if  [[ -f "${download_path}/${url_tail}" || -d "${download_path}/${url_tail##*branches/}" && ! -z ${url_tail##*branches/} ]]; then
     info "Found '${url_tail##*branches/}' in ${download_path}."
     info "If it resulted from an incomplete download, building ${package_name} could fail."
@@ -86,7 +85,7 @@ download_if_necessary()
   else
 
     if [[ "${fetch}" == "git" ]]; then
-      package_source_directory="${url_tail}"
+      package_source_directory="${package_name}"
     else
       package_source_directory="${package_name}-${version_to_build}"
     fi
@@ -101,7 +100,7 @@ download_if_necessary()
       return
     else
       if [[ "${fetch}" == "git" ]]; then
-        search_path="${download_path}/${version_to_build}"
+        search_path="${download_path}/${package_name}"
       else
         search_path="${download_path}/${url_tail}"
       fi
