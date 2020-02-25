@@ -5,11 +5,11 @@
 set_or_print_url()
 {
   # Verify requirements
-  [[ -n "${arg_U}" && -n "${arg_D:-${arg_p:-${arg_P:-${arg_V:-${arg_B}}}}}" ]] &&
+  [[ -n "${arg_U}" && -n "${arg_D:-${arg_p:-${arg_P:-${arg_V}}}}" ]] &&
     emergency "Please pass only one of {-B, -D, -p, -P, -U, -V} or a longer equivalent (multiple detected)."
 
   # Get package name from argument passed with  -p, -D, -P, -V, or -U
-  package_to_build="${arg_p:-${arg_D:-${arg_P:-${arg_U:-${arg_V:-${arg_B}}}}}}"
+  package_to_build="${arg_p:-${arg_D:-${arg_P:-${arg_U:-${arg_V}}}}}"
 
 if [[ -n "${arg_u:-}"  ]]; then
   # User specified a URL from which to download the package
@@ -20,10 +20,10 @@ else
   if [[ "${package_to_build}" == 'cmake' ]]; then
     major_minor="${version_to_build%.*}"
   elif [[ "${package_to_build}" == "gcc" ]]; then
-    if [[ -z "${arg_b:-${arg_B}}" ]]; then
+    if [[ -z "${arg_b}" ]]; then
       gcc_url_head="https://ftpmirror.gnu.org/gcc/gcc-${version_to_build}/"
     else
-      gcc_url_head="svn://gcc.gnu.org/svn/gcc/"
+      gcc_url_head="git://gcc.gnu.org/git/"
     fi
   fi
   package_url_head=(
@@ -52,12 +52,8 @@ else
 
   # Set differing tails for GCC release downloads versus development branch checkouts
   if [[ "${package_to_build}" == 'gcc' ]]; then
-    if [[ "${fetch}" == 'svn' ]]; then
-      if [[ "${version_to_build:-}" == "trunk" ]]; then
-        gcc_tail="${version_to_build}"
-      else
-        gcc_tail="branches/${version_to_build:-}"
-      fi
+    if [[ "${fetch}" == 'git' ]]; then
+      gcc_tail="gcc"
     else
       gcc_tail="gcc-${version_to_build}.tar.gz"
     fi

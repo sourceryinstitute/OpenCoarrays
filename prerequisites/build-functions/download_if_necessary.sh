@@ -22,18 +22,8 @@ download_if_necessary()
       args=("-n")
       ;;
     "git" )
-      args=("clone")
+      args=("clone" "-b" "${arg_b}")
       ;;
-    "svn" )
-       case "${arg_B:-}" in
-         "gcc")
-           args=("ls")
-           ;;
-         *)
-           args=("checkout")
-         ;;
-       esac
-       ;;
     "curl" )
       first_three_characters=$(echo "${package_url}" | cut -c1-3)
       case "${first_three_characters}" in
@@ -68,7 +58,6 @@ download_if_necessary()
       ;;
    esac
 
-
   if  [[ -f "${download_path}/${url_tail}" || -d "${download_path}/${url_tail##*branches/}" && ! -z ${url_tail##*branches/} ]]; then
     info "Found '${url_tail##*branches/}' in ${download_path}."
     info "If it resulted from an incomplete download, building ${package_name} could fail."
@@ -95,8 +84,8 @@ download_if_necessary()
     emergency "Aborting [exit 90]"
   else
 
-    if [[ "${fetch}" == "svn" || "${fetch}" == "git" ]]; then
-      package_source_directory="${url_tail}"
+    if [[ "${fetch}" == "git" ]]; then
+      package_source_directory="${package_name}"
     else
       package_source_directory="${package_name}-${version_to_build}"
     fi
@@ -107,22 +96,18 @@ download_if_necessary()
     pushd "${download_path}"
     "${fetch}" ${args[@]:-} "${package_url}"
     popd
-    if [[ ! -z "${arg_B:-}" ]]; then
-      return
+    if [[ "${fetch}" == "git" ]]; then
+      search_path="${download_path}/${package_name}"
     else
-      if [[ "${fetch}" == "svn" ]]; then
-        search_path="${download_path}/${version_to_build}"
-      else
-        search_path="${download_path}/${url_tail}"
-      fi
-      if [[ -f "${search_path}" || -d "${search_path}" ]]; then
-        info "Download succeeded. The ${package_name} source is in the following location:"
-        info "${search_path}"
-      else
-        info "Download failed. The ${package_name} source is not in the following, expected location:"
-        info "${search_path}"
-        emergency "Aborting. [exit 110]"
-      fi
+      search_path="${download_path}/${url_tail}"
+    fi
+    if [[ -f "${search_path}" || -d "${search_path}" ]]; then
+      info "Download succeeded. The ${package_name} source is in the following location:"
+      info "${search_path}"
+    else
+      info "Download failed. The ${package_name} source is not in the following, expected location:"
+      info "${search_path}"
+      emergency "Aborting. [exit 110]"
     fi
   fi
 }

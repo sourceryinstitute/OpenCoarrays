@@ -6,10 +6,10 @@
 set_or_print_downloader()
 {
   # Verify requirements
-  [ ! -z "${arg_D}" ] && [ ! -z "${arg_p:-${arg_P:-${arg_U:-${arg_V:-${arg_B}}}}}" ] &&
+  [ ! -z "${arg_D}" ] && [ ! -z "${arg_p:-${arg_P:-${arg_U:-${arg_V}}}}" ] &&
     emergency "Please pass only one of {-B, -D, -p, -P, -U, -V} or a longer equivalent (multiple detected)."
 
-  package_name="${arg_p:-${arg_D:-${arg_P:-${arg_U:-${arg_V:-${arg_B}}}}}}"
+  package_name="${arg_p:-${arg_D:-${arg_P:-${arg_U:-${arg_V}}}}}"
 
   if [[ "${package_name}" == "ofp" ]]; then
     "${OPENCOARRAYS_SRC_DIR}/prerequisites/install-ofp.sh" "${@}"
@@ -17,9 +17,9 @@ set_or_print_downloader()
   fi
 
   # Choose the first available download mechanism, prioritizing first any absolute requirement
-  # (svn for gcc development branches) and second robustness:
+  # (git for gcc development branches) and second robustness:
   info "Checking available download mechanisms: ftp, wget, and curl."
-  info "\${package_name}=${package_name}  \${arg_b:-\${arg_B:-}}=${arg_b:-${arg_B:-}}"
+  info "\${package_name}=${package_name}  \${arg_b:-}=${arg_b:-}"
 
   if type curl &> /dev/null; then
     gcc_prereqs_fetch=curl
@@ -34,22 +34,18 @@ set_or_print_downloader()
     tried="curl, wget, and ftp"
   fi
 
-  if [[ "${package_name}" == "gcc" && ! -z "${arg_b:-${arg_B:-}}" ]]; then
-    if type svn &> /dev/null; then
-      fetch=svn
+  if [[ "${package_name}" == "gcc" && ! -z "${arg_b}" ]]; then
+    if type git &> /dev/null; then
+      fetch=git
     else
-      tried="svn"
+      tried="git"
     fi
   else
     fetch=${gcc_prereqs_fetch}
   fi
 
   if [[ -z "${fetch:-}" ]]; then
-    if [[ -z "${arg_B:-}" ]]; then
-      warning "No available download mechanism. Options tried: ${tried}"
-    else
-      emergency "No available download mechanism. Option tried: ${tried}"
-    fi
+    emergency "No available download mechanism. Option tried: ${tried}"
   fi
 
   # If a printout of the download mechanism was requested, then print it and exit with normal status

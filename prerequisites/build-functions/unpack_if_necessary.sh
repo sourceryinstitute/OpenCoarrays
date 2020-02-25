@@ -2,8 +2,8 @@
 # shellcheck disable=SC2154
 unpack_if_necessary()
 {
-  if [[ "${fetch}" == "svn" || "${fetch}" == "git" ]]; then
-    package_source_directory="${version_to_build}"
+  if [[ "${fetch}" == "git" ]]; then
+    package_source_directory="${package_name}"
   else
     if [[ "${url_tail}" == *tar.gz || "${url_tail}" == *tar.bz2 || "${url_tail}" == *.tar.xz ]]; then
       info "Unpacking ${url_tail}."
