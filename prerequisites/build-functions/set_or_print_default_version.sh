@@ -13,7 +13,7 @@ set_or_print_default_version()
     echo "This script can build the following packages:"
   fi
   # Get package name from argument passed with -p, -V, -D, or -U
-  package_name="${arg_p:-${arg_D:-${arg_P:-${arg_U:-${arg_V:-${arg_B}}}}}}" # not needed for -l
+  package_name="${arg_p:-${arg_D:-${arg_P:-${arg_U:-${arg_V}}}}}" # not needed for -l
 
   if [[ "${package_name}" == "ofp" ]]; then
     "${OPENCOARRAYS_SRC_DIR}/prerequisites/install-ofp.sh" "${@}"

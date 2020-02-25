@@ -96,22 +96,18 @@ download_if_necessary()
     pushd "${download_path}"
     "${fetch}" ${args[@]:-} "${package_url}"
     popd
-    if [[ ! -z "${arg_B:-}" ]]; then
-      return
+    if [[ "${fetch}" == "git" ]]; then
+      search_path="${download_path}/${package_name}"
     else
-      if [[ "${fetch}" == "git" ]]; then
-        search_path="${download_path}/${package_name}"
-      else
-        search_path="${download_path}/${url_tail}"
-      fi
-      if [[ -f "${search_path}" || -d "${search_path}" ]]; then
-        info "Download succeeded. The ${package_name} source is in the following location:"
-        info "${search_path}"
-      else
-        info "Download failed. The ${package_name} source is not in the following, expected location:"
-        info "${search_path}"
-        emergency "Aborting. [exit 110]"
-      fi
+      search_path="${download_path}/${url_tail}"
+    fi
+    if [[ -f "${search_path}" || -d "${search_path}" ]]; then
+      info "Download succeeded. The ${package_name} source is in the following location:"
+      info "${search_path}"
+    else
+      info "Download failed. The ${package_name} source is not in the following, expected location:"
+      info "${search_path}"
+      emergency "Aborting. [exit 110]"
     fi
   fi
 }

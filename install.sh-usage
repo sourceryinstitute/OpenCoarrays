@@ -1,13 +1,12 @@
   -b --install-branch [arg]   Install the specified repository development branch (Examples: -b trunk or -b gcc-7-branch).
-  -B --list-branches [arg]    List the available branches in a package's repository (Currently only '-B gcc' is supported).
   -c --with-c [arg]           Use specified C compiler (Example: -c /usr/local/bin/gcc).
   -C --with-cxx [arg]         Use specified C++ compiler (Example: -C /usr/local/bin/g++).
-  -d --debug                  Enable debug mode. 
+  -d --debug                  Enable debug mode.
   -D --print-downloader [arg] Print download program for package specified in argument (Example: -D gcc).
   -e --verbose                Enable verbose mode, print script as it is executed.
   -f --with-fortran [arg]     Use specified Fortran compiler (Example: -f /usr/local/bin/gfortran).
   -h --help                   Print this page.
-  -i --install-prefix [arg]   Install package in specified path. Default="${OPENCOARRAYS_SRC_DIR}/prerequisites/installations/${package_name:-}/${version_to_build:-}" 
+  -i --install-prefix [arg]   Install package in specified path. Default="${OPENCOARRAYS_SRC_DIR}/prerequisites/installations/${package_name:-}/${version_to_build:-}"
   -I --install-version [arg]  Install package version (Example: -I 7.2.0).
   -j --num-threads [arg]      Number of threads to use when invoking make (Example: -j 8). Default="4"
   -l --list-packages          Print packages this script can install.

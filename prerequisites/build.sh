@@ -61,12 +61,12 @@ export __flag_present=1
 if [[ "${arg_l}" != "${__flag_present}" &&
       "${arg_v}" != "${__flag_present}" &&
       "${arg_h}" != "${__flag_present}" &&
-      -z "${arg_D:-${arg_p:-${arg_P:-${arg_U:-${arg_V:-${arg_B}}}}}}" ]]; then
+      -z "${arg_D:-${arg_p:-${arg_P:-${arg_U:-${arg_V}}}}}" ]]; then
   help "${__base}: Insufficient arguments. Please pass either -B, -D, -h, -l, -L, -p, -P, -U, -v, -V, or a longer equivalent."
 fi
 
 # Suppress info and debug messages if -B, -l, -P, -U, -V, -D, or their longer equivalent is present:
- [[ "${arg_l}" == "${__flag_present}" || ! -z "${arg_P:-${arg_U:-${arg_V:-${arg_D:-${arg_B}}}}}" ]] && suppress_info_debug_messages
+ [[ "${arg_l}" == "${__flag_present}" || ! -z "${arg_P:-${arg_U:-${arg_V:-${arg_D}}}}" ]] && suppress_info_debug_messages
 
 [ -z "${LOG_LEVEL:-}" ] && emergency "Cannot continue without LOG_LEVEL. "
 
@@ -88,7 +88,6 @@ info "__usage: ${__usage}"
 info "LOG_LEVEL: ${LOG_LEVEL}"
 
 info "-b (--install-branch):   ${arg_b} "
-info "-B (--list-branches):    ${arg_B} "
 info "-c (--with-c):           ${arg_c} "
 info "-C (--with-cxx):         ${arg_C} "
 info "-d (--debug):            ${arg_d} "
@@ -115,13 +114,11 @@ info "-y (--yes-to-all):       ${arg_y} "
 info "-Z (--bootstrap):        ${arg_Z} "
 }
 
-if [[ -z "${arg_B}" ]]; then
-  # shellcheck source=./build-functions/set_or_print_default_version.sh
-  source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/set_or_print_default_version.sh"
-  # shellcheck disable=SC2119
-  set_or_print_default_version
-  export version_to_build="${arg_I:-${arg_b:-${default_version}}}"
-fi
+# shellcheck source=./build-functions/set_or_print_default_version.sh
+source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/set_or_print_default_version.sh"
+# shellcheck disable=SC2119
+set_or_print_default_version
+export version_to_build="${arg_I:-${arg_b:-${default_version}}}"
 
 # shellcheck source=./build-functions/set_or_print_downloader.sh
 source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/set_or_print_downloader.sh"
@@ -135,9 +132,7 @@ set_or_print_url
 # shellcheck source=./build-functions/set_or_print_installation_path.sh
 source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/set_or_print_installation_path.sh"
 
-if [[ -z "${arg_B}" ]]; then
-  set_or_print_installation_path
-fi
+set_or_print_installation_path
 
 # shellcheck source=./build-functions/download_if_necessary.sh
 source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/download_if_necessary.sh"
@@ -159,16 +154,14 @@ else
    export bootstrap_build="bootstrap"
 fi
 
-if [[ -z "${arg_B}" ]]; then
-  # shellcheck source=./build-functions/unpack_if_necessary.sh
-  source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/unpack_if_necessary.sh"
-  unpack_if_necessary
+# shellcheck source=./build-functions/unpack_if_necessary.sh
+source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/unpack_if_necessary.sh"
+unpack_if_necessary
 
-  # shellcheck source=./build-functions/set_compilers.sh
-  source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/set_compilers.sh"
-  set_compilers
+# shellcheck source=./build-functions/set_compilers.sh
+source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/set_compilers.sh"
+set_compilers
 
-  # shellcheck source=./build-functions/build_and_install.sh
-  source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/build_and_install.sh"
-  build_and_install
-fi
+# shellcheck source=./build-functions/build_and_install.sh
+source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/build_and_install.sh"
+build_and_install
