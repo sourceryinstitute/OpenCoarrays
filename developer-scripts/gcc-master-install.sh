@@ -14,9 +14,9 @@ function usage()
   echo "Usage:"
   echo ""
   echo "  cd <opencoarrays-source-directory>"
-  echo "  ./developer_scripts/gcc-trunk-install.sh [--patch-file <patch-file-name>] [--packages-root <installation-path>]"
+  echo "  ./developer_scripts/gcc-master-install.sh [--patch-file <patch-file-name>] [--packages-root <installation-path>]"
   echo "or"
-  echo "  ./developer_scripts/gcc-trunk-install.sh [-p <patch-file-name>] [-r <installation-path>]"
+  echo "  ./developer_scripts/gcc-master-install.sh [-p <patch-file-name>] [-r <installation-path>]"
   echo ""
   echo " Square brackets surround optional arguments."
   exit 0
@@ -116,14 +116,11 @@ function install_if_missing()
   else # install package
 
     printf "no\n"
-    echo "sudo ${package_manager} install ${package}"
-    sudo "${package_manager}" install ${package}
+    echo "${package_manager} install ${package}"
+    "${package_manager}" install ${package}
 
   fi
 }
-
-# Install subversion to check out the GCC trunk if not already in the PATH:
-install_if_missing subversion svn
 
 # Install released versions of the GNU compilers if not already in the PATH:
 install_if_missing gfortran
@@ -136,30 +133,29 @@ install_if_missing flex
 
 ### Install the prerequisites that must be built from source ###
 
-# Download and build the GCC trunk:
-echo "Downloading the GCC trunk."
-./install.sh --only-download --package gcc --install-branch trunk --yes-to-all
+# Download and build the GCC master:
+echo "Downloading the GCC master."
+./install.sh --only-download --package gcc --install-branch master --yes-to-all
 
 if [[ ! -z "${absolute_path:-}" ]]; then
-  # Patch the GCC trunk and rebuild
+  # Patch the GCC master and rebuild
   echo "Patching the GCC source using ${absolute_path}."
-  pushd prerequisites/downloads/trunk
+  pushd prerequisites/downloads/master
     patch -p0 < "${absolute_path}"
   popd
   export patched="patched"
 fi
 
 
-export GCC_install_prefix=${packages_root}/gnu/trunk
-# Build the patched GCC trunk
+export GCC_install_prefix=${packages_root}/gnu/master
+# Build the patched GCC master
 
 echo "Rebuilding the patched GCC source."
 ./install.sh \
   --package gcc \
-  --install-branch trunk \
+  --install-branch master \
   --yes-to-all \
-  --num-threads 4 \
-  --disable-bootstrap \
+  --num-threads 8 \
   --install-prefix "${GCC_install_prefix}"
 
 # Verify that GCC installed in the expected path
@@ -188,17 +184,20 @@ function prepend() {
 
 if type "${GCC_install_prefix}"/bin/gfortran; then
   prepend "${GCC_install_prefix}/bin/" PATH
+  if [[ -z "${LD_LIBRARY_PATH:-}" ]]; then
+    export LD_LIBRARY_PATH=""
+  fi
   prepend "${GCC_install_prefix}/lib64/" LD_LIBRARY_PATH
 else
   echo "GCC is not installed in the expected location ${GCC_install_prefix}"
 fi
 
 echo "Building MPICH with the ${patched:-} compilers."
-export mpich_install_prefix="${packages_root}/mpich/3.2/gnu/trunk"
+export mpich_install_prefix="${packages_root}/mpich/3.2/gnu/master"
 
 ./install.sh \
   --package mpich \
-  --num-threads 4 \
+  --num-threads 8 \
   --yes-to-all \
   --with-fortran "${GCC_install_prefix}/bin/gfortran" \
   --with-c "${GCC_install_prefix}/bin/gcc" \
@@ -216,10 +215,10 @@ fi
 # Build OpenCoarrays with the just-built compilers and the just-built MPICH
 echo "Building OpenCoarrays."
 export opencoarrays_version=$(./install.sh -V opencoarrays)
-export opencoarrays_install_prefix="${packages_root}/opencoarrays/${opencoarrays_version}/gnu/trunk"
+export opencoarrays_install_prefix="${packages_root}/opencoarrays/${opencoarrays_version}/gnu/master"
 
 ./install.sh \
-  --num-threads 4 \
+  --num-threads 8 \
   --yes-to-all \
   --with-mpi "$mpich_install_prefix" \
   --install-prefix "$opencoarrays_install_prefix"
