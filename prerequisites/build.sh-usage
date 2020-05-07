@@ -1,5 +1,4 @@
-  -b --install-branch [arg]   Install the specified repository development branch.
-  -B --list-branches [arg]    List the available branches in the specified package's repository.
+  -b --install-branch [arg]   Install the specified repository development branch (Examples: -b master).
   -c --with-c [arg]           Use the specified C compiler. Default="gcc"
   -C --with-cxx [arg]         Use the specified C++ compiler. Default="g++"
   -d --debug                  Enable debug mode.

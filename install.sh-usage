@@ -1,4 +1,4 @@
-  -b --install-branch [arg]   Install the specified repository development branch (Examples: -b trunk or -b gcc-7-branch).
+  -b --install-branch [arg]   Install the specified repository development branch (Examples: -b master).
   -c --with-c [arg]           Use specified C compiler (Example: -c /usr/local/bin/gcc).
   -C --with-cxx [arg]         Use specified C++ compiler (Example: -C /usr/local/bin/g++).
   -d --debug                  Enable debug mode.
