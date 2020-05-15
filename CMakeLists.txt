@@ -543,17 +543,17 @@ function(caf_compile_executable target main_depend)
   foreach(d ${DirDefs})
     list(APPEND localDefs "-D${d}")
   endforeach()
-    add_custom_command(OUTPUT "${target}"
-      COMMAND "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf"
-                 ${includes} ${localDefs} ${config_Fortran_flags}
-                 -o "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target}"
-                 "${CMAKE_CURRENT_SOURCE_DIR}/${main_depend}"
-		 "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libopencoarrays_test_utilities.a"
-		 "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libopencoarrays_mod.a"
-		 ${ARGN}
-      DEPENDS "${main_depend}" ${ARGN} caf_mpi_static opencoarrays_test_utilities opencoarrays_mod
-      VERBATIM
-      )
+  add_custom_command(OUTPUT "${target}"
+    COMMAND "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf"
+            ${includes} ${localDefs} ${config_Fortran_flags}
+            -o "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/${main_depend}"
+            $<TARGET_FILE:opencoarrays_test_utilities>
+            $<TARGET_FILE:opencoarrays_mod>
+            ${ARGN}
+    DEPENDS "${main_depend}" ${ARGN} caf_mpi_static opencoarrays_test_utilities opencoarrays_mod
+    VERBATIM
+    )
   add_custom_target("build_${target}" ALL
     DEPENDS "${target}")
 endfunction(caf_compile_executable)
