@@ -314,7 +314,7 @@ configure_file("${CMAKE_SOURCE_DIR}/src/extensions/caf.in" "${CMAKE_BINARY_DIR}/
   @ONLY)
 
 
-# List of carrun.in variables needing configuration:
+# List of cafrun.in variables needing configuration:
 #
 # @CAF_VERSION@ @MPIEXEC@ @MPIEXEC_NUMPROC_FLAG@ @MPIEXEC_PREFLAGS@ @MPIEXEC_POSTFLAGS@
 # @HAVE_FAILED_IMG@
