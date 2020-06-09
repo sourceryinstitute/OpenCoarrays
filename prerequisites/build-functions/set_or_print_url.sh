@@ -46,7 +46,7 @@ else
 
   # Set differing tails for GCC release downloads versus development branch checkouts
   package_url_tail=(
-    "gcc;gcc.git"
+    "gcc;gcc"
     "wget;wget-${version_to_build-}.tar.gz"
     "m4;m4-${version_to_build-}.tar.bz2"
     "pkg-config;pkg-config-${version_to_build-}.tar.gz"

@@ -58,7 +58,7 @@ download_if_necessary()
       ;;
    esac
 
-  if  [[ -f "${download_path}/${url_tail}" || -d "${download_path}/${url_tail##*branches/}" && ! -z ${url_tail##*branches/} ]]; then
+  if  [[ -f "${download_path}/${url_tail}" || -d "${download_path}/${url_tail}" ]]; then
     info "Found '${url_tail##*branches/}' in ${download_path}."
     info "If it resulted from an incomplete download, building ${package_name} could fail."
     if [[ "${arg_y}" == "${__flag_present}" ]]; then

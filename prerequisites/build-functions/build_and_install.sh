@@ -79,25 +79,30 @@ build_and_install()
     # Warn about header prerequisite on macOS Mojave or subsequent versions
     if [[ $(uname) == "Darwin" ]]; then
       export kernel=$(uname -r)
-      export Mojave="18.7.0"
+      export Mojave="18.0.0"
+      export Catalina="19.0.0"
       if [ $(version $kernel) -ge $(version $Mojave) ]; then
-        info ""
-        info "______________________________________________________________________________"
-        info "Detected Darwin $kernel >= $Mojave (Mojave).  If $package_to_build build fails"
-        info "due to a missing header (*.h) file, please try something like the following bash command:"
-        info "open /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg"
-        info "Follow the prompts to install the missing headers. Then restart this $this_script."
-        info "See https://bit.ly/build-gcc-on-mojave for more details."
-        if [[ "${arg_y}" == "${__flag_present}" ]]; then
-          info "-y or --yes-to-all flag present. Proceeding with non-interactive build."
+        if [ $(version $kernel) -ge $(version $Catalina) ]; then
+          export with_sysroot="--with-sysroot=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
         else
-          info "Would you like to proceed anyway? (Y/n)"
-          read -r proceed
-          if [[ "${proceed}" == "n" || "${proceed}" == "N" || "${proceed}" == "no"  ]]; then
-            info "n"
-            emergency "Aborting. [exit 80]"
+          info ""
+          info "______________________________________________________________________________"
+          info "Detected Darwin $kernel (Mojave).  If $package_to_build build fails due to a"
+          info "missing header (*.h) file, please try something like the following bash command:"
+          info "open /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg"
+          info "Follow the prompts to install the missing headers. Then restart this $this_script."
+          info "See https://bit.ly/build-gcc-on-mojave for more details."
+          if [[ "${arg_y}" == "${__flag_present}" ]]; then
+            info "-y or --yes-to-all flag present. Proceeding with non-interactive build."
           else
-            info "y"
+            info "Would you like to proceed anyway? (Y/n)"
+            read -r proceed
+            if [[ "${proceed}" == "n" || "${proceed}" == "N" || "${proceed}" == "no"  ]]; then
+              info "n"
+              emergency "Aborting. [exit 80]"
+            else
+              info "y"
+            fi
           fi
         fi
       fi
@@ -127,8 +132,8 @@ build_and_install()
     info "popd"
     popd || emergency "build_and_install.sh: popd failed"
     info "Configuring gcc/g++/gfortran builds with the following command:"
-    info "${download_path}/${package_source_directory}/configure --prefix=${install_path} --enable-languages=c,c++,fortran,lto --disable-multilib --disable-werror ${bootstrap_configure}"
-    "${download_path}/${package_source_directory}/configure" --prefix="${install_path}" --enable-languages=c,c++,fortran,lto --disable-multilib --disable-werror "${bootstrap_configure}"
+    info "${download_path}/${package_source_directory}/configure --prefix=${install_path} --enable-languages=c,c++,fortran,lto --disable-multilib --disable-werror ${bootstrap_configure} ${with_sysroot:-}"
+    "${download_path}/${package_source_directory}/configure" --prefix="${install_path}" --enable-languages=c,c++,fortran,lto --disable-multilib --disable-werror "${bootstrap_configure}" "${with_sysroot:-}"
     info "Building with the following command: make -j ${num_threads} ${bootstrap_build}"
     make -j ${num_threads} ${bootstrap_build:-}
     if [[ -n "${SUDO:-}" ]]; then
