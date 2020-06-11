@@ -20,6 +20,10 @@ set_or_print_default_version()
     exit 0
   fi
 
+  if [[ $(uname) == "Darwin" ]]; then
+    apple_flex_version="2.5.35"
+  fi
+
   [ "${package_name}" == "opencoarrays" ] &&
     emergency "Please use this script with a previously downloaded opencoarrays source archive. This script does not download opencoarrays "
   # This is a bash 3 hack standing in for a bash 4 hash (bash 3 is the lowest common
@@ -27,10 +31,10 @@ set_or_print_default_version()
   # See http://stackoverflow.com/questions/1494178/how-to-define-hash-tables-in-bash
   package_version=(
     "cmake:3.10.0"
-    "gcc:8.3.0"
+    "gcc:10.1.0"
     "mpich:3.2"
     "wget:1.16.3"
-    "flex:2.6.0"
+    "flex:${apple_flex_version:-2.6.0}"
     "bison:3.0.4"
     "pkg-config:0.28"
     "make:4.1"

@@ -5,8 +5,8 @@
 # -- Verify whether an OpenCoarrays prerequisite meets the required minimum version number.
 #
 # OpenCoarrays is distributed under the OSI-approved BSD 3-clause License:
-# Copyright (c) 2015-2016, Sourcery, Inc.
-# Copyright (c) 2015-2016, Sourcery Institute
+# Copyright (c) 2015-2020, Sourcery, Inc.
+# Copyright (c) 2015-2020, Sourcery Institute
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification,
@@ -44,7 +44,7 @@ this_script=$(basename "$0")
 usage()
 {
     echo ""
-    echo " $this_script - Bash script for verifyin minimum version numbers for OpenCoarrays prerequisites"
+    echo " $this_script - Bash script for verifying minimum version numbers for OpenCoarrays prerequisites"
     echo ""
     echo " Usage (optional arguments in square brackets): "
     echo "      $this_script [<option>]"
@@ -104,21 +104,28 @@ if [[ "$verbose" == "--verbose" ]]; then
   echo "$package_version_header"
 fi
 
-# Extract the text after the final space:
-version=${package_version_header##* }
-major=${version%%.*}
-minor_patch=${version#*.}
-minor=${minor_patch%%.*}
-patch=${version##*.}
-if [[ "$verbose" == "--verbose" ]]; then
-  echo "$version = $major . $minor . $patch"
+before_first_dot="${package_version_header%%.*}"
+major="${before_first_dot##* }" # grab text after final space in remaining string
+
+after_first_dot="${package_version_header#*.}"
+minor="${after_first_dot%%.*}"
+
+after_final_dot="${package_version_header##*.}" # grab text after final dot
+if [[ "$after_final_dot" == "$after_first_dot" ]]; then
+  patch=""
+else
+  patch="${after_final_dot%% *}"
 fi
 
-# Extract the text after the final space:
+if [[ "$verbose" == "--verbose" ]]; then
+  echo "$major . $minor . $patch"
+fi
+
 min_major=${minimum_version%%.*}
 min_minor_patch=${minimum_version#*.}
 min_minor=${min_minor_patch%%.*}
 min_patch=${minimum_version##*.}
+
 if [[ "$verbose" == "--verbose" ]]; then
   echo "$minimum_version = $min_major . $min_minor . $min_patch"
 fi

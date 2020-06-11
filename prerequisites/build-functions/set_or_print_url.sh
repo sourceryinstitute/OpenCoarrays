@@ -19,15 +19,9 @@ else
 
   if [[ "${package_to_build}" == 'cmake' ]]; then
     major_minor="${version_to_build%.*}"
-  elif [[ "${package_to_build}" == "gcc" ]]; then
-    if [[ -z "${arg_b}" ]]; then
-      gcc_url_head="https://ftpmirror.gnu.org/gcc/gcc-${version_to_build}/"
-    else
-      gcc_url_head="git://gcc.gnu.org/git/"
-    fi
   fi
   package_url_head=(
-    "gcc;${gcc_url_head-}"
+    "gcc;https://gcc.gnu.org/git/"
     "wget;https://ftpmirror.gnu.org/gnu/wget/"
     "m4;https://ftpmirror.gnu.org/gnu/m4/"
     "pkg-config;https://pkgconfig.freedesktop.org/releases/"
@@ -51,15 +45,8 @@ else
   done
 
   # Set differing tails for GCC release downloads versus development branch checkouts
-  if [[ "${package_to_build}" == 'gcc' ]]; then
-    if [[ "${fetch}" == 'git' ]]; then
-      gcc_tail="gcc"
-    else
-      gcc_tail="gcc-${version_to_build}.tar.gz"
-    fi
-  fi
   package_url_tail=(
-    "gcc;${gcc_tail-}"
+    "gcc;gcc"
     "wget;wget-${version_to_build-}.tar.gz"
     "m4;m4-${version_to_build-}.tar.bz2"
     "pkg-config;pkg-config-${version_to_build-}.tar.gz"

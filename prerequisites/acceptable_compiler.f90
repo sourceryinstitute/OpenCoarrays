@@ -33,7 +33,7 @@
 ! POSSIBILITY OF SUCH DAMAGE.
 
 program main
-  !! input: acceptable compiler version the form major.minor.patch
+  !! input: acceptable compiler version in the form major.minor.patch
   !! output:
   !!   .true. if compiler version >= acceptable version
   !!   .false. otherwise
@@ -47,35 +47,40 @@ program main
   call get_command_argument(first_argument,acceptable_version,status=stat)
   call validate_command_line( stat )
 
-  associate( compiler_version=> compiler_version() )
-    associate(major_version=>major(compiler_version), acceptable_major=>major(acceptable_version))
-      if ( major_version > acceptable_major ) then
-        print *,.true.
-      else if ( major_version == acceptable_major ) then
-        associate(minor_version=>minor(compiler_version), acceptable_minor=>minor(acceptable_version))
-          if ( minor_version > acceptable_minor ) then
-            print *,.true.
-          else if ( minor_version == acceptable_minor ) then
-            associate(patch_version=>patch(compiler_version), acceptable_patch=>patch(acceptable_version))
-              if ( patch_version >= acceptable_patch ) then
-                print *,.true.
-              else
-                print *,.false.
-              end if
-            end associate
-          else
-            print *,.false.
-          end if
-        end associate
-      else
-        print *,.false.
-      end if
-    end associate
-  end associate
+  print *, meets_minimum( acceptable_version )
 
 contains
 
-  subroutine validate_command_line( command_line_status )
+  pure function meets_minimum( required_version ) result( acceptable)
+    character(len=*), intent(in) :: required_version
+    logical acceptable
+
+    acceptable = .false. ! default result
+
+    associate( actual_version => compiler_version() )
+      associate(major_version=>major(actual_version), acceptable_major=>major(required_version))
+        if (major_version < acceptable_major) return
+        if (major_version > acceptable_major) then
+          acceptable = .true.
+          return
+        end if
+        associate(minor_version=>minor(actual_version), acceptable_minor=>minor(required_version))
+          if (minor_version < acceptable_minor) return
+          if (minor_version > acceptable_minor) then
+            acceptable = .true.
+            return
+          end if
+          associate(patch_version=>patch(actual_version), acceptable_patch=>patch(required_version))
+            if (patch_version < acceptable_patch) return
+            acceptable = .true.
+          end associate
+        end associate
+      end associate
+    end associate
+
+  end function
+
+  pure subroutine validate_command_line( command_line_status )
     integer, intent(in) :: command_line_status
     select case(command_line_status)
       case(-1)
@@ -118,22 +123,23 @@ contains
   end function
 
   pure function patch(version_string) result(patch_value)
+    use iso_fortran_env, only : iostat_end
     character(len=*), intent(in) :: version_string
-    integer patch_value
+    integer patch_value, io_stat
     character(len=:), allocatable :: trailing_digits
 
     associate( first_dot => scan(version_string, '.') )
       associate( second_dot => first_dot + scan(version_string(first_dot+1:), '.') )
-        associate( first_non_digit=> second_dot + first_printable_non_digit(version_string(second_dot+1:)) )
-          trailing_digits = version_string( second_dot+1 : first_non_digit-1 )
-          read(trailing_digits,*) patch_value
+        associate( next_non_digit=> second_dot + next_printable_non_digit(version_string(second_dot+1:)) )
+          trailing_digits = version_string( second_dot+1 : next_non_digit-1 )
+          read(trailing_digits, * , iostat=io_stat) patch_value
         end associate
       end associate
     end associate
 
   end function
 
-  pure function first_printable_non_digit( string ) result(location)
+  pure function next_printable_non_digit( string ) result(location)
     character(len=*), intent(in) :: string
     integer i, location
     integer, parameter :: ASCII_non_digit(*)=[(i,i=32,47),(i,i=58,126)]
@@ -141,6 +147,7 @@ contains
     character(len=size(non_digit)) non_digit_string
     write(non_digit_string,'(85a)') non_digit
     location = scan(string,non_digit_string)
+    if (location==0) location=len(string)+1
   end function
 
 end program
