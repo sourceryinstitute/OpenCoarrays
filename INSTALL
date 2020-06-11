@@ -11,16 +11,14 @@ Developer/quickstart installation guide
 How to build OpenCoarrays for the very impatient
 ------------------------------------------------
 
-    mkdir opencoarrays-build
-    cd opencoarrays-build
-    export FC=/path/to/gfortran
-    export CC=/path/to/gcc
-    cmake /path/to/OpenCoarrays/source \
-      -DCMAKE_INSTALL_PREFIX=/path/to/desired/installation/location
+    git clone https://github.com/sourceryinstitute/OpenCoarrays
+    cd OpenCoarrays
+    mkdir build
+    cd build
+    cmake ..
     make
     make test # optional; verify build works
-    make install
-
+    sudo make install
 
 Intended audience
 -----------------
