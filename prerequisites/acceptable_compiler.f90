@@ -33,7 +33,7 @@
 ! POSSIBILITY OF SUCH DAMAGE.
 
 program main
-  !! input: acceptable compiler version the form major.minor.patch
+  !! input: acceptable compiler version in the form major.minor.patch
   !! output:
   !!   .true. if compiler version >= acceptable version
   !!   .false. otherwise
@@ -47,41 +47,40 @@ program main
   call get_command_argument(first_argument,acceptable_version,status=stat)
   call validate_command_line( stat )
 
-  print *, patch_meets_minimum( acceptable_version )
+  print *, meets_minimum( acceptable_version )
 
 contains
 
-  pure function patch_meets_minimum( required_version ) result( is_acceptable)
+  pure function meets_minimum( required_version ) result( acceptable)
     character(len=*), intent(in) :: required_version
-    logical is_acceptable
+    logical acceptable
 
-    is_acceptable = .false. ! default result
+    acceptable = .false. ! default result
 
     associate( actual_version => compiler_version() )
       associate(major_version=>major(actual_version), acceptable_major=>major(required_version))
         if (major_version < acceptable_major) return
         if (major_version > acceptable_major) then
-          is_acceptable = .true.
+          acceptable = .true.
           return
         end if
         associate(minor_version=>minor(actual_version), acceptable_minor=>minor(required_version))
           if (minor_version < acceptable_minor) return
           if (minor_version > acceptable_minor) then
-            is_acceptable = .true.
+            acceptable = .true.
             return
           end if
           associate(patch_version=>patch(actual_version), acceptable_patch=>patch(required_version))
             if (patch_version < acceptable_patch) return
-            is_acceptable = .true.
+            acceptable = .true.
           end associate
         end associate
       end associate
     end associate
 
-
   end function
 
-  subroutine validate_command_line( command_line_status )
+  pure subroutine validate_command_line( command_line_status )
     integer, intent(in) :: command_line_status
     select case(command_line_status)
       case(-1)
