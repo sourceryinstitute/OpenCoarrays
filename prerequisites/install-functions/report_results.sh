@@ -143,10 +143,10 @@ report_results()
     else
        setup_csh_location=${PWD}
     fi
-    echo "*** To set up your environment for using caf and cafrun, please   ***"
-    echo "*** source the installed setup.sh file in a bash shell or source  ***"
-    echo "*** setup.csh in a C-shell or add one of the following statements ***"
-    echo "*** to your login file:                                           ***"
+    echo "*** To set up your environment for using caf and cafrun, please ***"
+    echo "*** source the installed setup.sh file in bash or Z shell or    ***"
+    echo "*** source setup.csh in a C-shell or add one of the following   ***"
+    echo "*** statements to your login file:                              ***"
     echo ""
     echo " source ${setup_sh_location%/}/setup.sh"
     echo " source ${setup_csh_location%/}/setup.csh"
