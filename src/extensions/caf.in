@@ -7,8 +7,7 @@
 # Invokes the chosen Fortran compiler with the received command-line
 # arguments.
 #
-# Copyright (c) 2015-2018, Sourcery Institute
-# Copyright (c) 2015-2018, Sourcery, Inc.
+# Copyright (c) 2015-2020, Sourcery Institute
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -299,8 +298,7 @@ fi
 if [[ ${1} == -[vV] || ${1} == '--version' ]]; then
   echo ""
   echo "OpenCoarrays Coarray Fortran Compiler Wrapper (caf version ${caf_version})"
-  echo "Copyright (C) 2015-2018 Sourcery Institute"
-  echo "Copyright (C) 2015-2018 Sourcery, Inc."
+  echo "Copyright (C) 2015-2020 Sourcery Institute"
   echo ""
   echo "OpenCoarrays comes with NO WARRANTY, to the extent permitted by law."
   echo "You may redistribute copies of OpenCoarrays under the terms of the"
