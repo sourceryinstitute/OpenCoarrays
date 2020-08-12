@@ -429,6 +429,35 @@ caf_runtime_error (const char *message, ...)
   exit(EXIT_FAILURE);
 }
 
+/* Error handling is similar everytime. Keep in sync with single.c, too. */
+static void
+caf_internal_error (const char *msg, int *stat, char *errmsg,
+		    size_t errmsg_len, ...)
+{
+  va_list args;
+  va_start (args, errmsg_len);
+  if (stat)
+    {
+      *stat = 1;
+      if (errmsg_len > 0)
+	{
+	  int len = snprintf (errmsg, errmsg_len, msg, args);
+	  if (len >= 0 && errmsg_len > (size_t) len)
+	    memset (&errmsg[len], ' ', errmsg_len - len);
+	}
+      va_end (args);
+      return;
+    }
+  else
+  {
+    fprintf(stderr, "Fortran runtime error on image %d: ", caf_this_image);
+    vfprintf(stderr, msg, args);
+    fprintf(stderr, "\n");
+  }
+  va_end (args);
+  exit(EXIT_FAILURE);
+}
+
 /* Forward declaration of the feature unsupported message for failed images
  * functions. */
 static void
@@ -4705,7 +4734,7 @@ case kind:                                                              \
                 KINDCASE(16, __int128);
 #endif
                 default:
-                  caf_runtime_error(vecrefunknownkind, stat, NULL, 0);
+                  caf_internal_error(vecrefunknownkind, stat, NULL, 0);
                   return;
               }
 #undef KINDCASE
@@ -4751,7 +4780,7 @@ case kind:                                                              \
                * in a dimension. */
               break;
             default:
-              caf_runtime_error(unknownarrreftype, stat, NULL, 0);
+              caf_internal_error(unknownarrreftype, stat, NULL, 0);
               return;
           }
           dprint("i = %zd, array_ref = %s, delta = %ld\n", i,
@@ -4763,7 +4792,7 @@ case kind:                                                              \
           if (delta > 1 && dst_rank == 0)
           {
             /* No, an array is required, but not provided. */
-            caf_runtime_error(extentoutofrange, stat, NULL, 0);
+            caf_internal_error(extentoutofrange, stat, NULL, 0);
             return;
           }
           /* When dst is an array. */
@@ -4773,7 +4802,7 @@ case kind:                                                              \
              * only by scalar data. */
             if (dst_cur_dim >= dst_rank && delta != 1)
             {
-              caf_runtime_error(rankoutofrange, stat, NULL, 0);
+              caf_internal_error(rankoutofrange, stat, NULL, 0);
               return;
             }
             /* Do further checks, when the source is not scalar. */
@@ -4811,7 +4840,7 @@ case kind:                                                              \
                 }
                 else
                 {
-                  caf_runtime_error(doublearrayref, stat, NULL, 0);
+                  caf_internal_error(doublearrayref, stat, NULL, 0);
                   return;
                 }
               }
@@ -4826,7 +4855,7 @@ case kind:                                                              \
                 /* Check whether dst is reallocatable. */
                 if (unlikely(!dst_reallocatable))
                 {
-                  caf_runtime_error(nonallocextentmismatch, stat,
+                  caf_internal_error(nonallocextentmismatch, stat,
                                     NULL, 0, delta,
                                     GFC_DESCRIPTOR_EXTENT(dst, dst_cur_dim));
                   return;
@@ -4835,7 +4864,7 @@ case kind:                                                              \
                  * which is not allowed. */
                 else if (!dst_reallocatable && extent_mismatch)
                 {
-                  caf_runtime_error(extentoutofrange, stat, NULL, 0);
+                  caf_internal_error(extentoutofrange, stat, NULL, 0);
                   return;
                 }
                 realloc_needed = true;
@@ -4893,7 +4922,7 @@ case kind:                                                      \
                 KINDCASE(16, __int128);
 #endif
                 default:
-                  caf_runtime_error(vecrefunknownkind, stat, NULL, 0);
+                  caf_internal_error(vecrefunknownkind, stat, NULL, 0);
                   return;
               }
 #undef KINDCASE
@@ -4924,7 +4953,7 @@ case kind:                                                      \
                * not occur here. */
             case CAF_ARR_REF_OPEN_START:
             default:
-              caf_runtime_error(unknownarrreftype, stat, NULL, 0);
+              caf_internal_error(unknownarrreftype, stat, NULL, 0);
               return;
           }
           dprint("i = %zd, array_ref = %s, delta = %ld\n",
@@ -4936,7 +4965,7 @@ case kind:                                                      \
           if (delta > 1 && dst_rank == 0)
           {
             /* No, an array is required, but not provided. */
-            caf_runtime_error(extentoutofrange, stat, NULL, 0);
+            caf_internal_error(extentoutofrange, stat, NULL, 0);
             return;
           }
           /* When dst is an array. */
@@ -4946,7 +4975,7 @@ case kind:                                                      \
              * only by scalar data. */
             if (dst_cur_dim >= dst_rank && delta != 1)
             {
-              caf_runtime_error(rankoutofrange, stat, NULL, 0);
+              caf_internal_error(rankoutofrange, stat, NULL, 0);
               return;
             }
             /* Do further checks, when the source is not scalar. */
@@ -4967,7 +4996,7 @@ case kind:                                                      \
                 }
                 else
                 {
-                  caf_runtime_error(doublearrayref, stat, NULL, 0);
+                  caf_internal_error(doublearrayref, stat, NULL, 0);
                   return;
                 }
               }
@@ -4982,7 +5011,7 @@ case kind:                                                      \
                 /* Check whether dst is reallocatable. */
                 if (unlikely(!dst_reallocatable))
                 {
-                  caf_runtime_error(nonallocextentmismatch, stat,
+                  caf_internal_error(nonallocextentmismatch, stat,
                                     NULL, 0, delta,
                                     GFC_DESCRIPTOR_EXTENT(dst, dst_cur_dim));
                   return;
@@ -4991,7 +5020,7 @@ case kind:                                                      \
                  * which is not allowed. */
                 else if (!dst_reallocatable && extent_mismatch)
                 {
-                  caf_runtime_error(extentoutofrange, stat, NULL, 0);
+                  caf_internal_error(extentoutofrange, stat, NULL, 0);
                   return;
                 }
                 realloc_needed = true;
@@ -5025,7 +5054,7 @@ case kind:                                                      \
         }
         break;
       default:
-        caf_runtime_error(unknownreftype, stat, NULL, 0);
+        caf_internal_error(unknownreftype, stat, NULL, 0);
         return;
     }
     src_size = riter->item_size;
@@ -5053,7 +5082,7 @@ case kind:                                                      \
     dst->base_addr = malloc(size * GFC_DESCRIPTOR_SIZE(dst));
     if (unlikely(dst->base_addr == NULL))
     {
-      caf_runtime_error(cannotallocdst, stat, size * GFC_DESCRIPTOR_SIZE(dst));
+      caf_internal_error(cannotallocdst, stat, NULL, 0, size * GFC_DESCRIPTOR_SIZE(dst));
       return;
     }
   }
@@ -5912,7 +5941,7 @@ case kind:                                                              \
                 KINDCASE(16, __int128);
 #endif
                 default:
-                  caf_runtime_error(vecrefunknownkind, stat, NULL, 0);
+                  caf_internal_error(vecrefunknownkind, stat, NULL, 0);
                   return;
               }
 #undef KINDCASE
@@ -5958,7 +5987,7 @@ case kind:                                                              \
                * a dimension. */
               break;
             default:
-              caf_runtime_error(unknownarrreftype, stat, NULL, 0);
+              caf_internal_error(unknownarrreftype, stat, NULL, 0);
               return;
           } // switch
           dprint("i = %zd, array_ref = %s, delta = %ld\n",
@@ -5972,7 +6001,7 @@ case kind:                                                              \
           if (delta > 1 && dst_rank == 0)
           {
             /* No, an array is required, but not provided. */
-            caf_runtime_error(extentoutofrange, stat, NULL, 0);
+            caf_internal_error(extentoutofrange, stat, NULL, 0);
             return;
           }
           /* When dst is an array. */
@@ -5982,7 +6011,7 @@ case kind:                                                              \
              * only by scalar data. */
             if (src_cur_dim >= dst_rank && delta != 1)
             {
-              caf_runtime_error(rankoutofrange, stat, NULL, 0);
+              caf_internal_error(rankoutofrange, stat, NULL, 0);
               return;
             }
             /* Do further checks, when the source is not scalar. */
@@ -5999,7 +6028,7 @@ case kind:                                                              \
                 /* Check whether dst is reallocatable. */
                 if (unlikely(!dst_reallocatable))
                 {
-                  caf_runtime_error(nonallocextentmismatch, stat,
+                  caf_internal_error(nonallocextentmismatch, stat,
                                     NULL, 0, delta,
                                     GFC_DESCRIPTOR_EXTENT(dst, src_cur_dim));
                   return;
@@ -6008,7 +6037,7 @@ case kind:                                                              \
                  * modified, which is not allowed. */
                 else if (!dst_reallocatable && extent_mismatch)
                 {
-                  caf_runtime_error(extentoutofrange, stat, NULL, 0);
+                  caf_internal_error(extentoutofrange, stat, NULL, 0);
                   return;
                 }
                 dprint("extent(dst, %d): %zd != delta: %ld.\n", src_cur_dim,
@@ -6048,7 +6077,7 @@ case kind:                                                      \
                 KINDCASE(16, __int128);
 #endif
                 default:
-                  caf_runtime_error(vecrefunknownkind, stat, NULL, 0);
+                  caf_internal_error(vecrefunknownkind, stat, NULL, 0);
                   return;
               }
 #undef KINDCASE
@@ -6078,7 +6107,7 @@ case kind:                                                      \
                * can not occur here. */
             case CAF_ARR_REF_OPEN_START:
             default:
-              caf_runtime_error(unknownarrreftype, stat, NULL, 0);
+              caf_internal_error(unknownarrreftype, stat, NULL, 0);
               return;
           } // switch
           dprint("i = %zd, array_ref = %s, delta = %ld\n",
@@ -6092,7 +6121,7 @@ case kind:                                                      \
           if (delta > 1 && dst_rank == 0)
           {
             /* No, an array is required, but not provided. */
-            caf_runtime_error(extentoutofrange, stat, NULL, 0);
+            caf_internal_error(extentoutofrange, stat, NULL, 0);
             return;
           }
           /* When dst is an array. */
@@ -6102,7 +6131,7 @@ case kind:                                                      \
              * only by scalar data. */
             if (src_cur_dim >= dst_rank && delta != 1)
             {
-              caf_runtime_error(rankoutofrange, stat, NULL, 0);
+              caf_internal_error(rankoutofrange, stat, NULL, 0);
               return;
             }
             /* Do further checks, when the source is not scalar. */
@@ -6116,7 +6145,7 @@ case kind:                                                      \
                * the extent does not match the needed one. */
               if (realloc_dst || extent_mismatch)
               {
-                caf_runtime_error(unabletoallocdst, stat);
+                caf_internal_error(unabletoallocdst, stat, NULL, 0);
                 return;
               }
             }
@@ -6128,7 +6157,7 @@ case kind:                                                      \
         in_array_ref = false;
         break;
       default:
-        caf_runtime_error(unknownreftype, stat, NULL, 0);
+        caf_internal_error(unknownreftype, stat, NULL, 0);
         return;
     }
     dst_size = riter->item_size;
@@ -6143,7 +6172,7 @@ case kind:                                                      \
 
   if (realloc_dst)
   {
-    caf_runtime_error(unabletoallocdst, stat);
+    caf_internal_error(unabletoallocdst, stat, NULL, 0);
     return;
   }
 
@@ -6178,7 +6207,7 @@ case kind:                                                      \
       temp_src.base.base_addr = malloc(cap);
       if (temp_src.base.base_addr == NULL)
       {
-        caf_runtime_error(cannotallocdst, stat, NULL, cap);
+        caf_internal_error(cannotallocdst, stat, NULL, cap);
         return;
       }
     }
