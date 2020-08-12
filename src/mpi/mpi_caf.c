@@ -1151,7 +1151,7 @@ PREFIX(register) (size_t size, caf_register_t type, caf_token_t *token,
         /* Create or allocate a slave token. */
         mpi_caf_slave_token_t *slave_token;
 #ifdef EXTRA_DEBUG_OUTPUT
-        MPI_Aint mpi_address;
+        MPI_Aint mpi_address = 0;
 #endif
         CAF_Win_unlock_all(global_dynamic_win);
         if (type == CAF_REGTYPE_COARRAY_ALLOC_REGISTER_ONLY)
@@ -4651,8 +4651,8 @@ PREFIX(get_by_ref) (caf_token_t token, int image_index,
           src = (gfc_descriptor_t *)&src_desc;
           if (access_desc_through_global_win)
           {
-            dprint("remote desc fetch from %p, offset = %zd\n",
-                   remote_base_memptr, desc_offset);
+            dprint("remote desc fetch from %p, offset = %zd, ref_rank = %d\n",
+                   remote_base_memptr, desc_offset, ref_rank);
             MPI_Get(src, sizeof_desc_for_rank(ref_rank), MPI_BYTE, global_dynamic_win_rank,
                     MPI_Aint_add((MPI_Aint)remote_base_memptr, desc_offset),
                     sizeof_desc_for_rank(ref_rank), MPI_BYTE,
@@ -4660,8 +4660,8 @@ PREFIX(get_by_ref) (caf_token_t token, int image_index,
           }
           else
           {
-            dprint("remote desc fetch from win %d, offset = %zd\n",
-                   mpi_token->memptr_win, desc_offset);
+            dprint("remote desc fetch from win %d, offset = %zd, ref_rank = %d\n",
+                   mpi_token->memptr_win, desc_offset, ref_rank);
             MPI_Get(src, sizeof_desc_for_rank(ref_rank), MPI_BYTE, memptr_win_rank,
                     desc_offset, sizeof_desc_for_rank(ref_rank), MPI_BYTE,
                     mpi_token->memptr_win);
@@ -4672,8 +4672,7 @@ PREFIX(get_by_ref) (caf_token_t token, int image_index,
           src = mpi_token->desc;
 
 #ifdef EXTRA_DEBUG_OUTPUT
-        dprint("remote desc rank: %zd (ref_rank: %zd)\n",
-               GFC_DESCRIPTOR_RANK(src), ref_rank);
+        dprint("remote desc rank: %zd\n", GFC_DESCRIPTOR_RANK(src));
         for (i = 0; i < GFC_DESCRIPTOR_RANK(src); ++i)
         {
           dprint("remote desc dim[%zd] = (lb=%zd, ub=%zd, stride=%zd)\n",
@@ -4754,8 +4753,8 @@ case kind:                                                              \
               caf_runtime_error(unknownarrreftype, stat, NULL, 0);
               return;
           }
-          dprint("i = %zd, array_ref = %s, delta = %ld\n", i,
-                 caf_array_ref_str[array_ref], delta);
+          dprint("i = %zd, array_ref = %s, delta = %ld, in_array_ref = %d, arr_ext_fixed = %d, realloc_required = %d\n", i,
+                 caf_array_ref_str[array_ref], delta, in_array_ref, array_extent_fixed, realloc_required);
           if (delta <= 0)
             return;
           /* Check the various properties of the destination array.
