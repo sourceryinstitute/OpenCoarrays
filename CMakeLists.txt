@@ -887,6 +887,8 @@ if(opencoarrays_aware_compiler)
     add_caf_test(issue-515-mimic-mpi-gatherv 2 issue-515-mimic-mpi-gatherv)
   endif()
 
+  add_caf_test(issue-700-allow-multiple-scalar-dim-array-gets 2 issue-700-allow-multiple-scalar-dim-array-gets)
+
   # IMAGE FAIL tests
   if(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0)
     if(CAF_ENABLE_FAILED_IMAGES)
