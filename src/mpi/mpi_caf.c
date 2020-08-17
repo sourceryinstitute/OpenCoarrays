@@ -143,7 +143,7 @@ typedef struct mpi_caf_token_t
  * 
  *   o[2]%.comp                 // using T to get o of [2]
  * 
- *   +-o-on-image-2----+  "copy" of the requierd parts of o[2] on current image
+ *   +-o-on-image-2----+  "copy" of the required parts of o[2] on current image
  *   | 0x4711          |  comp * in global_dynamic_window
  *   | 0x2424          |  comp_token * of type slave_token
  *   +-----------------+
