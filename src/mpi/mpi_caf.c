@@ -104,7 +104,7 @@ do                                                  \
  * Objects of this data structure are owned by the library and are treated as a
  * black box by the compiler.  In the coarray-program the tokens are opaque
  * pointers, i.e. black boxes.
- * 
+ *
  * For each coarray (allocatable|save|pointer) (scalar|array|event|lock) a
  * token needs to be present. */
 typedef struct mpi_caf_token_t
@@ -129,20 +129,20 @@ typedef struct mpi_caf_token_t
  * component has the allocatable or pointer attribute. The token is reduced in
  * size, because the other data is already accessible and has been read from
  * the remote to fullfill the request.
- * 
+ *
  *   TYPE t
  *   +------------------+
  *   | comp *           |
  *   | comp_token *     |
  *   +------------------+
- * 
+ *
  *   TYPE(t) : o                struct T // the mpi_caf_token to t
  *                              +----------------+
  *                              | ...            |
  *                              +----------------+
- * 
+ *
  *   o[2]%.comp                 // using T to get o of [2]
- * 
+ *
  *   +-o-on-image-2----+  "copy" of the requierd parts of o[2] on current image
  *   | 0x4711          |  comp * in global_dynamic_window
  *   | 0x2424          |  comp_token * of type slave_token
@@ -415,7 +415,7 @@ static void
 caf_runtime_error (const char *message, ...)
 {
   va_list ap;
-  fprintf(stderr, "Fortran runtime error on image %d: ", caf_this_image);
+  fprintf(stderr, "OpenCoarrays internal error on image %d: ", caf_this_image);
   va_start(ap, message);
   vfprintf(stderr, message, ap);
   va_end(ap);
@@ -1210,7 +1210,7 @@ PREFIX(register) (size_t size, caf_register_t type, caf_token_t *token,
           mem = malloc(actual_size);
           slave_token->memptr = mem;
           ierr = MPI_Win_attach(global_dynamic_win, mem, actual_size);
-          chk_err(ierr); 
+          chk_err(ierr);
 #ifdef EXTRA_DEBUG_OUTPUT
           ierr = MPI_Get_address(mem, &mpi_address); chk_err(ierr);
 #endif
@@ -1941,7 +1941,7 @@ copy_char_to_self(void *src, int src_type, int src_size, int src_kind,
     caf_runtime_error("internal error: copy_char_to_self() "
                       "for non-char types called.");
 #endif
-  const size_t 
+  const size_t
       dst_len = dst_size / dst_kind,
       src_len = src_size / src_kind;
   const size_t min_len = (src_len < dst_len) ? src_len : dst_len;
@@ -2022,13 +2022,13 @@ copy_to_self(gfc_descriptor_t *src, int src_kind,
                          ? GFC_DESCRIPTOR_SIZE(src) : 0, size, stat);
 }
 
-/* token: The token of the array to be written to. 
+/* token: The token of the array to be written to.
  * offset: Difference between the coarray base address and the actual data,
- * used for caf(3)[2] = 8 or caf[4]%a(4)%b = 7. 
+ * used for caf(3)[2] = 8 or caf[4]%a(4)%b = 7.
  * image_index: Index of the coarray (typically remote,
- * though it can also be on this_image). 
- * data: Pointer to the to-be-transferred data. 
- * size: The number of bytes to be transferred. 
+ * though it can also be on this_image).
+ * data: Pointer to the to-be-transferred data.
+ * size: The number of bytes to be transferred.
  * asynchronous: Return before the data transfer has been complete */
 
 void selectType(int size, MPI_Datatype *dt)
@@ -4019,7 +4019,7 @@ do                                                              \
 (sizeof(gfc_descriptor_t) + (rank) * sizeof(descriptor_dimension))
 
 /* Define the descriptor of max rank.
- * 
+ *
  *  This typedef is made to allow storing a copy of a remote descriptor on the
  *  stack without having to care about the rank. */
 typedef struct gfc_max_dim_descriptor_t
@@ -4329,7 +4329,7 @@ case kind:                                                          \
                             ref->u.a.dim[src_dim].s.stride,
                             ref->u.a.dim[src_dim].s.start,
                             ref->u.a.dim[src_dim].s.end);
-          array_offset_src = 
+          array_offset_src =
             (ref->u.a.dim[src_dim].s.start - src->dim[src_dim].lower_bound)
             * src->dim[src_dim]._stride;
           stride_src =
@@ -4588,7 +4588,7 @@ PREFIX(get_by_ref) (caf_token_t token, int image_index,
   bool realloc_required, extent_mismatch = false;
   /* Set when the first non-scalar array reference is encountered. */
   bool in_array_ref = false, array_extent_fixed = false;
-  /* Set when remote data is to be accessed through the 
+  /* Set when remote data is to be accessed through the
    * global dynamic window. */
   bool access_data_through_global_win = false;
   /* Set when the remote descriptor is to accessed through the global window. */
@@ -4752,7 +4752,7 @@ case kind:                                                              \
                                 riter->u.a.dim[i].s.stride,
                                 riter->u.a.dim[i].s.start,
                                 riter->u.a.dim[i].s.end);
-              remote_memptr += 
+              remote_memptr +=
                 (riter->u.a.dim[i].s.start - src->dim[i].lower_bound)
                 * src->dim[i]._stride * riter->item_size;
               break;
@@ -5532,7 +5532,7 @@ case kind:                                          \
             send_for_ref(ref, i, src_index, mpi_token, dst, src, ds, sr,
                          dst_byte_offset + array_offset_dst * ref->item_size,
                          desc_byte_offset + array_offset_dst * ref->item_size,
-                         dst_kind, src_kind, next_dst_dim, src_dim + 1, 
+                         dst_kind, src_kind, next_dst_dim, src_dim + 1,
                          1, stat, global_dynamic_win_rank, memptr_win_rank,
                          ds_global, desc_global
 #ifdef GCC_GE_8
@@ -5878,7 +5878,7 @@ PREFIX(send_by_ref) (caf_token_t token, int image_index,
          * which is taken care of in the else part. */
         if (access_data_through_global_win)
         {
-          for (ref_rank = 0; 
+          for (ref_rank = 0;
                riter->u.a.mode[ref_rank] != CAF_ARR_REF_NONE; ++ref_rank) ;
           /* Get the remote descriptor and use the stack to store it
            * Note, dst may be pointing to mpi_token->desc therefore it
@@ -6271,7 +6271,7 @@ PREFIX(sendget_by_ref) (caf_token_t dst_token, int dst_image_index,
   /* Set when the first non-scalar array reference is encountered. */
   bool in_array_ref = false;
   bool array_extent_fixed = false;
-  /* Set when remote data is to be accessed through the 
+  /* Set when remote data is to be accessed through the
    * global dynamic window. */
   bool access_data_through_global_win = false;
   /* Set when the remote descriptor is to accessed through the global window. */
@@ -6447,7 +6447,7 @@ case kind:                                                              \
                                 riter->u.a.dim[i].s.stride,
                                 riter->u.a.dim[i].s.start,
                                 riter->u.a.dim[i].s.end);
-              remote_memptr += 
+              remote_memptr +=
                 (riter->u.a.dim[i].s.start - src->dim[i].lower_bound)
                 * src->dim[i]._stride * riter->item_size;
               break;
@@ -6695,7 +6695,7 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
         break;
       case CAF_REF_ARRAY:
         {
-          const gfc_descriptor_t *src = 
+          const gfc_descriptor_t *src =
             (gfc_descriptor_t *)(mpi_token->memptr + local_offset);
           for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
           {
@@ -6855,7 +6855,7 @@ PREFIX(is_present) (caf_token_t token, int image_index, caf_reference_t *refs)
           switch (array_ref)
           {
             case CAF_ARR_REF_FULL:
-              /* The local_offset stays unchanged when ref'ing the first 
+              /* The local_offset stays unchanged when ref'ing the first
                * element in a dimension. */
               break;
             case CAF_ARR_REF_SINGLE:
@@ -7174,11 +7174,11 @@ GEN_REDUCTION(do_max_int1, int8_t,
 #endif
 
 /*
-#ifndef MPI_INTEGER2 
-GEN_REDUCTION(do_sum_int1, int16_t, inoutvec[i] += invec[i]) 
+#ifndef MPI_INTEGER2
+GEN_REDUCTION(do_sum_int1, int16_t, inoutvec[i] += invec[i])
 GEN_REDUCTION(do_min_int1, int16_t,
-              inoutvec[i] = (invec[i] >= inoutvec[i] ? inoutvec[i] : invec[i])) 
-GEN_REDUCTION(do_max_int1, int16_t, 
+              inoutvec[i] = (invec[i] >= inoutvec[i] ? inoutvec[i] : invec[i]))
+GEN_REDUCTION(do_max_int1, int16_t,
              inoutvec[i] = (invec[i] <= inoutvec[i] ? inoutvec[i] : invec[i]))
 #endif
 */
@@ -7685,7 +7685,7 @@ PREFIX(atomic_ref) (caf_token_t token, size_t offset,
 {
   MPI_Win *p = TOKEN(token);
   MPI_Datatype dt;
-  int ierr = 0, 
+  int ierr = 0,
       image = (image_index != 0) ? image_index - 1 : caf_this_image - 1;
 
   selectType(kind, &dt);
@@ -7809,7 +7809,7 @@ PREFIX(event_post) (caf_token_t token, size_t index, int image_index,
 
 #if MPI_VERSION >= 3
   CAF_Win_lock(MPI_LOCK_EXCLUSIVE, image, *p);
-  ierr = MPI_Accumulate(&value, 1, MPI_INT, image, index * sizeof(int), 1, 
+  ierr = MPI_Accumulate(&value, 1, MPI_INT, image, index * sizeof(int), 1,
                         MPI_INT, MPI_SUM, *p); chk_err(ierr);
   CAF_Win_unlock(image, *p);
 #else // MPI_VERSION
@@ -8273,19 +8273,19 @@ void PREFIX(change_team) (caf_team_t *team,
   tmp_used = (caf_used_teams_list *)calloc(1,sizeof(caf_used_teams_list));
   tmp_used->prev = used_teams;
 
-  /* We need to look in the teams_list and find the appropriate element. 
-   * This is not efficient but can be easily fixed in the future.  
-   * Instead of keeping track of the communicator in the compiler  
-   * we should keep track of the caf_teams_list element associated with it. */ 
+  /* We need to look in the teams_list and find the appropriate element.
+   * This is not efficient but can be easily fixed in the future.
+   * Instead of keeping track of the communicator in the compiler
+   * we should keep track of the caf_teams_list element associated with it. */
 
   /*
-  tmp_list = teams_list; 
+  tmp_list = teams_list;
 
-  while (tmp_list) 
-  { 
-    if (tmp_list->team == tmp_team) 
-      break; 
-    tmp_list = tmp_list->prev; 
+  while (tmp_list)
+  {
+    if (tmp_list->team == tmp_team)
+      break;
+    tmp_list = tmp_list->prev;
   }
   */
 
