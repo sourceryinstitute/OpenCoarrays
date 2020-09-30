@@ -415,7 +415,7 @@ static void
 caf_runtime_error (const char *message, ...)
 {
   va_list ap;
-  fprintf(stderr, "Fortran runtime error on image %d: ", caf_this_image);
+  fprintf(stderr, "OpenCoarrays internal error on image %d: ", caf_this_image);
   va_start(ap, message);
   vfprintf(stderr, message, ap);
   va_end(ap);
