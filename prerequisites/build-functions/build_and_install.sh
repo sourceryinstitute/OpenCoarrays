@@ -35,7 +35,8 @@ build_and_install()
         cp "${download_path}/${package_source_directory}/src/include/mpiimpl.h.patched" "${download_path}/${package_source_directory}/src/include/mpiimpl.h"
       fi
 
-      FC_version=$($FC --version)
+      FC_18=${FC_18:-gfortran}
+      FC_version=$($FC_18 --version)
       text_before_dot="${FC_version%%.*}" # grab text before first dot
       major_version="${text_before_dot##* }" # grab text after final space
       if (( ${major_version} >= 10 )); then
