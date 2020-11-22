@@ -155,6 +155,7 @@ usage() {
   echo "   --version, -v, -V        Report version and copyright information"
   echo "   --wraps, -w,             Report info about the wrapped MPI launcher"
   echo "   -np <N>,                 Number of images, N, to execute, N must be a positive integer"
+  echo "   -n <N>,                  Same as -np"
   echo "   --reenable-auto-cleanup  Turn off failed images support (if library support is present)"
   echo "                            This option re-enables MPI auto cleanup, which is disabled by"
   echo "                            by default if GFortran/OpenCoarrays/MPI all support failed"
@@ -168,6 +169,7 @@ usage() {
   echo ""
   echo " Example usage:"
   echo ""
+  echo "   ${cmd} -n 2 foo"
   echo "   ${cmd} -np 2 foo foo_arg1 foo_arg2"
   echo "   ${cmd} -v"
   echo "   ${cmd} --help"
@@ -274,7 +276,8 @@ elif [[ "${1}" == -np || "${1}" == -n ]]; then
       exit "${return_code}"
     fi
   else
-    echo "You must pass \"-np\", \"<number_of_images>\", \"/path/to/coarray_Fortran_program\" as the first 3 arguments to ${cmd}."
-    exit 1
+    usage
   fi
+else
+  usage
 fi
