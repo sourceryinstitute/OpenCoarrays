@@ -10,7 +10,7 @@
 OpenCoarrays
 ============
 
-[![CI Build Status][build img]](https://travis-ci.org/sourceryinstitute/OpenCoarrays)
+[![CI Build Status][build img]](https://github.com/sourceryinstitute/OpenCoarrays/actions)
 [![Release Downloads][download img]][Releases]
 [![Gitter](https://img.shields.io/gitter/room/sourceryinstitute/opencoarrays.svg?style=flat-square)](https://gitter.im/sourceryinstitute/opencoarrays)
 [![GitHub license][license img]](./LICENSE)
@@ -203,7 +203,7 @@ to aid in development efforts.
 [OC-on-repology]: https://repology.org/project/opencoarrays/versions
 [repology-badge]: https://repology.org/badge/vertical-allrepos/opencoarrays.svg
 
-[build img]: https://img.shields.io/travis/sourceryinstitute/OpenCoarrays.svg?style=flat-square "Build badge"
+[build img]: https://github.com/sourceryinstitute/OpenCoarrays/workflows/CI/badge.svg "Build badge"
 [CI Master Branch]: https://travis-ci.org/sourceryinstitute/OpenCoarrays?branch=master "View Travis-CI builds"
 [download img]: https://img.shields.io/github/downloads/sourceryinstitute/OpenCoarrays/total.svg?style=flat-square "Download count badge"
 [license img]: https://img.shields.io/badge/license-BSD--3-blue.svg?style=flat-square "BSD-3 License badge"
