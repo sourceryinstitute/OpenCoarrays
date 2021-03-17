@@ -11,9 +11,7 @@ set_or_print_downloader()
 
   package_name="${arg_p:-${arg_D:-${arg_P:-${arg_U:-${arg_V}}}}}"
 
-  if [[ "${package_name}" == "gcc" ]]; then
-    arg_b=${arg_b:-releases/gcc-${version_to_build}}
-  elif [[ "${package_name}" == "ofp" ]]; then
+  if [[ "${package_name}" == "ofp" ]]; then
     "${OPENCOARRAYS_SRC_DIR}/prerequisites/install-ofp.sh" "${@}"
     exit 0
   fi
@@ -36,7 +34,7 @@ set_or_print_downloader()
     tried="curl, wget, and ftp"
   fi
 
-  if [[ "${package_name}" == "gcc" ]]; then
+  if [[ "${package_name}" == "gcc" && ! -z ${arg_b:-} ]]; then
     if type git &> /dev/null; then
       fetch=git
     else
