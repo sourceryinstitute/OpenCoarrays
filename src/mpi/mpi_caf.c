@@ -8491,3 +8491,73 @@ void PREFIX(sync_team) (caf_team_t *team , int unused __attribute__((unused)))
 
   int ierr = MPI_Barrier(*tmp_comm); chk_err(ierr);
 }
+
+extern void _gfortran_random_seed_i4 (int32_t *size, gfc_dim1_descriptor_t *put,
+                                      gfc_dim1_descriptor_t *get);
+
+void PREFIX(random_init) (bool repeatable, bool image_distinct)
+{
+  static gfc_dim1_descriptor_t rand_seed;
+  static bool rep_needs_init = true, arr_needs_init = true;
+  static int32_t seed_size;
+
+  if (arr_needs_init)
+  {
+    _gfortran_random_seed_i4(&seed_size, NULL, NULL);
+    memset(&rand_seed, 0, sizeof(gfc_dim1_descriptor_t));
+    rand_seed.base.base_addr = malloc(seed_size * sizeof(int32_t)); // because using seed_i4
+    rand_seed.base.offset = -1;
+    rand_seed.base.dtype.elem_len = sizeof(int32_t);
+    rand_seed.base.dtype.rank = 1;
+    rand_seed.base.dtype.type = BT_INTEGER;
+    rand_seed.base.span = 0;
+    rand_seed.dim[0].lower_bound = 1;
+    rand_seed.dim[0]._ubound = seed_size;
+    rand_seed.dim[0]._stride = 1;
+
+    arr_needs_init = false;
+  }
+
+  if (repeatable)
+  {
+    if (rep_needs_init)
+    {
+      int32_t lcg_seed = 57911963;
+      if (image_distinct)
+      {
+        lcg_seed *= caf_this_image;
+      }
+      int32_t *curr = rand_seed.base.base_addr;
+      for (int i = 0; i < seed_size; ++i)
+      {
+        const int32_t a = 16087;
+        const int32_t m = INT32_MAX;
+        const int32_t q = 127773;
+        const int32_t r = 2836;
+        lcg_seed = a * (lcg_seed % q) - r * (lcg_seed / q);
+        if (lcg_seed <= 0) lcg_seed += m;
+        *curr = lcg_seed;
+        ++curr;
+      }
+      rep_needs_init = false;
+    }
+    _gfortran_random_seed_i4(NULL, &rand_seed, NULL);
+  }
+  else if (image_distinct)
+  {
+    _gfortran_random_seed_i4(NULL, NULL, NULL);
+  }
+  else
+  {
+    if (caf_this_image == 0)
+    {
+      _gfortran_random_seed_i4(NULL, NULL, &rand_seed);
+      MPI_Bcast(rand_seed.base.base_addr, seed_size, MPI_INT32_T, 0, CAF_COMM_WORLD);
+    }
+    else
+    {
+      MPI_Bcast(rand_seed.base.base_addr, seed_size, MPI_INT32_T, 0, CAF_COMM_WORLD);
+      _gfortran_random_seed_i4(NULL, &rand_seed, NULL);
+    }
+  }
+}

@@ -782,6 +782,9 @@ if(opencoarrays_aware_compiler)
       message( AUTHOR_WARNING "Skipping the following test to GFortran < 7.4.0 lack of compatibility:
         send-strided-self.f90")
     endif()
+    if((NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 12.0.0) OR (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER}))
+      add_caf_test(random_init 4 random_init)
+    endif()
   endif()
 
   # Pure get tests

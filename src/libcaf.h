@@ -331,6 +331,8 @@ void PREFIX (event_post) (caf_token_t, size_t, int, int *, char *, charlen_t);
 void PREFIX (event_wait) (caf_token_t, size_t, int, int *, char *, charlen_t);
 void PREFIX (event_query) (caf_token_t, size_t, int, int *, int *);
 
+void PREFIX (random_init) (bool, bool);
+
 /* Language extension */
 #ifdef HAVE_MPI
 MPI_Fint PREFIX (get_communicator) (caf_team_t *);
