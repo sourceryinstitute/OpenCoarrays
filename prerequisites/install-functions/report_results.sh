@@ -2,11 +2,7 @@
 report_results()
 {
   fully_qualified_FC="$(type -P "${FC}")"
-  if [[ ${fully_qualified_FC} != *gfortran* ]]; then
-    emergency "report_results.sh: non-gfortran compiler: \${fully_qualified_FC}=${fully_qualified_FC}"
-  fi
-  # Set path_to_FC fully-qualified gfortran location
-  compiler_install_root="${fully_qualified_FC%bin/gfortran*}"
+  compiler_install_root="${fully_qualified_FC%bin/${FC}}"
 
   fully_qualified_MPIFC="$(type -P "${MPIFC}")"
   mpi_install_root="${fully_qualified_MPIFC%bin/mpifort*}"
