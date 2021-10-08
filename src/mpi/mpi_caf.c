@@ -4673,8 +4673,8 @@ PREFIX(get_by_ref) (caf_token_t token, int image_index,
   size = 1;
   while (riter)
   {
-    dprint("caf_ref = %p, offset = %zd, remote_mem = %p, global_win(data, desc)) = (%d, %d)\n",
-           riter, data_offset, remote_memptr, access_data_through_global_win,
+    dprint("caf_ref = %p, type = %d,  offset = %zd, remote_mem = %p, global_win(data, desc)) = (%d, %d)\n",
+           riter, riter->type, data_offset, remote_memptr, access_data_through_global_win,
            access_desc_through_global_win);
     switch (riter->type)
     {
@@ -4996,7 +4996,7 @@ case kind:                                                              \
               delta = riter->u.a.dim[i].v.nvec;
 #define KINDCASE(kind, type)                                    \
 case kind:                                                      \
-  remote_memptr +=                                              \
+  data_offset +=                                                \
     ((type *)riter->u.a.dim[i].v.vector)[0] * riter->item_size; \
   break
 
@@ -5026,15 +5026,14 @@ case kind:                                                      \
                                 riter->u.a.dim[i].s.stride,
                                 riter->u.a.dim[i].s.start,
                                 riter->u.a.dim[i].s.end);
-              remote_memptr += riter->u.a.dim[i].s.start
-                               * riter->u.a.dim[i].s.stride
-                               * riter->item_size;
+              data_offset += riter->u.a.dim[i].s.start
+                             * riter->u.a.dim[i].s.stride
+                             * riter->item_size;
               break;
             case CAF_ARR_REF_SINGLE:
               delta = 1;
-              remote_memptr += riter->u.a.dim[i].s.start
-                               * riter->u.a.dim[i].s.stride
-                               * riter->item_size;
+              data_offset += riter->u.a.dim[i].s.start
+                             * riter->item_size;
               break;
             case CAF_ARR_REF_OPEN_END:
               /* This and OPEN_START are mapped to a RANGE and therefore can
