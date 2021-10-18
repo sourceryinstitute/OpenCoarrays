@@ -21,7 +21,7 @@ else
     major_minor="${version_to_build%.*}"
   fi
   package_url_head=(
-    "gcc;https://gcc.gnu.org/git/"
+    "gcc;https://ftp.gnu.org/gnu/gcc/gcc-${version_to_build-}/"
     "wget;https://ftpmirror.gnu.org/gnu/wget/"
     "m4;https://ftpmirror.gnu.org/gnu/m4/"
     "pkg-config;https://pkgconfig.freedesktop.org/releases/"
@@ -44,9 +44,13 @@ else
      fi
   done
 
+  if [[ ! -z ${arg_b:-} && ${package_to_build} == 'gcc' ]]; then
+    url_head="https://gcc.gnu.org/git/"
+  fi
+
   # Set differing tails for GCC release downloads versus development branch checkouts
   package_url_tail=(
-    "gcc;gcc"
+    "gcc;gcc-${version_to_build-}.tar.gz"
     "wget;wget-${version_to_build-}.tar.gz"
     "m4;m4-${version_to_build-}.tar.bz2"
     "pkg-config;pkg-config-${version_to_build-}.tar.gz"
@@ -71,6 +75,9 @@ else
      fi
   done
 
+  if [[ ! -z ${arg_b:-} && ${package_to_build} == 'gcc' ]]; then
+    url_tail="gcc"
+  fi
 
   if [[ -z "${url_head:-}" || -z "${url_tail}" ]]; then
     emergency "Package ${package_name:-} not recognized.  Use --l or --list-packages to list the allowable names."

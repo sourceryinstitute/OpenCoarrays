@@ -1,0 +1,32 @@
+name: CI
+
+on: push
+
+jobs:
+  Build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+
+    env:
+      FC: gfortran
+      GCC_V: 10
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Install Dependencies
+      run: |
+        sudo apt install -y gfortran-${GCC_V} cmake mpich
+        sudo update-alternatives --install /usr/bin/gfortran gfortran /usr/bin/gfortran-${GCC_V} 100
+
+    - name: Build and Test
+      run: |
+        mkdir build
+        cd build
+        cmake -Wdev -DCMAKE_INSTALL_PREFIX:PATH="${HOME}/OpenCoarrays" -DCMAKE_BUILD_TYPE:STRING="Debug" ..
+        make -j $(nproc)
+        ctest --output-on-failure --schedule-random --repeat-until-fail 1 --timeout 200
+        make install
+        make uninstall
