@@ -2,6 +2,7 @@
 
 caf_compile_executable(increment_my_neighbor increment_neighbor.f90)
 caf_compile_executable(atomics testAtomics.f90)
+caf_compile_executable(random_init random_init.f90)
 
 # C tests
 #include(CMakeForceCompiler)
