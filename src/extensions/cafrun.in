@@ -208,8 +208,14 @@ if ! ${disable_failed_images}; then
     else
       preflags=(--disable-auto-cleanup)
     fi
+  elif [[ ${have_failed_img} == 'openmpi' ]]; then
+    if [[ -n "${preflags:-}" ]]; then
+      preflags+=(--enable-recovery)
+    else
+      preflags=(--enable-recovery)
+    fi
   fi
-elif [[ ${have_failed_img} == 'ulfm2' ]]; then
+elif [[ ${have_failed_img} == 'openmpi' ]]; then
   if [[ -n "${preflags:-}" ]]; then
     preflags+=(--disable-recovery)
   else
