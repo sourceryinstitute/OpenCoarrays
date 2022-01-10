@@ -1,4 +1,4 @@
-program co_reduce_factorial_int64
+program co_reduce_factorial
   !! author: Daniel Topa & Izaak Beekman
   !! category: regression
   !!
@@ -8,12 +8,14 @@ program co_reduce_factorial_int64
   !! instead of `intent(in)`
 
   implicit none
-  integer(kind=8) :: value[ * ] !! Each image stores their image number here
+  integer :: value[ * ] !! Each image stores their image number here
   integer :: k
-  integer(kind=8) :: np
   value = this_image ( )
-  np = num_images ( )
+#if defined(__GNUC__) && __GNUC__ < 12
   call co_reduce ( value, result_image = 1, operator = myProd )
+#else
+  call co_reduce ( value, result_image = 1, operation = myProd )
+#endif
   !! value[k /= 1] undefined, value[ k == 1 ] should equal $n!$ where $n$ is `num_images()`
   if ( this_image ( ) == 1 ) then
      write ( * , '( "Number of images = ", g0 )' ) num_images ( )
@@ -23,10 +25,10 @@ program co_reduce_factorial_int64
      end do
      write ( * , '( "Product  value = ", g0 )' ) value  !! should print num_images() factorial
      write ( * , 100 )
-     if ( value == factorial( np ) ) then
+     if ( value == factorial( num_images() ) ) then
         write ( * , '(a)' ) 'Test passed.'
      else
-        write ( * , '(a, I0)') 'Answer should have been num_images()! = ', factorial( np )
+        write ( * , '(a, I0)') 'Answer should have been num_images()! = ', factorial( num_images() )
         error stop 'Wrong answer for n! using co_reduce'
      end if
   end if
@@ -38,7 +40,7 @@ contains
     !! Product function to be used in `co_reduce` reduction for
     !! computing factorials. When `value` attribute is changed to
     !! `intent(in)` tests pass, and expected behavior is observed.
-    integer(kind=8), value :: a, b
+    integer, value :: a, b
     !! multiply two inputs together.  If we change `value` to
     !! `intent(in)` the test passes and the issue goes away and
     !! according to C1276 of F2008:
@@ -48,14 +50,14 @@ contains
     !! > the INTENT (IN) or the VALUE attribute.
     !!
     !! Thanks to @LadaF for pointing this out.
-    integer(kind=8)        :: rslt !! product of a*b
+    integer        :: rslt !! product of a*b
     rslt = a * b
   end function
 
   pure function factorial ( n ) result ( rslt )
     !! Compute $n!$
-    integer(kind=8), intent(in) :: n
-    integer(kind=8) :: rslt
+    integer, intent(in) :: n
+    integer :: rslt
     integer :: i
     rslt = 1
     do i = 1, n
