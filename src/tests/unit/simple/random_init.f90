@@ -54,7 +54,7 @@ program test_random_init
   if (me .eq. 1) then
     seed_eq = 0
   else
-    seed_eq = any(random_num .eq. from_master)
+    seed_eq = transfer(any(random_num .eq. from_master), 0)
   end if
   call co_max(seed_eq, 1)
 
@@ -73,7 +73,7 @@ program test_random_init
   if (me .eq. 1) then
     seed_eq = 0
   else
-    seed_eq = any(random_num .eq. from_master)
+    seed_eq = transfer(any(random_num .eq. from_master), 0)
   end if
   call co_max(seed_eq, 1)
 
@@ -91,7 +91,7 @@ program test_random_init
     from_master = random_num
   end if
   call co_broadcast(from_master, 1)
-  seed_eq = all(random_num .eq. from_master)
+  seed_eq = transfer(all(random_num .eq. from_master), 0)
   call co_min(seed_eq, 1)
 
 print *,"me=", me, ", rand_num=", random_num, ", from_master=", from_master, ", seed_eq=", seed_eq
@@ -109,7 +109,7 @@ print *,"me=", me, ", rand_num=", random_num, ", from_master=", from_master, ", 
     from_master = random_num
   end if
   call co_broadcast(from_master, 1)
-  seed_eq = all(random_num .eq. from_master)
+  seed_eq = transfer(all(random_num .eq. from_master), 0)
   call co_min(seed_eq, 1)
 
   if (me .eq. 1 .and. seed_eq .eq. 0) then
