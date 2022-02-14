@@ -1,17 +1,23 @@
-program co_reduce_res_im
+program co_reduce_factorial_int8
   !! author: Daniel Topa & Izaak Beekman
-  !! category: unit test
+  !! category: regression
   !!
-  !! This test is derived from
   !! [issue #172](https://github.com/sourceryinstitute/opencoarrays/issues/172)
-  !! but tweaks the binary operator's (pure function) arguments have
-  !! `intent(in)` which results in a working/passing test
+  !! wherein co-reduce gets junk in the first image when binary
+  !! operator's (pure function) arguments have `value` attribute
+  !! instead of `intent(in)`
 
   implicit none
-  integer :: value[ * ] !! Each image stores their image number here
+  integer(kind=1) :: value[ * ] !! Each image stores their image number here
   integer :: k
+  integer(kind=1) :: np
+  np = num_images ( )
   value = this_image ( )
+#if defined(__GNUC__) && __GNUC__ < 12
   call co_reduce ( value, result_image = 1, operator = myProd )
+#else
+  call co_reduce ( value, result_image = 1, operation = myProd )
+#endif
   !! value[k /= 1] undefined, value[ k == 1 ] should equal $n!$ where $n$ is `num_images()`
   if ( this_image ( ) == 1 ) then
      write ( * , '( "Number of images = ", g0 )' ) num_images ( )
@@ -20,39 +26,40 @@ program co_reduce_res_im
         write ( * , '(a)' ) 'since RESULT_IMAGE is present, value on other images is undefined by the standard'
      end do
      write ( * , '( "Product  value = ", g0 )' ) value  !! should print num_images() factorial
-     if ( value == factorial( num_images() ) ) then
+     write ( * , 100 )
+     if ( value == factorial( np ) ) then
         write ( * , '(a)' ) 'Test passed.'
      else
-        write ( * , '(a, I0)') 'Answer should have been num_images()! = ', factorial( num_images() )
+        write ( * , '(a, I0)') 'Answer should have been num_images()! = ', factorial( np )
         error stop 'Wrong answer for n! using co_reduce'
      end if
   end if
-
+100 format ( "Expected value = num_images()!", /, " 2! = 2, 3! = 6, 4! = 24, ..." )
 
 contains
 
   pure function myProd ( a, b ) result ( rslt )
     !! Product function to be used in `co_reduce` reduction for
-    !! computing factorials. When `intent(in)` attribute is changed
-    !! to `value` tests fail
-    integer, intent(in) :: a, b
-    !! multiply two inputs together.  If we change `intent(in)` to
-    !! `value` the test fails despite being correct according to C1276
-    !! of F2008:
+    !! computing factorials. When `value` attribute is changed to
+    !! `intent(in)` tests pass, and expected behavior is observed.
+    integer(kind=1), value :: a, b
+    !! multiply two inputs together.  If we change `value` to
+    !! `intent(in)` the test passes and the issue goes away and
+    !! according to C1276 of F2008:
     !!
     !! > C1276 The specification-part of a pure function subprogram
     !! > shall specify that all its nonpointer dummy data objects have
     !! > the INTENT (IN) or the VALUE attribute.
     !!
     !! Thanks to @LadaF for pointing this out.
-    integer        :: rslt !! product of a*b
+    integer(kind=1)        :: rslt !! product of a*b
     rslt = a * b
   end function
 
   pure function factorial ( n ) result ( rslt )
     !! Compute $n!$
-    integer, intent(in) :: n
-    integer :: rslt
+    integer(kind=1), intent(in) :: n
+    integer(kind=1) :: rslt
     integer :: i
     rslt = 1
     do i = 1, n
