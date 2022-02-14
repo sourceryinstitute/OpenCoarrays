@@ -7524,6 +7524,8 @@ PREFIX(co_broadcast) (gfc_descriptor_t *a, int source_image, int *stat,
     size *= dimextent;
   }
 
+  dprint("Using mpi-datatype: 0x%x in co_broadcast (base_addr=%p, rank= %d).\n",
+         datatype, a->base_addr, rank);
   if (rank == 0)
   {
     if( datatype == MPI_BYTE)
@@ -7564,16 +7566,17 @@ PREFIX(co_broadcast) (gfc_descriptor_t *a, int source_image, int *stat,
 
   for (i = 0; i < size; ++i)
   {
-    ptrdiff_t array_offset_sr = 0, tot_ext = 1, extent = 1;
+    ptrdiff_t array_offset = 0, tot_ext = 1, extent = 1;
     for (j = 0; j < rank - 1; ++j)
     {
       extent = a->dim[j]._ubound - a->dim[j].lower_bound + 1;
-      array_offset_sr += ((i / tot_ext) % extent) * a->dim[j]._stride;
+      array_offset += ((i / tot_ext) % extent) * a->dim[j]._stride;
       tot_ext *= extent;
     }
-    array_offset_sr += (i / tot_ext) * a->dim[rank - 1]._stride;
+    array_offset += (i / tot_ext) * a->dim[rank - 1]._stride;
+    dprint("The array offset for element %d used in co_broadcast is %d\n", i, array_offset);
     void *sr = (void *)(
-      (char *)a->base_addr + array_offset_sr * GFC_DESCRIPTOR_SIZE(a));
+      (char *)a->base_addr + array_offset * GFC_DESCRIPTOR_SIZE(a));
 
     ierr = MPI_Bcast(sr, 1, datatype, source_image - 1, CAF_COMM_WORLD);
     chk_err(ierr);
