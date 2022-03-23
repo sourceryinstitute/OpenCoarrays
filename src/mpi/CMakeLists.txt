@@ -80,6 +80,14 @@ set_target_properties ( caf_mpi
 #  VERSION ${PROJECT_VERSION}
 )
 
+# Unfortunately caf_mpi.c calls a function directly from libgfortran and this can be resolved later
+if(APPLE)
+  set_target_properties ( caf_mpi
+    PROPERTIES
+    LINK_FLAGS "-undefined dynamic_lookup"
+  )
+endif()
+
 # Create a symlink in the include dir
 if(UNIX)
   add_custom_command(TARGET caf_mpi
