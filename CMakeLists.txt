@@ -234,7 +234,7 @@ endif()
 
 if(gfortran_compiler)
   set(OLD_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
-  set(CMAKE_REQUIRED_FLAGS $<$<COMPILE_LANGUAGE:Fortran>:-fcoarray=single -ffree-form>)
+  set(CMAKE_REQUIRED_FLAGS -fcoarray=single)
 endif()
 include(CheckFortranSourceCompiles)
 CHECK_Fortran_SOURCE_COMPILES("
@@ -243,7 +243,8 @@ CHECK_Fortran_SOURCE_COMPILES("
     integer :: i
     i = this_image()
   end program
-" Check_Simple_Coarray_Fortran_Source_Compiles)
+" Check_Simple_Coarray_Fortran_Source_Compiles
+  SRC_EXT F90)
 if(gfortran_compiler)
   set (CMAKE_REQUIRED_FLAGS ${OLD_REQUIRED_FLAGS})
   unset(OLD_REQUIRED_FLAGS)
