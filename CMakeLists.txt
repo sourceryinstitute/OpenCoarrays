@@ -614,7 +614,14 @@ define_property(TARGET
 #-------------------------------
 # Recurse into the src directory
 #-------------------------------
-add_subdirectory(src)
+
+set(directories_to_build src tests)
+if( CAF_ENABLE_ISO_Fortran_BINDING OR ( CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER} ) ) 
+  list( APPEND directories_to_build iso-fortran-binding )
+endif()
+foreach(directory ${directories_to_build})
+  add_subdirectory(${directory})
+endforeach()
 
 #-----------------------------------------------------
 # Publicize installed location to other CMake projects
@@ -934,7 +941,7 @@ endif()
 
 # Test bash installation scripts
 include(cmake/AddInstallationScriptTest.cmake )
-add_installation_script_test(installation-scripts.sh src/tests/installation/)
+add_installation_script_test(installation-scripts.sh tests/installation/)
 
 if( CAF_ENABLE_FAILED_IMAGES AND ( NOT
       (	"${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" ) AND ( "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64" ) )
