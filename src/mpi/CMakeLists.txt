@@ -16,7 +16,7 @@ endif()
 #-----------------------------------------------------------
 # Add the actual library targets, then adjust them as needed
 #-----------------------------------------------------------
-add_library(opencoarrays_mod STATIC ../extensions/opencoarrays.F90)
+add_library(opencoarrays_mod STATIC ../cli/opencoarrays.F90)
 set_target_properties(opencoarrays_mod
   PROPERTIES
   Fortran_MODULE_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_INCLUDEDIR}/${mod_dir_tail}"
@@ -318,7 +318,7 @@ set_target_properties(caf_mpi_static
 get_target_property(libcaf_static caf_mpi_static OUTPUT_NAME)
 set(CAF_LIBS "${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${libcaf_static}${CMAKE_STATIC_LIBRARY_SUFFIX}")
 
-configure_file("${CMAKE_SOURCE_DIR}/src/extensions/caf.in" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf"
+configure_file("${CMAKE_SOURCE_DIR}/src/cli/caf.in" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf"
   @ONLY)
 
 
@@ -334,7 +334,7 @@ else()
   set(HAVE_FAILED_IMG "false")
 endif()
 
-configure_file("${CMAKE_SOURCE_DIR}/src/extensions/cafrun.in" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun"
+configure_file("${CMAKE_SOURCE_DIR}/src/cli/cafrun.in" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun"
   @ONLY)
 
 install(PROGRAMS "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun"
