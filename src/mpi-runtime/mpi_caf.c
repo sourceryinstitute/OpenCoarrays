@@ -54,7 +54,7 @@
   #define WITH_FAILED_IMAGES 1
 #endif
 
-#include "libcaf.h"
+#include "../libcaf.h"
 
 /* Define GFC_CAF_CHECK to enable run-time checking. */
 /* #define GFC_CAF_CHECK  1 */

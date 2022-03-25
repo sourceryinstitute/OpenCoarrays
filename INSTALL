@@ -156,3 +156,10 @@ Configure options
  For a look at all of the possible CMake settings, many/most of which are
  default CMake options, please run `ccmake /path/to/source` or
  `cmake-gui /path/to/source`.
+
+Experimental fpm build
+----------------------
+fpm build \
+  --compiler `which mpifort` \
+  --c-compiler `which mpicc` \
+  --c-flag="-DPREFIX_NAME=_gfortran_"
