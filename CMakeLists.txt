@@ -204,6 +204,9 @@ endif()
 
 if(CMAKE_BUILD_TYPE MATCHES "Debug|DEBUG|debug")
   add_definitions(-DEXTRA_DEBUG_OUTPUT)
+  set(IMPI_BUILD debug)
+else()
+  set(IMPI_BUILD release)
 endif()
 
   # We have populated CMAKE_Fortran_COMPILER_VERSION if it was missing
@@ -274,33 +277,97 @@ if (C_COMPILER_NAME MATCHES "^[mM][pP][iI]")
   set (MPI_C_COMPILER "${CMAKE_C_COMPILER}")
 endif()
 
-find_package( MPI )
+if(WIN32) # Only support building with GCC & GFortran using Intel MPI (OneAPI)
+# Here we assume Intel ONEAPI and the environment is loaded
+cmake_path(SET MPI_ROOT NORMALIZE "$ENV{I_MPI_ROOT}")
+set (IMPI_INCLUDES "${MPI_ROOT}/include")
+set (IMPI_LIB_DIR "${MPI_ROOT}/lib/${IMPI_BUILD}")
+set (IMPI_DLL_DIR "${MPI_ROOT}/bin/${IMPI_BUILD}")
+set (IMPI_BIN_DIR "${MPI_ROOT}/bin")
 
-if ( (NOT MPI_C_FOUND) OR (NOT MPI_Fortran_FOUND) OR (NOT MPIEXEC))
-  # Get default install location of MPICH from install.sh
-  message(WARNING "Could not find all MPI components!")
-  message(WARNING "
+find_library(IMPI_LIB
+  "impi.lib"
+  HINTS "${IMPI_LIB_DIR}"
+  DOC "Location of the Intel MPI impi.lib file"
+  REQUIRED
+  NO_DEFAULT_PATH)
+
+set(MPI_impi_LIBRARY "${IMPI_LIB}")
+set(MPI_impicxx_LIBRARY "${IMPI_LIB_DIR}/impicxx.lib")
+
+find_file(IMPI_DLL
+  "impi.dll"
+  HINTS "${IMPI_DLL_DIR}"
+  DOC "Location of the Intel MPI impi.dll file"
+  REQUIRED
+  NO_DEFAULT_PATH)
+
+
+add_library(IMPI::MPI SHARED IMPORTED)
+set_target_properties(IMPI::MPI
+  PROPERTIES
+  IMPORTED_IMPLIB "${IMPI_LIB}"
+  IMPORTED_LOCATION "${IMPI_DLL}")
+target_include_directories(IMPI::MPI
+  INTERFACE "${IMPI_INCLUDES}")
+
+set(MPI_C_INCLUDE_DIRS "${IMPI_INCLUDES}")
+set(MPI_C_INCLUDE_PATH "${IMPI_INCLUDES}")
+set(MPI_C_HEADER_DIR "${IMPI_INCLUDES}")
+set(MPI_Fortran_COMPILER_INCLUDE_DIRS "${IMPI_INCLUDES}")
+set(MPI_Fortran_F77_HEADER_DIR "${IMPI_INCLUDES}")
+set(MPI_Fortran_INCLUDE_PATH "${IMPI_INCLUDES}")
+
+set(MPI_C_LIB_NAMES impi;impicxx)
+set(MPI_C_LIBRARIES "${IMPI_LIB}")
+set(MPI_Fortran_LIB_NAMES impi)
+set(MPI_Fortran_LIBRARIES "${IMPI_LIB}")
+
+set(MPI_Fortran_HAVE_F90_MODULE FALSE)
+set(MPI_Fortran_HAVE_F08_MODULE FALSE)
+
+find_program(MPIEXEC_EXECUTABLE
+  mpiexec
+  HINTS "${IMPI_BIN_DIR}"
+  DOC "Location of Intel MPI implementations mpiexec launcher program"
+  REQUIRED
+  NO_DEFAULT_PATH)
+set(MPIEXEC "${MPIEXEC_EXECUTABLE}")
+set(MPI_EXEC_NUMPROC_FLAG -n)
+set(MPI_EXEC_PREFLAGS -print-all-exitcodes)
+
+set(MPI_C_FOUND TRUE)
+set(MPI_Fortran_FOUND TRUE)
+
+else()
+  find_package( MPI )
+
+  if ( (NOT MPI_C_FOUND) OR (NOT MPI_Fortran_FOUND) OR (NOT MPIEXEC_EXECUTABLE))
+    # Get default install location of MPICH from install.sh
+    message(WARNING "Could not find all MPI components!")
+    message(WARNING "
 MPI_C_FOUND        = ${MPI_C_FOUND}
 MPI_Fortran_FOUND  = ${MPI_Fortran_FOUND}
-MPIEXEC = ${MPIEXEC}
+MPIEXEC = ${MPIEXEC_EXECUTABLE}
 ")
-  execute_process( COMMAND "./install.sh" -P mpich
-    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-    OUTPUT_VARIABLE DEFAULT_MPICH_INSTALL_LOC
-    OUTPUT_QUIET
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
-  find_program (MY_MPI_EXEC NAMES mpirun mpiexec lamexec srun
-    PATHS "${DEFAULT_MPICH_INSTALL_LOC}" ENV PATH
-    HINTS "${FTN_COMPILER_DIR}" "${C_COMPILER_DIR}"
-    PATH_SUFFIXES bin)
-  set ( MPI_HOME "${MPI_HOME}" "${MY_MPI_EXEC}" "${MY_MPI_EXEC}/.." )
-  find_package( MPI REQUIRED )
+    execute_process( COMMAND "./install.sh" -P mpich
+      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+      OUTPUT_VARIABLE DEFAULT_MPICH_INSTALL_LOC
+      OUTPUT_QUIET
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      )
+    find_program (MY_MPI_EXEC NAMES mpirun mpiexec lamexec srun
+      PATHS "${DEFAULT_MPICH_INSTALL_LOC}" ENV PATH
+      HINTS "${FTN_COMPILER_DIR}" "${C_COMPILER_DIR}"
+      PATH_SUFFIXES bin)
+    set ( MPI_HOME "${MPI_HOME}" "${MY_MPI_EXEC}" "${MY_MPI_EXEC}/.." )
+    find_package( MPI REQUIRED )
+  endif()
 endif()
 list(REMOVE_DUPLICATES MPI_Fortran_INCLUDE_PATH)
 
-# Test for consistent MPI environment
-if (NOT MPIEXEC)
+# Test for consistent MPI environment but not on windows
+if (NOT MPIEXEC_EXECUTABLE)
   message ( ERROR "CMake failed to find `mpiexec` or similar. If building with `./install.sh` please
 report this bug to the OpenCoarrays developers at
 https://github.com/sourceryinstitute/opencoarrays/issues, otherwise point CMake
@@ -308,68 +375,69 @@ to the desired MPI runtime.")
 else()
   add_definitions(-DHAVE_MPI)
 endif()
+if(NOT WIN32)
+  get_filename_component(MPIEXEC_RELATIVE_LOC "${MPIEXEC}"
+    PROGRAM)
+  get_filename_component(MPIEXEC_ABS_LOC "${MPIEXEC_RELATIVE_LOC}"
+    REALPATH)
+  get_filename_component(MPIEXEC_DIR "${MPIEXEC_ABS_LOC}"
+    DIRECTORY)
 
-get_filename_component(MPIEXEC_RELATIVE_LOC "${MPIEXEC}"
-  PROGRAM)
-get_filename_component(MPIEXEC_ABS_LOC "${MPIEXEC_RELATIVE_LOC}"
-  REALPATH)
-get_filename_component(MPIEXEC_DIR "${MPIEXEC_ABS_LOC}"
-  DIRECTORY)
+  get_filename_component(MPICC_RELATIVE_LOC "${MPI_C_COMPILER}"
+    PROGRAM)
+  get_filename_component(MPICC_ABS_LOC "${MPICC_RELATIVE_LOC}"
+    REALPATH)
+  get_filename_component(MPICC_DIR "${MPICC_ABS_LOC}"
+    DIRECTORY)
 
-get_filename_component(MPICC_RELATIVE_LOC "${MPI_C_COMPILER}"
-  PROGRAM)
-get_filename_component(MPICC_ABS_LOC "${MPICC_RELATIVE_LOC}"
-  REALPATH)
-get_filename_component(MPICC_DIR "${MPICC_ABS_LOC}"
-  DIRECTORY)
+  get_filename_component(MPIFC_RELATIVE_LOC "${MPI_Fortran_COMPILER}"
+    PROGRAM)
+  get_filename_component(MPIFC_ABS_LOC "${MPIFC_RELATIVE_LOC}"
+    REALPATH)
+  get_filename_component(MPIFC_DIR "${MPIFC_ABS_LOC}"
+    DIRECTORY)
 
-get_filename_component(MPIFC_RELATIVE_LOC "${MPI_Fortran_COMPILER}"
-  PROGRAM)
-get_filename_component(MPIFC_ABS_LOC "${MPIFC_RELATIVE_LOC}"
-  REALPATH)
-get_filename_component(MPIFC_DIR "${MPIFC_ABS_LOC}"
-  DIRECTORY)
-
-if ((MPIEXEC_DIR STREQUAL MPICC_DIR) AND (MPIEXEC_DIR STREQUAL MPIFC_DIR))
-  message ( STATUS "MPI runtime and compile time environments appear to be consistent")
-else()
-  message ( WARNING "MPIEXEC is in \"${MPIEXEC_DIR},\"
+  if ((MPIEXEC_DIR STREQUAL MPICC_DIR) AND (MPIEXEC_DIR STREQUAL MPIFC_DIR))
+    message ( STATUS "MPI runtime and compile time environments appear to be consistent")
+  else()
+    message ( WARNING "MPIEXEC is in \"${MPIEXEC_DIR},\"
 which differs from the location of MPICC and/or MPIFC which are in
 \"${MPICC_DIR}\" and \"${MPIFC_DIR},\" respectively.
 This is likely indicative of a problem. If building with `./install.sh` please report
 this to the OpenCoarrays developers by filing a new issue at:
 https://github.com/sourceryinstitute/OpenCoarrays/issues/new")
-endif()
+  endif()
 
-#-----------------------------------------------
-# Work around bug #317 present on fedora systems
-#-----------------------------------------------
-if( (MPI_C_LINK_FLAGS MATCHES "noexecstack") OR (MPI_Fortran_LINK_FLAGS MATCHES "noexecstack") )
-  message ( WARNING
-"The `noexecstack` linker flag was found in the MPI_<lang>_LINK_FLAGS variable. This is
+  #-----------------------------------------------
+  # Work around bug #317 present on fedora systems
+  #-----------------------------------------------
+  if( (MPI_C_LINK_FLAGS MATCHES "noexecstack") OR (MPI_Fortran_LINK_FLAGS MATCHES "noexecstack") )
+    message ( WARNING
+      "The `noexecstack` linker flag was found in the MPI_<lang>_LINK_FLAGS variable. This is
 known to cause segmentation faults for some Fortran codes. See, e.g.,
 https://gcc.gnu.org/bugzilla/show_bug.cgi?id=71729 or
 https://github.com/sourceryinstitute/OpenCoarrays/issues/317.
 
 `noexecstack` is being replaced with `execstack`"
-    )
-  string(REPLACE "noexecstack"
-    "execstack" MPI_C_LINK_FLAGS_FIXED ${MPI_C_LINK_FLAGS})
-  string(REPLACE "noexecstack"
-    "execstack" MPI_Fortran_LINK_FLAGS_FIXED ${MPI_Fortran_LINK_FLAGS})
-  set(MPI_C_LINK_FLAGS "${MPI_C_LINK_FLAGS_FIXED}" CACHE STRING
-    "MPI C linking flags" FORCE)
-  set(MPI_Fortran_LINK_FLAGS "${MPI_Fortran_LINK_FLAGS_FIXED}" CACHE STRING
-    "MPI Fortran linking flags" FORCE)
+      )
+    string(REPLACE "noexecstack"
+      "execstack" MPI_C_LINK_FLAGS_FIXED ${MPI_C_LINK_FLAGS})
+    string(REPLACE "noexecstack"
+      "execstack" MPI_Fortran_LINK_FLAGS_FIXED ${MPI_Fortran_LINK_FLAGS})
+    set(MPI_C_LINK_FLAGS "${MPI_C_LINK_FLAGS_FIXED}" CACHE STRING
+      "MPI C linking flags" FORCE)
+    set(MPI_Fortran_LINK_FLAGS "${MPI_Fortran_LINK_FLAGS_FIXED}" CACHE STRING
+      "MPI Fortran linking flags" FORCE)
+  endif()
 endif()
 
 #--------------------------------------------------------
 # Make sure a simple "hello world" C mpi program compiles
 #--------------------------------------------------------
 set(OLD_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
-set(CMAKE_REQUIRED_FLAGS ${MPI_C_COMPILE_FLAGS} ${MPI_C_LINK_FLAGS})
+set(CMAKE_REQUIRED_FLAGS ${MPI_C_COMPILE_OPTIONS} ${MPI_C_COMPILE_DEFINITIONS} ${MPI_C_LINK_FLAGS})
 set(OLD_INCLUDES ${CMAKE_REQUIRED_INCLUDES})
-set(CMAKE_REQUIRED_INCLUDES ${MPI_C_INCLUDE_PATH})
+set(CMAKE_REQUIRED_INCLUDES ${MPI_C_INCLUDE_DIRS})
 set(OLD_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES})
 set(CMAKE_REQUIRED_LIBRARIES ${MPI_C_LIBRARIES})
 include (CheckCSourceCompiles)
@@ -410,7 +478,7 @@ endif()
 # Try using mpi.mod first then fall back on includ 'mpif.h'
 #--------------------------------------------------------------
 set(OLD_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
-set(CMAKE_REQUIRED_FLAGS "-ffree-form" ${MPI_Fortran_COMPILE_FLAGS} ${MPI_Fortran_LINK_FLAGS})
+set(CMAKE_REQUIRED_FLAGS "-ffree-form" ${MPI_Fortran_COMPILE_OPTIONS} ${MPI_Fortran_COMPILE_DEFINITIONS} ${MPI_Fortran_LINK_FLAGS})
 set(OLD_INCLUDES ${CMAKE_REQUIRED_INCLUDES})
 set(CMAKE_REQUIRED_INCLUDES ${MPI_Fortran_INCLUDE_PATH})
 set(OLD_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES})
@@ -442,7 +510,7 @@ unset(OLD_LIBRARIES)
 # If that failed try using mpif.h
 #--------------------------------
 set(OLD_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
-set(CMAKE_REQUIRED_FLAGS "-ffree-form" ${MPI_Fortran_COMPILE_FLAGS} ${MPI_Fortran_LINK_FLAGS})
+set(CMAKE_REQUIRED_FLAGS "-ffree-form" ${MPI_Fortran_COMPILE_OPTIONS} ${MPI_Fortra_COMPILE_DEFINITIONS} ${MPI_Fortran_LINK_FLAGS})
 set(OLD_INCLUDES ${CMAKE_REQUIRED_INCLUDES})
 set(CMAKE_REQUIRED_INCLUDES ${MPI_Fortran_INCLUDE_PATH})
 set(OLD_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES})

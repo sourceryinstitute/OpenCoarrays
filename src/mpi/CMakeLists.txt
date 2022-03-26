@@ -46,6 +46,20 @@ target_link_libraries(caf_mpi_static
 set_target_properties(caf_mpi_static
   PROPERTIES
   POSITION_INDEPENDENT_CODE TRUE)
+if(WIN32)
+  target_compile_options(caf_mpi
+    PUBLIC -pthread)
+  target_link_libraries(caf_mpi
+    PRIVATE pthread)
+  set_target_properties(caf_mpi
+    PROPERTIES LINKER_LANGUAGE Fortran)
+  target_compile_options(caf_mpi_static
+    PUBLIC -pthread)
+  target_link_options(caf_mpi_static
+    PUBLIC -pthread)
+  target_link_libraries(caf_mpi_static
+    PRIVATE gfortran)
+endif()
 target_include_directories(caf_mpi PUBLIC
   $<$<COMPILE_LANGUAGE:C>:${MPI_C_INCLUDE_PATH}>
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
