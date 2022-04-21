@@ -1,0 +1,6 @@
+name = "opencoarrays"
+version = "2.9.3"
+license = "BSD"
+author = ["Sourcery Institute"]
+maintainer = "damian@archaeologic.codes"
+copyright = "2015-2022 Sourcery Institute"

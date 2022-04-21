@@ -25,14 +25,6 @@
 * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 
-/****l* mpi/mpi_caf.c
- * NAME
- *   mpi_caf
- * SYNOPSIS
- *   This program implements the LIBCAF_MPI transport layer.
-******
-*/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>     /* For memcpy. */
@@ -54,7 +46,7 @@
   #define WITH_FAILED_IMAGES 1
 #endif
 
-#include "libcaf.h"
+#include "../libcaf.h"
 
 /* Define GFC_CAF_CHECK to enable run-time checking. */
 /* #define GFC_CAF_CHECK  1 */
