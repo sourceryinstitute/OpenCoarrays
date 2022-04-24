@@ -4,3 +4,6 @@ license = "BSD"
 author = ["Sourcery Institute"]
 maintainer = "damian@archaeologic.codes"
 copyright = "2015-2022 Sourcery Institute"
+
+[install]
+library = true
