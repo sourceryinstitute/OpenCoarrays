@@ -7,8 +7,8 @@
 # Invokes the chosen Fortran compiler with the received command-line
 # arguments.
 #
-# Copyright (c) 2015-2020, Sourcery Institute
-# Copyright (c) 2015-2020, Sourcery, Inc.
+# Copyright (c) 2015-2022, Sourcery Institute
+# Copyright (c) 2015-2022, Sourcery, Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -50,28 +50,25 @@ set -o pipefail
 #---------------------------
 # List of variables needing configuration:
 #
-# CAF_VERSION, opencoarrays_aware_compiler, Fortran_COMPILER, CAF_MODDIR,
-# CAF_MPI_Fortran_LINK_FLAGS, CAF_MPI_Fortran_COMPILE_FLAGS,
-# CAF_LIBS, CAF_MPI_LIBS
-#
+#   CAF_VERSION
+#   Fortran_COMPILER
+#   CAF_MPI_Fortran_LINK_FLAGS
+#   CAF_MPI_Fortran_COMPILE_FLAGS
+#   CAF_LIBS, CAF_MPI_LIBS
 
 caf_version='@CAF_VERSION@' # fetched from `git describe` and/or
 # `.VERSION` file
-oca_compiler="@opencoarrays_aware_compiler@" # True for GFortran > 5.0.0
 
 # Compiler used to build OpenCoarrays; runtime must match compiler used during build
 cafc="@Fortran_COMPILER@"
 if [[ "${cafc}" == @*@ ]]; then
   cafc=gfortran
 fi
-caf_mod_dir="@CAF_MODDIR@"    # location of extensions module, needed for non-OCA compilers
-mod_dir_flag="-I"
 
-
-# Ideally these should be absolute paths. Since they are array
-# variables multiple libs (absolute or not) can be specified provided
-# proper quoting is used, when @var@ is expanded. (i.e., expands with
-# double quotes around each library w/path to ensure proper word
+# Ideally these should be absolute paths. Because they are array
+# variables, multiple libs (absolute or not) can be specified provided
+# that proper quoting is used, when @var@ is expanded. (i.e., expands 
+# with double quotes around each library w/path to ensure proper word
 # splittling for paths with spaces) Handling of paths is complex
 # between CMake and pkg-config: pkg-config (new enough versions) will
 # theoretically expand paths with spaces escaped or the path
@@ -206,16 +203,6 @@ substitute_lib () {
   fi
 }
 
-# Always make extensions module available, user can choose whether to `use` it or not
-caf_pre_flags=("${mod_dir_flag}${prefix%/}/${caf_mod_dir}")
-
-if [[ "${oca_compiler}" == true ]]; then
-  if [[ -z "${caf_pre_flags[*]:-}" ]]; then
-    caf_pre_flags=('-fcoarray=lib')
-  else
-    caf_pre_flags+=('-fcoarray=lib')
-  fi
-fi
 if [[ -n "${mpi_compile_flags[*]:-}" ]]; then
   for compileflag in "${mpi_compile_flags[@]:-}"; do
       caf_pre_flags+=("${compileflag}")
@@ -260,34 +247,10 @@ usage() {
   echo "   ${cmd} --help"
   echo "   ${cmd} -s"
   echo ""
-  echo "OpenCoarrays ${caf_version} ${cmd} supports three categories of compilers"
-  echo "with the following restrictions for each use case:"
-  echo ""
-  echo " 1. With an OpenCoarrays-Aware (OCA) compiler (GNU 5.1.0 or later),"
-  echo "   a. If any of the options listed above appear, any remaining arguments are ignored."
-  echo "   b. If present, any Fortran <source-file(s)> must have a name of the form:"
-  echo "      *.f90, *.F90, *.f, or *.F. "
-  echo ""
-  echo " 2. With non-OCA CAF compilers (Intel or Cray),"
-  echo "   a. Observe restrictions 1a-d above."
-  echo "   b. Access OpenCoarrays collective subroutines via use association with an only clause,"
-  echo "      e.g., 'use opencoarrays, only : co_sum,co_broadcast' "
-  echo ""
-  echo " 3. With non-CAF compilers (all compilers not named above),"
-  echo "   a. Observe restrictions 1a-d above."
-  echo "   b. Access OpenCoarrays capabilities via use association ('use opencoarrays')."
-  echo "   c. The only CAF statements or expressions allowed are the following:"
-  echo "      * 'num_images()' "
-  echo "      * 'this_image()' with or without arguments"
-  echo "      * 'sync all' with or without arguments."
-  echo "      * 'sync images' with or without arguments."
-  echo "      * 'error stop' without arguments."
-  echo "      * 'co_sum', 'co_broadcast', 'co_max', 'co_min', or 'co_reduce'"
-  echo ""
-  echo " The caf wrapper will append -L..., -l..., and other required flags as necessary"
-  echo " to link against OpenCoarrays, using values that get set during the OpenCoarrays"
-  echo " build and installation."
-  echo ""
+  echo "OpenCoarrays ${caf_version} ${cmd} provides a runtime library for parallel features of Fortran 2018."
+  echo "An OpenCoarrays installation includes the opencoarrays library, the caf compiler wrapper, and the cafrun."
+  echo "program launcher.  The caf wrapper invokes the compiler with the flags required to link against"
+  echo "OpenCoarrays, using values that get set during the OpenCoarrays build and installation."
 }
 
 # Print useage information if caf is invoked without arguments
@@ -299,8 +262,8 @@ fi
 if [[ ${1} == -[vV] || ${1} == '--version' ]]; then
   echo ""
   echo "OpenCoarrays Coarray Fortran Compiler Wrapper (caf version ${caf_version})"
-  echo "Copyright (C) 2015-2020 Sourcery Institute"
-  echo "Copyright (C) 2015-2020 Sourcery, Inc."
+  echo "Copyright (C) 2015-2022 Sourcery Institute"
+  echo "Copyright (C) 2015-2022 Archaeologic Inc."
   echo ""
   echo "OpenCoarrays comes with NO WARRANTY, to the extent permitted by law."
   echo "You may redistribute copies of OpenCoarrays under the terms of the"
@@ -334,21 +297,6 @@ elif [[ ${1} == '-h' || ${1} == '--help' ]]; then
   # Print usage information
   usage | ${PAGER:-less -i -F -X -M -J}
   exit 0
-elif [[ "${oca_compiler:-}" != "true" ]]; then
-  # Transform file(s) with the .f90, .F90, .f, or .F extension, if present:
-  # Loop over all arguments and perform simple search & replace source transformation on any Fortran sources
-  i=0
-  for arg in "${@}"; do
-    src_extension="${arg##*.}"
-    ((i+=1)) # Increment i to keep track of which arg we're processing
-    if [[ "${src_extension}" == [fF]90 || "${src_extension}" == [fF] ]]; then
-      # Edit & copy the source to replace CAF syntax with calls to public procedures in opencoarrays.f90:
-      sed -e 's/sync all/call sync_all/g' -e 's/error stop/call error_stop/g' \
-        -e 's/sync images/call sync_images/g' "${arg}" >"caf-${arg}"
-      # Replace the file name in command-line argment $i with the new name before invoking the compiler:
-      set -- "${@:1:$((i - 1))}" "caf-${arg}" "${@:$((i + 1)):$((${#} - i))}"
-    fi
-  done
 fi
 
 # Invoke the compiler along with all command-line arguments:

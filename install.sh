@@ -269,12 +269,19 @@ $FPM install \
   --c-flag "-DPREFIX_NAME=_gfortran_caf_ -DGCC_GE_7 -DGCC_GE_8" \
   --flag "-fcoarray=lib"
 
+CAF_VERSION=$(sed -n '/[0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}/{s/^\([^.]*\)\([0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}\)\(.*\)/\2/p;q;}' .VERSION)
+MPIFORT_SHOW=$($MPIFC -show)
+Fortran_COMPILER="${MPIFORT_SHOW%% *}"
+CAF_MPI_LIBS="${MPIFORT_SHOW#* }"
+
+sed -e "s/@CAF_VERSION@/$CAF_VERSION/g" src/wrappers/caf.in > "$PREFIX"/bin/caf
+sed -i '' -e "s/@Fortran_COMPILER@/$Fortran_COMPILER/g" "$PREFIX"/bin/caf
+sed -i '' -e "s/@CAF_LIBS@/lib\/libopencoarrays.a/g" "$PREFIX"/bin/caf
+# sed -i '' -e "s/@CAF_MPI_LIBS@/$CAF_MPI_LIBS/g" "$PREFIX"/bin/caf
+# sed -i '' -e "s/@CAF_MPI_Fortran_COMPILE_FLAGS@/.../g" "$PREFIX"/bin/caf
+
 echo ""
 echo "________________ OpenCoarrays has been installed ________________"
 echo ""
-echo "To rebuild or to run tests or examples via the Fortran Package"
-echo "Manager (fpm) with the required compiler/linker flags, pass a"
-echo "fpm command to the build/run-fpm.sh script. For example, run"
-echo "the program example/hello.f90 as follows:"
-echo ""
-#echo "./$RUN_FPM_SH run --example hello"
+echo "Compile and launch parallel Fortran 2018 programs with the installed"
+echo "caf and cafrun scripts, respectively."
