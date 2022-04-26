@@ -61,7 +61,7 @@ oca_compiler="@opencoarrays_aware_compiler@" # True for GFortran > 5.0.0
 
 # Compiler used to build OpenCoarrays; runtime must match compiler used during build
 cafc="@Fortran_COMPILER@"
-if [[ "${cafc}" == @*@ ]]; then
+if [[ "${cafc}" == @*@ || -z "${cafc}" ]]; then
   cafc=gfortran
 fi
 caf_mod_dir="@CAF_MODDIR@"    # location of extensions module, needed for non-OCA compilers
@@ -176,7 +176,7 @@ __only_compiling () {
 substitute_lib () {
   # Try to substitute a shared or static library if requested library is missing
   # Some package managers only install dynamic or static libs
-  if ! [[ -f "${1}" ]] ; then
+  if ! [[ -f "${1}" && "${1}" = *.* ]] ; then
       case "${1##*.}" in
           a|lib)
               for suff in so dylib dll ; do
@@ -370,7 +370,7 @@ if "${cafc}" "${compiler_args[@]}" ; then
   exit $?
 else
   return_code=$?
-  echo "Error: comand:" >&2
+  echo "Error: command:" >&2
   echo "   \`${cafc} ${compiler_args[*]}\`" >&2
   echo "failed to compile." >&2
   exit "${return_code}"
