@@ -52,7 +52,7 @@ set -o pipefail
 #
 # CAF_VERSION, opencoarrays_aware_compiler, Fortran_COMPILER, CAF_MODDIR,
 # CAF_MPI_Fortran_LINK_FLAGS, CAF_MPI_Fortran_COMPILE_FLAGS,
-# CAF_LIBS, CAF_MPI_LIBS
+# CAF_LIBS, THREADS_LIB, CAF_MPI_LIBS
 #
 
 caf_version='@CAF_VERSION@' # fetched from `git describe` and/or
@@ -87,6 +87,7 @@ mpi_link_flags=(@CAF_MPI_Fortran_LINK_FLAGS@) # e.g. `pkg-config
 # --libs-only-L`
 mpi_compile_flags=(@CAF_MPI_Fortran_COMPILE_FLAGS@)
 caf_libs=(@CAF_LIBS@) # e.g. "libcaf_mpi" "libcaf_extensions",
+threads_lib=@THREADS_LIB@ # pthreads or compatible, needed for windows
 # preferably full paths, but could be
 # combination of -L... and -lcaf_mpi...
 mpi_libs=(@CAF_MPI_LIBS@) # e.g. `pkg-config --libs-only-l` or full paths
@@ -235,6 +236,11 @@ if [[ -n "${caf_libs[*]:-}" ]]; then
     caf_added_libs+=("$(substitute_lib "${prefix%/}/${lib}")")
   done
 fi
+
+if [[ -n "${threads_lib}" ]]; then
+  caf_added_libs+=("${threads_lib}")
+fi
+
 if [[ -n "${mpi_libs[*]:-}" ]]; then
   for lib in "${mpi_libs[@]:-}"; do
     caf_added_libs+=("$(substitute_lib "${lib}")")

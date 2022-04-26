@@ -46,20 +46,23 @@ target_link_libraries(caf_mpi_static
 set_target_properties(caf_mpi_static
   PROPERTIES
   POSITION_INDEPENDENT_CODE TRUE)
-if(WIN32)
-  target_compile_options(caf_mpi
-    PUBLIC -pthread)
-  target_link_libraries(caf_mpi
-    PRIVATE pthread)
-  set_target_properties(caf_mpi
-    PROPERTIES LINKER_LANGUAGE Fortran)
-  target_compile_options(caf_mpi_static
-    PUBLIC -pthread)
-  target_link_options(caf_mpi_static
-    PUBLIC -pthread)
-  target_link_libraries(caf_mpi_static
-    PRIVATE gfortran)
-endif()
+
+set(THREADS_PREFER_PTHREAD_FLAG TRUE)
+find_package(Threads REQUIRED)
+
+message(STATUS "Threads found? ${Threads_FOUND}")
+message(STATUS "Thread library to use: ${CMAKE_THREAD_LIBS_INIT}")
+message(STATUS "Found threads library pthread compatible? ${CMAKE_USE_PTHREADS_INIT}")
+
+target_link_libraries(caf_mpi
+  PUBLIC Threads::Threads)
+set_target_properties(caf_mpi
+  PROPERTIES LINKER_LANGUAGE Fortran)
+target_link_libraries(caf_mpi_static
+  PUBLIC Threads::Threads)
+target_link_libraries(caf_mpi_static
+  PRIVATE gfortran)
+
 target_include_directories(caf_mpi PUBLIC
   $<$<COMPILE_LANGUAGE:C>:${MPI_C_INCLUDE_PATH}>
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
@@ -305,13 +308,14 @@ set(CMAKE_REQUIRED_INCLUDES ${old_cmake_required_includes})
 #
 # @CAF_VERSION@ @opencoarrays_aware_compiler@ @Fortran_COMPILER@ @CAF_MODDIR@
 # @CAF_MPI_Fortran_LINK_FLAGS@ @CAF_MPI_Fortran_COMPILE_FLAGS@
-# @CAF_LIBS@ @CAF_MPI_LIBS@
+# @CAF_LIBS@ @THREADS_LIB@ @CAF_MPI_LIBS@
 #
 
 set(CAF_VERSION "${full_git_describe}")
 set(Fortran_COMPILER "${CMAKE_Fortran_COMPILER}")
 set(CAF_MODDIR "${CMAKE_INSTALL_INCLUDEDIR}/${mod_dir_tail}")
 set(MOD_DIR_FLAG "${CMAKE_Fortran_MODDIR_FLAG}")
+set(THREADS_LIB "${CMAKE_THREAD_LIBS_INIT}")
 set(CAF_MPI_LIBS "")
 foreach( lib IN LISTS MPI_Fortran_LIBRARIES)
   set(CAF_MPI_LIBS "${CAF_MPI_LIBS} \"${lib}\"")
@@ -330,7 +334,8 @@ string(STRIP "${CAF_MPI_Fortran_COMPILE_FLAGS}" CAF_MPI_Fortran_COMPILE_FLAGS)
 set_target_properties(caf_mpi_static
   PROPERTIES OUTPUT_NAME caf_mpi)
 get_target_property(libcaf_static caf_mpi_static OUTPUT_NAME)
-set(CAF_LIBS "${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${libcaf_static}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+set(CAF_LIBS
+  "${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${libcaf_static}${CMAKE_STATIC_LIBRARY_SUFFIX}")
 
 configure_file("${CMAKE_SOURCE_DIR}/src/extensions/caf.in" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf"
   @ONLY)
