@@ -253,8 +253,8 @@ $FPM install \
   --flag "-fcoarray=lib"
 
 CAF_VERSION=$(sed -n '/[0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}/{s/^\([^.]*\)\([0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}\)\(.*\)/\2/p;q;}' .VERSION)
-Fortran_COMPILER="$(which $(mpifort --showme:command))"
-CAF_MPI_Fortran_LINK_FLAGS="$(mpifort --showme:link)"
+Fortran_COMPILER="$(which $($MPIFC --showme:command))"
+CAF_MPI_Fortran_LINK_FLAGS="$($MPIFC --showme:link)"
 CAF_MPI_Fortran_COMPILE_FLAGS=""
 CAF_LIBS="lib\/libopencoarrays.a"
 CAF_MPI_LIBS=""
@@ -267,8 +267,22 @@ sed -i '' -e "s:@CAF_MPI_Fortran_COMPILE_FLAGS@:$CAF_MPI_Fortran_COMPILE_FLAGS:g
 sed -i '' -e "s:@CAF_LIBS@:$CAF_LIBS:g"                                           "$PREFIX"/bin/caf
 sed -i '' -e "s:@CAF_MPI_LIBS@:$CAF_MPI_LIBS:g"                                   "$PREFIX"/bin/caf
 
+MPIEXEC="$(which mpiexec)"
+HAVE_FAILED_IMG=false
+MPIEXEC_NUMPROC_FLAG=false
+MPIEXEC_PREFLAGS=false
+MPIEXEC_POSTFLAGS=false
+
+cp src/wrappers/cafrun.in "$PREFIX"/bin/cafrun
+sed -i '' -e "s/@CAF_VERSION@/$CAF_VERSION/g"                   "$PREFIX"/bin/cafrun
+sed -i '' -e "s:@MPIEXEC@:$MPIEXEC:g"                           "$PREFIX"/bin/cafrun
+sed -i '' -e "s/@MPIEXEC_NUMPROC_FLAG@/$MPIEXEC_NUMPROC_FLAG/g" "$PREFIX"/bin/cafrun
+sed -i '' -e "s/@MPIEXEC_PREFLAGS@/$MPIEXEC_PREFLAGS/g"         "$PREFIX"/bin/cafrun
+sed -i '' -e "s/@MPIEXEC_POSTFLAGS@/$MPIEXEC_POSTFLAGS/g"       "$PREFIX"/bin/cafrun
+sed -i '' -e "s/@HAVE_FAILED_IMG@/$HAVE_FAILED_IMG/g"  "$PREFIX"/bin/cafrun
+
 echo ""
 echo "________________ OpenCoarrays has been installed ________________"
 echo ""
-echo "Compile and launch parallel Fortran 2018 programs with the installed"
+echo "Compile and launch parallel Fortran programs the installed"
 echo "caf and cafrun scripts, respectively."
