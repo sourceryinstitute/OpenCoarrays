@@ -65,7 +65,7 @@ if [ -z ${MPIFC+x} ] || [ -z ${MPICC+x} ] ; then
     MPIFC=`which mpifort`
     echo "Setting MPIFC=$MPIFC"
   fi
-  if command -v mpicc- > /dev/null 2>&1; then
+  if command -v mpicc > /dev/null 2>&1; then
     MPICC=`which mpicc`
     echo "Setting MPICC=$MPICC"
   fi
