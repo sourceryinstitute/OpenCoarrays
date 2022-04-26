@@ -173,7 +173,7 @@ __only_compiling () {
 substitute_lib () {
   # Try to substitute a shared or static library if requested library is missing
   # Some package managers only install dynamic or static libs
-  if ! [[ -f "${1}" ]] ; then
+  if ! [[ -f "${1}" && "${1}" = *.* ]] ; then
       case "${1##*.}" in
           a|lib)
               for suff in so dylib dll ; do

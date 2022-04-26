@@ -226,11 +226,6 @@ FPM_FC=`which $MPIFC`
 FPM_CC=`which $MPICC`
 
 #echo "# DO NOT EDIT OR COMMIT -- Created by opencoarrays/install.sh" > build/fpm.toml
-#cp manifest/fpm.toml.template build/fpm.toml
-#FPM_TOML_LINK_ENTRY="link = [\"$(echo ${GASNET_LIB_NAMES} | sed 's/ /", "/g')\"]"
-#echo "${FPM_TOML_LINK_ENTRY}" >> build/fpm.toml
-#ln -f -s build/fpm.toml
-#
 #OPENCOARRAYS_PC="$PREFIX/lib/pkgconfig/opencoarrays.pc"
 #echo "OPENCOARRAYS_FPM_LDFLAGS=$GASNET_LDFLAGS $GASNET_LIB_LOCATIONS"             >  $OPENCOARRAYS_PC
 #echo "OPENCOARRAYS_FPM_FC=$FPM_FC"                                                >> $OPENCOARRAYS_PC
@@ -250,18 +245,6 @@ FPM_CC=`which $MPICC`
 #  fi
 #}
 #exit_if_pkg_config_pc_file_missing "opencoarrays"
-#
-#RUN_FPM_SH="build/run-fpm.sh"
-#echo "#!/bin/sh"                                                                  >  $RUN_FPM_SH
-#echo "#-- DO NOT EDIT -- created by opencoarrays/install.sh"                      >> $RUN_FPM_SH
-#echo "\"${FPM}\" \"\$@\" \\"                                                      >> $RUN_FPM_SH
-#echo "--compiler \"`$PKG_CONFIG opencoarrays --variable=OPENCOARRAYS_FPM_FC`\"   \\"  >> $RUN_FPM_SH
-#echo "--c-compiler \"`$PKG_CONFIG opencoarrays --variable=OPENCOARRAYS_FPM_CC`\" \\"  >> $RUN_FPM_SH
-#echo "--c-flag \"`$PKG_CONFIG opencoarrays --variable=OPENCOARRAYS_FPM_CFLAGS`\" \\"  >> $RUN_FPM_SH
-#echo "--link-flag \"`$PKG_CONFIG opencoarrays --variable=OPENCOARRAYS_FPM_LDFLAGS`\"" >> $RUN_FPM_SH
-#chmod u+x $RUN_FPM_SH
-#
-#./$RUN_FPM_SH build
 
 $FPM install \
   --compiler $FPM_FC \
@@ -270,15 +253,19 @@ $FPM install \
   --flag "-fcoarray=lib"
 
 CAF_VERSION=$(sed -n '/[0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}/{s/^\([^.]*\)\([0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}\)\(.*\)/\2/p;q;}' .VERSION)
-MPIFORT_SHOW=$($MPIFC -show)
-Fortran_COMPILER="${MPIFORT_SHOW%% *}"
-CAF_MPI_LIBS="${MPIFORT_SHOW#* }"
+Fortran_COMPILER="$(which $(mpifort --showme:command))"
+CAF_MPI_Fortran_LINK_FLAGS="$(mpifort --showme:link)"
+CAF_MPI_Fortran_COMPILE_FLAGS=""
+CAF_LIBS="lib\/libopencoarrays.a"
+CAF_MPI_LIBS=""
 
-sed -e "s/@CAF_VERSION@/$CAF_VERSION/g" src/wrappers/caf.in > "$PREFIX"/bin/caf
-sed -i '' -e "s/@Fortran_COMPILER@/$Fortran_COMPILER/g" "$PREFIX"/bin/caf
-sed -i '' -e "s/@CAF_LIBS@/lib\/libopencoarrays.a/g" "$PREFIX"/bin/caf
-# sed -i '' -e "s/@CAF_MPI_LIBS@/$CAF_MPI_LIBS/g" "$PREFIX"/bin/caf
-# sed -i '' -e "s/@CAF_MPI_Fortran_COMPILE_FLAGS@/.../g" "$PREFIX"/bin/caf
+cp src/wrappers/caf.in "$PREFIX"/bin/caf
+sed -i '' -e "s/@CAF_VERSION@/$CAF_VERSION/g"                                     "$PREFIX"/bin/caf
+sed -i '' -e "s:@Fortran_COMPILER@:$Fortran_COMPILER:g"                           "$PREFIX"/bin/caf
+sed -i '' -e "s:@CAF_MPI_Fortran_LINK_FLAGS@:$CAF_MPI_Fortran_LINK_FLAGS:g"       "$PREFIX"/bin/caf
+sed -i '' -e "s:@CAF_MPI_Fortran_COMPILE_FLAGS@:$CAF_MPI_Fortran_COMPILE_FLAGS:g" "$PREFIX"/bin/caf
+sed -i '' -e "s:@CAF_LIBS@:$CAF_LIBS:g"                                           "$PREFIX"/bin/caf
+sed -i '' -e "s:@CAF_MPI_LIBS@:$CAF_MPI_LIBS:g"                                   "$PREFIX"/bin/caf
 
 echo ""
 echo "________________ OpenCoarrays has been installed ________________"
