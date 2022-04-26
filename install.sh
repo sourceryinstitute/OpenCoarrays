@@ -184,7 +184,7 @@ if [ -z ${MPIFC+x} ] || [ -z ${MPICC+x} ] || [ -z ${PKG_CONFIG+x} ] || [ -z ${RE
   if [ -z ${MPIFC+x} ] || [ -z ${MPICC+x} ]; then
     ask_permission_to_install_homebrew_package "'mpifort' and 'mpicc'" "open-mpi"
     exit_if_user_declines "mpifort and mpicc"
-    "$BREW" install gcc@$GCC_VERSION
+    "$BREW" install open-mpi
   fi
   MPICC=`which mpifort`
   MPIFC=`which mpicc`
