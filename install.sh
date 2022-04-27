@@ -215,46 +215,51 @@ fi
 PREFIX=`$REALPATH ${PREFIX:-"${HOME}/.local"}`
 echo "PREFIX=$PREFIX"
 
-if [ -z ${PKG_CONFIG_PATH+x} ]; then
-  PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig"
-else
-  PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH"
-fi
+PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig"
+mkdir -p "$PKG_CONFIG_PATH"
 echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
-
-FPM_FC=`which $MPIFC`
-FPM_CC=`which $MPICC`
-
-#echo "# DO NOT EDIT OR COMMIT -- Created by opencoarrays/install.sh" > build/fpm.toml
-#OPENCOARRAYS_PC="$PREFIX/lib/pkgconfig/opencoarrays.pc"
-#echo "OPENCOARRAYS_FPM_LDFLAGS=$GASNET_LDFLAGS $GASNET_LIB_LOCATIONS"             >  $OPENCOARRAYS_PC
-#echo "OPENCOARRAYS_FPM_FC=$FPM_FC"                                                >> $OPENCOARRAYS_PC
-#echo "OPENCOARRAYS_FPM_FLAGS=-fcoarray=lib"                                       >> $OPENCOARRAYS_PC
-#echo "OPENCOARRAYS_FPM_CC=$FPM_CC"                                                >> $OPENCOARRAYS_PC
-#echo "OPENCOARRAYS_FPM_CFLAGS=-DPREFIX_NAME=_gfortran_caf_ -DGCC_GE_7 -DGCC_GE_8" >> $OPENCOARRAYS_PC
-#echo "Name: OpenCoarrays"                                                         >> $OPENCOARRAYS_PC
-#echo "Description: Coarray Fortran parallel runtime library"                      >> $OPENCOARRAYS_PC
-#echo "URL: https://github.com/sourceryinstitute/opencoarrays"                     >> $OPENCOARRAYS_PC
-#echo "Version: 3.0.0"                                                             >> $OPENCOARRAYS_PC
-#
-#exit_if_pkg_config_pc_file_missing()
-#{
-#  if ! $PKG_CONFIG $1 ; then
-#    echo "$1.pc pkg-config file not found"
-#    exit 1
-#  fi
-#}
-#exit_if_pkg_config_pc_file_missing "opencoarrays"
 
 CAF_VERSION=$(sed -n '/[0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}/{s/^\([^.]*\)\([0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}\)\(.*\)/\2/p;q;}' .VERSION)
 Fortran_COMPILER="$(which $($MPIFC --showme:command))"
 CAF_MPI_Fortran_LINK_FLAGS="$($MPIFC --showme:link)"
 CAF_MPI_Fortran_COMPILE_FLAGS=""
-CAF_LIBS="lib\/libopencoarrays.a"
-CAF_MPI_LIBS=""
+CAF_MPI_C_COMPILE_FLAGS="$(MPICC --showme:link)"
+CAF_LIBS="lib/libopencoarrays.a"
+
+MPIFC_LIBS="$($MPIFC --showme:libs)"
+MPIFC_LIBS="$(echo -L${MPIFC_LIBS} | sed -n -e 's/\ / -l/g')"
+
+MPIFC_LIB_DIRS="$($MPIFC --showme:libdirs)"
+MPIFC_LIB_DIRS="$(echo -L${MPIFC_LIB_DIRS} | sed -n -e 's/\ / -L/g')"
+
+OPENCOARRAYS_LIBS="-L$PREFIX/lib/ -lopencoarrays"
+
+OPENCOARRAYS_PC="$PKG_CONFIG_PATH/opencoarrays.pc"
+echo "OPENCOARRAYS_FC=$MPIFC"                                                    > $OPENCOARRAYS_PC
+echo "OPENCOARRAYS_CC=$MPICC"                                                   >> $OPENCOARRAYS_PC
+echo "OPENCOARRAYS_CFLAGS='-DPREFIX_NAME=_gfortran_caf_ -DGCC_GE_7 -DGCC_GE_8'" >> $OPENCOARRAYS_PC
+echo "OPENCOARRAYS_LIBS=$OPENCOARRAYS_LIBS"                                     >> $OPENCOARRAYS_PC
+echo ""                                                                         >> $OPENCOARRAYS_PC
+echo "Name: OpenCoarrays"                                                       >> $OPENCOARRAYS_PC
+echo "Description: Coarray Fortran parallel runtime library"                    >> $OPENCOARRAYS_PC
+echo "URL: https://github.com/sourceryinstitute/opencoarrays"                   >> $OPENCOARRAYS_PC
+echo "Version: $CAF_VERSION"                                                    >> $OPENCOARRAYS_PC
+echo "Libs: ${OPENCOARRAYS_LIBS}"                                               >> $OPENCOARRAYS_PC
+
+exit_if_pkg_config_pc_file_missing()
+{
+  export PKG_CONFIG_PATH
+  if ! $PKG_CONFIG $1 ; then
+    echo "$1.pc pkg-config file not found in $PKG_CONFIG_PATH"
+    exit 1
+  fi
+}
+exit_if_pkg_config_pc_file_missing "opencoarrays"
 
 build_script_dir="build/script-templates"
 mkdir -p $build_script_dir
+
+CAF_MPI_LIBS="$MPIFC_LIB_DIRS"
 
 cp script-templates/caf.in $build_script_dir/caf.in
 sed -i '' -e "s/@CAF_VERSION@/$CAF_VERSION/g"                                     $build_script_dir/caf.in
@@ -282,9 +287,9 @@ cp $build_script_dir/cafrun.in "$PREFIX"/bin/cafrun
 
 cp script-templates/run-fpm.in $build_script_dir/run-fpm.in
 sed -i '' -e "s:@CAF@:'$PREFIX'/bin/caf:g" $build_script_dir/run-fpm.in
-sed -i '' -e "s:@MPICC@:'$FPM_CC':g"       $build_script_dir/run-fpm.in
+sed -i '' -e "s:@MPICC@:'$MPICC':g"        $build_script_dir/run-fpm.in
 cp $build_script_dir/run-fpm.in build/run-fpm.sh
-./build/run-fpm.sh run --example
+./build/run-fpm.sh install
 
 echo ""
 echo "________________ OpenCoarrays has been installed ________________"
@@ -296,9 +301,10 @@ echo ""
 echo "$PREFIX/bin/caf example/hello.f90"
 echo "$PREFIX/bin/cafrun -n 4 ./a.out"
 echo ""
-echo "To rebuild, test, or run fpm in the OpenCoarrays repository,"
-echo "execute one of the following commands:"
+echo "The following commands should work now to rebuild, reinstall, or test OpenCoarrays"
+echo "or to run the program(s) in the example subdirectory:"
 echo ""
 echo "./build/run-fpm.sh build"
+echo "./build/run-fpm.sh install"
 echo "./build/run-fpm.sh test"
 echo "./build/run-fpm.sh run --example"
