@@ -1,6 +1,6 @@
 $Format:%d%n%n$
 # Fall back version, probably last release:
-2.9.2
+3.0.0
 
 # OpenCoarrays version file. This project uses semantic
 # versioning. For details see http://semver.org

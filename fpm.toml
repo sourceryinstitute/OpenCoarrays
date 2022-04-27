@@ -1,5 +1,5 @@
 name = "opencoarrays"
-version = "1.0.0"
+version = "3.0.0"
 license = "BSD"
 author = ["Sourcery Institute"]
 maintainer = "damian@archaeologic.codes"
