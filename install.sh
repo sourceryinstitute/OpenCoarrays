@@ -267,9 +267,9 @@ cp build/script-templates/caf.in "$PREFIX"/bin/caf
 
 MPIEXEC="$(which mpiexec)"
 HAVE_FAILED_IMG=false
-MPIEXEC_NUMPROC_FLAG=false
-MPIEXEC_PREFLAGS=false
-MPIEXEC_POSTFLAGS=false
+MPIEXEC_NUMPROC_FLAG="-n"
+MPIEXEC_PREFLAGS=""
+MPIEXEC_POSTFLAGS=""
 
 cp script-templates/cafrun.in $build_script_dir/cafrun.in
 sed -i '' -e "s/@CAF_VERSION@/$CAF_VERSION/g"                   $build_script_dir/cafrun.in
