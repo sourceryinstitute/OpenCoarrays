@@ -203,6 +203,8 @@ substitute_lib () {
   fi
 }
 
+caf_pre_flags=('-fcoarray=lib')
+
 if [[ -n "${mpi_compile_flags[*]:-}" ]]; then
   for compileflag in "${mpi_compile_flags[@]:-}"; do
       caf_pre_flags+=("${compileflag}")

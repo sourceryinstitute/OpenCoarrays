@@ -246,12 +246,6 @@ FPM_CC=`which $MPICC`
 #}
 #exit_if_pkg_config_pc_file_missing "opencoarrays"
 
-$FPM install \
-  --compiler $FPM_FC \
-  --c-compiler $FPM_CC \
-  --c-flag "-DPREFIX_NAME=_gfortran_caf_ -DGCC_GE_7 -DGCC_GE_8" \
-  --flag "-fcoarray=lib"
-
 CAF_VERSION=$(sed -n '/[0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}/{s/^\([^.]*\)\([0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}\)\(.*\)/\2/p;q;}' .VERSION)
 Fortran_COMPILER="$(which $($MPIFC --showme:command))"
 CAF_MPI_Fortran_LINK_FLAGS="$($MPIFC --showme:link)"
@@ -259,13 +253,17 @@ CAF_MPI_Fortran_COMPILE_FLAGS=""
 CAF_LIBS="lib\/libopencoarrays.a"
 CAF_MPI_LIBS=""
 
-cp src/wrappers/caf.in "$PREFIX"/bin/caf
-sed -i '' -e "s/@CAF_VERSION@/$CAF_VERSION/g"                                     "$PREFIX"/bin/caf
-sed -i '' -e "s:@Fortran_COMPILER@:$Fortran_COMPILER:g"                           "$PREFIX"/bin/caf
-sed -i '' -e "s:@CAF_MPI_Fortran_LINK_FLAGS@:$CAF_MPI_Fortran_LINK_FLAGS:g"       "$PREFIX"/bin/caf
-sed -i '' -e "s:@CAF_MPI_Fortran_COMPILE_FLAGS@:$CAF_MPI_Fortran_COMPILE_FLAGS:g" "$PREFIX"/bin/caf
-sed -i '' -e "s:@CAF_LIBS@:$CAF_LIBS:g"                                           "$PREFIX"/bin/caf
-sed -i '' -e "s:@CAF_MPI_LIBS@:$CAF_MPI_LIBS:g"                                   "$PREFIX"/bin/caf
+build_script_dir="build/script-templates"
+mkdir -p $build_script_dir
+
+cp script-templates/caf.in $build_script_dir/caf.in
+sed -i '' -e "s/@CAF_VERSION@/$CAF_VERSION/g"                                     $build_script_dir/caf.in
+sed -i '' -e "s:@Fortran_COMPILER@:$Fortran_COMPILER:g"                           $build_script_dir/caf.in
+sed -i '' -e "s:@CAF_MPI_Fortran_LINK_FLAGS@:$CAF_MPI_Fortran_LINK_FLAGS:g"       $build_script_dir/caf.in
+sed -i '' -e "s:@CAF_MPI_Fortran_COMPILE_FLAGS@:$CAF_MPI_Fortran_COMPILE_FLAGS:g" $build_script_dir/caf.in
+sed -i '' -e "s:@CAF_LIBS@:$CAF_LIBS:g"                                           $build_script_dir/caf.in
+sed -i '' -e "s:@CAF_MPI_LIBS@:$CAF_MPI_LIBS:g"                                   $build_script_dir/caf.in
+cp build/script-templates/caf.in "$PREFIX"/bin/caf
 
 MPIEXEC="$(which mpiexec)"
 HAVE_FAILED_IMG=false
@@ -273,16 +271,30 @@ MPIEXEC_NUMPROC_FLAG=false
 MPIEXEC_PREFLAGS=false
 MPIEXEC_POSTFLAGS=false
 
-cp src/wrappers/cafrun.in "$PREFIX"/bin/cafrun
-sed -i '' -e "s/@CAF_VERSION@/$CAF_VERSION/g"                   "$PREFIX"/bin/cafrun
-sed -i '' -e "s:@MPIEXEC@:$MPIEXEC:g"                           "$PREFIX"/bin/cafrun
-sed -i '' -e "s/@MPIEXEC_NUMPROC_FLAG@/$MPIEXEC_NUMPROC_FLAG/g" "$PREFIX"/bin/cafrun
-sed -i '' -e "s/@MPIEXEC_PREFLAGS@/$MPIEXEC_PREFLAGS/g"         "$PREFIX"/bin/cafrun
-sed -i '' -e "s/@MPIEXEC_POSTFLAGS@/$MPIEXEC_POSTFLAGS/g"       "$PREFIX"/bin/cafrun
-sed -i '' -e "s/@HAVE_FAILED_IMG@/$HAVE_FAILED_IMG/g"  "$PREFIX"/bin/cafrun
+cp script-templates/cafrun.in $build_script_dir/cafrun.in
+sed -i '' -e "s/@CAF_VERSION@/$CAF_VERSION/g"                   $build_script_dir/cafrun.in
+sed -i '' -e "s:@MPIEXEC@:$MPIEXEC:g"                           $build_script_dir/cafrun.in
+sed -i '' -e "s/@MPIEXEC_NUMPROC_FLAG@/$MPIEXEC_NUMPROC_FLAG/g" $build_script_dir/cafrun.in
+sed -i '' -e "s/@MPIEXEC_PREFLAGS@/$MPIEXEC_PREFLAGS/g"         $build_script_dir/cafrun.in
+sed -i '' -e "s/@MPIEXEC_POSTFLAGS@/$MPIEXEC_POSTFLAGS/g"       $build_script_dir/cafrun.in
+sed -i '' -e "s/@HAVE_FAILED_IMG@/$HAVE_FAILED_IMG/g"           $build_script_dir/cafrun.in
+cp $build_script_dir/cafrun.in "$PREFIX"/bin/cafrun
+
+cp script-templates/run-fpm.in $build_script_dir/run-fpm.in
+sed -i '' -e "s:@CAF@:'$PREFIX'/bin/caf:g" $build_script_dir/run-fpm.in
+sed -i '' -e "s:@MPICC@:'$FPM_CC':g"       $build_script_dir/run-fpm.in
+cp $build_script_dir/run-fpm.in build/run-fpm.sh
+./build/run-fpm.sh run --example
 
 echo ""
 echo "________________ OpenCoarrays has been installed ________________"
 echo ""
-echo "Compile and launch parallel Fortran programs the installed"
-echo "caf and cafrun scripts, respectively."
+echo "Compile and launch parallel Fortran programs the installed scripts:"
+echo ""
+echo "$PREFIX/bin/caf"
+echo "$PREFIX/bin/cafrun"
+echo ""
+echo "Rerun fpm in this repository by executing"
+echo ""
+echo "./build/run-fpm.sh"
+
