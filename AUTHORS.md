@@ -28,6 +28,7 @@ Download this file as a PDF document
  - [X] Götz Waschk <goetz.waschk@desy.de> @LaHaine
  - [ ] John C. Linford <jlinford@paratools.com>
  - [ ] Daniel Carrera  <dcarrera@gmail.com>
+ - [ ] Brad Richardson <brad@archaeologic.codes>
 
 [top]
 
