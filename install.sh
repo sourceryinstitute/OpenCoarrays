@@ -261,7 +261,7 @@ mkdir -p $build_script_dir
 
 CAF_MPI_LIBS="$MPIFC_LIB_DIRS"
 
-cp script-templates/caf.in $build_script_dir/caf.in
+cp src/script-templates/caf.in $build_script_dir/caf.in
 sed -i '' -e "s/@CAF_VERSION@/$CAF_VERSION/g"                                     $build_script_dir/caf.in
 sed -i '' -e "s:@Fortran_COMPILER@:$Fortran_COMPILER:g"                           $build_script_dir/caf.in
 sed -i '' -e "s:@CAF_MPI_Fortran_LINK_FLAGS@:$CAF_MPI_Fortran_LINK_FLAGS:g"       $build_script_dir/caf.in
@@ -276,7 +276,7 @@ MPIEXEC_NUMPROC_FLAG="-n"
 MPIEXEC_PREFLAGS=""
 MPIEXEC_POSTFLAGS=""
 
-cp script-templates/cafrun.in $build_script_dir/cafrun.in
+cp src/script-templates/cafrun.in $build_script_dir/cafrun.in
 sed -i '' -e "s/@CAF_VERSION@/$CAF_VERSION/g"                   $build_script_dir/cafrun.in
 sed -i '' -e "s:@MPIEXEC@:$MPIEXEC:g"                           $build_script_dir/cafrun.in
 sed -i '' -e "s/@MPIEXEC_NUMPROC_FLAG@/$MPIEXEC_NUMPROC_FLAG/g" $build_script_dir/cafrun.in
@@ -285,7 +285,7 @@ sed -i '' -e "s/@MPIEXEC_POSTFLAGS@/$MPIEXEC_POSTFLAGS/g"       $build_script_di
 sed -i '' -e "s/@HAVE_FAILED_IMG@/$HAVE_FAILED_IMG/g"           $build_script_dir/cafrun.in
 cp $build_script_dir/cafrun.in "$PREFIX"/bin/cafrun
 
-cp script-templates/run-fpm.in $build_script_dir/run-fpm.in
+cp src/script-templates/run-fpm.in $build_script_dir/run-fpm.in
 sed -i '' -e "s:@CAF@:'$PREFIX'/bin/caf:g" $build_script_dir/run-fpm.in
 sed -i '' -e "s:@MPICC@:'$MPICC':g"        $build_script_dir/run-fpm.in
 cp $build_script_dir/run-fpm.in build/run-fpm.sh
