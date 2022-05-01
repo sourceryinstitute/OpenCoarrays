@@ -223,7 +223,7 @@ CAF_VERSION=$(sed -n '/[0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}/{s/^\([^.]*\)\([0-9]\{
 Fortran_COMPILER="$(which $($MPIFC --showme:command))"
 CAF_MPI_Fortran_LINK_FLAGS="$($MPIFC --showme:link)"
 CAF_MPI_Fortran_COMPILE_FLAGS=""
-CAF_MPI_C_COMPILE_FLAGS="$(MPICC --showme:link)"
+CAF_MPI_C_COMPILE_FLAGS="$($MPICC --showme:link)"
 CAF_LIBS="lib/libopencoarrays.a"
 
 MPIFC_LIBS="$($MPIFC --showme:libs)"
@@ -262,12 +262,12 @@ mkdir -p $build_script_dir
 CAF_MPI_LIBS="$MPIFC_LIB_DIRS"
 
 cp src/script-templates/caf.in $build_script_dir/caf.in
-sed -i '' -e "s/@CAF_VERSION@/$CAF_VERSION/g"                                     $build_script_dir/caf.in
-sed -i '' -e "s:@Fortran_COMPILER@:$Fortran_COMPILER:g"                           $build_script_dir/caf.in
-sed -i '' -e "s:@CAF_MPI_Fortran_LINK_FLAGS@:$CAF_MPI_Fortran_LINK_FLAGS:g"       $build_script_dir/caf.in
-sed -i '' -e "s:@CAF_MPI_Fortran_COMPILE_FLAGS@:$CAF_MPI_Fortran_COMPILE_FLAGS:g" $build_script_dir/caf.in
-sed -i '' -e "s:@CAF_LIBS@:$CAF_LIBS:g"                                           $build_script_dir/caf.in
-sed -i '' -e "s:@CAF_MPI_LIBS@:$CAF_MPI_LIBS:g"                                   $build_script_dir/caf.in
+sed -i'' -e "s/@CAF_VERSION@/$CAF_VERSION/g"                                     $build_script_dir/caf.in
+sed -i'' -e "s:@Fortran_COMPILER@:$Fortran_COMPILER:g"                           $build_script_dir/caf.in
+sed -i'' -e "s:@CAF_MPI_Fortran_LINK_FLAGS@:$CAF_MPI_Fortran_LINK_FLAGS:g"       $build_script_dir/caf.in
+sed -i'' -e "s:@CAF_MPI_Fortran_COMPILE_FLAGS@:$CAF_MPI_Fortran_COMPILE_FLAGS:g" $build_script_dir/caf.in
+sed -i'' -e "s:@CAF_LIBS@:$CAF_LIBS:g"                                           $build_script_dir/caf.in
+sed -i'' -e "s:@CAF_MPI_LIBS@:$CAF_MPI_LIBS:g"                                   $build_script_dir/caf.in
 cp build/script-templates/caf.in "$PREFIX"/bin/caf
 
 MPIEXEC="$(which mpiexec)"
@@ -277,12 +277,12 @@ MPIEXEC_PREFLAGS=""
 MPIEXEC_POSTFLAGS=""
 
 cp src/script-templates/cafrun.in $build_script_dir/cafrun.in
-sed -i '' -e "s/@CAF_VERSION@/$CAF_VERSION/g"                   $build_script_dir/cafrun.in
-sed -i '' -e "s:@MPIEXEC@:$MPIEXEC:g"                           $build_script_dir/cafrun.in
-sed -i '' -e "s/@MPIEXEC_NUMPROC_FLAG@/$MPIEXEC_NUMPROC_FLAG/g" $build_script_dir/cafrun.in
-sed -i '' -e "s/@MPIEXEC_PREFLAGS@/$MPIEXEC_PREFLAGS/g"         $build_script_dir/cafrun.in
-sed -i '' -e "s/@MPIEXEC_POSTFLAGS@/$MPIEXEC_POSTFLAGS/g"       $build_script_dir/cafrun.in
-sed -i '' -e "s/@HAVE_FAILED_IMG@/$HAVE_FAILED_IMG/g"           $build_script_dir/cafrun.in
+sed -i'' -e "s/@CAF_VERSION@/$CAF_VERSION/g"                   $build_script_dir/cafrun.in
+sed -i'' -e "s:@MPIEXEC@:$MPIEXEC:g"                           $build_script_dir/cafrun.in
+sed -i'' -e "s/@MPIEXEC_NUMPROC_FLAG@/$MPIEXEC_NUMPROC_FLAG/g" $build_script_dir/cafrun.in
+sed -i'' -e "s/@MPIEXEC_PREFLAGS@/$MPIEXEC_PREFLAGS/g"         $build_script_dir/cafrun.in
+sed -i'' -e "s/@MPIEXEC_POSTFLAGS@/$MPIEXEC_POSTFLAGS/g"       $build_script_dir/cafrun.in
+sed -i'' -e "s/@HAVE_FAILED_IMG@/$HAVE_FAILED_IMG/g"           $build_script_dir/cafrun.in
 cp $build_script_dir/cafrun.in "$PREFIX"/bin/cafrun
 
 if [ ! -x "$PREFIX"/bin/caf ]; then
@@ -296,8 +296,8 @@ if [ ! -x "$PREFIX"/bin/cafrun ]; then
 fi
 
 cp src/script-templates/install.rsp-template $build_script_dir
-sed -i '' -e "s:@CAF@:'$PREFIX'/bin/caf:g" $build_script_dir/install.rsp-template
-sed -i '' -e "s:@MPICC@:'$MPICC':g"        $build_script_dir/install.rsp-template
+sed -i'' -e "s:@CAF@:'$PREFIX'/bin/caf:g" $build_script_dir/install.rsp-template
+sed -i'' -e "s:@MPICC@:'$MPICC':g"        $build_script_dir/install.rsp-template
 mv $build_script_dir/install.rsp-template build/install.rsp
 fpm @build/install
 
