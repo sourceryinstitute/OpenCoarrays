@@ -285,26 +285,36 @@ sed -i '' -e "s/@MPIEXEC_POSTFLAGS@/$MPIEXEC_POSTFLAGS/g"       $build_script_di
 sed -i '' -e "s/@HAVE_FAILED_IMG@/$HAVE_FAILED_IMG/g"           $build_script_dir/cafrun.in
 cp $build_script_dir/cafrun.in "$PREFIX"/bin/cafrun
 
-cp src/script-templates/run-fpm.in $build_script_dir/run-fpm.in
-sed -i '' -e "s:@CAF@:'$PREFIX'/bin/caf:g" $build_script_dir/run-fpm.in
-sed -i '' -e "s:@MPICC@:'$MPICC':g"        $build_script_dir/run-fpm.in
-cp $build_script_dir/run-fpm.in build/run-fpm.sh
-./build/run-fpm.sh install
+if [ ! -x "$PREFIX"/bin/caf ]; then
+  echo "caf not installed in '$PREFIX'/bin"
+  exit 1
+fi
+
+if [ ! -x "$PREFIX"/bin/cafrun ]; then
+  echo "cafrun not installed in '$PREFIX'/bin"
+  exit 1
+fi
+
+cp src/script-templates/install.rsp-template $build_script_dir
+sed -i '' -e "s:@CAF@:'$PREFIX'/bin/caf:g" $build_script_dir/install.rsp-template
+sed -i '' -e "s:@MPICC@:'$MPICC':g"        $build_script_dir/install.rsp-template
+mv $build_script_dir/install.rsp-template build/install.rsp
+fpm @build/install
+
+if [ ! -f "$PREFIX"/lib/libopencoarrays.a ]; then
+  echo "libopencoarrays.a not installed in '$PREFIX'/lib"
+  exit 1
+fi
 
 echo ""
 echo "________________ OpenCoarrays has been installed ________________"
 echo ""
-echo "Compile and launch parallel Fortran programs using the installed scripts."
-echo "For example, to compile example/hellof.90 and launch the resulting"
-echo "executable file in four images, execute"
+echo "Compile and launch parallel Fortran programs using the installed"
+echo "caf and cafrun scripts, respectively.  For example,"
 echo ""
 echo "$PREFIX/bin/caf example/hello.f90"
 echo "$PREFIX/bin/cafrun -n 4 ./a.out"
 echo ""
-echo "The following commands should work now to rebuild, reinstall, or test OpenCoarrays"
-echo "or to run the program(s) in the example subdirectory:"
+echo "The following command should work now to reinstall, OpenCoarrays:"
 echo ""
-echo "./build/run-fpm.sh build"
-echo "./build/run-fpm.sh install"
-echo "./build/run-fpm.sh test"
-echo "./build/run-fpm.sh run --example"
+echo "fpm @build/install"

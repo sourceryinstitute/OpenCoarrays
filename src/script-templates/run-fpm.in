@@ -1,6 +1,0 @@
-#!/bin/sh
-
-fpm $@ \
-  --compiler @CAF@ \
-  --c-compiler @MPICC@ \
-  --c-flag "-DPREFIX_NAME=_gfortran_caf_ -DGCC_GE_7 -DGCC_GE_8" \
