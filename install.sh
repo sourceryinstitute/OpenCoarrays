@@ -1,6 +1,7 @@
 #!/bin/sh
 
 set -e # exit on error
+set -o pipefail
 
 print_usage_info()
 {
