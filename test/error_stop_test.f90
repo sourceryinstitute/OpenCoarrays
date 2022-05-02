@@ -21,7 +21,7 @@ contains
         integer exit_status
 
         call execute_command_line( &
-          command = "./build/run-fpm.sh run --example error_stop_integer_code > /dev/null 2>&1", &
+          command = "fpm run --example error_stop_integer_code --compiler caf --runner 'cafrun -n 2' > /dev/null 2>&1", &
           wait = .true., &
           exitstat = exit_status &
         )   
@@ -34,7 +34,7 @@ contains
         integer exit_status
 
         call execute_command_line( &
-          command = "./build/run-fpm.sh run --example error_stop_character_code > /dev/null 2>&1", &
+          command = "fpm run --example error_stop_character_code --compiler caf --runner 'cafrun -n 2' > /dev/null 2>&1", &
           wait = .true., &
           exitstat = exit_status &
         )   

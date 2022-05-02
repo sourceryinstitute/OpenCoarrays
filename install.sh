@@ -297,10 +297,15 @@ if [ ! -x "$PREFIX"/bin/cafrun ]; then
 fi
 
 cp src/script-templates/install.rsp-template $build_script_dir
-sed -i'' -e "s:@CAF@:'$PREFIX'/bin/caf:g" $build_script_dir/install.rsp-template
-sed -i'' -e "s:@MPICC@:'$MPICC':g"        $build_script_dir/install.rsp-template
+sed -i'' -e "s:@MPIFC@:'$MPIFC':g" $build_script_dir/install.rsp-template
+sed -i'' -e "s:@MPICC@:'$MPICC':g" $build_script_dir/install.rsp-template
 mv $build_script_dir/install.rsp-template build/install.rsp
 fpm @build/install
+
+cp "src/script-templates/test.rsp-template" $build_script_dir
+sed -i'' -e "s:@CAF@:'$PREFIX'/bin/caf:g" "$build_script_dir/test.rsp-template"
+sed -i'' -e "s:@MPICC@:'$MPICC':g" "$build_script_dir/test.rsp-template"
+mv "$build_script_dir/test.rsp-template" "build/test.rsp"
 
 if [ ! -f "$PREFIX"/lib/libopencoarrays.a ]; then
   echo "libopencoarrays.a not installed in '$PREFIX'/lib"
@@ -316,6 +321,10 @@ echo ""
 echo "$PREFIX/bin/caf example/hello.f90"
 echo "$PREFIX/bin/cafrun -n 4 ./a.out"
 echo ""
-echo "The following command should work now to reinstall, OpenCoarrays:"
+echo "The following command should work now to reinstall or test OpenCoarrays, respectively:"
 echo ""
 echo "fpm @build/install"
+echo "fpm @build/test -- -d -v"
+echo ""
+echo "where the '-- -d -v' arguments instruct the Garden unit testing framework to print"
+echo "verbose debugging information."

@@ -1,5 +1,5 @@
-options install
-options --compiler @MPIFC@ 
+options test
+options --compiler @CAF@
 options --c-compiler @MPICC@ 
 options --c-flag "-DPREFIX_NAME=_gfortran_caf_ -DGCC_GE_7 -DGCC_GE_8"
-options --flag "-fcoarray=lib"
+options --runner "cafrun -n 4"
