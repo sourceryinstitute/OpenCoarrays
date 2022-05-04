@@ -278,91 +278,59 @@ if (C_COMPILER_NAME MATCHES "^[mM][pP][iI]")
 endif()
 
 if(WIN32) # Only support building with GCC & GFortran using Intel MPI (OneAPI)
-# Here we assume Intel ONEAPI and the environment is loaded
-cmake_path(SET MPI_ROOT NORMALIZE "$ENV{I_MPI_ROOT}")
-set (IMPI_INCLUDES "${MPI_ROOT}/include")
-set (IMPI_LIB_DIR "${MPI_ROOT}/lib/${IMPI_BUILD}")
-set (IMPI_DLL_DIR "${MPI_ROOT}/bin/${IMPI_BUILD}")
-set (IMPI_BIN_DIR "${MPI_ROOT}/bin")
+  # Here we assume Intel ONEAPI and the environment is loaded
+  set( MPI_ASSUME_NO_BUILTIN_MPI TRUE )
+  set( MPI_CXX_SKIP_MPICXX TRUE )
+  cmake_path(SET MPI_ROOT NORMALIZE "$ENV{I_MPI_ROOT}")
+  set (IMPI_LIB_DIR "${MPI_ROOT}/lib/${IMPI_BUILD}")
+  set (IMPI_DLL_DIR "${MPI_ROOT}/bin/${IMPI_BUILD}")
 
-find_library(IMPI_LIB
-  "impi.lib"
-  HINTS "${IMPI_LIB_DIR}"
-  DOC "Location of the Intel MPI impi.lib file"
-  REQUIRED
-  NO_DEFAULT_PATH)
+  find_library(IMPI_LIB
+    "impi.lib"
+    HINTS "${IMPI_LIB_DIR}"
+    DOC "Location of the Intel MPI impi.lib file"
+    REQUIRED
+    NO_DEFAULT_PATH)
 
-set(MPI_impi_LIBRARY "${IMPI_LIB}")
-set(MPI_impicxx_LIBRARY "${IMPI_LIB_DIR}/impicxx.lib")
-
-find_file(IMPI_DLL
-  "impi.dll"
-  HINTS "${IMPI_DLL_DIR}"
-  DOC "Location of the Intel MPI impi.dll file"
-  REQUIRED
-  NO_DEFAULT_PATH)
+  find_file(IMPI_DLL
+    "impi.dll"
+    HINTS "${IMPI_DLL_DIR}"
+    DOC "Location of the Intel MPI impi.dll file"
+    REQUIRED
+    NO_DEFAULT_PATH)
 
 
-add_library(IMPI::MPI SHARED IMPORTED)
-set_target_properties(IMPI::MPI
-  PROPERTIES
-  IMPORTED_IMPLIB "${IMPI_LIB}"
-  IMPORTED_LOCATION "${IMPI_DLL}")
-target_include_directories(IMPI::MPI
-  INTERFACE "${IMPI_INCLUDES}")
+  set( MPI_C_LIBRARIES ${IMPI_LIB};${IMPI_DLL} CACHE FILEPATH "MPI C libs to link" )
+  set( MPI_C_LIB_NAMES impi CACHE FILEPATH "MPI lib names" )
+  set( MPI_Fortran_LIBRARIES ${IMPI_LIB};${IMPI_DLL} CACHE FILEPATH "MPI Fortran libs to link" )
+  set( MPI_Fortran_LIB_NAMES impi CACHE FILEPATH "MPI Fortran lib names" )
+  set( MPI_impi_LIBRARY ${IMPI_LIB} CACHE FILEPATH "MPI lib to link" )
 
-set(MPI_C_INCLUDE_DIRS "${IMPI_INCLUDES}")
-set(MPI_C_INCLUDE_PATH "${IMPI_INCLUDES}")
-set(MPI_C_HEADER_DIR "${IMPI_INCLUDES}")
-set(MPI_Fortran_COMPILER_INCLUDE_DIRS "${IMPI_INCLUDES}")
-set(MPI_Fortran_F77_HEADER_DIR "${IMPI_INCLUDES}")
-set(MPI_Fortran_INCLUDE_PATH "${IMPI_INCLUDES}")
+  set(MPI_Fortran_HAVE_F90_MODULE FALSE)
+  set(MPI_Fortran_HAVE_F08_MODULE FALSE)
 
-set(MPI_C_LIB_NAMES impi;impicxx)
-set(MPI_C_LIBRARIES "${IMPI_LIB}")
-set(MPI_Fortran_LIB_NAMES impi)
-set(MPI_Fortran_LIBRARIES "${IMPI_LIB}")
+endif()
+find_package( MPI )
 
-set(MPI_Fortran_HAVE_F90_MODULE FALSE)
-set(MPI_Fortran_HAVE_F08_MODULE FALSE)
-
-find_program(MPIEXEC_EXECUTABLE
-  mpiexec
-  HINTS "${IMPI_BIN_DIR}"
-  DOC "Location of Intel MPI implementations mpiexec launcher program"
-  REQUIRED
-  NO_DEFAULT_PATH)
-set(MPIEXEC "${MPIEXEC_EXECUTABLE}")
-set(MPI_EXEC_NUMPROC_FLAG -n)
-set(MPI_EXEC_PREFLAGS -print-all-exitcodes)
-
-set(MPI_C_FOUND TRUE)
-set(MPI_Fortran_FOUND TRUE)
-
-else()
-  find_package( MPI )
-
-  if ( (NOT MPI_C_FOUND) OR (NOT MPI_Fortran_FOUND) OR (NOT MPIEXEC_EXECUTABLE))
-    # Get default install location of MPICH from install.sh
-    message(WARNING "Could not find all MPI components!")
-    message(WARNING "
+if ( (NOT MPI_C_FOUND) OR (NOT MPI_Fortran_FOUND) OR (NOT MPIEXEC_EXECUTABLE))
+  # Get default install location of MPICH from install.sh
+  message(WARNING "Could not find all MPI components!")
+  message(WARNING "
 MPI_C_FOUND        = ${MPI_C_FOUND}
 MPI_Fortran_FOUND  = ${MPI_Fortran_FOUND}
 MPIEXEC = ${MPIEXEC_EXECUTABLE}
 ")
-    execute_process( COMMAND "./install.sh" -P mpich
-      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-      OUTPUT_VARIABLE DEFAULT_MPICH_INSTALL_LOC
-      OUTPUT_QUIET
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-      )
-    find_program (MY_MPI_EXEC NAMES mpirun mpiexec lamexec srun
-      PATHS "${DEFAULT_MPICH_INSTALL_LOC}" ENV PATH
-      HINTS "${FTN_COMPILER_DIR}" "${C_COMPILER_DIR}"
-      PATH_SUFFIXES bin)
-    set ( MPI_HOME "${MPI_HOME}" "${MY_MPI_EXEC}" "${MY_MPI_EXEC}/.." )
-    find_package( MPI REQUIRED )
-  endif()
+  execute_process( COMMAND "./install.sh" -P mpich
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    OUTPUT_VARIABLE DEFAULT_MPICH_INSTALL_LOC
+    OUTPUT_QUIET
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+  find_program (MY_MPI_EXEC NAMES mpirun mpiexec lamexec srun
+    PATHS "${DEFAULT_MPICH_INSTALL_LOC}" ENV PATH
+    HINTS "${FTN_COMPILER_DIR}" "${C_COMPILER_DIR}"
+    PATH_SUFFIXES bin)
+  set ( MPI_HOME "${MPI_HOME}" "${MY_MPI_EXEC}" "${MY_MPI_EXEC}/.." )
+  find_package( MPI REQUIRED )
 endif()
 list(REMOVE_DUPLICATES MPI_Fortran_INCLUDE_PATH)
 
