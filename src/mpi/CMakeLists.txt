@@ -356,9 +356,24 @@ endif()
 configure_file("${CMAKE_SOURCE_DIR}/src/extensions/cafrun.in" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun"
   @ONLY)
 
-install(PROGRAMS "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun"
+install(PROGRAMS
+  "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun"
   "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf"
   DESTINATION "${CMAKE_INSTALL_FULL_BINDIR}")
+
+if(WIN32)
+  # Add the batch script wrappers
+  configure_file(
+    "${CMAKE_SOURCE_DIR}/src/extensions/caf.bat.in" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf.bat"
+    @ONLY)
+  configure_file(
+    "${CMAKE_SOURCE_DIR}/src/extensions/cafrun.bat.in" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun.bat"
+    @ONLY)
+  install(PROGRAMS
+    "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun.bat"
+    "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf.bat"
+    DESTINATION "${CMAKE_INSTALL_FULL_BINDIR}")
+endif()
 
 lint_script("${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}" caf)
 check_script_style("${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf")

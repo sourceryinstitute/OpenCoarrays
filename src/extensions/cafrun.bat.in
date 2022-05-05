@@ -1,0 +1,4 @@
+@REM Batch file wrapper script to call the cafrun bash script on windows
+@REM %~dp0 is the directory of the batch script. This assumes cafrun.bat in same dir as cafrun
+
+"@BASH_EXECUTABLE@" "%~dp0cafrun" %*
