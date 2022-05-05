@@ -31,7 +31,7 @@ target_link_libraries(opencoarrays_mod
 target_link_libraries(opencoarrays_mod
   PUBLIC caf_mpi_static)
 target_include_directories(opencoarrays_mod PUBLIC
-  $<$<COMPILE_LANGUAGE:Fortran>:${MPI_Fortran_INCLUDE_PATH}>
+  $<$<COMPILE_LANGUAGE:Fortran>:${MPI_Fortran_INCLUDE_DIRS}>
   $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_INCLUDEDIR}/${mod_dir_tail}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${mod_dir_tail}>)
 
@@ -64,11 +64,11 @@ target_link_libraries(caf_mpi_static
   PRIVATE gfortran)
 
 target_include_directories(caf_mpi PUBLIC
-  $<$<COMPILE_LANGUAGE:C>:${MPI_C_INCLUDE_PATH}>
+  $<$<COMPILE_LANGUAGE:C>:${MPI_C_INCLUDE_DIRS}>
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 target_include_directories(caf_mpi_static PUBLIC
-  $<$<COMPILE_LANGUAGE:C>:${MPI_C_INCLUDE_PATH}>
+  $<$<COMPILE_LANGUAGE:C>:${MPI_C_INCLUDE_DIRS}>
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 target_compile_options(caf_mpi
@@ -140,7 +140,7 @@ cmake_host_system_information(RESULT N_CPU QUERY NUMBER_OF_LOGICAL_CORES)
 set(N_CPU ${N_CPU} PARENT_SCOPE)
 cmake_host_system_information(RESULT HOST_NAME QUERY HOSTNAME)
 set(HOST_NAME ${HOST_NAME} PARENT_SCOPE)
-execute_process(COMMAND ${MPIEXEC} --version
+execute_process(COMMAND ${MPIEXEC_EXECUTABLE} --version
   OUTPUT_VARIABLE mpi_version_out)
 if (mpi_version_out MATCHES "[Oo]pen[ -][Mm][Pp][Ii]")
   message( STATUS "OpenMPI detected")
@@ -217,15 +217,15 @@ set(NEEDED_SYMBOLS MPIX_ERR_PROC_FAILED;MPIX_ERR_REVOKED;MPIX_Comm_failure_ack;M
 
 set(old_cmake_required_includes "${CMAKE_REQUIRED_INCLUDES}")
 if(CMAKE_REQUIRED_INCLUDES)
-  set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${MPI_C_INCLUDE_PATH})
+  set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${MPI_C_INCLUDE_DIRS})
 else()
-  set(CMAKE_REQUIRED_INCLUDES ${MPI_C_INCLUDE_PATH})
+  set(CMAKE_REQUIRED_INCLUDES ${MPI_C_INCLUDE_DIRS})
 endif()
 set(old_cmake_required_flags "${CMAKE_REQUIRED_FLAGS}")
 if(CMAKE_REQUIRED_FLAGS)
-  set(CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS} ${MPI_C_COMPILE_FLAGS} ${MPI_C_LINK_FLAGS})
+  set(CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS} ${MPI_C_COMPILE_OPTIONS} ${MPI_C_COMPILE_DEFINITIONS} ${MPI_C_LINK_FLAGS})
 else()
-  set(CMAKE_REQUIRED_FLAGS ${MPI_C_COMPILE_FLAGS} ${MPI_C_LINK_FLAGS})
+  set(CMAKE_REQUIRED_FLAGS ${MPI_C_COMPILE_OPTIONS} ${MPI_C_COMPILE_DEFINITIONS} ${MPI_C_LINK_FLAGS})
 endif()
 set(old_cmake_required_libraries "${CMAKE_REQUIRED_LIBRARIES}")
 if(CMAKE_REQUIRED_LIBRARIES)
@@ -287,9 +287,9 @@ endif()
 #---------------------------------------------------
 set(old_cmake_required_includes "${CMAKE_REQUIRED_INCLUDES}")
 if(CMAKE_REQUIRED_INCLUDES)
-  set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${MPI_C_INCLUDE_PATH})
+  set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${MPI_C_INCLUDE_DIRS})
 else()
-  set(CMAKE_REQUIRED_INCLUDES ${MPI_C_INCLUDE_PATH})
+  set(CMAKE_REQUIRED_INCLUDES ${MPI_C_INCLUDE_DIRS})
 endif()
 CHECK_INCLUDE_FILES("mpi.h" HAVE_MPI_H)
 CHECK_SYMBOL_EXISTS(I_MPI_VERSION "mpi.h" HAVE_Intel_MPI)
@@ -327,7 +327,7 @@ foreach( lflag IN LISTS MPI_Fortran_LINK_FLAGS)
 endforeach()
 string(STRIP "${CAF_MPI_Fortran_LINK_FLAGS}" CAF_MPI_Fortran_LINK_FLAGS)
 set(CAF_MPI_Fortran_COMPILE_FLAGS "")
-foreach( fcflag IN LISTS MPI_Fortran_COMPILE_FLAGS)
+foreach( fcflag IN LISTS MPI_Fortran_COMPILE_OPTIONS MPI_Fortran_COMPILE_DEFINITIONS)
   set(CAF_MPI_Fortran_COMPILE_FLAGS "${CAF_MPI_Fortran_COMPILE_FLAGS} ${fcflag}" )
 endforeach()
 string(STRIP "${CAF_MPI_Fortran_COMPILE_FLAGS}" CAF_MPI_Fortran_COMPILE_FLAGS)
@@ -343,7 +343,7 @@ configure_file("${CMAKE_SOURCE_DIR}/src/extensions/caf.in" "${CMAKE_BINARY_DIR}/
 
 # List of cafrun.in variables needing configuration:
 #
-# @CAF_VERSION@ @MPIEXEC@ @MPIEXEC_NUMPROC_FLAG@ @MPIEXEC_PREFLAGS@ @MPIEXEC_POSTFLAGS@
+# @CAF_VERSION@ @MPIEXEC_EXECUTABLE@ @MPIEXEC_NUMPROC_FLAG@ @MPIEXEC_PREFLAGS@ @MPIEXEC_POSTFLAGS@
 # @HAVE_FAILED_IMG@
 #
 

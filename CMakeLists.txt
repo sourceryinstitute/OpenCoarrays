@@ -1,6 +1,6 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.19)
 
-cmake_policy(VERSION 3.10...3.14)
+cmake_policy(VERSION 3.19...3.23)
 
 if(DEFINED ENV{SOURCE_DATE_EPOCH})
   set(SOURCE_DATE_EPOCH "$ENV{SOURCE_DATE_EPOCH}")
@@ -318,7 +318,7 @@ if ( (NOT MPI_C_FOUND) OR (NOT MPI_Fortran_FOUND) OR (NOT MPIEXEC_EXECUTABLE))
   message(WARNING "
 MPI_C_FOUND        = ${MPI_C_FOUND}
 MPI_Fortran_FOUND  = ${MPI_Fortran_FOUND}
-MPIEXEC = ${MPIEXEC_EXECUTABLE}
+MPIEXEC_EXECUTABLE = ${MPIEXEC_EXECUTABLE}
 ")
   execute_process( COMMAND "./install.sh" -P mpich
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
@@ -332,7 +332,7 @@ MPIEXEC = ${MPIEXEC_EXECUTABLE}
   set ( MPI_HOME "${MPI_HOME}" "${MY_MPI_EXEC}" "${MY_MPI_EXEC}/.." )
   find_package( MPI REQUIRED )
 endif()
-list(REMOVE_DUPLICATES MPI_Fortran_INCLUDE_PATH)
+list(REMOVE_DUPLICATES MPI_Fortran_INCLUDE_DIRS)
 
 # Test for consistent MPI environment but not on windows
 if (NOT MPIEXEC_EXECUTABLE)
@@ -344,7 +344,7 @@ else()
   add_definitions(-DHAVE_MPI)
 endif()
 if(NOT WIN32)
-  get_filename_component(MPIEXEC_RELATIVE_LOC "${MPIEXEC}"
+  get_filename_component(MPIEXEC_RELATIVE_LOC "${MPIEXEC_EXECUTABLE}"
     PROGRAM)
   get_filename_component(MPIEXEC_ABS_LOC "${MPIEXEC_RELATIVE_LOC}"
     REALPATH)
@@ -448,7 +448,7 @@ endif()
 set(OLD_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
 set(CMAKE_REQUIRED_FLAGS "-ffree-form" ${MPI_Fortran_COMPILE_OPTIONS} ${MPI_Fortran_COMPILE_DEFINITIONS} ${MPI_Fortran_LINK_FLAGS})
 set(OLD_INCLUDES ${CMAKE_REQUIRED_INCLUDES})
-set(CMAKE_REQUIRED_INCLUDES ${MPI_Fortran_INCLUDE_PATH})
+set(CMAKE_REQUIRED_INCLUDES ${MPI_Fortran_INCLUDE_DIRS})
 set(OLD_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES})
 set(CMAKE_REQUIRED_LIBRARIES ${MPI_Fortran_LIBRARIES})
 include (CheckFortranSourceCompiles)
@@ -480,7 +480,7 @@ unset(OLD_LIBRARIES)
 set(OLD_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
 set(CMAKE_REQUIRED_FLAGS "-ffree-form" ${MPI_Fortran_COMPILE_OPTIONS} ${MPI_Fortra_COMPILE_DEFINITIONS} ${MPI_Fortran_LINK_FLAGS})
 set(OLD_INCLUDES ${CMAKE_REQUIRED_INCLUDES})
-set(CMAKE_REQUIRED_INCLUDES ${MPI_Fortran_INCLUDE_PATH})
+set(CMAKE_REQUIRED_INCLUDES ${MPI_Fortran_INCLUDE_DIRS})
 set(OLD_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES})
 set(CMAKE_REQUIRED_LIBRARIES ${MPI_Fortran_LIBRARIES})
 include (CheckFortranSourceCompiles)
@@ -524,26 +524,6 @@ else()
     )
 endif()
 
-#----------------
-# Setup MPI flags
-#----------------
-if(NOT CMAKE_C_COMPILE_FLAGS)
-  set(CMAKE_C_COMPILE_FLAGS "")
-endif()
-if(NOT CMAKE_C_LINK_FLAGS)
-  set(CMAKE_C_LINK_FLAGS "")
-endif()
-if(NOT CMAKE_Fortran_COMPILE_FLAGS)
-  set(CMAKE_Fortran_COMPILE_FLAGS "")
-endif()
-if(NOT CMAKE_Fortran_LINK_FLAGS)
-  set(CMAKE_Fortran_LINK_FLAGS "")
-endif()
-set(CMAKE_C_COMPILE_FLAGS "${CMAKE_C_COMPILE_FLAGS} ${MPI_C_COMPILE_FLAGS}")
-set(CMAKE_C_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} ${MPI_C_LINK_FLAGS}")
-set(CMAKE_Fortran_COMPILE_FLAGS "${CMAKE_Fortran_COMPILE_FLAGS} ${MPI_Fortran_COMPILE_FLAGS}")
-set(CMAKE_Fortran_LINK_FLAGS "${CMAKE_Fortran_LINK_FLAGS} ${MPI_Fortran_LINK_FLAGS}")
-
 #---------------------------------------------------
 # Use standardized GNU install directory conventions
 #---------------------------------------------------
@@ -570,7 +550,7 @@ endif()
 
 function(caf_compile_executable target main_depend)
   set(includes "")
-  foreach(includedir ${MPI_Fortran_INCLUDE_PATH})
+  foreach(includedir ${MPI_Fortran_INCLUDE_DIRS})
     list(APPEND includes "-I${includedir}")
   endforeach()
   string(TOUPPER "${CMAKE_BUILD_TYPE}" build_type)
