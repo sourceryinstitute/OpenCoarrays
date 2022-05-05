@@ -621,10 +621,11 @@ endfunction()
 #-----------------------------------------------
 
 find_program(style_pl style.pl "${CMAKE_SOURCE_DIR}/developer-scripts/")
+find_package(Perl)
 function(check_script_style script_full_path)
-  if(style_pl)
+  if(style_pl AND PERL_FOUND)
     add_test(NAME "style:${script_full_path}"
-      COMMAND "${style_pl}" "${script_full_path}")
+      COMMAND "${PERL_EXECUTABLE}" "${style_pl}" "${script_full_path}")
   endif()
 endfunction()
 
