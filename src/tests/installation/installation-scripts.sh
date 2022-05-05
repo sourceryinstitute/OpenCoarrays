@@ -129,11 +129,11 @@ function cleanup_before_exit() {
 }
 trap cleanup_before_exit EXIT # The signal is specified here. Could be SIGINT, SIGTERM etc.
 
-pushd "${OPENCOARRAYS_SRC_DIR}"/src/tests/installation
+pushd "${OPENCOARRAYS_SRC_DIR}"/src/tests/installation || exit 1
 
 # shellcheck source=../../../prerequisites/stack.sh
 source "${OPENCOARRAYS_SRC_DIR}"/prerequisites/stack.sh
 source test-stack.sh
 test_stack
 
-popd
+popd || exit 1
