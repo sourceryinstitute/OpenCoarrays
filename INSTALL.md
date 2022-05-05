@@ -186,6 +186,20 @@ OpenCoarrays on Windows.
     Also, a large numberof firewall warnings will pop up.
     `cmake --build . -t check`
 
+__NOTE About the Intel OneAPI CMD.exe shell__
+
+If you don't have a "Intel oneAPI command prompt for Intel 64 for Visual Studio 20xx"
+in your start menu you can figure out how to launch an equivalent `CMD.exe` or
+Powershell instance by examining the shortcut Target that it created for me:
+
+```
+%ComSpec% /E:ON /K ""C:\Program Files (x86)\Intel\oneAPI\setvars.bat" intel64 vs2022"
+```
+
+So it looks like you can launch `CMD.exe` and then run the appropriate `setvars.bat`
+script with the `intel64` and `vs20<xx>` arguments where `vs20<xx>` matches the
+appropriate Visual Studio version.
+
 #### Old Procedure ####
 
 __NOTE: Use this method at your own risk, it is no longer officially supported!__
