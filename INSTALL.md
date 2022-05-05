@@ -125,6 +125,71 @@ source.
 
 ### Windows ###
 
+Windows installation support has recently been enhanced. The new installation
+method doesn't require Cygwin or WSL and relies only a light weight git/bash
+distribution like Git-Bash, and the Intel OneAPI base distribution as well as
+the Intel OneAPI HPC Toolkit. This allows native and redistributable statically
+linked binaries to be built if you use the appropriate compiler flags. Clients
+will only require the free redistributable Intel MPI runtime.
+
+#### New and Recommended Windows Installation ####
+
+Please follow these instructions, this is the recommended way to install
+OpenCoarrays on Windows.
+
+##### Pre-requisits #####
+
+* [CMake]
+* [Git-Bash]
+* [GCC, GFortran, Unix Make]
+* [Intel OneAPI Base] and [Intel OneAPI HPC toolkit]
+
+##### Installation Procedure #####
+
+1. Ensure all the prerequisites have been installed following the directions of
+   the provider.
+2. Launch the 64-bit Intel OneAPI developer shell. This will either be in the
+   start menu, or you may need to figure out how to launch it manually. See the
+   note below for help.
+3. Ensure that cmake, git-bash, gfortran, gcc, make are available on your default
+   path. The installers should have taken care of this for you.
+5. Launch a Git-Bash bash shell from the OneAPI environment, or ensure Git-Bash's
+   `bash.exe` is first on your path by either:
+     1. Typing `git-bash` from within the windows `CMD.exe` style OneAPI shell, or
+     2. Editing your system wide `%PATH%` variable, or updating it in the local shell
+        so that git-bash's `bin` subdirectory (containing `bash.exe`) is at the front
+        of your `PATH`: `set PATH=C:\path\to\Git-Bash\bin;%PATH%`.
+6. At this point typing `bash --version` should show you you're using Git-Bash, *AND*
+   typing `bash -c pwd` should match the current directory. __`bash` provided with
+   WSL will show the directory as your home directore, something like `/home/username`
+   and this WILL cause problems later__
+7. cd to the extracted OpenCoarrays source directory (obtained by downloading a
+   release archive, or, for advanced useres, cheked out with git etc.)
+8. Create a build directory and change to it with something like:
+   `mkdir build` and `cd build`
+9. Set GCC and GFortran as the default C and Fortran compilers with something like:
+   `set FC=gfortran` and `set CC=gcc`
+10. Check that Intel's MPI is setup correctly by typing `mpifc -show` which should
+    show you how the compiler wrapper script is planning to build MPI programs.
+    (It's fine if this shows `ifort` being used as the compiler instead of `gfortran`
+    at this point.)
+11. Configure Open-Coarrays with CMake and specify the installation directory you would
+    like to use. (If this is not a user-writable location, you will have to open a new
+    shell later as an administrator to perform the installation step.) Run:
+    `cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX="C:\path\to\desired\install\location" ".\path\to\opencoarrays-source-dir"`
+    The quotes ensure paths with spaces are handled properly. You may omit them if there
+    are no spaces.
+12. When the configuration completes, build with:
+    `cmake --build . -j <ncores>`
+13. Install OpenCoarrays: `cmake --build . -j <ncores> -t install`
+14. Optionally run the test suite. There are a few known failures on Windows.
+    Also, a large numberof firewall warnings will pop up.
+    `cmake --build . -t check`
+
+#### Old Procedure ####
+
+__NOTE: Use this method at your own risk, it is no longer officially supported!__
+
 Windows users may run the [`install.sh`] script inside the Windows Subsystem
 for Linux ([WSL]). The script uses Ubuntu's [APT] package manager to build
 [GCC] 5.4.0, [CMake], and [MPICH].  Windows users who desire a newer version
@@ -448,6 +513,10 @@ file.
 [INSTALL.pdf]: https://md2pdf.herokuapp.com/sourceryinstitute/OpenCoarrays/blob/master/INSTALL.pdf
 [INSTALL.md]: https://github.com/sourceryinstitute/OpenCoarrays/blob/master/INSTALL.md
 [CMake]: https://cmake.org
+[Git-Bash]: https://gitforwindows.org/
+[GCC, GFortran, Unix Make]: http://www.equation.com/servlet/equation.cmd?fa=programminglog
+[Intel OneAPI Base]: https://www.intel.com/content/www/us/en/developer/tools/oneapi/base-toolkit.htm
+[Intel OneAPI HPC toolkit]: https://www.intel.com/content/www/us/en/developer/tools/oneapi/hpc-toolkit.html
 [Sourcery Institute Store]: http://www.sourceryinstitute.org/store/c1/Featured_Products.html
 [VirtualBox]: https://www.virtualbox.org
 [download and installation instructions]: http://www.sourceryinstitute.org/uploads/4/9/9/6/49967347/overview.pdf
