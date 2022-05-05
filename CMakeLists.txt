@@ -548,6 +548,10 @@ if(APPLE)
   find_program(CODESIGN codesign)
 endif()
 
+# We need bash, even on windows, for now at least. A light version like Git-Bash works best,
+# WSL dumps you into your home directory and there's nothing you can do about it.
+find_program(BASH_EXECUTABLE bash
+  REQUIRED)
 function(caf_compile_executable target main_depend)
   set(includes "")
   foreach(includedir ${MPI_Fortran_INCLUDE_DIRS})
@@ -561,7 +565,7 @@ function(caf_compile_executable target main_depend)
     list(APPEND localDefs "-D${d}")
   endforeach()
   add_custom_command(OUTPUT "${target}"
-    COMMAND "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf"
+    COMMAND "${BASH_EXECUTABLE}" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf"
             ${includes} ${localDefs} ${config_Fortran_flags}
             -o "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target}"
             "${CMAKE_CURRENT_SOURCE_DIR}/${main_depend}"
@@ -720,9 +724,9 @@ function(add_caf_test name num_caf_img test_target)
   endif()
   set(test_parameters -np ${num_caf_img} ${test_parameters})
   if(DEFINED ARGN)
-    add_test(NAME ${name} COMMAND "bash" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun" ${test_parameters} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${test_target}" ${ARGN})
+    add_test(NAME ${name} COMMAND "${BASH_EXECUTABLE}" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun" ${test_parameters} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${test_target}" ${ARGN})
   else()
-    add_test(NAME ${name} COMMAND "bash" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun" ${test_parameters} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${test_target}")
+    add_test(NAME ${name} COMMAND "${BASH_EXECUTABLE}" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun" ${test_parameters} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${test_target}")
   endif()
   set_property(TEST ${name} PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
 endfunction(add_caf_test)
