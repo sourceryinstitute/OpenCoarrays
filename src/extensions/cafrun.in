@@ -50,31 +50,31 @@ set -o pipefail
 # Configured variables
 #---------------------
 #
-# CAF_VERSION, MPIEXEC, MPIEXEC_NUMPROC_FLAG, MPIEXEC_PREFLAGS, MPIEXEC_POSTFLAGS,
+# CAF_VERSION, MPIEXEC_EXECUTABLE, MPIEXEC_NUMPROC_FLAG, MPIEXEC_PREFLAGS, MPIEXEC_POSTFLAGS,
 # HAVE_FAILED_IMG
 #
 
 caf_version='@CAF_VERSION@'
-CAFRUN="@MPIEXEC@"
-if [[ "${CAFRUN}" == @*@ ]]; then
+CAFRUN="@MPIEXEC_EXECUTABLE@"
+if [[ "${CAFRUN}" == @*@ || -z "${CAFRUN}" ]]; then
   CAFRUN=mpiexec
 fi
 have_failed_img=@HAVE_FAILED_IMG@
-if [[ ${have_failed_img} == @*@ ]]; then
+if [[ ${have_failed_img} == @*@  || -z "${have_failed_img}" ]]; then
   have_failed_img=false
 fi
 numproc_flag='@MPIEXEC_NUMPROC_FLAG@'
-if [[ ${numproc_flag} == @*@ ]]; then
+if [[ ${numproc_flag} == @*@  || -z "${numproc_flag}" ]]; then
   numproc_flag='-np'
 fi
 preflags="@MPIEXEC_PREFLAGS@"
 preflags="${preflags//;/ }"
-if [[ "${preflags}" == @*@ ]]; then
+if [[ "${preflags}" == @*@  || -z "${preflags}" ]]; then
   unset preflags
 fi
 postflags="@MPIEXEC_POSTFLAGS@"
 postflags="${postflags//;/ }"
-if [[ "${postflags}" == @*@ ]]; then
+if [[ "${postflags}" == @*@  || -z "${postflags}" ]]; then
   unset postflags
 fi
 #-------------------------

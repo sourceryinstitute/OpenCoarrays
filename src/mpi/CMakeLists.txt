@@ -2,6 +2,9 @@
 if(NOT CMAKE_REQUIRED_FLAGS)
   set(CMAKE_REQUIRED_FLAGS "")
 endif()
+if(NOT CMAKE_REQUIRED_DEFINITIONS)
+  set(CMAKE_REQUIRED_DEFINITIONS "")
+endif()
 if(NOT CMAKE_REQUIRED_LIBRARIES)
   set(CMAKE_REQUIRED_LIBRARIES "")
 endif()
@@ -31,7 +34,7 @@ target_link_libraries(opencoarrays_mod
 target_link_libraries(opencoarrays_mod
   PUBLIC caf_mpi_static)
 target_include_directories(opencoarrays_mod PUBLIC
-  $<$<COMPILE_LANGUAGE:Fortran>:${MPI_Fortran_INCLUDE_PATH}>
+  $<$<COMPILE_LANGUAGE:Fortran>:${MPI_Fortran_INCLUDE_DIRS}>
   $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_INCLUDEDIR}/${mod_dir_tail}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${mod_dir_tail}>)
 
@@ -46,12 +49,29 @@ target_link_libraries(caf_mpi_static
 set_target_properties(caf_mpi_static
   PROPERTIES
   POSITION_INDEPENDENT_CODE TRUE)
+
+set(THREADS_PREFER_PTHREAD_FLAG TRUE)
+find_package(Threads REQUIRED)
+
+message(STATUS "Threads found? ${Threads_FOUND}")
+message(STATUS "Thread library to use: ${CMAKE_THREAD_LIBS_INIT}")
+message(STATUS "Found threads library pthread compatible? ${CMAKE_USE_PTHREADS_INIT}")
+
+target_link_libraries(caf_mpi
+  PUBLIC Threads::Threads)
+set_target_properties(caf_mpi
+  PROPERTIES LINKER_LANGUAGE Fortran)
+target_link_libraries(caf_mpi_static
+  PUBLIC Threads::Threads)
+target_link_libraries(caf_mpi_static
+  PRIVATE gfortran)
+
 target_include_directories(caf_mpi PUBLIC
-  $<$<COMPILE_LANGUAGE:C>:${MPI_C_INCLUDE_PATH}>
+  $<$<COMPILE_LANGUAGE:C>:${MPI_C_INCLUDE_DIRS}>
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 target_include_directories(caf_mpi_static PUBLIC
-  $<$<COMPILE_LANGUAGE:C>:${MPI_C_INCLUDE_PATH}>
+  $<$<COMPILE_LANGUAGE:C>:${MPI_C_INCLUDE_DIRS}>
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 target_compile_options(caf_mpi
@@ -123,7 +143,7 @@ cmake_host_system_information(RESULT N_CPU QUERY NUMBER_OF_LOGICAL_CORES)
 set(N_CPU ${N_CPU} PARENT_SCOPE)
 cmake_host_system_information(RESULT HOST_NAME QUERY HOSTNAME)
 set(HOST_NAME ${HOST_NAME} PARENT_SCOPE)
-execute_process(COMMAND ${MPIEXEC} --version
+execute_process(COMMAND ${MPIEXEC_EXECUTABLE} --version
   OUTPUT_VARIABLE mpi_version_out)
 if (mpi_version_out MATCHES "[Oo]pen[ -][Mm][Pp][Ii]")
   message( STATUS "OpenMPI detected")
@@ -200,15 +220,15 @@ set(NEEDED_SYMBOLS MPIX_ERR_PROC_FAILED;MPIX_ERR_REVOKED;MPIX_Comm_failure_ack;M
 
 set(old_cmake_required_includes "${CMAKE_REQUIRED_INCLUDES}")
 if(CMAKE_REQUIRED_INCLUDES)
-  set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${MPI_C_INCLUDE_PATH})
+  set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${MPI_C_INCLUDE_DIRS})
 else()
-  set(CMAKE_REQUIRED_INCLUDES ${MPI_C_INCLUDE_PATH})
+  set(CMAKE_REQUIRED_INCLUDES ${MPI_C_INCLUDE_DIRS})
 endif()
 set(old_cmake_required_flags "${CMAKE_REQUIRED_FLAGS}")
 if(CMAKE_REQUIRED_FLAGS)
-  set(CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS} ${MPI_C_COMPILE_FLAGS} ${MPI_C_LINK_FLAGS})
+  set(CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS} ${MPI_C_COMPILE_OPTIONS} ${MPI_C_COMPILE_DEFINITIONS} ${MPI_C_LINK_FLAGS})
 else()
-  set(CMAKE_REQUIRED_FLAGS ${MPI_C_COMPILE_FLAGS} ${MPI_C_LINK_FLAGS})
+  set(CMAKE_REQUIRED_FLAGS ${MPI_C_COMPILE_OPTIONS} ${MPI_C_COMPILE_DEFINITIONS} ${MPI_C_LINK_FLAGS})
 endif()
 set(old_cmake_required_libraries "${CMAKE_REQUIRED_LIBRARIES}")
 if(CMAKE_REQUIRED_LIBRARIES)
@@ -270,9 +290,9 @@ endif()
 #---------------------------------------------------
 set(old_cmake_required_includes "${CMAKE_REQUIRED_INCLUDES}")
 if(CMAKE_REQUIRED_INCLUDES)
-  set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${MPI_C_INCLUDE_PATH})
+  set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${MPI_C_INCLUDE_DIRS})
 else()
-  set(CMAKE_REQUIRED_INCLUDES ${MPI_C_INCLUDE_PATH})
+  set(CMAKE_REQUIRED_INCLUDES ${MPI_C_INCLUDE_DIRS})
 endif()
 CHECK_INCLUDE_FILES("mpi.h" HAVE_MPI_H)
 CHECK_SYMBOL_EXISTS(I_MPI_VERSION "mpi.h" HAVE_Intel_MPI)
@@ -291,13 +311,14 @@ set(CMAKE_REQUIRED_INCLUDES ${old_cmake_required_includes})
 #
 # @CAF_VERSION@ @opencoarrays_aware_compiler@ @Fortran_COMPILER@ @CAF_MODDIR@
 # @CAF_MPI_Fortran_LINK_FLAGS@ @CAF_MPI_Fortran_COMPILE_FLAGS@
-# @CAF_LIBS@ @CAF_MPI_LIBS@
+# @CAF_LIBS@ @THREADS_LIB@ @CAF_MPI_LIBS@
 #
 
 set(CAF_VERSION "${full_git_describe}")
 set(Fortran_COMPILER "${CMAKE_Fortran_COMPILER}")
 set(CAF_MODDIR "${CMAKE_INSTALL_INCLUDEDIR}/${mod_dir_tail}")
 set(MOD_DIR_FLAG "${CMAKE_Fortran_MODDIR_FLAG}")
+set(THREADS_LIB "${CMAKE_THREAD_LIBS_INIT}")
 set(CAF_MPI_LIBS "")
 foreach( lib IN LISTS MPI_Fortran_LIBRARIES)
   set(CAF_MPI_LIBS "${CAF_MPI_LIBS} \"${lib}\"")
@@ -309,14 +330,15 @@ foreach( lflag IN LISTS MPI_Fortran_LINK_FLAGS)
 endforeach()
 string(STRIP "${CAF_MPI_Fortran_LINK_FLAGS}" CAF_MPI_Fortran_LINK_FLAGS)
 set(CAF_MPI_Fortran_COMPILE_FLAGS "")
-foreach( fcflag IN LISTS MPI_Fortran_COMPILE_FLAGS)
+foreach( fcflag IN LISTS MPI_Fortran_COMPILE_OPTIONS MPI_Fortran_COMPILE_DEFINITIONS)
   set(CAF_MPI_Fortran_COMPILE_FLAGS "${CAF_MPI_Fortran_COMPILE_FLAGS} ${fcflag}" )
 endforeach()
 string(STRIP "${CAF_MPI_Fortran_COMPILE_FLAGS}" CAF_MPI_Fortran_COMPILE_FLAGS)
 set_target_properties(caf_mpi_static
   PROPERTIES OUTPUT_NAME caf_mpi)
 get_target_property(libcaf_static caf_mpi_static OUTPUT_NAME)
-set(CAF_LIBS "${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${libcaf_static}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+set(CAF_LIBS
+  "${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${libcaf_static}${CMAKE_STATIC_LIBRARY_SUFFIX}")
 
 configure_file("${CMAKE_SOURCE_DIR}/src/extensions/caf.in" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf"
   @ONLY)
@@ -324,7 +346,7 @@ configure_file("${CMAKE_SOURCE_DIR}/src/extensions/caf.in" "${CMAKE_BINARY_DIR}/
 
 # List of cafrun.in variables needing configuration:
 #
-# @CAF_VERSION@ @MPIEXEC@ @MPIEXEC_NUMPROC_FLAG@ @MPIEXEC_PREFLAGS@ @MPIEXEC_POSTFLAGS@
+# @CAF_VERSION@ @MPIEXEC_EXECUTABLE@ @MPIEXEC_NUMPROC_FLAG@ @MPIEXEC_PREFLAGS@ @MPIEXEC_POSTFLAGS@
 # @HAVE_FAILED_IMG@
 #
 
@@ -337,9 +359,24 @@ endif()
 configure_file("${CMAKE_SOURCE_DIR}/src/extensions/cafrun.in" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun"
   @ONLY)
 
-install(PROGRAMS "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun"
+install(PROGRAMS
+  "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun"
   "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf"
   DESTINATION "${CMAKE_INSTALL_FULL_BINDIR}")
+
+if(WIN32)
+  # Add the batch script wrappers
+  configure_file(
+    "${CMAKE_SOURCE_DIR}/src/extensions/caf.bat.in" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf.bat"
+    @ONLY)
+  configure_file(
+    "${CMAKE_SOURCE_DIR}/src/extensions/cafrun.bat.in" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun.bat"
+    @ONLY)
+  install(PROGRAMS
+    "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun.bat"
+    "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf.bat"
+    DESTINATION "${CMAKE_INSTALL_FULL_BINDIR}")
+endif()
 
 lint_script("${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}" caf)
 check_script_style("${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf")

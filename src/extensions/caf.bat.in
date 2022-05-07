@@ -1,0 +1,4 @@
+@REM Batch file wrapper script to call the caf bash script on windows
+@REM %~dp0 is the directory of the batch script. This assumes caf.bat in same dir as caf
+
+"@BASH_EXECUTABLE@" "%~dp0caf" %*

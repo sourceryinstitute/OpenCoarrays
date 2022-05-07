@@ -8,7 +8,10 @@ macro(add_installation_script_test name path)
   file( COPY "${CMAKE_CURRENT_SOURCE_DIR}/${path}/${name}-usage" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/${path}"
     FILE_PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
   )
-  add_test(NAME test-${name} COMMAND "${CMAKE_BINARY_DIR}/${path}/${name}")
-  set_property(TEST test-${name} PROPERTY WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/${path}")
-  set_property(TEST test-${name} PROPERTY ENVIRONMENT "OPENCOARRAYS_SRC_DIR=${CMAKE_SOURCE_DIR}")
+  if(EXISTS ${BASH_EXECUTABLE})
+    message(STATUS "Bash executable found: ${BASH_EXECUTABLE}")
+    add_test(NAME test-${name} COMMAND "${BASH_EXECUTABLE}" "${CMAKE_BINARY_DIR}/${path}/${name}")
+    set_property(TEST test-${name} PROPERTY WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/${path}")
+    set_property(TEST test-${name} PROPERTY ENVIRONMENT "OPENCOARRAYS_SRC_DIR=${CMAKE_SOURCE_DIR}")
+  endif()
 endmacro(add_installation_script_test)

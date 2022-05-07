@@ -52,7 +52,7 @@ set -o pipefail
 #
 # CAF_VERSION, opencoarrays_aware_compiler, Fortran_COMPILER, CAF_MODDIR,
 # CAF_MPI_Fortran_LINK_FLAGS, CAF_MPI_Fortran_COMPILE_FLAGS,
-# CAF_LIBS, CAF_MPI_LIBS
+# CAF_LIBS, THREADS_LIB, CAF_MPI_LIBS
 #
 
 caf_version='@CAF_VERSION@' # fetched from `git describe` and/or
@@ -61,7 +61,7 @@ oca_compiler="@opencoarrays_aware_compiler@" # True for GFortran > 5.0.0
 
 # Compiler used to build OpenCoarrays; runtime must match compiler used during build
 cafc="@Fortran_COMPILER@"
-if [[ "${cafc}" == @*@ ]]; then
+if [[ "${cafc}" == @*@ || -z "${cafc}" ]]; then
   cafc=gfortran
 fi
 caf_mod_dir="@CAF_MODDIR@"    # location of extensions module, needed for non-OCA compilers
@@ -87,6 +87,7 @@ mpi_link_flags=(@CAF_MPI_Fortran_LINK_FLAGS@) # e.g. `pkg-config
 # --libs-only-L`
 mpi_compile_flags=(@CAF_MPI_Fortran_COMPILE_FLAGS@)
 caf_libs=(@CAF_LIBS@) # e.g. "libcaf_mpi" "libcaf_extensions",
+threads_lib=@THREADS_LIB@ # pthreads or compatible, needed for windows
 # preferably full paths, but could be
 # combination of -L... and -lcaf_mpi...
 mpi_libs=(@CAF_MPI_LIBS@) # e.g. `pkg-config --libs-only-l` or full paths
@@ -176,7 +177,7 @@ __only_compiling () {
 substitute_lib () {
   # Try to substitute a shared or static library if requested library is missing
   # Some package managers only install dynamic or static libs
-  if ! [[ -f "${1}" ]] ; then
+  if ! [[ -f "${1}" && "${1}" = *.* ]] ; then
       case "${1##*.}" in
           a|lib)
               for suff in so dylib dll ; do
@@ -235,6 +236,11 @@ if [[ -n "${caf_libs[*]:-}" ]]; then
     caf_added_libs+=("$(substitute_lib "${prefix%/}/${lib}")")
   done
 fi
+
+if [[ -n "${threads_lib}" ]]; then
+  caf_added_libs+=("${threads_lib}")
+fi
+
 if [[ -n "${mpi_libs[*]:-}" ]]; then
   for lib in "${mpi_libs[@]:-}"; do
     caf_added_libs+=("$(substitute_lib "${lib}")")
@@ -370,7 +376,7 @@ if "${cafc}" "${compiler_args[@]}" ; then
   exit $?
 else
   return_code=$?
-  echo "Error: comand:" >&2
+  echo "Error: command:" >&2
   echo "   \`${cafc} ${compiler_args[*]}\`" >&2
   echo "failed to compile." >&2
   exit "${return_code}"
