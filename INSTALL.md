@@ -159,7 +159,7 @@ OpenCoarrays on Windows.
      2. Editing your system wide `%PATH%` variable, or updating it in the local shell
         so that git-bash's `bin` subdirectory (containing `bash.exe`) is at the front
         of your `PATH`: `set PATH=C:\path\to\Git-Bash\bin;%PATH%`.
-6. At this point typing `bash --version` should show you you're using Git-Bash, *AND*
+6. At this point, typing `bash --version` should show you you're using Git-Bash, *AND*
    typing `bash -c pwd` should match the current directory. __`bash` provided with
    WSL will show the directory as your home directory, something like `/home/username`
    and this *will* cause problems later__
