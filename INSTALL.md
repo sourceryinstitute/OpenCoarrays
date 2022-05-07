@@ -137,7 +137,7 @@ will only require the free redistributable Intel MPI runtime.
 Please follow these instructions, this is the recommended way to install
 OpenCoarrays on Windows.
 
-##### Pre-requisits #####
+##### Pre-requisites #####
 
 * [CMake]
 * [Git-Bash]
@@ -161,10 +161,10 @@ OpenCoarrays on Windows.
         of your `PATH`: `set PATH=C:\path\to\Git-Bash\bin;%PATH%`.
 6. At this point typing `bash --version` should show you you're using Git-Bash, *AND*
    typing `bash -c pwd` should match the current directory. __`bash` provided with
-   WSL will show the directory as your home directore, something like `/home/username`
-   and this WILL cause problems later__
-7. cd to the extracted OpenCoarrays source directory (obtained by downloading a
-   release archive, or, for advanced useres, cheked out with git etc.)
+   WSL will show the directory as your home directory, something like `/home/username`
+   and this *will* cause problems later__
+7. `cd` to the extracted OpenCoarrays source directory (obtained by downloading a
+   release archive, or, for advanced useres, checked out with `git`, etc.)
 8. Create a build directory and change to it with something like:
    `mkdir build` and `cd build`
 9. Set GCC and GFortran as the default C and Fortran compilers with something like:
