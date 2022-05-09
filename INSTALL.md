@@ -448,8 +448,8 @@ less portable.  Also, the static Makefiles provided in [src] lack several
 important capabilities.  In particular, they will not build the tests;
 they will not generate the `caf` compiler wrapper that ensures correct linking
 and `cafrun` program launcher that ensures support for advanced features such
-as Fortran 2015 failed images; they will not build the [opencoarrays] module
-that can be used to provide some Fortran 2015 features with non-Fortran-2015
+as Fortran 2018 failed images; they will not build the [opencoarrays] module
+that can be used to provide some Fortran 2018 features with non-Fortran-2018
 compilers; nor do the static Makefiles provide a `make install` option so you
 will need to manually move the resultant library from the build location to your
 chosen installation location.

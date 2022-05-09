@@ -5,8 +5,8 @@
 # -- This script installs OpenCoarrays and its prerequisites.
 #
 # OpenCoarrays is distributed under the OSI-approved BSD 3-clause License:
-# Copyright (c) 2015-2016, Sourcery, Inc.
-# Copyright (c) 2015-2016, Sourcery Institute
+# Copyright (c) 2015-2022, Sourcery Institute
+# Copyright (c) 2015-2022, Archaeologic Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification,
@@ -251,8 +251,8 @@ if [[ "${arg_v}" == "${__flag_present}" || "${arg_V}" == "opencoarrays" ]]; then
     echo "OpenCoarrays ${opencoarrays_version}"
     echo ""
     echo "OpenCoarrays installer"
-    echo "Copyright (C) 2015-2016 Sourcery, Inc."
-    echo "Copyright (C) 2015-2016 Sourcery Institute"
+    echo "Copyright (C) 2015-2022 Sourcery Institute"
+    echo "Copyright (C) 2015-2022 Archaeologic Inc."
     echo ""
     echo "OpenCoarrays comes with NO WARRANTY, to the extent permitted by law."
     echo "You may redistribute copies of ${this_script} under the terms of the"

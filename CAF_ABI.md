@@ -18,7 +18,7 @@ Download this file as a PDF document
 This document describes the OpenCoarrays application binary interface (ABI) through
 which a compiler accesses coarray functionality.  As such, the target audience for
 this document is compiler developers.  Most application developers need only write
-standard-conforming Fortran 2008 or 2015 and compile their code with the OpenCoarrays
+standard-conforming Fortran 2008 or 2018 and compile their code with the OpenCoarrays
 `caf` compiler wrapper without knowledge of the ABI.
 
 The actual function names in this document have a PREFIX in the source code to avoid
