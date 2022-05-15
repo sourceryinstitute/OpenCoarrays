@@ -15,7 +15,11 @@ where the above files are in dependency order: each file depends on the file(s) 
 
 We currently maintain, build, and test only the MPI runtime.  The GASNet and OpenSHMEM runtime library source code serve only to provide detailed, open-source documentation of the research described by [Fanfarillo et al. (2014)] and [Rouson et al. (2017)].  For a Fortran 2018 parallel runtime library based on the more recent GASNet-EX exascale networking middleware described by [Bonachea and Hargrove (2018)], please see the [Caffeine] repository.
 
+One exception regarding the transparent nature of the ABI is the [opencoarrays module], which provides a public function that returns the underlying MPI communicator. This capability can be useful for using coarray Fortran to drive an ensemble of simulations using pre-existing MPI as described in [Rouson, McCreight, and Fanfarillo (2017)].
+
 [Fanfarillo et al. (2014)]: http://dx.doi.org/10.1145/2676870.2676876
 [Rouson et al. (2017)]: https://doi.org/10.1145/3144779.3169104
 [Bonachea and Hargrove (2018)]: https://doi.org/10.1007/978-3-030-34627-0_11
 [Caffeine]: https://go.lbl.gov/caffeine
+[opencoarrays module]: ./runtime-libraries/mpi/opencoarrays.F90
+[Rouson, McCreight, and Fanfarillo (2017)]: https://doi.org/10.1145/3144779.3169110
