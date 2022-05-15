@@ -32,7 +32,7 @@
 
 export OPENCOARRAYS_SRC_DIR="${OPENCOARRAYS_SRC_DIR:-${PWD%prerequisites*}}"
 export __usage=${OPENCOARRAYS_SRC_DIR}/prerequisites/build.sh-usage
-if [[ ! -f "${OPENCOARRAYS_SRC_DIR}/src/libcaf.h" ]]; then
+if [[ ! -f "${OPENCOARRAYS_SRC_DIR}/src/runtime-libraries/mpi/mpi_caf.c" ]]; then
   echo "Please run this script inside the OpenCoarrays source \"prerequisites\" subdirectory"
   echo "or set OPENCOARRAYS_SRC_DIR to the top-level OpenCoarrays source directory path."
   exit 1

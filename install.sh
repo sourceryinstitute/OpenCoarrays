@@ -81,7 +81,7 @@
 
 ### Start of boilerplate -- do not edit this block #######################
 export OPENCOARRAYS_SRC_DIR="${OPENCOARRAYS_SRC_DIR:-${PWD%/}}"
-if [[ ! -f "${OPENCOARRAYS_SRC_DIR}/src/libcaf.h" ]]; then
+if [[ ! -f "${OPENCOARRAYS_SRC_DIR}/src/runtime-libraries/mpi/mpi_caf.c" ]]; then
   echo "Please run this script inside the top-level OpenCoarrays source directory or "
   echo "set OPENCOARRAYS_SRC_DIR to the OpenCoarrays source directory path."
   exit 1
@@ -331,6 +331,7 @@ elif [[ "${arg_p:-}" == "opencoarrays" ]]; then
       report_results 2>&1 | tee -a ../"${installation_record}"
     fi
   fi
+
 
 elif [[ "${arg_p:-}" == "ofp" ]]; then
 

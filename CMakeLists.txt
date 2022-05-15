@@ -697,7 +697,7 @@ add_custom_target( hash_installed
 #---------------------------------------------------------------------------------------
 # Define macro for adding CAF tests, and ensuring proper flags are passed to MPI runtime
 #---------------------------------------------------------------------------------------
-# Test for OpenMPI moved to src/mpi/CMakeLists.txt and passed back up through set(... PARENT_SCOPE)
+# Test for OpenMPI moved to src/runtime-libraries/mpi/CMakeLists.txt and passed back up through set(... PARENT_SCOPE)
 function(add_caf_test name num_caf_img test_target)
   # Function to add MPI tests.
   if(TARGET ${test_target})
