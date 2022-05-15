@@ -30,8 +30,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 
 #include "libcaf-version-def.h"
 
-/* GNU Fortran's array descriptor.  Keep in sync with libgfortran.h.  To be
-   replaced by TS29113's ISO_Fortran_binding.h with CFI_cdesc_t.  */
+/* GNU Fortran's array descriptor.  Keep in sync with libgfortran.h.  */
 
 enum
 { BT_UNKNOWN = 0, BT_INTEGER, BT_LOGICAL, BT_REAL, BT_COMPLEX,
