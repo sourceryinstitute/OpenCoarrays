@@ -25,14 +25,13 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 
-/****l* gasnet/gasnet_caf.c
- * NAME
- *   gasnet_caf
- * SYNOPSIS
- *   This program implements the LIBCAF_GASNET transport layer.
-******
-*/
+/*
 
+  !!!!! This file is no longer maintained and remains in the OpenCoarrays !!!!!
+  !!!!! for archival purposes to support related publications as cited in !!!!!
+  !!!!! the src/README.md file.                                           !!!!!
+
+*/
 
 #include "libcaf.h"
 #include "gasnet.h"
