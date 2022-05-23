@@ -19,7 +19,7 @@ One exception regarding the transparent nature of the ABI is the [opencoarrays m
 
 [Fanfarillo et al. (2014)]: http://dx.doi.org/10.1145/2676870.2676876
 [Rouson et al. (2017)]: https://doi.org/10.1145/3144779.3169104
-[Bonachea and Hargrove (2018)]: https://doi.org/10.1007/978-3-030-34627-0_11
+[Bonachea and Hargrove (2018)]: https://doi.org/10.25344/S4QP4W
 [Caffeine]: https://go.lbl.gov/caffeine
 [opencoarrays module]: ./runtime-libraries/mpi/opencoarrays.F90
 [Rouson, McCreight, and Fanfarillo (2017)]: https://doi.org/10.1145/3144779.3169110
