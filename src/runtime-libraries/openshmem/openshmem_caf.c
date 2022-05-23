@@ -27,9 +27,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 
 /*
 
-  !!!!! This file is no longer maintained and remains in the OpenCoarrays !!!!!
-  !!!!! for archival purposes to support related publications as cited in !!!!!
-  !!!!! the src/README.md file.                                           !!!!!
+  !!!!! This file is no longer maintained and remains in OpenCoarrays for !!!!!
+  !!!!! archival purposes to support related publications as cited in the !!!!!
+  !!!!! src/README.md file.                                               !!!!!
 
 */
 
