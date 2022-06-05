@@ -104,8 +104,8 @@ trap '__b3bp_err_report "${FUNCNAME:-.}" ${LINENO}' ERR
 
 ### Start of boilerplate -- do not edit this block #######################
 export OPENCOARRAYS_SRC_DIR="${OPENCOARRAYS_SRC_DIR:-${PWD%/}/../../..}"
-if [[ ! -f "${OPENCOARRAYS_SRC_DIR}/src/libcaf.h" ]]; then
-  echo "Please run this script inside the OpenCoarrays source sudirectory src/tests/instsallation"
+if [[ ! -f "${OPENCOARRAYS_SRC_DIR}/src/runtime-libraries/mpi/mpi_caf.c" ]]; then
+  echo "Please run this script inside the OpenCoarrays source subdirectory src/tests/instsallation"
   echo "or set OPENCOARRAYS_SRC_DIR to the OpenCoarrays source directory path."
   exit 1
 fi

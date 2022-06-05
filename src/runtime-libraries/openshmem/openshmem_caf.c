@@ -1,4 +1,4 @@
-/* One-sided MPI implementation of Libcaf
+/* One-sided OpenSHMEM/MPI implementation of Libcaf
 
 Copyright (c) 2012-2016, Sourcery, Inc.
 All rights reserved.
@@ -25,12 +25,12 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 
-/****l* mpi/mpi_caf.c
- * NAME
- *   mpi_caf
- * SYNOPSIS
- *   This program implements the LIBCAF_MPI transport layer.
-******
+/*
+
+  !!!!! This file is no longer maintained and remains in OpenCoarrays for !!!!!
+  !!!!! archival purposes to support related publications as cited in the !!!!!
+  !!!!! src/README.md file.                                               !!!!!
+
 */
 
 #include <stdio.h>

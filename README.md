@@ -5,7 +5,7 @@
 [https://github.com/sourceryinstitute/OpenCoarrays/blob/master/README.md]:#
 <div align="center">
 
-[![Sourcery Institute][sourcery-institute logo]][Sourcery, Inc.]
+[![Sourcery Institute][sourcery-institute logo]][Sourcery Institute]
 
 OpenCoarrays
 ============
@@ -30,25 +30,22 @@ OpenCoarrays
 Overview
 --------
 
-[OpenCoarrays] supports [Fortran 2018] compilers by providing a
-parallel application binary interface (ABI) that abstracts away the
-underlying parallel programming model, which can be the Message
-Passing Interface ([MPI]) or [OpenSHMEM].  Parallel Fortran 2018
-programs may be written and compiled into object files once and
-then linked or re-linked to either MPI or [OpenSHMEM] without modifying
-or recompiling the Fortran source.  Not a single line of source code
-need change to switch parallel programming models.  The default
-programming model is MPI because it provides the broadest capability
-for supporting Fortran 2018  features.  However, having the option to
-change parallel programming models at link-time may enhance portability
-and performance (see [Rouson et al. (2017)]).
+[OpenCoarrays] supports the GNU Compiler Collection ([GCC]) Fortran compiler
+([`gfortran`]) by providing a parallel application binary interface (ABI) that
+abstracts away the underlying communication library.  OpenCoarrays thus enables
+`gfortran` to support Fortran's parallel programming features, often called
+"Coarray Fortran," without making direct reference to the back-end communication
+library: the Message Passing Interface (MPI).  This ensures that Fortran
+programs and Fortran compilers may take advantage of other communication
+libraries without costly refactoring.  Work is underway on the [Caffeine]
+project to support alternative communication libraries and alternative compilers
+by defining a compiler-independent parallel ABI atop the [GASNet-EX] exascale
+networking middleware.
 
-OpenCoarrays provides a compiler wrapper (`caf`), parallel runtime
-libraries (`libcaf_mpi` and `libcaf_openshmem`), and a parallel
-executable file launcher (`cafrun`).  The wrapper and launcher
-provide a uniform abstraction for compiling and executing parallel
-Fortran 2018 programs without direct reference to the underlying
-parallel programming model.
+OpenCoarrays provides a compiler wrapper (`caf`), a parallel runtime library
+(`libcaf_mpi`), and a program launcher (`cafrun`).  The wrapper and launcher
+provide a uniform abstraction for compiling and executing Coarray Fortran
+without direct reference to the underlying MPI layer.
 
 Downloads
 ---------
@@ -58,22 +55,20 @@ Please see our [Releases] page.
 Compatibility
 -------------
 
-The GNU Compiler Collection ([GCC]) Fortran front end ([gfortran]) has
-used OpenCoarrays since the GCC 5.1.0 release .  Discussions are under
-way around incorporating OpenCoarrays into other compilers.
+The OpenCoarrays ABI was adopted by `gfortran` in release the GCC 5.1.0 release
+and `gfortran` continues to work with OpenCoarrays as of this writing.  
 
 Prerequisites
 -------------
 
 Building OpenCoarrays requires
 
-* An MPI implementation (default: [MPICH]).
-* CMake.
-* A Fortran compiler (default: [GCC]).
-* _Optional_: An [OpenSHMEM] implementation.
+* An MPI implementation,
+* CMake, and
+* The GCC C and Fortran compilers: `gcc` and `gfortran`.
 
-If you use a package manager or the OpenCoarrays installer, any
-missing prerequisites will be built for you.
+If you use a package manager or the OpenCoarrays installer, any missing
+prerequisites will be built for you.
 
 
 Installation
@@ -124,6 +119,12 @@ Acknowledgments
 
 We gratefully acknowledge support from the following institutions:
 
+* The U.S. Nuclear Regulatory Commission ([NRC]) for funding the work that led to support for
+  - the Windows operating system, 
+  - the `random_init` subroutine, and 
+  - `co_broadcast` of derived-type objects with `allocatable` components.
+* The National Aeronautics and Space Administration [NASA] for funding the work that led to
+  support for the `co_broadcast` of derived-type objects.
 * [Arm] for approving compiler engineer contributions of code.
 * [National Center for Atmospheric Research] for access to the
   Yellowstone/Caldera supercomputers and for logistics support during
@@ -137,7 +138,7 @@ We gratefully acknowledge support from the following institutions:
   of Energy under Contract No. DE-AC02-05CH11231, for access to the
   Hopper and Edison supercomputers under the OpenCoarrays project
   start allocation.
-* [Sourcery, Inc.], for financial support for the domain registration,
+* [Archaeologic Inc.] for financial support for the domain registration,
   web hosting, advanced development, and conference travel.
 
 Donate
@@ -169,7 +170,6 @@ to aid in development efforts.
 [Contributing]: #contributing
 [Acknowledgments]: #acknowledgments
 
-[Fortran 2018]: https://j3-fortran.org/doc/year/18/18-007r1.pdf 
 [Arm]: https://www.arm.com
 
 [OpenSHMEM]: http://www.openshmem.org/site/
@@ -178,9 +178,9 @@ to aid in development efforts.
 [ABI]: https://gcc.gnu.org/onlinedocs/gfortran/Coarray-Programming.html#Coarray-Programming
 [MPI]: https://www.mpi-forum.org/
 [GCC]: https://gcc.gnu.org
-[gfortran]: https://gcc.gnu.org/wiki/GFortran
+[`gfortran`]: https://gcc.gnu.org/wiki/GFortran
 [MPICH]: https://www.mpich.org
-[Sourcery, Inc.]: http://www.sourceryinstitute.org
+[Sourcery Institute]: http://www.sourceryinstitute.org
 [Google]: https://www.google.com
 [CINECA]: https://www.cineca.it/en
 [NERSC]: https://www.nersc.gov
@@ -210,7 +210,10 @@ to aid in development efforts.
 [release img]: https://img.shields.io/github/release/sourceryinstitute/OpenCoarrays.svg?style=flat-square "Latest release badge"
 [pdf img]: https://img.shields.io/badge/PDF-README.md-6C2DC7.svg?style=flat-square "Download this readme as a PDF"
 [twitter img]: https://img.shields.io/twitter/url/http/shields.io.svg?style=social
-[Writing Fortran 2018 Today]: https://www.eventbrite.com/e/writing-fortran-2018-today-object-oriented-parallel-programming-tickets-48982176007
-[Rouson et al. (2017)]: http://www.opencoarrays.org/uploads/6/9/7/4/69747895/a4-rouson.pdf
+[NRC]: https://www.nrc.gov
+[NASA]: https://www.nasa.gov
+[Caffeine]: https://go.lbl.gov/caffeine
+[Archaeologic Inc.]: https://www.archaeologic.codes
+[GASNet-EX]: https://go.lbl.gov/gasnet
 
 [default tweet]: https://twitter.com/intent/tweet?hashtags=HPC,Fortran,PGAS&related=zbeekman,gnutools,HPCwire,HPC_Guru,hpcprogrammer,SciNetHPC,DegenerateConic,jeffdotscience,travisci&text=Stop%20programming%20w%2F%20the%20%23MPI%20docs%20in%20your%20lap%2C%20try%20Coarray%20Fortran%20w%2F%20OpenCoarrays%20%26%20GFortran!&url=https%3A//github.com/sourceryinstitute/OpenCoarrays

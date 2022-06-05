@@ -28,10 +28,6 @@ if($ENV{OPENCOARRAYS_DEVELOPER})
 endif()
 option(CAF_RUN_DEVELOPER_TESTS "Run tests intended only for developers" ${_TF})
 mark_as_advanced(CAF_RUN_DEVELOPER_TESTS)
-option( CAF_ENABLE_ISO_Fortran_BINDING
-  "Build and install F2018 C interop iso_fortran_binding.h header; experimental!"
-  ${_TF} )
-
 
 # Name project and specify source languages
 # Parse version from .VERSION file so that more info can be added and easier to get from scripts
@@ -701,7 +697,7 @@ add_custom_target( hash_installed
 #---------------------------------------------------------------------------------------
 # Define macro for adding CAF tests, and ensuring proper flags are passed to MPI runtime
 #---------------------------------------------------------------------------------------
-# Test for OpenMPI moved to src/mpi/CMakeLists.txt and passed back up through set(... PARENT_SCOPE)
+# Test for OpenMPI moved to src/runtime-libraries/mpi/CMakeLists.txt and passed back up through set(... PARENT_SCOPE)
 function(add_caf_test name num_caf_img test_target)
   # Function to add MPI tests.
   if(TARGET ${test_target})
@@ -973,16 +969,6 @@ add_installation_script_test(installation-scripts.sh src/tests/installation/)
 if( CAF_ENABLE_FAILED_IMAGES AND ( NOT
       (	"${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" ) AND ( "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64" ) )
     )
-  message ( WARNING
-    "ISO_Fortran_BINDING has only been tested with recent GCC C compilers on x86_64 architectures!
-     Some people have reported problems on other architectures or using other C compilers (Clang).
-     There are likely bugs present; use at your own risk!")
-endif()
-
-# Test ISO_Fortran_binding library
-if( CAF_ENABLE_ISO_Fortran_BINDING OR ( CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER} ) )
-  # See https://github.com/sourceryinstitute/OpenCoarrays/issues/523#issuecomment-401613209
-  add_test(NAME ISO_Fortran_binding_tests COMMAND "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ISO_Fortran_binding_tests")
 endif()
 
 # Lint the Travis-CI scripts
