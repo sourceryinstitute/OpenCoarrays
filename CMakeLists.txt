@@ -645,6 +645,7 @@ define_property(TARGET
 # Recurse into the src directory
 #-------------------------------
 add_subdirectory(src)
+add_subdirectory(tests)
 
 #-----------------------------------------------------
 # Publicize installed location to other CMake projects
