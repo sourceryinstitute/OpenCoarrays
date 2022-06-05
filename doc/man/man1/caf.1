@@ -1,4 +1,4 @@
-.TH CAF 1 2017\-09\-12 OpenCoarrays\-1.9.1 "caf compiler wrapper manual"
+.TH CAF 1 2022\-06\-05 OpenCoarrays\-2.10.1 "caf compiler wrapper manual"
 .SH NAME
 .PP
 \fB\fCcaf\fR \- OpenCoarrays compiler wrapper to compile and link coarray Fortran source files and programs
@@ -7,9 +7,9 @@
 \fB\fCcaf\fR [compiler\-options] [linker\-options] \fI<fortran\-source\-file>\fP [\fIobject\-files\fP] [libraries]
 .SH DESCRIPTION
 .PP
-\fB\fCcaf\fR is a compiler wrapper script which is generated when the OpenCoarrays library \[la]https://github.com/sourceryinstitute/OpenCoarrays#readme\[ra] that ensures coarray fortran programs are compiled with the same fortran compiler OpenCoarrays was built for,
+\fB\fCcaf\fR is a compiler wrapper script which is generated when the OpenCoarrays library \[la]https://github.com/sourceryinstitute/OpenCoarrays#readme\[ra] that ensures coarray Fortran programs are compiled with the same Fortran compiler OpenCoarrays was built for,
 .BR gfortran (1)
-by default, and that the linker links against the appropriate parallel runtime, MPI by default. The \fB\fCcaf\fR compiler wrapper serves a similar purpose to the MPI fortran wrapper compiler,
+by default, and that the linker links against the appropriate parallel runtime, MPI by default. The \fB\fCcaf\fR compiler wrapper serves a similar purpose to the MPI Fortran wrapper compiler,
 .BR mpifort (1).
 \fB\fCcaf\fR embeds the full path to the Fortran compiler it was built for, and to the parallel runtime libraries it links against, and a relative path, based on the install location of \fB\fCcaf\fR itself, to the OpenCoarrays library. This ensures that the API and ABI of OpenCoarrays is always consistent with the Fortran compiler it was built for, and the parallel runtime it uses. To upgrade the parallel runtime, e.g., MPI, or the Fortran compiler, you will need to rebuild and install OpenCoarrays, which will regenerate and reinstall the \fB\fCcaf\fR wrapper script.
 .PP
@@ -30,9 +30,10 @@ Report the name and version of the Fortran compiler \fB\fCcaf\fR is wrapping and
 .SH BUGS
 .PP
 For a list of bugs currently affecting OpenCoarrays, or to report a new one, please report any bugs to the OpenCoarrays project at \[la]https://github.com/sourceryinstitute/OpenCoarrays/issues\[ra]
-.SH AUTHOR
+.SH AUTHORS
 .PP
 Izaak Beekman \[la]izaak@izaakbeekman.com\[ra]
+Damian Rouson \[la]damian@rouson.net\[ra]
 .SH SEE ALSO
 .PP
 .BR cafrun (1),
