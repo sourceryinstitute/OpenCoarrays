@@ -1,6 +1,5 @@
 add_subdirectory(application-binary-interface )
 add_subdirectory(runtime-libraries )
-add_subdirectory(tests)
 
 set(N_CPU ${N_CPU} PARENT_SCOPE)
 set(HOST_NAME ${HOST_NAME} PARENT_SCOPE)
