@@ -119,11 +119,12 @@ Acknowledgments
 
 We gratefully acknowledge support from the following institutions:
 
-* The U.S. Nuclear Regulatory Commission [NRC] for funding work on supporting 
-  the Windows operating system, the `random_init` subroutine, and the `co_broadcast`.
-  of objects of derived type with `allocatable` components
-* The National Aeronautics and Space Administration [NASA] for funding the work on
-  supporting the `co_broadcast` objects of derived type.
+* The U.S. Nuclear Regulatory Commission ([NRC]) for funding the work that led to support for
+  - the Windows operating system, 
+  - the `random_init` subroutine, and 
+  - `co_broadcast` of derived-type objects with `allocatable` components.
+* The National Aeronautics and Space Administration [NASA] for funding the work that led to
+  support for the `co_broadcast` of derived-type objects.
 * [Arm] for approving compiler engineer contributions of code.
 * [National Center for Atmospheric Research] for access to the
   Yellowstone/Caldera supercomputers and for logistics support during
