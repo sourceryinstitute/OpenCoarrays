@@ -965,7 +965,7 @@ endif()
 
 # Test bash installation scripts
 include(cmake/AddInstallationScriptTest.cmake )
-add_installation_script_test(installation-scripts.sh src/tests/installation/)
+add_installation_script_test(installation-scripts.sh tests/installation/)
 
 if( CAF_ENABLE_FAILED_IMAGES AND ( NOT
       (	"${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" ) AND ( "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64" ) )
