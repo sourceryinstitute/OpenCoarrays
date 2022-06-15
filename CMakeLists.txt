@@ -562,6 +562,7 @@ find_program(BASH_EXECUTABLE bash
   REQUIRED)
 function(caf_compile_executable target main_depend)
   set(includes "")
+  list(APPEND includes "-I${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_INCLUDEDIR}/${mod_dir_tail}")
   foreach(includedir ${MPI_Fortran_INCLUDE_DIRS})
     list(APPEND includes "-I${includedir}")
   endforeach()
