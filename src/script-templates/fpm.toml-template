@@ -1,0 +1,13 @@
+name = "opencoarrays"
+version = "3.0.0"
+license = "BSD"
+author = ["Sourcery Institute"]
+maintainer = "damian@archaeologic.codes"
+copyright = "2015-2022 Sourcery Institute"
+
+[install]
+library = true
+
+[dev-dependencies]
+garden = {git = "https://gitlab.com/everythingfunctional/garden", tag = "v1.0.1"}
+assert= {git = "https://github.com/sourceryinstitute/assert", tag = "1.3.0"}

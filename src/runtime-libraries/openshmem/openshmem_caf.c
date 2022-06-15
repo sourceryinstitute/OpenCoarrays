@@ -1,6 +1,6 @@
 /* One-sided OpenSHMEM/MPI implementation of Libcaf
 
-Copyright (c) 2012-2016, Sourcery, Inc.
+Copyright (c) 2012-2022, Sourcery Institute
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -32,6 +32,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
   !!!!! src/README.md file.                                               !!!!!
 
 */
+
+#ifdef OPENSHMEM
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -3886,3 +3888,4 @@ PREFIX (error_stop) (int32_t error)
   fprintf (stderr, "ERROR STOP %d\n", error);
   error_stop (error);
 }
+#endif /* OPENSHMEM */

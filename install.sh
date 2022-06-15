@@ -1,355 +1,331 @@
-#!/usr/bin/env bash
-#
-# install.sh
-#
-# -- This script installs OpenCoarrays and its prerequisites.
-#
-# OpenCoarrays is distributed under the OSI-approved BSD 3-clause License:
-# Copyright (c) 2015-2022, Sourcery Institute
-# Copyright (c) 2015-2022, Archaeologic Inc.
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without modification,
-# are permitted provided that the following conditions are met:
-#
-# 1. Redistributions of source code must retain the above copyright notice, this
-#    list of conditions and the following disclaimer.
-# 2. Redistributions in binary form must reproduce the above copyright notice, this
-#    list of conditions and the following disclaimer in the documentation and/or
-#    other materials provided with the distribution.
-# 3. Neither the names of the copyright holders nor the names of their contributors
-#    may be used to endorse or promote products derived from this software without
-#    specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-# IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-# NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-#
-# Portions of this script derive from BASH3 Boilerplate and are distributed under
-# the following license:
-#
-# The MIT License (MIT)
-#
-# Copyright (c) 2014 Kevin van Zonneveld
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-#
-#
-#  - https://github.com/kvz/bash3boilerplate
-#  - http://kvz.io/blog/2013/02/26/introducing-bash3boilerplate/
-#
-# Version: 2.0.0
-#
-# Authors:
-#
-#  - Kevin van Zonneveld (http://kvz.io)
-#  - Izaak Beekman (https://izaakbeekman.com/)
-#  - Alexander Rathai (Alexander.Rathai@gmail.com)
-#  - Dr. Damian Rouson (http://www.sourceryinstitute.org/) (documentation)
-#
-# Licensed under MIT
-# Copyright (c) 2013 Kevin van Zonneveld (http://kvz.io)
+#!/bin/sh
 
-# The invocation of bootstrap.sh below performs the following tasks:
-# (1) Import several bash3boilerplate helper functions & default settings.
-# (2) Set several variables describing the current file and its usage page.
-# (3) Parse the usage information (default usage file name: current file's name with -usage appended).
-# (4) Parse the command line using the usage information.
+set -e # exit on error
+set -o pipefail
 
-### Start of boilerplate -- do not edit this block #######################
-export OPENCOARRAYS_SRC_DIR="${OPENCOARRAYS_SRC_DIR:-${PWD%/}}"
-if [[ ! -f "${OPENCOARRAYS_SRC_DIR}/src/runtime-libraries/mpi/mpi_caf.c" ]]; then
-  echo "Please run this script inside the top-level OpenCoarrays source directory or "
-  echo "set OPENCOARRAYS_SRC_DIR to the OpenCoarrays source directory path."
+print_usage_info()
+{
+    echo "OpenCoarrays Installation Script"
+    echo ""
+    echo "USAGE:"
+    echo "./install.sh [--help | [--prefix=PREFIX]"
+    echo ""
+    echo " --help             Display this help text"
+    echo " --prefix=PREFIX    Install binary in 'PREFIX/bin'"
+    echo " --prereqs          Display a list of prerequisite software."
+    echo "                    Default prefix='\$HOME/.local/bin'"
+    echo ""
+    echo "For a non-interactive build with the 'yes' utility installed, execute"
+    echo "yes | ./install.sh"
+}
+
+GCC_VERSION=11
+
+list_prerequisites()
+{
+    echo "By default, OpenCoarrays and this installer use the following prerequisite package" 
+    echo "versions, which also indicate the versions that the installer will install if"
+    echo "missing and if granted permission:"
+    echo ""
+    echo "  GCC $GCC_VERSION"
+    echo "  fpm 0.5.0"
+    echo "  pkg-config 0.29.2"
+    echo "  realpath 9.0 (Homebrew coreutils 9.0)"
+    echo ""
+    echo "Some earlier versions will also work."
+}
+
+while [ "$1" != "" ]; do
+    PARAM=$(echo "$1" | awk -F= '{print $1}')
+    VALUE=$(echo "$1" | awk -F= '{print $2}')
+    case $PARAM in
+        -h | --help)
+            print_usage_info
+            exit
+            ;;
+        --prereqs)
+            list_prerequisites
+            exit
+            ;;
+        --prefix)
+            PREFIX=$VALUE
+            ;;
+        *)
+            echo "ERROR: unknown parameter \"$PARAM\""
+            usage
+            exit 1
+            ;;
+    esac
+    shift
+done
+
+set -u # error on use of undefined variable
+
+if [ -z ${MPIFC+x} ] || [ -z ${MPICC+x} ] ; then
+  if command -v mpifort > /dev/null 2>&1; then
+    MPIFC=`which mpifort`
+    echo "Setting MPIFC=$MPIFC"
+  fi
+  if command -v mpicc > /dev/null 2>&1; then
+    MPICC=`which mpicc`
+    echo "Setting MPICC=$MPICC"
+  fi
+fi
+
+if command -v pkg-config > /dev/null 2>&1; then
+  PKG_CONFIG=`which pkg-config`
+fi
+  
+if command -v realpath > /dev/null 2>&1; then
+  REALPATH=`which realpath`
+fi
+
+if command -v fpm > /dev/null 2>&1; then
+  FPM=`which fpm`
+fi
+
+ask_permission_to_use_homebrew()
+{
+  echo ""
+  echo "Either one or both of the environment variables MPIFC and MPICC are unset or"
+  echo "one or more of the following packages are not in the PATH: pkg-config, realpath, and fpm."
+  echo "If you grant permission to install prerequisites, you will be prompted before each installation." 
+  echo ""
+  echo "Press 'Enter' to choose the square-bracketed default answer:"
+  printf "Is it ok to use Homebrew to install prerequisite packages? [yes] "
+}
+
+ask_permission_to_install_homebrew()
+{
+  echo ""
+  echo "Homebrew not found. Installing Homebrew requires sudo privileges."
+  echo "If you grant permission to install Homebrew, you may be prompted to enter your password." 
+  echo ""
+  echo "Press 'Enter' to choose the square-bracketed default answer:"
+  printf "Is it ok to download and install Homebrew? [yes] "
+}
+
+ask_permission_to_install_homebrew_package()
+{
+  echo ""
+  if [ ! -z ${2+x} ]; then
+    echo "Homebrew installs $1 collectively in one package named '$2'."
+    echo ""
+  fi
+  printf "Is it ok to use Homebrew to install $1? [yes] "
+}
+
+CI=${CI:-"false"} # GitHub Actions workflows set CI=true
+
+exit_if_user_declines()
+{
+  if [ $CI = true ]; then 
+    echo " 'yes' assumed (GitHub Actions workflow detected)"
+    return
+  fi
+  read answer
+  if [ -n "$answer" -a "$answer" != "y" -a "$answer" != "Y" -a "$answer" != "Yes" -a "$answer" != "YES" -a "$answer" != "yes" ]; then
+    echo "Installation declined."
+    case ${1:-} in  
+      *MPI*) 
+        echo "To use compilers other than Homebrew-installed mpifort and mpicc,"
+        echo "please set the MPIFC and MPICC environment variables and rerun './install.sh'." ;;
+      *) 
+        echo "Please ensure that $1 is installed and in your PATH and then rerun './install.sh'." ;;
+    esac
+    echo "OpenCoarrays was not installed." 
+    exit 1
+  fi
+}
+
+DEPENDENCIES_DIR="build/dependencies"
+if [ ! -d $DEPENDENCIES_DIR ]; then
+  mkdir -p $DEPENDENCIES_DIR
+fi
+
+if [ -z ${MPIFC+x} ] || [ -z ${MPICC+x} ] || [ -z ${PKG_CONFIG+x} ] || [ -z ${REALPATH+x} ] || [ -z ${FPM+x} ] ; then
+
+  ask_permission_to_use_homebrew 
+  exit_if_user_declines "brew"
+
+  BREW="brew"
+
+  if ! command -v $BREW > /dev/null 2>&1; then
+
+    ask_permission_to_install_homebrew
+    exit_if_user_declines "brew"
+
+    if ! command -v curl > /dev/null 2>&1; then
+      echo "No download mechanism found. Please install curl and rerun ./install.sh"
+      exit 1
+    fi
+
+    curl -L https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh -o $DEPENDENCIES_DIR/install-homebrew.sh --create-dirs
+    chmod u+x $DEPENDENCIES_DIR/install-homebrew.sh
+
+    if [ -p /dev/stdin ]; then 
+       echo ""
+       echo "Pipe detected.  Installing Homebrew requires sudo privileges, which most likely will"
+       echo "not work if you are installing non-interactively, e.g., via 'yes | ./install.sh'."
+       echo "To install OpenCoarrays non-interactiely, please rerun the OpenCoarrays installer after" 
+       echo "executing the following command to install Homebrew:"
+       echo "\"./$DEPENDENCIES_DIR/install-homebrew.sh\""
+       exit 1
+    else
+      ./$DEPENDENCIES_DIR/install-homebrew.sh
+      rm $DEPENDENCIES_DIR/install-homebrew.sh
+    fi
+
+    if [ $(uname) = "Linux" ]; then
+      BREW=/home/linuxbrew/.linuxbrew/bin/brew
+      eval "$($BREW shellenv)"
+    fi
+  fi
+
+  if [ -z ${MPIFC+x} ] || [ -z ${MPICC+x} ]; then
+    ask_permission_to_install_homebrew_package "'mpifort' and 'mpicc'" "open-mpi"
+    exit_if_user_declines "mpifort and mpicc"
+    "$BREW" install open-mpi
+  fi
+  MPIFC=`which mpifort`
+  MPICC=`which mpicc`
+
+  if [ -z ${PKG_CONFIG+x} ]; then
+    ask_permission_to_install_homebrew_package "'pkg-config'"
+    exit_if_user_declines "pkg-config"
+    "$BREW" install pkg-config
+  fi
+  PKG_CONFIG=`which pkg-config`
+
+  if [ -z ${REALPATH+x} ] ; then
+    ask_permission_to_install_homebrew_package "'realpath'" "coreutils"
+    exit_if_user_declines "realpath"
+    "$BREW" install coreutils
+  fi
+  REALPATH=`which realpath`
+
+  if [ -z ${FPM+x} ] ; then
+    ask_permission_to_install_homebrew_package "'fpm'"
+    exit_if_user_declines "fpm"
+    "$BREW" tap awvwgk/fpm
+    "$BREW" install fpm
+  fi
+  FPM=`which fpm`
+fi
+
+PREFIX=`$REALPATH ${PREFIX:-"${HOME}/.local"}`
+echo "PREFIX=$PREFIX"
+
+PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig"
+mkdir -p "$PKG_CONFIG_PATH"
+echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
+
+CAF_VERSION=$(sed -n '/[0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}/{s/^\([^.]*\)\([0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}\)\(.*\)/\2/p;q;}' .VERSION)
+Fortran_COMPILER="$(which $($MPIFC --showme:command))"
+CAF_MPI_Fortran_LINK_FLAGS="$($MPIFC --showme:link)"
+CAF_MPI_Fortran_COMPILE_FLAGS=""
+CAF_MPI_C_COMPILE_FLAGS="$($MPICC --showme:link)"
+CAF_LIBS="lib/libopencoarrays.a"
+
+MPIFC_LIBS="$($MPIFC --showme:libs)"
+MPIFC_LIBS="$(echo -L${MPIFC_LIBS} | sed -n -e 's/\ / -l/g')"
+
+MPIFC_LIB_DIRS="$($MPIFC --showme:libdirs)"
+MPIFC_LIB_DIRS="$(echo -L${MPIFC_LIB_DIRS} | sed -n -e 's/\ / -L/g')"
+
+OPENCOARRAYS_LIBS="-L$PREFIX/lib/ -lopencoarrays"
+
+OPENCOARRAYS_PC="$PKG_CONFIG_PATH/opencoarrays.pc"
+echo "OPENCOARRAYS_FC=$MPIFC"                                                    > $OPENCOARRAYS_PC
+echo "OPENCOARRAYS_CC=$MPICC"                                                   >> $OPENCOARRAYS_PC
+echo "OPENCOARRAYS_CFLAGS='-DPREFIX_NAME=_gfortran_caf_ -DGCC_GE_7 -DGCC_GE_8'" >> $OPENCOARRAYS_PC
+echo "OPENCOARRAYS_LIBS=$OPENCOARRAYS_LIBS"                                     >> $OPENCOARRAYS_PC
+echo ""                                                                         >> $OPENCOARRAYS_PC
+echo "Name: OpenCoarrays"                                                       >> $OPENCOARRAYS_PC
+echo "Description: Coarray Fortran parallel runtime library"                    >> $OPENCOARRAYS_PC
+echo "URL: https://github.com/sourceryinstitute/opencoarrays"                   >> $OPENCOARRAYS_PC
+echo "Version: $CAF_VERSION"                                                    >> $OPENCOARRAYS_PC
+echo "Libs: ${OPENCOARRAYS_LIBS}"                                               >> $OPENCOARRAYS_PC
+
+exit_if_pkg_config_pc_file_missing()
+{
+  export PKG_CONFIG_PATH
+  if ! $PKG_CONFIG $1 ; then
+    echo "$1.pc pkg-config file not found in $PKG_CONFIG_PATH"
+    exit 1
+  fi
+}
+exit_if_pkg_config_pc_file_missing "opencoarrays"
+
+build_script_dir="build/script-templates"
+mkdir -p $build_script_dir
+
+CAF_MPI_LIBS="$MPIFC_LIB_DIRS"
+
+cp src/script-templates/caf.in $build_script_dir/caf.in
+sed -i'' -e "s/@CAF_VERSION@/$CAF_VERSION/g"                                     $build_script_dir/caf.in
+sed -i'' -e "s:@Fortran_COMPILER@:$Fortran_COMPILER:g"                           $build_script_dir/caf.in
+sed -i'' -e "s:@CAF_MPI_Fortran_LINK_FLAGS@:$CAF_MPI_Fortran_LINK_FLAGS:g"       $build_script_dir/caf.in
+sed -i'' -e "s:@CAF_MPI_Fortran_COMPILE_FLAGS@:$CAF_MPI_Fortran_COMPILE_FLAGS:g" $build_script_dir/caf.in
+sed -i'' -e "s:@CAF_LIBS@:$CAF_LIBS:g"                                           $build_script_dir/caf.in
+sed -i'' -e "s:@CAF_MPI_LIBS@:$CAF_MPI_LIBS:g"                                   $build_script_dir/caf.in
+cp build/script-templates/caf.in "$PREFIX"/bin/caf
+
+MPIEXEC="$(which mpiexec)"
+HAVE_FAILED_IMG=false
+MPIEXEC_NUMPROC_FLAG="-n"
+MPIEXEC_PREFLAGS=""
+MPIEXEC_POSTFLAGS=""
+
+cp src/script-templates/cafrun.in $build_script_dir/cafrun.in
+sed -i'' -e "s/@CAF_VERSION@/$CAF_VERSION/g"                   $build_script_dir/cafrun.in
+sed -i'' -e "s:@MPIEXEC@:$MPIEXEC:g"                           $build_script_dir/cafrun.in
+sed -i'' -e "s/@MPIEXEC_NUMPROC_FLAG@/$MPIEXEC_NUMPROC_FLAG/g" $build_script_dir/cafrun.in
+sed -i'' -e "s/@MPIEXEC_PREFLAGS@/$MPIEXEC_PREFLAGS/g"         $build_script_dir/cafrun.in
+sed -i'' -e "s/@MPIEXEC_POSTFLAGS@/$MPIEXEC_POSTFLAGS/g"       $build_script_dir/cafrun.in
+sed -i'' -e "s/@HAVE_FAILED_IMG@/$HAVE_FAILED_IMG/g"           $build_script_dir/cafrun.in
+cp $build_script_dir/cafrun.in "$PREFIX"/bin/cafrun
+
+if [ ! -x "$PREFIX"/bin/caf ]; then
+  echo "caf not installed in '$PREFIX'/bin"
   exit 1
 fi
-export B3B_USE_CASE="${B3B_USE_CASE:-${OPENCOARRAYS_SRC_DIR}/prerequisites/use-case}"
-if [[ ! -f "${B3B_USE_CASE:-}/bootstrap.sh" ]]; then
-  echo "Please set B3B_USE_CASE to the bash3boilerplate use-case directory path."
-  exit 2
-else
-    # shellcheck source=./prerequisites/use-case/bootstrap.sh
-    source "${B3B_USE_CASE}/bootstrap.sh" "$@"
-fi
-### End of boilerplate -- start user edits below #########################
 
-# Set expected value of present flags that take no arguments
-export __flag_present=1
-
-# Set up a function to call when receiving an EXIT signal to do some cleanup. Remove if
-# not needed. Other signals can be trapped too, like SIGINT and SIGTERM.
-function cleanup_before_exit () {
-  info "Cleaning up. Done"
-}
-trap cleanup_before_exit EXIT # The signal is specified here. Could be SIGINT, SIGTERM etc.
-
-
-### Validation (decide what's required for running your script and error out)
-#####################################################################
-
-[ -z "${LOG_LEVEL:-}" ] && emergency "Cannot continue without LOG_LEVEL. "
-
-# shellcheck disable=SC2154
-if [[ "${arg_v}" == "${__flag_present}" || "${arg_l}" == "${__flag_present}" || ! -z "${arg_P:-${arg_U:-${arg_V:-${arg_D}}}}" ]]; then
-   print_debug_only=7
-   if [ "$(( LOG_LEVEL < print_debug_only ))" -ne 0 ]; then
-     debug "Supressing info and debug messages: one of {-l, -v, -P, -U, -V, -D} present."
-     suppress_info_debug_messages
-   fi
+if [ ! -x "$PREFIX"/bin/cafrun ]; then
+  echo "cafrun not installed in '$PREFIX'/bin"
+  exit 1
 fi
 
-[ ! -z "${arg_D}" ] && [ ! -z "${arg_P:-${arg_U:-${arg_V}}}" ] &&
-  emergency "Please pass only one of {-B, -D, -p, -P, -U, -V} or a longer equivalent (multiple detected). [exit 101]"
+cp src/script-templates/install.rsp-template $build_script_dir
+sed -i'' -e "s:@MPIFC@:'$MPIFC':g" $build_script_dir/install.rsp-template
+sed -i'' -e "s:@MPICC@:'$MPICC':g" $build_script_dir/install.rsp-template
+mv $build_script_dir/install.rsp-template build/install.rsp
 
-[ ! -z "${arg_P}" ] && [ ! -z "${arg_U:-${arg_V}}" ] &&
-  emergency "Please pass only one of {-B, -D, -p, -P, -U, -V} or a longer equivalent (multiple detected). [exit 102]"
+cp src/script-templates/fpm.toml-template ./fpm.toml
+fpm @build/install
 
-[ ! -z "${arg_U}" ] && [ ! -z "${arg_V}" ] &&
-  emergency "Please pass only one of {-B, -D, -p, -P, -U, -V} or a longer equivalent (multiple detected). [exit 103]"
+cp "src/script-templates/test.rsp-template" $build_script_dir
+sed -i'' -e "s:@CAF@:'$PREFIX'/bin/caf:g" "$build_script_dir/test.rsp-template"
+sed -i'' -e "s:@MPICC@:'$MPICC':g" "$build_script_dir/test.rsp-template"
+mv "$build_script_dir/test.rsp-template" "build/test.rsp"
 
-### Print bootstrapped magic variables to STDERR when LOG_LEVEL
-### is at the default value (6) or above.
-#####################################################################
-# shellcheck disable=SC2154
-{
-info "__file: ${__file}"
-info "__dir: ${__dir}"
-info "__base: ${__base}"
-info "__os: ${__os}"
-info "__usage: ${__usage}"
-info "LOG_LEVEL: ${LOG_LEVEL}"
-
-info  "-b (--install-branch):   ${arg_b}"
-info  "-c (--with-c):           ${arg_c}"
-info  "-C (--with-cxx):         ${arg_C}"
-info  "-d (--debug):            ${arg_d}"
-info  "-D (--print-downloader): ${arg_D}"
-info  "-e (--verbose):          ${arg_e}"
-info  "-f (--with-fortran):     ${arg_f}"
-info  "-h (--help):             ${arg_h}"
-info  "-i (--install-prefix):   ${arg_i}"
-info  "-I (--install-version):  ${arg_I}"
-info  "-j (--num-threads):      ${arg_j}"
-info  "-l (--list-packages):    ${arg_l}"
-info  "-m (--with-cmake):       ${arg_m}"
-info  "-M (--with-mpi):         ${arg_M}"
-info  "-n (--no-color):         ${arg_n}"
-info  "-o (--only-download):    ${arg_o}"
-info  "-p (--package):          ${arg_p}"
-info  "-P (--print-path):       ${arg_P}"
-info  "-r (--prefix-root):      ${arg_r}"
-info  "-u (--from-url):         ${arg_u}"
-info  "-U (--print-url):        ${arg_U}"
-info  "-v (--version):          ${arg_v}"
-info  "-V (--print-version):    ${arg_V}"
-info  "-y (--yes-to-all):       ${arg_y}"
-info  "-Z (--bootstrap):        ${arg_Z}"
-}
-# This file is organized into three sections:
-# 1. Command-line argument and environment variable processing.
-# 2. Function definitions.
-# 3. Main body.
-# The script depends on several external programs, including a second script that
-# builds prerequisite software.  Building prerequisites requires network access
-# unless tar balls of the prerequisites are present.
-
-# TODO:
-# 1. Collapse the body of the main conditional branches in the find_or_install function
-#    into one new function.
-# 2. Verify that script-installed packages meet the minimum version number.
-# 3. Add a script_transfer function to collapse the stack_pop x; stack_push z y
-#    pattern into one statement
-# 4. Consider adding mpich and cmake to the dependency stack before passing them to
-#    find_or_install to make the blocks inside find_or_install more uniform.
-#    Alternatively, check the dependency stacks for the package before entering the
-#    main conditional blocks in find_or_install.
-#
-
-
-# __________ Process command-line arguments and environment variables _____________
-
-this_script="$(basename "$0")"
-export this_script
-
-export install_path=${arg_i%/}
-export prefix_root="${arg_r:-}"
-
-export num_threads="${arg_j}"
-info "num_threads=\"${arg_j}\""
-
-export opencoarrays_src_dir="${OPENCOARRAYS_SRC_DIR}"
-info "opencoarrays_src_dir=${OPENCOARRAYS_SRC_DIR}"
-
-export build_path="${opencoarrays_src_dir}"/prerequisites/builds
-info "build_path=\"${opencoarrays_src_dir}\"/prerequisites/builds"
-
-export build_script="${opencoarrays_src_dir}"/prerequisites/build.sh
-info "build_script=\"${opencoarrays_src_dir}\"/prerequisites/build.sh"
-
-# ___________________ Define functions for use in the Main Body ___________________
-
-# Include stack management functions
-#. ./prerequisites/stack.sh
-# shellcheck source=./prerequisites/stack.sh
-source $opencoarrays_src_dir/prerequisites/stack.sh
-stack_new dependency_pkg
-stack_new dependency_exe
-stack_new dependency_path
-stack_new script_installed
-
-# shellcheck source=./prerequisites/install-functions/find_or_install.sh
-source $opencoarrays_src_dir/prerequisites/install-functions/find_or_install.sh
-
-# shellcheck source=./prerequisites/install-functions/print_header.sh
-source $opencoarrays_src_dir/prerequisites/install-functions/print_header.sh
-
-# shellcheck source=./prerequisites/install-functions/build_opencoarrays.sh
-source $opencoarrays_src_dir/prerequisites/install-functions/build_opencoarrays.sh
-
-# shellcheck source=./prerequisites/install-functions/report_results.sh
-source $opencoarrays_src_dir/prerequisites/install-functions/report_results.sh
-
-# shellcheck source=./prerequisites/install-functions/install-xcode-clt.sh
-source "${opencoarrays_src_dir}/prerequisites/install-functions/install-xcode-clt.sh"
-
-# ___________________ End of function definitions for use in the Main Body __________________
-
-
-# ________________________________ Start of the Main Body ___________________________________
-
-if [[ "${arg_v}" == "${__flag_present}" || "${arg_V}" == "opencoarrays" ]]; then
-
-  # Print script copyright & version if invoked with -v, -V, or
-  # --version argument git attributes handle .VERSION, making it more
-  # robust, but fallback version is still manually included. Search
-  # for the first version string we encounter and extract it using sed:
-  opencoarrays_version=$(sed -n '/[0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}/{s/^\([^.]*\)\([0-9]\{1,\}\(\.[0-9]\{1,\}\)\{1,\}\)\(.*\)/\2/p;q;}' "${opencoarrays_src_dir%/}/.VERSION")
-  if [[ "${arg_v}" == "${__flag_present}" ]]; then
-    echo "OpenCoarrays ${opencoarrays_version}"
-    echo ""
-    echo "OpenCoarrays installer"
-    echo "Copyright (C) 2015-2022 Sourcery Institute"
-    echo "Copyright (C) 2015-2022 Archaeologic Inc."
-    echo ""
-    echo "OpenCoarrays comes with NO WARRANTY, to the extent permitted by law."
-    echo "You may redistribute copies of ${this_script} under the terms of the"
-    echo "BSD 3-Clause License.  For more information about these matters, see"
-    echo "http://www.sourceryinstitute.org/license.html"
-    echo ""
-  elif [[ "${arg_V}" == "opencoarrays" ]]; then
-    echo "${opencoarrays_version//[[:space:]]/}"
-  fi
-
-elif [[ ! -z "${arg_D:-${arg_P:-${arg_U:-${arg_V}}}}" ||  "${arg_l}" == "${__flag_present}" ]]; then
-
-  # Delegate to build.sh for the packages it builds
-  build_arg=${arg_D:-${arg_P:-${arg_U:-${arg_V:-${arg_p}}}}}
-  [ ! -z "${arg_D}" ] && build_flag="-D"
-  [ ! -z "${arg_P}" ] && build_flag="-P"
-  [ ! -z "${arg_U}" ] && build_flag="-U"
-  [ ! -z "${arg_V}" ] && build_flag="-V"
-  [ "${arg_l}" == "${__flag_present}" ] && build_flag="-l"
-
-  if [[ "${arg_P}" == "opencoarrays" ]]; then
-
-    version="$("${opencoarrays_src_dir}/install.sh" -V opencoarrays)"
-    echo "${install_path%/}/opencoarrays/${version}"
-
-  else
-
-    info "Invoking build script with the following command:"
-    info "\"${opencoarrays_src_dir}\"/prerequisites/build.sh \"${build_flag}\" \"${build_arg}\""
-    "${opencoarrays_src_dir}"/prerequisites/build.sh "${build_flag}" "${build_arg}"
-
-    # Add lines other packages the current script builds
-    if [[ "${arg_l}" == "${__flag_present}" ]]; then
-      echo "opencoarrays (version $("${opencoarrays_src_dir}/install.sh" -V opencoarrays))"
-      echo "ofp (version: ofp-sdf for OS X )"
-    fi
-  fi
-
-elif [[ "${arg_p:-}" == "opencoarrays" ]]; then
-
-  if [[ "${arg_o}" == "${__flag_present}" ]]; then
-
-    # Download all prerequisites and exit
-    info "source ${OPENCOARRAYS_SRC_DIR}/prerequisites/install-functions/download-all-prerequisites.sh"
-    source "${OPENCOARRAYS_SRC_DIR}/prerequisites/install-functions/download-all-prerequisites.sh"
-    info "download_all_prerequisites"
-    download_all_prerequisites
-
-  else
-
-    # Install Xcode command line tools (CLT) if on macOS and if needed
-    maybe_install_xcodeCLT
-    # Install OpenCoarrays
-
-    cd prerequisites || exit 1
-    installation_record=install-opencoarrays.log
-    # shellcheck source=./prerequisites/build-functions/set_SUDO_if_needed_to_write_to_directory.sh
-    source "${OPENCOARRAYS_SRC_DIR:-}/prerequisites/build-functions/set_SUDO_if_needed_to_write_to_directory.sh"
-    version="$("${opencoarrays_src_dir}/install.sh" -V opencoarrays)"
-
-    if [[ -z "${prefix_root:-}" ]]; then
-      set_SUDO_if_needed_to_write_to_directory "${install_path}"
-    else
-      set_SUDO_if_needed_to_write_to_directory "${prefix_root}"
-    fi
-
-    if grep -s -q Microsoft /proc/version  ; then
-      info "Windows Subsystem for Linux detected.  Invoking windows-install.sh with the following command:"
-      info "\"${opencoarrays_src_dir}\"/prerequisites/install-functions/windows-install.sh \"$@\""
-      "${opencoarrays_src_dir}"/prerequisites/install-functions/windows-install.sh "$@"
-    else
-      # Using process substitution "> >(...) -" instead of piping to tee via "2>&1 |" ensures that
-      # report_results gets the FC value set in build_opencoarrays
-      # Source: http://stackoverflow.com/questions/8221227/bash-variable-losing-its-value-strange
-      build_opencoarrays > >( tee ../"${installation_record}" ) -
-      report_results 2>&1 | tee -a ../"${installation_record}"
-    fi
-  fi
-
-
-elif [[ "${arg_p:-}" == "ofp" ]]; then
-
-  # Install Xcode command line tools (CLT) if on macOS and if needed
-  maybe_install_xcodeCLT
-
-  info "Invoking Open Fortran Parser build script with the following command:"
-  info "\"${opencoarrays_src_dir}\"/prerequisites/install-ofp.sh"
-  "${opencoarrays_src_dir}"/prerequisites/install-ofp.sh
-
-elif [[ ! -z "${arg_p:-}" ]]; then
-
-  # Install Xcode command line tools (CLT) if on macOS and if needed
-  maybe_install_xcodeCLT
-
-  info "Invoking build script with the following command:"
-  info "\"${opencoarrays_src_dir}\"/prerequisites/build.sh ${*:-}"
-  "${opencoarrays_src_dir}"/prerequisites/build.sh "${@:-}"
-
+if [ ! -f "$PREFIX"/lib/libopencoarrays.a ]; then
+  echo "libopencoarrays.a not installed in '$PREFIX'/lib"
+  exit 1
 fi
-# ____________________________________ End of Main Body ____________________________________________
+
+echo ""
+echo "________________ OpenCoarrays has been installed ________________"
+echo ""
+echo "OpenCoarrays users: compile and launch parallel Fortran programs the installed scripts:"
+echo ""
+echo "$PREFIX/bin/caf example/hello.f90"
+echo "$PREFIX/bin/cafrun -n 4 ./a.out"
+echo ""
+echo "The following command should work now to reinstall or test OpenCoarrays, respectively:"
+echo ""
+echo "fpm @build/install"
+echo "fpm @build/test"
+echo ""
+echo "If test failures occur, try 'fpm @build/test -- -d -v' (without the quotation marks)"
+echo "to instruct the Garden unit testing framework to print verbose debugging information."

@@ -4,7 +4,7 @@
  * SYNOPSIS
  *   This C program represents the code an OpenCoarrays-compatible
  *   Fortran compiler might generate from doc/sample-fortran-source.f90.
- *   The code delegates all necessary synchronization and communicaiton
+ *   The code delegates all necessary synchronization and communication
  *   to an OpenCoarrays transport layer.  In this program, image 1 puts
  *   its local elements of an array coarray into the corresponding
  *   elements of image 2.

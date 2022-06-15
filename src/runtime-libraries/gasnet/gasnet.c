@@ -33,6 +33,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 
 */
 
+#ifdef GASNET
+
 #include "libcaf.h"
 #include "gasnet.h"
 #include <stdio.h>
@@ -1198,3 +1200,4 @@ PREFIX (error_stop) (int32_t error)
   fprintf (stderr, "ERROR STOP %d\n", error);
   error_stop (error);
 }
+#endif /* GASNET */

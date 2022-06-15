@@ -562,6 +562,7 @@ find_program(BASH_EXECUTABLE bash
   REQUIRED)
 function(caf_compile_executable target main_depend)
   set(includes "")
+  list(APPEND includes "-I${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_INCLUDEDIR}/${mod_dir_tail}")
   foreach(includedir ${MPI_Fortran_INCLUDE_DIRS})
     list(APPEND includes "-I${includedir}")
   endforeach()
@@ -645,6 +646,7 @@ define_property(TARGET
 # Recurse into the src directory
 #-------------------------------
 add_subdirectory(src)
+add_subdirectory(tests)
 
 #-----------------------------------------------------
 # Publicize installed location to other CMake projects
@@ -964,7 +966,7 @@ endif()
 
 # Test bash installation scripts
 include(cmake/AddInstallationScriptTest.cmake )
-add_installation_script_test(installation-scripts.sh src/tests/installation/)
+add_installation_script_test(installation-scripts.sh tests/installation/)
 
 if( CAF_ENABLE_FAILED_IMAGES AND ( NOT
       (	"${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" ) AND ( "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64" ) )

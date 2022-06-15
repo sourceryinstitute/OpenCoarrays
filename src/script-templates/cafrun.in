@@ -2,8 +2,7 @@
 #
 # Coarray Fortran (CAF) Executable Launcher version @CAF_VERSION@
 #
-# Copyright (c) 2015-2022, Sourcery Institute
-# Copyright (c) 2015-2022, Archaeologic Inc.
+# Copyright (c) 2015-2020, Sourcery, Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -51,31 +50,31 @@ set -o pipefail
 # Configured variables
 #---------------------
 #
-# CAF_VERSION, MPIEXEC_EXECUTABLE, MPIEXEC_NUMPROC_FLAG, MPIEXEC_PREFLAGS, MPIEXEC_POSTFLAGS,
+# CAF_VERSION, MPIEXEC, MPIEXEC_NUMPROC_FLAG, MPIEXEC_PREFLAGS, MPIEXEC_POSTFLAGS,
 # HAVE_FAILED_IMG
 #
 
 caf_version='@CAF_VERSION@'
-CAFRUN="@MPIEXEC_EXECUTABLE@"
-if [[ "${CAFRUN}" == @*@ || -z "${CAFRUN}" ]]; then
+CAFRUN="@MPIEXEC@"
+if [[ "${CAFRUN}" == @*@ ]]; then
   CAFRUN=mpiexec
 fi
 have_failed_img=@HAVE_FAILED_IMG@
-if [[ ${have_failed_img} == @*@  || -z "${have_failed_img}" ]]; then
+if [[ ${have_failed_img} == @*@ ]]; then
   have_failed_img=false
 fi
 numproc_flag='@MPIEXEC_NUMPROC_FLAG@'
-if [[ ${numproc_flag} == @*@  || -z "${numproc_flag}" ]]; then
+if [[ ${numproc_flag} == @*@ ]]; then
   numproc_flag='-np'
 fi
 preflags="@MPIEXEC_PREFLAGS@"
 preflags="${preflags//;/ }"
-if [[ "${preflags}" == @*@  || -z "${preflags}" ]]; then
+if [[ "${preflags}" == @*@ ]]; then
   unset preflags
 fi
 postflags="@MPIEXEC_POSTFLAGS@"
 postflags="${postflags//;/ }"
-if [[ "${postflags}" == @*@  || -z "${postflags}" ]]; then
+if [[ "${postflags}" == @*@ ]]; then
   unset postflags
 fi
 #-------------------------
@@ -215,8 +214,7 @@ if ((${#} == 0)); then
 elif [[ "${1}" == -[vV] || "${1}" == '--version' ]]; then
   echo ""
   echo "OpenCoarrays Coarray Fortran Executable Launcher (cafrun version ${caf_version})"
-  echo "Copyright (C) 2015-2022 Sourcery Institute"
-  echo "Copyright (C) 2015-2022 Archaeologic Inc."
+  echo "Copyright (C) 2015-2020 Sourcery, Inc."
   echo ""
   echo "OpenCoarrays comes with NO WARRANTY, to the extent permitted by law."
   echo "You may redistribute copies of OpenCoarrays under the terms of the"

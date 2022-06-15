@@ -1,11 +1,11 @@
 OpenCoarrays Runtime Libraries
 ==============================
 
-One original goal of the OpenCoarrays project was to provide a transparent application binary interface (ABI) supported by interchangeable parallel runtime libraries based on a range of communication libraries.  The following header files in this directory define that ABI:
+One original goal of the OpenCoarrays project was to provide a transparent application binary interface (ABI) supported by interchangeable parallel runtime libraries based on a range of communication libraries.  The following header files in the [application-binary-interface](./application-binary-interface) subdirectory define that ABI:
 
 * libcaf.h
 * libcaf-gfortran-descriptor.h
-* libcaf-version-def.h: 
+* libcaf-version-def.h
 
 where the above files are in dependency order: each file depends on the file(s) listed below it.  The [runtime-libraries](./runtime-libraries) subdirectory contains runtimes based on the following communication libraries:
 
