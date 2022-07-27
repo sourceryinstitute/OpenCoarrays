@@ -16,3 +16,4 @@ caf_compile_executable(issue-700-allow-multiple-scalar-dim-array-gets issue-700-
 if (gfortran_compiler AND (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0))
   caf_compile_executable(issue-515-mimic-mpi-gatherv issue-515-mimic-mpi-gatherv.f90)
 endif()
+caf_compile_executable(issue-762-mpi-crashing-on-exit issue-762-mpi-crashing-on-exit.f90)
