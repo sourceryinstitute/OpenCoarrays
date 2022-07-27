@@ -1034,7 +1034,8 @@ finalize_internal(int status_code)
   while (cur_stok)
   {
     prev_stok = cur_stok->prev;
-    ierr = MPI_Win_detach(global_dynamic_win, cur_stok); chk_err(ierr);
+    dprint("freeing slave token %p for memory %p", cur_stok->token, cur_stok->token->memptr);
+    ierr = MPI_Win_detach(global_dynamic_win, cur_stok->token); chk_err(ierr);
     if (cur_stok->token->memptr)
     {
       ierr = MPI_Win_detach(global_dynamic_win, cur_stok->token->memptr);
@@ -1213,7 +1214,7 @@ PREFIX(register) (size_t size, caf_register_t type, caf_token_t *token,
           struct caf_allocated_slave_tokens_t *tmp =
             malloc(sizeof(struct caf_allocated_slave_tokens_t));
           tmp->prev  = caf_allocated_slave_tokens;
-          tmp->token = *token;
+          tmp->token = slave_token;
           caf_allocated_slave_tokens = tmp;
         }
         else // (type == CAF_REGTYPE_COARRAY_ALLOC_ALLOCATE_ONLY)
