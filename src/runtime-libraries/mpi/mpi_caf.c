@@ -1034,14 +1034,17 @@ finalize_internal(int status_code)
   while (cur_stok)
   {
     prev_stok = cur_stok->prev;
-    ierr = MPI_Win_detach(global_dynamic_win, cur_stok); chk_err(ierr);
+    dprint("freeing slave token %p for memory %p", cur_stok->token, cur_stok->token->memptr);
+    ierr = MPI_Win_detach(global_dynamic_win, cur_stok->token); chk_err(ierr);
     if (cur_stok->token->memptr)
     {
       ierr = MPI_Win_detach(global_dynamic_win, cur_stok->token->memptr);
       chk_err(ierr);
-      free(cur_stok->token->memptr);
+      ierr = MPI_Free_mem(cur_stok->token->memptr);
+      chk_err(ierr);
     }
-    free(cur_stok->token);
+    ierr = MPI_Free_mem(cur_stok->token);
+    chk_err(ierr);
     free(cur_stok);
     cur_stok = prev_stok;
   }
@@ -1064,10 +1067,13 @@ finalize_internal(int status_code)
 #ifdef GCC_GE_7
     /* Unregister the window to the descriptors when freeing the token. */
     dprint("MPI_Win_free(%p)\n", p);
-    ierr = MPI_Win_free(p); chk_err(ierr);
-    free(cur_tok->token);
+    ierr = MPI_Win_free(p);
+    chk_err(ierr);
+    ierr = MPI_Free_mem(cur_tok->token);
+    chk_err(ierr);
 #else // GCC_GE_7
-    ierr = MPI_Win_free(p); chk_err(ierr);
+    ierr = MPI_Win_free(p);
+    chk_err(ierr);
 #endif // GCC_GE_7
     free(cur_tok);
     cur_tok = prev;
@@ -1213,7 +1219,7 @@ PREFIX(register) (size_t size, caf_register_t type, caf_token_t *token,
           struct caf_allocated_slave_tokens_t *tmp =
             malloc(sizeof(struct caf_allocated_slave_tokens_t));
           tmp->prev  = caf_allocated_slave_tokens;
-          tmp->token = *token;
+          tmp->token = slave_token;
           caf_allocated_slave_tokens = tmp;
         }
         else // (type == CAF_REGTYPE_COARRAY_ALLOC_ALLOCATE_ONLY)
@@ -1528,7 +1534,8 @@ PREFIX(deregister) (caf_token_t *token, int *stat, char *errmsg,
         {
           ierr = MPI_Win_detach(global_dynamic_win, slave_token->memptr);
           chk_err(ierr);
-          free(slave_token->memptr);
+          ierr = MPI_Free_mem(slave_token->memptr);
+          chk_err(ierr);
           slave_token->memptr = NULL;
           if (type == CAF_DEREGTYPE_COARRAY_DEALLOCATE_ONLY)
           {
@@ -1545,7 +1552,8 @@ PREFIX(deregister) (caf_token_t *token, int *stat, char *errmsg,
           caf_allocated_slave_tokens = prev_stok;
 
         free(cur_stok);
-        free(*token);
+        ierr = MPI_Free_mem(*token);
+        chk_err(ierr);
         return;
       }
 

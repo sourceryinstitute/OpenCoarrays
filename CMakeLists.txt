@@ -925,6 +925,7 @@ if(opencoarrays_aware_compiler)
   endif()
 
   add_caf_test(issue-700-allow-multiple-scalar-dim-array-gets 2 issue-700-allow-multiple-scalar-dim-array-gets)
+  add_caf_test(issue-762-mpi-crashing-on-exit 2 issue-762-mpi-crashing-on-exit)
 
   # IMAGE FAIL tests
   if(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0)
