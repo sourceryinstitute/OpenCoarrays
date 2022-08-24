@@ -1069,8 +1069,7 @@ finalize_internal(int status_code)
     dprint("MPI_Win_free(%p)\n", p);
     ierr = MPI_Win_free(p);
     chk_err(ierr);
-    ierr = MPI_Free_mem(cur_tok->token);
-    chk_err(ierr);
+    free(cur_tok->token);
 #else // GCC_GE_7
     ierr = MPI_Win_free(p);
     chk_err(ierr);
