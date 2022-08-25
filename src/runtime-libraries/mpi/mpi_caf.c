@@ -1069,8 +1069,7 @@ finalize_internal(int status_code)
     dprint("MPI_Win_free(%p)\n", p);
     ierr = MPI_Win_free(p);
     chk_err(ierr);
-    ierr = MPI_Free_mem(cur_tok->token);
-    chk_err(ierr);
+    free(cur_tok->token);
 #else // GCC_GE_7
     ierr = MPI_Win_free(p);
     chk_err(ierr);
@@ -1117,9 +1116,13 @@ finalize_internal(int status_code)
   }
 #endif
 
+#ifdef HELPER
   pthread_mutex_lock(&lock_am);
   caf_is_finalized = 1;
   pthread_mutex_unlock(&lock_am);
+#else
+  caf_is_finalized = 1;
+#endif
   free(sync_handles);
   dprint("Finalisation done!!!\n");
 }
