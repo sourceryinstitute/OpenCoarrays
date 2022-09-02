@@ -31,7 +31,7 @@ set_or_print_default_version()
   # See http://stackoverflow.com/questions/1494178/how-to-define-hash-tables-in-bash
   package_version=(
     "cmake:3.10.0"
-    "gcc:10.1.0"
+    "gcc:12.1.0"
     "mpich:3.2"
     "wget:1.16.3"
     "flex:${apple_flex_version:-2.6.0}"
