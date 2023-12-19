@@ -284,6 +284,8 @@ if(WIN32) # Only support building with GCC & GFortran using Intel MPI (OneAPI)
   set (IMPI_LIB_DIR "${MPI_ROOT}/lib/${IMPI_BUILD}")
   set (IMPI_DLL_DIR "${MPI_ROOT}/bin/${IMPI_BUILD}")
 
+  message(STATUS "Looking in IMPI_LIB_DIR=${IMPI_LIB_DIR}")
+  message(STATUS "Looking in IMPI_DLL_DIR=${IMPI_DLL_DIR}")
   find_library(IMPI_LIB
     "impi.lib"
     HINTS "${IMPI_LIB_DIR}"
