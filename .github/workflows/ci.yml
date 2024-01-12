@@ -25,8 +25,8 @@ jobs:
       run: |
         mkdir build
         cmake -S . -B build -Wdev -DCMAKE_INSTALL_PREFIX:PATH="${HOME}/OpenCoarrays" -DCMAKE_BUILD_TYPE:STRING="Debug" ..
-        cmake --build build make -j $(nproc)
-        cmake --build -t install -j || echo "installation failed"
+        cmake --build build -j $(nproc)
+        cmake --build build -t install -j $(nproc) || echo "installation failed"
         ctest --output-on-failure --schedule-random --repeat-until-fail 1 --timeout 200
         make install
         make uninstall

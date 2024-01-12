@@ -37,7 +37,7 @@ jobs:
       run: |
         echo "${{ steps.setup-mpi.outputs.mpi }}"
         set -o verbose
-        mpiexec -help
+        # mpiexec -help
         type mpiexec
         ls "${I_MPI_ROOT}/bin"
         ls "${I_MPI_ROOT}"
