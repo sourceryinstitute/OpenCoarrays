@@ -54,9 +54,7 @@ jobs:
         cmake -Wdev -G "Unix Makefiles" -S . -B build -DCMAKE_INSTALL_PREFIX="${HOME}/apps/OpenCoarrays" -DCMAKE_BUILD_TYPE:STRING="Debug"
         cmake --build build -j
         cmake --build build -t install -j || echo "installation failed"
-        cd build
-        ctest --output-on-failure --schedule-random --repeat-until-fail 1 --timeout 200
-        cd ..
+        ctest --test-dir build --output-on-failure --schedule-random --repeat-until-fail 1 --timeout 200
         echo "${HOME}/apps/OpenCoarrays/bin" >> $GITHUB_PATH
         export PATH="${HOME}/apps/OpenCoarrays/bin:${PATH}"
         which caf || true
