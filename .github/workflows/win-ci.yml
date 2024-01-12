@@ -1,0 +1,67 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  Build:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: true
+    defaults:
+      run:
+        shell: msys2 {0}
+
+    env:
+      FC: gfortran
+      CC: gcc
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Install Dependencies
+      uses: msys2/setup-msys2@v2
+      with:
+        update: true
+        path-type: inherit
+        install: >-
+          mingw-w64-x86_64-gcc-fortran mingw-w64-x86_64-gcc mingw-w64-x86_64-wget
+
+    - name: setup-mpi
+      id: setup-mpi
+      uses: mpi4py/setup-mpi@v1
+      with:
+        mpi: intelmpi
+
+    - name: MPI info
+      run: |
+        echo "${{ steps.setup-mpi.outputs.mpi }}"
+        mpiexec -help
+        type mpiexec
+        ls "${I_MPI_ROOT}/bin"
+        ls "${I_MPI_ROOT}"
+        ls "${I_MPI_ROOT}/lib"
+        mpifc.bat -show
+        mpicc.bat -show
+        mpifc.bat -version || echo "ifort not installed"
+        mpicc.bat -version || echo "icc not installed"
+
+    - name: Build and Test
+      run: |
+        mkdir build
+        cmake -Wdev -G "Unix Makefiles" -S . -B build -DCMAKE_INSTALL_PREFIX="${HOME}/apps/OpenCoarrays" -DCMAKE_BUILD_TYPE:STRING="Debug"
+        cmake --build build -j
+        cmake --build -t install -j || echo "installation failed"
+        cd build
+        ctest --output-on-failure --schedule-random --repeat-until-fail 1 --timeout 200
+        cd ..
+        echo "${HOME}/apps/OpenCoarrays/bin" >> $GITHUB_PATH
+        export PATH="${HOME}/apps/OpenCoarrays/bin:${PATH}"
+        which caf || true
+        which cafrun || true
+        cafrun --show || true
+        caf --show || true
+        cafrun --version || true
+        caf --version || true
+        cd build
+        make uninstall
