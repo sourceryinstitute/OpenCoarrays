@@ -281,12 +281,15 @@ if(WIN32) # Only support building with GCC & GFortran using Intel MPI (OneAPI)
   set( MPI_ASSUME_NO_BUILTIN_MPI TRUE )
   set( MPI_CXX_SKIP_MPICXX TRUE )
   cmake_path(SET MPI_ROOT NORMALIZE "$ENV{I_MPI_ROOT}")
-  set (IMPI_LIB_DIR "${MPI_ROOT}/lib/${IMPI_BUILD}")
-  set (IMPI_DLL_DIR "${MPI_ROOT}/bin/${IMPI_BUILD}")
+  set (IMPI_LIB_DIR "${MPI_ROOT}/lib")
+  set (IMPI_DLL_DIR "${MPI_ROOT}/bin")
 
+  message(STATUS "Looking in IMPI_LIB_DIR=${IMPI_LIB_DIR}")
+  message(STATUS "Looking in IMPI_DLL_DIR=${IMPI_DLL_DIR}")
   find_library(IMPI_LIB
     "impi.lib"
     HINTS "${IMPI_LIB_DIR}"
+    PATH_SUFFIXES "${IMPI_BUILD}"
     DOC "Location of the Intel MPI impi.lib file"
     REQUIRED
     NO_DEFAULT_PATH)
@@ -294,6 +297,7 @@ if(WIN32) # Only support building with GCC & GFortran using Intel MPI (OneAPI)
   find_file(IMPI_DLL
     "impi.dll"
     HINTS "${IMPI_DLL_DIR}"
+    PATH_SUFFIXES "${IMPI_BUILD}"
     DOC "Location of the Intel MPI impi.dll file"
     REQUIRED
     NO_DEFAULT_PATH)

@@ -150,11 +150,12 @@ cd "${current_dir}" || exit 5
 
 # Error tracing
 # requires `set -o errtrace`
+# shellcheck disable=SC2317
 __caf_err_report() {
   local error_code
-  error_code=${?}
+  error_code="${?}"
   echo "Error in ${__file} in function ${1} on line ${2}. Please report this error at http://bit.ly/OpenCoarrays-new-issue" >&2
-  exit ${error_code}
+  exit "${error_code}"
 }
 # Always provide an error backtrace
 trap '__caf_err_report "${FUNCNAME:-.}" ${LINENO}' ERR
