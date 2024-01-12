@@ -10,11 +10,11 @@ jobs:
 
     env:
       FC: gfortran
-      GCC_V: 10
+      GCC_V: 11
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Install Dependencies
       run: |
@@ -24,9 +24,9 @@ jobs:
     - name: Build and Test
       run: |
         mkdir build
-        cd build
-        cmake -Wdev -DCMAKE_INSTALL_PREFIX:PATH="${HOME}/OpenCoarrays" -DCMAKE_BUILD_TYPE:STRING="Debug" ..
-        make -j $(nproc)
+        cmake -S . -B build -Wdev -DCMAKE_INSTALL_PREFIX:PATH="${HOME}/OpenCoarrays" -DCMAKE_BUILD_TYPE:STRING="Debug" ..
+        cmake --build build make -j $(nproc)
+        cmake --build -t install -j || echo "installation failed"
         ctest --output-on-failure --schedule-random --repeat-until-fail 1 --timeout 200
         make install
         make uninstall

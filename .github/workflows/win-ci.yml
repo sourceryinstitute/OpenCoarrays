@@ -1,4 +1,4 @@
-name: CI
+name: Windows CI
 
 on: [push, pull_request]
 
@@ -17,7 +17,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Install Dependencies
       uses: msys2/setup-msys2@v2
@@ -25,7 +25,7 @@ jobs:
         update: true
         path-type: inherit
         install: >-
-          mingw-w64-x86_64-gcc-fortran mingw-w64-x86_64-gcc mingw-w64-x86_64-wget
+          mingw-w64-x86_64-gcc-fortran mingw-w64-x86_64-gcc
 
     - name: setup-mpi
       id: setup-mpi
@@ -36,6 +36,7 @@ jobs:
     - name: MPI info
       run: |
         echo "${{ steps.setup-mpi.outputs.mpi }}"
+        set -o verbose
         mpiexec -help
         type mpiexec
         ls "${I_MPI_ROOT}/bin"
@@ -45,13 +46,14 @@ jobs:
         mpicc.bat -show
         mpifc.bat -version || echo "ifort not installed"
         mpicc.bat -version || echo "icc not installed"
+        set +o verbose
 
     - name: Build and Test
       run: |
         mkdir build
         cmake -Wdev -G "Unix Makefiles" -S . -B build -DCMAKE_INSTALL_PREFIX="${HOME}/apps/OpenCoarrays" -DCMAKE_BUILD_TYPE:STRING="Debug"
         cmake --build build -j
-        cmake --build -t install -j || echo "installation failed"
+        cmake --build build -t install -j || echo "installation failed"
         cd build
         ctest --output-on-failure --schedule-random --repeat-until-fail 1 --timeout 200
         cd ..
