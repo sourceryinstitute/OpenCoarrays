@@ -42,11 +42,11 @@ jobs:
         ls "$env:I_MPI_ROOT\lib"
         mpifc.bat -show
         mpicc.bat -show
-	echo $HOME
-	echo $env:HOME
-	echo $home
-	echo $env:home
-	echo "$env:home/some/path"
+        echo $HOME
+        echo $env:HOME
+        echo $home
+        echo $env:home
+        echo "$env:home/some/path"
 
     - name: Build and Test
       run: |
