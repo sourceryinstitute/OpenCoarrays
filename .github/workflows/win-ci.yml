@@ -7,9 +7,9 @@ jobs:
     runs-on: windows-latest
     strategy:
       fail-fast: true
-    defaults:
-      run:
-        shell: msys2 {0}
+    # defaults:
+    #   run:
+    #     shell: msys2 {0}
 
     env:
       FC: gfortran
