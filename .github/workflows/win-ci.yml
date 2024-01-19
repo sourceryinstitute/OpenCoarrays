@@ -45,16 +45,38 @@ jobs:
 
     - name: Build and Test
       run: |
+        $ErrorActionPreference = "Stop"
+        Set-StrictMode -Version Latest
+        $ErrorActionPreference = "Stop"
+        $PSDefaultParameterValues['*:ErrorAction']='Stop'
+        function ThrowOnNativeFailure {
+            if (-not $?)
+            {
+                throw 'Native Failure'
+            }
+        }
         mkdir build
+        $env:VERBOSE = 1
         cmake -Wdev -G "Unix Makefiles" -S . -B build -DCMAKE_INSTALL_PREFIX=$env:HOME\apps\OpenCoarrays -DCMAKE_BUILD_TYPE:STRING="Debug"
+        ThrowOnNativeFailure
         cmake --build build -j
+        ThrowOnNativeFailure
         cmake --build build -t install -j
+        ThrowOnNativeFailure
         ctest --test-dir build --output-on-failure --schedule-random --repeat-until-fail 1 --timeout 200
-        echo "$env:HOME\apps\OpenCoarrays\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-        $env:PATH += ";$env:HOME/apps/OpenCoarrays/bin"
+        ThrowOnNativeFailure
+        echo $env:HOME\apps\OpenCoarrays\bin | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        ThrowOnNativeFailure
+        $env:PATH += ;$env:HOME\apps\OpenCoarrays\bin
+        ThrowOnNativeFailure
         cafrun --show
+        ThrowOnNativeFailure
         caf --show
+        ThrowOnNativeFailure
         cafrun --version
+        ThrowOnNativeFailure
         caf --version
+        ThrowOnNativeFailure
         cd build
         make uninstall
+        ThrowOnNativeFailure
