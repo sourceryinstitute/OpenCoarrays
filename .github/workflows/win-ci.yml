@@ -67,7 +67,7 @@ jobs:
         ThrowOnNativeFailure
         echo $env:HOME\apps\OpenCoarrays\bin | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
         ThrowOnNativeFailure
-        $env:PATH += ;$env:HOME\apps\OpenCoarrays\bin
+        $env:PATH += ';' + $env:HOME + '\apps\OpenCoarrays\bin'
         ThrowOnNativeFailure
         cafrun --show
         ThrowOnNativeFailure
