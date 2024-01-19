@@ -37,11 +37,16 @@ jobs:
       run: |
         echo "${{ steps.setup-mpi.outputs.mpi }}"
         mpiexec --version
-        ls $I_MPI_ROOT
-        ls "$I_MPI_ROOT\bin"
-        ls "$I_MPI_ROOT\lib"
+        ls $env:I_MPI_ROOT
+        ls "$env:I_MPI_ROOT\bin"
+        ls "$env:I_MPI_ROOT\lib"
         mpifc.bat -show
         mpicc.bat -show
+	echo $HOME
+	echo $env:HOME
+	echo $home
+	echo $env:home
+	echo "$env:home/some/path"
 
     - name: Build and Test
       run: |
@@ -67,7 +72,7 @@ jobs:
         ThrowOnNativeFailure
         ctest --test-dir build --output-on-failure --schedule-random --repeat-until-fail 1 --timeout 200
         ThrowOnNativeFailure
-        echo "$HOME\apps\OpenCoarrays\bin" | Out-File -FilePath $GITHUB_PATH -Encoding utf8 -Append
+        echo "$HOME\apps\OpenCoarrays\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
         ThrowOnNativeFailure
         $env:PATH += ";$HOME\apps\OpenCoarrays\bin"
         ThrowOnNativeFailure
