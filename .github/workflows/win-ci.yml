@@ -38,8 +38,8 @@ jobs:
         echo "${{ steps.setup-mpi.outputs.mpi }}"
         mpiexec --version
         ls $I_MPI_ROOT
-        ls $I_MPI_ROOT\bin
-        ls $I_MPI_ROOT\lib
+        ls "$I_MPI_ROOT\bin"
+        ls "$I_MPI_ROOT\lib"
         mpifc.bat -show
         mpicc.bat -show
 
@@ -57,7 +57,9 @@ jobs:
         }
         mkdir build
         $env:VERBOSE = 1
-        make -Wdev -G "Unix Makefiles" -S . -B build -DCMAKE_INSTALL_PREFIX=$HOME\apps\OpenCoarrays -DCMAKE_BUILD_TYPE:STRING="Debug"
+        make -Wdev -G "Unix Makefiles" -S . -B build -DCMAKE_INSTALL_PREFIX="$HOME\apps\OpenCoarrays" -DCMAKE_BUILD_TYPE:STRING="Debug"
+        ThrowOnNativeFailure
+        cmake --build build -j
         ThrowOnNativeFailure
         cmake --build build -j
         ThrowOnNativeFailure
@@ -65,7 +67,7 @@ jobs:
         ThrowOnNativeFailure
         ctest --test-dir build --output-on-failure --schedule-random --repeat-until-fail 1 --timeout 200
         ThrowOnNativeFailure
-        echo $HOME\apps\OpenCoarrays\bin | Out-File -FilePath $GITHUB_PATH -Encoding utf8 -Append
+        echo "$HOME\apps\OpenCoarrays\bin" | Out-File -FilePath $GITHUB_PATH -Encoding utf8 -Append
         ThrowOnNativeFailure
         $env:PATH += ";$HOME\apps\OpenCoarrays\bin"
         ThrowOnNativeFailure
