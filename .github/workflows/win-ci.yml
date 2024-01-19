@@ -62,7 +62,7 @@ jobs:
         }
         mkdir build
         $env:VERBOSE = 1
-        make -Wdev -G "Unix Makefiles" -S . -B build -DCMAKE_INSTALL_PREFIX="$HOME\apps\OpenCoarrays" -DCMAKE_BUILD_TYPE:STRING="Debug"
+        cmake -Wdev -G "Unix Makefiles" -S . -B build -DCMAKE_INSTALL_PREFIX="$HOME\apps\OpenCoarrays" -DCMAKE_BUILD_TYPE:STRING="Debug"
         ThrowOnNativeFailure
         cmake --build build -j
         ThrowOnNativeFailure
