@@ -36,17 +36,16 @@ jobs:
     - name: MPI info
       run: |
         echo "${{ steps.setup-mpi.outputs.mpi }}"
-        set -o verbose
-        # mpiexec -help
-        type mpiexec
-        ls "${I_MPI_ROOT}/bin"
-        ls "${I_MPI_ROOT}"
-        ls "${I_MPI_ROOT}/lib"
+        @echo on
+        mpiexec --version
+        dir "${I_MPI_ROOT}/bin"
+        dir "${I_MPI_ROOT}"
+        dir "${I_MPI_ROOT}/lib"
         mpifc.bat -show
         mpicc.bat -show
         mpifc.bat -version || echo "ifort not installed"
         mpicc.bat -version || echo "icc not installed"
-        set +o verbose
+        @echo off
 
     - name: Build and Test
       run: |
