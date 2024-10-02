@@ -2026,25 +2026,30 @@ copy_char_to_self(void *src, int src_type, int src_size, int src_kind,
 
 static void
 copy_to_self(gfc_descriptor_t *src, int src_kind,
-              gfc_descriptor_t *dest, int dst_kind, size_t size, int *stat)
+              gfc_descriptor_t *dst, int dst_kind, size_t elem_size, int *stat)
 {
+  const int src_size = GFC_DESCRIPTOR_SIZE(src),
+      dst_size = GFC_DESCRIPTOR_SIZE(dst);
+  const int src_type = GFC_DESCRIPTOR_TYPE(src),
+      dst_type = GFC_DESCRIPTOR_TYPE(dst);
+  const int src_rank = GFC_DESCRIPTOR_RANK(src),
+      dst_rank = GFC_DESCRIPTOR_RANK(dst);
 #ifdef GFC_CAF_CHECK
-  if (GFC_DESCRIPTOR_TYPE(dest) == BT_CHARACTER
-      || GFC_DESCRIPTOR_TYPE(src) == BT_CHARACTER)
+  if (dst_type == BT_CHARACTER || src_type == BT_CHARACTER)
     caf_runtime_error("internal error: copy_to_self() for char types called.");
 #endif
   /* The address of dest passed by the compiler points on the right
-   * memory location. No offset summation is needed. */
-  if (dst_kind == src_kind)
-    memmove(dest->base_addr, src->base_addr, size * GFC_DESCRIPTOR_SIZE(dest));
+   * memory location. No offset summation is needed. Use the convert with
+   * strides when src is a scalar. */
+  if (dst_kind == src_kind && dst_size == src_size && dst_type == src_type
+      && src_rank == dst_rank)
+    memmove(dst->base_addr, src->base_addr, elem_size * dst_size);
   else
     /* When the rank is 0 then a scalar is copied to a vector and the stride
      * is zero. */
-    convert_with_strides(dest->base_addr, GFC_DESCRIPTOR_TYPE(dest), dst_kind,
-                         GFC_DESCRIPTOR_SIZE(dest), src->base_addr,
-                         GFC_DESCRIPTOR_TYPE(src), src_kind,
-                         (GFC_DESCRIPTOR_RANK(src) > 0)
-                         ? GFC_DESCRIPTOR_SIZE(src) : 0, size, stat);
+    convert_with_strides(dst->base_addr, dst_type, dst_kind,
+                         dst_size, src->base_addr, src_type, src_kind,
+                         src_rank > 0 ? src_size : 0, elem_size, stat);
 }
 
 /* token: The token of the array to be written to. 
