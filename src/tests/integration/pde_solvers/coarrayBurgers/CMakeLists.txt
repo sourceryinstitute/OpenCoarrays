@@ -19,13 +19,25 @@ else()
 endif()
 
 set(CMAKE_Fortran_COMPILER "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf")
-add_executable(coarray_burgers_pde
-  main.F90
-  global_field.F90
-  local_field.F90
+add_library(cbp_base STATIC
+  ${config_directory}/compiler_capabilities.txt
   ${library_directory}/ForTrilinos_assertion_utility.F90
   ${library_directory}/object_interface.F90
   ${library_directory}/co_object_interface.F90
 )
-add_dependencies(coarray_burgers_pde caf_mpi_static)
-target_include_directories(coarray_burgers_pde PRIVATE ${config_directory})
+add_library(cbp_local STATIC
+  ${config_directory}/compiler_capabilities.txt
+  local_field.F90
+)
+add_executable(coarray_burgers_pde
+  ${config_directory}/compiler_capabilities.txt
+  global_field.F90
+  main.F90
+)
+target_link_libraries(cbp_local PUBLIC cbp_base caf_mpi_static)
+target_link_libraries(coarray_burgers_pde PRIVATE cbp_local)
+set_target_properties(cbp_base cbp_local coarray_burgers_pde
+  PROPERTIES
+  Fortran_MODULE_DIRECTORY "${config_directory}"
+  INCLUDE_DIRECTORIES "${CMAKE_BINARY_DIR};${config_directory}"
+)
