@@ -27,7 +27,7 @@
 
 program main
   use IEEE_arithmetic, only : IEEE_is_NaN
-  use global_field_module, only : global_field
+  use chs_global_field_module, only : global_field
   implicit none
   type(global_field) :: T,laplacian_T,T_half
   real, parameter :: alpha=1.,dt=0.0001,final_time=1.,tolerance=1.E-3
