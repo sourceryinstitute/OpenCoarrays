@@ -147,7 +147,7 @@ execute_process(COMMAND ${MPIEXEC_EXECUTABLE} --version
   OUTPUT_VARIABLE mpi_version_out)
 if (mpi_version_out MATCHES "[Oo]pen[ -][Mm][Pp][Ii]")
   message( STATUS "OpenMPI detected")
-  set ( openmpi true PARENT_SCOPE)
+  set_property(GLOBAL PROPERTY openmpi true)
   # Write out a host file because OMPI's mpiexec is dumb
   file(WRITE ${CMAKE_BINARY_DIR}/hostfile "${HOST_NAME} slots=${N_CPU}\n")
   message( STATUS "hostfile written to: ${CMAKE_BINARY_DIR}/hostfile")
