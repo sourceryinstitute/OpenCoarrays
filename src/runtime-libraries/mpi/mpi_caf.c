@@ -1104,6 +1104,24 @@ finalize_internal(int status_code)
     ierr = MPI_Finalize(); chk_err(ierr);
   }
 #else
+#ifdef MPI_CLEAR_COMM_BEFORE_FREE
+  {
+    int probe_flag;
+    MPI_Status status;
+    do {
+      ierr = MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, CAF_COMM_WORLD, &probe_flag,
+                        &status); /* error is not of interest. */
+      if (probe_flag) {
+        int cnt;
+        MPI_Get_count(&status, MPI_BYTE, &cnt);
+        void * buf = alloca(cnt);
+        ierr = MPI_Recv(buf, cnt, MPI_BYTE, status.MPI_SOURCE, status.MPI_TAG,
+                        CAF_COMM_WORLD, &status); chk_err(ierr);
+      }
+    } while (probe_flag);
+  }
+#endif
+  dprint("freeing caf's communicator.\n");
   ierr = MPI_Comm_free(&CAF_COMM_WORLD); chk_err(ierr);
 
   CAF_Win_unlock_all(*stat_tok);
@@ -1112,6 +1130,7 @@ finalize_internal(int status_code)
   /* Only call Finalize if CAF runtime Initialized MPI. */
   if (caf_owns_mpi)
   {
+    dprint("Finalizing MPI.\n");
     ierr = MPI_Finalize(); chk_err(ierr);
   }
 #endif

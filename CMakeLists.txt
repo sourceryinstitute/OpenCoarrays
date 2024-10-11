@@ -644,6 +644,11 @@ define_property(TARGET
   FULL_DOCS "Property to mark executable targets run as tests that they require 2^n images."
   )
 
+#-------------------------------------------------------------------------------------
+# Add global openmpi property, because using a variable an setting in parent scope did
+# not work as expected, i.e., not at all, on Linux Fedora 39.
+#-------------------------------------------------------------------------------------
+define_property(GLOBAL PROPERTY openmpi BRIEF_DOCS "True when mpi is openMPI.")
 
 #-------------------------------
 # Recurse into the src directory
@@ -715,6 +720,7 @@ function(add_caf_test name num_caf_img test_target)
     endif()
   endif()
   # Add a host file for OMPI
+  get_property(openmpi GLOBAL PROPERTY openmpi)
   if ( openmpi )
     set(test_parameters --hostfile ${CMAKE_BINARY_DIR}/hostfile)
   endif()
