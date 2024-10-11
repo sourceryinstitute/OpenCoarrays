@@ -1,6 +1,6 @@
 module opencoarrays_object_interface
-  !! Object pattern abstract type to provide a universal interface to a userd-defined derived type ouptput
-  !! capability specified in a generic binding
+  !! Object pattern abstract type to provide a universal interface to a user-defined
+  !! derived type output capability specified in a generic binding
   implicit none
 
   type, abstract :: object

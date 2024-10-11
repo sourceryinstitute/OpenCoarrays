@@ -161,14 +161,13 @@ __caf_err_report() {
 trap '__caf_err_report "${FUNCNAME:-.}" ${LINENO}' ERR
 
 # See if we are compiling or compiling and/or linking
-__only_compiling () {
-    for arg in "${@}"; do
-      if [[ "${arg}" == "-c" ]]; then
-        return 0
-      fi
-    done
-    return 1
-}
+with_link="true"
+for arg in "${@}"; do
+  if [[ "${arg}" == "-c" || "${arg}" == "-cpp" ]]; then
+    with_link="false"
+    break
+  fi
+done
 
 #--------------------------------------------------------------------------
 # End configured variables, now process them and build compile/link command
@@ -223,16 +222,14 @@ if [[ -n "${mpi_compile_flags[*]:-}" ]]; then
       caf_pre_flags+=("${compileflag}")
   done
 fi
-if [[ -n "${mpi_link_flags[*]:-}" ]]; then
-  if ! __only_compiling "${@}"; then
-    for linkflag in "${mpi_link_flags[@]:-}"; do
-      caf_pre_flags+=("${linkflag}")
-    done
-  fi
+if [[ -n "${mpi_link_flags[*]:-}" && "${with_link}" == "true" ]]; then
+  for linkflag in "${mpi_link_flags[@]:-}"; do
+    caf_pre_flags+=("${linkflag}")
+  done
 fi
 
 # Now do libraries, IN CORRECT ORDER, to append to command
-if [[ -n "${caf_libs[*]:-}" ]]; then
+if [[ "${with_link}" == "true" && -n "${caf_libs[*]:-}" ]]; then
   for lib in "${caf_libs[@]:-}"; do
     caf_added_libs+=("$(substitute_lib "${prefix%/}/${lib}")")
   done
@@ -242,7 +239,7 @@ if [[ -n "${threads_lib}" ]]; then
   caf_added_libs+=("${threads_lib}")
 fi
 
-if [[ -n "${mpi_libs[*]:-}" ]]; then
+if [[ "${with_link}" == "true" && -n "${mpi_libs[*]:-}" ]]; then
   for lib in "${mpi_libs[@]:-}"; do
     caf_added_libs+=("$(substitute_lib "${lib}")")
   done
@@ -330,10 +327,8 @@ elif [[ ${1} == '-s' || ${1} == '--show' || ${1} == '-show' ]]; then
   if [[ "${args}" ]]; then
     compiler_args+=("${args}")
   fi
-  if [[ "${caf_added_libs[*]:-}" ]]; then
-    if ! __only_compiling "${@}"; then
-      compiler_args+=("${caf_added_libs[@]}")
-    fi
+  if [[ "${caf_added_libs[*]:-}" && "${with_link}" == "true" ]]; then
+    compiler_args+=("${caf_added_libs[@]}")
   fi
   echo "${cafc}" "${compiler_args[@]}"
   exit 0
@@ -365,10 +360,8 @@ fi
 if [[ "${*:-}" ]]; then
   compiler_args+=("${@}")
 fi
-if [[ "${caf_added_libs[*]:-}" ]]; then
-  if ! __only_compiling "${@}" ; then
-    compiler_args+=("${caf_added_libs[@]}")
-  fi
+if [[ "${caf_added_libs[*]:-}" && "${with_link}" == "true" ]]; then
+  compiler_args+=("${caf_added_libs[@]}")
 fi
 #set -o xtrace # Show what we're doing
 set +o errtrace

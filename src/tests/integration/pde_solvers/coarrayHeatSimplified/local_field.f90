@@ -24,7 +24,7 @@
 ! ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 ! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 !
-module local_field_module
+module chs_local_field_module
   implicit none
   private
   public :: local_field

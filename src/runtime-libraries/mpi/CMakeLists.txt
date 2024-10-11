@@ -147,13 +147,17 @@ execute_process(COMMAND ${MPIEXEC_EXECUTABLE} --version
   OUTPUT_VARIABLE mpi_version_out)
 if (mpi_version_out MATCHES "[Oo]pen[ -][Mm][Pp][Ii]")
   message( STATUS "OpenMPI detected")
-  set ( openmpi true PARENT_SCOPE)
+  set_property(GLOBAL PROPERTY openmpi true)
   # Write out a host file because OMPI's mpiexec is dumb
   file(WRITE ${CMAKE_BINARY_DIR}/hostfile "${HOST_NAME} slots=${N_CPU}\n")
   message( STATUS "hostfile written to: ${CMAKE_BINARY_DIR}/hostfile")
   if(NOT DEFINED ENV{TRAVIS})
     message( STATUS "Open-MPI back end detected, passing --allow-run-as-root to allow tests to pass when run with sudo or as root." )
   endif()
+elseif (mpi_version_out MATCHES "HYDRA")
+  message(STATUS "MPICH detected")
+  target_compile_definitions(caf_mpi PRIVATE MPI_CLEAR_COMM_BEFORE_FREE)
+  target_compile_definitions(caf_mpi_static PRIVATE MPI_CLEAR_COMM_BEFORE_FREE)
 endif ()
 
 if("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
