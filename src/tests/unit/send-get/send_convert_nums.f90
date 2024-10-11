@@ -364,7 +364,7 @@ program send_convert_nums
         & call print_and_register( 'send strided int kind=1 to kind=1 self failed.')
 
       co_int_k4 = -1
-      co_int_k4(::2)[1] = int_k4(1:3)
+      co_int_k4(::2)[1] = int_k4
       print *, co_int_k4
       if (any(co_int_k4 /= [int_k4(1), -1, int_k4(2), -1, int_k4(3)])) &
         call print_and_register( 'send strided int kind=4 to kind=4 self failed.')
