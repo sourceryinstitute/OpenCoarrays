@@ -1,5 +1,6 @@
 program get_static_array
     type :: container
+        real :: f
         integer, allocatable :: stuff(:)
     end type
 
@@ -20,4 +21,3 @@ program get_static_array
         end if
     end if
 end program
-
