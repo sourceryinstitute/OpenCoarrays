@@ -629,6 +629,19 @@ function(check_script_style script_full_path)
   endif()
 endfunction()
 
+#------------------------------------------------------------
+# Setup clang-format if present for testing/linting c sources
+#------------------------------------------------------------
+find_program(CLANGFORMAT_EXE clang-format
+  DOC "Path to clang-format executable for linting c sources/headers"
+  )
+if (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER})
+  if(NOT CLANGFORMAT_EXE)
+    message( AUTHOR_WARNING "OpenCoarrays developers should install clang-format to test/lint all C sources and headers.
+    See https://releases.llvm.org/download.html for info on obtaining clang-format as part of clang.")
+  endif()
+endif()
+
 #------------------------------------------------------------------------------
 # Add custom properties on targets for controling number of images during tests
 #------------------------------------------------------------------------------

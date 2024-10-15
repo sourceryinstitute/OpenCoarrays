@@ -1,0 +1,17 @@
+#
+
+---
+BasedOnStyle: Microsoft
+Language: Cpp
+
+AlignAfterOpenBracket: Align
+AlignOperands: Align
+AlwaysBreakAfterReturnType: TopLevel
+BraceWrapping:
+  AfterCaseLabel: true
+BreakBeforeBinaryOperators: true
+ColumnLimit: 80
+IndentCaseBlocks: true
+IndentCaseLabels: true
+IndentWidth: 2
+PointerAlignment: Right
