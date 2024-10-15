@@ -12,6 +12,7 @@ caf_compile_executable(issue-503-non-contig-red-ndarray issue-503-non-contig-red
 caf_compile_executable(issue-322-non-coarray-vector-idx-lhs issue-322-non-coarray-vector-idx-lhs.f90)
 caf_compile_executable(issue-552-send_by_ref-singleton issue-552-send_by_ref-singleton.f90)
 caf_compile_executable(issue-511-incorrect-shape issue-511-incorrect-shape.f90)
+caf_compile_executable(issue-654-send_by_ref_rank_2 issue-654-send_by_ref_rank_2.f90)
 caf_compile_executable(issue-700-allow-multiple-scalar-dim-array-gets issue-700-allow-multiple-scalar-dim-array-gets.f90)
 if (gfortran_compiler AND (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0))
   caf_compile_executable(issue-515-mimic-mpi-gatherv issue-515-mimic-mpi-gatherv.f90)
