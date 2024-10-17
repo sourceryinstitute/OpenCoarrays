@@ -232,12 +232,18 @@ MPI_Datatype *dts;
 char *msgbody;
 pthread_mutex_t lock_am;
 int done_am = 0;
+pthread_t commthread;
+bool commthread_running = true;
+static const int CAF_CT_TAG = 13;
 
 char err_buffer[MPI_MAX_ERROR_STRING];
 
 /* All CAF runtime calls should use this comm instead of MPI_COMM_WORLD for
  * interoperability purposes. */
 MPI_Comm CAF_COMM_WORLD;
+MPI_Comm ct_COMM;
+
+static const int CT_STATUS_TERM_REQ = -1;
 
 static caf_teams_list *teams_list = NULL;
 static caf_used_teams_list *used_teams = NULL;
@@ -404,6 +410,69 @@ helperFunction()
   }
 }
 #endif
+
+void *
+communication_thread(void *)
+{
+  int ierr = 0;
+  int cnt;
+  MPI_Status status;
+
+  dprint("ct: Started.\n");
+
+  do
+  {
+    dprint("ct: Waiting for request.\n");
+    ierr = MPI_Probe(MPI_ANY_SOURCE, CAF_CT_TAG, ct_COMM, &status);
+    dprint("ct: Woke up.\n");
+    if (status.MPI_ERROR == MPI_SUCCESS)
+    {
+      MPI_Get_count(&status, MPI_BYTE, &cnt);
+
+      struct
+      {
+        MPI_Win win;
+        size_t sz;
+      } msg;
+      if (cnt >= sizeof(msg))
+      {
+        ierr = MPI_Recv(&msg, cnt, MPI_BYTE, status.MPI_SOURCE, status.MPI_TAG,
+                        ct_COMM, &status);
+        chk_err(ierr);
+        dprint("ct: Received request of size %ld.\n", cnt);
+
+        void *bptr;
+        int flag;
+        ierr = MPI_Win_get_attr(msg.win, MPI_WIN_BASE, &bptr, &flag);
+        chk_err(ierr);
+        dprint("ct: Local base for win %ld is %p (set: %b).\n", msg.win, bptr,
+               flag);
+        if (!flag)
+        {
+          dprint("ct: Error: Window %p memory is not allocated.\n", msg.win);
+        }
+        ierr = MPI_Send(bptr, msg.sz, MPI_BYTE, status.MPI_SOURCE,
+                        status.MPI_TAG + 1, ct_COMM);
+        chk_err(ierr);
+      }
+      else if (!commthread_running)
+      {
+        /* Pickup empty message. */
+        MPI_Recv(&msg, cnt, MPI_BYTE, status.MPI_SOURCE, status.MPI_TAG,
+                 ct_COMM, &status);
+      }
+      else
+      {
+        dprint("ct: Error: message to small, ignoring (got: %ld, exp: %ld).\n",
+               cnt, sizeof(msg));
+      }
+    }
+    else
+      chk_err(ierr);
+  } while (commthread_running);
+  dprint("ct: Ended.\n");
+  return NULL;
+}
 
 /* Keep in sync with single.c. */
 
@@ -841,7 +910,7 @@ PREFIX(init)(int *argc, char ***argv)
   if (caf_num_images == 0)
   {
     int ierr = 0, i = 0, j = 0, rc, prov_lev = 0;
-    int is_init = 0, prior_thread_level = MPI_THREAD_FUNNELED;
+    int is_init = 0, prior_thread_level = MPI_THREAD_MULTIPLE;
     ierr = MPI_Initialized(&is_init);
     chk_err(ierr);
 
@@ -850,6 +919,7 @@ PREFIX(init)(int *argc, char ***argv)
       ierr = MPI_Query_thread(&prior_thread_level);
       chk_err(ierr);
     }
+    dprint("Main thread: thread level: %d\n", prior_thread_level);
 #ifdef HELPER
     if (is_init)
     {
@@ -990,6 +1060,11 @@ PREFIX(init)(int *argc, char ***argv)
              *win_model, flag);
     }
 #endif
+
+    ierr = MPI_Comm_dup(MPI_COMM_WORLD, &ct_COMM);
+    chk_err(ierr);
+    ierr = pthread_create(&commthread, NULL, &communication_thread, NULL);
+    chk_err(ierr);
   }
 }
 
@@ -1059,9 +1134,12 @@ finalize_internal(int status_code)
   /* Add a conventional barrier to prevent images from quitting too early. */
   if (status_code == 0)
   {
-    dprint("In barrier for finalize...");
-    ierr = MPI_Barrier(CAF_COMM_WORLD);
-    chk_err(ierr);
+    if (caf_num_images > 1)
+    {
+      dprint("In barrier for finalize...");
+      ierr = MPI_Barrier(CAF_COMM_WORLD);
+      chk_err(ierr);
+    }
   }
   else
     /* Without failed images support, but a given status_code, we need to
@@ -1125,6 +1203,17 @@ finalize_internal(int status_code)
   ierr = MPI_Info_free(&mpi_info_same_size);
   chk_err(ierr);
 #endif // MPI_VERSION
+
+  dprint("Sending termination signal to communication thread.\n");
+  commthread_running = false;
+  ierr = MPI_Send(NULL, 0, MPI_BYTE, caf_this_image - 1, CAF_CT_TAG, ct_COMM);
+  chk_err(ierr);
+  dprint("Termination signal send, waiting for thread join.\n");
+  ierr = pthread_join(commthread, NULL);
+  dprint("Communication thread terminated with rc = %d.\n", ierr);
+  dprint("Freeing ct_COMM.\n");
+  MPI_Comm_free(&ct_COMM);
+  dprint("Freeed ct_COMM.\n");
 
   /* Free the global dynamic window. */
   ierr = MPI_Win_free(&global_dynamic_win);
@@ -1200,6 +1289,7 @@ finalize_internal(int status_code)
   caf_is_finalized = 1;
 #endif
   free(sync_handles);
+
   dprint("Finalisation done!!!\n");
 }
 
@@ -1348,9 +1438,15 @@ void PREFIX(register)(size_t size, caf_register_t type, caf_token_t *token,
         p = TOKEN(mpi_token);
 
 #if MPI_VERSION >= 3
-        ierr = MPI_Win_allocate(actual_size, 1, MPI_INFO_NULL, CAF_COMM_WORLD,
-                                &mem, p);
+        void *flavor;
+        int flag = -1;
+        ierr = MPI_Win_allocate /*_shared*/ (actual_size, 1, MPI_INFO_NULL,
+                                             CAF_COMM_WORLD, &mem, p);
         chk_err(ierr);
+        ierr = MPI_Win_get_attr(*p, MPI_WIN_CREATE_FLAVOR, &flavor, &flag);
+        chk_err(ierr);
+        dprint("win %d has create flavor: %x, flag: %d.\n", *p, *(int *)flavor,
+               flag);
         CAF_Win_lock_all(*p);
 #else
         ierr = MPI_Alloc_mem(actual_size, MPI_INFO_NULL, &mem);
@@ -3683,11 +3779,23 @@ PREFIX(get)(caf_token_t token, size_t offset, int image_index,
         {
           const size_t trans_size
               = ((dst_size > src_size) ? src_size : dst_size) * size;
-          CAF_Win_lock(MPI_LOCK_SHARED, remote_image, *p);
-          ierr = MPI_Get(dest->base_addr, trans_size, MPI_BYTE, remote_image,
-                         offset, trans_size, MPI_BYTE, *p);
+          struct
+          {
+            MPI_Win win;
+            size_t sz;
+          } buf = {*p, trans_size};
+          int tag = CAF_CT_TAG; // + caf_this_image) % 0xffff;
+          ierr
+              = MPI_Sendrecv(&buf, sizeof(buf), MPI_BYTE, remote_image, tag,
+                             dest->base_addr, trans_size, MPI_BYTE,
+                             remote_image, tag + 1, ct_COMM, MPI_STATUS_IGNORE);
           chk_err(ierr);
-          CAF_Win_unlock(remote_image, *p);
+
+          // CAF_Win_lock(MPI_LOCK_SHARED, remote_image, *p);
+          // ierr = MPI_Get(dest->base_addr, trans_size, MPI_BYTE, remote_image,
+          //                offset, trans_size, MPI_BYTE, *p);
+          // chk_err(ierr);
+          // CAF_Win_unlock(remote_image, *p);
         }
         else
         {
