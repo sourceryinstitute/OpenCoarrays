@@ -9,11 +9,7 @@ program get_offset_1d
 
   allocate(a(100)[*],b(10))
 
-  a = (/ (i, i=1,100) /)
-
-  do i=1,100
-    a(i) = a(i) + me
-  enddo
+  a = (/ (i + me, i=1,100) /)
 
   sync all
 
