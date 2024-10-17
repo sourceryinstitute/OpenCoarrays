@@ -233,6 +233,9 @@ endif()
   if ( gfortran_compiler AND ( NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 8.0.0 ) )
     add_definitions(-DGCC_GE_8) # Tell library to build against GFortran 8.x bindings w/ descriptor change
   endif()
+  if ( gfortran_compiler AND ( NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 14.0.0 ) )
+    add_definitions(-DGCC_GE_15) # Tell library to build against GFortran 15.x bindings
+  endif()
 
 if(gfortran_compiler)
   set(OLD_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
@@ -858,6 +861,7 @@ if(opencoarrays_aware_compiler)
 
   # Pure sendget tests
   add_caf_test(strided_sendget 3 strided_sendget)
+  add_caf_test(get_with_1d_vector_index 3 get_with_1d_vector_index)
   add_caf_test(get_with_vector_index 4 get_with_vector_index)
 
   # Collective subroutine tests
