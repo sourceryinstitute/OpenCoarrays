@@ -172,6 +172,7 @@ error_stop_str(const char *string, size_t len, bool quiet)
 
 /* Global variables. */
 static int caf_this_image;
+static int mpi_this_image;
 static int caf_num_images = 0;
 static int caf_is_finalized = 0;
 static MPI_Win global_dynamic_win;
@@ -901,10 +902,10 @@ PREFIX(init)(int *argc, char ***argv)
 
     ierr = MPI_Comm_size(CAF_COMM_WORLD, &caf_num_images);
     chk_err(ierr);
-    ierr = MPI_Comm_rank(CAF_COMM_WORLD, &caf_this_image);
+    ierr = MPI_Comm_rank(CAF_COMM_WORLD, &mpi_this_image);
     chk_err(ierr);
 
-    ++caf_this_image;
+    caf_this_image = mpi_this_image + 1;
     caf_is_finalized = 0;
 
     /* BEGIN SYNC IMAGE preparation
@@ -1010,22 +1011,22 @@ finalize_internal(int status_code)
   chk_err(ierr);
 #endif
   /* For future security enclose setting img_status in a lock. */
-  CAF_Win_lock(MPI_LOCK_EXCLUSIVE, caf_this_image - 1, *stat_tok);
+  CAF_Win_lock(MPI_LOCK_EXCLUSIVE, mpi_this_image, *stat_tok);
   if (status_code == 0)
   {
     img_status = STAT_STOPPED_IMAGE;
 #ifdef WITH_FAILED_IMAGES
-    image_stati[caf_this_image - 1] = STAT_STOPPED_IMAGE;
+    image_stati[mpi_this_image] = STAT_STOPPED_IMAGE;
 #endif
   }
   else
   {
     img_status = status_code;
 #ifdef WITH_FAILED_IMAGES
-    image_stati[caf_this_image - 1] = status_code;
+    image_stati[mpi_this_image] = status_code;
 #endif
   }
-  CAF_Win_unlock(caf_this_image - 1, *stat_tok);
+  CAF_Win_unlock(mpi_this_image, *stat_tok);
 
   /* Announce to all other images, that this one has changed its execution
    * status. */
@@ -1371,11 +1372,11 @@ void PREFIX(register)(size_t size, caf_register_t type, caf_token_t *token,
         if (l_var)
         {
           init_array = (int *)calloc(size, sizeof(int));
-          CAF_Win_lock(MPI_LOCK_EXCLUSIVE, caf_this_image - 1, *p);
-          ierr = MPI_Put(init_array, size, MPI_INT, caf_this_image - 1, 0, size,
+          CAF_Win_lock(MPI_LOCK_EXCLUSIVE, mpi_this_image, *p);
+          ierr = MPI_Put(init_array, size, MPI_INT, mpi_this_image, 0, size,
                          MPI_INT, *p);
           chk_err(ierr);
-          CAF_Win_unlock(caf_this_image - 1, *p);
+          CAF_Win_unlock(mpi_this_image, *p);
           free(init_array);
         }
 
@@ -1472,11 +1473,11 @@ void *PREFIX(register)(size_t size, caf_register_t type, caf_token_t *token,
   if (l_var)
   {
     init_array = (int *)calloc(size, sizeof(int));
-    CAF_Win_lock(MPI_LOCK_EXCLUSIVE, caf_this_image - 1, *p);
-    ierr = MPI_Put(init_array, size, MPI_INT, caf_this_image - 1, 0, size,
-                   MPI_INT, *p);
+    CAF_Win_lock(MPI_LOCK_EXCLUSIVE, mpi_this_image, *p);
+    ierr = MPI_Put(init_array, size, MPI_INT, mpi_this_image, 0, size, MPI_INT,
+                   *p);
     chk_err(ierr);
-    CAF_Win_unlock(caf_this_image - 1, *p);
+    CAF_Win_unlock(mpi_this_image, *p);
     free(init_array);
   }
 
@@ -3579,16 +3580,23 @@ PREFIX(get)(caf_token_t token, size_t offset, int image_index,
   bool free_pad_str = false, free_t_buff = false;
   const bool dest_char_array_is_longer
       = dst_type == BT_CHARACTER && dst_size > src_size && !same_image;
-  int remote_image = image_index - 1;
+  int remote_image = image_index - 1, this_image = mpi_this_image;
+
   if (!same_image)
   {
     MPI_Group current_team_group, win_group;
+    int trans_ranks[2];
     ierr = MPI_Comm_group(CAF_COMM_WORLD, &current_team_group);
     chk_err(ierr);
     ierr = MPI_Win_get_group(*p, &win_group);
     chk_err(ierr);
-    ierr = MPI_Group_translate_ranks(
-        current_team_group, 1, (int[]){remote_image}, win_group, &remote_image);
+    ierr = MPI_Group_translate_ranks(current_team_group, 2,
+                                     (int[]){remote_image, this_image},
+                                     win_group, trans_ranks);
+    dprint("rank translation: remote: %d -> %d, this: %d -> %d.\n",
+           remote_image, trans_ranks[0], this_image, trans_ranks[1]);
+    remote_image = trans_ranks[0];
+    this_image = trans_ranks[1];
     chk_err(ierr);
     ierr = MPI_Group_free(&current_team_group);
     chk_err(ierr);
@@ -3618,8 +3626,8 @@ PREFIX(get)(caf_token_t token, size_t offset, int image_index,
   if (size == 0)
     return;
 
-  dprint("src_vector = %p, image_index = %d, offset = %zd.\n", src_vector,
-         image_index, offset);
+  dprint("src_vector = %p, image_index = %d (remote = %d), offset = %zd.\n",
+         src_vector, image_index, remote_image, offset);
   check_image_health(image_index, stat);
 
   /* For char arrays: create the padding array, when dst is longer than src. */
@@ -7995,8 +8003,7 @@ PREFIX(atomic_define)(caf_token_t token, size_t offset, int image_index,
 {
   MPI_Win *p = TOKEN(token);
   MPI_Datatype dt;
-  int ierr = 0,
-      image = (image_index != 0) ? image_index - 1 : caf_this_image - 1;
+  int ierr = 0, image = (image_index != 0) ? image_index - 1 : mpi_this_image;
 
   selectType(kind, &dt);
 
@@ -8027,8 +8034,7 @@ PREFIX(atomic_ref)(caf_token_t token, size_t offset, int image_index,
 {
   MPI_Win *p = TOKEN(token);
   MPI_Datatype dt;
-  int ierr = 0,
-      image = (image_index != 0) ? image_index - 1 : caf_this_image - 1;
+  int ierr = 0, image = (image_index != 0) ? image_index - 1 : mpi_this_image;
 
   selectType(kind, &dt);
 
@@ -8059,8 +8065,7 @@ PREFIX(atomic_cas)(caf_token_t token, size_t offset, int image_index, void *old,
 {
   MPI_Win *p = TOKEN(token);
   MPI_Datatype dt;
-  int ierr = 0,
-      image = (image_index != 0) ? image_index - 1 : caf_this_image - 1;
+  int ierr = 0, image = (image_index != 0) ? image_index - 1 : mpi_this_image;
 
   selectType(kind, &dt);
 
@@ -8091,7 +8096,7 @@ PREFIX(atomic_op)(int op, caf_token_t token, size_t offset, int image_index,
   int ierr = 0;
   MPI_Datatype dt;
   MPI_Win *p = TOKEN(token);
-  int image = (image_index != 0) ? image_index - 1 : caf_this_image - 1;
+  int image = (image_index != 0) ? image_index - 1 : mpi_this_image;
 
 #if MPI_VERSION >= 3
   old = malloc(kind);
@@ -8146,7 +8151,7 @@ PREFIX(event_post)(caf_token_t token, size_t index, int image_index, int *stat,
   int value = 1, ierr = 0, flag;
   MPI_Win *p = TOKEN(token);
   const char msg[] = "Error on event post";
-  int image = (image_index == 0) ? caf_this_image - 1 : image_index - 1;
+  int image = (image_index == 0) ? mpi_this_image : image_index - 1;
 
   if (stat != NULL)
     *stat = 0;
@@ -8184,7 +8189,7 @@ void
 PREFIX(event_wait)(caf_token_t token, size_t index, int until_count, int *stat,
                    char *errmsg, charlen_t errmsg_len)
 {
-  int ierr = 0, count = 0, i, image = caf_this_image - 1;
+  int ierr = 0, count = 0, i, image = mpi_this_image;
   int *var = NULL, flag, old = 0, newval = 0;
   const int spin_loop_max = 20000;
   MPI_Win *p = TOKEN(token);
@@ -8250,8 +8255,7 @@ PREFIX(event_query)(caf_token_t token, size_t index, int image_index,
                     int *count, int *stat)
 {
   MPI_Win *p = TOKEN(token);
-  int ierr = 0,
-      image = (image_index == 0) ? caf_this_image - 1 : image_index - 1;
+  int ierr = 0, image = (image_index == 0) ? mpi_this_image : image_index - 1;
 
   if (stat != NULL)
     *stat = 0;
@@ -8590,13 +8594,12 @@ PREFIX(form_team)(int team_id, caf_team_t *team,
                   int index __attribute__((unused)))
 {
   struct caf_teams_list *tmp;
-  void *tmp_team;
   MPI_Comm *newcomm;
-  MPI_Comm *current_comm = &CAF_COMM_WORLD;
+  MPI_Comm current_comm = CAF_COMM_WORLD;
   int ierr;
 
   newcomm = (MPI_Comm *)calloc(1, sizeof(MPI_Comm));
-  ierr = MPI_Comm_split(*current_comm, team_id, caf_this_image, newcomm);
+  ierr = MPI_Comm_split(current_comm, team_id, mpi_this_image, newcomm);
   chk_err(ierr);
 
   tmp = calloc(1, sizeof(struct caf_teams_list));
@@ -8646,9 +8649,9 @@ PREFIX(change_team)(caf_team_t *team, int coselector __attribute__((unused)))
   tmp_team = tmp_used->team_list_elem->team;
   tmp_comm = (MPI_Comm *)tmp_team;
   CAF_COMM_WORLD = *tmp_comm;
-  int ierr = MPI_Comm_rank(*tmp_comm, &caf_this_image);
+  int ierr = MPI_Comm_rank(*tmp_comm, &mpi_this_image);
   chk_err(ierr);
-  caf_this_image++;
+  caf_this_image = mpi_this_image + 1;
   ierr = MPI_Comm_size(*tmp_comm, &caf_num_images);
   chk_err(ierr);
   ierr = MPI_Barrier(*tmp_comm);
@@ -8699,9 +8702,9 @@ PREFIX(end_team)(caf_team_t *team __attribute__((unused)))
   tmp_comm = (MPI_Comm *)tmp_team;
   CAF_COMM_WORLD = *tmp_comm;
   /* CAF_COMM_WORLD = (MPI_Comm)*tmp_used->team_list_elem->team; */
-  ierr = MPI_Comm_rank(CAF_COMM_WORLD, &caf_this_image);
+  ierr = MPI_Comm_rank(CAF_COMM_WORLD, &mpi_this_image);
   chk_err(ierr);
-  caf_this_image++;
+  caf_this_image = mpi_this_image + 1;
   ierr = MPI_Comm_size(CAF_COMM_WORLD, &caf_num_images);
   chk_err(ierr);
 }
