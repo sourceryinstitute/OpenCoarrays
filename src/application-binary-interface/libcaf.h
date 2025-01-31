@@ -264,20 +264,34 @@ void PREFIX(caf_sendget)(caf_token_t, size_t, int, gfc_descriptor_t *,
 
 #ifdef GCC_GE_15
 void PREFIX(register_accessor)(const int hash,
-                               void (*accessor)(void **, int32_t *, void *,
-                                                void *, size_t *, size_t *));
+                               void (*accessor)(void *, const int *, void **,
+                                                int32_t *, void *, caf_token_t,
+                                                const size_t, size_t *,
+                                                const size_t *));
 
 void PREFIX(register_accessors_finish)();
 
 int PREFIX(get_remote_function_index)(const int hash);
 
-void PREFIX(get_by_ct)(caf_token_t token, const gfc_descriptor_t *opt_src_desc,
-                       const size_t *opt_src_charlen, const int image_index,
-                       const size_t dst_size, void **dst_data,
-                       size_t *opt_dst_charlen, gfc_descriptor_t *opt_dst_desc,
-                       const bool may_realloc_dst, const int getter_index,
-                       void *get_data, const size_t get_data_size, int *stat,
-                       caf_team_t *team, int *team_number);
+void PREFIX(get_from_remote)(
+    caf_token_t token, const gfc_descriptor_t *opt_src_desc,
+    const size_t *opt_src_charlen, const int image_index, const size_t dst_size,
+    void **dst_data, size_t *opt_dst_charlen, gfc_descriptor_t *opt_dst_desc,
+    const bool may_realloc_dst, const int getter_index, void *get_data,
+    const size_t get_data_size, int *stat, caf_team_t *team, int *team_number);
+
+int32_t PREFIX(is_present_on_remote)(caf_token_t token, const int image_index,
+                                     const int is_present_index, void *add_data,
+                                     const size_t add_data_size);
+
+void PREFIX(send_to_remote)(caf_token_t token, gfc_descriptor_t *opt_dst_desc,
+                            const size_t *opt_dst_charlen,
+                            const int image_index, const size_t src_size,
+                            const void *src_data, size_t *opt_src_charlen,
+                            const gfc_descriptor_t *opt_src_desc,
+                            const int setter_index, void *add_data,
+                            const size_t add_data_size, int *stat,
+                            caf_team_t *team, int *team_number);
 #endif
 #ifdef GCC_GE_8
 void PREFIX(get_by_ref)(caf_token_t, int, gfc_descriptor_t *dst,
