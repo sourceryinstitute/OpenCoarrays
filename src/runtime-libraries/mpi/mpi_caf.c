@@ -1044,11 +1044,6 @@ communication_thread(void *)
 static void
 unsupported_fail_images_message(const char *functionname);
 
-/* Forward declaration of the feature unimplemented message for allocatable
- * components. */
-static void
-unimplemented_alloc_comps_message(const char *functionname);
-
 static void
 locking_atomic_op(MPI_Win win, int *value, int newval, int compare,
                   int image_index, size_t index)
@@ -1375,7 +1370,8 @@ mutex_unlock(MPI_Win win, int image_index, size_t index, int *stat,
   if (stat != NULL)
     *stat = 0;
 #if MPI_VERSION >= 3
-  int value = 1, ierr = 0, newval = 0, flag;
+  /* Mark `flag` unused, because of conditional compilation.  */
+  int value = 1, ierr = 0, newval = 0, flag __attribute__((unused));
 #ifdef WITH_FAILED_IMAGES
   ierr = MPI_Test(&alive_request, &flag, MPI_STATUS_IGNORE);
   chk_err(ierr);
@@ -1388,9 +1384,8 @@ mutex_unlock(MPI_Win win, int image_index, size_t index, int *stat,
   ierr = CAF_Win_unlock(image_index - 1, win);
   chk_err(ierr);
 
-  /* Temporarily commented */
-  /* if (value == 0)
-   *   goto stat_error; */
+  if (value == 0)
+    goto stat_error;
 
   if (stat)
     *stat = ierr;
@@ -1425,7 +1420,8 @@ PREFIX(init)(int *argc, char ***argv)
   int flag;
   if (caf_num_images == 0)
   {
-    int ierr = 0, i = 0, j = 0, rc, prov_lev = 0;
+    /* Flag rc as unused, because conditional compilation.  */
+    int ierr = 0, i = 0, j = 0, rc __attribute__((unused)), prov_lev = 0;
     int is_init = 0, prior_thread_level = MPI_THREAD_MULTIPLE;
     ierr = MPI_Initialized(&is_init);
     chk_err(ierr);
@@ -7458,8 +7454,6 @@ PREFIX(send_by_ref)(caf_token_t token, int image_index, gfc_descriptor_t *src,
    * used for error tracking only.  It is not (yet) possible to allocate memory
    * on the remote image. */
   bool realloc_dst = false, extent_mismatch = false;
-  /* Set when the first non-scalar array reference is encountered. */
-  bool in_array_ref = false;
   /* Set when remote data is to be accessed through the
    * global dynamic window. */
   bool access_data_through_global_win = false;
@@ -7712,7 +7706,6 @@ PREFIX(send_by_ref)(caf_token_t token, int image_index, gfc_descriptor_t *src,
             /* Do further checks, when the source is not scalar. */
             else if (delta != 1)
             {
-              in_array_ref = true;
               /* When the realloc is required, then no extent may have
                * been set. */
               extent_mismatch = GFC_DESCRIPTOR_EXTENT(dst, src_cur_dim) < delta;
@@ -7746,7 +7739,6 @@ PREFIX(send_by_ref)(caf_token_t token, int image_index, gfc_descriptor_t *src,
           }
           size *= (ptrdiff_t)delta;
         }
-        in_array_ref = false;
         break;
       case CAF_REF_STATIC_ARRAY:
         for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
@@ -7825,7 +7817,6 @@ PREFIX(send_by_ref)(caf_token_t token, int image_index, gfc_descriptor_t *src,
             /* Do further checks, when the source is not scalar. */
             else if (delta != 1)
             {
-              in_array_ref = true;
               /* When the realloc is required, then no extent may have
                * been set. */
               extent_mismatch = GFC_DESCRIPTOR_EXTENT(dst, src_cur_dim) < delta;
@@ -7843,7 +7834,6 @@ PREFIX(send_by_ref)(caf_token_t token, int image_index, gfc_descriptor_t *src,
           }
           size *= (ptrdiff_t)delta;
         }
-        in_array_ref = false;
         break;
       default:
         caf_internal_error(unknownreftype, stat, NULL, 0);
@@ -7961,7 +7951,6 @@ PREFIX(sendget_by_ref)(caf_token_t dst_token, int dst_image_index,
   int global_dst_rank, global_src_rank, memptr_dst_rank, memptr_src_rank;
   /* Set when the first non-scalar array reference is encountered. */
   bool in_array_ref = false;
-  bool array_extent_fixed = false;
   /* Set when remote data is to be accessed through the
    * global dynamic window. */
   bool access_data_through_global_win = false;
@@ -8189,10 +8178,7 @@ PREFIX(sendget_by_ref)(caf_token_t dst_token, int dst_image_index,
           size *= (ptrdiff_t)delta;
         }
         if (in_array_ref)
-        {
-          array_extent_fixed = true;
           in_array_ref = false;
-        }
         break;
       case CAF_REF_STATIC_ARRAY:
         for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
@@ -8254,10 +8240,7 @@ PREFIX(sendget_by_ref)(caf_token_t dst_token, int dst_image_index,
           size *= (ptrdiff_t)delta;
         }
         if (in_array_ref)
-        {
-          array_extent_fixed = true;
           in_array_ref = false;
-        }
         break;
       default:
         caf_runtime_error(unknownreftype, src_stat, NULL, 0);
@@ -8634,7 +8617,9 @@ static void
 sync_images_internal(int count, int images[], int *stat, char *errmsg,
                      size_t errmsg_len, bool internal)
 {
-  int ierr = 0, i = 0, j = 0, int_zero = 0, done_count = 0, flag;
+  /* Marked as unused, because of conditional compilation.  */
+  int ierr = 0, i = 0, j = 0, int_zero = 0, done_count = 0,
+      flag __attribute__((unused));
   MPI_Status s;
 
 #ifdef WITH_FAILED_IMAGES
@@ -9501,7 +9486,7 @@ void
 PREFIX(event_post)(caf_token_t token, size_t index, int image_index, int *stat,
                    char *errmsg, charlen_t errmsg_len)
 {
-  int value = 1, ierr = 0, flag;
+  int value = 1, ierr = 0;
   MPI_Win *p = TOKEN(token);
   const char msg[] = "Error on event post";
   int image = (image_index == 0) ? mpi_this_image : image_index - 1;
@@ -9919,24 +9904,6 @@ unsupported_fail_images_message(const char *functionname)
           "*** You need a compiler with failed images support activated and "
           "*** compile OpenCoarrays with failed images support.\n",
           caf_this_image, functionname);
-#ifdef STOP_ON_UNSUPPORTED
-  exit(EXIT_FAILURE);
-#endif
-}
-
-/* Give a descriptive message when support for an allocatable components
- * feature is not available. */
-void
-unimplemented_alloc_comps_message(const char *functionname)
-{
-  fprintf(stderr,
-          "*** Message from libcaf_mpi runtime function '%s' on image %d:\n"
-          "*** Assigning to an allocatable coarray component of a derived type"
-          "is not yet supported with GCC 7.\n"
-          "*** Either revert to GCC 6 or convert all "
-          "puts (type(foo)::x; x%%y[recipient] = z) to "
-          "gets (z = x%%y[provider]).\n",
-          functionname, caf_this_image);
 #ifdef STOP_ON_UNSUPPORTED
   exit(EXIT_FAILURE);
 #endif
