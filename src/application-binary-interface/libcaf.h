@@ -265,8 +265,8 @@ void PREFIX(caf_sendget)(caf_token_t, size_t, int, gfc_descriptor_t *,
 void PREFIX(register_accessor)(const int hash,
                                void (*accessor)(void *, const int *, void **,
                                                 int32_t *, void *, caf_token_t,
-                                                const size_t, const size_t *,
-                                                size_t *));
+                                                const size_t, size_t *,
+                                                const size_t *));
 
 void PREFIX(register_accessors_finish)();
 

@@ -252,7 +252,7 @@ enum CT_MSG_FLAGS
 };
 
 typedef void (*getter_t)(void *, const int *, void **, int32_t *, void *,
-                         caf_token_t, const size_t, const size_t *, size_t *);
+                         caf_token_t, const size_t, size_t *, const size_t *);
 typedef void (*is_present_t)(void *, const int *, int32_t *, void *,
                              caf_token_t, const size_t);
 typedef void (*receiver_t)(void *, const int *, void *, const void *,
@@ -622,7 +622,7 @@ handle_get_message(ct_msg_t *msg, void *baseptr)
   charlen = msg->dest_opt_charlen;
   accessor_hash_table[msg->accessor_index].u.getter(
       get_data, &msg->dest_image, dst_ptr, &free_buffer, src_ptr, &src_token, 0,
-      &msg->opt_charlen, &charlen);
+      &charlen, &msg->opt_charlen);
   dprint("ct: getter executed.\n");
   comm = (msg->flags & CT_INTER_CT) ? ct_COMM : CAF_COMM_WORLD;
   if (msg->flags & CT_DST_HAS_DESC)
