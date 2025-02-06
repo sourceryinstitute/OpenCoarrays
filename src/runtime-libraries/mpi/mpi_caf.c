@@ -242,12 +242,11 @@ MPI_Comm ct_COMM;
 bool commthread_running = true;
 enum CT_MSG_FLAGS
 {
-  /* Use the inter communication thread communicator. */
-  CT_INTER_CT = 1,
-  CT_DST_HAS_DESC = 1 << 1,
-  CT_SRC_HAS_DESC = 1 << 2,
-  CT_CHAR_ARRAY = 1 << 3,
-  CT_INCLUDE_DESCRIPTOR = 1 << 4,
+  CT_DST_HAS_DESC = 1,
+  CT_SRC_HAS_DESC = 1 << 1,
+  CT_CHAR_ARRAY = 1 << 2,
+  CT_INCLUDE_DESCRIPTOR = 1 << 3,
+  CT_TRANSFER_DESC = 1 << 4,
   /* Use 1 << 5 for next flag. */
 };
 
@@ -296,6 +295,7 @@ enum remote_command
   remote_command_get = 1,
   remote_command_present,
   remote_command_send,
+  remote_command_transfer,
 };
 
 /* The structure to communicate with the communication thread. Make sure, that
@@ -314,6 +314,24 @@ typedef struct
   size_t dest_opt_charlen;
   char data[];
 } ct_msg_t;
+
+struct transfer_msg_data_t
+{
+  size_t dst_msg_size;
+  size_t dst_desc_size;
+  size_t dst_add_data_size;
+  char data[];
+};
+
+/* Define the descriptor of max rank.
+ *
+ *  This typedef is made to allow storing a copy of a remote descriptor on the
+ *  stack without having to care about the rank. */
+typedef struct gfc_max_dim_descriptor_t
+{
+  gfc_descriptor_t base;
+  descriptor_dimension dim[GFC_MAX_DIMENSIONS];
+} gfc_max_dim_descriptor_t;
 
 char err_buffer[MPI_MAX_ERROR_STRING];
 
@@ -565,81 +583,52 @@ dump_mem(const char *pre, void *m, const size_t s)
 #define dump_mem(pre, m, s) ;
 #endif
 
-void
-handle_get_message(ct_msg_t *msg, void *baseptr)
+size_t
+handle_getting(ct_msg_t *msg, int cb_image, void *baseptr, void *dst_ptr,
+               void **buffer, int32_t *free_buffer, void *dbase)
 {
-  int ierr = 0;
-  MPI_Comm comm;
-  void *src_ptr, *buffer, *dst_ptr, *get_data;
+  void *src_ptr;
   size_t charlen, send_size;
-  int32_t free_buffer;
   int i;
   mpi_caf_token_t src_token = {(void *)msg->ra_id, MPI_WIN_NULL, nullptr};
 
-  if (msg->flags & CT_DST_HAS_DESC)
-  {
-    buffer = msg->data;
-    ((gfc_descriptor_t *)buffer)->base_addr = NULL;
-    get_data = msg->data + sizeof(gfc_descriptor_t)
-               + GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)buffer)
-                     * sizeof(descriptor_dimension);
-    // dump_mem(buffer, sizeof(gfc_descriptor_t)
-    //                      + GFC_DESCRIPTOR_RANK((gfc_descriptor_t
-    //                      *)buffer)
-    //                            * sizeof(descriptor_dimension));
-    /* The destination is a descriptor which address is not mutable. */
-    dst_ptr = buffer;
-  }
-  else
-  {
-    get_data = msg->data;
-    /* The destination is raw memory block, which adress is mutable. */
-    buffer = NULL;
-    dst_ptr = &buffer;
-    dprint("ct: dst_ptr: %p, buffer: %p.\n", dst_ptr, buffer);
-  }
   if (msg->flags & CT_SRC_HAS_DESC)
   {
-    ((gfc_descriptor_t *)get_data)->base_addr = baseptr;
-    src_ptr = get_data;
-    get_data += sizeof(gfc_descriptor_t)
-                + GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)src_ptr)
-                      * sizeof(descriptor_dimension);
-    dprint("ct: src_desc base: %p, rank: %d, offset: %d.\n",
+    ((gfc_descriptor_t *)dbase)->base_addr = baseptr;
+    src_ptr = dbase;
+    dbase += sizeof(gfc_descriptor_t)
+             + GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)src_ptr)
+                   * sizeof(descriptor_dimension);
+    dprint("ct: src_desc base: %p, rank: %d, offset: %zd.\n",
            ((gfc_descriptor_t *)src_ptr)->base_addr,
            GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)src_ptr),
            ((gfc_descriptor_t *)src_ptr)->offset);
-    for (int i = 0; i < GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)src_ptr); ++i)
-      dprint("ct: src_desc (dim: %d) lb: %d, ub: %d, stride: %d\n", i,
-             ((gfc_descriptor_t *)src_ptr)->dim[i].lower_bound,
-             ((gfc_descriptor_t *)src_ptr)->dim[i]._ubound,
-             ((gfc_descriptor_t *)src_ptr)->dim[i]._stride);
-    // dump_mem("ct", ((gfc_descriptor_t *)baseptr)->base_addr,
-    //          (((gfc_descriptor_t *)baseptr)->dim[0]._ubound + 1
-    //           - ((gfc_descriptor_t *)baseptr)->dim[0].lower_bound
-    //           + ((gfc_descriptor_t *)baseptr)->offset)
-    //              * GFC_DESCRIPTOR_SIZE((gfc_descriptor_t *)baseptr));
+    // for (int i = 0; i < GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)src_ptr);
+    // ++i)
+    //   dprint("ct: src_desc (dim: %d) lb: %d, ub: %d, stride: %d\n", i,
+    //          ((gfc_descriptor_t *)src_ptr)->dim[i].lower_bound,
+    //          ((gfc_descriptor_t *)src_ptr)->dim[i]._ubound,
+    //          ((gfc_descriptor_t *)src_ptr)->dim[i]._stride);
   }
   else
     src_ptr = baseptr;
 
   charlen = msg->dest_opt_charlen;
   accessor_hash_table[msg->accessor_index].u.getter(
-      get_data, &msg->dest_image, dst_ptr, &free_buffer, src_ptr, &src_token, 0,
-      &charlen, &msg->opt_charlen);
+      dbase, &cb_image, dst_ptr, free_buffer, src_ptr, &src_token, 0, &charlen,
+      &msg->opt_charlen);
   dprint("ct: getter executed.\n");
-  comm = (msg->flags & CT_INTER_CT) ? ct_COMM : CAF_COMM_WORLD;
   if (msg->flags & CT_DST_HAS_DESC)
   {
     size_t dsize = ((gfc_descriptor_t *)dst_ptr)->span;
-    dprint("ct: dst_desc base: %p, rank: %d, offset: %d.\n",
+    dprint("ct: dst_desc base: %p, rank: %d, offset: %zd.\n",
            ((gfc_descriptor_t *)dst_ptr)->base_addr,
            GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)dst_ptr),
            ((gfc_descriptor_t *)dst_ptr)->offset);
     for (int i = 0; i < GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)dst_ptr); ++i)
     {
-      dprint("ct: dst_desc (dim: %d) lb: %d, ub: %d, stride: %d, extend: "
-             "%d\n",
+      dprint("ct: dst_desc (dim: %d) lb: %td, ub: %td, stride: %td, extend: "
+             "%td\n",
              i, ((gfc_descriptor_t *)dst_ptr)->dim[i].lower_bound,
              ((gfc_descriptor_t *)dst_ptr)->dim[i]._ubound,
              ((gfc_descriptor_t *)dst_ptr)->dim[i]._stride,
@@ -647,7 +636,7 @@ handle_get_message(ct_msg_t *msg, void *baseptr)
       dsize *= GFC_DESCRIPTOR_EXTENT((gfc_descriptor_t *)dst_ptr, i);
     }
     dump_mem("ct", ((gfc_descriptor_t *)dst_ptr)->base_addr, dsize);
-    buffer = ((gfc_descriptor_t *)dst_ptr)->base_addr;
+    *buffer = ((gfc_descriptor_t *)dst_ptr)->base_addr;
     if ((msg->flags & (CT_CHAR_ARRAY | CT_INCLUDE_DESCRIPTOR)) == 0)
       send_size = msg->transfer_size;
     else
@@ -672,46 +661,76 @@ handle_get_message(ct_msg_t *msg, void *baseptr)
             + GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)dst_ptr)
                   * sizeof(descriptor_dimension);
       void *tbuff = malloc(desc_size + send_size);
-      dprint("ct: Including dst descriptor: %p, sizeof(desc): %d, rank: "
-             "%d, sizeof(buffer): %d, incoming free_buffer: %b.\n",
+      dprint("ct: Including dst descriptor: %p, sizeof(desc): %zd, rank: "
+             "%d, sizeof(buffer): %zd, incoming free_buffer: %b.\n",
              tbuff, desc_size, GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)dst_ptr),
-             send_size, free_buffer);
+             send_size, *free_buffer);
       /* Copy the descriptor contents. */
       memcpy(tbuff, dst_ptr, desc_size);
       /* Copy the data to the end of buffer (i.e. behind the descriptor).
        * Does not copy anything, when send_size is 0.  */
-      memcpy(tbuff + desc_size, buffer, send_size);
-      if (free_buffer)
+      memcpy(tbuff + desc_size, *buffer, send_size);
+      if (*free_buffer)
       {
-        dprint("ct: Freeing buffer: %p.\n", buffer);
-        free(buffer);
+        dprint("ct: Freeing buffer: %p.\n", *buffer);
+        free(*buffer);
       }
       /* For debugging only: */
       ((gfc_descriptor_t *)tbuff)->base_addr = tbuff + desc_size;
-      free_buffer = true;
-      buffer = tbuff;
+      *free_buffer = true;
+      *buffer = tbuff;
       send_size += desc_size;
     }
   }
   else
   {
-    buffer = *(void **)dst_ptr;
-    dprint("ct: dst_ptr: %p, buffer: %p.\n", dst_ptr, buffer);
+    *buffer = *(void **)dst_ptr;
+    dprint("ct: dst_ptr: %p, buffer: %p.\n", dst_ptr, *buffer);
     send_size = charlen * msg->transfer_size;
-    dprint("ct: buffer %p, send_size: %d.\n", buffer, send_size);
+    dprint("ct: buffer %p, send_size: %zd.\n", *buffer, send_size);
   }
+  return send_size;
+}
+
+void
+handle_get_message(ct_msg_t *msg, void *baseptr)
+{
+  int ierr = 0;
+  void *buffer, *dst_ptr, *get_data;
+  size_t send_size;
+  int32_t free_buffer;
+
+  if (msg->flags & CT_DST_HAS_DESC)
+  {
+    buffer = msg->data;
+    ((gfc_descriptor_t *)buffer)->base_addr = NULL;
+    get_data = msg->data + sizeof(gfc_descriptor_t)
+               + GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)buffer)
+                     * sizeof(descriptor_dimension);
+    /* The destination is a descriptor which address is not mutable. */
+    dst_ptr = buffer;
+  }
+  else
+  {
+    get_data = msg->data;
+    /* The destination is raw memory block, which adress is mutable. */
+    buffer = NULL;
+    dst_ptr = &buffer;
+    dprint("ct: dst_ptr: %p, buffer: %p.\n", dst_ptr, buffer);
+  }
+
+  send_size = handle_getting(msg, msg->dest_image, baseptr, dst_ptr, &buffer,
+                             &free_buffer, get_data);
+
   dump_mem("ct", buffer, send_size);
-  dprint("ct: Sending %ld bytes (kind: %d, cl: %d) to image %d, tag %d "
-         "on comm %x "
-         "(%s).\n",
-         send_size, msg->transfer_size, charlen, msg->dest_image, msg->dest_tag,
-         comm, comm == CAF_COMM_WORLD ? "CAF_COMM_WORLD" : "ct_COMM");
+  dprint("ct: Sending %zd bytes to image %d, tag %d.\n", send_size,
+         msg->dest_image, msg->dest_tag);
   ierr = MPI_Send(buffer, send_size, MPI_BYTE, msg->dest_image, msg->dest_tag,
-                  comm);
+                  CAF_COMM_WORLD);
   chk_err(ierr);
   if (free_buffer)
   {
-    dprint("ct: going to free buffer: %p (&buffer: %p).\n", buffer, &buffer);
+    dprint("ct: going to free buffer: %p.\n", buffer);
     free(buffer);
   }
 }
@@ -720,7 +739,6 @@ void
 handle_is_present_message(ct_msg_t *msg, void *baseptr)
 {
   int ierr = 0;
-  MPI_Comm comm;
   void *add_data, *ptr;
   int32_t result;
   mpi_caf_token_t src_token = {(void *)msg->ra_id, MPI_WIN_NULL, nullptr};
@@ -751,7 +769,6 @@ void
 handle_send_message(ct_msg_t *msg, void *baseptr)
 {
   int ierr = 0;
-  MPI_Comm comm;
   void *src_ptr, *buffer, *dst_ptr, *add_data;
   mpi_caf_token_t src_token = {(void *)msg->ra_id, MPI_WIN_NULL, nullptr};
 
@@ -812,95 +829,97 @@ handle_send_message(ct_msg_t *msg, void *baseptr)
       add_data, &msg->dest_image, dst_ptr, src_ptr, &src_token, 0,
       &msg->dest_opt_charlen, &msg->opt_charlen);
   dprint("ct: setter executed.\n");
-  comm = (msg->flags & CT_INTER_CT) ? ct_COMM : CAF_COMM_WORLD;
-  // if (msg->flags & CT_DST_HAS_DESC)
-  // {
-  //   size_t dsize = ((gfc_descriptor_t *)dst_ptr)->span;
-  //   dprint("ct: dst_desc base: %p, rank: %d, offset: %d.\n",
-  //          ((gfc_descriptor_t *)dst_ptr)->base_addr,
-  //          GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)dst_ptr),
-  //          ((gfc_descriptor_t *)dst_ptr)->offset);
-  //   for (int i = 0; i < GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)dst_ptr);
-  //   ++i)
-  //   {
-  //     dprint("ct: dst_desc (dim: %d) lb: %d, ub: %d, stride: %d, extend: "
-  //            "%d\n",
-  //            i, ((gfc_descriptor_t *)dst_ptr)->dim[i].lower_bound,
-  //            ((gfc_descriptor_t *)dst_ptr)->dim[i]._ubound,
-  //            ((gfc_descriptor_t *)dst_ptr)->dim[i]._stride,
-  //            GFC_DESCRIPTOR_EXTENT((gfc_descriptor_t *)dst_ptr, i));
-  //     dsize *= GFC_DESCRIPTOR_EXTENT((gfc_descriptor_t *)dst_ptr, i);
-  //   }
-  //   dump_mem("ct", ((gfc_descriptor_t *)dst_ptr)->base_addr, dsize);
-  //   buffer = ((gfc_descriptor_t *)dst_ptr)->base_addr;
-  //   if ((msg->flags & (CT_CHAR_ARRAY | CT_INCLUDE_DESCRIPTOR)) == 0)
-  //     send_size = msg->transfer_size;
-  //   else
-  //   {
-  //     if (msg->flags & CT_INCLUDE_DESCRIPTOR)
-  //       send_size = ((gfc_descriptor_t *)dst_ptr)->span;
-  //     else
-  //       send_size = charlen * msg->transfer_size;
-  //     for (i = 0; i < GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)dst_ptr); ++i)
-  //     {
-  //       const ptrdiff_t ext
-  //           = GFC_DESCRIPTOR_EXTENT((gfc_descriptor_t *)dst_ptr, i);
-  //       if (ext < 0)
-  //         dprint("ct: dst extend in dim %d is < 0: %ld.\n", i, ext);
-  //       send_size *= ext;
-  //     }
-  //   }
-  //   if (msg->flags & CT_INCLUDE_DESCRIPTOR)
-  //   {
-  //     const size_t desc_size
-  //         = sizeof(gfc_descriptor_t)
-  //           + GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)dst_ptr)
-  //                 * sizeof(descriptor_dimension);
-  //     void *tbuff = malloc(desc_size + send_size);
-  //     dprint("ct: Including dst descriptor: %p, sizeof(desc): %d, rank: "
-  //            "%d, sizeof(buffer): %d, incoming free_buffer: %b.\n",
-  //            tbuff, desc_size, GFC_DESCRIPTOR_RANK((gfc_descriptor_t
-  //            *)dst_ptr), send_size, free_buffer);
-  //     /* Copy the descriptor contents. */
-  //     memcpy(tbuff, dst_ptr, desc_size);
-  //     /* Copy the data to the end of buffer (i.e. behind the descriptor).
-  //      * Does not copy anything, when send_size is 0.  */
-  //     memcpy(tbuff + desc_size, buffer, send_size);
-  //     if (free_buffer)
-  //     {
-  //       dprint("ct: Freeing buffer: %p.\n", buffer);
-  //       free(buffer);
-  //     }
-  //     /* For debugging only: */
-  //     ((gfc_descriptor_t *)tbuff)->base_addr = tbuff + desc_size;
-  //     free_buffer = true;
-  //     buffer = tbuff;
-  //     send_size += desc_size;
-  //   }
-  // }
-  // else
-  // {
-  //   buffer = *(void **)dst_ptr;
-  //   dprint("ct: dst_ptr: %p, buffer: %p.\n", dst_ptr, buffer);
-  //   send_size = charlen * msg->transfer_size;
-  //   dprint("ct: buffer %p, send_size: %d.\n", buffer, send_size);
-  // }
-  // dump_mem("ct", buffer, send_size);
   {
     char c = 1;
-    dprint("ct: Sending %ld bytes to image %d, tag %d "
-           "on comm %x "
-           "(%s).\n",
-           1, msg->dest_image, msg->dest_tag, comm,
-           comm == CAF_COMM_WORLD ? "CAF_COMM_WORLD" : "ct_COMM");
-    ierr = MPI_Send(&c, 1, MPI_BYTE, msg->dest_image, msg->dest_tag, comm);
+    dprint("ct: Sending %d bytes to image %d, tag %d.\n", 1, msg->dest_image,
+           msg->dest_tag);
+    ierr = MPI_Send(&c, 1, MPI_BYTE, msg->dest_image, msg->dest_tag,
+                    CAF_COMM_WORLD);
     chk_err(ierr);
   }
-  // if (free_buffer)
-  // {
-  //   dprint("ct: going to free buffer: %p (&buffer: %p).\n", buffer, &buffer);
-  //   free(buffer);
-  // }
+}
+
+void
+handle_transfer_message(ct_msg_t *msg, void *baseptr)
+{
+  int ierr;
+  int32_t free_buffer;
+  gfc_max_dim_descriptor_t transfer_desc;
+  void *transfer_ptr, *buffer = NULL;
+  size_t send_size, src_size, offset;
+  bool free_send_msg;
+  ct_msg_t *incoming_send_msg = (ct_msg_t *)msg->data, *send_msg;
+  struct transfer_msg_data_t *tmd
+      = (struct transfer_msg_data_t *)(incoming_send_msg)->data;
+  void *get_msg_data_base = msg->data + tmd->dst_msg_size;
+
+  if (msg->flags & CT_TRANSFER_DESC)
+  {
+    memset(&transfer_desc, 0, sizeof(transfer_desc));
+    transfer_ptr = &transfer_desc;
+    msg->flags |= CT_DST_HAS_DESC | CT_INCLUDE_DESCRIPTOR;
+    incoming_send_msg->flags |= CT_SRC_HAS_DESC;
+  }
+  else
+  {
+    msg->flags &= ~(CT_DST_HAS_DESC | CT_INCLUDE_DESCRIPTOR);
+    transfer_ptr = &buffer;
+  }
+
+  src_size
+      = handle_getting(msg, incoming_send_msg->dest_image, baseptr,
+                       transfer_ptr, &buffer, &free_buffer, get_msg_data_base);
+
+  send_size = sizeof(ct_msg_t) + src_size + tmd->dst_desc_size
+              + tmd->dst_add_data_size;
+
+  dprint("ct: src_size: %zd, send_size: %zd, dst_desc_size: %zd, "
+         "dst_add_data_size: %zd.\n",
+         src_size, send_size, tmd->dst_desc_size, tmd->dst_add_data_size);
+
+  if ((free_send_msg = ((send_msg = alloca(send_size)) == NULL)))
+  {
+    send_msg = malloc(send_size);
+    if (send_msg == NULL)
+      caf_runtime_error("Unable to allocate memory "
+                        "for internal message in handle_transfer_message().");
+  }
+  memcpy(send_msg, incoming_send_msg, sizeof(ct_msg_t));
+  offset = 0;
+  if (msg->flags & CT_TRANSFER_DESC)
+  {
+    const gfc_descriptor_t *d = (gfc_descriptor_t *)buffer;
+    const int rank = GFC_DESCRIPTOR_RANK(d);
+    size_t desc_size, sz = d->span;
+    for (int i = 0; i < rank; ++i)
+      sz *= GFC_DESCRIPTOR_EXTENT(d, i);
+    /* Add the data first.  */
+    send_msg->transfer_size = sz;
+    memcpy(send_msg->data, ((gfc_descriptor_t *)buffer)->base_addr, sz);
+    offset += sz;
+    desc_size = sizeof(gfc_descriptor_t) + rank * sizeof(descriptor_dimension);
+    memcpy(send_msg->data + offset, buffer, desc_size);
+    offset += desc_size;
+  }
+  else
+  {
+    memcpy(send_msg->data, buffer, src_size);
+    offset += src_size;
+  }
+  memcpy(send_msg->data + offset, tmd->data,
+         tmd->dst_desc_size + tmd->dst_add_data_size);
+
+  ierr = MPI_Send(send_msg, send_size, MPI_BYTE, msg->dest_image, msg->dest_tag,
+                  ct_COMM);
+  chk_err(ierr);
+
+  if (free_send_msg)
+    free(send_msg);
+  if (free_buffer)
+  {
+    dprint("ct: going to free buffer: %p.\n", buffer);
+    free(buffer);
+  }
 }
 
 void
@@ -949,6 +968,9 @@ handle_incoming_message(MPI_Status *status_in, MPI_Message *msg_han,
       break;
     case remote_command_send:
       handle_send_message(msg, baseptr);
+      break;
+    case remote_command_transfer:
+      handle_transfer_message(msg, baseptr);
       break;
     default:
       caf_runtime_error("unknown command %d in message for remote execution",
@@ -4780,16 +4802,6 @@ get_data(void *ds, mpi_caf_token_t *token, MPI_Aint offset, int dst_type,
 #define sizeof_desc_for_rank(rank)                                             \
   (sizeof(gfc_descriptor_t) + (rank) * sizeof(descriptor_dimension))
 
-/* Define the descriptor of max rank.
- *
- *  This typedef is made to allow storing a copy of a remote descriptor on the
- *  stack without having to care about the rank. */
-typedef struct gfc_max_dim_descriptor_t
-{
-  gfc_descriptor_t base;
-  descriptor_dimension dim[GFC_MAX_DIMENSIONS];
-} gfc_max_dim_descriptor_t;
-
 typedef struct gfc_dim1_descriptor_t
 {
   gfc_descriptor_t base;
@@ -5407,10 +5419,12 @@ PREFIX(get_remote_function_index)(const int hash)
 }
 
 /* Get data from a remote image's memory pointed to by `token`.  The image is
- * given by `image_index`. `opt_src_charlen` gives the length of the source
- * string on the remote image when that is a character array.  `dst_size` then
- * gives the number of bytes of each character. `opt_src_charlen` is null, when
- * this is no character array.
+ * given by `image_index`.  When the source is descriptor array, then
+ * `opt_src_desc` gives its dimension as of the source image.  On the remote
+ * image the base address will be replaced.  `opt_src_charlen` gives the length
+ * of the source string on the remote image when that is a character array.
+ * `dst_size` then gives the number of bytes of each character.
+ * `opt_src_charlen` is null, when this is no character array.
  * `*dst_size` gives the expected number of bytes to be stored in `*dst_data`.
  * `*dst_data` gives the memory where the data is stored.  This address may be
  * changed, when reallocation is necessary.
@@ -5420,8 +5434,9 @@ PREFIX(get_remote_function_index)(const int hash)
  * but its data may be changed. `getter_index` is the index in the hashtable as
  * returned by `get_remote_function_index()`. `get_data` is optional data to be
  * passed to the getter function. `get_data_size` is the size of the former
- * data.
- *
+ * data.  `*stat` will be set to non-zero on error, when `stat` is not null.
+ * `team` and `team_number` will be used for team and number of the team in the
+ * future. At the moment these are only placeholders.
  */
 void
 PREFIX(get_from_remote)(caf_token_t token, const gfc_descriptor_t *opt_src_desc,
@@ -5720,22 +5735,21 @@ PREFIX(is_present_on_remote)(caf_token_t token, const int image_index,
   return result;
 }
 
-/* Get data from a remote image's memory pointed to by `token`.  The image is
- * given by `image_index`. `opt_src_charlen` gives the length of the source
- * string on the remote image when that is a character array.  `dst_size` then
- * gives the number of bytes of each character. `opt_src_charlen` is null, when
- * this is no character array.
- * `*dst_size` gives the expected number of bytes to be stored in `*dst_data`.
- * `*dst_data` gives the memory where the data is stored.  This address may be
- * changed, when reallocation is necessary.
- * `opt_dst_charlen` is NULL when dst is not a character array, or stores the
- * number a characters in `*dst_data`.
- * 'opt_dst_desc' is an optional descriptor. Its address in memory is fixed,
- * but its data may be changed. `setter_index` is the index in the hashtable as
- * returned by `get_remote_function_index()`. `add_data` is optional data to be
+/* Send data to a remote image's memory pointed to by `token`.  The image
+ * is given by `image_index`. When the data is a descriptor array, then
+ * `opt_dst_desc` gives the descriptor. Its data pointer is replaced by the
+ * memory of the remote image. `opt_dst_charlen` gives the length of the
+ * destination string on the remote image when that is a character array.
+ * `in_src_size` then gives the number of bytes of each character, else
+ * `in_src_size` gives the bytes to transfer from `src_data`. If `src_data` is
+ * a character array, then `opt_src_charlen` gives its number of characters.
+ * When source is a descriptor array, then `opt_src_desc` gives the descriptor.
+ * `setter_index` is the index in the hashtable as returned by
+ * `get_remote_function_index()`. `add_data` is optional data to be
  * passed to the getter function. `add_data_size` is the size of the former
- * data.
- *
+ * data. `*stat` will be set to non-zero on error, when `stat` is not null.
+ * `team` and `team_number` will be used for team and number of the team in the
+ * future. At the moment these are only placeholders.
  */
 void
 PREFIX(send_to_remote)(caf_token_t token, gfc_descriptor_t *opt_dst_desc,
@@ -5810,8 +5824,8 @@ PREFIX(send_to_remote)(caf_token_t token, gfc_descriptor_t *opt_dst_desc,
 
   dprint(
       "Entering send_to_remote(), token = %p, win_rank = %d, this_rank = %d, "
-      "setter index = %d, sizeof(data = %p) = %ld, sizeof(src_desc) = %d, "
-      "sizeof(dst_desc) = %d, sizeof(msg) = %ld.\n",
+      "setter index = %d, sizeof(data = %p) = %zd, sizeof(src_desc) = %zd, "
+      "sizeof(dst_desc) = %zd, sizeof(msg) = %zd.\n",
       token, remote_image, this_image, setter_index, src_data, src_size,
       src_desc_size, dst_desc_size, msg_size);
 
@@ -5885,12 +5899,221 @@ PREFIX(send_to_remote)(caf_token_t token, gfc_descriptor_t *opt_dst_desc,
     pra->next = rat->next;
   }
   free(rat);
-  // MPI_Win_detach(global_dynamic_win, msg->data + dst_desc_size +
-  // src_desc_size);
+
   if (free_msg)
     free(msg);
 
   dprint("done with send_to_remote.\n");
+}
+
+/* Transfer data from one remote image's memory to a different remote image.
+ * The memory on the destination image is given by `dst_token`.  If that memory
+ * is a descriptor array, then `opt_dst_desc` gives the descriptor of the array
+ * on the initiating image. When the destination data is a string, then
+ * `opt_dst_charlen` gives the number of characters. The destination images
+ * index is given by `dst_image_index`. The accessor to use is given by
+ * `dst_access_index`. Addititional data to provide to the accessor on the
+ * destination is given by `dst_add_data` and that size in `dst_add_data_size`.
+ * The source for the transfer is given by `src_token`.  If the memory is an
+ * array, then `opt_src_desc` gives it descriptor. When the source is a string,
+ * then `opt_src_charlen` gives its the length. `in_src_size` then
+ * gives the number of bytes of each character. `opt_src_charlen` is null, when
+ * this is no character array.
+ * The index of the source image is given by `src_image_index`. The index for
+ * the getter is specified in `src_access_index`. Additional data to provide to
+ * this getter is given in `*src_add_data` and its size in `src_add_data_size`.
+ * The parameter `in_src_size` specifies the size of data to transfer from on
+ * to the other image, when the data to transfer is not an array. In the latter
+ * case it is ignored. When the data to transfer is a character array, then
+ * `in_src_size` gives the size of one character. The `scalar_transfer`
+ * indicates that the data between the two images is not a descriptor array.
+ * `dst_stat` if set, gets set to zero on success. Should there be an error,
+ * then this is set to non-zero.  When `src_stat` is set, it is set to zero.
+ * `dst_team`, `dst_team_number`, `src_team` and `src_team_number` will be used
+ * for team and number of the team in the future. At the moment these are only
+ * placeholders.
+ */
+void
+PREFIX(transfer_between_remotes)(
+    caf_token_t dst_token, gfc_descriptor_t *opt_dst_desc,
+    size_t *opt_dst_charlen, const int dst_image_index,
+    const int dst_access_index, void *dst_add_data,
+    const size_t dst_add_data_size, caf_token_t src_token,
+    const gfc_descriptor_t *opt_src_desc, const size_t *opt_src_charlen,
+    const int src_image_index, const int src_access_index, void *src_add_data,
+    const size_t src_add_data_size, const size_t in_src_size,
+    const bool scalar_transfer, int *dst_stat, int *src_stat,
+    caf_team_t *dst_team __attribute__((unused)),
+    int *dst_team_number __attribute__((unused)),
+    caf_team_t *src_team __attribute__((unused)),
+    int *src_team_number __attribute__((unused)))
+{
+  MPI_Group current_team_group, win_group;
+  int ierr, this_image, src_remote_image, dst_remote_image;
+  int trans_ranks[3];
+  bool free_msg;
+  ct_msg_t *full_msg, *dst_msg;
+  struct transfer_msg_data_t *tmd;
+  const bool has_src_desc = opt_src_desc;
+  const size_t dst_desc_size
+      = opt_dst_desc ? sizeof(gfc_descriptor_t)
+                           + GFC_DESCRIPTOR_RANK(opt_dst_desc)
+                                 * sizeof(descriptor_dimension)
+                     : 0,
+      src_desc_size = has_src_desc ? sizeof(gfc_descriptor_t)
+                                         + GFC_DESCRIPTOR_RANK(opt_src_desc)
+                                               * sizeof(descriptor_dimension)
+                                   : 0;
+  size_t src_size
+      = opt_src_charlen ? in_src_size * *opt_src_charlen : in_src_size,
+      dst_msg_size = sizeof(ct_msg_t) + sizeof(struct transfer_msg_data_t)
+                     + dst_desc_size + dst_add_data_size,
+      full_msg_size
+      = sizeof(ct_msg_t) + dst_msg_size + src_desc_size + src_add_data_size;
+  struct running_accesses_t *rat;
+
+  if (dst_stat)
+    *dst_stat = 0;
+  if (src_stat)
+    *src_stat = 0;
+
+  // Get mapped remote image
+  ierr = MPI_Comm_group(CAF_COMM_WORLD, &current_team_group);
+  chk_err(ierr);
+  ierr = MPI_Win_get_group(*TOKEN(src_token), &win_group);
+  chk_err(ierr);
+  ierr = MPI_Group_translate_ranks(
+      current_team_group, 3,
+      (int[]){src_image_index - 1, dst_image_index - 1, mpi_this_image},
+      win_group, trans_ranks);
+  chk_err(ierr);
+  src_remote_image = trans_ranks[0];
+  dst_remote_image = trans_ranks[1];
+  this_image = trans_ranks[2];
+  ierr = MPI_Group_free(&current_team_group);
+  chk_err(ierr);
+  ierr = MPI_Group_free(&win_group);
+  chk_err(ierr);
+
+  check_image_health(src_remote_image, src_stat);
+  check_image_health(dst_remote_image, dst_stat);
+
+  if (opt_src_charlen && opt_src_desc)
+  {
+    size_t sz = 1;
+    full_msg_size -= src_size;
+    dst_msg_size -= src_size;
+    for (int i = 0; i < GFC_DESCRIPTOR_RANK(opt_src_desc); ++i)
+      sz *= GFC_DESCRIPTOR_EXTENT(opt_src_desc, i);
+    src_size *= sz;
+    full_msg_size += src_size;
+    dst_msg_size += src_size;
+  }
+
+  dprint("Entering transfer_between_remotes(), dst_token = %p, dst_rank = %d, "
+         "this_rank = %d, setter index = %d, src_token = %p, src_rank = %d, "
+         "getter index = %d, sizeof(src_desc) = %zd, sizeof(dst_desc) = %zd, "
+         "sizeof(msg) = %zd.\n",
+         dst_token, dst_remote_image, this_image, dst_access_index, src_token,
+         src_remote_image, src_access_index, src_desc_size, dst_desc_size,
+         full_msg_size);
+
+  // create get msg
+  if ((free_msg = (((full_msg = alloca(full_msg_size))) == NULL)))
+  {
+    full_msg = malloc(full_msg_size);
+    if (full_msg == NULL)
+      caf_runtime_error("Unable to allocate memory "
+                        "for internal message in transfer_between_remotes().");
+  }
+  full_msg->cmd = remote_command_transfer;
+  full_msg->transfer_size = src_size;
+  full_msg->opt_charlen = opt_src_charlen ? *opt_src_charlen : 0;
+  full_msg->win = *TOKEN(src_token);
+  full_msg->dest_image = dst_remote_image;
+  full_msg->dest_tag = CAF_CT_TAG;
+  full_msg->dest_opt_charlen = opt_dst_charlen ? *opt_dst_charlen : 1;
+  full_msg->flags = (opt_dst_desc ? CT_DST_HAS_DESC : 0)
+                    | (has_src_desc ? CT_SRC_HAS_DESC : 0)
+                    | (opt_src_charlen ? CT_CHAR_ARRAY : 0)
+                    | (scalar_transfer ? 0 : CT_TRANSFER_DESC);
+  dprint("get message flags: %x.\n", full_msg->flags);
+  full_msg->accessor_index = src_access_index;
+
+  /* The message to hand to the reciever of the data.  */
+  dst_msg = (ct_msg_t *)full_msg->data;
+  dst_msg->cmd = remote_command_send;
+  dst_msg->transfer_size = src_size;
+  dst_msg->opt_charlen = opt_src_charlen ? *opt_src_charlen : 0;
+  dst_msg->win = *TOKEN(dst_token);
+  dst_msg->dest_image = mpi_this_image;
+  dst_msg->dest_tag = CAF_CT_TAG + 1;
+  dst_msg->dest_opt_charlen = opt_dst_charlen ? *opt_dst_charlen : 1;
+  dst_msg->flags
+      = (opt_dst_desc ? (CT_DST_HAS_DESC | CT_INCLUDE_DESCRIPTOR) : 0)
+        | (scalar_transfer ? 0 : CT_SRC_HAS_DESC)
+        | (opt_src_charlen ? CT_CHAR_ARRAY : 0);
+  dprint("send message flags: %x.\n", dst_msg->flags);
+  dst_msg->accessor_index = dst_access_index;
+
+  tmd = (struct transfer_msg_data_t *)dst_msg->data;
+  tmd->dst_msg_size = dst_msg_size;
+  tmd->dst_desc_size = dst_desc_size;
+  tmd->dst_add_data_size = dst_add_data_size;
+
+  /* Data for forwarding result to receiver.  */
+  if (opt_dst_desc)
+    memcpy(tmd->data, opt_dst_desc, dst_desc_size);
+  memcpy(tmd->data + dst_desc_size, dst_add_data, dst_add_data_size);
+
+  /* Data the getter needs.  */
+  if (has_src_desc)
+    memcpy(tmd->data + dst_desc_size + dst_add_data_size, opt_src_desc,
+           src_desc_size);
+  memcpy(tmd->data + dst_desc_size + dst_add_data_size + src_desc_size,
+         src_add_data, src_add_data_size);
+
+  full_msg->ra_id = running_accesses_id_cnt++;
+  rat = (struct running_accesses_t *)malloc(sizeof(struct running_accesses_t));
+  rat->id = full_msg->ra_id;
+  rat->memptr = full_msg->data + src_size + dst_desc_size + src_desc_size;
+  rat->next = running_accesses;
+  running_accesses = rat;
+
+  // initiate transfer on getter
+  dprint("message size is %zd, dst_desc_size: %zd, src_desc_size: %zd.\n",
+         full_msg_size, dst_desc_size, src_desc_size);
+  ierr = MPI_Send(full_msg, full_msg_size, MPI_BYTE, src_remote_image,
+                  CAF_CT_TAG, ct_COMM);
+  chk_err(ierr);
+
+  {
+    char c;
+    dprint("waiting to receive %d bytes from %d on tag %d.\n", 1,
+           dst_image_index - 1, dst_msg->dest_tag);
+    ierr = MPI_Recv(&c, 1, MPI_BYTE, dst_image_index - 1, dst_msg->dest_tag,
+                    CAF_COMM_WORLD, MPI_STATUS_IGNORE);
+    chk_err(ierr);
+    if (dst_stat)
+      *dst_stat = c;
+    dprint("received %d bytes as requested from %d.\n", 1, dst_image_index - 1);
+  }
+
+  if (running_accesses == rat)
+    running_accesses = rat->next;
+  else
+  {
+    struct running_accesses_t *pra = running_accesses;
+    for (; pra && pra->next != rat; pra = pra->next)
+      ;
+    pra->next = rat->next;
+  }
+  free(rat);
+
+  if (free_msg)
+    free(full_msg);
+
+  dprint("done with transfer_between_remotes.\n");
 }
 #endif
 
