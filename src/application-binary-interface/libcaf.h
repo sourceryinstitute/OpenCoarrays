@@ -30,6 +30,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 
 #include <stdbool.h>
 #include <stddef.h> /* For size_t.  */
+#include <stdint.h>
 
 #include "libcaf-gfortran-descriptor.h"
 #include "libcaf-version-def.h"
