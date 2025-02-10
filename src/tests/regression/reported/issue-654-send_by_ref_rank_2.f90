@@ -1,3 +1,5 @@
+! Check transfering data from one to a different remote image works.
+
 program test_sendget_by_ref
   implicit none
   type :: rank1_type
@@ -18,6 +20,8 @@ program test_sendget_by_ref
 
   sync all
 
+  ! Send data from image j to image i's j-th column.
+  ! This ensures that sendget_by_ref works as expected.
   do i = 1, num_images()
     do j = 1, num_images()
       R_send[i]%A(j,this_image()) = R_get[j]%A(j)
@@ -26,10 +30,14 @@ program test_sendget_by_ref
 
   sync all
 
+  ! Check that each image has the correct data in its R_send array,
+  ! which in fact is the receiver here.
   do i = 1, num_images()
     if (any(R_send%A(:,i) /= (/(j, j = 1, num_images())/))) res = .False.
   end do
 
+  ! Recude the result. both() is just a logical scalar and, because there
+  ! is no predefined operator for this.
   call co_reduce(res, both)
   write(*,*) this_image(), ':', R_get%A, '|', R_send%A
 
