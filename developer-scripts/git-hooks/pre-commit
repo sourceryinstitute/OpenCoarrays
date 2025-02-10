@@ -93,6 +93,14 @@ for f in $(git diff-index --name-status --cached $against | grep -v ^D | cut -c3
 	    status=1
 	fi
     fi
+    if [[ "$f" =~ ([.](h|c))$ ]] ; then
+	if ! clang-format --dry-run --Werror "$f" >&/dev/null; then
+	    echo "Format violation of file: $f"
+            echo "Use clang-format to fix it."
+            echo ""
+            status=1
+        fi
+    fi
 done
 
 # If there are whitespace errors, print the offending file names and fail.
