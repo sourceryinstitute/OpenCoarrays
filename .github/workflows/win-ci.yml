@@ -42,11 +42,23 @@ jobs:
         ls "${I_MPI_ROOT}/bin"
         ls "${I_MPI_ROOT}"
         ls "${I_MPI_ROOT}/lib"
-        mpifc.bat -show
-        mpicc.bat -show
+        ls "${I_MPI_ROOT}/env"
+        # cat "${I_MPI_ROOT}/bin/mpifc.bat"
+        # mpifc.bat -show
+        # mpicc.bat -show
         mpifc.bat -version || echo "ifort not installed"
         mpicc.bat -version || echo "icc not installed"
         set +o verbose
+        # echo The following environment variables are used:
+        # echo    CMPLR_ROOT      Intel^(R^) Compiler installation directory path
+        # echo    I_MPI_ROOT      Intel^(R^) MPI Library installation directory path
+        # echo    I_MPI_{FC,F77,F90} or MPICH_{FC,F77,F90}
+        # echo                    the path/name of the underlying compiler to be used.
+        # echo    I_MPI_{FC,F77,F90}_PROFILE or MPI{FC,F77,F90}_PROFILE
+        # echo                    name of profile file ^(without extension^)
+        # echo    I_MPI_COMPILER_CONFIG_DIR
+        # echo                    folder which contains configuration files *.conf
+        # echo    VT_ROOT         Intel^(R^) Trace Collector installation directory path
 
     - name: Build and Test
       run: |
