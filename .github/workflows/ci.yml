@@ -7,10 +7,16 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
+      matrix:
+        mpi: [ 'impi' ]
+#        mpi: [ 'mpich', 'openmpi', 'impi' ]
+#        mpich is borken on ubuntu-24.04LTS and 24.10 see https://bugs.launchpad.net/ubuntu/+source/mpich/+bug/2072338
+#        openmpi is borken on ubuntu-24.04LTS and 24.10 see https://github.com/open-mpi/ompi/issues/10726
+#        ubuntu 24.10 is not available as github runner, so we are left with Intel's mpi for now.
 
     env:
       FC: gfortran
-      GCC_V: 11
+      GCC_V: 13
 
     steps:
     - name: Checkout code
@@ -18,11 +24,17 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        sudo apt install -y gfortran-${GCC_V} cmake mpich
+        sudo apt install -y gfortran-${GCC_V} cmake
         sudo update-alternatives --install /usr/bin/gfortran gfortran /usr/bin/gfortran-${GCC_V} 100
+
+    - name: Setup MPI ${{ matrix.mpi }}
+      uses: mpi4py/setup-mpi@v1
+      with:
+        mpi: ${{ matrix.mpi }}
 
     - name: Build and Test
       run: |
+        mpirun --version
         mkdir build
         cmake -S . -B build -Wdev -DCMAKE_INSTALL_PREFIX:PATH="${HOME}/OpenCoarrays" -DCMAKE_BUILD_TYPE:STRING="Debug" ..
         cmake --build build -j $(nproc)
@@ -30,3 +42,4 @@ jobs:
         ctest --test-dir build --output-on-failure --schedule-random --repeat-until-fail 1 --timeout 200
         cd build
         make uninstall
+        echo "Ran with mpi: ${{ matrix.mpi }}"

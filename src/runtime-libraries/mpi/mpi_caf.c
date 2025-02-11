@@ -881,6 +881,9 @@ PREFIX(init)(int *argc, char ***argv)
     if (unlikely((ierr != MPI_SUCCESS)))
       caf_runtime_error("Failure when initializing MPI: %d", ierr);
 
+    ierr = MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+    chk_err(ierr);
+
     /* Duplicate MPI_COMM_WORLD so that no CAF internal functions use it.
      * This is critical for MPI-interoperability. */
     rc = MPI_Comm_dup(MPI_COMM_WORLD, &CAF_COMM_WORLD);

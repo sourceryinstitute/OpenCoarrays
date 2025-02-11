@@ -140,7 +140,7 @@ install(TARGETS opencoarrays_mod caf_mpi caf_mpi_static EXPORT OpenCoarraysTarge
 # Determine if we're using Open MPI
 #----------------------------------
 cmake_host_system_information(RESULT N_CPU QUERY NUMBER_OF_LOGICAL_CORES)
-set(N_CPU ${N_CPU} PARENT_SCOPE)
+set_property(GLOBAL PROPERTY N_CPU ${N_CPU})
 cmake_host_system_information(RESULT HOST_NAME QUERY HOSTNAME)
 set(HOST_NAME ${HOST_NAME} PARENT_SCOPE)
 execute_process(COMMAND ${MPIEXEC_EXECUTABLE} --version
