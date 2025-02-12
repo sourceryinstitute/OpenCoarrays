@@ -1,22 +1,20 @@
-name: CI
+name: Ubuntu 22.04 CI
 
 on: push
 
 jobs:
   Build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: true
       matrix:
-        mpi: [ 'impi' ]
+        mpi: [ 'mpich', 'impi' ]
 #        mpi: [ 'mpich', 'openmpi', 'impi' ]
-#        mpich is borken on ubuntu-24.04LTS and 24.10 see https://bugs.launchpad.net/ubuntu/+source/mpich/+bug/2072338
-#        openmpi is borken on ubuntu-24.04LTS and 24.10 see https://github.com/open-mpi/ompi/issues/10726
-#        ubuntu 24.10 is not available as github runner, so we are left with Intel's mpi for now.
+#        openmpi is borken on ubuntu-22.04 and above see https://github.com/open-mpi/ompi/issues/10726
 
     env:
       FC: gfortran
-      GCC_V: 13
+      GCC_V: 11
 
     steps:
     - name: Checkout code
