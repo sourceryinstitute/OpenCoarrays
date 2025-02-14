@@ -734,10 +734,11 @@ function(add_caf_test name num_caf_img test_target)
   endif()
   # Add a host file for OMPI
   get_property(openmpi GLOBAL PROPERTY openmpi)
+  get_property(N_CPU GLOBAL PROPERTY N_CPU)
   if ( openmpi )
     set(test_parameters --hostfile ${CMAKE_BINARY_DIR}/hostfile)
   endif()
-  if ( ((N_CPU LESS num_caf_img) OR (N_CPU EQUAL 0)) )
+  if ( ( N_CPU LESS_EQUAL num_caf_img ) OR ( N_CPU EQUAL 0 ) )
     message(STATUS "Test ${name} is oversubscribed: ${num_caf_img} CAF images requested with ${N_CPU} system processor available.")
     if ( openmpi )
       if (min_test_imgs)
@@ -949,6 +950,8 @@ if(opencoarrays_aware_compiler)
 
   add_caf_test(issue-700-allow-multiple-scalar-dim-array-gets 2 issue-700-allow-multiple-scalar-dim-array-gets)
   add_caf_test(issue-762-mpi-crashing-on-exit 2 issue-762-mpi-crashing-on-exit)
+
+  add_caf_test(issue-654-send_by_ref_rank_2       3 issue-654-send_by_ref_rank_2)
 
   # IMAGE FAIL tests
   if(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 7.0.0)
