@@ -427,6 +427,9 @@ double (*double_by_value)(double, double);
 #define GFC_DESCRIPTOR_EXTENT(desc, i)                                         \
   ((desc)->dim[i]._ubound + 1 - (desc)->dim[i].lower_bound)
 
+#define sizeof_desc_for_rank(rank)                                             \
+  (sizeof(gfc_descriptor_t) + (rank) * sizeof(descriptor_dimension))
+
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 
 #if defined(NONBLOCKING_PUT) && !defined(CAF_MPI_LOCK_UNLOCK)
@@ -584,6 +587,21 @@ dump_mem(const char *pre, void *m, const size_t s)
 #endif
 
 size_t
+compute_arr_data_size_sz(const gfc_descriptor_t *desc, size_t sz)
+{
+  for (int i = 0; i < GFC_DESCRIPTOR_RANK(desc); ++i)
+    sz *= GFC_DESCRIPTOR_EXTENT(desc, i);
+
+  return sz;
+}
+
+size_t
+compute_arr_data_size(const gfc_descriptor_t *desc)
+{
+  return compute_arr_data_size_sz(desc, desc->span);
+}
+
+size_t
 handle_getting(ct_msg_t *msg, int cb_image, void *baseptr, void *dst_ptr,
                void **buffer, int32_t *free_buffer, void *dbase)
 {
@@ -596,9 +614,8 @@ handle_getting(ct_msg_t *msg, int cb_image, void *baseptr, void *dst_ptr,
   {
     ((gfc_descriptor_t *)dbase)->base_addr = baseptr;
     src_ptr = dbase;
-    dbase += sizeof(gfc_descriptor_t)
-             + GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)src_ptr)
-                   * sizeof(descriptor_dimension);
+    dbase += sizeof_desc_for_rank(
+        GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)src_ptr));
     dprint("ct: src_desc base: %p, rank: %d, offset: %zd.\n",
            ((gfc_descriptor_t *)src_ptr)->base_addr,
            GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)src_ptr),
@@ -656,10 +673,8 @@ handle_getting(ct_msg_t *msg, int cb_image, void *baseptr, void *dst_ptr,
     }
     if (msg->flags & CT_INCLUDE_DESCRIPTOR)
     {
-      const size_t desc_size
-          = sizeof(gfc_descriptor_t)
-            + GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)dst_ptr)
-                  * sizeof(descriptor_dimension);
+      const size_t desc_size = sizeof_desc_for_rank(
+          GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)dst_ptr));
       void *tbuff = malloc(desc_size + send_size);
       dprint("ct: Including dst descriptor: %p, sizeof(desc): %zd, rank: "
              "%d, sizeof(buffer): %zd, incoming free_buffer: %b.\n",
@@ -704,9 +719,9 @@ handle_get_message(ct_msg_t *msg, void *baseptr)
   {
     buffer = msg->data;
     ((gfc_descriptor_t *)buffer)->base_addr = NULL;
-    get_data = msg->data + sizeof(gfc_descriptor_t)
-               + GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)buffer)
-                     * sizeof(descriptor_dimension);
+    get_data = msg->data
+               + sizeof_desc_for_rank(
+                   GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)buffer));
     /* The destination is a descriptor which address is not mutable. */
     dst_ptr = buffer;
   }
@@ -748,9 +763,8 @@ handle_is_present_message(ct_msg_t *msg, void *baseptr)
   {
     ((gfc_descriptor_t *)add_data)->base_addr = baseptr;
     ptr = add_data;
-    add_data += sizeof(gfc_descriptor_t)
-                + GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)ptr)
-                      * sizeof(descriptor_dimension);
+    add_data
+        += sizeof_desc_for_rank(GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)ptr));
   }
   else
     ptr = baseptr;
@@ -778,9 +792,8 @@ handle_send_message(ct_msg_t *msg, void *baseptr)
   {
     src_ptr = add_data;
     ((gfc_descriptor_t *)add_data)->base_addr = buffer;
-    add_data += sizeof(gfc_descriptor_t)
-                + GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)src_ptr)
-                      * sizeof(descriptor_dimension);
+    add_data += sizeof_desc_for_rank(
+        GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)src_ptr));
     dprint("ct: src_desc base: %p, rank: %d, offset: %td.\n",
            ((gfc_descriptor_t *)src_ptr)->base_addr,
            GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)src_ptr),
@@ -803,9 +816,8 @@ handle_send_message(ct_msg_t *msg, void *baseptr)
   {
     ((gfc_descriptor_t *)add_data)->base_addr = baseptr;
     dst_ptr = add_data;
-    add_data += sizeof(gfc_descriptor_t)
-                + GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)dst_ptr)
-                      * sizeof(descriptor_dimension);
+    add_data += sizeof_desc_for_rank(
+        GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)dst_ptr));
     dprint("ct: dst_desc base: %p, rank: %d, offset: %zd.\n",
            ((gfc_descriptor_t *)dst_ptr)->base_addr,
            GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)dst_ptr),
@@ -890,14 +902,12 @@ handle_transfer_message(ct_msg_t *msg, void *baseptr)
   {
     const gfc_descriptor_t *d = (gfc_descriptor_t *)buffer;
     const int rank = GFC_DESCRIPTOR_RANK(d);
-    size_t desc_size, sz = d->span;
-    for (int i = 0; i < rank; ++i)
-      sz *= GFC_DESCRIPTOR_EXTENT(d, i);
+    const size_t desc_size = sizeof_desc_for_rank(rank),
+                 sz = compute_arr_data_size(d);
     /* Add the data first.  */
     send_msg->transfer_size = sz;
     memcpy(send_msg->data, ((gfc_descriptor_t *)buffer)->base_addr, sz);
     offset += sz;
-    desc_size = sizeof(gfc_descriptor_t) + rank * sizeof(descriptor_dimension);
     memcpy(send_msg->data + offset, buffer, desc_size);
     offset += desc_size;
   }
@@ -4795,9 +4805,6 @@ get_data(void *ds, mpi_caf_token_t *token, MPI_Aint offset, int dst_type,
     num = (abs_stride > 1) ? (1 + (num - 1) / abs_stride) : num;               \
   } while (0)
 
-#define sizeof_desc_for_rank(rank)                                             \
-  (sizeof(gfc_descriptor_t) + (rank) * sizeof(descriptor_dimension))
-
 typedef struct gfc_dim1_descriptor_t
 {
   gfc_descriptor_t base;
@@ -5454,14 +5461,11 @@ PREFIX(get_from_remote)(caf_token_t token, const gfc_descriptor_t *opt_src_desc,
              has_src_desc = opt_src_desc,
              external_call = *TOKEN(token) != MPI_WIN_NULL;
   const size_t dst_desc_size
-      = opt_dst_desc ? sizeof(gfc_descriptor_t)
-                           + GFC_DESCRIPTOR_RANK(opt_dst_desc)
-                                 * sizeof(descriptor_dimension)
+      = opt_dst_desc ? sizeof_desc_for_rank(GFC_DESCRIPTOR_RANK(opt_dst_desc))
                      : 0,
-      src_desc_size = has_src_desc ? sizeof(gfc_descriptor_t)
-                                         + GFC_DESCRIPTOR_RANK(opt_src_desc)
-                                               * sizeof(descriptor_dimension)
-                                   : 0,
+      src_desc_size
+      = has_src_desc ? sizeof_desc_for_rank(GFC_DESCRIPTOR_RANK(opt_src_desc))
+                     : 0,
       msg_size
       = sizeof(ct_msg_t) + dst_desc_size + src_desc_size + get_data_size;
   struct running_accesses_t *rat;
@@ -5594,10 +5598,8 @@ PREFIX(get_from_remote)(caf_token_t token, const gfc_descriptor_t *opt_src_desc,
         *opt_dst_charlen = cnt / dst_size;
       if (dst_incl_desc)
       {
-        const size_t desc_size
-            = sizeof(gfc_descriptor_t)
-              + GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)(*dst_data))
-                    * sizeof(descriptor_dimension);
+        const size_t desc_size = sizeof_desc_for_rank(
+            GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)(*dst_data)));
         dprint("refitting dst descriptor of size %zd at %p with data %zd at %p "
                "from %d bytes transfered.\n",
                desc_size, opt_dst_desc, cnt - desc_size, *dst_data, cnt);
@@ -5766,14 +5768,11 @@ PREFIX(send_to_remote)(caf_token_t token, gfc_descriptor_t *opt_dst_desc,
   const bool dst_incl_desc = opt_dst_desc, has_src_desc = opt_src_desc,
              external_call = *TOKEN(token) != MPI_WIN_NULL;
   const size_t dst_desc_size
-      = opt_dst_desc ? sizeof(gfc_descriptor_t)
-                           + GFC_DESCRIPTOR_RANK(opt_dst_desc)
-                                 * sizeof(descriptor_dimension)
+      = opt_dst_desc ? sizeof_desc_for_rank(GFC_DESCRIPTOR_RANK(opt_dst_desc))
                      : 0,
-      src_desc_size = has_src_desc ? sizeof(gfc_descriptor_t)
-                                         + GFC_DESCRIPTOR_RANK(opt_src_desc)
-                                               * sizeof(descriptor_dimension)
-                                   : 0;
+      src_desc_size
+      = has_src_desc ? sizeof_desc_for_rank(GFC_DESCRIPTOR_RANK(opt_src_desc))
+                     : 0;
   size_t src_size
       = opt_src_charlen ? in_src_size * *opt_src_charlen : in_src_size,
       msg_size = sizeof(ct_msg_t) + src_size + dst_desc_size + src_desc_size
@@ -5810,10 +5809,8 @@ PREFIX(send_to_remote)(caf_token_t token, gfc_descriptor_t *opt_dst_desc,
   check_image_health(remote_image, stat);
   if (opt_src_charlen && opt_src_desc)
   {
-    size_t sz = 1;
+    const size_t sz = compute_arr_data_size_sz(opt_src_desc, 1);
     msg_size -= src_size;
-    for (int i = 0; i < GFC_DESCRIPTOR_RANK(opt_src_desc); ++i)
-      sz *= GFC_DESCRIPTOR_EXTENT(opt_src_desc, i);
     src_size *= sz;
     msg_size += src_size;
   }
@@ -5952,14 +5949,11 @@ PREFIX(transfer_between_remotes)(
   struct transfer_msg_data_t *tmd;
   const bool has_src_desc = opt_src_desc;
   const size_t dst_desc_size
-      = opt_dst_desc ? sizeof(gfc_descriptor_t)
-                           + GFC_DESCRIPTOR_RANK(opt_dst_desc)
-                                 * sizeof(descriptor_dimension)
+      = opt_dst_desc ? sizeof_desc_for_rank(GFC_DESCRIPTOR_RANK(opt_dst_desc))
                      : 0,
-      src_desc_size = has_src_desc ? sizeof(gfc_descriptor_t)
-                                         + GFC_DESCRIPTOR_RANK(opt_src_desc)
-                                               * sizeof(descriptor_dimension)
-                                   : 0;
+      src_desc_size
+      = has_src_desc ? sizeof_desc_for_rank(GFC_DESCRIPTOR_RANK(opt_src_desc))
+                     : 0;
   size_t src_size
       = opt_src_charlen ? in_src_size * *opt_src_charlen : in_src_size,
       dst_msg_size = sizeof(ct_msg_t) + sizeof(struct transfer_msg_data_t)
@@ -5996,11 +5990,9 @@ PREFIX(transfer_between_remotes)(
 
   if (opt_src_charlen && opt_src_desc)
   {
-    size_t sz = 1;
+    const size_t sz = compute_arr_data_size_sz(opt_src_desc, 1);
     full_msg_size -= src_size;
     dst_msg_size -= src_size;
-    for (int i = 0; i < GFC_DESCRIPTOR_RANK(opt_src_desc); ++i)
-      sz *= GFC_DESCRIPTOR_EXTENT(opt_src_desc, i);
     src_size *= sz;
     full_msg_size += src_size;
     dst_msg_size += src_size;
