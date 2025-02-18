@@ -786,6 +786,7 @@ handle_send_message(ct_msg_t *msg, void *baseptr)
   void *src_ptr, *buffer, *dst_ptr, *add_data;
   mpi_caf_token_t src_token = {(void *)msg->ra_id, MPI_WIN_NULL, nullptr};
 
+  dprint("ct: putting data using %d accessor.\n", msg->accessor_index);
   buffer = msg->data;
   add_data = msg->data + msg->transfer_size;
   if (msg->flags & CT_SRC_HAS_DESC)
@@ -835,7 +836,10 @@ handle_send_message(ct_msg_t *msg, void *baseptr)
     //              * GFC_DESCRIPTOR_SIZE((gfc_descriptor_t *)dst_ptr));
   }
   else
+  {
     dst_ptr = baseptr;
+    dprint("ct: scalar dst_ptr: %p.\n", dst_ptr);
+  }
 
   accessor_hash_table[msg->accessor_index].u.receiver(
       add_data, &msg->dest_image, dst_ptr, src_ptr, &src_token, 0,
@@ -886,8 +890,9 @@ handle_transfer_message(ct_msg_t *msg, void *baseptr)
               + tmd->dst_add_data_size;
 
   dprint("ct: src_size: %zd, send_size: %zd, dst_desc_size: %zd, "
-         "dst_add_data_size: %zd.\n",
-         src_size, send_size, tmd->dst_desc_size, tmd->dst_add_data_size);
+         "dst_add_data_size: %zd, buffer: %p.\n",
+         src_size, send_size, tmd->dst_desc_size, tmd->dst_add_data_size,
+         buffer);
 
   if ((free_send_msg = ((send_msg = alloca(send_size)) == NULL)))
   {
@@ -919,9 +924,22 @@ handle_transfer_message(ct_msg_t *msg, void *baseptr)
   memcpy(send_msg->data + offset, tmd->data,
          tmd->dst_desc_size + tmd->dst_add_data_size);
 
-  ierr = MPI_Send(send_msg, send_size, MPI_BYTE, msg->dest_image, msg->dest_tag,
-                  ct_COMM);
-  chk_err(ierr);
+  if (msg->dest_image != mpi_this_image)
+  {
+    dprint("ct: sending message of size %zd to image %d for processing.\n",
+           send_size, msg->dest_image);
+    ierr = MPI_Send(send_msg, send_size, MPI_BYTE, msg->dest_image,
+                    msg->dest_tag, ct_COMM);
+    chk_err(ierr);
+  }
+  else
+  {
+    int flag;
+    dprint("ct: self handling message of size %zd.\n", send_size);
+    ierr = MPI_Win_get_attr(send_msg->win, MPI_WIN_BASE, &baseptr, &flag);
+    chk_err(ierr);
+    handle_send_message(send_msg, baseptr);
+  }
 
   if (free_send_msg)
     free(send_msg);
@@ -1499,6 +1517,11 @@ PREFIX(init)(int *argc, char ***argv)
     caf_this_image = mpi_this_image + 1;
     caf_is_finalized = 0;
 
+#ifdef EXTRA_DEBUG_OUTPUT
+    pid_t mypid = getpid();
+    dprint("I have pid %d.\n", mypid);
+#endif
+
     /* BEGIN SYNC IMAGE preparation
      * Prepare memory for syncing images. */
     images_full = (int *)calloc(caf_num_images - 1, sizeof(int));
@@ -1863,7 +1886,7 @@ void PREFIX(register)(size_t size, caf_register_t type, caf_token_t *token,
   if (unlikely(caf_is_finalized))
     goto error;
 
-  /* Start GASNET if not already started. */
+  /* Start MPI if not already started. */
   if (caf_num_images == 0)
     PREFIX(init)(NULL, NULL);
 
@@ -5417,6 +5440,47 @@ PREFIX(get_remote_function_index)(const int hash)
   return index;
 }
 
+static void
+get_from_self(caf_token_t token, const gfc_descriptor_t *opt_src_desc,
+              const size_t *opt_src_charlen,
+              const int image_index __attribute__((unused)), void **dst_data,
+              size_t *opt_dst_charlen, gfc_descriptor_t *opt_dst_desc,
+              const bool may_realloc_dst, const int getter_index,
+              void *get_data, const int this_image)
+{
+  const bool dst_incl_desc = opt_dst_desc && may_realloc_dst,
+             has_src_desc = opt_src_desc;
+  int32_t ignore;
+  gfc_max_dim_descriptor_t tmp_desc;
+  void *dst_ptr = opt_dst_desc
+                      ? (dst_incl_desc ? opt_dst_desc : (void *)&tmp_desc)
+                      : dst_data;
+  const bool needs_copy_back = opt_dst_desc && !may_realloc_dst;
+  mpi_caf_token_t src_token = {get_data, MPI_WIN_NULL, nullptr};
+  void *src_ptr = has_src_desc ? (void *)opt_src_desc
+                               : ((mpi_caf_token_t *)token)->memptr;
+
+  if (needs_copy_back)
+  {
+    memcpy(&tmp_desc, opt_dst_desc,
+           sizeof_desc_for_rank(GFC_DESCRIPTOR_RANK(opt_dst_desc)));
+    tmp_desc.base.base_addr = NULL;
+  }
+
+  dprint("Shortcutting due to self access on image %d.\n", image_index);
+  accessor_hash_table[getter_index].u.getter(get_data, &this_image, dst_ptr,
+                                             &ignore, src_ptr, &src_token, 0,
+                                             opt_dst_charlen, opt_src_charlen);
+
+  if (needs_copy_back)
+  {
+    const size_t sz = compute_arr_data_size(opt_dst_desc);
+
+    memcpy(opt_dst_desc->base_addr, tmp_desc.base.base_addr, sz);
+    free(tmp_desc.base.base_addr);
+  }
+}
+
 /* Get data from a remote image's memory pointed to by `token`.  The image is
  * given by `image_index`.  When the source is descriptor array, then
  * `opt_src_desc` gives its dimension as of the source image.  On the remote
@@ -5501,6 +5565,13 @@ PREFIX(get_from_remote)(caf_token_t token, const gfc_descriptor_t *opt_src_desc,
       token, remote_image, this_image, getter_index, src_desc_size,
       dst_desc_size);
 
+  if (this_image == remote_image)
+  {
+    get_from_self(token, opt_src_desc, opt_src_charlen, image_index, dst_data,
+                  opt_dst_charlen, opt_dst_desc, may_realloc_dst, getter_index,
+                  get_data, this_image);
+    return;
+  }
   // create get msg
   if ((free_msg = (((msg = alloca(msg_size))) == NULL)))
   {
@@ -5674,6 +5745,19 @@ PREFIX(is_present_on_remote)(caf_token_t token, const int image_index,
       "%d, is_present index = %d, sizeof(msg) = %ld.\n",
       token, remote_image, this_image, is_present_index, msg_size);
 
+  if (this_image == remote_image)
+  {
+    int32_t result = 0;
+    mpi_caf_token_t src_token = {get_data, MPI_WIN_NULL, nullptr};
+    void *src_ptr = ((mpi_caf_token_t *)token)->memptr;
+
+    dprint("Shortcutting due to self access on image %d.\n", image_index);
+    accessor_hash_table[is_present_index].u.is_present(
+        add_data, &this_image, &result, src_ptr, &src_token, 0);
+
+    return result;
+  }
+
   // create get msg
   if ((free_msg = (((msg = alloca(msg_size))) == NULL)))
   {
@@ -5727,6 +5811,68 @@ PREFIX(is_present_on_remote)(caf_token_t token, const int image_index,
 
   dprint("done with is_present_on_remote.\n");
   return result;
+}
+
+static void
+send_to_self(caf_token_t token, gfc_descriptor_t *opt_dst_desc,
+             const size_t *opt_dst_charlen,
+             const int image_index __attribute__((unused)),
+             const size_t src_size, const void *src_data,
+             size_t *opt_src_charlen, const gfc_descriptor_t *opt_src_desc,
+             const int setter_index, void *add_data, const int this_image)
+{
+  const bool requires_temp
+      = (opt_src_desc
+         && ((mpi_caf_token_t *)token)->memptr == opt_src_desc->base_addr)
+        || (!opt_src_desc && ((mpi_caf_token_t *)token)->memptr == src_data);
+  void *dst_ptr
+      = opt_dst_desc ? opt_dst_desc : ((mpi_caf_token_t *)token)->memptr;
+  mpi_caf_token_t src_token = {add_data, MPI_WIN_NULL, nullptr};
+  const void *src_ptr = opt_src_desc ? opt_src_desc : src_data,
+             *orig_src_ptr = src_ptr;
+  const size_t sz
+      = requires_temp
+            ? opt_src_desc ? compute_arr_data_size(opt_src_desc) : src_size
+            : 0;
+  bool free_tmp = false;
+  if (requires_temp)
+  {
+    void *tmp_ptr;
+    if ((free_tmp = (tmp_ptr = alloca(sz)) == NULL))
+    {
+      tmp_ptr = malloc(sz);
+      if (!tmp_ptr)
+        caf_runtime_error("can not allocate %zd bytes for temp buffer in send",
+                          sz);
+    }
+    memcpy(tmp_ptr, opt_src_desc ? opt_src_desc->base_addr : src_ptr, sz);
+    if (opt_src_desc)
+    {
+      orig_src_ptr = opt_src_desc->base_addr;
+      ((gfc_descriptor_t *)opt_src_desc)->base_addr = tmp_ptr;
+    }
+    else
+      src_ptr = tmp_ptr;
+  }
+
+  dprint("Shortcutting due to self access on image %d %s temporary on %s.\n",
+         image_index, requires_temp ? "w/ " : "w/o",
+         opt_src_desc ? "array " : "scalar");
+  accessor_hash_table[setter_index].u.receiver(
+      add_data, &this_image, dst_ptr, src_ptr, &src_token, 0, opt_dst_charlen,
+      opt_src_charlen);
+
+  if (requires_temp)
+  {
+    if (opt_src_desc)
+    {
+      if (free_tmp)
+        free(opt_src_desc->base_addr);
+      ((gfc_descriptor_t *)opt_src_desc)->base_addr = (void *)orig_src_ptr;
+    }
+    else if (free_tmp)
+      free((void *)src_ptr);
+  }
 }
 
 /* Send data to a remote image's memory pointed to by `token`.  The image
@@ -5811,12 +5957,21 @@ PREFIX(send_to_remote)(caf_token_t token, gfc_descriptor_t *opt_dst_desc,
     msg_size += src_size;
   }
 
-  dprint(
-      "Entering send_to_remote(), token = %p, win_rank = %d, this_rank = %d, "
-      "setter index = %d, sizeof(data = %p) = %zd, sizeof(src_desc) = %zd, "
-      "sizeof(dst_desc) = %zd, sizeof(msg) = %zd.\n",
-      token, remote_image, this_image, setter_index, src_data, src_size,
-      src_desc_size, dst_desc_size, msg_size);
+  dprint("Entering send_to_remote(), token = %p, memptr = %p, win_rank = %d, "
+         "this_rank = %d, setter index = %d, sizeof(data = %p) = %zd, "
+         "sizeof(src_desc) = %zd, sizeof(dst_desc) = %zd, sizeof(msg) = %zd.\n",
+         token, ((mpi_caf_token_t *)token)->memptr, remote_image, this_image,
+         setter_index, opt_src_desc ? opt_src_desc->base_addr : src_data,
+         src_size, src_desc_size, dst_desc_size, msg_size);
+
+  /* Shortcut for copy to self.  */
+  if (this_image == remote_image)
+  {
+    send_to_self(token, opt_dst_desc, opt_dst_charlen, image_index, src_size,
+                 src_data, opt_src_charlen, opt_src_desc, setter_index,
+                 add_data, this_image);
+    return;
+  }
 
   // create get msg
   if ((free_msg = (((msg = alloca(msg_size))) == NULL)))
@@ -5997,10 +6152,84 @@ PREFIX(transfer_between_remotes)(
   dprint("Entering transfer_between_remotes(), dst_token = %p, dst_rank = %d, "
          "this_rank = %d, setter index = %d, src_token = %p, src_rank = %d, "
          "getter index = %d, sizeof(src_desc) = %zd, sizeof(dst_desc) = %zd, "
-         "sizeof(msg) = %zd.\n",
+         "sizeof(msg) = %zd, scalar_transfer = %d, in_src_size = %zd, src_size "
+         "= %zd.\n",
          dst_token, dst_remote_image, this_image, dst_access_index, src_token,
          src_remote_image, src_access_index, src_desc_size, dst_desc_size,
-         full_msg_size);
+         full_msg_size, scalar_transfer, in_src_size, src_size);
+
+  /* Shortcut for copy to self.  */
+  if (this_image == src_remote_image && this_image == dst_remote_image)
+  {
+    void *dptr = NULL;
+    gfc_max_dim_descriptor_t max_desc;
+    gfc_descriptor_t *trans_desc
+        = scalar_transfer ? NULL : (gfc_descriptor_t *)&max_desc;
+
+    if (!scalar_transfer)
+      trans_desc->base_addr = NULL;
+
+    get_from_self(src_token, opt_src_desc, opt_src_charlen, src_image_index,
+                  &dptr, opt_dst_charlen, trans_desc, true, src_access_index,
+                  src_add_data, this_image);
+    send_to_self(dst_token, opt_dst_desc, opt_dst_charlen, dst_image_index,
+                 src_size, dptr, (size_t *)opt_src_charlen, trans_desc,
+                 dst_access_index, dst_add_data, this_image);
+
+    if (trans_desc)
+      free(trans_desc->base_addr);
+
+    return;
+  }
+  else if (this_image == src_remote_image)
+  {
+    void *dptr = NULL;
+    gfc_max_dim_descriptor_t max_desc;
+    gfc_descriptor_t *trans_desc
+        = scalar_transfer ? NULL : (gfc_descriptor_t *)&max_desc;
+
+    if (!scalar_transfer)
+      trans_desc->base_addr = NULL;
+
+    // Essentially a send_to_remote
+    get_from_self(src_token, opt_src_desc, opt_src_charlen, src_image_index,
+                  &dptr, opt_dst_charlen, trans_desc, true, src_access_index,
+                  src_add_data, this_image);
+    _gfortran_caf_send_to_remote(
+        dst_token, opt_dst_desc, opt_dst_charlen, dst_image_index, src_size,
+        dptr, (size_t *)opt_src_charlen, trans_desc, dst_access_index,
+        dst_add_data, dst_add_data_size, dst_stat, dst_team, dst_team_number);
+    if (trans_desc)
+      free(trans_desc->base_addr);
+    return;
+  }
+  else if (this_image == dst_remote_image)
+  {
+    // Essentially a get_from_remote
+    void *dptr = NULL;
+    gfc_max_dim_descriptor_t max_desc;
+    gfc_descriptor_t *trans_desc
+        = scalar_transfer ? NULL : (gfc_descriptor_t *)&max_desc;
+
+    if (!scalar_transfer)
+      trans_desc->base_addr = NULL;
+    if (scalar_transfer)
+      dptr = malloc(src_size);
+
+    _gfortran_caf_get_from_remote(
+        src_token, opt_src_desc, opt_src_charlen, src_image_index, src_size,
+        &dptr, opt_dst_charlen, trans_desc, true, src_access_index,
+        src_add_data, src_add_data_size, src_stat, src_team, src_team_number);
+    send_to_self(dst_token, opt_dst_desc, opt_dst_charlen, dst_image_index,
+                 src_size, dptr, (size_t *)opt_src_charlen, trans_desc,
+                 dst_access_index, dst_add_data, this_image);
+
+    if (trans_desc)
+      free(trans_desc->base_addr);
+    if (scalar_transfer)
+      free(dptr);
+    return;
+  }
 
   // create get msg
   if ((free_msg = (((full_msg = alloca(full_msg_size))) == NULL)))
