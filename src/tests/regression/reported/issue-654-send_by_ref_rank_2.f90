@@ -36,7 +36,7 @@ program test_sendget_by_ref
     if (any(R_send%A(:,i) /= (/(j, j = 1, num_images())/))) res = .False.
   end do
 
-  ! Recude the result. both() is just a logical scalar and, because there
+  ! Reduce the result. both() is just a logical scalar and, because there
   ! is no predefined operator for this.
   call co_reduce(res, both)
   write(*,*) this_image(), ':', R_get%A, '|', R_send%A

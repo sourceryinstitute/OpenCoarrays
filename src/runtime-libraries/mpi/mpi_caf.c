@@ -2079,7 +2079,7 @@ void *PREFIX(register)(size_t size, caf_register_t type, caf_token_t *token,
   if (unlikely(caf_is_finalized))
     goto error;
 
-  /* Start GASNET if not already started. */
+  /* Start MPI if not already started. */
   if (caf_num_images == 0)
 #ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
     _gfortran_caf_init(NULL, NULL);
