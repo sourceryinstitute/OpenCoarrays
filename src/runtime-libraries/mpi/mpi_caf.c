@@ -70,8 +70,9 @@ static char *caf_ref_type_str[] = {
 #define chk_err(...)
 #else
 #define dprint(format, ...)                                                    \
-  fprintf(stderr, "%d/%d: %s(%d) " format, caf_this_image, caf_num_images,     \
-          __FUNCTION__, __LINE__, ##__VA_ARGS__)
+  fprintf(stderr, "%d/%d (t:%d/%d): %s(%d) " format, global_this_image,        \
+          global_num_images, caf_this_image, caf_num_images, __FUNCTION__,     \
+          __LINE__, ##__VA_ARGS__)
 #define chk_err(ierr)                                                          \
   do                                                                           \
   {                                                                            \
@@ -176,6 +177,8 @@ static int caf_this_image;
 static int mpi_this_image;
 static int caf_num_images = 0;
 static int caf_is_finalized = 0;
+static int global_this_image;
+static int global_num_images;
 static MPI_Win global_dynamic_win;
 
 #if MPI_VERSION >= 3
@@ -846,9 +849,9 @@ handle_send_message(ct_msg_t *msg, void *baseptr)
       &msg->dest_opt_charlen, &msg->opt_charlen);
   dprint("ct: setter executed.\n");
   {
-    char c = 1;
-    dprint("ct: Sending %d bytes to image %d, tag %d.\n", 1, msg->dest_image,
-           msg->dest_tag);
+    char c = 0;
+    dprint("ct: Sending %d bytes to image %d, tag %d.\n", 1,
+           msg->dest_image + 1, msg->dest_tag);
     ierr = MPI_Send(&c, 1, MPI_BYTE, msg->dest_image, msg->dest_tag,
                     CAF_COMM_WORLD);
     chk_err(ierr);
@@ -924,7 +927,7 @@ handle_transfer_message(ct_msg_t *msg, void *baseptr)
   memcpy(send_msg->data + offset, tmd->data,
          tmd->dst_desc_size + tmd->dst_add_data_size);
 
-  if (msg->dest_image != mpi_this_image)
+  if (msg->dest_image != global_this_image)
   {
     dprint("ct: sending message of size %zd to image %d for processing.\n",
            send_size, msg->dest_image);
@@ -1514,7 +1517,9 @@ PREFIX(init)(int *argc, char ***argv)
     ierr = MPI_Comm_rank(CAF_COMM_WORLD, &mpi_this_image);
     chk_err(ierr);
 
+    global_this_image = mpi_this_image;
     caf_this_image = mpi_this_image + 1;
+    global_num_images = caf_num_images;
     caf_is_finalized = 0;
 
 #ifdef EXTRA_DEBUG_OUTPUT
@@ -6026,11 +6031,13 @@ PREFIX(send_to_remote)(caf_token_t token, gfc_descriptor_t *opt_dst_desc,
 
   {
     char c;
-    dprint("waiting to receive %d bytes from %d.\n", 1, image_index - 1);
+    dprint("waiting to receive %d bytes from %d on tag %d.\n", 1, image_index,
+           msg->dest_tag);
     ierr = MPI_Recv(&c, 1, MPI_BYTE, image_index - 1, msg->dest_tag,
                     CAF_COMM_WORLD, MPI_STATUS_IGNORE);
     chk_err(ierr);
-    dprint("received %d bytes as requested from %d.\n", 1, image_index - 1);
+    dprint("received %d bytes as requested from %d on tag %d.\n", 1,
+           image_index, msg->dest_tag);
   }
 
   if (running_accesses == rat)
@@ -6136,6 +6143,9 @@ PREFIX(transfer_between_remotes)(
   ierr = MPI_Group_free(&win_group);
   chk_err(ierr);
 
+  dprint("team-map: dst(in) %d -> %d, src(in) %d -> %d, this %d -> %d.\n",
+         dst_image_index, dst_remote_image, src_image_index, src_remote_image,
+         caf_this_image, this_image);
   check_image_health(src_remote_image, src_stat);
   check_image_health(dst_remote_image, dst_stat);
 
@@ -6303,13 +6313,14 @@ PREFIX(transfer_between_remotes)(
   {
     char c;
     dprint("waiting to receive %d bytes from %d on tag %d.\n", 1,
-           dst_image_index - 1, dst_msg->dest_tag);
+           dst_image_index, dst_msg->dest_tag);
     ierr = MPI_Recv(&c, 1, MPI_BYTE, dst_image_index - 1, dst_msg->dest_tag,
                     CAF_COMM_WORLD, MPI_STATUS_IGNORE);
     chk_err(ierr);
     if (dst_stat)
       *dst_stat = c;
-    dprint("received %d bytes as requested from %d.\n", 1, dst_image_index - 1);
+    dprint("received %d bytes as requested from %d on tag %d.\n", 1,
+           dst_image_index, dst_msg->dest_tag);
   }
 
   if (running_accesses == rat)
