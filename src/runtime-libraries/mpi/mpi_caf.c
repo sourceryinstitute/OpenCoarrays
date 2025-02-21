@@ -70,7 +70,7 @@ static char *caf_ref_type_str[] = {
 #define chk_err(...)
 #else
 #define dprint(format, ...)                                                    \
-  fprintf(stderr, "%d/%d (t:%d/%d): %s(%d) " format, global_this_image,        \
+  fprintf(stderr, "%d/%d (t:%d/%d): %s(%d) " format, global_this_image + 1,    \
           global_num_images, caf_this_image, caf_num_images, __FUNCTION__,     \
           __LINE__, ##__VA_ARGS__)
 #define chk_err(ierr)                                                          \
