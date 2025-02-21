@@ -430,7 +430,7 @@ contains
                                   print *, a
                                   print *, c
                                   print *, a-c
-                                  call print_and_register( "array sections with ranges and strides failed in three of get_array_test")
+                                  call print_and_register("array sections with ranges and strides failed in three of get_array_test")
                                endif
                             end if
                             ! ARRAY = ARRAY
