@@ -967,7 +967,8 @@ handle_incoming_message(MPI_Status *status_in, MPI_Message *msg_han,
 
   ierr = MPI_Mrecv(msg, cnt, MPI_BYTE, msg_han, status_in);
   chk_err(ierr);
-  dprint("ct: Received request of size %d.\n", cnt);
+  dprint("ct: Received request of size %d (sizeof(ct_msg) = %zd).\n", cnt,
+         sizeof(ct_msg_t));
 
   if (msg->win != MPI_WIN_NULL)
   {
@@ -1039,7 +1040,8 @@ communication_thread(void *)
            status.MPI_SOURCE, status.MPI_TAG, status.MPI_ERROR);
     if (status.MPI_TAG == CAF_CT_TAG && status.MPI_ERROR == MPI_SUCCESS)
     {
-      MPI_Get_count(&status, MPI_BYTE, &cnt);
+      ierr = MPI_Get_count(&status, MPI_BYTE, &cnt);
+      chk_err(ierr);
 
       if (cnt >= sizeof(ct_msg_t))
       {
