@@ -611,7 +611,7 @@ handle_getting(ct_msg_t *msg, int cb_image, void *baseptr, void *dst_ptr,
   void *src_ptr;
   size_t charlen, send_size;
   int i;
-  mpi_caf_token_t src_token = {(void *)msg->ra_id, MPI_WIN_NULL, nullptr};
+  mpi_caf_token_t src_token = {(void *)msg->ra_id, MPI_WIN_NULL, NULL};
 
   if (msg->flags & CT_SRC_HAS_DESC)
   {
@@ -759,7 +759,7 @@ handle_is_present_message(ct_msg_t *msg, void *baseptr)
   int ierr = 0;
   void *add_data, *ptr;
   int32_t result;
-  mpi_caf_token_t src_token = {(void *)msg->ra_id, MPI_WIN_NULL, nullptr};
+  mpi_caf_token_t src_token = {(void *)msg->ra_id, MPI_WIN_NULL, NULL};
 
   add_data = msg->data;
   if (msg->flags & CT_SRC_HAS_DESC)
@@ -787,7 +787,7 @@ handle_send_message(ct_msg_t *msg, void *baseptr)
 {
   int ierr = 0;
   void *src_ptr, *buffer, *dst_ptr, *add_data;
-  mpi_caf_token_t src_token = {(void *)msg->ra_id, MPI_WIN_NULL, nullptr};
+  mpi_caf_token_t src_token = {(void *)msg->ra_id, MPI_WIN_NULL, NULL};
 
   dprint("ct: putting data using %d accessor.\n", msg->accessor_index);
   buffer = msg->data;
@@ -5461,7 +5461,7 @@ get_from_self(caf_token_t token, const gfc_descriptor_t *opt_src_desc,
                       ? (dst_incl_desc ? opt_dst_desc : (void *)&tmp_desc)
                       : dst_data;
   const bool needs_copy_back = opt_dst_desc && !may_realloc_dst;
-  mpi_caf_token_t src_token = {get_data, MPI_WIN_NULL, nullptr};
+  mpi_caf_token_t src_token = {get_data, MPI_WIN_NULL, NULL};
   void *src_ptr = has_src_desc ? (void *)opt_src_desc
                                : ((mpi_caf_token_t *)token)->memptr;
 
@@ -5753,7 +5753,7 @@ PREFIX(is_present_on_remote)(caf_token_t token, const int image_index,
   if (this_image == remote_image)
   {
     int32_t result = 0;
-    mpi_caf_token_t src_token = {get_data, MPI_WIN_NULL, nullptr};
+    mpi_caf_token_t src_token = {get_data, MPI_WIN_NULL, NULL};
     void *src_ptr = ((mpi_caf_token_t *)token)->memptr;
 
     dprint("Shortcutting due to self access on image %d.\n", image_index);
@@ -5832,7 +5832,7 @@ send_to_self(caf_token_t token, gfc_descriptor_t *opt_dst_desc,
         || (!opt_src_desc && ((mpi_caf_token_t *)token)->memptr == src_data);
   void *dst_ptr
       = opt_dst_desc ? opt_dst_desc : ((mpi_caf_token_t *)token)->memptr;
-  mpi_caf_token_t src_token = {add_data, MPI_WIN_NULL, nullptr};
+  mpi_caf_token_t src_token = {add_data, MPI_WIN_NULL, NULL};
   const void *src_ptr = opt_src_desc ? opt_src_desc : src_data,
              *orig_src_ptr = src_ptr;
   const size_t sz
