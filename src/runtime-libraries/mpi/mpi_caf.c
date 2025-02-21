@@ -8589,7 +8589,7 @@ PREFIX(is_present)(caf_token_t token, int image_index, caf_reference_t *refs)
   ptrdiff_t local_offset = 0;
   void *remote_memptr = NULL, *remote_base_memptr = NULL;
   bool carryOn = true, firstDesc = true;
-  caf_reference_t *riter = refs, *prev;
+  caf_reference_t *riter = refs;
   size_t i, ref_rank;
   int ierr;
   gfc_max_dim_descriptor_t src_desc;
@@ -8678,7 +8678,6 @@ PREFIX(is_present)(caf_token_t token, int image_index, caf_reference_t *refs)
         caf_runtime_error(unsupportedRefType);
         return false;
     } // switch
-    prev = riter;
     riter = riter->next;
   }
 
@@ -8769,7 +8768,7 @@ PREFIX(is_present)(caf_token_t token, int image_index, caf_reference_t *refs)
 #ifdef EXTRA_DEBUG_OUTPUT
         {
           gfc_descriptor_t *src = (gfc_descriptor_t *)(&src_desc);
-          dprint("remote desc rank: %zd (ref_rank: %zd)\n",
+          dprint("remote desc rank: %d (ref_rank: %zd)\n",
                  GFC_DESCRIPTOR_RANK(src), ref_rank);
           for (i = 0; i < GFC_DESCRIPTOR_RANK(src); ++i)
           {
