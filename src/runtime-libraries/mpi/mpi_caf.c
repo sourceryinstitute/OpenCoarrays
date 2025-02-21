@@ -238,6 +238,7 @@ char *msgbody;
 pthread_mutex_t lock_am;
 int done_am = 0;
 
+#ifdef GCC_GE_15
 /* Communication thread variables, constants and structures. */
 static const int CAF_CT_TAG = 13;
 pthread_t commthread;
@@ -325,6 +326,7 @@ struct transfer_msg_data_t
   size_t dst_add_data_size;
   char data[];
 };
+#endif
 
 /* Define the descriptor of max rank.
  *
@@ -604,6 +606,7 @@ compute_arr_data_size(const gfc_descriptor_t *desc)
   return compute_arr_data_size_sz(desc, desc->span);
 }
 
+#ifdef GCC_GE_15
 size_t
 handle_getting(ct_msg_t *msg, int cb_image, void *baseptr, void *dst_ptr,
                void **buffer, int32_t *free_buffer, void *dbase)
@@ -1073,6 +1076,7 @@ communication_thread(void *)
   dprint("ct: Ended.\n");
   return NULL;
 }
+#endif
 
 /* Forward declaration of the feature unsupported message for failed images
  * functions. */
@@ -1618,10 +1622,12 @@ PREFIX(init)(int *argc, char ***argv)
     }
 #endif
 
+#ifdef GCC_GE_15
     ierr = MPI_Comm_dup(CAF_COMM_WORLD, &ct_COMM);
     chk_err(ierr);
     ierr = pthread_create(&commthread, NULL, &communication_thread, NULL);
     chk_err(ierr);
+#endif
   }
 }
 
@@ -1761,6 +1767,7 @@ finalize_internal(int status_code)
   chk_err(ierr);
 #endif // MPI_VERSION
 
+#ifdef GCC_GE_15
   dprint("Sending termination signal to communication thread.\n");
   commthread_running = false;
   ierr = MPI_Send(NULL, 0, MPI_BYTE, mpi_this_image, CAF_CT_TAG, ct_COMM);
@@ -1771,6 +1778,7 @@ finalize_internal(int status_code)
   dprint("Freeing ct_COMM.\n");
   MPI_Comm_free(&ct_COMM);
   dprint("Freeed ct_COMM.\n");
+#endif
 
   /* Free the global dynamic window. */
   ierr = MPI_Win_free(&global_dynamic_win);
