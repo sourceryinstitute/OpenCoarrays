@@ -664,7 +664,10 @@ define_property(TARGET
 # Add global openmpi property, because using a variable an setting in parent scope did
 # not work as expected, i.e., not at all, on Linux Fedora 39.
 #-------------------------------------------------------------------------------------
-define_property(GLOBAL PROPERTY openmpi BRIEF_DOCS "True when mpi is openMPI.")
+define_property(GLOBAL
+  PROPERTY openmpi
+  BRIEF_DOCS "True when mpi is openMPI."
+  FULL_DOCS "Set internally when the mpi library to use is openmpi.")
 
 #-------------------------------
 # Recurse into the src directory
