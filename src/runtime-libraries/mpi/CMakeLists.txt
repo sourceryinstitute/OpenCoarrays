@@ -146,6 +146,11 @@ set(HOST_NAME ${HOST_NAME} PARENT_SCOPE)
 execute_process(COMMAND ${MPIEXEC_EXECUTABLE} --version
   OUTPUT_VARIABLE mpi_version_out)
 if (mpi_version_out MATCHES "[Oo]pen[ -][Mm][Pp][Ii]")
+  if ( gfortran_compiler AND ( NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 14.0.0 ) )
+    # OpenMPI uses addresses for windows instead of identical ids on all images for the same token.
+    # Therefore we can't use it (yet; and probably never).
+    message( FATAL_ERROR "OpenMPI is incompatible with gfortran's coarray implementation from gfortran version 15 on. Please use a different MPI implementation!")
+  endif ()
   message( STATUS "OpenMPI detected")
   set_property(GLOBAL PROPERTY openmpi true)
   # Write out a host file because OMPI's mpiexec is dumb
