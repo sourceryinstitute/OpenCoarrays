@@ -813,6 +813,7 @@ if(opencoarrays_aware_compiler)
       add_caf_test(teams_coarray_sendget 5 teams_coarray_sendget)
       add_caf_test(sync_team 8 sync_team)
       add_caf_test(alloc_comp_multidim_shape 2 alloc_comp_multidim_shape)
+      set_tests_properties(alloc_comp_multidim_shape PROPERTIES TIMEOUT 300)
     endif()
   endif()
 
