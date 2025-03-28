@@ -65,6 +65,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 #define STAT_STOPPED_IMAGE 6000
 #define STAT_FAILED_IMAGE 6001
 
+#ifdef GCC_GE_16
+/* Definitions of the Fortran 2018 standard; need to kept in sync with
+   ISO_FORTRAN_ENV, cf. gcc/fortran/libgfortran.h.  */
+typedef enum
+{
+  CAF_INITIAL_TEAM = 0,
+  CAF_PARENT_TEAM,
+  CAF_CURRENT_TEAM
+} caf_team_level_t;
+#endif
+
 /* Describes what type of array we are registerring. Keep in sync with
    gcc/fortran/trans.h.  */
 typedef enum caf_register_t
@@ -88,23 +99,11 @@ typedef enum caf_deregister_t
   CAF_DEREGTYPE_COARRAY_DEALLOCATE_ONLY
 } caf_deregister_t;
 
+/** The opaque type to represent a coarray token. */
 typedef void *caf_token_t;
-/** Add a dummy type representing teams in coarrays. */
 
+/** The opaque type for teams. */
 typedef void *caf_team_t;
-
-typedef struct caf_teams_list
-{
-  caf_team_t team;
-  int team_id;
-  struct caf_teams_list *prev;
-} caf_teams_list;
-
-typedef struct caf_used_teams_list
-{
-  struct caf_teams_list *team_list_elem;
-  struct caf_used_teams_list *prev;
-} caf_used_teams_list;
 
 /* When there is a vector subscript in this dimension, nvec == 0, otherwise,
    lower_bound, upper_bound, stride contains the bounds relative to the declared
@@ -238,8 +237,15 @@ bool PREFIX(is_contiguous)(gfc_descriptor_t *);
 void PREFIX(init)(int *, char ***);
 void PREFIX(finalize)(void);
 
+#ifdef GCC_GE_16
+int PREFIX(this_image)(caf_team_t);
+
+int PREFIX(num_images)(caf_team_t, int32_t *);
+#else
 int PREFIX(this_image)(int);
+
 int PREFIX(num_images)(int, int);
+#endif
 
 #ifdef GCC_GE_7
 void PREFIX(register)(size_t, caf_register_t, caf_token_t *, gfc_descriptor_t *,
@@ -359,11 +365,20 @@ void PREFIX(error_stop)(int QUIETARG) __attribute__((noreturn));
 
 void PREFIX(fail_image)(void) __attribute__((noreturn));
 
+#ifdef GCC_GE_16
+void PREFIX(form_team)(int, caf_team_t *, int *, int *, char *, charlen_t);
+void PREFIX(change_team)(caf_team_t, int *, char *, charlen_t);
+void PREFIX(end_team)(int *, char *, charlen_t);
+void PREFIX(sync_team)(caf_team_t, int *, char *, charlen_t);
+int PREFIX(team_number)(caf_team_t);
+caf_team_t PREFIX(get_team)(int32_t *);
+#else
 void PREFIX(form_team)(int, caf_team_t *, int);
 void PREFIX(change_team)(caf_team_t *, int);
 void PREFIX(end_team)(caf_team_t *);
 void PREFIX(sync_team)(caf_team_t *, int);
 int PREFIX(team_number)(caf_team_t *);
+#endif
 
 int PREFIX(image_status)(int);
 void PREFIX(failed_images)(gfc_descriptor_t *, int, int *);
