@@ -35,6 +35,7 @@
 #include <alloca.h> /* Assume functionality provided elsewhere if missing */
 #endif
 #include <mpi.h>
+#define __USE_GNU
 #include <pthread.h>
 #include <signal.h> /* For raise */
 #include <stdint.h> /* For int32_t. */
@@ -69,8 +70,9 @@ static char *caf_ref_type_str[] = {
 #define chk_err(...)
 #else
 #define dprint(format, ...)                                                    \
-  fprintf(stderr, "%d/%d: %s(%d) " format, caf_this_image, caf_num_images,     \
-          __FUNCTION__, __LINE__, ##__VA_ARGS__)
+  fprintf(stderr, "%d/%d (t:%d/%d): %s(%d) " format, global_this_image + 1,    \
+          global_num_images, caf_this_image, caf_num_images, __FUNCTION__,     \
+          __LINE__, ##__VA_ARGS__)
 #define chk_err(ierr)                                                          \
   do                                                                           \
   {                                                                            \
@@ -172,8 +174,11 @@ error_stop_str(const char *string, size_t len, bool quiet)
 
 /* Global variables. */
 static int caf_this_image;
+static int mpi_this_image;
 static int caf_num_images = 0;
 static int caf_is_finalized = 0;
+static int global_this_image;
+static int global_num_images;
 static MPI_Win global_dynamic_win;
 
 #if MPI_VERSION >= 3
@@ -232,6 +237,106 @@ MPI_Datatype *dts;
 char *msgbody;
 pthread_mutex_t lock_am;
 int done_am = 0;
+
+#ifdef GCC_GE_15
+/* Communication thread variables, constants and structures. */
+static const int CAF_CT_TAG = 13;
+pthread_t commthread;
+MPI_Comm ct_COMM;
+bool commthread_running = true;
+enum CT_MSG_FLAGS
+{
+  CT_DST_HAS_DESC = 1,
+  CT_SRC_HAS_DESC = 1 << 1,
+  CT_CHAR_ARRAY = 1 << 2,
+  CT_INCLUDE_DESCRIPTOR = 1 << 3,
+  CT_TRANSFER_DESC = 1 << 4,
+  /* Use 1 << 5 for next flag. */
+};
+
+typedef void (*getter_t)(void *, const int *, void **, int32_t *, void *,
+                         caf_token_t, const size_t, size_t *, const size_t *);
+typedef void (*is_present_t)(void *, const int *, int32_t *, void *,
+                             caf_token_t, const size_t);
+typedef void (*receiver_t)(void *, const int *, void *, const void *,
+                           caf_token_t, const size_t, const size_t *,
+                           const size_t *);
+
+struct accessor_hash_t
+{
+  int hash;
+  int pad;
+  union {
+    getter_t getter;
+    is_present_t is_present;
+    receiver_t receiver;
+  } u;
+};
+
+static struct accessor_hash_t *accessor_hash_table = NULL;
+static int aht_cap = 0;
+static int aht_size = 0;
+static enum
+{
+  AHT_UNINITIALIZED,
+  AHT_OPEN,
+  AHT_PREPARED
+} accessor_hash_table_state = AHT_UNINITIALIZED;
+
+typedef ptrdiff_t rat_id_t;
+static struct running_accesses_t
+{
+  rat_id_t id;
+  void *memptr;
+  struct running_accesses_t *next;
+} *running_accesses = NULL;
+
+static rat_id_t running_accesses_id_cnt = 0;
+
+enum remote_command
+{
+  remote_command_unset = 0,
+  remote_command_get = 1,
+  remote_command_present,
+  remote_command_send,
+  remote_command_transfer,
+};
+
+/* The structure to communicate with the communication thread. Make sure, that
+ * data[] starts on pointer aligned address to not loss any performance. */
+typedef struct
+{
+  int cmd;
+  int flags;
+  size_t transfer_size;
+  size_t opt_charlen;
+  MPI_Win win;
+  int dest_image;
+  int dest_tag;
+  int accessor_index;
+  rat_id_t ra_id;
+  size_t dest_opt_charlen;
+  char data[];
+} ct_msg_t;
+
+struct transfer_msg_data_t
+{
+  size_t dst_msg_size;
+  size_t dst_desc_size;
+  size_t dst_add_data_size;
+  char data[];
+};
+#endif
+
+/* Define the descriptor of max rank.
+ *
+ *  This typedef is made to allow storing a copy of a remote descriptor on the
+ *  stack without having to care about the rank. */
+typedef struct gfc_max_dim_descriptor_t
+{
+  gfc_descriptor_t base;
+  descriptor_dimension dim[GFC_MAX_DIMENSIONS];
+} gfc_max_dim_descriptor_t;
 
 char err_buffer[MPI_MAX_ERROR_STRING];
 
@@ -320,6 +425,15 @@ double (*double_by_value)(double, double);
 // #endif
 // #define CAF_Win_unlock_all(win) MPI_Win_unlock_all (win)
 // #endif // CAF_MPI_LOCK_UNLOCK
+
+/* Convenience macro to get the extent of a descriptor in a certain dimension
+ *
+ * Copied from gcc:libgfortran/libgfortran.h. */
+#define GFC_DESCRIPTOR_EXTENT(desc, i)                                         \
+  ((desc)->dim[i]._ubound + 1 - (desc)->dim[i].lower_bound)
+
+#define sizeof_desc_for_rank(rank)                                             \
+  (sizeof(gfc_descriptor_t) + (rank) * sizeof(descriptor_dimension))
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 
@@ -454,15 +568,520 @@ caf_internal_error(const char *msg, int *stat, char *errmsg, size_t errmsg_len,
   exit(EXIT_FAILURE);
 }
 
+#ifdef EXTRA_DEBUG_OUTPUT
+void
+dump_mem(const char *pre, void *m, const size_t s)
+{
+  const size_t str_len = s && m ? s * 3 + 1 : 8;
+  char *str = (char *)alloca(str_len), *p, *pend = str + str_len;
+
+  if (m && s)
+  {
+    p = str;
+    for (size_t i = 0; i < s && p < pend; ++i, p += 3)
+      sprintf(p, "%02x ", ((unsigned char *)m)[i]);
+    if (p >= pend)
+      dprint("dump_mem: output buffer exhausted.\n");
+  }
+  else
+    memcpy(str, "*EMPTY*", 8);
+  dprint("%s: %p: (len = %zd) %s\n", pre, m, s, str);
+}
+#else
+#define dump_mem(pre, m, s) ;
+#endif
+
+size_t
+compute_arr_data_size_sz(const gfc_descriptor_t *desc, size_t sz)
+{
+  for (int i = 0; i < GFC_DESCRIPTOR_RANK(desc); ++i)
+    sz *= GFC_DESCRIPTOR_EXTENT(desc, i);
+
+  return sz;
+}
+
+size_t
+compute_arr_data_size(const gfc_descriptor_t *desc)
+{
+  return compute_arr_data_size_sz(desc, desc->span);
+}
+
+#ifdef GCC_GE_15
+size_t
+handle_getting(ct_msg_t *msg, int cb_image, void *baseptr, void *dst_ptr,
+               void **buffer, int32_t *free_buffer, void *dbase)
+{
+  void *src_ptr;
+  size_t charlen, send_size;
+  int i;
+  mpi_caf_token_t src_token = {(void *)msg->ra_id, MPI_WIN_NULL, NULL};
+
+  if (msg->flags & CT_SRC_HAS_DESC)
+  {
+    ((gfc_descriptor_t *)dbase)->base_addr = baseptr;
+    src_ptr = dbase;
+    dbase += sizeof_desc_for_rank(
+        GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)src_ptr));
+    dprint("ct: src_desc base: %p, rank: %d, offset: %zd.\n",
+           ((gfc_descriptor_t *)src_ptr)->base_addr,
+           GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)src_ptr),
+           ((gfc_descriptor_t *)src_ptr)->offset);
+    // for (int i = 0; i < GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)src_ptr);
+    // ++i)
+    //   dprint("ct: src_desc (dim: %d) lb: %d, ub: %d, stride: %d\n", i,
+    //          ((gfc_descriptor_t *)src_ptr)->dim[i].lower_bound,
+    //          ((gfc_descriptor_t *)src_ptr)->dim[i]._ubound,
+    //          ((gfc_descriptor_t *)src_ptr)->dim[i]._stride);
+  }
+  else
+    src_ptr = baseptr;
+
+  charlen = msg->dest_opt_charlen;
+  accessor_hash_table[msg->accessor_index].u.getter(
+      dbase, &cb_image, dst_ptr, free_buffer, src_ptr, &src_token, 0, &charlen,
+      &msg->opt_charlen);
+  dprint("ct: getter executed.\n");
+  if (msg->flags & CT_DST_HAS_DESC)
+  {
+    size_t dsize = ((gfc_descriptor_t *)dst_ptr)->span;
+    dprint("ct: dst_desc base: %p, rank: %d, offset: %zd.\n",
+           ((gfc_descriptor_t *)dst_ptr)->base_addr,
+           GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)dst_ptr),
+           ((gfc_descriptor_t *)dst_ptr)->offset);
+    for (int i = 0; i < GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)dst_ptr); ++i)
+    {
+      dprint("ct: dst_desc (dim: %d) lb: %td, ub: %td, stride: %td, extend: "
+             "%td\n",
+             i, ((gfc_descriptor_t *)dst_ptr)->dim[i].lower_bound,
+             ((gfc_descriptor_t *)dst_ptr)->dim[i]._ubound,
+             ((gfc_descriptor_t *)dst_ptr)->dim[i]._stride,
+             GFC_DESCRIPTOR_EXTENT((gfc_descriptor_t *)dst_ptr, i));
+      dsize *= GFC_DESCRIPTOR_EXTENT((gfc_descriptor_t *)dst_ptr, i);
+    }
+    dump_mem("ct", ((gfc_descriptor_t *)dst_ptr)->base_addr, dsize);
+    *buffer = ((gfc_descriptor_t *)dst_ptr)->base_addr;
+    if ((msg->flags & (CT_CHAR_ARRAY | CT_INCLUDE_DESCRIPTOR)) == 0)
+      send_size = msg->transfer_size;
+    else
+    {
+      if (msg->flags & CT_INCLUDE_DESCRIPTOR)
+        send_size = ((gfc_descriptor_t *)dst_ptr)->span;
+      else
+        send_size = charlen * msg->transfer_size;
+      for (i = 0; i < GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)dst_ptr); ++i)
+      {
+        const ptrdiff_t ext
+            = GFC_DESCRIPTOR_EXTENT((gfc_descriptor_t *)dst_ptr, i);
+        if (ext < 0)
+          dprint("ct: dst extend in dim %d is < 0: %ld.\n", i, ext);
+        send_size *= ext;
+      }
+    }
+    if (msg->flags & CT_INCLUDE_DESCRIPTOR)
+    {
+      const size_t desc_size = sizeof_desc_for_rank(
+          GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)dst_ptr));
+      void *tbuff = malloc(desc_size + send_size);
+      dprint("ct: Including dst descriptor: %p, sizeof(desc): %zd, rank: "
+             "%d, sizeof(buffer): %zd, incoming free_buffer: %b.\n",
+             tbuff, desc_size, GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)dst_ptr),
+             send_size, *free_buffer);
+      /* Copy the descriptor contents. */
+      memcpy(tbuff, dst_ptr, desc_size);
+      /* Copy the data to the end of buffer (i.e. behind the descriptor).
+       * Does not copy anything, when send_size is 0.  */
+      memcpy(tbuff + desc_size, *buffer, send_size);
+      if (*free_buffer)
+      {
+        dprint("ct: Freeing buffer: %p.\n", *buffer);
+        free(*buffer);
+      }
+      /* For debugging only: */
+      ((gfc_descriptor_t *)tbuff)->base_addr = tbuff + desc_size;
+      *free_buffer = true;
+      *buffer = tbuff;
+      send_size += desc_size;
+    }
+  }
+  else
+  {
+    *buffer = *(void **)dst_ptr;
+    dprint("ct: dst_ptr: %p, buffer: %p.\n", dst_ptr, *buffer);
+    send_size = charlen * msg->transfer_size;
+    dprint("ct: buffer %p, send_size: %zd.\n", *buffer, send_size);
+  }
+  return send_size;
+}
+
+void
+handle_get_message(ct_msg_t *msg, void *baseptr)
+{
+  int ierr = 0;
+  void *buffer, *dst_ptr, *get_data;
+  size_t send_size;
+  int32_t free_buffer;
+
+  if (msg->flags & CT_DST_HAS_DESC)
+  {
+    buffer = msg->data;
+    ((gfc_descriptor_t *)buffer)->base_addr = NULL;
+    get_data = msg->data
+               + sizeof_desc_for_rank(
+                   GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)buffer));
+    /* The destination is a descriptor which address is not mutable. */
+    dst_ptr = buffer;
+  }
+  else
+  {
+    get_data = msg->data;
+    /* The destination is raw memory block, which adress is mutable. */
+    buffer = NULL;
+    dst_ptr = &buffer;
+    dprint("ct: dst_ptr: %p, buffer: %p.\n", dst_ptr, buffer);
+  }
+
+  send_size = handle_getting(msg, msg->dest_image, baseptr, dst_ptr, &buffer,
+                             &free_buffer, get_data);
+
+  dump_mem("ct", buffer, send_size);
+  dprint("ct: Sending %zd bytes to image %d, tag %d.\n", send_size,
+         msg->dest_image, msg->dest_tag);
+  ierr = MPI_Send(buffer, send_size, MPI_BYTE, msg->dest_image, msg->dest_tag,
+                  CAF_COMM_WORLD);
+  chk_err(ierr);
+  if (free_buffer)
+  {
+    dprint("ct: going to free buffer: %p.\n", buffer);
+    free(buffer);
+  }
+}
+
+void
+handle_is_present_message(ct_msg_t *msg, void *baseptr)
+{
+  int ierr = 0;
+  void *add_data, *ptr;
+  int32_t result;
+  mpi_caf_token_t src_token = {(void *)msg->ra_id, MPI_WIN_NULL, NULL};
+
+  add_data = msg->data;
+  if (msg->flags & CT_SRC_HAS_DESC)
+  {
+    ((gfc_descriptor_t *)add_data)->base_addr = baseptr;
+    ptr = add_data;
+    add_data
+        += sizeof_desc_for_rank(GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)ptr));
+  }
+  else
+    ptr = baseptr;
+
+  accessor_hash_table[msg->accessor_index].u.is_present(
+      add_data, &msg->dest_image, &result, ptr, &src_token, 0);
+  dprint("ct: is_present executed.\n");
+  dprint("ct: Sending %d bytes to image %d, tag %d.\n", 1, msg->dest_image,
+         msg->dest_tag);
+  ierr = MPI_Send(&result, 1, MPI_BYTE, msg->dest_image, msg->dest_tag,
+                  CAF_COMM_WORLD);
+  chk_err(ierr);
+}
+
+void
+handle_send_message(ct_msg_t *msg, void *baseptr)
+{
+  int ierr = 0;
+  void *src_ptr, *buffer, *dst_ptr, *add_data;
+  mpi_caf_token_t src_token = {(void *)msg->ra_id, MPI_WIN_NULL, NULL};
+
+  dprint("ct: putting data using %d accessor.\n", msg->accessor_index);
+  buffer = msg->data;
+  add_data = msg->data + msg->transfer_size;
+  if (msg->flags & CT_SRC_HAS_DESC)
+  {
+    src_ptr = add_data;
+    ((gfc_descriptor_t *)add_data)->base_addr = buffer;
+    add_data += sizeof_desc_for_rank(
+        GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)src_ptr));
+    dprint("ct: src_desc base: %p, rank: %d, offset: %td.\n",
+           ((gfc_descriptor_t *)src_ptr)->base_addr,
+           GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)src_ptr),
+           ((gfc_descriptor_t *)src_ptr)->offset);
+    // for (int i = 0; i < GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)src_ptr);
+    // ++i)
+    //   dprint("ct: src_desc (dim: %d) lb: %td, ub: %td, stride: %td\n", i,
+    //          ((gfc_descriptor_t *)src_ptr)->dim[i].lower_bound,
+    //          ((gfc_descriptor_t *)src_ptr)->dim[i]._ubound,
+    //          ((gfc_descriptor_t *)src_ptr)->dim[i]._stride);
+    /* The destination is a descriptor which address is not mutable. */
+  }
+  else
+  {
+    /* The destination is raw memory block, which adress is mutable. */
+    src_ptr = buffer;
+    dprint("ct: src_ptr: %p, buffer: %p.\n", src_ptr, buffer);
+  }
+  if (msg->flags & CT_DST_HAS_DESC)
+  {
+    ((gfc_descriptor_t *)add_data)->base_addr = baseptr;
+    dst_ptr = add_data;
+    add_data += sizeof_desc_for_rank(
+        GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)dst_ptr));
+    dprint("ct: dst_desc base: %p, rank: %d, offset: %zd.\n",
+           ((gfc_descriptor_t *)dst_ptr)->base_addr,
+           GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)dst_ptr),
+           ((gfc_descriptor_t *)dst_ptr)->offset);
+    // for (int i = 0; i < GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)dst_ptr);
+    // ++i)
+    //   dprint("ct: dst_desc (dim: %d) lb: %td, ub: %td, stride: %td\n", i,
+    //          ((gfc_descriptor_t *)dst_ptr)->dim[i].lower_bound,
+    //          ((gfc_descriptor_t *)dst_ptr)->dim[i]._ubound,
+    //          ((gfc_descriptor_t *)dst_ptr)->dim[i]._stride);
+    // dump_mem("send dst", ((gfc_descriptor_t *)dst_ptr)->base_addr,
+    //          (((gfc_descriptor_t *)dst_ptr)->dim[0]._ubound + 1
+    //           - ((gfc_descriptor_t *)dst_ptr)->dim[0].lower_bound
+    //           + ((gfc_descriptor_t *)dst_ptr)->offset)
+    //              * GFC_DESCRIPTOR_SIZE((gfc_descriptor_t *)dst_ptr));
+  }
+  else
+  {
+    dst_ptr = baseptr;
+    dprint("ct: scalar dst_ptr: %p.\n", dst_ptr);
+  }
+
+  accessor_hash_table[msg->accessor_index].u.receiver(
+      add_data, &msg->dest_image, dst_ptr, src_ptr, &src_token, 0,
+      &msg->dest_opt_charlen, &msg->opt_charlen);
+  dprint("ct: setter executed.\n");
+  {
+    char c = 0;
+    dprint("ct: Sending %d bytes to image %d, tag %d.\n", 1,
+           msg->dest_image + 1, msg->dest_tag);
+    ierr = MPI_Send(&c, 1, MPI_BYTE, msg->dest_image, msg->dest_tag,
+                    CAF_COMM_WORLD);
+    chk_err(ierr);
+  }
+}
+
+void
+handle_transfer_message(ct_msg_t *msg, void *baseptr)
+{
+  int ierr;
+  int32_t free_buffer;
+  gfc_max_dim_descriptor_t transfer_desc;
+  void *transfer_ptr, *buffer = NULL;
+  size_t send_size, src_size, offset;
+  bool free_send_msg;
+  ct_msg_t *incoming_send_msg = (ct_msg_t *)msg->data, *send_msg;
+  struct transfer_msg_data_t *tmd
+      = (struct transfer_msg_data_t *)(incoming_send_msg)->data;
+  void *get_msg_data_base = msg->data + tmd->dst_msg_size;
+
+  if (msg->flags & CT_TRANSFER_DESC)
+  {
+    memset(&transfer_desc, 0, sizeof(transfer_desc));
+    transfer_ptr = &transfer_desc;
+    msg->flags |= CT_DST_HAS_DESC | CT_INCLUDE_DESCRIPTOR;
+    incoming_send_msg->flags |= CT_SRC_HAS_DESC;
+  }
+  else
+  {
+    msg->flags &= ~(CT_DST_HAS_DESC | CT_INCLUDE_DESCRIPTOR);
+    transfer_ptr = &buffer;
+  }
+
+  src_size
+      = handle_getting(msg, incoming_send_msg->dest_image, baseptr,
+                       transfer_ptr, &buffer, &free_buffer, get_msg_data_base);
+
+  send_size = sizeof(ct_msg_t) + src_size + tmd->dst_desc_size
+              + tmd->dst_add_data_size;
+
+  dprint("ct: src_size: %zd, send_size: %zd, dst_desc_size: %zd, "
+         "dst_add_data_size: %zd, buffer: %p.\n",
+         src_size, send_size, tmd->dst_desc_size, tmd->dst_add_data_size,
+         buffer);
+
+  if ((free_send_msg = ((send_msg = alloca(send_size)) == NULL)))
+  {
+    send_msg = malloc(send_size);
+    if (send_msg == NULL)
+      caf_runtime_error("Unable to allocate memory "
+                        "for internal message in handle_transfer_message().");
+  }
+  memcpy(send_msg, incoming_send_msg, sizeof(ct_msg_t));
+  offset = 0;
+  if (msg->flags & CT_TRANSFER_DESC)
+  {
+    const gfc_descriptor_t *d = (gfc_descriptor_t *)buffer;
+    const int rank = GFC_DESCRIPTOR_RANK(d);
+    const size_t desc_size = sizeof_desc_for_rank(rank),
+                 sz = compute_arr_data_size(d);
+    /* Add the data first.  */
+    send_msg->transfer_size = sz;
+    memcpy(send_msg->data, ((gfc_descriptor_t *)buffer)->base_addr, sz);
+    offset += sz;
+    memcpy(send_msg->data + offset, buffer, desc_size);
+    offset += desc_size;
+  }
+  else
+  {
+    memcpy(send_msg->data, buffer, src_size);
+    offset += src_size;
+  }
+  memcpy(send_msg->data + offset, tmd->data,
+         tmd->dst_desc_size + tmd->dst_add_data_size);
+
+  if (msg->dest_image != global_this_image)
+  {
+    dprint("ct: sending message of size %zd to image %d for processing.\n",
+           send_size, msg->dest_image);
+    ierr = MPI_Send(send_msg, send_size, MPI_BYTE, msg->dest_image,
+                    msg->dest_tag, ct_COMM);
+    chk_err(ierr);
+  }
+  else
+  {
+    int flag;
+    dprint("ct: self handling message of size %zd.\n", send_size);
+    ierr = MPI_Win_get_attr(send_msg->win, MPI_WIN_BASE, &baseptr, &flag);
+    chk_err(ierr);
+    handle_send_message(send_msg, baseptr);
+  }
+
+  if (free_send_msg)
+    free(send_msg);
+  if (free_buffer)
+  {
+    dprint("ct: going to free buffer: %p.\n", buffer);
+    free(buffer);
+  }
+}
+
+void
+handle_incoming_message(MPI_Status *status_in, MPI_Message *msg_han,
+                        const int cnt)
+{
+  int ierr = 0;
+  void *baseptr;
+  int flag;
+  ct_msg_t *msg = alloca(cnt);
+
+  ierr = MPI_Mrecv(msg, cnt, MPI_BYTE, msg_han, status_in);
+  chk_err(ierr);
+  dprint("ct: Received request of size %d (sizeof(ct_msg) = %zd).\n", cnt,
+         sizeof(ct_msg_t));
+
+  if (msg->win != MPI_WIN_NULL)
+  {
+    ierr = MPI_Win_get_attr(msg->win, MPI_WIN_BASE, &baseptr, &flag);
+    chk_err(ierr);
+  }
+  else
+  {
+    struct running_accesses_t *ra = running_accesses;
+    for (; ra && ra->id != msg->ra_id; ra = ra->next)
+      ;
+    baseptr = ra->memptr;
+  }
+
+  dprint("ct: Local base for win %d is %p (set: %b) Executing accessor at "
+         "index %d address %p for command %i.\n",
+         msg->win, baseptr, flag, msg->accessor_index,
+         accessor_hash_table[msg->accessor_index].u.getter, msg->cmd);
+  if (!flag)
+  {
+    dprint("ct: Error: Window %d memory is not allocated.\n", msg->win);
+  }
+
+  switch (msg->cmd)
+  {
+    case remote_command_get:
+      handle_get_message(msg, baseptr);
+      break;
+    case remote_command_present:
+      handle_is_present_message(msg, baseptr);
+      break;
+    case remote_command_send:
+      handle_send_message(msg, baseptr);
+      break;
+    case remote_command_transfer:
+      handle_transfer_message(msg, baseptr);
+      break;
+    default:
+      caf_runtime_error("unknown command %d in message for remote execution",
+                        msg->cmd);
+      break;
+  }
+}
+
+void *
+communication_thread(void *)
+{
+  int ierr = 0, cnt;
+  MPI_Status status;
+  MPI_Message msg_han;
+  void *baseptr;
+
+#if defined(__have_pthread_attr_t) && defined(EXTRA_DEBUG_OUTPUT)
+  pthread_t self;
+  pthread_attr_t pattr;
+  size_t stacksize;
+  self = pthread_self();
+  pthread_getattr_np(self, &pattr);
+  pthread_attr_getstacksize(&pattr, &stacksize);
+  dprint("ct: Started witch stacksize: %ld.\n", stacksize);
+#endif
+
+  memset(&status, 0, sizeof(MPI_Status));
+  do
+  {
+    dprint("ct: Probing for incoming message.\n");
+    ierr = MPI_Mprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, ct_COMM, &msg_han, &status);
+    chk_err(ierr);
+    dprint("ct: Message received from %d, tag %d, mpi-status: %d, processing "
+           "...\n",
+           status.MPI_SOURCE, status.MPI_TAG, status.MPI_ERROR);
+    if (status.MPI_TAG == CAF_CT_TAG && status.MPI_ERROR == MPI_SUCCESS)
+    {
+      ierr = MPI_Get_count(&status, MPI_BYTE, &cnt);
+      chk_err(ierr);
+
+      if (cnt >= sizeof(ct_msg_t))
+      {
+        handle_incoming_message(&status, &msg_han, cnt);
+      }
+      else if (!commthread_running)
+      {
+        /* Pickup empty message. */
+        dprint("ct: Got termination message. Terminating.\n");
+        baseptr = NULL;
+        ierr = MPI_Mrecv(baseptr, cnt, MPI_BYTE, &msg_han, &status);
+        chk_err(ierr);
+      }
+      else
+      {
+        dprint("ct: Error: message to small, ignoring (got: %d, exp: %zd).\n",
+               cnt, sizeof(ct_msg_t));
+      }
+    }
+    else if (ierr == MPI_SUCCESS)
+    {
+      /* There is a message, but not for us. */
+      dprint("ct: Message not for us received. Setting it free again.\n");
+      // ierr = MPI_Request_free(&msg_han);
+      chk_err(ierr);
+    }
+    else
+      chk_err(ierr);
+  } while (commthread_running);
+  dprint("ct: Ended.\n");
+  return NULL;
+}
+#endif
+
 /* Forward declaration of the feature unsupported message for failed images
  * functions. */
 static void
 unsupported_fail_images_message(const char *functionname);
-
-/* Forward declaration of the feature unimplemented message for allocatable
- * components. */
-static void
-unimplemented_alloc_comps_message(const char *functionname);
 
 static void
 locking_atomic_op(MPI_Win win, int *value, int newval, int compare,
@@ -790,7 +1409,8 @@ mutex_unlock(MPI_Win win, int image_index, size_t index, int *stat,
   if (stat != NULL)
     *stat = 0;
 #if MPI_VERSION >= 3
-  int value = 1, ierr = 0, newval = 0, flag;
+  /* Mark `flag` unused, because of conditional compilation.  */
+  int value = 1, ierr = 0, newval = 0, flag __attribute__((unused));
 #ifdef WITH_FAILED_IMAGES
   ierr = MPI_Test(&alive_request, &flag, MPI_STATUS_IGNORE);
   chk_err(ierr);
@@ -803,9 +1423,8 @@ mutex_unlock(MPI_Win win, int image_index, size_t index, int *stat,
   ierr = CAF_Win_unlock(image_index - 1, win);
   chk_err(ierr);
 
-  /* Temporarily commented */
-  /* if (value == 0)
-   *   goto stat_error; */
+  if (value == 0)
+    goto stat_error;
 
   if (stat)
     *stat = ierr;
@@ -840,8 +1459,9 @@ PREFIX(init)(int *argc, char ***argv)
   int flag;
   if (caf_num_images == 0)
   {
-    int ierr = 0, i = 0, j = 0, rc, prov_lev = 0;
-    int is_init = 0, prior_thread_level = MPI_THREAD_FUNNELED;
+    /* Flag rc as unused, because conditional compilation.  */
+    int ierr = 0, i = 0, j = 0, rc __attribute__((unused)), prov_lev = 0;
+    int is_init = 0, prior_thread_level = MPI_THREAD_MULTIPLE;
     ierr = MPI_Initialized(&is_init);
     chk_err(ierr);
 
@@ -850,6 +1470,7 @@ PREFIX(init)(int *argc, char ***argv)
       ierr = MPI_Query_thread(&prior_thread_level);
       chk_err(ierr);
     }
+    dprint("Main thread: thread level: %d\n", prior_thread_level);
 #ifdef HELPER
     if (is_init)
     {
@@ -901,11 +1522,18 @@ PREFIX(init)(int *argc, char ***argv)
 
     ierr = MPI_Comm_size(CAF_COMM_WORLD, &caf_num_images);
     chk_err(ierr);
-    ierr = MPI_Comm_rank(CAF_COMM_WORLD, &caf_this_image);
+    ierr = MPI_Comm_rank(CAF_COMM_WORLD, &mpi_this_image);
     chk_err(ierr);
 
-    ++caf_this_image;
+    global_this_image = mpi_this_image;
+    caf_this_image = mpi_this_image + 1;
+    global_num_images = caf_num_images;
     caf_is_finalized = 0;
+
+#ifdef EXTRA_DEBUG_OUTPUT
+    pid_t mypid = getpid();
+    dprint("I have pid %d.\n", mypid);
+#endif
 
     /* BEGIN SYNC IMAGE preparation
      * Prepare memory for syncing images. */
@@ -993,6 +1621,13 @@ PREFIX(init)(int *argc, char ***argv)
              *win_model, flag);
     }
 #endif
+
+#ifdef GCC_GE_15
+    ierr = MPI_Comm_dup(CAF_COMM_WORLD, &ct_COMM);
+    chk_err(ierr);
+    ierr = pthread_create(&commthread, NULL, &communication_thread, NULL);
+    chk_err(ierr);
+#endif
   }
 }
 
@@ -1010,22 +1645,22 @@ finalize_internal(int status_code)
   chk_err(ierr);
 #endif
   /* For future security enclose setting img_status in a lock. */
-  CAF_Win_lock(MPI_LOCK_EXCLUSIVE, caf_this_image - 1, *stat_tok);
+  CAF_Win_lock(MPI_LOCK_EXCLUSIVE, mpi_this_image, *stat_tok);
   if (status_code == 0)
   {
     img_status = STAT_STOPPED_IMAGE;
 #ifdef WITH_FAILED_IMAGES
-    image_stati[caf_this_image - 1] = STAT_STOPPED_IMAGE;
+    image_stati[mpi_this_image] = STAT_STOPPED_IMAGE;
 #endif
   }
   else
   {
     img_status = status_code;
 #ifdef WITH_FAILED_IMAGES
-    image_stati[caf_this_image - 1] = status_code;
+    image_stati[mpi_this_image] = status_code;
 #endif
   }
-  CAF_Win_unlock(caf_this_image - 1, *stat_tok);
+  CAF_Win_unlock(mpi_this_image, *stat_tok);
 
   /* Announce to all other images, that this one has changed its execution
    * status. */
@@ -1062,9 +1697,12 @@ finalize_internal(int status_code)
   /* Add a conventional barrier to prevent images from quitting too early. */
   if (status_code == 0)
   {
-    dprint("In barrier for finalize...");
-    ierr = MPI_Barrier(CAF_COMM_WORLD);
-    chk_err(ierr);
+    if (caf_num_images > 1)
+    {
+      dprint("In barrier for finalize...");
+      ierr = MPI_Barrier(CAF_COMM_WORLD);
+      chk_err(ierr);
+    }
   }
   else
     /* Without failed images support, but a given status_code, we need to
@@ -1128,6 +1766,19 @@ finalize_internal(int status_code)
   ierr = MPI_Info_free(&mpi_info_same_size);
   chk_err(ierr);
 #endif // MPI_VERSION
+
+#ifdef GCC_GE_15
+  dprint("Sending termination signal to communication thread.\n");
+  commthread_running = false;
+  ierr = MPI_Send(NULL, 0, MPI_BYTE, mpi_this_image, CAF_CT_TAG, ct_COMM);
+  chk_err(ierr);
+  dprint("Termination signal send, waiting for thread join.\n");
+  ierr = pthread_join(commthread, NULL);
+  dprint("Communication thread terminated with rc = %d.\n", ierr);
+  dprint("Freeing ct_COMM.\n");
+  MPI_Comm_free(&ct_COMM);
+  dprint("Freeed ct_COMM.\n");
+#endif
 
   /* Free the global dynamic window. */
   ierr = MPI_Win_free(&global_dynamic_win);
@@ -1203,6 +1854,7 @@ finalize_internal(int status_code)
   caf_is_finalized = 1;
 #endif
   free(sync_handles);
+
   dprint("Finalisation done!!!\n");
 }
 
@@ -1251,7 +1903,7 @@ void PREFIX(register)(size_t size, caf_register_t type, caf_token_t *token,
   if (unlikely(caf_is_finalized))
     goto error;
 
-  /* Start GASNET if not already started. */
+  /* Start MPI if not already started. */
   if (caf_num_images == 0)
     PREFIX(init)(NULL, NULL);
 
@@ -1265,8 +1917,8 @@ void PREFIX(register)(size_t size, caf_register_t type, caf_token_t *token,
   else
     actual_size = size;
 
-  dprint("size = %zd, type = %d, token = %p, desc = %p\n", size, type, token,
-         desc);
+  dprint("size = %zd, type = %d, token = %p, desc = %p, rank = %d\n", size,
+         type, token, desc, GFC_DESCRIPTOR_RANK(desc));
   switch (type)
   {
     case CAF_REGTYPE_COARRAY_ALLOC_REGISTER_ONLY:
@@ -1293,7 +1945,7 @@ void PREFIX(register)(size_t size, caf_register_t type, caf_token_t *token,
           ierr = MPI_Get_address(*token, &mpi_address);
           chk_err(ierr);
 #endif
-          dprint("Attach slave token %p (size: %zd, mpi-address: %p) to "
+          dprint("Attach slave token %p (size: %zd, mpi-address: %lx) to "
                  "global_dynamic_window = %d\n",
                  slave_token, sizeof(mpi_caf_slave_token_t), mpi_address,
                  global_dynamic_win);
@@ -1318,7 +1970,7 @@ void PREFIX(register)(size_t size, caf_register_t type, caf_token_t *token,
           ierr = MPI_Get_address(mem, &mpi_address);
           chk_err(ierr);
 #endif
-          dprint("Attach mem %p (mpi-address: %p) to global_dynamic_window = "
+          dprint("Attach mem %p (mpi-address: %lx) to global_dynamic_window = "
                  "%d on slave_token %p, size %zd, ierr: %d\n",
                  mem, mpi_address, global_dynamic_win, slave_token, actual_size,
                  ierr);
@@ -1371,11 +2023,11 @@ void PREFIX(register)(size_t size, caf_register_t type, caf_token_t *token,
         if (l_var)
         {
           init_array = (int *)calloc(size, sizeof(int));
-          CAF_Win_lock(MPI_LOCK_EXCLUSIVE, caf_this_image - 1, *p);
-          ierr = MPI_Put(init_array, size, MPI_INT, caf_this_image - 1, 0, size,
+          CAF_Win_lock(MPI_LOCK_EXCLUSIVE, mpi_this_image, *p);
+          ierr = MPI_Put(init_array, size, MPI_INT, mpi_this_image, 0, size,
                          MPI_INT, *p);
           chk_err(ierr);
-          CAF_Win_unlock(caf_this_image - 1, *p);
+          CAF_Win_unlock(mpi_this_image, *p);
           free(init_array);
         }
 
@@ -1435,7 +2087,7 @@ void *PREFIX(register)(size_t size, caf_register_t type, caf_token_t *token,
   if (unlikely(caf_is_finalized))
     goto error;
 
-  /* Start GASNET if not already started. */
+  /* Start MPI if not already started. */
   if (caf_num_images == 0)
 #ifdef COMPILER_SUPPORTS_CAF_INTRINSICS
     _gfortran_caf_init(NULL, NULL);
@@ -1472,11 +2124,11 @@ void *PREFIX(register)(size_t size, caf_register_t type, caf_token_t *token,
   if (l_var)
   {
     init_array = (int *)calloc(size, sizeof(int));
-    CAF_Win_lock(MPI_LOCK_EXCLUSIVE, caf_this_image - 1, *p);
-    ierr = MPI_Put(init_array, size, MPI_INT, caf_this_image - 1, 0, size,
-                   MPI_INT, *p);
+    CAF_Win_lock(MPI_LOCK_EXCLUSIVE, mpi_this_image, *p);
+    ierr = MPI_Put(init_array, size, MPI_INT, mpi_this_image, 0, size, MPI_INT,
+                   *p);
     chk_err(ierr);
-    CAF_Win_unlock(caf_this_image - 1, *p);
+    CAF_Win_unlock(mpi_this_image, *p);
     free(init_array);
   }
 
@@ -3579,16 +4231,23 @@ PREFIX(get)(caf_token_t token, size_t offset, int image_index,
   bool free_pad_str = false, free_t_buff = false;
   const bool dest_char_array_is_longer
       = dst_type == BT_CHARACTER && dst_size > src_size && !same_image;
-  int remote_image = image_index - 1;
+  int remote_image = image_index - 1, this_image = mpi_this_image;
+
   if (!same_image)
   {
     MPI_Group current_team_group, win_group;
+    int trans_ranks[2];
     ierr = MPI_Comm_group(CAF_COMM_WORLD, &current_team_group);
     chk_err(ierr);
     ierr = MPI_Win_get_group(*p, &win_group);
     chk_err(ierr);
-    ierr = MPI_Group_translate_ranks(
-        current_team_group, 1, (int[]){remote_image}, win_group, &remote_image);
+    ierr = MPI_Group_translate_ranks(current_team_group, 2,
+                                     (int[]){remote_image, this_image},
+                                     win_group, trans_ranks);
+    dprint("rank translation: remote: %d -> %d, this: %d -> %d.\n",
+           remote_image, trans_ranks[0], this_image, trans_ranks[1]);
+    remote_image = trans_ranks[0];
+    this_image = trans_ranks[1];
     chk_err(ierr);
     ierr = MPI_Group_free(&current_team_group);
     chk_err(ierr);
@@ -3618,8 +4277,8 @@ PREFIX(get)(caf_token_t token, size_t offset, int image_index,
   if (size == 0)
     return;
 
-  dprint("src_vector = %p, image_index = %d, offset = %zd.\n", src_vector,
-         image_index, offset);
+  dprint("src_vector = %p, image_index = %d (remote = %d), offset = %zd.\n",
+         src_vector, image_index, remote_image, offset);
   check_image_health(image_index, stat);
 
   /* For char arrays: create the padding array, when dst is longer than src. */
@@ -4098,7 +4757,7 @@ get_data(void *ds, mpi_caf_token_t *token, MPI_Aint offset, int dst_type,
            ds, win, image_index + 1, offset, src_size, dst_size, dst_type,
            dst_kind, src_type, src_kind);
   else
-    dprint("%p = global_win(%d) offset: %zd (0x%x) of size %zd -> %zd, "
+    dprint("%p = global_win(%d) offset: %zd (0x%lx) of size %zd -> %zd, "
            "dst type %d(%d), src type %d(%d)\n",
            ds, image_index + 1, offset, offset, src_size, dst_size, dst_type,
            dst_kind, src_type, src_kind);
@@ -4182,25 +4841,6 @@ get_data(void *ds, mpi_caf_token_t *token, MPI_Aint offset, int dst_type,
     num = (abs_stride > 1) ? (1 + (num - 1) / abs_stride) : num;               \
   } while (0)
 
-/* Convenience macro to get the extent of a descriptor in a certain dimension
- *
- * Copied from gcc:libgfortran/libgfortran.h. */
-#define GFC_DESCRIPTOR_EXTENT(desc, i)                                         \
-  ((desc)->dim[i]._ubound + 1 - (desc)->dim[i].lower_bound)
-
-#define sizeof_desc_for_rank(rank)                                             \
-  (sizeof(gfc_descriptor_t) + (rank) * sizeof(descriptor_dimension))
-
-/* Define the descriptor of max rank.
- *
- *  This typedef is made to allow storing a copy of a remote descriptor on the
- *  stack without having to care about the rank. */
-typedef struct gfc_max_dim_descriptor_t
-{
-  gfc_descriptor_t base;
-  descriptor_dimension dim[GFC_MAX_DIMENSIONS];
-} gfc_max_dim_descriptor_t;
-
 typedef struct gfc_dim1_descriptor_t
 {
   gfc_descriptor_t base;
@@ -4237,11 +4877,11 @@ get_for_ref(caf_reference_t *ref, size_t *i, size_t dst_index,
     return;
   }
 
-  dprint(
-      "caf_ref = %p (type = %d), sr_offset = %zd, sr = %p, rdesc = %p, "
-      "desc_offset = %zd, src = %p, sr_glb = %d, desc_glb = %d, src_dim = %d\n",
-      ref, ref->type, sr_byte_offset, sr, rdesc, desc_byte_offset, src,
-      sr_global, desc_global, src_dim);
+  dprint("caf_ref = %p (type = %d), sr_offset = %zd, sr = %p, rdesc = %p, "
+         "desc_offset = %zd, src = %p, sr_glb = %d, desc_glb = %d, src_dim = "
+         "%zd\n",
+         ref, ref->type, sr_byte_offset, sr, rdesc, desc_byte_offset, src,
+         sr_global, desc_global, src_dim);
 
   if (ref->next == NULL)
   {
@@ -4417,7 +5057,7 @@ get_for_ref(caf_reference_t *ref, size_t *i, size_t dst_index,
           if (desc_global)
           {
             MPI_Aint disp = MPI_Aint_add((MPI_Aint)rdesc, desc_byte_offset);
-            dprint("Fetching remote descriptor from %p.\n", disp);
+            dprint("Fetching remote descriptor from %lx.\n", disp);
             CAF_Win_lock(MPI_LOCK_SHARED, global_dynamic_win_rank,
                          global_dynamic_win);
             ierr = MPI_Get(&src_desc_data, sizeof_desc_for_rank(ref_rank),
@@ -4449,7 +5089,7 @@ get_for_ref(caf_reference_t *ref, size_t *i, size_t dst_index,
         sr_byte_offset = 0;
         desc_byte_offset = 0;
 #ifdef EXTRA_DEBUG_OUTPUT
-        dprint("remote desc rank: %zd, base: %p\n", GFC_DESCRIPTOR_RANK(src),
+        dprint("remote desc rank: %d, base: %p\n", GFC_DESCRIPTOR_RANK(src),
                src->base_addr);
         for (int r = 0; r < GFC_DESCRIPTOR_RANK(src); ++r)
         {
@@ -4752,6 +5392,967 @@ get_for_ref(caf_reference_t *ref, size_t *i, size_t dst_index,
   }
 }
 
+#ifdef GCC_GE_15
+void
+PREFIX(register_accessor)(const int hash, getter_t accessor)
+{
+  if (accessor_hash_table_state == AHT_UNINITIALIZED)
+  {
+    aht_cap = 16;
+    accessor_hash_table = calloc(aht_cap, sizeof(struct accessor_hash_t));
+    accessor_hash_table_state = AHT_OPEN;
+  }
+  if (aht_size == aht_cap)
+  {
+    aht_cap += 16;
+    accessor_hash_table = realloc(accessor_hash_table,
+                                  aht_cap * sizeof(struct accessor_hash_t));
+  }
+  if (accessor_hash_table_state == AHT_PREPARED)
+  {
+    accessor_hash_table_state = AHT_OPEN;
+  }
+  dprint("adding function %p with hash %x.\n", accessor, hash);
+  accessor_hash_table[aht_size].hash = hash;
+  accessor_hash_table[aht_size].u.getter = accessor;
+  ++aht_size;
+}
+
+static int
+hash_compare(const struct accessor_hash_t *lhs,
+             const struct accessor_hash_t *rhs)
+{
+  return lhs->hash < rhs->hash ? -1 : (lhs->hash > rhs->hash ? 1 : 0);
+}
+
+void
+PREFIX(register_accessors_finish)()
+{
+  if (accessor_hash_table_state == AHT_PREPARED
+      || accessor_hash_table_state == AHT_UNINITIALIZED)
+    return;
+
+  qsort(accessor_hash_table, aht_size, sizeof(struct accessor_hash_t),
+        (int (*)(const void *, const void *))hash_compare);
+  accessor_hash_table_state = AHT_PREPARED;
+  dprint("finished accessor hash table.\n");
+}
+
+int
+PREFIX(get_remote_function_index)(const int hash)
+{
+  if (accessor_hash_table_state != AHT_PREPARED)
+  {
+    caf_runtime_error("the accessor hash table is not prepared.");
+  }
+
+  struct accessor_hash_t cand;
+  cand.hash = hash;
+  struct accessor_hash_t *f = bsearch(
+      &cand, accessor_hash_table, aht_size, sizeof(struct accessor_hash_t),
+      (int (*)(const void *, const void *))hash_compare);
+
+  int index = f ? f - accessor_hash_table : -1;
+  dprint("the index for accessor hash %x is %d.\n", hash, index);
+  return index;
+}
+
+static void
+get_from_self(caf_token_t token, const gfc_descriptor_t *opt_src_desc,
+              const size_t *opt_src_charlen,
+              const int image_index __attribute__((unused)), void **dst_data,
+              size_t *opt_dst_charlen, gfc_descriptor_t *opt_dst_desc,
+              const bool may_realloc_dst, const int getter_index,
+              void *get_data, const int this_image)
+{
+  const bool dst_incl_desc = opt_dst_desc && may_realloc_dst,
+             has_src_desc = opt_src_desc;
+  int32_t ignore;
+  gfc_max_dim_descriptor_t tmp_desc;
+  void *dst_ptr = opt_dst_desc
+                      ? (dst_incl_desc ? opt_dst_desc : (void *)&tmp_desc)
+                      : dst_data;
+  const bool needs_copy_back = opt_dst_desc && !may_realloc_dst;
+  mpi_caf_token_t src_token = {get_data, MPI_WIN_NULL, NULL};
+  void *src_ptr = has_src_desc ? (void *)opt_src_desc
+                               : ((mpi_caf_token_t *)token)->memptr;
+
+  if (needs_copy_back)
+  {
+    memcpy(&tmp_desc, opt_dst_desc,
+           sizeof_desc_for_rank(GFC_DESCRIPTOR_RANK(opt_dst_desc)));
+    tmp_desc.base.base_addr = NULL;
+  }
+
+  dprint("Shortcutting due to self access on image %d.\n", image_index);
+  accessor_hash_table[getter_index].u.getter(get_data, &this_image, dst_ptr,
+                                             &ignore, src_ptr, &src_token, 0,
+                                             opt_dst_charlen, opt_src_charlen);
+
+  if (needs_copy_back)
+  {
+    const size_t sz = compute_arr_data_size(opt_dst_desc);
+
+    memcpy(opt_dst_desc->base_addr, tmp_desc.base.base_addr, sz);
+    free(tmp_desc.base.base_addr);
+  }
+}
+
+/* Get data from a remote image's memory pointed to by `token`.  The image is
+ * given by `image_index`.  When the source is descriptor array, then
+ * `opt_src_desc` gives its dimension as of the source image.  On the remote
+ * image the base address will be replaced.  `opt_src_charlen` gives the length
+ * of the source string on the remote image when that is a character array.
+ * `dst_size` then gives the number of bytes of each character.
+ * `opt_src_charlen` is null, when this is no character array.
+ * `*dst_size` gives the expected number of bytes to be stored in `*dst_data`.
+ * `*dst_data` gives the memory where the data is stored.  This address may be
+ * changed, when reallocation is necessary.
+ * `opt_dst_charlen` is NULL when dst is not a character array, or stores the
+ * number a characters in `*dst_data`.
+ * 'opt_dst_desc' is an optional descriptor. Its address in memory is fixed,
+ * but its data may be changed. `getter_index` is the index in the hashtable as
+ * returned by `get_remote_function_index()`. `get_data` is optional data to be
+ * passed to the getter function. `get_data_size` is the size of the former
+ * data.  `*stat` will be set to non-zero on error, when `stat` is not null.
+ * `team` and `team_number` will be used for team and number of the team in the
+ * future. At the moment these are only placeholders.
+ */
+void
+PREFIX(get_from_remote)(caf_token_t token, const gfc_descriptor_t *opt_src_desc,
+                        const size_t *opt_src_charlen, const int image_index,
+                        const size_t dst_size, void **dst_data,
+                        size_t *opt_dst_charlen, gfc_descriptor_t *opt_dst_desc,
+                        const bool may_realloc_dst, const int getter_index,
+                        void *get_data, const size_t get_data_size, int *stat,
+                        caf_team_t *team __attribute__((unused)),
+                        int *team_number __attribute__((unused)))
+{
+  MPI_Group current_team_group, win_group;
+  int ierr, this_image, remote_image;
+  int trans_ranks[2];
+  bool free_t_buff, free_msg;
+  void *t_buff;
+  ct_msg_t *msg;
+  const bool dst_incl_desc = opt_dst_desc && may_realloc_dst,
+             has_src_desc = opt_src_desc,
+             external_call = *TOKEN(token) != MPI_WIN_NULL;
+  const size_t dst_desc_size
+      = opt_dst_desc ? sizeof_desc_for_rank(GFC_DESCRIPTOR_RANK(opt_dst_desc))
+                     : 0,
+      src_desc_size
+      = has_src_desc ? sizeof_desc_for_rank(GFC_DESCRIPTOR_RANK(opt_src_desc))
+                     : 0,
+      msg_size
+      = sizeof(ct_msg_t) + dst_desc_size + src_desc_size + get_data_size;
+  struct running_accesses_t *rat;
+
+  if (stat)
+    *stat = 0;
+
+  // Get mapped remote image
+  if (external_call)
+  {
+    ierr = MPI_Comm_group(CAF_COMM_WORLD, &current_team_group);
+    chk_err(ierr);
+    ierr = MPI_Win_get_group(*TOKEN(token), &win_group);
+    chk_err(ierr);
+    ierr = MPI_Group_translate_ranks(current_team_group, 2,
+                                     (int[]){image_index - 1, mpi_this_image},
+                                     win_group, trans_ranks);
+    chk_err(ierr);
+    remote_image = trans_ranks[0];
+    this_image = trans_ranks[1];
+    ierr = MPI_Group_free(&current_team_group);
+    chk_err(ierr);
+    ierr = MPI_Group_free(&win_group);
+    chk_err(ierr);
+  }
+  else
+  {
+    remote_image = image_index - 1;
+    this_image = mpi_this_image;
+  }
+
+  check_image_health(remote_image, stat);
+
+  dprint(
+      "Entering get_from_remote(), token = %p, win_rank = %d, this_rank = %d, "
+      "getter index = %d, sizeof(src_desc) = %zd, sizeof(dst_desc) = %zd.\n",
+      token, remote_image, this_image, getter_index, src_desc_size,
+      dst_desc_size);
+
+  if (this_image == remote_image)
+  {
+    get_from_self(token, opt_src_desc, opt_src_charlen, image_index, dst_data,
+                  opt_dst_charlen, opt_dst_desc, may_realloc_dst, getter_index,
+                  get_data, this_image);
+    return;
+  }
+  // create get msg
+  if ((free_msg = (((msg = alloca(msg_size))) == NULL)))
+  {
+    msg = malloc(msg_size);
+    if (msg == NULL)
+      caf_runtime_error("Unable to allocate memory "
+                        "for internal message in get_from_remote().");
+  }
+  msg->cmd = remote_command_get;
+  msg->transfer_size = dst_size;
+  msg->opt_charlen = opt_src_charlen ? *opt_src_charlen : 0;
+  msg->win = *TOKEN(token);
+  msg->dest_image = mpi_this_image;
+  msg->dest_tag = CAF_CT_TAG + 1;
+  msg->dest_opt_charlen = opt_dst_charlen ? *opt_dst_charlen : 1;
+  msg->flags = (opt_dst_desc ? CT_DST_HAS_DESC : 0)
+               | (has_src_desc ? CT_SRC_HAS_DESC : 0)
+               | (opt_src_charlen ? CT_CHAR_ARRAY : 0)
+               | (dst_incl_desc ? CT_INCLUDE_DESCRIPTOR : 0);
+  dprint("message flags: %x.\n", msg->flags);
+  msg->accessor_index = getter_index;
+  if (opt_dst_desc)
+    memcpy(msg->data, opt_dst_desc, dst_desc_size);
+  if (has_src_desc)
+    memcpy(msg->data + dst_desc_size, opt_src_desc, src_desc_size);
+
+  memcpy(msg->data + dst_desc_size + src_desc_size, get_data, get_data_size);
+
+  if (external_call)
+  {
+    msg->ra_id = running_accesses_id_cnt++;
+    rat = (struct running_accesses_t *)malloc(
+        sizeof(struct running_accesses_t));
+    rat->id = msg->ra_id;
+    rat->memptr = msg->data + dst_desc_size + src_desc_size;
+    rat->next = running_accesses;
+    running_accesses = rat;
+  }
+  else
+    msg->ra_id = (rat_id_t)((struct mpi_caf_token_t *)token)->memptr;
+
+  // call get on remote
+  ierr = MPI_Send(msg, msg_size, MPI_BYTE, remote_image, CAF_CT_TAG, ct_COMM);
+  chk_err(ierr);
+
+  if (!opt_dst_charlen && !dst_incl_desc)
+  {
+    // allocate local buffer
+    if ((free_t_buff = (((t_buff = alloca(dst_size))) == NULL)))
+    {
+      t_buff = malloc(dst_size);
+      if (t_buff == NULL)
+        caf_runtime_error("Unable to allocate memory "
+                          "for internal buffer in get_from_remote().");
+    }
+    dprint("waiting to receive %zd bytes from %d.\n", dst_size,
+           image_index - 1);
+    ierr = MPI_Recv(t_buff, dst_size, MPI_BYTE, image_index - 1, msg->dest_tag,
+                    CAF_COMM_WORLD, MPI_STATUS_IGNORE);
+    chk_err(ierr);
+    dprint("received %zd bytes as requested from %d.\n", dst_size,
+           image_index - 1);
+    // dump_mem("get_from_remote", t_buff, dst_size);
+    memcpy(*dst_data, t_buff, dst_size);
+
+    if (free_t_buff)
+      free(t_buff);
+  }
+  else
+  {
+    MPI_Status status;
+    MPI_Message msg_han;
+    int cnt;
+
+    dprint("probing for incoming message from %d, tag %d.\n", image_index - 1,
+           msg->dest_tag);
+    ierr = MPI_Mprobe(image_index - 1, msg->dest_tag, CAF_COMM_WORLD, &msg_han,
+                      &status);
+    chk_err(ierr);
+    if (ierr == MPI_SUCCESS)
+    {
+      MPI_Get_count(&status, MPI_BYTE, &cnt);
+      dprint("get message of %d bytes from image %d, tag %d, dest_addr %p.\n",
+             cnt, image_index - 1, msg->dest_tag, *dst_data);
+      if (may_realloc_dst)
+        *dst_data = realloc(*dst_data, cnt);
+      // else // max cnt
+      ierr = MPI_Mrecv(*dst_data, cnt, MPI_BYTE, &msg_han, &status);
+      chk_err(ierr);
+      if (opt_dst_charlen)
+        *opt_dst_charlen = cnt / dst_size;
+      if (dst_incl_desc)
+      {
+        const size_t desc_size = sizeof_desc_for_rank(
+            GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)(*dst_data)));
+        dprint("refitting dst descriptor of size %zd at %p with data %zd at %p "
+               "from %d bytes transfered.\n",
+               desc_size, opt_dst_desc, cnt - desc_size, *dst_data, cnt);
+        memcpy(opt_dst_desc, *dst_data, desc_size);
+        memmove(*dst_data, (*dst_data) + desc_size, cnt - desc_size);
+        opt_dst_desc->base_addr = *dst_data
+            = realloc(*dst_data, cnt - desc_size);
+        dump_mem("ret data", opt_dst_desc->base_addr, cnt - desc_size);
+      }
+    }
+    else
+    {
+      int err_len;
+      char err_str[MPI_MAX_ERROR_STRING];
+      MPI_Error_string(status.MPI_ERROR, err_str, &err_len);
+      caf_runtime_error("Got MPI error %d retrieving result: %s",
+                        status.MPI_ERROR, err_str);
+    }
+  }
+
+  if (running_accesses == rat)
+    running_accesses = rat->next;
+  else
+  {
+    struct running_accesses_t *pra = running_accesses;
+    for (; pra && pra->next != rat; pra = pra->next)
+      ;
+    pra->next = rat->next;
+  }
+  free(rat);
+
+  if (free_msg)
+    free(msg);
+
+  dprint("done with get_from_remote.\n");
+}
+
+int32_t
+PREFIX(is_present_on_remote)(caf_token_t token, const int image_index,
+                             const int is_present_index, void *add_data,
+                             const size_t add_data_size)
+{
+  /* Unregistered tokens are always not present.  */
+  if (!token)
+    return 0;
+
+  MPI_Group current_team_group, win_group;
+  int ierr, this_image, remote_image;
+  int trans_ranks[2];
+  bool free_msg;
+  int32_t result = 0;
+  ct_msg_t *msg;
+  const size_t msg_size = sizeof(ct_msg_t) + add_data_size;
+  struct running_accesses_t *rat;
+
+  // Get mapped remote image
+  ierr = MPI_Comm_group(CAF_COMM_WORLD, &current_team_group);
+  chk_err(ierr);
+  ierr = MPI_Win_get_group(*TOKEN(token), &win_group);
+  chk_err(ierr);
+  ierr = MPI_Group_translate_ranks(current_team_group, 2,
+                                   (int[]){image_index - 1, mpi_this_image},
+                                   win_group, trans_ranks);
+  chk_err(ierr);
+  remote_image = trans_ranks[0];
+  this_image = trans_ranks[1];
+  ierr = MPI_Group_free(&current_team_group);
+  chk_err(ierr);
+  ierr = MPI_Group_free(&win_group);
+  chk_err(ierr);
+
+  check_image_health(remote_image, stat);
+
+  dprint(
+      "Entering is_present_on_remote(), token = %p, win_rank = %d, this_rank = "
+      "%d, is_present index = %d, sizeof(msg) = %ld.\n",
+      token, remote_image, this_image, is_present_index, msg_size);
+
+  if (this_image == remote_image)
+  {
+    int32_t result = 0;
+    mpi_caf_token_t src_token = {get_data, MPI_WIN_NULL, NULL};
+    void *src_ptr = ((mpi_caf_token_t *)token)->memptr;
+
+    dprint("Shortcutting due to self access on image %d.\n", image_index);
+    accessor_hash_table[is_present_index].u.is_present(
+        add_data, &this_image, &result, src_ptr, &src_token, 0);
+
+    return result;
+  }
+
+  // create get msg
+  if ((free_msg = (((msg = alloca(msg_size))) == NULL)))
+  {
+    msg = malloc(msg_size);
+    if (msg == NULL)
+      caf_runtime_error("Unable to allocate memory "
+                        "for internal message in get_from_remote().");
+  }
+  msg->cmd = remote_command_present;
+  msg->transfer_size = 1;
+  msg->opt_charlen = 0;
+  msg->win = *TOKEN(token);
+  msg->dest_image = mpi_this_image;
+  msg->dest_tag = CAF_CT_TAG + 1;
+  msg->dest_opt_charlen = 0;
+  msg->flags = 0;
+  dprint("message flags: %x.\n", msg->flags);
+  msg->accessor_index = is_present_index;
+
+  memcpy(msg->data, add_data, add_data_size);
+
+  msg->ra_id = running_accesses_id_cnt++;
+  rat = (struct running_accesses_t *)malloc(sizeof(struct running_accesses_t));
+  rat->id = msg->ra_id;
+  rat->memptr = msg->data;
+  rat->next = running_accesses;
+  running_accesses = rat;
+
+  // call get on remote
+  ierr = MPI_Send(msg, msg_size, MPI_BYTE, remote_image, CAF_CT_TAG, ct_COMM);
+  chk_err(ierr);
+
+  dprint("waiting to receive %d bytes from %d.\n", 1, image_index - 1);
+  ierr = MPI_Recv(&result, 1, MPI_BYTE, image_index - 1, msg->dest_tag,
+                  CAF_COMM_WORLD, MPI_STATUS_IGNORE);
+  chk_err(ierr);
+  dprint("received %d bytes as requested from %d.\n", 1, image_index - 1);
+
+  if (running_accesses == rat)
+    running_accesses = rat->next;
+  else
+  {
+    struct running_accesses_t *pra = running_accesses;
+    for (; pra && pra->next != rat; pra = pra->next)
+      ;
+    pra->next = rat->next;
+  }
+  free(rat);
+  if (free_msg)
+    free(msg);
+
+  dprint("done with is_present_on_remote.\n");
+  return result;
+}
+
+static void
+send_to_self(caf_token_t token, gfc_descriptor_t *opt_dst_desc,
+             const size_t *opt_dst_charlen,
+             const int image_index __attribute__((unused)),
+             const size_t src_size, const void *src_data,
+             size_t *opt_src_charlen, const gfc_descriptor_t *opt_src_desc,
+             const int setter_index, void *add_data, const int this_image)
+{
+  const bool requires_temp
+      = (opt_src_desc
+         && ((mpi_caf_token_t *)token)->memptr == opt_src_desc->base_addr)
+        || (!opt_src_desc && ((mpi_caf_token_t *)token)->memptr == src_data);
+  void *dst_ptr
+      = opt_dst_desc ? opt_dst_desc : ((mpi_caf_token_t *)token)->memptr;
+  mpi_caf_token_t src_token = {add_data, MPI_WIN_NULL, NULL};
+  const void *src_ptr = opt_src_desc ? opt_src_desc : src_data,
+             *orig_src_ptr = src_ptr;
+  const size_t sz
+      = requires_temp
+            ? opt_src_desc ? compute_arr_data_size(opt_src_desc) : src_size
+            : 0;
+  bool free_tmp = false;
+  if (requires_temp)
+  {
+    void *tmp_ptr;
+    if ((free_tmp = (tmp_ptr = alloca(sz)) == NULL))
+    {
+      tmp_ptr = malloc(sz);
+      if (!tmp_ptr)
+        caf_runtime_error("can not allocate %zd bytes for temp buffer in send",
+                          sz);
+    }
+    memcpy(tmp_ptr, opt_src_desc ? opt_src_desc->base_addr : src_ptr, sz);
+    if (opt_src_desc)
+    {
+      orig_src_ptr = opt_src_desc->base_addr;
+      ((gfc_descriptor_t *)opt_src_desc)->base_addr = tmp_ptr;
+    }
+    else
+      src_ptr = tmp_ptr;
+  }
+
+  dprint("Shortcutting due to self access on image %d %s temporary on %s.\n",
+         image_index, requires_temp ? "w/ " : "w/o",
+         opt_src_desc ? "array " : "scalar");
+  accessor_hash_table[setter_index].u.receiver(
+      add_data, &this_image, dst_ptr, src_ptr, &src_token, 0, opt_dst_charlen,
+      opt_src_charlen);
+
+  if (requires_temp)
+  {
+    if (opt_src_desc)
+    {
+      if (free_tmp)
+        free(opt_src_desc->base_addr);
+      ((gfc_descriptor_t *)opt_src_desc)->base_addr = (void *)orig_src_ptr;
+    }
+    else if (free_tmp)
+      free((void *)src_ptr);
+  }
+}
+
+/* Send data to a remote image's memory pointed to by `token`.  The image
+ * is given by `image_index`. When the data is a descriptor array, then
+ * `opt_dst_desc` gives the descriptor. Its data pointer is replaced by the
+ * memory of the remote image. `opt_dst_charlen` gives the length of the
+ * destination string on the remote image when that is a character array.
+ * `in_src_size` then gives the number of bytes of each character, else
+ * `in_src_size` gives the bytes to transfer from `src_data`. If `src_data` is
+ * a character array, then `opt_src_charlen` gives its number of characters.
+ * When source is a descriptor array, then `opt_src_desc` gives the descriptor.
+ * `setter_index` is the index in the hashtable as returned by
+ * `get_remote_function_index()`. `add_data` is optional data to be
+ * passed to the getter function. `add_data_size` is the size of the former
+ * data. `*stat` will be set to non-zero on error, when `stat` is not null.
+ * `team` and `team_number` will be used for team and number of the team in the
+ * future. At the moment these are only placeholders.
+ */
+void
+PREFIX(send_to_remote)(caf_token_t token, gfc_descriptor_t *opt_dst_desc,
+                       const size_t *opt_dst_charlen, const int image_index,
+                       const size_t in_src_size, const void *src_data,
+                       size_t *opt_src_charlen,
+                       const gfc_descriptor_t *opt_src_desc,
+                       const int setter_index, void *add_data,
+                       const size_t add_data_size, int *stat,
+                       caf_team_t *team __attribute__((unused)),
+                       int *team_number __attribute__((unused)))
+{
+  MPI_Group current_team_group, win_group;
+  int ierr, this_image, remote_image;
+  int trans_ranks[2];
+  bool free_msg;
+  ct_msg_t *msg;
+  const bool dst_incl_desc = opt_dst_desc, has_src_desc = opt_src_desc,
+             external_call = *TOKEN(token) != MPI_WIN_NULL;
+  const size_t dst_desc_size
+      = opt_dst_desc ? sizeof_desc_for_rank(GFC_DESCRIPTOR_RANK(opt_dst_desc))
+                     : 0,
+      src_desc_size
+      = has_src_desc ? sizeof_desc_for_rank(GFC_DESCRIPTOR_RANK(opt_src_desc))
+                     : 0;
+  size_t src_size
+      = opt_src_charlen ? in_src_size * *opt_src_charlen : in_src_size,
+      msg_size = sizeof(ct_msg_t) + src_size + dst_desc_size + src_desc_size
+                 + add_data_size;
+  struct running_accesses_t *rat;
+
+  if (stat)
+    *stat = 0;
+
+  // Get mapped remote image
+  if (external_call)
+  {
+    ierr = MPI_Comm_group(CAF_COMM_WORLD, &current_team_group);
+    chk_err(ierr);
+    ierr = MPI_Win_get_group(*TOKEN(token), &win_group);
+    chk_err(ierr);
+    ierr = MPI_Group_translate_ranks(current_team_group, 2,
+                                     (int[]){image_index - 1, mpi_this_image},
+                                     win_group, trans_ranks);
+    chk_err(ierr);
+    remote_image = trans_ranks[0];
+    this_image = trans_ranks[1];
+    ierr = MPI_Group_free(&current_team_group);
+    chk_err(ierr);
+    ierr = MPI_Group_free(&win_group);
+    chk_err(ierr);
+  }
+  else
+  {
+    remote_image = image_index - 1;
+    this_image = mpi_this_image;
+  }
+
+  check_image_health(remote_image, stat);
+  if (opt_src_charlen && opt_src_desc)
+  {
+    const size_t sz = compute_arr_data_size_sz(opt_src_desc, 1);
+    msg_size -= src_size;
+    src_size *= sz;
+    msg_size += src_size;
+  }
+
+  dprint("Entering send_to_remote(), token = %p, memptr = %p, win_rank = %d, "
+         "this_rank = %d, setter index = %d, sizeof(data = %p) = %zd, "
+         "sizeof(src_desc) = %zd, sizeof(dst_desc) = %zd, sizeof(msg) = %zd.\n",
+         token, ((mpi_caf_token_t *)token)->memptr, remote_image, this_image,
+         setter_index, opt_src_desc ? opt_src_desc->base_addr : src_data,
+         src_size, src_desc_size, dst_desc_size, msg_size);
+
+  /* Shortcut for copy to self.  */
+  if (this_image == remote_image)
+  {
+    send_to_self(token, opt_dst_desc, opt_dst_charlen, image_index, src_size,
+                 src_data, opt_src_charlen, opt_src_desc, setter_index,
+                 add_data, this_image);
+    return;
+  }
+
+  // create get msg
+  if ((free_msg = (((msg = alloca(msg_size))) == NULL)))
+  {
+    msg = malloc(msg_size);
+    if (msg == NULL)
+      caf_runtime_error("Unable to allocate memory "
+                        "for internal message in send_to_remote().");
+  }
+  msg->cmd = remote_command_send;
+  msg->transfer_size = src_size;
+  msg->opt_charlen = opt_src_charlen ? *opt_src_charlen : 0;
+  msg->win = *TOKEN(token);
+  msg->dest_image = mpi_this_image;
+  msg->dest_tag = CAF_CT_TAG + 1;
+  msg->dest_opt_charlen = opt_dst_charlen ? *opt_dst_charlen : 1;
+  msg->flags = (opt_dst_desc ? CT_DST_HAS_DESC : 0)
+               | (has_src_desc ? CT_SRC_HAS_DESC : 0)
+               | (opt_src_charlen ? CT_CHAR_ARRAY : 0)
+               | (dst_incl_desc ? CT_INCLUDE_DESCRIPTOR : 0);
+  dprint("message flags: %x.\n", msg->flags);
+  msg->accessor_index = setter_index;
+  if (has_src_desc)
+  {
+    memcpy(msg->data, opt_src_desc->base_addr, src_size);
+    memcpy(msg->data + src_size, opt_src_desc, src_desc_size);
+  }
+  else
+    memcpy(msg->data, src_data, src_size);
+  if (opt_dst_desc)
+    memcpy(msg->data + src_size + src_desc_size, opt_dst_desc, dst_desc_size);
+
+  memcpy(msg->data + src_size + src_desc_size + dst_desc_size, add_data,
+         add_data_size);
+
+  if (external_call)
+  {
+    msg->ra_id = running_accesses_id_cnt++;
+    rat = (struct running_accesses_t *)malloc(
+        sizeof(struct running_accesses_t));
+    rat->id = msg->ra_id;
+    rat->memptr = msg->data + src_size + dst_desc_size + src_desc_size;
+    rat->next = running_accesses;
+    running_accesses = rat;
+  }
+  else
+    msg->ra_id = (rat_id_t)((struct mpi_caf_token_t *)token)->memptr;
+
+  // call get on remote
+  ierr = MPI_Send(msg, msg_size, MPI_BYTE, remote_image, CAF_CT_TAG, ct_COMM);
+  chk_err(ierr);
+
+  {
+    char c;
+    dprint("waiting to receive %d bytes from %d on tag %d.\n", 1, image_index,
+           msg->dest_tag);
+    ierr = MPI_Recv(&c, 1, MPI_BYTE, image_index - 1, msg->dest_tag,
+                    CAF_COMM_WORLD, MPI_STATUS_IGNORE);
+    chk_err(ierr);
+    dprint("received %d bytes as requested from %d on tag %d.\n", 1,
+           image_index, msg->dest_tag);
+  }
+
+  if (running_accesses == rat)
+    running_accesses = rat->next;
+  else
+  {
+    struct running_accesses_t *pra = running_accesses;
+    for (; pra && pra->next != rat; pra = pra->next)
+      ;
+    pra->next = rat->next;
+  }
+  free(rat);
+
+  if (free_msg)
+    free(msg);
+
+  dprint("done with send_to_remote.\n");
+}
+
+/* Transfer data from one remote image's memory to a different remote image.
+ * The memory on the destination image is given by `dst_token`.  If that memory
+ * is a descriptor array, then `opt_dst_desc` gives the descriptor of the array
+ * on the initiating image. When the destination data is a string, then
+ * `opt_dst_charlen` gives the number of characters. The destination images
+ * index is given by `dst_image_index`. The accessor to use is given by
+ * `dst_access_index`. Addititional data to provide to the accessor on the
+ * destination is given by `dst_add_data` and that size in `dst_add_data_size`.
+ * The source for the transfer is given by `src_token`.  If the memory is an
+ * array, then `opt_src_desc` gives it descriptor. When the source is a string,
+ * then `opt_src_charlen` gives its the length. `in_src_size` then
+ * gives the number of bytes of each character. `opt_src_charlen` is null, when
+ * this is no character array.
+ * The index of the source image is given by `src_image_index`. The index for
+ * the getter is specified in `src_access_index`. Additional data to provide to
+ * this getter is given in `*src_add_data` and its size in `src_add_data_size`.
+ * The parameter `in_src_size` specifies the size of data to transfer from on
+ * to the other image, when the data to transfer is not an array. In the latter
+ * case it is ignored. When the data to transfer is a character array, then
+ * `in_src_size` gives the size of one character. The `scalar_transfer`
+ * indicates that the data between the two images is not a descriptor array.
+ * `dst_stat` if set, gets set to zero on success. Should there be an error,
+ * then this is set to non-zero.  When `src_stat` is set, it is set to zero.
+ * `dst_team`, `dst_team_number`, `src_team` and `src_team_number` will be used
+ * for team and number of the team in the future. At the moment these are only
+ * placeholders.
+ */
+void
+PREFIX(transfer_between_remotes)(
+    caf_token_t dst_token, gfc_descriptor_t *opt_dst_desc,
+    size_t *opt_dst_charlen, const int dst_image_index,
+    const int dst_access_index, void *dst_add_data,
+    const size_t dst_add_data_size, caf_token_t src_token,
+    const gfc_descriptor_t *opt_src_desc, const size_t *opt_src_charlen,
+    const int src_image_index, const int src_access_index, void *src_add_data,
+    const size_t src_add_data_size, const size_t in_src_size,
+    const bool scalar_transfer, int *dst_stat, int *src_stat,
+    caf_team_t *dst_team __attribute__((unused)),
+    int *dst_team_number __attribute__((unused)),
+    caf_team_t *src_team __attribute__((unused)),
+    int *src_team_number __attribute__((unused)))
+{
+  MPI_Group current_team_group, win_group;
+  int ierr, this_image, src_remote_image, dst_remote_image;
+  int trans_ranks[3];
+  bool free_msg;
+  ct_msg_t *full_msg, *dst_msg;
+  struct transfer_msg_data_t *tmd;
+  const bool has_src_desc = opt_src_desc;
+  const size_t dst_desc_size
+      = opt_dst_desc ? sizeof_desc_for_rank(GFC_DESCRIPTOR_RANK(opt_dst_desc))
+                     : 0,
+      src_desc_size
+      = has_src_desc ? sizeof_desc_for_rank(GFC_DESCRIPTOR_RANK(opt_src_desc))
+                     : 0;
+  size_t src_size
+      = opt_src_charlen ? in_src_size * *opt_src_charlen : in_src_size,
+      dst_msg_size = sizeof(ct_msg_t) + sizeof(struct transfer_msg_data_t)
+                     + dst_desc_size + dst_add_data_size,
+      full_msg_size
+      = sizeof(ct_msg_t) + dst_msg_size + src_desc_size + src_add_data_size;
+  struct running_accesses_t *rat;
+
+  if (dst_stat)
+    *dst_stat = 0;
+  if (src_stat)
+    *src_stat = 0;
+
+  // Get mapped remote image
+  ierr = MPI_Comm_group(CAF_COMM_WORLD, &current_team_group);
+  chk_err(ierr);
+  ierr = MPI_Win_get_group(*TOKEN(src_token), &win_group);
+  chk_err(ierr);
+  ierr = MPI_Group_translate_ranks(
+      current_team_group, 3,
+      (int[]){src_image_index - 1, dst_image_index - 1, mpi_this_image},
+      win_group, trans_ranks);
+  chk_err(ierr);
+  src_remote_image = trans_ranks[0];
+  dst_remote_image = trans_ranks[1];
+  this_image = trans_ranks[2];
+  ierr = MPI_Group_free(&current_team_group);
+  chk_err(ierr);
+  ierr = MPI_Group_free(&win_group);
+  chk_err(ierr);
+
+  dprint("team-map: dst(in) %d -> %d, src(in) %d -> %d, this %d -> %d.\n",
+         dst_image_index, dst_remote_image, src_image_index, src_remote_image,
+         caf_this_image, this_image);
+  check_image_health(src_remote_image, src_stat);
+  check_image_health(dst_remote_image, dst_stat);
+
+  if (opt_src_charlen && opt_src_desc)
+  {
+    const size_t sz = compute_arr_data_size_sz(opt_src_desc, 1);
+    full_msg_size -= src_size;
+    dst_msg_size -= src_size;
+    src_size *= sz;
+    full_msg_size += src_size;
+    dst_msg_size += src_size;
+  }
+
+  dprint("Entering transfer_between_remotes(), dst_token = %p, dst_rank = %d, "
+         "this_rank = %d, setter index = %d, src_token = %p, src_rank = %d, "
+         "getter index = %d, sizeof(src_desc) = %zd, sizeof(dst_desc) = %zd, "
+         "sizeof(msg) = %zd, scalar_transfer = %d, in_src_size = %zd, src_size "
+         "= %zd.\n",
+         dst_token, dst_remote_image, this_image, dst_access_index, src_token,
+         src_remote_image, src_access_index, src_desc_size, dst_desc_size,
+         full_msg_size, scalar_transfer, in_src_size, src_size);
+
+  /* Shortcut for copy to self.  */
+  if (this_image == src_remote_image && this_image == dst_remote_image)
+  {
+    void *dptr = NULL;
+    gfc_max_dim_descriptor_t max_desc;
+    gfc_descriptor_t *trans_desc
+        = scalar_transfer ? NULL : (gfc_descriptor_t *)&max_desc;
+
+    if (!scalar_transfer)
+      trans_desc->base_addr = NULL;
+
+    get_from_self(src_token, opt_src_desc, opt_src_charlen, src_image_index,
+                  &dptr, opt_dst_charlen, trans_desc, true, src_access_index,
+                  src_add_data, this_image);
+    send_to_self(dst_token, opt_dst_desc, opt_dst_charlen, dst_image_index,
+                 src_size, dptr, (size_t *)opt_src_charlen, trans_desc,
+                 dst_access_index, dst_add_data, this_image);
+
+    if (trans_desc)
+      free(trans_desc->base_addr);
+
+    return;
+  }
+  else if (this_image == src_remote_image)
+  {
+    void *dptr = NULL;
+    gfc_max_dim_descriptor_t max_desc;
+    gfc_descriptor_t *trans_desc
+        = scalar_transfer ? NULL : (gfc_descriptor_t *)&max_desc;
+
+    if (!scalar_transfer)
+      trans_desc->base_addr = NULL;
+
+    // Essentially a send_to_remote
+    get_from_self(src_token, opt_src_desc, opt_src_charlen, src_image_index,
+                  &dptr, opt_dst_charlen, trans_desc, true, src_access_index,
+                  src_add_data, this_image);
+    _gfortran_caf_send_to_remote(
+        dst_token, opt_dst_desc, opt_dst_charlen, dst_image_index, src_size,
+        dptr, (size_t *)opt_src_charlen, trans_desc, dst_access_index,
+        dst_add_data, dst_add_data_size, dst_stat, dst_team, dst_team_number);
+    if (trans_desc)
+      free(trans_desc->base_addr);
+    return;
+  }
+  else if (this_image == dst_remote_image)
+  {
+    // Essentially a get_from_remote
+    void *dptr = NULL;
+    gfc_max_dim_descriptor_t max_desc;
+    gfc_descriptor_t *trans_desc
+        = scalar_transfer ? NULL : (gfc_descriptor_t *)&max_desc;
+
+    if (!scalar_transfer)
+      trans_desc->base_addr = NULL;
+    if (scalar_transfer)
+      dptr = malloc(src_size);
+
+    _gfortran_caf_get_from_remote(
+        src_token, opt_src_desc, opt_src_charlen, src_image_index, src_size,
+        &dptr, opt_dst_charlen, trans_desc, true, src_access_index,
+        src_add_data, src_add_data_size, src_stat, src_team, src_team_number);
+    send_to_self(dst_token, opt_dst_desc, opt_dst_charlen, dst_image_index,
+                 src_size, dptr, (size_t *)opt_src_charlen, trans_desc,
+                 dst_access_index, dst_add_data, this_image);
+
+    if (trans_desc)
+      free(trans_desc->base_addr);
+    if (scalar_transfer)
+      free(dptr);
+    return;
+  }
+
+  // create get msg
+  if ((free_msg = (((full_msg = alloca(full_msg_size))) == NULL)))
+  {
+    full_msg = malloc(full_msg_size);
+    if (full_msg == NULL)
+      caf_runtime_error("Unable to allocate memory "
+                        "for internal message in transfer_between_remotes().");
+  }
+  full_msg->cmd = remote_command_transfer;
+  full_msg->transfer_size = src_size;
+  full_msg->opt_charlen = opt_src_charlen ? *opt_src_charlen : 0;
+  full_msg->win = *TOKEN(src_token);
+  full_msg->dest_image = dst_remote_image;
+  full_msg->dest_tag = CAF_CT_TAG;
+  full_msg->dest_opt_charlen = opt_dst_charlen ? *opt_dst_charlen : 1;
+  full_msg->flags = (opt_dst_desc ? CT_DST_HAS_DESC : 0)
+                    | (has_src_desc ? CT_SRC_HAS_DESC : 0)
+                    | (opt_src_charlen ? CT_CHAR_ARRAY : 0)
+                    | (scalar_transfer ? 0 : CT_TRANSFER_DESC);
+  dprint("get message flags: %x.\n", full_msg->flags);
+  full_msg->accessor_index = src_access_index;
+
+  /* The message to hand to the reciever of the data.  */
+  dst_msg = (ct_msg_t *)full_msg->data;
+  dst_msg->cmd = remote_command_send;
+  dst_msg->transfer_size = src_size;
+  dst_msg->opt_charlen = opt_src_charlen ? *opt_src_charlen : 0;
+  dst_msg->win = *TOKEN(dst_token);
+  dst_msg->dest_image = mpi_this_image;
+  dst_msg->dest_tag = CAF_CT_TAG + 1;
+  dst_msg->dest_opt_charlen = opt_dst_charlen ? *opt_dst_charlen : 1;
+  dst_msg->flags
+      = (opt_dst_desc ? (CT_DST_HAS_DESC | CT_INCLUDE_DESCRIPTOR) : 0)
+        | (scalar_transfer ? 0 : CT_SRC_HAS_DESC)
+        | (opt_src_charlen ? CT_CHAR_ARRAY : 0);
+  dprint("send message flags: %x.\n", dst_msg->flags);
+  dst_msg->accessor_index = dst_access_index;
+
+  tmd = (struct transfer_msg_data_t *)dst_msg->data;
+  tmd->dst_msg_size = dst_msg_size;
+  tmd->dst_desc_size = dst_desc_size;
+  tmd->dst_add_data_size = dst_add_data_size;
+
+  /* Data for forwarding result to receiver.  */
+  if (opt_dst_desc)
+    memcpy(tmd->data, opt_dst_desc, dst_desc_size);
+  memcpy(tmd->data + dst_desc_size, dst_add_data, dst_add_data_size);
+
+  /* Data the getter needs.  */
+  if (has_src_desc)
+    memcpy(tmd->data + dst_desc_size + dst_add_data_size, opt_src_desc,
+           src_desc_size);
+  memcpy(tmd->data + dst_desc_size + dst_add_data_size + src_desc_size,
+         src_add_data, src_add_data_size);
+
+  full_msg->ra_id = running_accesses_id_cnt++;
+  rat = (struct running_accesses_t *)malloc(sizeof(struct running_accesses_t));
+  rat->id = full_msg->ra_id;
+  rat->memptr = full_msg->data + src_size + dst_desc_size + src_desc_size;
+  rat->next = running_accesses;
+  running_accesses = rat;
+
+  // initiate transfer on getter
+  dprint("message size is %zd, dst_desc_size: %zd, src_desc_size: %zd.\n",
+         full_msg_size, dst_desc_size, src_desc_size);
+  ierr = MPI_Send(full_msg, full_msg_size, MPI_BYTE, src_remote_image,
+                  CAF_CT_TAG, ct_COMM);
+  chk_err(ierr);
+
+  {
+    char c;
+    dprint("waiting to receive %d bytes from %d on tag %d.\n", 1,
+           dst_image_index, dst_msg->dest_tag);
+    ierr = MPI_Recv(&c, 1, MPI_BYTE, dst_image_index - 1, dst_msg->dest_tag,
+                    CAF_COMM_WORLD, MPI_STATUS_IGNORE);
+    chk_err(ierr);
+    if (dst_stat)
+      *dst_stat = c;
+    dprint("received %d bytes as requested from %d on tag %d.\n", 1,
+           dst_image_index, dst_msg->dest_tag);
+  }
+
+  if (running_accesses == rat)
+    running_accesses = rat->next;
+  else
+  {
+    struct running_accesses_t *pra = running_accesses;
+    for (; pra && pra->next != rat; pra = pra->next)
+      ;
+    pra->next = rat->next;
+  }
+  free(rat);
+
+  if (free_msg)
+    free(full_msg);
+
+  dprint("done with transfer_between_remotes.\n");
+}
+#endif
+
 void
 PREFIX(get_by_ref)(caf_token_t token, int image_index, gfc_descriptor_t *dst,
                    caf_reference_t *refs, int dst_kind, int src_kind,
@@ -4920,8 +6521,8 @@ PREFIX(get_by_ref)(caf_token_t token, int image_index, gfc_descriptor_t *dst,
           if (access_desc_through_global_win)
           {
             size_t datasize = sizeof_desc_for_rank(ref_rank);
-            dprint("remote desc fetch from %p, offset = %zd, ref_rank = %d, "
-                   "get_size = %u, rank = %d\n",
+            dprint("remote desc fetch from %p, offset = %td, ref_rank = %zd, "
+                   "get_size = %zd, rank = %d\n",
                    remote_base_memptr, desc_offset, ref_rank, datasize,
                    global_dynamic_win_rank);
             CAF_Win_lock(MPI_LOCK_SHARED, global_dynamic_win_rank,
@@ -4936,7 +6537,7 @@ PREFIX(get_by_ref)(caf_token_t token, int image_index, gfc_descriptor_t *dst,
           else
           {
             dprint(
-                "remote desc fetch from win %d, offset = %zd, ref_rank = %d\n",
+                "remote desc fetch from win %d, offset = %td, ref_rank = %zd\n",
                 mpi_token->memptr_win, desc_offset, ref_rank);
             CAF_Win_lock(MPI_LOCK_SHARED, memptr_win_rank,
                          mpi_token->memptr_win);
@@ -4966,7 +6567,7 @@ PREFIX(get_by_ref)(caf_token_t token, int image_index, gfc_descriptor_t *dst,
         }
 
 #ifdef EXTRA_DEBUG_OUTPUT
-        dprint("remote desc rank: %zd, base_addr: %p\n",
+        dprint("remote desc rank: %d, base_addr: %p\n",
                GFC_DESCRIPTOR_RANK(src), src->base_addr);
         for (i = 0; i < GFC_DESCRIPTOR_RANK(src); ++i)
         {
@@ -5365,7 +6966,7 @@ PREFIX(get_by_ref)(caf_token_t token, int image_index, gfc_descriptor_t *dst,
   remote_memptr = mpi_token->memptr;
   dst_index = 0;
 #ifdef EXTRA_DEBUG_OUTPUT
-  dprint("dst_rank: %zd\n", dst_rank);
+  dprint("dst_rank: %d\n", dst_rank);
   for (i = 0; i < dst_rank; ++i)
   {
     dprint("dst_dim[%zd] = (%zd, %zd)\n", i, dst->dim[i].lower_bound,
@@ -5702,7 +7303,7 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
           if (desc_global)
           {
             MPI_Aint disp = MPI_Aint_add((MPI_Aint)rdesc, desc_byte_offset);
-            dprint("remote desc fetch from %p, offset = %zd, aggreg. = %p\n",
+            dprint("remote desc fetch from %p, offset = %td, aggreg. = %ld\n",
                    rdesc, desc_byte_offset, disp);
             CAF_Win_lock(MPI_LOCK_SHARED, global_dynamic_win_rank,
                          global_dynamic_win);
@@ -5734,7 +7335,7 @@ send_for_ref(caf_reference_t *ref, size_t *i, size_t src_index,
         dst_byte_offset = 0;
         desc_byte_offset = 0;
 #ifdef EXTRA_DEBUG_OUTPUT
-        dprint("remote desc rank: %zd (ref_rank: %zd)\n",
+        dprint("remote desc rank: %d (ref_rank: %zd)\n",
                GFC_DESCRIPTOR_RANK(dst), ref_rank);
         for (int r = 0; r < GFC_DESCRIPTOR_RANK(dst); ++r)
         {
@@ -6097,8 +7698,6 @@ PREFIX(send_by_ref)(caf_token_t token, int image_index, gfc_descriptor_t *src,
    * used for error tracking only.  It is not (yet) possible to allocate memory
    * on the remote image. */
   bool realloc_dst = false, extent_mismatch = false;
-  /* Set when the first non-scalar array reference is encountered. */
-  bool in_array_ref = false;
   /* Set when remote data is to be accessed through the
    * global dynamic window. */
   bool access_data_through_global_win = false;
@@ -6249,11 +7848,11 @@ PREFIX(send_by_ref)(caf_token_t token, int image_index, gfc_descriptor_t *src,
           dst = mpi_token->desc;
 #ifdef EXTRA_DEBUG_OUTPUT
         desc_seen = true;
-        dprint("remote desc rank: %zd (ref_rank: %zd)\n",
+        dprint("remote desc rank: %d (ref_rank: %zd)\n",
                GFC_DESCRIPTOR_RANK(dst), ref_rank);
         for (i = 0; i < GFC_DESCRIPTOR_RANK(dst); ++i)
         {
-          dprint("remote desc dim[%zd] = (lb=%zd, ub=%zd, stride=%zd)\n", i,
+          dprint("remote desc dim[%zd] = (lb=%td, ub=%td, stride=%td)\n", i,
                  dst->dim[i].lower_bound, dst->dim[i]._ubound,
                  dst->dim[i]._stride);
         }
@@ -6351,7 +7950,6 @@ PREFIX(send_by_ref)(caf_token_t token, int image_index, gfc_descriptor_t *src,
             /* Do further checks, when the source is not scalar. */
             else if (delta != 1)
             {
-              in_array_ref = true;
               /* When the realloc is required, then no extent may have
                * been set. */
               extent_mismatch = GFC_DESCRIPTOR_EXTENT(dst, src_cur_dim) < delta;
@@ -6385,7 +7983,6 @@ PREFIX(send_by_ref)(caf_token_t token, int image_index, gfc_descriptor_t *src,
           }
           size *= (ptrdiff_t)delta;
         }
-        in_array_ref = false;
         break;
       case CAF_REF_STATIC_ARRAY:
         for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
@@ -6464,7 +8061,6 @@ PREFIX(send_by_ref)(caf_token_t token, int image_index, gfc_descriptor_t *src,
             /* Do further checks, when the source is not scalar. */
             else if (delta != 1)
             {
-              in_array_ref = true;
               /* When the realloc is required, then no extent may have
                * been set. */
               extent_mismatch = GFC_DESCRIPTOR_EXTENT(dst, src_cur_dim) < delta;
@@ -6482,7 +8078,6 @@ PREFIX(send_by_ref)(caf_token_t token, int image_index, gfc_descriptor_t *src,
           }
           size *= (ptrdiff_t)delta;
         }
-        in_array_ref = false;
         break;
       default:
         caf_internal_error(unknownreftype, stat, NULL, 0);
@@ -6511,10 +8106,10 @@ PREFIX(send_by_ref)(caf_token_t token, int image_index, gfc_descriptor_t *src,
 #ifdef EXTRA_DEBUG_OUTPUT
   if (desc_seen)
   {
-    dprint("dst_rank: %zd\n", GFC_DESCRIPTOR_RANK(dst));
+    dprint("dst_rank: %d\n", GFC_DESCRIPTOR_RANK(dst));
     for (i = 0; i < GFC_DESCRIPTOR_RANK(dst); ++i)
     {
-      dprint("dst_dim[%zd] = (%zd, %zd)\n", i, dst->dim[i].lower_bound,
+      dprint("dst_dim[%zd] = (%td, %td)\n", i, dst->dim[i].lower_bound,
              dst->dim[i]._ubound);
     }
   }
@@ -6600,7 +8195,6 @@ PREFIX(sendget_by_ref)(caf_token_t dst_token, int dst_image_index,
   int global_dst_rank, global_src_rank, memptr_dst_rank, memptr_src_rank;
   /* Set when the first non-scalar array reference is encountered. */
   bool in_array_ref = false;
-  bool array_extent_fixed = false;
   /* Set when remote data is to be accessed through the
    * global dynamic window. */
   bool access_data_through_global_win = false;
@@ -6746,11 +8340,11 @@ PREFIX(sendget_by_ref)(caf_token_t dst_token, int dst_image_index,
           src = src_mpi_token->desc;
         }
 #ifdef EXTRA_DEBUG_OUTPUT
-        dprint("remote desc rank: %zd (ref_rank: %zd)\n",
+        dprint("remote desc rank: %d (ref_rank: %zd)\n",
                GFC_DESCRIPTOR_RANK(src), ref_rank);
         for (i = 0; i < GFC_DESCRIPTOR_RANK(src); ++i)
         {
-          dprint("remote desc dim[%zd] = (lb=%zd, ub=%zd, stride=%zd)\n", i,
+          dprint("remote desc dim[%zd] = (lb=%td, ub=%td, stride=%td)\n", i,
                  src->dim[i].lower_bound, src->dim[i]._ubound,
                  src->dim[i]._stride);
         }
@@ -6828,10 +8422,7 @@ PREFIX(sendget_by_ref)(caf_token_t dst_token, int dst_image_index,
           size *= (ptrdiff_t)delta;
         }
         if (in_array_ref)
-        {
-          array_extent_fixed = true;
           in_array_ref = false;
-        }
         break;
       case CAF_REF_STATIC_ARRAY:
         for (i = 0; riter->u.a.mode[i] != CAF_ARR_REF_NONE; ++i)
@@ -6893,10 +8484,7 @@ PREFIX(sendget_by_ref)(caf_token_t dst_token, int dst_image_index,
           size *= (ptrdiff_t)delta;
         }
         if (in_array_ref)
-        {
-          array_extent_fixed = true;
           in_array_ref = false;
-        }
         break;
       default:
         caf_runtime_error(unknownreftype, src_stat, NULL, 0);
@@ -7003,7 +8591,7 @@ PREFIX(is_present)(caf_token_t token, int image_index, caf_reference_t *refs)
   ptrdiff_t local_offset = 0;
   void *remote_memptr = NULL, *remote_base_memptr = NULL;
   bool carryOn = true, firstDesc = true;
-  caf_reference_t *riter = refs, *prev;
+  caf_reference_t *riter = refs;
   size_t i, ref_rank;
   int ierr;
   gfc_max_dim_descriptor_t src_desc;
@@ -7092,7 +8680,6 @@ PREFIX(is_present)(caf_token_t token, int image_index, caf_reference_t *refs)
         caf_runtime_error(unsupportedRefType);
         return false;
     } // switch
-    prev = riter;
     riter = riter->next;
   }
 
@@ -7183,7 +8770,7 @@ PREFIX(is_present)(caf_token_t token, int image_index, caf_reference_t *refs)
 #ifdef EXTRA_DEBUG_OUTPUT
         {
           gfc_descriptor_t *src = (gfc_descriptor_t *)(&src_desc);
-          dprint("remote desc rank: %zd (ref_rank: %zd)\n",
+          dprint("remote desc rank: %d (ref_rank: %zd)\n",
                  GFC_DESCRIPTOR_RANK(src), ref_rank);
           for (i = 0; i < GFC_DESCRIPTOR_RANK(src); ++i)
           {
@@ -7273,7 +8860,9 @@ static void
 sync_images_internal(int count, int images[], int *stat, char *errmsg,
                      size_t errmsg_len, bool internal)
 {
-  int ierr = 0, i = 0, j = 0, int_zero = 0, done_count = 0, flag;
+  /* Marked as unused, because of conditional compilation.  */
+  int ierr = 0, i = 0, j = 0, int_zero = 0, done_count = 0,
+      flag __attribute__((unused));
   MPI_Status s;
 
 #ifdef WITH_FAILED_IMAGES
@@ -7810,7 +9399,7 @@ PREFIX(co_broadcast)(gfc_descriptor_t *a, int source_image, int *stat,
       tot_ext *= extent;
     }
     array_offset += (i / tot_ext) * a->dim[rank - 1]._stride;
-    dprint("The array offset for element %d used in co_broadcast is %d\n", i,
+    dprint("The array offset for element %zd used in co_broadcast is %td\n", i,
            array_offset);
     void *sr = (void *)((char *)a->base_addr
                         + array_offset * GFC_DESCRIPTOR_SIZE(a));
@@ -7995,8 +9584,7 @@ PREFIX(atomic_define)(caf_token_t token, size_t offset, int image_index,
 {
   MPI_Win *p = TOKEN(token);
   MPI_Datatype dt;
-  int ierr = 0,
-      image = (image_index != 0) ? image_index - 1 : caf_this_image - 1;
+  int ierr = 0, image = (image_index != 0) ? image_index - 1 : mpi_this_image;
 
   selectType(kind, &dt);
 
@@ -8027,8 +9615,7 @@ PREFIX(atomic_ref)(caf_token_t token, size_t offset, int image_index,
 {
   MPI_Win *p = TOKEN(token);
   MPI_Datatype dt;
-  int ierr = 0,
-      image = (image_index != 0) ? image_index - 1 : caf_this_image - 1;
+  int ierr = 0, image = (image_index != 0) ? image_index - 1 : mpi_this_image;
 
   selectType(kind, &dt);
 
@@ -8059,8 +9646,7 @@ PREFIX(atomic_cas)(caf_token_t token, size_t offset, int image_index, void *old,
 {
   MPI_Win *p = TOKEN(token);
   MPI_Datatype dt;
-  int ierr = 0,
-      image = (image_index != 0) ? image_index - 1 : caf_this_image - 1;
+  int ierr = 0, image = (image_index != 0) ? image_index - 1 : mpi_this_image;
 
   selectType(kind, &dt);
 
@@ -8091,7 +9677,7 @@ PREFIX(atomic_op)(int op, caf_token_t token, size_t offset, int image_index,
   int ierr = 0;
   MPI_Datatype dt;
   MPI_Win *p = TOKEN(token);
-  int image = (image_index != 0) ? image_index - 1 : caf_this_image - 1;
+  int image = (image_index != 0) ? image_index - 1 : mpi_this_image;
 
 #if MPI_VERSION >= 3
   old = malloc(kind);
@@ -8143,10 +9729,10 @@ void
 PREFIX(event_post)(caf_token_t token, size_t index, int image_index, int *stat,
                    char *errmsg, charlen_t errmsg_len)
 {
-  int value = 1, ierr = 0, flag;
+  int value = 1, ierr = 0;
   MPI_Win *p = TOKEN(token);
   const char msg[] = "Error on event post";
-  int image = (image_index == 0) ? caf_this_image - 1 : image_index - 1;
+  int image = (image_index == 0) ? mpi_this_image : image_index - 1;
 
   if (stat != NULL)
     *stat = 0;
@@ -8184,7 +9770,7 @@ void
 PREFIX(event_wait)(caf_token_t token, size_t index, int until_count, int *stat,
                    char *errmsg, charlen_t errmsg_len)
 {
-  int ierr = 0, count = 0, i, image = caf_this_image - 1;
+  int ierr = 0, count = 0, i, image = mpi_this_image;
   int *var = NULL, flag, old = 0, newval = 0;
   const int spin_loop_max = 20000;
   MPI_Win *p = TOKEN(token);
@@ -8250,8 +9836,7 @@ PREFIX(event_query)(caf_token_t token, size_t index, int image_index,
                     int *count, int *stat)
 {
   MPI_Win *p = TOKEN(token);
-  int ierr = 0,
-      image = (image_index == 0) ? caf_this_image - 1 : image_index - 1;
+  int ierr = 0, image = (image_index == 0) ? mpi_this_image : image_index - 1;
 
   if (stat != NULL)
     *stat = 0;
@@ -8567,36 +10152,17 @@ unsupported_fail_images_message(const char *functionname)
 #endif
 }
 
-/* Give a descriptive message when support for an allocatable components
- * feature is not available. */
-void
-unimplemented_alloc_comps_message(const char *functionname)
-{
-  fprintf(stderr,
-          "*** Message from libcaf_mpi runtime function '%s' on image %d:\n"
-          "*** Assigning to an allocatable coarray component of a derived type"
-          "is not yet supported with GCC 7.\n"
-          "*** Either revert to GCC 6 or convert all "
-          "puts (type(foo)::x; x%%y[recipient] = z) to "
-          "gets (z = x%%y[provider]).\n",
-          functionname, caf_this_image);
-#ifdef STOP_ON_UNSUPPORTED
-  exit(EXIT_FAILURE);
-#endif
-}
-
 void
 PREFIX(form_team)(int team_id, caf_team_t *team,
                   int index __attribute__((unused)))
 {
   struct caf_teams_list *tmp;
-  void *tmp_team;
   MPI_Comm *newcomm;
-  MPI_Comm *current_comm = &CAF_COMM_WORLD;
+  MPI_Comm current_comm = CAF_COMM_WORLD;
   int ierr;
 
   newcomm = (MPI_Comm *)calloc(1, sizeof(MPI_Comm));
-  ierr = MPI_Comm_split(*current_comm, team_id, caf_this_image, newcomm);
+  ierr = MPI_Comm_split(current_comm, team_id, mpi_this_image, newcomm);
   chk_err(ierr);
 
   tmp = calloc(1, sizeof(struct caf_teams_list));
@@ -8646,9 +10212,9 @@ PREFIX(change_team)(caf_team_t *team, int coselector __attribute__((unused)))
   tmp_team = tmp_used->team_list_elem->team;
   tmp_comm = (MPI_Comm *)tmp_team;
   CAF_COMM_WORLD = *tmp_comm;
-  int ierr = MPI_Comm_rank(*tmp_comm, &caf_this_image);
+  int ierr = MPI_Comm_rank(*tmp_comm, &mpi_this_image);
   chk_err(ierr);
-  caf_this_image++;
+  caf_this_image = mpi_this_image + 1;
   ierr = MPI_Comm_size(*tmp_comm, &caf_num_images);
   chk_err(ierr);
   ierr = MPI_Barrier(*tmp_comm);
@@ -8699,9 +10265,9 @@ PREFIX(end_team)(caf_team_t *team __attribute__((unused)))
   tmp_comm = (MPI_Comm *)tmp_team;
   CAF_COMM_WORLD = *tmp_comm;
   /* CAF_COMM_WORLD = (MPI_Comm)*tmp_used->team_list_elem->team; */
-  ierr = MPI_Comm_rank(CAF_COMM_WORLD, &caf_this_image);
+  ierr = MPI_Comm_rank(CAF_COMM_WORLD, &mpi_this_image);
   chk_err(ierr);
-  caf_this_image++;
+  caf_this_image = mpi_this_image + 1;
   ierr = MPI_Comm_size(CAF_COMM_WORLD, &caf_num_images);
   chk_err(ierr);
 }

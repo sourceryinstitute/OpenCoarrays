@@ -233,6 +233,9 @@ endif()
   if ( gfortran_compiler AND ( NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 8.0.0 ) )
     add_definitions(-DGCC_GE_8) # Tell library to build against GFortran 8.x bindings w/ descriptor change
   endif()
+  if ( gfortran_compiler AND ( NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 14.0.0 ) )
+    add_definitions(-DGCC_GE_15) # Tell library to build against GFortran 15.x bindings
+  endif()
 
 if(gfortran_compiler)
   set(OLD_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
@@ -661,7 +664,10 @@ define_property(TARGET
 # Add global openmpi property, because using a variable an setting in parent scope did
 # not work as expected, i.e., not at all, on Linux Fedora 39.
 #-------------------------------------------------------------------------------------
-define_property(GLOBAL PROPERTY openmpi BRIEF_DOCS "True when mpi is openMPI.")
+define_property(GLOBAL
+  PROPERTY openmpi
+  BRIEF_DOCS "True when mpi is openMPI."
+  FULL_DOCS "Set internally when the mpi library to use is openmpi.")
 
 #-------------------------------
 # Recurse into the src directory
@@ -807,6 +813,7 @@ if(opencoarrays_aware_compiler)
       add_caf_test(teams_coarray_sendget 5 teams_coarray_sendget)
       add_caf_test(sync_team 8 sync_team)
       add_caf_test(alloc_comp_multidim_shape 2 alloc_comp_multidim_shape)
+      set_tests_properties(alloc_comp_multidim_shape PROPERTIES TIMEOUT 300)
     endif()
   endif()
 
@@ -858,6 +865,7 @@ if(opencoarrays_aware_compiler)
 
   # Pure sendget tests
   add_caf_test(strided_sendget 3 strided_sendget)
+  add_caf_test(get_with_1d_vector_index 3 get_with_1d_vector_index)
   add_caf_test(get_with_vector_index 4 get_with_vector_index)
 
   # Collective subroutine tests

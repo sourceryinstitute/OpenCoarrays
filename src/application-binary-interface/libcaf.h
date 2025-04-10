@@ -30,6 +30,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 
 #include <stdbool.h>
 #include <stddef.h> /* For size_t.  */
+#include <stdint.h>
 
 #include "libcaf-gfortran-descriptor.h"
 #include "libcaf-version-def.h"
@@ -261,6 +262,49 @@ void PREFIX(caf_sendget)(caf_token_t, size_t, int, gfc_descriptor_t *,
                          gfc_descriptor_t *, caf_vector_t *, int, int, bool,
                          int *);
 
+#ifdef GCC_GE_15
+void PREFIX(register_accessor)(const int hash,
+                               void (*accessor)(void *, const int *, void **,
+                                                int32_t *, void *, caf_token_t,
+                                                const size_t, size_t *,
+                                                const size_t *));
+
+void PREFIX(register_accessors_finish)();
+
+int PREFIX(get_remote_function_index)(const int hash);
+
+void PREFIX(get_from_remote)(
+    caf_token_t token, const gfc_descriptor_t *opt_src_desc,
+    const size_t *opt_src_charlen, const int image_index, const size_t dst_size,
+    void **dst_data, size_t *opt_dst_charlen, gfc_descriptor_t *opt_dst_desc,
+    const bool may_realloc_dst, const int getter_index, void *get_data,
+    const size_t get_data_size, int *stat, caf_team_t *team, int *team_number);
+
+int32_t PREFIX(is_present_on_remote)(caf_token_t token, const int image_index,
+                                     const int is_present_index, void *add_data,
+                                     const size_t add_data_size);
+
+void PREFIX(send_to_remote)(caf_token_t token, gfc_descriptor_t *opt_dst_desc,
+                            const size_t *opt_dst_charlen,
+                            const int image_index, const size_t src_size,
+                            const void *src_data, size_t *opt_src_charlen,
+                            const gfc_descriptor_t *opt_src_desc,
+                            const int setter_index, void *add_data,
+                            const size_t add_data_size, int *stat,
+                            caf_team_t *team, int *team_number);
+
+void PREFIX(transfer_between_remotes)(
+    caf_token_t dst_token, gfc_descriptor_t *opt_dst_desc,
+    size_t *opt_dst_charlen, const int dst_image_index,
+    const int dst_access_index, void *dst_add_data,
+    const size_t dst_add_data_size, caf_token_t src_token,
+    const gfc_descriptor_t *opt_src_desc, const size_t *opt_src_charlen,
+    const int src_image_index, const int src_access_index, void *src_add_data,
+    const size_t src_add_data_size, const size_t src_size,
+    const bool scalar_transfer, int *dst_stat, int *src_stat,
+    caf_team_t *dst_team, int *dst_team_number, caf_team_t *src_team,
+    int *src_team_number);
+#endif
 #ifdef GCC_GE_8
 void PREFIX(get_by_ref)(caf_token_t, int, gfc_descriptor_t *dst,
                         caf_reference_t *refs, int dst_kind, int src_kind,
