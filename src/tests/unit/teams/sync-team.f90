@@ -5,12 +5,13 @@ program main
   type(team_type) :: team(3)
 
   if (num_images() < 8) error stop "I need at least 8 images to function."
+  associate(ni => num_images())
 
   form team (1, team(PARENT_TEAM))
   change team (team(PARENT_TEAM))
-    form team (mod(this_image(),2)+1, team(CURRENT_TEAM))
+    form team (ni + mod(this_image(),2)+1, team(CURRENT_TEAM))
     change team (team(CURRENT_TEAM))
-      form team(mod(this_image(),2)+1, team(CHILD_TEAM))
+      form team(2 * ni + mod(this_image(),2)+1, team(CHILD_TEAM))
       sync team(team(PARENT_TEAM))
       ! change order / number of syncs between teams to try to expose deadlocks
       if (team_number() == 1) then
@@ -24,6 +25,7 @@ program main
       end if
     end team
   end team
+  end associate
 
   sync all
 
