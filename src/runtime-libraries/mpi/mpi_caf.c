@@ -10357,8 +10357,6 @@ void
 PREFIX(form_team)(int team_id, caf_team_t *team, int *new_index, int *stat,
                   char *errmsg, charlen_t errmsg_len)
 {
-  static const char *duplicate_team_id
-      = "FORM TEAM: Team ids have to be unique";
   static const char *negative_team_id
       = "FORM TEAM: Team id shall be a positive unique integer";
   static const char *negative_new_index
@@ -10371,12 +10369,6 @@ PREFIX(form_team)(int team_id, caf_team_t *team, int *new_index, int *stat,
   if (stat)
     *stat = 0;
 
-  for (caf_teams_list_t *cur = teams_list; cur; cur = cur->prev)
-    if (cur->team_id == team_id)
-    {
-      caf_internal_error(duplicate_team_id, stat, errmsg, errmsg_len);
-      return;
-    }
   if (team_id < 0)
   {
     caf_internal_error(negative_team_id, stat, errmsg, errmsg_len);
