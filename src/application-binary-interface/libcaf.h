@@ -88,7 +88,10 @@ typedef enum caf_register_t
   CAF_REGTYPE_EVENT_STATIC,
   CAF_REGTYPE_EVENT_ALLOC,
   CAF_REGTYPE_COARRAY_ALLOC_REGISTER_ONLY,
-  CAF_REGTYPE_COARRAY_ALLOC_ALLOCATE_ONLY
+  CAF_REGTYPE_COARRAY_ALLOC_ALLOCATE_ONLY,
+#ifdef GCC_GE_16
+  CAF_REGTYPE_COARRAY_MAP_EXISTING,
+#endif
 } caf_register_t;
 
 /* Describes the action to take on _caf_deregister. Keep in sync with
