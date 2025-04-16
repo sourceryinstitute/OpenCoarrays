@@ -5752,7 +5752,18 @@ team_translate(int *remote_image, int *this_image, caf_token_t token,
 
 #ifdef GCC_GE_16
   if (team)
+  {
+    caf_team_stack_node_t *cur = current_team;
+    while (cur && cur->team_list_elem != *team)
+      cur = cur->parent;
+    if (!cur)
+    {
+      caf_internal_error("Team %d is not active", stat, NULL, 0,
+                         (*(caf_teams_list_t **)team)->team_id);
+      return false;
+    }
     comm = (*(caf_teams_list_t **)team)->communicator;
+  }
   else if (team_number)
   {
     bool found = false;
