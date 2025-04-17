@@ -35,12 +35,15 @@ associate(me => this_image(), num => num_images())
     sync all
     form team(MOD(me, 2) + 1, team)
 
+    ! Test no parameter gives all images in curren team.
     j1 = num_images()
     if (j1 /= num) stop 1
 
+    ! Test that a team_type parameter gives the #images in that team.
     j2 = num_images(team)
     if (j2 /= num / 2) stop 2
 
+    ! Same but using the number of the team.
     j3 = num_images(MOD(me, 2) + 1)
     if (j3 /= num / 2) stop 3
 
