@@ -69,10 +69,19 @@ static char *caf_ref_type_str[] = {
 #define dprint(...)
 #define chk_err(...)
 #else
+#ifdef GCC_GE_15
 #define dprint(format, ...)                                                    \
-  fprintf(stderr, "%d/%d (t:%d/%d): %s(%d) " format, global_this_image + 1,    \
+  fprintf(stderr, "%d/%d (t(%d):%d/%d): %s(%d) " format,                       \
+          global_this_image + 1, global_num_images,                            \
+          current_team ? current_team->team_list_elem->team_id : -99,          \
+          caf_this_image, caf_num_images, __FUNCTION__, __LINE__,              \
+          ##__VA_ARGS__)
+#else
+#define dprint(format, ...)                                                    \
+  fprintf(stderr, "%d/%d (%d/%d): %s(%d) " format, global_this_image + 1,      \
           global_num_images, caf_this_image, caf_num_images, __FUNCTION__,     \
           __LINE__, ##__VA_ARGS__)
+#endif
 #define chk_err(ierr)                                                          \
   do                                                                           \
   {                                                                            \
@@ -112,6 +121,11 @@ typedef struct mpi_caf_token_t
   /* The pointer to the primary array, i.e., to coarrays that are arrays and
    * not a derived type. */
   gfc_descriptor_t *desc;
+#ifdef GCC_GE_15
+  /* Only set to false, when this token maps memory into another token's
+   * memory segment. This only happens when in an associate or a change team. */
+  int owning_memory;
+#endif
 } mpi_caf_token_t;
 
 /* For components of derived type coarrays a slave_token is needed when the
@@ -208,13 +222,17 @@ static win_sync *last_elem = NULL;
 static win_sync *pending_puts = NULL;
 #endif
 
+#ifndef GCC_GE_15
 /* Linked list of static coarrays registered.  Do not expose to public in the
- * header, because it is implementation specific. */
+ * header, because it is implementation specific.
+ *
+ * From gcc-15 on, this list is contained in the teams handling. */
 struct caf_allocated_tokens_t
 {
   caf_token_t token;
   struct caf_allocated_tokens_t *prev;
 } *caf_allocated_tokens = NULL;
+#endif
 
 #ifdef GCC_GE_7
 /* Linked list of slave coarrays registered. */
@@ -227,7 +245,7 @@ struct caf_allocated_slave_tokens_t
 
 /* Image status variable */
 static int img_status = 0;
-static MPI_Win *stat_tok;
+static MPI_Win stat_tok;
 
 /* Active messages variables */
 char **buff_am;
@@ -344,8 +362,56 @@ char err_buffer[MPI_MAX_ERROR_STRING];
  * interoperability purposes. */
 MPI_Comm CAF_COMM_WORLD;
 
+#ifdef GCC_GE_15
+#define CAF_COMM_TEAM current_team->team_list_elem->communicator
+
+typedef struct caf_teams_list
+{
+  /* The communicator having all team members.  */
+  MPI_Comm communicator;
+  /* The unique id (over all other formed teams) of this team. */
+  int team_id;
+  /* The id of this image in this team. */
+  int image_id;
+  struct caf_teams_list *prev;
+} caf_teams_list_t;
+
+typedef struct caf_team_stack_node
+{
+  struct caf_teams_list *team_list_elem;
+  /* The list of tokens allocated in the current team. Needed to free them
+   * when the team is left. */
+  struct allocated_tokens_t
+  {
+    mpi_caf_token_t *token;
+    struct allocated_tokens_t *next;
+  } *allocated_tokens;
+  struct caf_team_stack_node *parent;
+} caf_team_stack_node_t;
+
+static caf_teams_list_t *teams_list = NULL;
+static caf_team_stack_node_t *current_team = NULL, *initial_team;
+
+#else
+
+#define CAF_COMM_TEAM CAF_COMM_WORLD
+
+typedef struct caf_teams_list
+{
+  caf_team_t team;
+  int team_id;
+  struct caf_teams_list *prev;
+} caf_teams_list;
+
+typedef struct caf_used_teams_list
+{
+  struct caf_teams_list *team_list_elem;
+  struct caf_used_teams_list *prev;
+} caf_used_teams_list;
+
 static caf_teams_list *teams_list = NULL;
 static caf_used_teams_list *used_teams = NULL;
+#endif
 
 /* Emitted when a theorectically unreachable part is reached. */
 const char unreachable[] = "Fatal error: unreachable alternative found.\n";
@@ -773,7 +839,7 @@ handle_is_present_message(ct_msg_t *msg, void *baseptr)
         += sizeof_desc_for_rank(GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)ptr));
   }
   else
-    ptr = baseptr;
+    ptr = &baseptr;
 
   accessor_hash_table[msg->accessor_index].u.is_present(
       add_data, &msg->dest_image, &result, ptr, &src_token, 0);
@@ -1462,6 +1528,7 @@ PREFIX(init)(int *argc, char ***argv)
     /* Flag rc as unused, because conditional compilation.  */
     int ierr = 0, i = 0, j = 0, rc __attribute__((unused)), prov_lev = 0;
     int is_init = 0, prior_thread_level = MPI_THREAD_MULTIPLE;
+
     ierr = MPI_Initialized(&is_init);
     chk_err(ierr);
 
@@ -1508,6 +1575,7 @@ PREFIX(init)(int *argc, char ***argv)
     /* Duplicate MPI_COMM_WORLD so that no CAF internal functions use it.
      * This is critical for MPI-interoperability. */
     rc = MPI_Comm_dup(MPI_COMM_WORLD, &CAF_COMM_WORLD);
+
 #ifdef WITH_FAILED_IMAGES
     flag = (MPI_SUCCESS == rc);
     rc = MPIX_Comm_agree(MPI_COMM_WORLD, &flag);
@@ -1548,8 +1616,16 @@ PREFIX(init)(int *argc, char ***argv)
     sync_handles = malloc(caf_num_images * sizeof(MPI_Request));
     /* END SYNC IMAGE preparation. */
 
-    stat_tok = malloc(sizeof(MPI_Win));
-
+    /* BEGIN teams preparations. */
+#ifdef GCC_GE_15
+    teams_list = (caf_teams_list_t *)malloc(sizeof(caf_teams_list_t));
+    *teams_list
+        = (struct caf_teams_list){CAF_COMM_WORLD, -1, caf_this_image, NULL};
+    current_team
+        = (caf_team_stack_node_t *)malloc(sizeof(caf_team_stack_node_t));
+    *current_team = (struct caf_team_stack_node){teams_list, NULL};
+    initial_team = current_team;
+#else
     teams_list = (caf_teams_list *)calloc(1, sizeof(caf_teams_list));
     teams_list->team_id = -1;
     MPI_Comm *tmp_comm = (MPI_Comm *)calloc(1, sizeof(MPI_Comm));
@@ -1559,6 +1635,8 @@ PREFIX(init)(int *argc, char ***argv)
     used_teams = (caf_used_teams_list *)calloc(1, sizeof(caf_used_teams_list));
     used_teams->team_list_elem = teams_list;
     used_teams->prev = NULL;
+#endif
+    /* END teams preparations. */
 
 #ifdef WITH_FAILED_IMAGES
     MPI_Comm_dup(MPI_COMM_WORLD, &alive_comm);
@@ -1592,12 +1670,12 @@ PREFIX(init)(int *argc, char ***argv)
 
     /* Setting img_status */
     ierr = MPI_Win_create(&img_status, sizeof(int), 1, mpi_info_same_size,
-                          CAF_COMM_WORLD, stat_tok);
+                          CAF_COMM_WORLD, &stat_tok);
     chk_err(ierr);
-    CAF_Win_lock_all(*stat_tok);
+    CAF_Win_lock_all(stat_tok);
 #else
     ierr = MPI_Win_create(&img_status, sizeof(int), 1, MPI_INFO_NULL,
-                          CAF_COMM_WORLD, stat_tok);
+                          CAF_COMM_WORLD, &stat_tok);
     chk_err(ierr);
 #endif // MPI_VERSION
 
@@ -1645,7 +1723,7 @@ finalize_internal(int status_code)
   chk_err(ierr);
 #endif
   /* For future security enclose setting img_status in a lock. */
-  CAF_Win_lock(MPI_LOCK_EXCLUSIVE, mpi_this_image, *stat_tok);
+  CAF_Win_lock(MPI_LOCK_EXCLUSIVE, mpi_this_image, stat_tok);
   if (status_code == 0)
   {
     img_status = STAT_STOPPED_IMAGE;
@@ -1660,7 +1738,7 @@ finalize_internal(int status_code)
     image_stati[mpi_this_image] = status_code;
 #endif
   }
-  CAF_Win_unlock(mpi_this_image, *stat_tok);
+  CAF_Win_unlock(mpi_this_image, stat_tok);
 
   /* Announce to all other images, that this one has changed its execution
    * status. */
@@ -1739,6 +1817,43 @@ finalize_internal(int status_code)
 #endif
 
   dprint("Freed all slave tokens.\n");
+
+#ifdef GCC_GE_15
+  for (caf_team_stack_node_t *node = current_team; node;)
+  {
+    caf_team_stack_node_t *pn = node->parent;
+    MPI_Win *p;
+
+    for (struct allocated_tokens_t *t = node->allocated_tokens; t;)
+    {
+      struct allocated_tokens_t *nt = t->next;
+
+      p = TOKEN(t->token);
+      if (p != NULL)
+        CAF_Win_unlock_all(*p);
+      /* Unregister the window to the descriptors when freeing the token. */
+      ierr = MPI_Win_free(p);
+      chk_err(ierr);
+      free(t->token);
+      free(t);
+      t = nt;
+    }
+    free(node);
+    node = pn;
+  }
+  current_team = initial_team = NULL;
+
+  for (caf_teams_list_t *node = teams_list; node;)
+  {
+    caf_teams_list_t *pn = node->prev;
+
+    if (node->team_id != -1)
+      MPI_Comm_free(&node->communicator);
+
+    free(node);
+    node = pn;
+  }
+#else
   struct caf_allocated_tokens_t *cur_tok = caf_allocated_tokens,
                                 *prev = caf_allocated_tokens;
   MPI_Win *p;
@@ -1762,6 +1877,7 @@ finalize_internal(int status_code)
     free(cur_tok);
     cur_tok = prev;
   }
+#endif
 #if MPI_VERSION >= 3
   ierr = MPI_Info_free(&mpi_info_same_size);
   chk_err(ierr);
@@ -1815,7 +1931,7 @@ finalize_internal(int status_code)
     MPI_Status status;
     do
     {
-      ierr = MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, CAF_COMM_WORLD,
+      ierr = MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD,
                         &probe_flag, &status); /* error is not of interest. */
       if (probe_flag)
       {
@@ -1823,18 +1939,20 @@ finalize_internal(int status_code)
         MPI_Get_count(&status, MPI_BYTE, &cnt);
         void *buf = alloca(cnt);
         ierr = MPI_Recv(buf, cnt, MPI_BYTE, status.MPI_SOURCE, status.MPI_TAG,
-                        CAF_COMM_WORLD, &status);
+                        MPI_COMM_WORLD, &status);
         chk_err(ierr);
       }
     } while (probe_flag);
   }
 #endif
+#ifndef GCC_GE_15
   dprint("freeing caf's communicator.\n");
   ierr = MPI_Comm_free(&CAF_COMM_WORLD);
   chk_err(ierr);
+#endif
 
-  CAF_Win_unlock_all(*stat_tok);
-  ierr = MPI_Win_free(stat_tok);
+  CAF_Win_unlock_all(stat_tok);
+  ierr = MPI_Win_free(&stat_tok);
   chk_err(ierr);
 
   /* Only call Finalize if CAF runtime Initialized MPI. */
@@ -1865,6 +1983,40 @@ PREFIX(finalize)(void)
   finalize_internal(0);
 }
 
+#ifdef GCC_GE_15
+int
+PREFIX(this_image)(caf_team_t team)
+{
+  return team ? ((caf_teams_list_t *)team)->image_id : caf_this_image;
+}
+
+int
+PREFIX(num_images)(caf_team_t team, int32_t *team_number)
+{
+  if (team)
+  {
+    caf_teams_list_t *t = (caf_teams_list_t *)team;
+    int comm_size = 0, ierr;
+    ierr = MPI_Comm_size(t->communicator, &comm_size);
+    chk_err(ierr);
+    return comm_size;
+  }
+  if (team_number)
+  {
+    for (caf_teams_list_t *curr = teams_list; curr; curr = curr->prev)
+      if (curr->team_id == *team_number)
+      {
+        int comm_size = 0, ierr;
+        ierr = MPI_Comm_size(curr->communicator, &comm_size);
+        chk_err(ierr);
+        return comm_size;
+      }
+
+    caf_runtime_error("NUM_IMAGES: Unknown team_number %d", *team_number);
+  }
+  return caf_num_images;
+}
+#else
 /* TODO: This is interface is violating the F2015 standard, but not the gfortran
  * API. Fix it (the fortran API). */
 int
@@ -1881,6 +2033,7 @@ PREFIX(num_images)(int distance __attribute__((unused)),
 {
   return caf_num_images;
 }
+#endif
 
 #ifdef GCC_GE_7
 /* Register an object with the coarray library creating a token where
@@ -1993,6 +2146,38 @@ void PREFIX(register)(size_t size, caf_register_t type, caf_token_t *token,
                slave_token, slave_token->memptr, slave_token->desc);
       }
       break;
+#ifdef GCC_GE_15
+    case CAF_REGTYPE_COARRAY_MAP_EXISTING:
+      {
+        mpi_caf_token_t *mpi_token;
+        MPI_Win *p;
+
+        *token = calloc(1, sizeof(mpi_caf_token_t));
+        mpi_token = (mpi_caf_token_t *)(*token);
+        p = TOKEN(mpi_token);
+        mem = desc->base_addr;
+        ierr = MPI_Win_create(mem, actual_size, 1, MPI_INFO_NULL, CAF_COMM_TEAM,
+                              p);
+        chk_err(ierr);
+        CAF_Win_lock_all(*p);
+        mpi_token->owning_memory = 0;
+
+        struct allocated_tokens_t *allocated_token
+            = malloc(sizeof(struct allocated_tokens_t));
+        allocated_token->next = current_team->allocated_tokens;
+        allocated_token->token = *token;
+        current_team->allocated_tokens = allocated_token;
+
+        if (stat)
+          *stat = 0;
+
+        mpi_token->memptr = mem;
+        dprint("Token %p on exit of mapping: mpi_caf_token_t "
+               "{ (local_)memptr: %p (size: %zd), memptr_win: %d }\n",
+               mpi_token, mpi_token->memptr, size, mpi_token->memptr_win);
+        break;
+      }
+#endif
     default:
       {
         mpi_caf_token_t *mpi_token;
@@ -2003,17 +2188,20 @@ void PREFIX(register)(size_t size, caf_register_t type, caf_token_t *token,
         p = TOKEN(mpi_token);
 
 #if MPI_VERSION >= 3
-        ierr = MPI_Win_allocate(actual_size, 1, MPI_INFO_NULL, CAF_COMM_WORLD,
+        ierr = MPI_Win_allocate(actual_size, 1, MPI_INFO_NULL, CAF_COMM_TEAM,
                                 &mem, p);
         chk_err(ierr);
         CAF_Win_lock_all(*p);
 #else
         ierr = MPI_Alloc_mem(actual_size, MPI_INFO_NULL, &mem);
         chk_err(ierr);
-        ierr = MPI_Win_create(mem, actual_size, 1, MPI_INFO_NULL,
-                              CAF_COMM_WORLD, p);
+        ierr = MPI_Win_create(mem, actual_size, 1, MPI_INFO_NULL, CAF_COMM_TEAM,
+                              p);
         chk_err(ierr);
 #endif // MPI_VERSION
+#ifdef GCC_GE_15
+        mpi_token->owning_memory = 1;
+#endif
 
 #ifndef GCC_GE_8
         if (GFC_DESCRIPTOR_RANK(desc) != 0)
@@ -2031,11 +2219,19 @@ void PREFIX(register)(size_t size, caf_register_t type, caf_token_t *token,
           free(init_array);
         }
 
+#ifdef GCC_GE_15
+        struct allocated_tokens_t *allocated_token
+            = malloc(sizeof(struct allocated_tokens_t));
+        allocated_token->next = current_team->allocated_tokens;
+        allocated_token->token = *token;
+        current_team->allocated_tokens = allocated_token;
+#else
         struct caf_allocated_tokens_t *tmp
             = malloc(sizeof(struct caf_allocated_tokens_t));
         tmp->prev = caf_allocated_tokens;
         tmp->token = *token;
         caf_allocated_tokens = tmp;
+#endif
 
         if (stat)
           *stat = 0;
@@ -2213,13 +2409,45 @@ PREFIX(deregister)(caf_token_t *token, int *stat, char *errmsg,
     /* Sync all images only, when deregistering the token. Just freeing the
      * memory needs no sync. */
 #ifdef WITH_FAILED_IMAGES
-    ierr = MPI_Barrier(CAF_COMM_WORLD);
+    ierr = MPI_Barrier(CAF_COMM_TEAM);
     chk_err(ierr);
 #else
     PREFIX(sync_all)(NULL, NULL, 0);
 #endif
   }
 #endif // GCC_GE_7
+#ifdef GCC_GE_15
+  {
+    struct allocated_tokens_t *cur = current_team->allocated_tokens,
+                              *prev = current_team->allocated_tokens;
+    MPI_Win *p;
+
+    while (cur)
+    {
+      if (cur->token == *token)
+      {
+        p = TOKEN(*token);
+        dprint("Found regular token %p for memptr_win: %d.\n", *token, *p);
+        CAF_Win_unlock_all(*p);
+        ierr = MPI_Win_free(p);
+        chk_err(ierr);
+        dprint("Window destroyed.\n");
+
+        if (cur == current_team->allocated_tokens)
+          current_team->allocated_tokens = cur->next;
+        else
+          prev->next = cur->next;
+
+        free(cur);
+        free(*token);
+        *token = NULL;
+        return;
+      }
+      prev = cur;
+      cur = cur->next;
+    }
+  }
+#else
   {
     struct caf_allocated_tokens_t *cur = caf_allocated_tokens,
                                   *next = caf_allocated_tokens, *prev;
@@ -2247,12 +2475,14 @@ PREFIX(deregister)(caf_token_t *token, int *stat, char *errmsg,
 
         free(cur);
         free(*token);
+        *token = NULL;
         return;
       }
       next = cur;
       cur = prev;
     }
   }
+#endif
 
 #ifdef GCC_GE_7
   /* Feel through: Has to be a component token. */
@@ -2297,6 +2527,7 @@ PREFIX(deregister)(caf_token_t *token, int *stat, char *errmsg,
         free(cur_stok);
         ierr = MPI_Free_mem(*token);
         chk_err(ierr);
+        *token = NULL;
         return;
       }
 
@@ -2346,7 +2577,13 @@ PREFIX(sync_all)(int *stat, char *errmsg, charlen_t errmsg_len)
     ierr = MPI_Barrier(CAF_COMM_WORLD);
     chk_err(ierr);
 #endif
-    dprint("MPI_Barrier = %d.\n", err);
+    dprint("Sync all on team %d, MPI_Barrier = %d.\n",
+#ifdef GCC_GE_15
+           current_team->team_list_elem->team_id,
+#else
+           -1,
+#endif
+           err);
     if (ierr == STAT_FAILED_IMAGE)
       err = STAT_FAILED_IMAGE;
     else if (ierr != 0)
@@ -5498,6 +5735,77 @@ get_from_self(caf_token_t token, const gfc_descriptor_t *opt_src_desc,
   }
 }
 
+bool
+team_translate(int *remote_image, int *this_image,
+               caf_token_t token __attribute__((unused)), int image_index,
+               caf_team_t *team, int *team_number, int *stat)
+{
+  MPI_Group world_group, team_group, remote_group;
+  int ierr, trans, team_id = current_team->team_list_elem->team_id;
+  MPI_Comm remote_comm = MPI_COMM_NULL;
+
+#ifdef GCC_GE_15
+  if (team)
+  {
+    caf_team_stack_node_t *cur = current_team;
+    while (cur && cur->team_list_elem != *team)
+      cur = cur->parent;
+    if (!cur)
+    {
+      caf_internal_error("Team %d is not active", stat, NULL, 0,
+                         (*(caf_teams_list_t **)team)->team_id);
+      return false;
+    }
+    remote_comm = (*(caf_teams_list_t **)team)->communicator;
+    team_id = (*(caf_teams_list_t **)team)->team_id;
+  }
+  else if (team_number)
+  {
+    bool found = false;
+    for (caf_team_stack_node_t *cur = current_team; cur; cur = cur->parent)
+      if (cur->team_list_elem->team_id == *team_number)
+      {
+        remote_comm = cur->team_list_elem->communicator;
+        team_id = cur->team_list_elem->team_id;
+        found = true;
+        break;
+      }
+    if (!found)
+    {
+      caf_internal_error("Team number %d not found", stat, NULL, 0,
+                         *team_number);
+      return false;
+    }
+  }
+#endif
+
+  ierr = MPI_Comm_group(CAF_COMM_WORLD, &world_group);
+  chk_err(ierr);
+  if (remote_comm == MPI_COMM_NULL)
+    ierr = MPI_Comm_group(CAF_COMM_TEAM, &remote_group);
+  else
+    ierr = MPI_Comm_group(remote_comm, &remote_group);
+  chk_err(ierr);
+  ierr = MPI_Comm_group(CAF_COMM_TEAM, &team_group);
+  chk_err(ierr);
+  trans = image_index - 1;
+  ierr = MPI_Group_translate_ranks(team_group, 1, &mpi_this_image, world_group,
+                                   this_image);
+  chk_err(ierr);
+  ierr = MPI_Group_translate_ranks(remote_group, 1, &trans, world_group,
+                                   remote_image);
+  chk_err(ierr);
+  ierr = MPI_Group_free(&remote_group);
+  chk_err(ierr);
+  ierr = MPI_Group_free(&team_group);
+  chk_err(ierr);
+  ierr = MPI_Group_free(&world_group);
+  chk_err(ierr);
+  dprint("this: %d -> %d, rmt: %d -> %d on team %d.\n", caf_this_image,
+         *this_image + 1, image_index, *remote_image + 1, team_id);
+  return true;
+}
+
 /* Get data from a remote image's memory pointed to by `token`.  The image is
  * given by `image_index`.  When the source is descriptor array, then
  * `opt_src_desc` gives its dimension as of the source image.  On the remote
@@ -5525,12 +5833,9 @@ PREFIX(get_from_remote)(caf_token_t token, const gfc_descriptor_t *opt_src_desc,
                         size_t *opt_dst_charlen, gfc_descriptor_t *opt_dst_desc,
                         const bool may_realloc_dst, const int getter_index,
                         void *get_data, const size_t get_data_size, int *stat,
-                        caf_team_t *team __attribute__((unused)),
-                        int *team_number __attribute__((unused)))
+                        caf_team_t *team, int *team_number)
 {
-  MPI_Group current_team_group, win_group;
   int ierr, this_image, remote_image;
-  int trans_ranks[2];
   bool free_t_buff, free_msg;
   void *t_buff;
   ct_msg_t *msg;
@@ -5553,20 +5858,9 @@ PREFIX(get_from_remote)(caf_token_t token, const gfc_descriptor_t *opt_src_desc,
   // Get mapped remote image
   if (external_call)
   {
-    ierr = MPI_Comm_group(CAF_COMM_WORLD, &current_team_group);
-    chk_err(ierr);
-    ierr = MPI_Win_get_group(*TOKEN(token), &win_group);
-    chk_err(ierr);
-    ierr = MPI_Group_translate_ranks(current_team_group, 2,
-                                     (int[]){image_index - 1, mpi_this_image},
-                                     win_group, trans_ranks);
-    chk_err(ierr);
-    remote_image = trans_ranks[0];
-    this_image = trans_ranks[1];
-    ierr = MPI_Group_free(&current_team_group);
-    chk_err(ierr);
-    ierr = MPI_Group_free(&win_group);
-    chk_err(ierr);
+    if (unlikely(!team_translate(&remote_image, &this_image, token, image_index,
+                                 team, team_number, stat)))
+      return;
   }
   else
   {
@@ -5601,7 +5895,7 @@ PREFIX(get_from_remote)(caf_token_t token, const gfc_descriptor_t *opt_src_desc,
   msg->transfer_size = dst_size;
   msg->opt_charlen = opt_src_charlen ? *opt_src_charlen : 0;
   msg->win = *TOKEN(token);
-  msg->dest_image = mpi_this_image;
+  msg->dest_image = this_image;
   msg->dest_tag = CAF_CT_TAG + 1;
   msg->dest_opt_charlen = opt_dst_charlen ? *opt_dst_charlen : 1;
   msg->flags = (opt_dst_desc ? CT_DST_HAS_DESC : 0)
@@ -5644,13 +5938,12 @@ PREFIX(get_from_remote)(caf_token_t token, const gfc_descriptor_t *opt_src_desc,
         caf_runtime_error("Unable to allocate memory "
                           "for internal buffer in get_from_remote().");
     }
-    dprint("waiting to receive %zd bytes from %d.\n", dst_size,
-           image_index - 1);
-    ierr = MPI_Recv(t_buff, dst_size, MPI_BYTE, image_index - 1, msg->dest_tag,
+    dprint("waiting to receive %zd bytes from %d.\n", dst_size, remote_image);
+    ierr = MPI_Recv(t_buff, dst_size, MPI_BYTE, remote_image, msg->dest_tag,
                     CAF_COMM_WORLD, MPI_STATUS_IGNORE);
     chk_err(ierr);
     dprint("received %zd bytes as requested from %d.\n", dst_size,
-           image_index - 1);
+           remote_image);
     // dump_mem("get_from_remote", t_buff, dst_size);
     memcpy(*dst_data, t_buff, dst_size);
 
@@ -5757,10 +6050,10 @@ PREFIX(is_present_on_remote)(caf_token_t token, const int image_index,
 
   check_image_health(remote_image, stat);
 
-  dprint(
-      "Entering is_present_on_remote(), token = %p, win_rank = %d, this_rank = "
-      "%d, is_present index = %d, sizeof(msg) = %ld.\n",
-      token, remote_image, this_image, is_present_index, msg_size);
+  dprint("Entering is_present_on_remote(), token = %p, memptr = %p, win_rank = "
+         "%d, this_rank = %d, is_present index = %d, sizeof(msg) = %ld.\n",
+         token, ((mpi_caf_token_t *)token)->memptr, remote_image, this_image,
+         is_present_index, msg_size);
 
   if (this_image == remote_image)
   {
@@ -5770,7 +6063,7 @@ PREFIX(is_present_on_remote)(caf_token_t token, const int image_index,
 
     dprint("Shortcutting due to self access on image %d.\n", image_index);
     accessor_hash_table[is_present_index].u.is_present(
-        add_data, &this_image, &result, src_ptr, &src_token, 0);
+        add_data, &this_image, &result, &src_ptr, &src_token, 0);
 
     return result;
   }
@@ -5915,13 +6208,10 @@ PREFIX(send_to_remote)(caf_token_t token, gfc_descriptor_t *opt_dst_desc,
                        size_t *opt_src_charlen,
                        const gfc_descriptor_t *opt_src_desc,
                        const int setter_index, void *add_data,
-                       const size_t add_data_size, int *stat,
-                       caf_team_t *team __attribute__((unused)),
-                       int *team_number __attribute__((unused)))
+                       const size_t add_data_size, int *stat, caf_team_t *team,
+                       int *team_number)
 {
-  MPI_Group current_team_group, win_group;
   int ierr, this_image, remote_image;
-  int trans_ranks[2];
   bool free_msg;
   ct_msg_t *msg;
   const bool dst_incl_desc = opt_dst_desc, has_src_desc = opt_src_desc,
@@ -5944,20 +6234,9 @@ PREFIX(send_to_remote)(caf_token_t token, gfc_descriptor_t *opt_dst_desc,
   // Get mapped remote image
   if (external_call)
   {
-    ierr = MPI_Comm_group(CAF_COMM_WORLD, &current_team_group);
-    chk_err(ierr);
-    ierr = MPI_Win_get_group(*TOKEN(token), &win_group);
-    chk_err(ierr);
-    ierr = MPI_Group_translate_ranks(current_team_group, 2,
-                                     (int[]){image_index - 1, mpi_this_image},
-                                     win_group, trans_ranks);
-    chk_err(ierr);
-    remote_image = trans_ranks[0];
-    this_image = trans_ranks[1];
-    ierr = MPI_Group_free(&current_team_group);
-    chk_err(ierr);
-    ierr = MPI_Group_free(&win_group);
-    chk_err(ierr);
+    if (unlikely(!team_translate(&remote_image, &this_image, token, image_index,
+                                 team, team_number, stat)))
+      return;
   }
   else
   {
@@ -6002,7 +6281,7 @@ PREFIX(send_to_remote)(caf_token_t token, gfc_descriptor_t *opt_dst_desc,
   msg->transfer_size = src_size;
   msg->opt_charlen = opt_src_charlen ? *opt_src_charlen : 0;
   msg->win = *TOKEN(token);
-  msg->dest_image = mpi_this_image;
+  msg->dest_image = this_image;
   msg->dest_tag = CAF_CT_TAG + 1;
   msg->dest_opt_charlen = opt_dst_charlen ? *opt_dst_charlen : 1;
   msg->flags = (opt_dst_desc ? CT_DST_HAS_DESC : 0)
@@ -6043,13 +6322,13 @@ PREFIX(send_to_remote)(caf_token_t token, gfc_descriptor_t *opt_dst_desc,
 
   {
     char c;
-    dprint("waiting to receive %d bytes from %d on tag %d.\n", 1, image_index,
+    dprint("waiting to receive 1 byte from %d on tag %d.\n", remote_image,
            msg->dest_tag);
-    ierr = MPI_Recv(&c, 1, MPI_BYTE, image_index - 1, msg->dest_tag,
+    ierr = MPI_Recv(&c, 1, MPI_BYTE, remote_image, msg->dest_tag,
                     CAF_COMM_WORLD, MPI_STATUS_IGNORE);
     chk_err(ierr);
-    dprint("received %d bytes as requested from %d on tag %d.\n", 1,
-           image_index, msg->dest_tag);
+    dprint("received 1 byte as requested from %d on tag %d.\n", remote_image,
+           msg->dest_tag);
   }
 
   if (running_accesses == rat)
@@ -6106,14 +6385,10 @@ PREFIX(transfer_between_remotes)(
     const int src_image_index, const int src_access_index, void *src_add_data,
     const size_t src_add_data_size, const size_t in_src_size,
     const bool scalar_transfer, int *dst_stat, int *src_stat,
-    caf_team_t *dst_team __attribute__((unused)),
-    int *dst_team_number __attribute__((unused)),
-    caf_team_t *src_team __attribute__((unused)),
-    int *src_team_number __attribute__((unused)))
+    caf_team_t *dst_team, int *dst_team_number, caf_team_t *src_team,
+    int *src_team_number)
 {
-  MPI_Group current_team_group, win_group;
   int ierr, this_image, src_remote_image, dst_remote_image;
-  int trans_ranks[3];
   bool free_msg;
   ct_msg_t *full_msg, *dst_msg;
   struct transfer_msg_data_t *tmd;
@@ -6138,22 +6413,14 @@ PREFIX(transfer_between_remotes)(
     *src_stat = 0;
 
   // Get mapped remote image
-  ierr = MPI_Comm_group(CAF_COMM_WORLD, &current_team_group);
-  chk_err(ierr);
-  ierr = MPI_Win_get_group(*TOKEN(src_token), &win_group);
-  chk_err(ierr);
-  ierr = MPI_Group_translate_ranks(
-      current_team_group, 3,
-      (int[]){src_image_index - 1, dst_image_index - 1, mpi_this_image},
-      win_group, trans_ranks);
-  chk_err(ierr);
-  src_remote_image = trans_ranks[0];
-  dst_remote_image = trans_ranks[1];
-  this_image = trans_ranks[2];
-  ierr = MPI_Group_free(&current_team_group);
-  chk_err(ierr);
-  ierr = MPI_Group_free(&win_group);
-  chk_err(ierr);
+  if (unlikely(!team_translate(&src_remote_image, &this_image, src_token,
+                               src_image_index, src_team, src_team_number,
+                               src_stat)))
+    return;
+  if (unlikely(!team_translate(&dst_remote_image, &this_image, dst_token,
+                               dst_image_index, dst_team, dst_team_number,
+                               dst_stat)))
+    return;
 
   dprint("team-map: dst(in) %d -> %d, src(in) %d -> %d, this %d -> %d.\n",
          dst_image_index, dst_remote_image, src_image_index, src_remote_image,
@@ -6281,7 +6548,7 @@ PREFIX(transfer_between_remotes)(
   dst_msg->transfer_size = src_size;
   dst_msg->opt_charlen = opt_src_charlen ? *opt_src_charlen : 0;
   dst_msg->win = *TOKEN(dst_token);
-  dst_msg->dest_image = mpi_this_image;
+  dst_msg->dest_image = this_image;
   dst_msg->dest_tag = CAF_CT_TAG + 1;
   dst_msg->dest_opt_charlen = opt_dst_charlen ? *opt_dst_charlen : 1;
   dst_msg->flags
@@ -6324,15 +6591,15 @@ PREFIX(transfer_between_remotes)(
 
   {
     char c;
-    dprint("waiting to receive %d bytes from %d on tag %d.\n", 1,
-           dst_image_index, dst_msg->dest_tag);
-    ierr = MPI_Recv(&c, 1, MPI_BYTE, dst_image_index - 1, dst_msg->dest_tag,
+    dprint("waiting to receive 1 byte from %d on tag %d.\n", dst_remote_image,
+           dst_msg->dest_tag);
+    ierr = MPI_Recv(&c, 1, MPI_BYTE, dst_remote_image, dst_msg->dest_tag,
                     CAF_COMM_WORLD, MPI_STATUS_IGNORE);
     chk_err(ierr);
     if (dst_stat)
       *dst_stat = c;
-    dprint("received %d bytes as requested from %d on tag %d.\n", 1,
-           dst_image_index, dst_msg->dest_tag);
+    dprint("received 1 byte as requested from %d on tag %d.\n",
+           dst_remote_image, dst_msg->dest_tag);
   }
 
   if (running_accesses == rat)
@@ -9245,19 +9512,19 @@ internal_co_reduce(MPI_Op op, gfc_descriptor_t *source, int result_image,
     if (result_image == 0)
     {
       ierr = MPI_Allreduce(MPI_IN_PLACE, source->base_addr, size, datatype, op,
-                           CAF_COMM_WORLD);
+                           CAF_COMM_TEAM);
       chk_err(ierr);
     }
     else if (result_image == caf_this_image)
     {
       ierr = MPI_Reduce(MPI_IN_PLACE, source->base_addr, size, datatype, op,
-                        result_image - 1, CAF_COMM_WORLD);
+                        result_image - 1, CAF_COMM_TEAM);
       chk_err(ierr);
     }
     else
     {
       ierr = MPI_Reduce(source->base_addr, NULL, size, datatype, op,
-                        result_image - 1, CAF_COMM_WORLD);
+                        result_image - 1, CAF_COMM_TEAM);
       chk_err(ierr);
     }
     if (ierr)
@@ -9279,19 +9546,19 @@ internal_co_reduce(MPI_Op op, gfc_descriptor_t *source, int result_image,
                         + array_offset_sr * GFC_DESCRIPTOR_SIZE(source));
     if (result_image == 0)
     {
-      ierr = MPI_Allreduce(MPI_IN_PLACE, sr, 1, datatype, op, CAF_COMM_WORLD);
+      ierr = MPI_Allreduce(MPI_IN_PLACE, sr, 1, datatype, op, CAF_COMM_TEAM);
       chk_err(ierr);
     }
     else if (result_image == caf_this_image)
     {
       ierr = MPI_Reduce(MPI_IN_PLACE, sr, 1, datatype, op, result_image - 1,
-                        CAF_COMM_WORLD);
+                        CAF_COMM_TEAM);
       chk_err(ierr);
     }
     else
     {
       ierr = MPI_Reduce(sr, NULL, 1, datatype, op, result_image - 1,
-                        CAF_COMM_WORLD);
+                        CAF_COMM_TEAM);
       chk_err(ierr);
     }
     if (ierr)
@@ -9354,13 +9621,13 @@ PREFIX(co_broadcast)(gfc_descriptor_t *a, int source_image, int *stat,
     if (datatype == MPI_BYTE)
     {
       ierr = MPI_Bcast(a->base_addr, size * GFC_DESCRIPTOR_SIZE(a), datatype,
-                       source_image - 1, CAF_COMM_WORLD);
+                       source_image - 1, CAF_COMM_TEAM);
       chk_err(ierr);
     }
     else if (datatype != MPI_CHARACTER)
     {
       ierr = MPI_Bcast(a->base_addr, size, datatype, source_image - 1,
-                       CAF_COMM_WORLD);
+                       CAF_COMM_TEAM);
       chk_err(ierr);
     }
     else
@@ -9369,13 +9636,13 @@ PREFIX(co_broadcast)(gfc_descriptor_t *a, int source_image, int *stat,
       if (caf_this_image == source_image)
         a_length = strlen(a->base_addr);
       /* Broadcast the string lenth */
-      ierr = MPI_Bcast(&a_length, 1, MPI_INT, source_image - 1, CAF_COMM_WORLD);
+      ierr = MPI_Bcast(&a_length, 1, MPI_INT, source_image - 1, CAF_COMM_TEAM);
       chk_err(ierr);
       if (ierr)
         goto error;
       /* Broadcast the string itself */
       ierr = MPI_Bcast(a->base_addr, a_length, datatype, source_image - 1,
-                       CAF_COMM_WORLD);
+                       CAF_COMM_TEAM);
       chk_err(ierr);
     }
 
@@ -9404,7 +9671,7 @@ PREFIX(co_broadcast)(gfc_descriptor_t *a, int source_image, int *stat,
     void *sr = (void *)((char *)a->base_addr
                         + array_offset * GFC_DESCRIPTOR_SIZE(a));
 
-    ierr = MPI_Bcast(sr, 1, datatype, source_image - 1, CAF_COMM_WORLD);
+    ierr = MPI_Bcast(sr, 1, datatype, source_image - 1, CAF_COMM_TEAM);
     chk_err(ierr);
 
     if (ierr)
@@ -10152,6 +10419,47 @@ unsupported_fail_images_message(const char *functionname)
 #endif
 }
 
+#ifdef GCC_GE_15
+void
+PREFIX(form_team)(int team_id, caf_team_t *team, int *new_index, int *stat,
+                  char *errmsg, charlen_t errmsg_len)
+{
+  static const char *negative_team_id
+      = "FORM TEAM: Team id shall be a positive unique integer";
+  static const char *negative_new_index
+      = "FORM TEAM: NEW_INDEX= shall be a positive unique integer";
+  caf_teams_list_t *new_team;
+  MPI_Comm current_comm = CAF_COMM_TEAM;
+  int ierr;
+  int key = new_index ? *new_index : caf_this_image;
+
+  if (stat)
+    *stat = 0;
+
+  if (team_id < 0)
+  {
+    caf_internal_error(negative_team_id, stat, errmsg, errmsg_len);
+    return;
+  }
+  if (new_index && *new_index < 0)
+  {
+    caf_internal_error(negative_new_index, stat, errmsg, errmsg_len);
+    return;
+  }
+
+  new_team = (caf_teams_list_t *)malloc(sizeof(struct caf_teams_list));
+  new_team->team_id = team_id;
+  new_team->image_id = key;
+  new_team->prev = teams_list;
+
+  ierr
+      = MPI_Comm_split(current_comm, team_id, key - 1, &new_team->communicator);
+  chk_err(ierr);
+
+  teams_list = new_team;
+  *team = new_team;
+}
+#else
 void
 PREFIX(form_team)(int team_id, caf_team_t *team,
                   int index __attribute__((unused)))
@@ -10172,7 +10480,43 @@ PREFIX(form_team)(int team_id, caf_team_t *team,
   teams_list->team = newcomm;
   *team = tmp;
 }
+#endif
 
+#ifdef GCC_GE_15
+void
+PREFIX(change_team)(caf_team_t team, int *stat, char *errmsg,
+                    charlen_t errmsg_len)
+{
+  caf_team_stack_node_t *new_current_team = NULL;
+  caf_teams_list_t *provisioned_team = (caf_teams_list_t *)team;
+  int ierr;
+
+  if (stat)
+    *stat = 0;
+
+  if (provisioned_team == NULL)
+  {
+    caf_internal_error("CHANGE TEAM: Called on a non-existing team", stat,
+                       errmsg, errmsg_len);
+    return;
+  }
+
+  new_current_team
+      = (caf_team_stack_node_t *)malloc(sizeof(caf_team_stack_node_t));
+  *new_current_team
+      = (caf_team_stack_node_t){provisioned_team, NULL, current_team};
+
+  current_team = new_current_team;
+  ierr = MPI_Comm_rank(CAF_COMM_TEAM, &mpi_this_image);
+  chk_err(ierr);
+  caf_this_image = mpi_this_image + 1;
+  ierr = MPI_Comm_size(CAF_COMM_TEAM, &caf_num_images);
+  chk_err(ierr);
+  ierr = MPI_Barrier(CAF_COMM_TEAM);
+  chk_err(ierr);
+  dprint("changed to team %d.\n", current_team->team_list_elem->team_id);
+}
+#else
 void
 PREFIX(change_team)(caf_team_t *team, int coselector __attribute__((unused)))
 {
@@ -10196,13 +10540,13 @@ PREFIX(change_team)(caf_team_t *team, int coselector __attribute__((unused)))
   /*
   tmp_list = teams_list;
 
-  while (tmp_list)
-  {
-    if (tmp_list->team == tmp_team)
-      break;
-    tmp_list = tmp_list->prev;
-  }
-  */
+ while (tmp_list)
+ {
+   if (tmp_list->team == tmp_team)
+     break;
+   tmp_list = tmp_list->prev;
+ }
+ */
 
   if (tmp_list == NULL)
     caf_runtime_error("CHANGE TEAM called on a non-existing team");
@@ -10220,7 +10564,49 @@ PREFIX(change_team)(caf_team_t *team, int coselector __attribute__((unused)))
   ierr = MPI_Barrier(*tmp_comm);
   chk_err(ierr);
 }
+#endif
 
+#ifdef GCC_GE_15
+MPI_Fint
+PREFIX(get_communicator)(caf_team_t *team)
+{
+  caf_teams_list_t *cur_team = team ? *team : current_team->team_list_elem;
+
+  MPI_Fint ret = MPI_Comm_c2f(cur_team->communicator);
+
+  return ret;
+}
+
+int
+PREFIX(team_number)(caf_team_t team)
+{
+  if (team != NULL)
+    return ((caf_teams_list_t *)team)->team_id;
+  else
+    return current_team->team_list_elem->team_id; /* current team */
+}
+
+caf_team_t
+PREFIX(get_team)(int32_t *level)
+{
+  if (!level)
+    return current_team->team_list_elem;
+
+  switch ((caf_team_level_t)*level)
+  {
+    case CAF_INITIAL_TEAM:
+      return initial_team->team_list_elem;
+    case CAF_PARENT_TEAM:
+      return current_team->parent ? current_team->parent->team_list_elem
+                                  : initial_team->team_list_elem;
+    case CAF_CURRENT_TEAM:
+      return current_team->team_list_elem;
+    default:
+      caf_runtime_error("Illegal value for GET_TEAM");
+  }
+  return NULL; /* To prevent any warnings.  */
+}
+#else
 MPI_Fint
 PREFIX(get_communicator)(caf_team_t *team)
 {
@@ -10232,7 +10618,6 @@ PREFIX(get_communicator)(caf_team_t *team)
   MPI_Fint ret = MPI_Comm_c2f(*comm_ptr);
 
   return ret;
-  // return  *(int*)comm_ptr;
 }
 
 int
@@ -10243,7 +10628,60 @@ PREFIX(team_number)(caf_team_t *team)
   else
     return used_teams->team_list_elem->team_id; /* current team */
 }
+#endif
 
+#ifdef GCC_GE_15
+void
+PREFIX(end_team)(int *stat, char *errmsg, charlen_t errmsg_len)
+{
+  caf_team_stack_node_t *ending_team = current_team;
+  int ierr;
+
+  if (stat)
+    *stat = 0;
+
+  ierr = MPI_Barrier(CAF_COMM_TEAM);
+  chk_err(ierr);
+  if (current_team->parent == NULL)
+  {
+    caf_internal_error("END TEAM called on initial team", stat, errmsg,
+                       errmsg_len);
+    return;
+  }
+
+  dprint("ending team %d.\n", ending_team->team_list_elem->team_id);
+  for (struct allocated_tokens_t *ac = current_team->allocated_tokens; ac;)
+  {
+    struct allocated_tokens_t *nac = ac->next;
+
+    if (((mpi_caf_token_t *)ac->token)->owning_memory)
+      PREFIX(deregister)((void **)&ac->token,
+                         CAF_DEREGTYPE_COARRAY_DEALLOCATE_ONLY, stat, errmsg,
+                         errmsg_len);
+    else
+    {
+      MPI_Win *p = TOKEN(ac->token);
+
+      CAF_Win_unlock_all(*p);
+      ierr = MPI_Win_free(p);
+      chk_err(ierr);
+
+      free(ac->token);
+    }
+    free(ac);
+    ac = nac;
+  }
+  current_team = current_team->parent;
+
+  ierr = MPI_Comm_rank(CAF_COMM_TEAM, &mpi_this_image);
+  chk_err(ierr);
+  caf_this_image = mpi_this_image + 1;
+  ierr = MPI_Comm_size(CAF_COMM_TEAM, &caf_num_images);
+  chk_err(ierr);
+  free(ending_team);
+  dprint("switched to team %d.\n", current_team->team_list_elem->team_id);
+}
+#else
 void
 PREFIX(end_team)(caf_team_t *team __attribute__((unused)))
 {
@@ -10271,7 +10709,42 @@ PREFIX(end_team)(caf_team_t *team __attribute__((unused)))
   ierr = MPI_Comm_size(CAF_COMM_WORLD, &caf_num_images);
   chk_err(ierr);
 }
+#endif
 
+#ifdef GCC_GE_15
+void
+PREFIX(sync_team)(caf_team_t team, int *stat, char *errmsg,
+                  charlen_t errmsg_len)
+{
+  caf_teams_list_t *team_to_sync = (caf_teams_list_t *)team;
+  caf_team_stack_node_t *active_team = current_team;
+
+  if (stat)
+    *stat = 0;
+
+  /* Check if team to sync is a child of the current team, aka not changed to
+   * yet.
+   */
+  if (team_to_sync->prev != active_team->team_list_elem)
+    /* if the team is not a child */
+    for (; active_team && active_team->team_list_elem != team_to_sync;
+         active_team = active_team->parent)
+      ;
+
+  if (!active_team)
+  {
+    caf_internal_error("SYNC TEAM: Called on team different from current, "
+                       "or ancestor, or child",
+                       stat, errmsg, errmsg_len);
+    return;
+  }
+
+  dprint("syncing team %d.\n", current_team->team_list_elem->team_id);
+  int ierr = MPI_Barrier(team_to_sync->communicator);
+  chk_err(ierr);
+  dprint("synced team %d.\n", current_team->team_list_elem->team_id);
+}
+#else
 void
 PREFIX(sync_team)(caf_team_t *team, int unused __attribute__((unused)))
 {
@@ -10303,6 +10776,7 @@ PREFIX(sync_team)(caf_team_t *team, int unused __attribute__((unused)))
   int ierr = MPI_Barrier(*tmp_comm);
   chk_err(ierr);
 }
+#endif
 
 extern void
 _gfortran_random_seed_i4(int32_t *size, gfc_dim1_descriptor_t *put,

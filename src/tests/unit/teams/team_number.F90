@@ -29,7 +29,7 @@
 ! OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 program main
   !! summary: Test team_number intrinsic function
-  use iso_fortran_env, only : team_type
+  use, intrinsic :: iso_fortran_env
   use iso_c_binding, only : c_loc
   use oc_assertions_interface, only : assert
 
@@ -43,10 +43,9 @@ program main
 
   call assert(team_number()==standard_initial_value,"initial team number conforms with Fortran standard before 'change team'")
 
- !call assert(
- !  team_number(c_loc(home))==standard_initial_value,"initial team number conforms with Fortran standard before 'change team'"
- !)
-   !! TODO: uncomment the above assertion after implementing support for team_number's optional argument:
+#ifdef GCC_GE_15
+  call assert(team_number(get_team(current_team))==standard_initial_value,"initial team number conforms with Fortran standard before 'change team'")
+#endif
 
   after_change_team: block
     associate(parent_team_number => 100 + (num_images()-1)/4, child_team_number => 1000 + mod(num_images()-1,4)/2)

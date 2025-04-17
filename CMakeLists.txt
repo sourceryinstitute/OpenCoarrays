@@ -233,7 +233,7 @@ endif()
   if ( gfortran_compiler AND ( NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 8.0.0 ) )
     add_definitions(-DGCC_GE_8) # Tell library to build against GFortran 8.x bindings w/ descriptor change
   endif()
-  if ( gfortran_compiler AND ( NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 14.0.0 ) )
+  if ( gfortran_compiler AND ( NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 15.0.0 ) )
     add_definitions(-DGCC_GE_15) # Tell library to build against GFortran 15.x bindings
   endif()
 
@@ -814,6 +814,12 @@ if(opencoarrays_aware_compiler)
       add_caf_test(sync_team 8 sync_team)
       add_caf_test(alloc_comp_multidim_shape 2 alloc_comp_multidim_shape)
       set_tests_properties(alloc_comp_multidim_shape PROPERTIES TIMEOUT 300)
+    endif()
+    if(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 15)
+        add_caf_test(teams_this_image 8 teams_this_image)
+        add_caf_test(teams_num_images 8 teams_num_images)
+        add_caf_test(test_teams_1 9 test_teams_1)
+        add_caf_test(teams_coindexed 2 teams_coindexed)
     endif()
   endif()
 
