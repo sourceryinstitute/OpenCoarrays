@@ -233,10 +233,10 @@ endif()
   if ( gfortran_compiler AND ( NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 8.0.0 ) )
     add_definitions(-DGCC_GE_8) # Tell library to build against GFortran 8.x bindings w/ descriptor change
   endif()
-  if ( gfortran_compiler AND ( NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 15.0.0 ) )
+  if ( gfortran_compiler AND ( NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS_EQUAL 15.0.0 ) )
     add_definitions(-DGCC_GE_15) # Tell library to build against GFortran 15.x bindings
   endif()
-  if ( gfortran_compiler AND ( NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 16.0.0 ) )
+  if ( gfortran_compiler AND ( CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER_EQUAL 16.0.0 ) )
     add_definitions(-DGCC_GE_16) # Tell library to build against GFortran 16.x bindings
   endif()
 

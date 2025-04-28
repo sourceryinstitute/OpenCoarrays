@@ -226,7 +226,7 @@ static win_sync *pending_puts = NULL;
 /* Linked list of static coarrays registered.  Do not expose to public in the
  * header, because it is implementation specific.
  *
- * From gcc-15 on, this list is contained in the teams handling. */
+ * From gcc-16 on, this list is contained in the teams handling. */
 struct caf_allocated_tokens_t
 {
   caf_token_t token;
@@ -839,7 +839,11 @@ handle_is_present_message(ct_msg_t *msg, void *baseptr)
         += sizeof_desc_for_rank(GFC_DESCRIPTOR_RANK((gfc_descriptor_t *)ptr));
   }
   else
+#ifdef GCC_GE_16
     ptr = &baseptr;
+#else
+    ptr = baseptr;
+#endif
 
   accessor_hash_table[msg->accessor_index].u.is_present(
       add_data, &msg->dest_image, &result, ptr, &src_token, 0);
@@ -5740,11 +5744,11 @@ team_translate(int *remote_image, int *this_image,
                caf_token_t token __attribute__((unused)), int image_index,
                caf_team_t *team, int *team_number, int *stat)
 {
+#ifdef GCC_GE_16
   MPI_Group world_group, team_group, remote_group;
   int ierr, trans, team_id = current_team->team_list_elem->team_id;
   MPI_Comm remote_comm = MPI_COMM_NULL;
 
-#ifdef GCC_GE_16
   if (team)
   {
     caf_team_stack_node_t *cur = current_team;
@@ -5777,7 +5781,6 @@ team_translate(int *remote_image, int *this_image,
       return false;
     }
   }
-#endif
 
   ierr = MPI_Comm_group(CAF_COMM_WORLD, &world_group);
   chk_err(ierr);
@@ -5803,6 +5806,27 @@ team_translate(int *remote_image, int *this_image,
   chk_err(ierr);
   dprint("this: %d -> %d, rmt: %d -> %d on team %d.\n", caf_this_image,
          *this_image + 1, image_index, *remote_image + 1, team_id);
+#else
+  MPI_Group current_team_group, win_group;
+  int ierr, trans_ranks[2];
+
+  ierr = MPI_Comm_group(CAF_COMM_WORLD, &current_team_group);
+  chk_err(ierr);
+  ierr = MPI_Win_get_group(*TOKEN(token), &win_group);
+  chk_err(ierr);
+  ierr = MPI_Group_translate_ranks(current_team_group, 2,
+                                   (int[]){image_index - 1, mpi_this_image},
+                                   win_group, trans_ranks);
+  chk_err(ierr);
+  *remote_image = trans_ranks[0];
+  *this_image = trans_ranks[1];
+  ierr = MPI_Group_free(&current_team_group);
+  chk_err(ierr);
+  ierr = MPI_Group_free(&win_group);
+  chk_err(ierr);
+  dprint("this: %d -> %d, rmt: %d -> %d.\n", caf_this_image, *this_image + 1,
+         image_index, *remote_image + 1);
+#endif
   return true;
 }
 
@@ -5895,7 +5919,11 @@ PREFIX(get_from_remote)(caf_token_t token, const gfc_descriptor_t *opt_src_desc,
   msg->transfer_size = dst_size;
   msg->opt_charlen = opt_src_charlen ? *opt_src_charlen : 0;
   msg->win = *TOKEN(token);
+#ifdef GCC_GE_16
   msg->dest_image = this_image;
+#else
+  msg->dest_image = mpi_this_image;
+#endif
   msg->dest_tag = CAF_CT_TAG + 1;
   msg->dest_opt_charlen = opt_dst_charlen ? *opt_dst_charlen : 1;
   msg->flags = (opt_dst_desc ? CT_DST_HAS_DESC : 0)
@@ -5939,8 +5967,13 @@ PREFIX(get_from_remote)(caf_token_t token, const gfc_descriptor_t *opt_src_desc,
                           "for internal buffer in get_from_remote().");
     }
     dprint("waiting to receive %zd bytes from %d.\n", dst_size, remote_image);
+#ifdef GCC_GE_16
     ierr = MPI_Recv(t_buff, dst_size, MPI_BYTE, remote_image, msg->dest_tag,
                     CAF_COMM_WORLD, MPI_STATUS_IGNORE);
+#else
+    ierr = MPI_Recv(t_buff, dst_size, MPI_BYTE, image_index - 1, msg->dest_tag,
+                    CAF_COMM_WORLD, MPI_STATUS_IGNORE);
+#endif
     chk_err(ierr);
     dprint("received %zd bytes as requested from %d.\n", dst_size,
            remote_image);
@@ -5958,8 +5991,13 @@ PREFIX(get_from_remote)(caf_token_t token, const gfc_descriptor_t *opt_src_desc,
 
     dprint("probing for incoming message from %d, tag %d.\n", image_index - 1,
            msg->dest_tag);
+#ifdef GCC_GE_16
+    ierr = MPI_Mprobe(remote_image, msg->dest_tag, CAF_COMM_WORLD, &msg_han,
+                      &status);
+#else
     ierr = MPI_Mprobe(image_index - 1, msg->dest_tag, CAF_COMM_WORLD, &msg_han,
                       &status);
+#endif
     chk_err(ierr);
     if (ierr == MPI_SUCCESS)
     {
@@ -6062,8 +6100,14 @@ PREFIX(is_present_on_remote)(caf_token_t token, const int image_index,
     void *src_ptr = ((mpi_caf_token_t *)token)->memptr;
 
     dprint("Shortcutting due to self access on image %d.\n", image_index);
-    accessor_hash_table[is_present_index].u.is_present(
-        add_data, &this_image, &result, &src_ptr, &src_token, 0);
+    accessor_hash_table[is_present_index].u.is_present(add_data, &this_image,
+                                                       &result,
+#ifdef GCC_GE_16
+                                                       &src_ptr,
+#else
+                                                       src_ptr,
+#endif
+                                                       &src_token, 0);
 
     return result;
   }
@@ -6281,7 +6325,11 @@ PREFIX(send_to_remote)(caf_token_t token, gfc_descriptor_t *opt_dst_desc,
   msg->transfer_size = src_size;
   msg->opt_charlen = opt_src_charlen ? *opt_src_charlen : 0;
   msg->win = *TOKEN(token);
+#ifdef GCC_GE_16
   msg->dest_image = this_image;
+#else
+  msg->dest_image = mpi_this_image;
+#endif
   msg->dest_tag = CAF_CT_TAG + 1;
   msg->dest_opt_charlen = opt_dst_charlen ? *opt_dst_charlen : 1;
   msg->flags = (opt_dst_desc ? CT_DST_HAS_DESC : 0)
@@ -6324,8 +6372,13 @@ PREFIX(send_to_remote)(caf_token_t token, gfc_descriptor_t *opt_dst_desc,
     char c;
     dprint("waiting to receive 1 byte from %d on tag %d.\n", remote_image,
            msg->dest_tag);
+#ifdef GCC_GE_16
     ierr = MPI_Recv(&c, 1, MPI_BYTE, remote_image, msg->dest_tag,
                     CAF_COMM_WORLD, MPI_STATUS_IGNORE);
+#else
+    ierr = MPI_Recv(&c, 1, MPI_BYTE, image_index - 1, msg->dest_tag,
+                    CAF_COMM_WORLD, MPI_STATUS_IGNORE);
+#endif
     chk_err(ierr);
     dprint("received 1 byte as requested from %d on tag %d.\n", remote_image,
            msg->dest_tag);
@@ -6548,7 +6601,11 @@ PREFIX(transfer_between_remotes)(
   dst_msg->transfer_size = src_size;
   dst_msg->opt_charlen = opt_src_charlen ? *opt_src_charlen : 0;
   dst_msg->win = *TOKEN(dst_token);
+#ifdef GCC_GE_16
   dst_msg->dest_image = this_image;
+#else
+  dst_msg->dest_image = mpi_this_image;
+#endif
   dst_msg->dest_tag = CAF_CT_TAG + 1;
   dst_msg->dest_opt_charlen = opt_dst_charlen ? *opt_dst_charlen : 1;
   dst_msg->flags
@@ -6593,8 +6650,13 @@ PREFIX(transfer_between_remotes)(
     char c;
     dprint("waiting to receive 1 byte from %d on tag %d.\n", dst_remote_image,
            dst_msg->dest_tag);
+#ifdef GCC_GE_16
     ierr = MPI_Recv(&c, 1, MPI_BYTE, dst_remote_image, dst_msg->dest_tag,
                     CAF_COMM_WORLD, MPI_STATUS_IGNORE);
+#else
+    ierr = MPI_Recv(&c, 1, MPI_BYTE, dst_image_index - 1, dst_msg->dest_tag,
+                    CAF_COMM_WORLD, MPI_STATUS_IGNORE);
+#endif
     chk_err(ierr);
     if (dst_stat)
       *dst_stat = c;

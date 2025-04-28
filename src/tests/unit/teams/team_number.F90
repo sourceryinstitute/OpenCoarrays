@@ -43,7 +43,7 @@ program main
 
   call assert(team_number()==standard_initial_value,"initial team number conforms with Fortran standard before 'change team'")
 
-#ifdef GCC_GE_15
+#ifdef GCC_GE_16
   call assert(team_number(get_team(current_team))==standard_initial_value,"initial team number conforms with Fortran standard before 'change team'")
 #endif
 
