@@ -40,7 +40,7 @@ program co_reduce_strings
   associate (me => this_image())
     allocate(strarr(numstrings)[*])
     do i = 1, numstrings
-      write(strarr(i), "('foo'I02)") i * me
+      write(strarr(i), "('foo',I02)") i * me
     end do
     ! Collectively reduce the maximum string.
     call co_reduce(strarr, strmax)
@@ -50,7 +50,7 @@ program co_reduce_strings
   ! implicitly synchronizes.
   associate (np => num_images())
     do i = 1, np
-      write (expect, "('foo'I02)") i * np
+      write (expect, "('foo',I02)") i * np
       if (strarr(i) /= expect) then
         ! On errror print what we got and what we expected.
         print *, "Got: ", strarr(i), ", expected: ", expect
@@ -77,4 +77,3 @@ contains
   end function
 
 end program co_reduce_strings
-

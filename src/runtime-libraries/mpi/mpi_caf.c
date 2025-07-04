@@ -6095,19 +6095,19 @@ PREFIX(is_present_on_remote)(caf_token_t token, const int image_index,
 
   if (this_image == remote_image)
   {
+    mpi_caf_token_t *mpi_token = (mpi_caf_token_t *)token;
     int32_t result = 0;
     mpi_caf_token_t src_token = {get_data, MPI_WIN_NULL, NULL};
-    void *src_ptr = ((mpi_caf_token_t *)token)->memptr;
+#ifdef GCC_GE_16
+    void *src_ptr
+        = mpi_token->desc ? mpi_token->desc : (void *)&mpi_token->memptr;
+#else
+    void *src_ptr = mpi_token->memptr;
+#endif
 
     dprint("Shortcutting due to self access on image %d.\n", image_index);
-    accessor_hash_table[is_present_index].u.is_present(add_data, &this_image,
-                                                       &result,
-#ifdef GCC_GE_16
-                                                       &src_ptr,
-#else
-                                                       src_ptr,
-#endif
-                                                       &src_token, 0);
+    accessor_hash_table[is_present_index].u.is_present(
+        add_data, &this_image, &result, src_ptr, &src_token, 0);
 
     return result;
   }
