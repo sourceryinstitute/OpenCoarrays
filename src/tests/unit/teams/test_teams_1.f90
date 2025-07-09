@@ -43,10 +43,10 @@ program test_teams_1
         form team((me - 1) / 3 + 1, row_team, new_index=mod(me - 1, 3) + 1)
         row_t: change team(row_team, row[*] => caf(:, team_number(row_team)))
             ! Form column teams; each team has only one image
-            form team (team_number(), column_team)
+            form team (this_image(), column_team)
             col_t: change team(column_team, cell[*] => row(this_image()))
-                cell = team_number()
-                if (this_image() /= 1) row(this_image())[1] = cell
+                cell = team_number(row_team)
+                if (this_image(row_team) /= 1) row(this_image(row_team))[1, team=row_team] = cell
             end team col_t
             sync team(row_team)
             if (this_image() == 1) caf(:, team_number(row_team))[1, team_number = -1] = row
