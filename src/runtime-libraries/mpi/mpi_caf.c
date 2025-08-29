@@ -65,6 +65,14 @@ static char *caf_ref_type_str[] = {
     "CAF_REF_STATIC_ARRAY",
 };
 
+static inline MPI_Win CAF_idx2win(int idx) {
+    return MPI_Win_f2c(idx);
+}
+
+static inline int CAF_win2idx(MPI_Win win) {
+    return MPI_Win_c2f(win);
+}
+
 #ifndef EXTRA_DEBUG_OUTPUT
 #define dprint(...)
 #define chk_err(...)
@@ -310,7 +318,7 @@ typedef struct
   int flags;
   size_t transfer_size;
   size_t opt_charlen;
-  MPI_Win win;
+  int win;
   int dest_image;
   int dest_tag;
   int accessor_index;
@@ -942,7 +950,7 @@ handle_transfer_message(ct_msg_t *msg, void *baseptr)
   {
     int flag;
     dprint("ct: self handling message of size %zd.\n", send_size);
-    ierr = MPI_Win_get_attr(send_msg->win, MPI_WIN_BASE, &baseptr, &flag);
+    ierr = MPI_Win_get_attr(CAF_idx2win(send_msg->win), MPI_WIN_BASE, &baseptr, &flag);
     chk_err(ierr);
     handle_send_message(send_msg, baseptr);
   }
@@ -970,9 +978,10 @@ handle_incoming_message(MPI_Status *status_in, MPI_Message *msg_han,
   dprint("ct: Received request of size %d (sizeof(ct_msg) = %zd).\n", cnt,
          sizeof(ct_msg_t));
 
-  if (msg->win != MPI_WIN_NULL)
+  MPI_Win win = CAF_idx2win(msg->win);
+  if (win != MPI_WIN_NULL)
   {
-    ierr = MPI_Win_get_attr(msg->win, MPI_WIN_BASE, &baseptr, &flag);
+    ierr = MPI_Win_get_attr(win, MPI_WIN_BASE, &baseptr, &flag);
     chk_err(ierr);
   }
   else
@@ -5600,7 +5609,7 @@ PREFIX(get_from_remote)(caf_token_t token, const gfc_descriptor_t *opt_src_desc,
   msg->cmd = remote_command_get;
   msg->transfer_size = dst_size;
   msg->opt_charlen = opt_src_charlen ? *opt_src_charlen : 0;
-  msg->win = *TOKEN(token);
+  msg->win = CAF_win2idx(*TOKEN(token));
   msg->dest_image = mpi_this_image;
   msg->dest_tag = CAF_CT_TAG + 1;
   msg->dest_opt_charlen = opt_dst_charlen ? *opt_dst_charlen : 1;
@@ -5786,7 +5795,7 @@ PREFIX(is_present_on_remote)(caf_token_t token, const int image_index,
   msg->cmd = remote_command_present;
   msg->transfer_size = 1;
   msg->opt_charlen = 0;
-  msg->win = *TOKEN(token);
+  msg->win = CAF_win2idx(*TOKEN(token));
   msg->dest_image = mpi_this_image;
   msg->dest_tag = CAF_CT_TAG + 1;
   msg->dest_opt_charlen = 0;
@@ -6001,7 +6010,7 @@ PREFIX(send_to_remote)(caf_token_t token, gfc_descriptor_t *opt_dst_desc,
   msg->cmd = remote_command_send;
   msg->transfer_size = src_size;
   msg->opt_charlen = opt_src_charlen ? *opt_src_charlen : 0;
-  msg->win = *TOKEN(token);
+  msg->win = CAF_win2idx(*TOKEN(token));
   msg->dest_image = mpi_this_image;
   msg->dest_tag = CAF_CT_TAG + 1;
   msg->dest_opt_charlen = opt_dst_charlen ? *opt_dst_charlen : 1;
@@ -6264,7 +6273,7 @@ PREFIX(transfer_between_remotes)(
   full_msg->cmd = remote_command_transfer;
   full_msg->transfer_size = src_size;
   full_msg->opt_charlen = opt_src_charlen ? *opt_src_charlen : 0;
-  full_msg->win = *TOKEN(src_token);
+  full_msg->win = CAF_win2idx(*TOKEN(src_token));
   full_msg->dest_image = dst_remote_image;
   full_msg->dest_tag = CAF_CT_TAG;
   full_msg->dest_opt_charlen = opt_dst_charlen ? *opt_dst_charlen : 1;
@@ -6280,7 +6289,7 @@ PREFIX(transfer_between_remotes)(
   dst_msg->cmd = remote_command_send;
   dst_msg->transfer_size = src_size;
   dst_msg->opt_charlen = opt_src_charlen ? *opt_src_charlen : 0;
-  dst_msg->win = *TOKEN(dst_token);
+  dst_msg->win = CAF_win2idx(*TOKEN(dst_token));
   dst_msg->dest_image = mpi_this_image;
   dst_msg->dest_tag = CAF_CT_TAG + 1;
   dst_msg->dest_opt_charlen = opt_dst_charlen ? *opt_dst_charlen : 1;
