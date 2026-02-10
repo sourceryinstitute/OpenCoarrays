@@ -150,7 +150,7 @@ cd "${current_dir}" || exit 5
 
 # Error tracing
 # requires `set -o errtrace`
-# shellcheck disable=SC2317
+# shellcheck disable=SC2317,SC2329
 __caf_err_report() {
   local error_code
   error_code="${?}"
