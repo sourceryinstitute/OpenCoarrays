@@ -703,9 +703,9 @@ install(
     "${CMAKE_INSTALL_LIBDIR}/cmake/opencoarrays"
 )
 
-#------------------------------------------
-# Add portable unistall command to makefile
-#------------------------------------------
+#-------------------------------------------
+# Add portable uninstall command to makefile
+#-------------------------------------------
 # Adapted from the CMake Wiki FAQ
 configure_file ( "${CMAKE_SOURCE_DIR}/cmake/uninstall.cmake.in" "${CMAKE_BINARY_DIR}/uninstall.cmake"
     @ONLY)
