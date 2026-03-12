@@ -614,6 +614,9 @@ function(add_caf_test name num_caf_img test_target)
     add_test(NAME ${name} COMMAND "${BASH_EXECUTABLE}" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun" ${test_parameters} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${test_target}")
   endif()
   set_property(TEST ${name} PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
+  if(WIN32)
+    set_tests_properties(${name} PROPERTIES RUN_SERIAL TRUE)
+  endif()
 endfunction(add_caf_test)
 
 #--------------
