@@ -1,10 +1,10 @@
-name: Ubuntu 22.04 CI
+name: Ubuntu 26.04 CI
 
 on: push
 
 jobs:
   Build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-26.04
     strategy:
       fail-fast: true
       matrix:
@@ -14,7 +14,7 @@ jobs:
 
     env:
       FC: gfortran
-      GCC_V: 11
+      GCC_V: 14
 
     steps:
     - name: Checkout code
