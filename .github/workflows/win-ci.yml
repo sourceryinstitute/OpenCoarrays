@@ -5,6 +5,8 @@ on: [push, pull_request]
 jobs:
   Build:
     runs-on: windows-latest
+    # Tests hang under Intel MPI on Windows (#808); report without failing the PR
+    continue-on-error: true
     strategy:
       fail-fast: true
     defaults:
@@ -68,7 +70,8 @@ jobs:
         cmake -Wdev -G "Unix Makefiles" -S . -B build -DCMAKE_INSTALL_PREFIX="${HOME}/apps/OpenCoarrays" -DCMAKE_BUILD_TYPE:STRING="Debug"
         cmake --build build -j
         cmake --build build -t install -j || echo "installation failed"
-        ctest --test-dir build --output-on-failure --schedule-random --repeat-until-fail 1 --timeout 200
+        # Longest passing test on Windows took 5.48 s; hung tests waste 200 s each
+        ctest --test-dir build --output-on-failure --schedule-random --repeat-until-fail 1 --timeout 30
         echo "${HOME}/apps/OpenCoarrays/bin" >> $GITHUB_PATH
         export PATH="${HOME}/apps/OpenCoarrays/bin:${PATH}"
         which caf || true
