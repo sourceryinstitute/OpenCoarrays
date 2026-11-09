@@ -24,8 +24,10 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        sudo apt install -y "gfortran-${GCC_V}" cmake
+        sudo apt install -y "gfortran-${GCC_V}" "gcc-${GCC_V}" cmake
         sudo update-alternatives --install /usr/bin/gfortran gfortran "/usr/bin/gfortran-${GCC_V}" 100
+        # C and Fortran must match: Ubuntu's MPICH adds -flto, and LTO objects don't mix GCC versions
+        echo "CC=gcc-${GCC_V}" >> "$GITHUB_ENV"
 
     - name: Setup MPI ${{ matrix.mpi }}
       uses: mpi4py/setup-mpi@v1
@@ -35,7 +37,7 @@ jobs:
     - name: Build and Test
       run: |
         gfortran --version
-        gcc --version
+        "${CC}" --version
         mpirun --version
         mkdir build
         cmake -S . -B build -Wdev -DCMAKE_INSTALL_PREFIX:PATH="${HOME}/OpenCoarrays" -DCMAKE_BUILD_TYPE:STRING="Debug"
