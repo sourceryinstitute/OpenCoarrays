@@ -564,6 +564,10 @@ install(FILES "${CMAKE_SOURCE_DIR}/doc/man/man1/caf.1" "${CMAKE_SOURCE_DIR}/doc/
 #---------------------------------------------------
 if(APPLE)
   find_program(CODESIGN codesign)
+  set(CAF_CODESIGN_IDENTITY "" CACHE STRING
+    "Code-signing identity (name or SHA-1 hash) that caf signs linked programs with, to stop macOS firewall prompts")
+  set(CAF_CODESIGN_IDENTIFIER "org.opencoarrays.caf" CACHE STRING
+    "Identifier caf signs linked programs with; keep it the same for every program")
 endif()
 
 # We need bash, even on windows, for now at least. A light version like Git-Bash works best,
