@@ -19,11 +19,9 @@ jobs:
     env:
       FC: gfortran
       CC: gcc
-      # Let mpiexec end hung jobs before ctest's 35 s timeout: ctest kills only
-      # the launcher, which leaves Intel MPI ranks running on Windows and
-      # exhausts shared memory for later tests (#808)
-      I_MPI_JOB_TIMEOUT: 30
       I_MPI_FABRICS: ${{ matrix.fabrics }}
+      # Ranks yield the CPU while waiting instead of busy-polling (#808)
+      I_MPI_WAIT_MODE: 1
 
     steps:
     - name: Checkout code
@@ -78,8 +76,21 @@ jobs:
         cmake -Wdev -G "Unix Makefiles" -S . -B build -DCMAKE_INSTALL_PREFIX="${HOME}/apps/OpenCoarrays" -DCMAKE_BUILD_TYPE:STRING="Debug"
         cmake --build build -j
         cmake --build build -t install -j || echo "installation failed"
-        # Longest passing test on Windows took 5.48 s; hung tests waste 200 s each
-        ctest --test-dir build --output-on-failure --schedule-random --repeat-until-fail 1 --timeout 35
+        # Run tests one at a time in random order. After a failure, kill the
+        # job's leftover processes: ctest kills only the launcher, and the
+        # ranks it leaves exhaust shared memory for later tests (#808)
+        mapfile -t tests < <(ctest --test-dir build -N | sed -n 's/^ *Test *#\([0-9]*\): /\1 /p' | shuf)
+        failed=()
+        for t in "${tests[@]}"; do
+          # Longest passing test on Windows took 5.48 s; hung tests waste 200 s each
+          if ! ctest --test-dir build --output-on-failure --timeout 35 -I "${t%% *},${t%% *}"; then
+            failed+=("${t#* }")
+            taskkill //F //T //IM mpiexec.exe //IM hydra_pmi_proxy.exe || true
+          fi
+        done
+        echo "${#failed[@]} of ${#tests[@]} tests failed"
+        printf '  %s\n' "${failed[@]}"
+        [ "${#failed[@]}" -eq 0 ]
         echo "${HOME}/apps/OpenCoarrays/bin" >> $GITHUB_PATH
         export PATH="${HOME}/apps/OpenCoarrays/bin:${PATH}"
         which caf || true
