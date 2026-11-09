@@ -72,6 +72,13 @@ If the wrong compiler or MPI implementation is being used and you
 cannot determine why, you can try deleting the entire build directly
 and re-running CMake.
 
+On macOS with the Application Firewall on, `make test` can raise a
+firewall prompt for every test program. To avoid this, create a
+self-signed code-signing identity and pass it to CMake with
+`-DCAF_CODESIGN_IDENTITY="<name>"`. The `caf` wrapper then signs every
+program it links, so you click Allow only once. See "Avoiding macOS
+firewall prompts" in [`INSTALL`] for the steps.
+
 ## End-User Installation ##
 
 Most users will find it easiest and fastest to use package management
