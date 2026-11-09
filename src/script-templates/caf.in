@@ -52,7 +52,8 @@ set -o pipefail
 #
 # CAF_VERSION, opencoarrays_aware_compiler, Fortran_COMPILER, CAF_MODDIR,
 # CAF_MPI_Fortran_LINK_FLAGS, CAF_MPI_Fortran_COMPILE_FLAGS,
-# CAF_LIBS, THREADS_LIB, CAF_MPI_LIBS
+# CAF_LIBS, THREADS_LIB, CAF_MPI_LIBS, CAF_CODESIGN_IDENTITY,
+# CAF_CODESIGN_IDENTIFIER
 #
 
 caf_version='@CAF_VERSION@' # fetched from `git describe` and/or
@@ -92,6 +93,18 @@ threads_lib=@THREADS_LIB@ # pthreads or compatible, needed for windows
 # combination of -L... and -lcaf_mpi...
 mpi_libs=(@CAF_MPI_LIBS@) # e.g. `pkg-config --libs-only-l` or full paths
 # to MPI libs
+
+# macOS only: sign linked programs so the Application Firewall stops
+# prompting for each new one. The environment overrides the configured value;
+# set CAF_CODESIGN_IDENTITY to an empty string to turn signing off.
+codesign_identity="${CAF_CODESIGN_IDENTITY-@CAF_CODESIGN_IDENTITY@}"
+if [[ "${codesign_identity}" == @*@ ]]; then
+  codesign_identity=""
+fi
+codesign_identifier="${CAF_CODESIGN_IDENTIFIER:-@CAF_CODESIGN_IDENTIFIER@}"
+if [[ "${codesign_identifier}" == @*@ || -z "${codesign_identifier}" ]]; then
+  codesign_identifier="org.opencoarrays.caf"
+fi
 
 #-------------------------
 # End configured variables
@@ -293,6 +306,14 @@ usage() {
   echo " to link against OpenCoarrays, using values that get set during the OpenCoarrays"
   echo " build and installation."
   echo ""
+  echo " Environment (macOS only):"
+  echo "   CAF_CODESIGN_IDENTITY    Sign linked programs with this code-signing identity"
+  echo "                            (name or SHA-1 hash) so the Application Firewall"
+  echo "                            does not prompt for each new program."
+  echo "                            Current: '${codesign_identity:-none}'"
+  echo "   CAF_CODESIGN_IDENTIFIER  Identifier to sign with. Keep it the same for every"
+  echo "                            program. Current: '${codesign_identifier}'"
+  echo ""
 }
 
 # Print useage information if caf is invoked without arguments
@@ -368,7 +389,23 @@ fi
 set +o errtrace
 set +o errexit
 if "${cafc}" "${compiler_args[@]}" ; then
-  exit $?
+  if [[ "${with_link}" == "true" && -n "${codesign_identity}" && "$(uname -s)" == "Darwin" ]]; then
+    program="a.out"
+    for ((i = 1; i <= ${#}; i++)); do
+      if [[ "${!i}" == "-o" ]]; then
+        next=$((i + 1))
+        program="${!next:-a.out}"
+      elif [[ "${!i}" == -o?* ]]; then
+        program="${!i#-o}"
+      fi
+    done
+    if ! codesign -f -s "${codesign_identity}" -i "${codesign_identifier}" "${program}"; then
+      echo "Error: failed to sign ${program} with identity '${codesign_identity}'." >&2
+      echo "Set CAF_CODESIGN_IDENTITY to an empty string to skip signing." >&2
+      exit 1
+    fi
+  fi
+  exit 0
 else
   return_code=$?
   echo "Error: command:" >&2

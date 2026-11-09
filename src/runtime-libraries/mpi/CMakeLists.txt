@@ -321,6 +321,7 @@ set(CMAKE_REQUIRED_INCLUDES ${old_cmake_required_includes})
 # @CAF_VERSION@ @opencoarrays_aware_compiler@ @Fortran_COMPILER@ @CAF_MODDIR@
 # @CAF_MPI_Fortran_LINK_FLAGS@ @CAF_MPI_Fortran_COMPILE_FLAGS@
 # @CAF_LIBS@ @THREADS_LIB@ @CAF_MPI_LIBS@
+# @CAF_CODESIGN_IDENTITY@ @CAF_CODESIGN_IDENTIFIER@ (set in top-level CMakeLists.txt)
 #
 
 set(CAF_VERSION "${full_git_describe}")
