@@ -90,3 +90,12 @@ jobs:
         caf --version || true
         cd build
         make uninstall
+
+    - name: List leftover MPI processes
+      if: always()
+      run: |
+        # Shows whether hung test jobs were cleaned up (#808)
+        tasklist //FO CSV //NH > tasks.csv
+        grep -i -E 'mpiexec|hydra' tasks.csv || echo "No mpiexec or hydra processes left"
+        find build/bin -path '*-tests/*' -type f -printf '%f\n' | sed 's/\.exe$//' > test-programs.txt
+        grep -i -F -f test-programs.txt tasks.csv || echo "No test programs left"
