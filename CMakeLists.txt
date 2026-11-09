@@ -783,6 +783,14 @@ if(opencoarrays_aware_compiler)
   endif()
   # Unit tests targeting each libcaf_mpi function, argument, and branch of code
   add_caf_test(initialize_mpi 2 initialize_mpi)
+  if(APPLE AND CAF_CODESIGN_IDENTITY)
+    # caf signs every program it links; check one carries the configured identifier
+    add_test(NAME caf_codesign
+      COMMAND "${CODESIGN}" -d -r- "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/initialize_mpi")
+    string(REPLACE "." "\\." identifier_regex "${CAF_CODESIGN_IDENTIFIER}")
+    set_tests_properties(caf_codesign PROPERTIES
+      PASS_REGULAR_EXPRESSION "identifier \"${identifier_regex}\"")
+  endif()
   add_caf_test(register 2 register)
   add_caf_test(register_vector 2 register_vector)
   add_caf_test(register_alloc_vector 2 register_alloc_vector)
