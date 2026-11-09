@@ -127,7 +127,7 @@ decrease the GCC build time from several hours to 15 or fewer minutes.
 
 
 [`install.sh`]: https://github.com/sourceryinstitute/OpenCoarrays/blob/master/install.sh
-[`INSTALL']: https://github.com/sourceryinstitute/OpenCoarrays/blob/master/INSTALL
+[`INSTALL`]: https://github.com/sourceryinstitute/OpenCoarrays/blob/master/INSTALL
 [new issue]: https://github.com/sourceryinstitute/OpenCoarrays/issues/new
 
 [TOC links]: #
