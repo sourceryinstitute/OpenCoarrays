@@ -169,3 +169,83 @@ Configure options
  For a look at all of the possible CMake settings, many/most of which are
  default CMake options, please run `ccmake /path/to/source` or
  `cmake-gui /path/to/source`.
+
+
+Avoiding macOS firewall prompts
+-------------------------------
+
+ With the macOS Application Firewall on, MPI programs open network
+ listeners, and the firewall asks whether to allow each new program.
+ `make test` builds dozens of programs, so it raises dozens of prompts.
+ While a prompt is unanswered, the firewall holds new connections, so tests
+ can hang. Ad-hoc signing does not help: each rebuild looks like a new
+ program to the firewall.
+
+ Instead, sign every program with one self-signed certificate. After you
+ allow one signed program, the firewall allows every program signed with
+ the same certificate and identifier. Create the identity once in your login
+ keychain. Use `/usr/bin/openssl` (Apple's LibreSSL), not a Homebrew
+ OpenSSL 3 that may be first on `PATH`: `security import` rejects the `.p12`
+ file OpenSSL 3 writes unless you add `-legacy` to `pkcs12 -export`.
+
+ Save this as `cert.cnf`:
+
+    [req]
+    distinguished_name = dn
+    x509_extensions = ext
+    prompt = no
+    [dn]
+    CN = MPI Dev
+    [ext]
+    basicConstraints = critical, CA:false
+    keyUsage = critical, digitalSignature
+    extendedKeyUsage = critical, codeSigning
+
+ Then run:
+
+    /usr/bin/openssl req -x509 -newkey rsa:2048 -nodes -days 3650 \
+       -config cert.cnf -keyout key.pem -out cert.pem
+    /usr/bin/openssl pkcs12 -export -inkey key.pem -in cert.pem \
+       -name "MPI Dev" -passout pass:temp -out id.p12
+    security import id.p12 -k ~/Library/Keychains/login.keychain-db \
+       -P temp -T /usr/bin/codesign
+    security set-key-partition-list -S apple-tool:,apple: -s -D "MPI Dev" \
+       ~/Library/Keychains/login.keychain-db
+    rm cert.cnf key.pem cert.pem id.p12
+    security find-identity -p codesigning
+
+ `set-key-partition-list` asks for your login password. It lets `codesign`
+ use the key without a dialog. `find-identity` reports the certificate as
+ CSSMERR_TP_NOT_TRUSTED. That is expected and does not stop `codesign`.
+ Then configure OpenCoarrays with it:
+
+    cmake /path/to/OpenCoarrays/source -DCAF_CODESIGN_IDENTITY="MPI Dev"
+
+ Check that a program `caf` linked is signed. The output should name the
+ identifier (org.opencoarrays.caf by default) and the certificate's hash:
+
+    codesign -d -r- /path/to/program
+
+ Allow the identity in the firewall once. Either click Allow at the first
+ prompt for a signed program, or add a rule for one signed program without
+ a prompt:
+
+    sudo /usr/libexec/ApplicationFirewall/socketfilterfw --add /path/to/program
+    sudo /usr/libexec/ApplicationFirewall/socketfilterfw --unblockapp /path/to/program
+
+ The rule covers every program signed with the same certificate and
+ identifier, not only that path. Pick a program at a stable path, and do
+ not remove its rule later: removing the last rule for an identifier brings
+ the prompts back. A different CAF_CODESIGN_IDENTIFIER needs its own rule.
+
+ If you click Deny by mistake, the firewall adds a block rule, recorded with
+ the program's identifier, so later signed programs may be blocked without
+ a prompt. Find the entry marked "(Block incoming connections)" and remove
+ it:
+
+    /usr/libexec/ApplicationFirewall/socketfilterfw --listapps
+    sudo /usr/libexec/ApplicationFirewall/socketfilterfw --remove /path/to/program
+
+ Security note: once allowed, the firewall accepts incoming connections for
+ anything signed with this key and identifier. Keep the private key only in
+ your keychain, and never sign code you do not trust.
