@@ -6,10 +6,12 @@ jobs:
   Build:
     runs-on: ubuntu-26.04
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         mpi: [ 'mpich', 'impi' ]
 #        mpi: [ 'mpich', 'openmpi', 'impi' ]
+#        Ubuntu's mpich 4.3.2 (ch4:ucx) fails sendget_convert_nums and sendget_convert_char_array,
+#        so mpich comes from Homebrew instead (see "Setup MPI mpich (Homebrew)" below).
 #        openmpi is borken on ubuntu-22.04 and above see https://github.com/open-mpi/ompi/issues/10726
 
     env:
@@ -28,9 +30,20 @@ jobs:
         echo "CC=gcc-${GCC_V}" >> "$GITHUB_ENV"
 
     - name: Setup MPI ${{ matrix.mpi }}
+      if: matrix.mpi != 'mpich'
       uses: mpi4py/setup-mpi@v1
       with:
         mpi: ${{ matrix.mpi }}
+
+    - name: Setup MPI mpich (Homebrew)
+      if: matrix.mpi == 'mpich'
+      env:
+        HOMEBREW_NO_AUTO_UPDATE: 1
+      run: |
+        eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+        brew install mpich
+        # Only MPICH's own bin: Homebrew's gfortran must not shadow gfortran-${GCC_V}
+        echo "$(brew --prefix mpich)/bin" >> "$GITHUB_PATH"
 
     - name: Build and Test
       run: |
