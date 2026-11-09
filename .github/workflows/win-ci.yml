@@ -17,7 +17,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v7
 
     - name: Install Dependencies
       uses: msys2/setup-msys2@v2
