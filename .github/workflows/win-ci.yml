@@ -8,7 +8,10 @@ jobs:
     # Tests hang under Intel MPI on Windows (#808); report without failing the PR
     continue-on-error: true
     strategy:
-      fail-fast: true
+      fail-fast: false
+      matrix:
+        # shm:ofi is Intel MPI's default; ofi skips shared memory (#808)
+        fabrics: [ 'shm:ofi', 'ofi' ]
     defaults:
       run:
         shell: msys2 {0}
@@ -16,6 +19,11 @@ jobs:
     env:
       FC: gfortran
       CC: gcc
+      # Let mpiexec end hung jobs before ctest's 35 s timeout: ctest kills only
+      # the launcher, which leaves Intel MPI ranks running on Windows and
+      # exhausts shared memory for later tests (#808)
+      I_MPI_JOB_TIMEOUT: 30
+      I_MPI_FABRICS: ${{ matrix.fabrics }}
 
     steps:
     - name: Checkout code
@@ -71,7 +79,7 @@ jobs:
         cmake --build build -j
         cmake --build build -t install -j || echo "installation failed"
         # Longest passing test on Windows took 5.48 s; hung tests waste 200 s each
-        ctest --test-dir build --output-on-failure --schedule-random --repeat-until-fail 1 --timeout 30
+        ctest --test-dir build --output-on-failure --schedule-random --repeat-until-fail 1 --timeout 35
         echo "${HOME}/apps/OpenCoarrays/bin" >> $GITHUB_PATH
         export PATH="${HOME}/apps/OpenCoarrays/bin:${PATH}"
         which caf || true
