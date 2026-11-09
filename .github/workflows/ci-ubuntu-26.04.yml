@@ -32,6 +32,8 @@ jobs:
 
     - name: Build and Test
       run: |
+        gfortran --version
+        gcc --version
         mpirun --version
         mkdir build
         cmake -S . -B build -Wdev -DCMAKE_INSTALL_PREFIX:PATH="${HOME}/OpenCoarrays" -DCMAKE_BUILD_TYPE:STRING="Debug"
