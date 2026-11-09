@@ -153,6 +153,19 @@ Configure options
 	the environment variable OPENCOARRAYS_DEVELOPER=TRUE
 	Example: cmake .. -DCAF_RUN_DEVELOPER_TESTS=TRUE
 
+ CAF_CODESIGN_IDENTITY (macOS only)
+	Code-signing identity, by name or SHA-1 hash, that the `caf` wrapper
+	signs every program it links with. This includes the test programs.
+	The environment variable of the same name overrides it when running
+	`caf`; set it to an empty string to turn signing off.
+	Default="" (no signing)
+	Example: cmake .. -DCAF_CODESIGN_IDENTITY="MPI Dev"
+
+ CAF_CODESIGN_IDENTIFIER (macOS only)
+	Identifier `caf` signs programs with. The environment variable of the
+	same name overrides it. Default=org.opencoarrays.caf
+	Example: cmake .. -DCAF_CODESIGN_IDENTIFIER=org.example.mpi-dev
+
  For a look at all of the possible CMake settings, many/most of which are
  default CMake options, please run `ccmake /path/to/source` or
  `cmake-gui /path/to/source`.
