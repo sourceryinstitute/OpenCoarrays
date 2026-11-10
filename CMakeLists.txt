@@ -798,7 +798,7 @@ if(opencoarrays_aware_compiler)
     file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/caf_codesign")
     add_test(NAME caf_codesign_link
       COMMAND "${BASH_EXECUTABLE}" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf"
-              -o signed "${CMAKE_SOURCE_DIR}/src/tests/unit/init_register/register_alloc_comp_1.f90"
+              -o signed "${CMAKE_SOURCE_DIR}/src/tests/unit/init_register/register.f90"
       WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/caf_codesign")
     add_test(NAME caf_codesign
       COMMAND "${CODESIGN}" -d -r- "${CMAKE_BINARY_DIR}/caf_codesign/signed")
@@ -813,7 +813,7 @@ if(opencoarrays_aware_compiler)
     file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/caf_codesign_no_link")
     add_test(NAME caf_codesign_no_link
       COMMAND "${BASH_EXECUTABLE}" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf"
-              -fsyntax-only "${CMAKE_SOURCE_DIR}/src/tests/unit/init_register/register_alloc_comp_1.f90"
+              -fsyntax-only "${CMAKE_SOURCE_DIR}/src/tests/unit/init_register/register.f90"
       WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/caf_codesign_no_link")
     # Same for compiler queries; CMake runs `-dumpmachine` when caf is the Fortran compiler
     add_test(NAME caf_codesign_query
@@ -831,7 +831,7 @@ if(opencoarrays_aware_compiler)
   file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/caf_cpp_link")
   add_test(NAME caf_cpp_link
     COMMAND "${BASH_EXECUTABLE}" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf"
-            -cpp -o cpp_link "${CMAKE_SOURCE_DIR}/src/tests/unit/init_register/register_alloc_comp_1.f90"
+            -cpp -o cpp_link "${CMAKE_SOURCE_DIR}/src/tests/unit/init_register/register.f90"
     WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/caf_cpp_link")
   add_caf_test(register 2 register)
   add_caf_test(register_vector 2 register_vector)
