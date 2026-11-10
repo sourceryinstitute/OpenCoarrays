@@ -822,6 +822,11 @@ if(opencoarrays_aware_compiler)
     set_tests_properties(caf_codesign_no_link caf_codesign_query PROPERTIES
       ENVIRONMENT "${codesign_env}")
   endif()
+  # caf must keep configured signing settings literal, even with shell syntax in them
+  add_test(NAME caf_codesign_quoting
+    COMMAND "${CMAKE_COMMAND}" "-DCAF_TEMPLATE=${CMAKE_SOURCE_DIR}/src/script-templates/caf.in"
+            "-DOUT_DIR=${CMAKE_BINARY_DIR}/caf_codesign_quoting" "-DBASH=${BASH_EXECUTABLE}"
+            -P "${CMAKE_SOURCE_DIR}/cmake/CafCodesignQuotingTest.cmake")
   # -cpp only turns on preprocessing, so caf must still link
   file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/caf_cpp_link")
   add_test(NAME caf_cpp_link
