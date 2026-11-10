@@ -802,7 +802,8 @@ if(opencoarrays_aware_compiler)
       WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/caf_codesign")
     add_test(NAME caf_codesign
       COMMAND "${CODESIGN}" -d -r- "${CMAKE_BINARY_DIR}/caf_codesign/signed")
-    string(REPLACE "." "\\." identifier_regex "${CAF_CODESIGN_IDENTIFIER}")
+    # Escape every regex metacharacter, so identifiers such as org.example.c++ match
+    string(REGEX REPLACE "([][^$.*+?|()\\])" "\\\\\\1" identifier_regex "${CAF_CODESIGN_IDENTIFIER}")
     set_tests_properties(caf_codesign_link PROPERTIES
       FIXTURES_SETUP caf_codesign_program
       ENVIRONMENT "${codesign_env}")
