@@ -43,8 +43,8 @@ Prerequisite software
  * GFortran 6.1 or newer
  * A standard conforming C compiler, GCC 6.1 or newer is preferred, but clang
    and other alternatives should be fine too
- * An MPI 3 implementation. MPICH 3.2 or newer is recommended, but others,
-   such as OpenMPI, should work as well.
+ * An MPI 3 implementation. MPICH 3.2 or newer is recommended; Intel MPI
+   works too. Open MPI works only with GFortran 14 or older.
 
  CMake binary and source distributions can be obtained from:
 
