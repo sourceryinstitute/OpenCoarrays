@@ -806,6 +806,13 @@ if(opencoarrays_aware_compiler)
     set_tests_properties(caf_codesign_link PROPERTIES
       FIXTURES_SETUP caf_codesign_program
       ENVIRONMENT "${codesign_env}")
+    # caf must sign the file named by GFortran's --output=FILE, not a.out
+    file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/caf_codesign_output")
+    add_test(NAME caf_codesign_output
+      COMMAND "${BASH_EXECUTABLE}" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf"
+              --output=signed "${CMAKE_SOURCE_DIR}/src/tests/unit/init_register/register.f90"
+      WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/caf_codesign_output")
+    set_tests_properties(caf_codesign_output PROPERTIES ENVIRONMENT "${codesign_env}")
     set_tests_properties(caf_codesign PROPERTIES
       FIXTURES_REQUIRED caf_codesign_program
       PASS_REGULAR_EXPRESSION "identifier \"${identifier_regex}\"")

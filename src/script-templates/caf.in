@@ -405,9 +405,11 @@ if "${cafc}" "${compiler_args[@]}" ; then
   if [[ "${with_link}" == "true" && -n "${codesign_identity}" && "$(uname -s)" == "Darwin" ]]; then
     program="a.out"
     for ((i = 1; i <= ${#}; i++)); do
-      if [[ "${!i}" == "-o" ]]; then
+      if [[ "${!i}" == "-o" || "${!i}" == "--output" ]]; then
         next=$((i + 1))
         program="${!next:-a.out}"
+      elif [[ "${!i}" == --output=* ]]; then
+        program="${!i#--output=}"
       elif [[ "${!i}" == -o?* ]]; then
         program="${!i#-o}"
       fi
