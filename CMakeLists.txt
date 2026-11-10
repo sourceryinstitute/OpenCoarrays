@@ -796,6 +796,12 @@ if(opencoarrays_aware_compiler)
     string(REPLACE "." "\\." identifier_regex "${CAF_CODESIGN_IDENTIFIER}")
     set_tests_properties(caf_codesign PROPERTIES
       PASS_REGULAR_EXPRESSION "identifier \"${identifier_regex}\"")
+    # caf must not try to sign a.out when it does not link; run where no a.out exists
+    file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/caf_codesign_no_link")
+    add_test(NAME caf_codesign_no_link
+      COMMAND "${BASH_EXECUTABLE}" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf"
+              -fsyntax-only "${CMAKE_SOURCE_DIR}/src/tests/unit/init_register/register_alloc_comp_1.f90"
+      WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/caf_codesign_no_link")
   endif()
   add_caf_test(register 2 register)
   add_caf_test(register_vector 2 register_vector)

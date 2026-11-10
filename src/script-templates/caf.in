@@ -177,7 +177,8 @@ trap '__caf_err_report "${FUNCNAME:-.}" ${LINENO}' ERR
 # See if we are compiling or compiling and/or linking
 with_link="true"
 for arg in "${@}"; do
-  if [[ "${arg}" == "-c" || "${arg}" == "-cpp" ]]; then
+  if [[ "${arg}" == "-c" || "${arg}" == "-cpp" || "${arg}" == "-S" || "${arg}" == "-E" ||
+        "${arg}" == "-fsyntax-only" ]]; then
     with_link="false"
     break
   fi
