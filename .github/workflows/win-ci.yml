@@ -4,14 +4,10 @@ on: [push, pull_request]
 
 jobs:
   Build:
+    name: "Build (known failure #808)"
     runs-on: windows-latest
     # Tests hang under Intel MPI on Windows (#808); report without failing the PR
     continue-on-error: true
-    strategy:
-      fail-fast: false
-      matrix:
-        # shm:ofi is Intel MPI's default; ofi skips shared memory (#808)
-        fabrics: [ 'shm:ofi', 'ofi' ]
     defaults:
       run:
         shell: msys2 {0}
@@ -19,7 +15,6 @@ jobs:
     env:
       FC: gfortran
       CC: gcc
-      I_MPI_FABRICS: ${{ matrix.fabrics }}
       # Ranks yield the CPU while waiting instead of busy-polling (#808)
       I_MPI_WAIT_MODE: 1
 
@@ -110,3 +105,11 @@ jobs:
         grep -i -E 'mpiexec|hydra' tasks.csv || echo "No mpiexec or hydra processes left"
         find build/bin -path '*-tests/*' -type f -printf '%f\n' | sed 's/\.exe$//' > test-programs.txt
         grep -i -F -f test-programs.txt tasks.csv || echo "No test programs left"
+
+    - name: Warn that Windows tests are known to fail
+      if: always()
+      run: |
+        msg="Tests hang under Intel MPI on Windows, so failures are allowed for now. A passing run does not mean Windows works. See https://github.com/sourceryinstitute/OpenCoarrays/issues/808"
+        echo "::warning title=Windows tests are known to fail::${msg}"
+        echo "> [!WARNING]" >> "${GITHUB_STEP_SUMMARY}"
+        echo "> ${msg}" >> "${GITHUB_STEP_SUMMARY}"
