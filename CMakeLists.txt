@@ -815,7 +815,12 @@ if(opencoarrays_aware_compiler)
       COMMAND "${BASH_EXECUTABLE}" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf"
               -fsyntax-only "${CMAKE_SOURCE_DIR}/src/tests/unit/init_register/register_alloc_comp_1.f90"
       WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/caf_codesign_no_link")
-    set_tests_properties(caf_codesign_no_link PROPERTIES ENVIRONMENT "${codesign_env}")
+    # Same for compiler queries; CMake runs `-dumpmachine` when caf is the Fortran compiler
+    add_test(NAME caf_codesign_query
+      COMMAND "${BASH_EXECUTABLE}" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf" -dumpmachine
+      WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/caf_codesign_no_link")
+    set_tests_properties(caf_codesign_no_link caf_codesign_query PROPERTIES
+      ENVIRONMENT "${codesign_env}")
   endif()
   # -cpp only turns on preprocessing, so caf must still link
   file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/caf_cpp_link")

@@ -177,10 +177,15 @@ trap '__caf_err_report "${FUNCNAME:-.}" ${LINENO}' ERR
 # See if we are compiling or compiling and/or linking
 with_link="true"
 for arg in "${@}"; do
-  if [[ "${arg}" == "-c" || "${arg}" == "-S" || "${arg}" == "-E" || "${arg}" == "-fsyntax-only" ]]; then
-    with_link="false"
-    break
-  fi
+  case "${arg}" in
+    # Modes that produce no program: compile, assemble, preprocess, check, list
+    # dependencies, dry run, or query the compiler (CMake runs -dumpmachine)
+    -c | -S | -E | -fsyntax-only | -M | -MM | '-###' | -dumpmachine | -dumpversion | \
+      -dumpfullversion | -dumpspecs | -print-*)
+      with_link="false"
+      break
+      ;;
+  esac
 done
 
 #--------------------------------------------------------------------------
