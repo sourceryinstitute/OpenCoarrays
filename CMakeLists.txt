@@ -803,6 +803,12 @@ if(opencoarrays_aware_compiler)
               -fsyntax-only "${CMAKE_SOURCE_DIR}/src/tests/unit/init_register/register_alloc_comp_1.f90"
       WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/caf_codesign_no_link")
   endif()
+  # -cpp only turns on preprocessing, so caf must still link
+  file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/caf_cpp_link")
+  add_test(NAME caf_cpp_link
+    COMMAND "${BASH_EXECUTABLE}" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf"
+            -cpp -o cpp_link "${CMAKE_SOURCE_DIR}/src/tests/unit/init_register/register_alloc_comp_1.f90"
+    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/caf_cpp_link")
   add_caf_test(register 2 register)
   add_caf_test(register_vector 2 register_vector)
   add_caf_test(register_alloc_vector 2 register_alloc_vector)
