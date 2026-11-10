@@ -790,11 +790,24 @@ if(opencoarrays_aware_compiler)
   # Unit tests targeting each libcaf_mpi function, argument, and branch of code
   add_caf_test(initialize_mpi 2 initialize_mpi)
   if(APPLE AND CAF_CODESIGN_IDENTITY)
-    # caf signs every program it links; check one carries the configured identifier
+    # Check that caf signs what it links with the configured identifier. The tests set
+    # the configured values, so CAF_CODESIGN_* in the caller's environment can't override them
+    set(codesign_env
+      "CAF_CODESIGN_IDENTITY=${CAF_CODESIGN_IDENTITY}"
+      "CAF_CODESIGN_IDENTIFIER=${CAF_CODESIGN_IDENTIFIER}")
+    file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/caf_codesign")
+    add_test(NAME caf_codesign_link
+      COMMAND "${BASH_EXECUTABLE}" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf"
+              -o signed "${CMAKE_SOURCE_DIR}/src/tests/unit/init_register/register_alloc_comp_1.f90"
+      WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/caf_codesign")
     add_test(NAME caf_codesign
-      COMMAND "${CODESIGN}" -d -r- "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/initialize_mpi")
+      COMMAND "${CODESIGN}" -d -r- "${CMAKE_BINARY_DIR}/caf_codesign/signed")
     string(REPLACE "." "\\." identifier_regex "${CAF_CODESIGN_IDENTIFIER}")
+    set_tests_properties(caf_codesign_link PROPERTIES
+      FIXTURES_SETUP caf_codesign_program
+      ENVIRONMENT "${codesign_env}")
     set_tests_properties(caf_codesign PROPERTIES
+      FIXTURES_REQUIRED caf_codesign_program
       PASS_REGULAR_EXPRESSION "identifier \"${identifier_regex}\"")
     # caf must not try to sign a.out when it does not link; run where no a.out exists
     file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/caf_codesign_no_link")
@@ -802,6 +815,7 @@ if(opencoarrays_aware_compiler)
       COMMAND "${BASH_EXECUTABLE}" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf"
               -fsyntax-only "${CMAKE_SOURCE_DIR}/src/tests/unit/init_register/register_alloc_comp_1.f90"
       WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/caf_codesign_no_link")
+    set_tests_properties(caf_codesign_no_link PROPERTIES ENVIRONMENT "${codesign_env}")
   endif()
   # -cpp only turns on preprocessing, so caf must still link
   file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/caf_cpp_link")
