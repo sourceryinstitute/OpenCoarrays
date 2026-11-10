@@ -8,11 +8,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mpi: [ 'mpich', 'impi' ]
-#        mpi: [ 'mpich', 'openmpi', 'impi' ]
+        # Open MPI only works with GFortran 14 and older (see
+        # src/runtime-libraries/mpi/CMakeLists.txt)
+        mpi: [ 'mpich', 'openmpi', 'impi' ]
 #        Ubuntu's mpich 4.3.2 (ch4:ucx) fails sendget_convert_nums and sendget_convert_char_array,
 #        so mpich comes from Homebrew instead (see "Setup MPI mpich (Homebrew)" below).
-#        openmpi is borken on ubuntu-22.04 and above see https://github.com/open-mpi/ompi/issues/10726
 
     env:
       FC: gfortran
