@@ -8,11 +8,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # No openmpi: Ubuntu 24.04 ships Open MPI 4.1.6, whose MPI_Win_create fails with -np 1
+        # (https://github.com/open-mpi/ompi/issues/10726)
         mpi: [ 'mpich', 'impi' ]
-#        mpi: [ 'mpich', 'openmpi', 'impi' ]
-#        Ubuntu's mpich is borken on ubuntu-24.04LTS and 24.10 see https://bugs.launchpad.net/ubuntu/+source/mpich/+bug/2072338
-#        so mpich comes from Homebrew instead (see "Setup MPI mpich (Homebrew)" below).
-#        openmpi is borken on ubuntu-24.04LTS and 24.10 see https://github.com/open-mpi/ompi/issues/10726
 
     env:
       FC: gfortran
@@ -26,7 +24,7 @@ jobs:
       run: |
         sudo apt install -y "gfortran-${GCC_V}" "gcc-${GCC_V}" cmake
         sudo update-alternatives --install /usr/bin/gfortran gfortran "/usr/bin/gfortran-${GCC_V}" 100
-        # C and Fortran must match: Ubuntu's MPICH adds -flto, and LTO objects don't mix GCC versions
+        # Build C with the same GCC version as gfortran-${GCC_V}
         echo "CC=gcc-${GCC_V}" >> "$GITHUB_ENV"
 
     - name: Setup MPI ${{ matrix.mpi }}
@@ -35,6 +33,7 @@ jobs:
       with:
         mpi: ${{ matrix.mpi }}
 
+    # Ubuntu's MPICH is broken on 24.04 (https://bugs.launchpad.net/ubuntu/+source/mpich/+bug/2072338)
     - name: Setup MPI mpich (Homebrew)
       if: matrix.mpi == 'mpich'
       env:

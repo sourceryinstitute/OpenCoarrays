@@ -11,8 +11,6 @@ jobs:
         # Open MPI only works with GFortran 14 and older (see
         # src/runtime-libraries/mpi/CMakeLists.txt)
         mpi: [ 'mpich', 'openmpi', 'impi' ]
-#        Ubuntu's mpich 4.3.2 (ch4:ucx) fails sendget_convert_nums and sendget_convert_char_array,
-#        so mpich comes from Homebrew instead (see "Setup MPI mpich (Homebrew)" below).
 
     env:
       FC: gfortran
@@ -26,7 +24,7 @@ jobs:
       run: |
         sudo apt install -y "gfortran-${GCC_V}" "gcc-${GCC_V}" cmake
         sudo update-alternatives --install /usr/bin/gfortran gfortran "/usr/bin/gfortran-${GCC_V}" 100
-        # C and Fortran must match: Ubuntu's MPICH adds -flto, and LTO objects don't mix GCC versions
+        # Build C with the same GCC version as gfortran-${GCC_V} (26.04 defaults to GCC 15)
         echo "CC=gcc-${GCC_V}" >> "$GITHUB_ENV"
 
     - name: Setup MPI ${{ matrix.mpi }}
@@ -35,6 +33,7 @@ jobs:
       with:
         mpi: ${{ matrix.mpi }}
 
+    # Ubuntu's MPICH 4.3.2 (ch4:ucx) fails the sendget_convert tests
     - name: Setup MPI mpich (Homebrew)
       if: matrix.mpi == 'mpich'
       env:
