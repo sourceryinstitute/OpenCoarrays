@@ -27,6 +27,13 @@ Print OpenCoarrays version and copyright information and exit.
 .TP
 \fB\fC\-\-wrapping\fR, \fB\fC\-\-wraps\fR, \fB\fC\-w\fR
 Report the name and version of the Fortran compiler \fB\fCcaf\fR is wrapping and exit.
+.SH ENVIRONMENT
+.TP
+\fB\fCCAF_CODESIGN_IDENTITY\fR
+macOS only. Sign each linked program with this code\-signing identity (name or SHA\-1 hash), so the Application Firewall does not prompt for each new program. Overrides the value set with the CMake option of the same name. Set it to an empty string to turn signing off.
+.TP
+\fB\fCCAF_CODESIGN_IDENTIFIER\fR
+macOS only. The identifier to sign programs with. Keep it the same for every program. Overrides the CMake option of the same name. Default: \fB\fCorg.opencoarrays.caf\fR\&.
 .SH BUGS
 .PP
 For a list of bugs currently affecting OpenCoarrays, or to report a new one, please report any bugs to the OpenCoarrays project at \[la]https://github.com/sourceryinstitute/OpenCoarrays/issues\[ra]

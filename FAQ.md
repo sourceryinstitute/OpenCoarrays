@@ -8,6 +8,7 @@ Frequently Asked Questions
 * [5. OpenCoarrays was built with MPICH as the MPI back end, but I am running into bugs, what should I do?]
 * [6. How can I pass additional flags through to the underlying parallel run-time or compiler?]
 * [7. When `install.sh` builds the GCC compilers, it takes forever (hours).  How can I speed up the build?]
+* [8. On macOS, the firewall asks to allow every program I build, and `make test` hangs. How can I stop this?]
 
 ## 1. I have installed OpenCoarrays with OpenMPI but I'm having trouble running with more than a few images, why? ##
 
@@ -125,9 +126,20 @@ use more threads by passing, for example, `--num-threads -4` or `-j 4`
 to use four threads.  In combination, these two recommendations can
 decrease the GCC build time from several hours to 15 or fewer minutes.
 
+## 8. On macOS, the firewall asks to allow every program I build, and `make test` hangs. How can I stop this? ##
+
+The macOS Application Firewall asks once for each new program that
+accepts network connections, and MPI programs do. While a prompt
+waits for an answer, other programs' connections wait too, so test
+runs can hang. Sign your programs with one self-signed certificate
+and set `CAF_CODESIGN_IDENTITY` (as a CMake option or an environment
+variable). `caf` then signs every program it links, and the firewall
+asks only once. See "Avoiding macOS firewall prompts" in the
+[`INSTALL`] file for the steps.
+
 
 [`install.sh`]: https://github.com/sourceryinstitute/OpenCoarrays/blob/master/install.sh
-[`INSTALL']: https://github.com/sourceryinstitute/OpenCoarrays/blob/master/INSTALL
+[`INSTALL`]: https://github.com/sourceryinstitute/OpenCoarrays/blob/master/INSTALL
 [new issue]: https://github.com/sourceryinstitute/OpenCoarrays/issues/new
 
 [TOC links]: #
@@ -138,3 +150,4 @@ decrease the GCC build time from several hours to 15 or fewer minutes.
 [5. OpenCoarrays was built with MPICH as the MPI back end, but I am running into bugs, what should I do?]: #5-opencoarrays-was-built-with-mpich-as-the-mpi-back-end-but-i-am-running-into-bugs-what-should-i-do
 [6. How can I pass additional flags through to the underlying parallel run-time or compiler?]: #6-how-can-i-pass-additional-flags-through-to-the-underlying-parallel-run-time-or-compiler
 [7. When `install.sh` builds the GCC compilers, it takes forever (hours).  How can I speed up the build?]: #7-when-installsh-builds-the-gcc-compilers-it-takes-forever-hours--how-can-i-speed-up-the-build
+[8. On macOS, the firewall asks to allow every program I build, and `make test` hangs. How can I stop this?]: #8-on-macos-the-firewall-asks-to-allow-every-program-i-build-and-make-test-hangs-how-can-i-stop-this

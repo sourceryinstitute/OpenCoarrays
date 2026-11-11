@@ -40,7 +40,8 @@ OpenCoarrays in a canonical CMake way.
 
 Prerequites for direct CMake installation:
 
-* An MPI 3 implementation (MPICH is preferred, OpenMPI works too)
+* An MPI 3 implementation (MPICH is preferred, Intel MPI works too; Open MPI
+  works only with GFortran 14 or older)
 * A recent version of GCC with GFortran version 6.1 or newer
 * CMake version 3.4 or newer
 
@@ -71,6 +72,13 @@ setting them on the command line: `cmake ../path/to/src -DVAR=VALUE`
 If the wrong compiler or MPI implementation is being used and you
 cannot determine why, you can try deleting the entire build directly
 and re-running CMake.
+
+On macOS with the Application Firewall on, `make test` can raise a
+firewall prompt for every test program. To avoid this, create a
+self-signed code-signing identity and pass it to CMake with
+`-DCAF_CODESIGN_IDENTITY="<name>"`. The `caf` wrapper then signs every
+program it links, so you click Allow only once. See "Avoiding macOS
+firewall prompts" in [`INSTALL`] for the steps.
 
 ## End-User Installation ##
 

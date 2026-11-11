@@ -233,8 +233,11 @@ endif()
   if ( gfortran_compiler AND ( NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 8.0.0 ) )
     add_definitions(-DGCC_GE_8) # Tell library to build against GFortran 8.x bindings w/ descriptor change
   endif()
-  if ( gfortran_compiler AND ( NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 14.0.0 ) )
+  if ( gfortran_compiler AND ( NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS_EQUAL 15.0.0 ) )
     add_definitions(-DGCC_GE_15) # Tell library to build against GFortran 15.x bindings
+  endif()
+  if ( gfortran_compiler AND ( CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER_EQUAL 16.0.0 ) )
+    add_definitions(-DGCC_GE_16) # Tell library to build against GFortran 16.x bindings
   endif()
 
 if(gfortran_compiler)
@@ -561,6 +564,10 @@ install(FILES "${CMAKE_SOURCE_DIR}/doc/man/man1/caf.1" "${CMAKE_SOURCE_DIR}/doc/
 #---------------------------------------------------
 if(APPLE)
   find_program(CODESIGN codesign)
+  set(CAF_CODESIGN_IDENTITY "" CACHE STRING
+    "Code-signing identity (name or SHA-1 hash) that caf signs linked programs with, to stop macOS firewall prompts")
+  set(CAF_CODESIGN_IDENTIFIER "org.opencoarrays.caf" CACHE STRING
+    "Identifier caf signs linked programs with; keep it the same for every program")
 endif()
 
 # We need bash, even on windows, for now at least. A light version like Git-Bash works best,
@@ -768,6 +775,8 @@ function(add_caf_test name num_caf_img test_target)
     add_test(NAME ${name} COMMAND "${BASH_EXECUTABLE}" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun" ${test_parameters} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${test_target}")
   endif()
   set_property(TEST ${name} PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
+  # Count each image against `ctest -j`, so parallel runs don't oversubscribe
+  set_property(TEST ${name} PROPERTY PROCESSORS ${num_caf_img})
 endfunction(add_caf_test)
 
 #--------------
@@ -780,6 +789,58 @@ if(opencoarrays_aware_compiler)
   endif()
   # Unit tests targeting each libcaf_mpi function, argument, and branch of code
   add_caf_test(initialize_mpi 2 initialize_mpi)
+  if(APPLE AND CAF_CODESIGN_IDENTITY)
+    # Check that caf signs what it links with the configured identifier. The tests set
+    # the configured values, so CAF_CODESIGN_* in the caller's environment can't override them
+    set(codesign_env
+      "CAF_CODESIGN_IDENTITY=${CAF_CODESIGN_IDENTITY}"
+      "CAF_CODESIGN_IDENTIFIER=${CAF_CODESIGN_IDENTIFIER}")
+    file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/caf_codesign")
+    add_test(NAME caf_codesign_link
+      COMMAND "${BASH_EXECUTABLE}" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf"
+              -o signed "${CMAKE_SOURCE_DIR}/src/tests/unit/init_register/register.f90"
+      WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/caf_codesign")
+    add_test(NAME caf_codesign
+      COMMAND "${CODESIGN}" -d -r- "${CMAKE_BINARY_DIR}/caf_codesign/signed")
+    # Escape every regex metacharacter, so identifiers such as org.example.c++ match
+    string(REGEX REPLACE "([][^$.*+?|()\\])" "\\\\\\1" identifier_regex "${CAF_CODESIGN_IDENTIFIER}")
+    set_tests_properties(caf_codesign_link PROPERTIES
+      FIXTURES_SETUP caf_codesign_program
+      ENVIRONMENT "${codesign_env}")
+    # caf must sign the file named by GFortran's --output=FILE, not a.out
+    file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/caf_codesign_output")
+    add_test(NAME caf_codesign_output
+      COMMAND "${BASH_EXECUTABLE}" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf"
+              --output=signed "${CMAKE_SOURCE_DIR}/src/tests/unit/init_register/register.f90"
+      WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/caf_codesign_output")
+    set_tests_properties(caf_codesign_output PROPERTIES ENVIRONMENT "${codesign_env}")
+    set_tests_properties(caf_codesign PROPERTIES
+      FIXTURES_REQUIRED caf_codesign_program
+      PASS_REGULAR_EXPRESSION "identifier \"${identifier_regex}\"")
+    # caf must not try to sign a.out when it does not link; run where no a.out exists
+    file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/caf_codesign_no_link")
+    add_test(NAME caf_codesign_no_link
+      COMMAND "${BASH_EXECUTABLE}" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf"
+              -fsyntax-only "${CMAKE_SOURCE_DIR}/src/tests/unit/init_register/register.f90"
+      WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/caf_codesign_no_link")
+    # Same for compiler queries; CMake runs `-dumpmachine` when caf is the Fortran compiler
+    add_test(NAME caf_codesign_query
+      COMMAND "${BASH_EXECUTABLE}" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf" -dumpmachine
+      WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/caf_codesign_no_link")
+    set_tests_properties(caf_codesign_no_link caf_codesign_query PROPERTIES
+      ENVIRONMENT "${codesign_env}")
+  endif()
+  # caf must keep configured signing settings literal, even with shell syntax in them
+  add_test(NAME caf_codesign_quoting
+    COMMAND "${CMAKE_COMMAND}" "-DCAF_TEMPLATE=${CMAKE_SOURCE_DIR}/src/script-templates/caf.in"
+            "-DOUT_DIR=${CMAKE_BINARY_DIR}/caf_codesign_quoting" "-DBASH=${BASH_EXECUTABLE}"
+            -P "${CMAKE_SOURCE_DIR}/cmake/CafCodesignQuotingTest.cmake")
+  # -cpp only turns on preprocessing, so caf must still link
+  file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/caf_cpp_link")
+  add_test(NAME caf_cpp_link
+    COMMAND "${BASH_EXECUTABLE}" "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf"
+            -cpp -o cpp_link "${CMAKE_SOURCE_DIR}/src/tests/unit/init_register/register.f90"
+    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/caf_cpp_link")
   add_caf_test(register 2 register)
   add_caf_test(register_vector 2 register_vector)
   add_caf_test(register_alloc_vector 2 register_alloc_vector)
@@ -814,6 +875,12 @@ if(opencoarrays_aware_compiler)
       add_caf_test(sync_team 8 sync_team)
       add_caf_test(alloc_comp_multidim_shape 2 alloc_comp_multidim_shape)
       set_tests_properties(alloc_comp_multidim_shape PROPERTIES TIMEOUT 300)
+    endif()
+    if(NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 16)
+        add_caf_test(teams_this_image 8 teams_this_image)
+        add_caf_test(teams_num_images 8 teams_num_images)
+        add_caf_test(test_teams_1 9 test_teams_1)
+        add_caf_test(teams_coindexed 2 teams_coindexed)
     endif()
   endif()
 

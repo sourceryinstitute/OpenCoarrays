@@ -1,0 +1,59 @@
+name: Ubuntu 26.04 CI
+
+on: [push, pull_request]
+
+jobs:
+  Build:
+    runs-on: ubuntu-26.04
+    strategy:
+      fail-fast: false
+      matrix:
+        # Open MPI only works with GFortran 14 and older (see
+        # src/runtime-libraries/mpi/CMakeLists.txt)
+        mpi: [ 'mpich', 'openmpi', 'impi' ]
+
+    env:
+      FC: gfortran
+      GCC_V: 14
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v7
+
+    - name: Install Dependencies
+      run: |
+        sudo apt install -y "gfortran-${GCC_V}" "gcc-${GCC_V}" cmake
+        sudo update-alternatives --install /usr/bin/gfortran gfortran "/usr/bin/gfortran-${GCC_V}" 100
+        # Build C with the same GCC version as gfortran-${GCC_V} (26.04 defaults to GCC 15)
+        echo "CC=gcc-${GCC_V}" >> "$GITHUB_ENV"
+
+    - name: Setup MPI ${{ matrix.mpi }}
+      if: matrix.mpi != 'mpich'
+      uses: mpi4py/setup-mpi@v1
+      with:
+        mpi: ${{ matrix.mpi }}
+
+    # Ubuntu's MPICH 4.3.2 (ch4:ucx) fails the sendget_convert tests
+    - name: Setup MPI mpich (Homebrew)
+      if: matrix.mpi == 'mpich'
+      env:
+        HOMEBREW_NO_AUTO_UPDATE: 1
+      run: |
+        eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+        brew install mpich
+        # Only MPICH's own bin: Homebrew's gfortran must not shadow gfortran-${GCC_V}
+        echo "$(brew --prefix mpich)/bin" >> "$GITHUB_PATH"
+
+    - name: Build and Test
+      run: |
+        gfortran --version
+        "${CC}" --version
+        mpirun --version
+        mkdir build
+        cmake -S . -B build -Wdev -DCMAKE_INSTALL_PREFIX:PATH="${HOME}/OpenCoarrays" -DCMAKE_BUILD_TYPE:STRING="Debug"
+        cmake --build build -j "$(nproc)"
+        cmake --build build -t install -j "$(nproc)" || echo "installation failed"
+        ctest --test-dir build --output-on-failure --schedule-random --repeat-until-fail 1 --timeout 200
+        cd build
+        make uninstall
+        echo "Ran with mpi: ${{ matrix.mpi }}"

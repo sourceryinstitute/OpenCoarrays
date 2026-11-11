@@ -52,7 +52,8 @@ set -o pipefail
 #
 # CAF_VERSION, opencoarrays_aware_compiler, Fortran_COMPILER, CAF_MODDIR,
 # CAF_MPI_Fortran_LINK_FLAGS, CAF_MPI_Fortran_COMPILE_FLAGS,
-# CAF_LIBS, THREADS_LIB, CAF_MPI_LIBS
+# CAF_LIBS, THREADS_LIB, CAF_MPI_LIBS, CAF_CODESIGN_IDENTITY,
+# CAF_CODESIGN_IDENTIFIER
 #
 
 caf_version='@CAF_VERSION@' # fetched from `git describe` and/or
@@ -92,6 +93,26 @@ threads_lib=@THREADS_LIB@ # pthreads or compatible, needed for windows
 # combination of -L... and -lcaf_mpi...
 mpi_libs=(@CAF_MPI_LIBS@) # e.g. `pkg-config --libs-only-l` or full paths
 # to MPI libs
+
+# macOS only: sign linked programs so the Application Firewall stops
+# prompting for each new one. The environment overrides the configured value;
+# set CAF_CODESIGN_IDENTITY to an empty string to turn signing off.
+# Read the configured values from quoted here-documents, so shell syntax in them
+# stays literal.
+IFS= read -r configured_identity <<'CAF_CONFIGURED'
+@CAF_CODESIGN_IDENTITY@
+CAF_CONFIGURED
+IFS= read -r configured_identifier <<'CAF_CONFIGURED'
+@CAF_CODESIGN_IDENTIFIER@
+CAF_CONFIGURED
+codesign_identity="${CAF_CODESIGN_IDENTITY-${configured_identity}}"
+if [[ "${codesign_identity}" == @*@ ]]; then
+  codesign_identity=""
+fi
+codesign_identifier="${CAF_CODESIGN_IDENTIFIER:-${configured_identifier}}"
+if [[ "${codesign_identifier}" == @*@ || -z "${codesign_identifier}" ]]; then
+  codesign_identifier="org.opencoarrays.caf"
+fi
 
 #-------------------------
 # End configured variables
@@ -150,7 +171,8 @@ cd "${current_dir}" || exit 5
 
 # Error tracing
 # requires `set -o errtrace`
-# shellcheck disable=SC2317
+# Only called from the ERR trap below, which shellcheck cannot follow
+# shellcheck disable=SC2317,SC2329
 __caf_err_report() {
   local error_code
   error_code="${?}"
@@ -163,10 +185,15 @@ trap '__caf_err_report "${FUNCNAME:-.}" ${LINENO}' ERR
 # See if we are compiling or compiling and/or linking
 with_link="true"
 for arg in "${@}"; do
-  if [[ "${arg}" == "-c" || "${arg}" == "-cpp" ]]; then
-    with_link="false"
-    break
-  fi
+  case "${arg}" in
+    # Modes that produce no program: compile, assemble, preprocess, check, list
+    # dependencies, dry run, or query the compiler (CMake runs -dumpmachine)
+    -c | -S | -E | -fsyntax-only | -M | -MM | '-###' | -dumpmachine | -dumpversion | \
+      -dumpfullversion | -dumpspecs | -print-*)
+      with_link="false"
+      break
+      ;;
+  esac
 done
 
 #--------------------------------------------------------------------------
@@ -292,6 +319,14 @@ usage() {
   echo " to link against OpenCoarrays, using values that get set during the OpenCoarrays"
   echo " build and installation."
   echo ""
+  echo " Environment (macOS only):"
+  echo "   CAF_CODESIGN_IDENTITY    Sign linked programs with this code-signing identity"
+  echo "                            (name or SHA-1 hash) so the Application Firewall"
+  echo "                            does not prompt for each new program."
+  echo "                            Current: '${codesign_identity:-none}'"
+  echo "   CAF_CODESIGN_IDENTIFIER  Identifier to sign with. Keep it the same for every"
+  echo "                            program. Current: '${codesign_identifier}'"
+  echo ""
 }
 
 # Print useage information if caf is invoked without arguments
@@ -367,7 +402,25 @@ fi
 set +o errtrace
 set +o errexit
 if "${cafc}" "${compiler_args[@]}" ; then
-  exit $?
+  if [[ "${with_link}" == "true" && -n "${codesign_identity}" && "$(uname -s)" == "Darwin" ]]; then
+    program="a.out"
+    for ((i = 1; i <= ${#}; i++)); do
+      if [[ "${!i}" == "-o" || "${!i}" == "--output" ]]; then
+        next=$((i + 1))
+        program="${!next:-a.out}"
+      elif [[ "${!i}" == --output=* ]]; then
+        program="${!i#--output=}"
+      elif [[ "${!i}" == -o?* ]]; then
+        program="${!i#-o}"
+      fi
+    done
+    if ! codesign -f -s "${codesign_identity}" -i "${codesign_identifier}" "${program}"; then
+      echo "Error: failed to sign ${program} with identity '${codesign_identity}'." >&2
+      echo "Set CAF_CODESIGN_IDENTITY to an empty string to skip signing." >&2
+      exit 1
+    fi
+  fi
+  exit 0
 else
   return_code=$?
   echo "Error: command:" >&2

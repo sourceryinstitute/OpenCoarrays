@@ -43,7 +43,7 @@ This pull request (PR) is a:
     be introduced)
   - I have added an explanation of what these changes do and why they should be included
   - I have checked to ensure there aren't other open [Pull Requests] for the same change
-  - I have you written new tests for these changes
+  - I have written new tests for these changes
   - I have successfully tested these changes locally
   - I have commented any non-trivial, non-obvious code changes
   - The commits are logically atomic, self consistent and coherent
@@ -59,4 +59,4 @@ This pull request (PR) is a:
 [links]: #
 [best practices]: https://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html
 [commit messages]: https://thoughtbot.com/blog/5-useful-tips-for-a-better-commit-message
-[Pull Requests]: https://github.com/sourceryinstitue/OpenCoarrays/pulls
+[Pull Requests]: https://github.com/sourceryinstitute/OpenCoarrays/pulls
