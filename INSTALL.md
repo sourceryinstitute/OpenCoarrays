@@ -73,6 +73,9 @@ If the wrong compiler or MPI implementation is being used and you
 cannot determine why, you can try deleting the entire build directly
 and re-running CMake.
 
+To build OpenCoarrays without its tests, pass `-DBUILD_TESTING=OFF` to
+CMake.
+
 On macOS with the Application Firewall on, `make test` can raise a
 firewall prompt for every test program. To avoid this, create a
 self-signed code-signing identity and pass it to CMake with
