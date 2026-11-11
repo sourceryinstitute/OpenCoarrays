@@ -601,7 +601,12 @@ function(caf_compile_executable target main_depend)
     DEPENDS "${target}")
 endfunction(caf_compile_executable)
 
-enable_testing()
+# Same name and default as CTest's option, so -DBUILD_TESTING=OFF skips the tests
+option(BUILD_TESTING "Build and register the tests" ON)
+# Without enable_testing(), the add_test() calls below register nothing with CTest
+if(BUILD_TESTING)
+  enable_testing()
+endif()
 
 #--------------------------------------------------------
 # Setup shellcheck if present for testing/linting scripts

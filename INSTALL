@@ -135,6 +135,11 @@ Configure options
 	 * CodeCoverage
 	Example: cmake .. -DCMAKE_BUILD_TYPE=Debug
 
+ BUILD_TESTING
+	Build the test programs and register them with CTest. Turn it off to
+	build and install only the library and wrappers. Default=ON
+	Example: cmake .. -DBUILD_TESTING=OFF
+
  CAF_ENABLE_FAILED_IMAGES
 	Enable failed image support. Defaults to TRUE if experimental fault
 	tolerance features are detected to be present in the MPI
