@@ -8,13 +8,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        mpi: [ 'mpich', 'openmpi', 'impi' ]
+        # GFortran 16 on 26.04 is a pre-release snapshot; add 16 once a release is packaged
+        gcc: [ 14, 15 ]
         # Open MPI only works with GFortran 14 and older (see
         # src/runtime-libraries/mpi/CMakeLists.txt)
-        mpi: [ 'mpich', 'openmpi', 'impi' ]
+        exclude:
+          - { mpi: 'openmpi', gcc: 15 }
 
     env:
       FC: gfortran
-      GCC_V: 14
+      GCC_V: ${{ matrix.gcc }}
 
     steps:
     - name: Checkout code
@@ -56,4 +60,4 @@ jobs:
         ctest --test-dir build --output-on-failure --schedule-random --repeat-until-fail 1 --timeout 200
         cd build
         make uninstall
-        echo "Ran with mpi: ${{ matrix.mpi }}"
+        echo "Ran with mpi: ${{ matrix.mpi }}, gcc: ${{ matrix.gcc }}"
