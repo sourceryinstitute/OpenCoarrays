@@ -174,8 +174,8 @@ cd "${current_dir}" || exit 5
 # Only called from the ERR trap below, which shellcheck cannot follow
 # shellcheck disable=SC2317,SC2329
 __caf_err_report() {
-  local error_code
-  error_code="${?}"
+  # One statement: a separate `local` would reset ${?} to its own status, 0
+  local error_code="${?}"
   echo "Error in ${__file} in function ${1} on line ${2}. Please report this error at http://bit.ly/OpenCoarrays-new-issue" >&2
   exit "${error_code}"
 }

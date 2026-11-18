@@ -847,6 +847,12 @@ if(opencoarrays_aware_compiler)
             "-DCAFRUN=${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun"
             "-DOUT_DIR=${CMAKE_BINARY_DIR}/caf_help_without_pager" "-DBASH=${BASH_EXECUTABLE}"
             -P "${CMAKE_SOURCE_DIR}/cmake/CafHelpTest.cmake")
+  # caf and cafrun must exit non-zero when a command fails under their ERR trap
+  add_test(NAME caf_error_status
+    COMMAND "${CMAKE_COMMAND}" "-DCAF_TEMPLATE=${CMAKE_SOURCE_DIR}/src/script-templates/caf.in"
+            "-DCAFRUN_TEMPLATE=${CMAKE_SOURCE_DIR}/src/script-templates/cafrun.in"
+            "-DOUT_DIR=${CMAKE_BINARY_DIR}/caf_error_status" "-DBASH=${BASH_EXECUTABLE}"
+            -P "${CMAKE_SOURCE_DIR}/cmake/CafErrorStatusTest.cmake")
   # -cpp only turns on preprocessing, so caf must still link
   file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/caf_cpp_link")
   add_test(NAME caf_cpp_link
