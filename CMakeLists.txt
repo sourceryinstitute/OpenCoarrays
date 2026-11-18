@@ -1081,7 +1081,7 @@ if(NOT WIN32)
   set(install_test_dir "${CMAKE_BINARY_DIR}/install_prefix_test")
   add_test(NAME install_prefix
     COMMAND "${CMAKE_COMMAND}" "-DBUILD_DIR=${CMAKE_BINARY_DIR}" "-DOUT_DIR=${install_test_dir}"
-            "-DBINDIR=${CMAKE_INSTALL_BINDIR}"
+            "-DBINDIR=${CMAKE_INSTALL_BINDIR}" "-DCONFIG=$<CONFIG>"
             -P "${CMAKE_SOURCE_DIR}/cmake/InstallPrefixTest.cmake")
   add_test(NAME uninstall
     COMMAND "${CMAKE_COMMAND}" "-DUNINSTALL_TEMPLATE=${CMAKE_SOURCE_DIR}/cmake/uninstall.cmake.in"

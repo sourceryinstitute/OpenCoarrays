@@ -1,7 +1,7 @@
 # Install the build with `cmake --install --prefix` into a scratch directory,
 # and check that every installed file is under that prefix. Usage:
 #   cmake -DBUILD_DIR=<build dir> -DOUT_DIR=<scratch dir> -DBINDIR=<bin dir>
-#         -P InstallPrefixTest.cmake
+#         [-DCONFIG=<build configuration>] -P InstallPrefixTest.cmake
 # Leaves the install, and its manifest as <scratch dir>/install_manifest.txt,
 # for UninstallTest.cmake.
 foreach(var IN ITEMS BUILD_DIR OUT_DIR BINDIR)
@@ -9,25 +9,51 @@ foreach(var IN ITEMS BUILD_DIR OUT_DIR BINDIR)
     message(FATAL_ERROR "${var} is not set; see the usage at the top of ${CMAKE_CURRENT_LIST_FILE}")
   endif()
 endforeach()
+# Put back records that a killed earlier run left moved aside, before deleting its files
+file(GLOB saved_records "${OUT_DIR}/saved-install_manifest_*")
+foreach(saved IN LISTS saved_records)
+  get_filename_component(record "${saved}" NAME)
+  string(REGEX REPLACE "^saved-" "" record "${record}")
+  file(RENAME "${saved}" "${BUILD_DIR}/${record}")
+endforeach()
 file(REMOVE_RECURSE "${OUT_DIR}")
+file(MAKE_DIRECTORY "${OUT_DIR}")
 set(prefix "${OUT_DIR}/prefix")
+# Install the configuration CTest runs; single-config builds may have none
+set(config_args "")
+if(NOT "${CONFIG}" STREQUAL "")
+  set(config_args --config "${CONFIG}")
+endif()
 # Under DESTDIR, even files installed to an absolute path stay in the scratch directory
 set(ENV{DESTDIR} "${OUT_DIR}/destdir")
 # Install each component on its own, so the build's own install_manifest.txt is left
 # alone: `documentation` holds the man pages, `Unspecified` everything else
 set(files "")
 foreach(component IN ITEMS Unspecified documentation)
+  # Move aside the build's records of a real install of this component, to restore them
+  set(records install_manifest_${component}.txt install_manifest_${component}.SHA256.txt)
+  foreach(record IN LISTS records)
+    if(EXISTS "${BUILD_DIR}/${record}")
+      file(RENAME "${BUILD_DIR}/${record}" "${OUT_DIR}/saved-${record}")
+    endif()
+  endforeach()
   execute_process(COMMAND "${CMAKE_COMMAND}" --install "${BUILD_DIR}" --prefix "${prefix}"
-                          --component ${component}
+                          --component ${component} ${config_args}
     RESULT_VARIABLE rc)
+  if(rc EQUAL 0)
+    file(STRINGS "${BUILD_DIR}/install_manifest_${component}.txt" component_files)
+    list(APPEND files ${component_files})
+  endif()
+  # Remove this test's manifests from the build tree, and put the saved records back
+  foreach(record IN LISTS records)
+    file(REMOVE "${BUILD_DIR}/${record}")
+    if(EXISTS "${OUT_DIR}/saved-${record}")
+      file(RENAME "${OUT_DIR}/saved-${record}" "${BUILD_DIR}/${record}")
+    endif()
+  endforeach()
   if(NOT rc EQUAL 0)
     message(FATAL_ERROR "cmake --install --component ${component} failed with exit status ${rc}")
   endif()
-  file(STRINGS "${BUILD_DIR}/install_manifest_${component}.txt" component_files)
-  list(APPEND files ${component_files})
-  # Leave no manifests from this test in the build tree
-  file(REMOVE "${BUILD_DIR}/install_manifest_${component}.txt"
-              "${BUILD_DIR}/install_manifest_${component}.SHA256.txt")
 endforeach()
 list(JOIN files "\n" manifest)
 file(WRITE "${OUT_DIR}/install_manifest.txt" "${manifest}")
