@@ -63,3 +63,5 @@ uninstall()
 if(NOT EXISTS "${kept}")
   message(FATAL_ERROR "uninstall removed ${kept}, which it did not install${log}")
 endif()
+# CTest runs all fixture repeats first, so this test's reruns must find no files
+file(REMOVE "${kept}")
