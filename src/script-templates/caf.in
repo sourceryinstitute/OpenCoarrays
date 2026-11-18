@@ -281,7 +281,7 @@ usage() {
   echo " Wrapper options:"
   echo "   --help, -h               Show this help message and exit"
   echo "   --version, -v, -V        Report version and copyright information and exit"
-  echo "   --wrapping, -w, --wraps  Report the name of the wrapped compiler and exit"
+  echo "   --wrapping, -w, --wraps  Report the full path of the wrapped compiler and exit"
   echo "   --show, -s, -show        Show how this wrapper will call the compiler and exit (dry run)"
   echo ""
   echo " Example usage:"
@@ -319,6 +319,14 @@ usage() {
   echo " to link against OpenCoarrays, using values that get set during the OpenCoarrays"
   echo " build and installation."
   echo ""
+  echo " ${cmd} does not read @file response files; keep -o, -c, and -fsyntax-only on"
+  echo " the command line."
+  echo ""
+  echo " Environment:"
+  echo "   PAGER                    Pager for this help text when output is a terminal."
+  echo "                            Default: less, if installed. Set PAGER to an empty"
+  echo "                            string or cat to turn paging off."
+  echo ""
   echo " Environment (macOS only):"
   echo "   CAF_CODESIGN_IDENTITY    Sign linked programs with this code-signing identity"
   echo "                            (name or SHA-1 hash) so the Application Firewall"
@@ -329,9 +337,21 @@ usage() {
   echo ""
 }
 
+# Page the usage only when stdout is a terminal and the pager is installed;
+# otherwise print it. The pager is PAGER if set (empty turns paging off), else less
+show_usage() {
+  local pager
+  read -r -a pager <<<"${PAGER-less -i -F -X -M -J}"
+  if [[ -t 1 && -n "${pager[*]:-}" ]] && command -v "${pager[0]}" >/dev/null; then
+    usage | "${pager[@]}"
+  else
+    usage
+  fi
+}
+
 # Print useage information if caf is invoked without arguments
 if ((${#} == 0)); then
-  usage | ${PAGER:-less -i -F -X -M -J}
+  show_usage
   exit 1
 fi
 
@@ -369,7 +389,7 @@ elif [[ ${1} == '-s' || ${1} == '--show' || ${1} == '-show' ]]; then
   exit 0
 elif [[ ${1} == '-h' || ${1} == '--help' ]]; then
   # Print usage information
-  usage | ${PAGER:-less -i -F -X -M -J}
+  show_usage
   exit 0
 elif [[ "${oca_compiler:-}" != "true" ]]; then
   # Transform file(s) with the .f90, .F90, .f, or .F extension, if present:
