@@ -2,7 +2,8 @@
 # and check that every installed file is under that prefix. Usage:
 #   cmake -DBUILD_DIR=<build dir> -DOUT_DIR=<scratch dir> -DBINDIR=<bin dir>
 #         -P InstallPrefixTest.cmake
-# Leaves the install, and its manifest as <scratch dir>/install_manifest.txt.
+# Leaves the install, and its manifest as <scratch dir>/install_manifest.txt,
+# for UninstallTest.cmake.
 foreach(var IN ITEMS BUILD_DIR OUT_DIR BINDIR)
   if("${${var}}" STREQUAL "")
     message(FATAL_ERROR "${var} is not set; see the usage at the top of ${CMAKE_CURRENT_LIST_FILE}")

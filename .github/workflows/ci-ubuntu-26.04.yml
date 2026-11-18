@@ -56,8 +56,14 @@ jobs:
         mkdir build
         cmake -S . -B build -Wdev -DCMAKE_INSTALL_PREFIX:PATH="${HOME}/OpenCoarrays" -DCMAKE_BUILD_TYPE:STRING="Debug"
         cmake --build build -j "$(nproc)"
-        cmake --build build -t install -j "$(nproc)" || echo "installation failed"
+        # Install to a prefix other than the configured one: nothing may go to the latter
+        cmake --install build --prefix "${HOME}/prefix" || echo "installation failed"
         ctest --test-dir build --output-on-failure --schedule-random --repeat-until-fail 1 --timeout 200
+        test -x "${HOME}/prefix/bin/caf"
+        test -x "${HOME}/prefix/bin/cafrun"
+        test ! -e "${HOME}/OpenCoarrays"
         cd build
         make uninstall
+        # Fail on, and list, any file that make uninstall left
+        if find "${HOME}/prefix" ! -type d | grep .; then exit 1; fi
         echo "Ran with mpi: ${{ matrix.mpi }}, gcc: ${{ matrix.gcc }}"
