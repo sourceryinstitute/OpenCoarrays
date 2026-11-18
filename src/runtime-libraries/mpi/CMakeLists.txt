@@ -373,7 +373,7 @@ configure_file("${CMAKE_SOURCE_DIR}/src/script-templates/cafrun.in" "${CMAKE_BIN
 install(PROGRAMS
   "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun"
   "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf"
-  DESTINATION "${CMAKE_INSTALL_FULL_BINDIR}")
+  DESTINATION "${CMAKE_INSTALL_BINDIR}")
 
 if(WIN32)
   # Add the batch script wrappers
@@ -386,7 +386,7 @@ if(WIN32)
   install(PROGRAMS
     "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun.bat"
     "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf.bat"
-    DESTINATION "${CMAKE_INSTALL_FULL_BINDIR}")
+    DESTINATION "${CMAKE_INSTALL_BINDIR}")
 endif()
 
 lint_script("${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}" caf)

@@ -1073,6 +1073,17 @@ endif()
 include(cmake/AddInstallationScriptTest.cmake )
 add_installation_script_test(installation-scripts.sh src/tests/installation/)
 
+# `cmake --install --prefix` must put every file under that prefix. Not on Windows: the
+# test installs under DESTDIR, and the install receipt script joins `$ENV{DESTDIR}${file}`,
+# which is not a valid path when `${file}` starts with a drive letter
+if(NOT WIN32)
+  set(install_test_dir "${CMAKE_BINARY_DIR}/install_prefix_test")
+  add_test(NAME install_prefix
+    COMMAND "${CMAKE_COMMAND}" "-DBUILD_DIR=${CMAKE_BINARY_DIR}" "-DOUT_DIR=${install_test_dir}"
+            "-DBINDIR=${CMAKE_INSTALL_BINDIR}"
+            -P "${CMAKE_SOURCE_DIR}/cmake/InstallPrefixTest.cmake")
+endif()
+
 if( CAF_ENABLE_FAILED_IMAGES AND ( NOT
       (	"${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" ) AND ( "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64" ) )
     )
