@@ -186,7 +186,9 @@ usage() {
 
 i=0
 disable_failed_images=false
-for arg in "${@}"; do
+# Not `in "${@}"`: bash 3.2 (macOS) treats `"${@}"` as unbound under nounset
+# when there are no arguments
+for arg; do
   ((i+=1))
   if [[ "${arg}" == "--reenable-auto-cleanup" ]]; then
     # Strip "--reenable-auto-cleanup" from args
