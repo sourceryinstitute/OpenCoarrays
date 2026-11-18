@@ -840,9 +840,11 @@ if(opencoarrays_aware_compiler)
     COMMAND "${CMAKE_COMMAND}" "-DCAF_TEMPLATE=${CMAKE_SOURCE_DIR}/src/script-templates/caf.in"
             "-DOUT_DIR=${CMAKE_BINARY_DIR}/caf_codesign_quoting" "-DBASH=${BASH_EXECUTABLE}"
             -P "${CMAKE_SOURCE_DIR}/cmake/CafCodesignQuotingTest.cmake")
-  # caf must print its usage, not page it, when stdout is not a terminal
+  # caf must print its usage, not page it, when stdout is not a terminal; caf and
+  # cafrun without arguments must print it too
   add_test(NAME caf_help_without_pager
     COMMAND "${CMAKE_COMMAND}" "-DCAF=${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/caf"
+            "-DCAFRUN=${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/cafrun"
             "-DOUT_DIR=${CMAKE_BINARY_DIR}/caf_help_without_pager" "-DBASH=${BASH_EXECUTABLE}"
             -P "${CMAKE_SOURCE_DIR}/cmake/CafHelpTest.cmake")
   # -cpp only turns on preprocessing, so caf must still link

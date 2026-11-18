@@ -184,7 +184,9 @@ trap '__caf_err_report "${FUNCNAME:-.}" ${LINENO}' ERR
 
 # See if we are compiling or compiling and/or linking
 with_link="true"
-for arg in "${@}"; do
+# Not `in "${@}"`: bash 3.2 (macOS) treats `"${@}"` as unbound under nounset
+# when there are no arguments
+for arg; do
   case "${arg}" in
     # Modes that produce no program: compile, assemble, preprocess, check, list
     # dependencies, dry run, or query the compiler (CMake runs -dumpmachine)

@@ -1,10 +1,12 @@
-# Check that caf prints its usage when stdout is not a terminal, with a `less`
-# and a PAGER that would lose the text (#810). Usage:
-#   cmake -DCAF=<caf> -DBASH=<bash> -DOUT_DIR=<dir> -P CafHelpTest.cmake
-foreach(var IN ITEMS CAF BASH OUT_DIR)
+# Check that caf and cafrun print their usage when stdout is not a terminal,
+# with a `less` and a PAGER that would lose the text (#810). Usage:
+#   cmake -DCAF=<caf> -DCAFRUN=<cafrun> -DBASH=<bash> -DOUT_DIR=<dir>
+#         -P CafHelpTest.cmake
+foreach(var IN ITEMS CAF CAFRUN BASH OUT_DIR)
   if(NOT ${var})
     message(FATAL_ERROR "Missing -D${var}=<value>. Usage:\n"
-      "  cmake -DCAF=<caf> -DBASH=<bash> -DOUT_DIR=<dir> -P ${CMAKE_CURRENT_LIST_FILE}")
+      "  cmake -DCAF=<caf> -DCAFRUN=<cafrun> -DBASH=<bash> -DOUT_DIR=<dir>"
+      " -P ${CMAKE_CURRENT_LIST_FILE}")
   endif()
 endforeach()
 
@@ -20,24 +22,26 @@ endif()
 unset(ENV{PAGER})
 
 set(failed "")
-# Run caf with ARGN; record a failure unless it exits with `expected_rc` and
-# prints its usage, from the `Usage:` line to the last variable it documents
-macro(check_usage case expected_rc)
-  execute_process(COMMAND "${BASH}" "${CAF}" ${ARGN}
+# Run `script` with ARGN; record a failure unless it exits with `expected_rc`
+# and prints its usage, from the `Usage:` line to the text `last` near its end
+macro(check_usage case expected_rc script last)
+  execute_process(COMMAND "${BASH}" "${script}" ${ARGN}
     OUTPUT_VARIABLE out ERROR_VARIABLE err RESULT_VARIABLE rc)
-  string(FIND "${out}" " Usage: " first)
-  string(FIND "${out}" "CAF_CODESIGN_IDENTIFIER" last)
-  if(NOT rc EQUAL ${expected_rc} OR first EQUAL -1 OR last EQUAL -1)
+  string(FIND "${out}" " Usage: " first_pos)
+  string(FIND "${out}" "${last}" last_pos)
+  if(NOT rc EQUAL ${expected_rc} OR first_pos EQUAL -1 OR last_pos EQUAL -1)
     string(APPEND failed "${case} (exit ${rc}, expected ${expected_rc}):\n${out}\n${err}\n")
   endif()
 endmacro()
 
-check_usage("caf --help with PAGER unset" 0 --help)
-check_usage("caf without arguments, PAGER unset" 1)
+check_usage("caf --help with PAGER unset" 0 "${CAF}" CAF_CODESIGN_IDENTIFIER --help)
+check_usage("caf without arguments, PAGER unset" 1 "${CAF}" CAF_CODESIGN_IDENTIFIER)
+check_usage("cafrun without arguments" 1 "${CAFRUN}" "caf --wraps")
 # A pager must not run when stdout is not a terminal
 set(ENV{PAGER} false)
-check_usage("caf --help with PAGER=false" 0 --help)
+check_usage("caf --help with PAGER=false" 0 "${CAF}" CAF_CODESIGN_IDENTIFIER --help)
 
 if(failed)
-  message(FATAL_ERROR "caf did not print its usage with the expected exit status:\n${failed}")
+  message(FATAL_ERROR "caf or cafrun did not print its usage with the expected exit status:\n"
+    "${failed}")
 endif()
