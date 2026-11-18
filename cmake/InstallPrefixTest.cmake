@@ -9,12 +9,18 @@ foreach(var IN ITEMS BUILD_DIR OUT_DIR BINDIR)
     message(FATAL_ERROR "${var} is not set; see the usage at the top of ${CMAKE_CURRENT_LIST_FILE}")
   endif()
 endforeach()
-# Put back records that a killed earlier run left moved aside, before deleting its files
-file(GLOB saved_records "${OUT_DIR}/saved-install_manifest_*")
-foreach(saved IN LISTS saved_records)
-  get_filename_component(record "${saved}" NAME)
-  string(REGEX REPLACE "^saved-" "" record "${record}")
-  file(RENAME "${saved}" "${BUILD_DIR}/${record}")
+# Install each component on its own, so the build's own install_manifest.txt is left
+# alone: `documentation` holds the man pages, `Unspecified` everything else
+set(components Unspecified documentation)
+# Put back records that a killed earlier run left moved aside, before deleting its files.
+# Name them, rather than use `file(GLOB)`, which would read `[`, `*` or `?` in the path
+# as patterns, miss the records, and let them be deleted.
+foreach(component IN LISTS components)
+  foreach(record IN ITEMS install_manifest_${component}.txt install_manifest_${component}.SHA256.txt)
+    if(EXISTS "${OUT_DIR}/saved-${record}")
+      file(RENAME "${OUT_DIR}/saved-${record}" "${BUILD_DIR}/${record}")
+    endif()
+  endforeach()
 endforeach()
 file(REMOVE_RECURSE "${OUT_DIR}")
 file(MAKE_DIRECTORY "${OUT_DIR}")
@@ -26,10 +32,8 @@ if(NOT "${CONFIG}" STREQUAL "")
 endif()
 # Under DESTDIR, even files installed to an absolute path stay in the scratch directory
 set(ENV{DESTDIR} "${OUT_DIR}/destdir")
-# Install each component on its own, so the build's own install_manifest.txt is left
-# alone: `documentation` holds the man pages, `Unspecified` everything else
 set(files "")
-foreach(component IN ITEMS Unspecified documentation)
+foreach(component IN LISTS components)
   # Move aside the build's records of a real install of this component, to restore them
   set(records install_manifest_${component}.txt install_manifest_${component}.SHA256.txt)
   foreach(record IN LISTS records)
