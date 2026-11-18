@@ -65,3 +65,20 @@ if(NOT EXISTS "${kept}")
 endif()
 # CTest runs all fixture repeats first, so this test's reruns must find no files
 file(REMOVE "${kept}")
+
+# The same holds when the path has glob characters, which `file(GLOB)` would misread
+set(ENV{DESTDIR} "${OUT_DIR}/destdir [1]")
+set(own_dir "$ENV{DESTDIR}${prefix}/${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}")
+set(kept "${own_dir}/not-installed")
+file(WRITE "${kept}" "")
+uninstall()
+if(NOT EXISTS "${kept}")
+  message(FATAL_ERROR "uninstall removed ${kept}, which it did not install${log}")
+endif()
+# Once empty, the directory must go
+file(REMOVE "${kept}")
+uninstall()
+if(EXISTS "${own_dir}")
+  message(FATAL_ERROR "uninstall did not remove the empty directory ${own_dir}${log}")
+endif()
+file(REMOVE_RECURSE "$ENV{DESTDIR}")
