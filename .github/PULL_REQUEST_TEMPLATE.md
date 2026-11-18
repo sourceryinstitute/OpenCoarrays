@@ -51,11 +51,6 @@ This pull request (PR) is a:
   - Test coverage is maintained or increased after this is merged
 
 
-## Code coverage data
-
-![coverage on master](https://codecov.io/gh/sourceryinstitute/OpenCoarrays/branch/master/graphs/commits.svg)
-
-
 [links]: #
 [best practices]: https://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html
 [commit messages]: https://thoughtbot.com/blog/5-useful-tips-for-a-better-commit-message
