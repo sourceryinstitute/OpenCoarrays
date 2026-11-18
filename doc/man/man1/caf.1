@@ -1,4 +1,4 @@
-.TH CAF 1 2026\-11\-14 OpenCoarrays\-2.10.3 "caf compiler wrapper manual"
+.TH CAF 1 2026\-11\-18 OpenCoarrays\-2.10.3 "caf compiler wrapper manual"
 .SH NAME
 .PP
 \fB\fCcaf\fR \- OpenCoarrays compiler wrapper to compile and link coarray Fortran source files and programs
@@ -14,10 +14,12 @@ by default, and that the linker links against the appropriate parallel runtime, 
 \fB\fCcaf\fR embeds the full path to the Fortran compiler it was built for, and to the parallel runtime libraries it links against, and a relative path, based on the install location of \fB\fCcaf\fR itself, to the OpenCoarrays library. This ensures that the API and ABI of OpenCoarrays is always consistent with the Fortran compiler it was built for, and the parallel runtime it uses. To upgrade the parallel runtime, e.g., MPI, or the Fortran compiler, you will need to rebuild and install OpenCoarrays, which will regenerate and reinstall the \fB\fCcaf\fR wrapper script.
 .PP
 \fB\fCcaf\fR tries to be smart about how it calls the underlying compiler and linker. Any user specified libraries will be inserted before the OpenCoarrays library, \fIlibcaf_mpi\fP, and before the parallel runtime libraries. This ensures that the linker will be able to resolve any references to the OpenCoarrays library and the parallel runtime library made by user supplied libraries. In addition, any options not recognized by \fB\fCcaf\fR itself (see OPTIONS below) are passed on to the underlying compiler. To see the default command \fB\fCcaf\fR will invoke, run \fB\fCcaf \-\-show\fR\&. To see how \fB\fCcaf\fR would execute a specific command, i.e., perform a dry\-run, pass the full command you wish to run, with the additional \fB\fC\-\-show\fR option as the very first option or argument after \fB\fCcaf\fR\&. (e.g., \fB\fCcaf \-\-show \-c foo.f90 \-o foo.f90.o\fR or \fB\fCcaf \-\-show foo.f90.o bar.f90.o \-lblas \-o a.out\fR)
+.PP
+\fB\fCcaf\fR does not read \fB\fC@file\fR response files; keep \fB\fC\-o\fR, \fB\fC\-c\fR, and \fB\fC\-fsyntax\-only\fR on the command line.
 .SH OPTIONS
 .TP
 \fB\fC\-\-help\fR, \fB\fC\-h\fR
-Print a brief help/usage message and return without performing any substantive action.
+Print a brief help/usage message and return without performing any substantive action. When standard output is a terminal, show the message through a pager (see \fB\fCPAGER\fR below); otherwise print it directly. Running \fB\fCcaf\fR with no arguments prints the same message and exits with status 1.
 .TP
 \fB\fC\-\-show\fR, \fB\fC\-s\fR, \fB\fC\-show\fR
 Print the default invocation of the underlying compiler, including what flags are passed, etc. This also functions as a dry\-run for executing a specific command, showing the user how the compiler would be called with the additional files and arguments passed by the user.
@@ -34,6 +36,11 @@ macOS only. Sign each linked program with this code\-signing identity (name or S
 .TP
 \fB\fCCAF_CODESIGN_IDENTIFIER\fR
 macOS only. The identifier to sign programs with. Keep it the same for every program. Overrides the CMake option of the same name. Default: \fB\fCorg.opencoarrays.caf\fR\&.
+.TP
+\fB\fCPAGER\fR
+Pager for the usage message (\fB\fC\-\-help\fR, or no arguments) when standard output is a terminal. If \fB\fCPAGER\fR is unset, \fB\fCcaf\fR uses
+.BR less (1)
+with the options \fB\fC\-i \-F \-X \-M \-J\fR\&. Set it to an empty string or \fB\fCcat\fR to turn paging off. If the pager is not installed, \fB\fCcaf\fR prints the message directly.
 .SH BUGS
 .PP
 For a list of bugs currently affecting OpenCoarrays, or to report a new one, please report any bugs to the OpenCoarrays project at \[la]https://github.com/sourceryinstitute/OpenCoarrays/issues\[ra]

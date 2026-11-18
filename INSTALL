@@ -231,6 +231,9 @@ Avoiding macOS firewall prompts
 
     codesign -d -r- /path/to/program
 
+ `caf` does not read `@file` response files; keep `-o`, `-c`, and
+ `-fsyntax-only` on the command line.
+
  Allow the identity in the firewall once. Either click Allow at the first
  prompt for a signed program, or add a rule for one signed program without
  a prompt:
