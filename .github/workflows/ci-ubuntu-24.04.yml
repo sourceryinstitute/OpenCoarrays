@@ -44,9 +44,19 @@ jobs:
         # Only MPICH's own bin: Homebrew's gfortran must not shadow gfortran-${GCC_V}
         echo "$(brew --prefix mpich)/bin" >> "$GITHUB_PATH"
 
+    # Keep this image's CMake 3.31.6, to test CMake 3.x and to avoid CTest 4.5.0, which
+    # slows tests with heavy output into timeouts; revert this pin once the images ship
+    # CMake 4.5.1 or later (https://gitlab.kitware.com/cmake/cmake/-/issues/28298)
+    - name: Setup CMake
+      uses: jwlawson/actions-setup-cmake@v2
+      with:
+        cmake-version: '3.31.6'
+
     - name: Build and Test
       run: |
         gfortran --version
+        cmake --version
+        ctest --version
         "${CC}" --version
         mpirun --version
         mkdir build
