@@ -45,9 +45,18 @@ jobs:
         mpicc.bat -version || echo "icc not installed"
         set +o verbose
 
+    # CTest 4.5.0 slows tests with heavy output into timeouts; revert this pin once the
+    # images ship CMake 4.5.1 or later (https://gitlab.kitware.com/cmake/cmake/-/issues/28298)
+    - name: Setup CMake
+      uses: jwlawson/actions-setup-cmake@v2
+      with:
+        cmake-version: '4.4.5'
+
     - name: Build and Test
       run: |
         gfortran --version
+        cmake --version
+        ctest --version
         gcc --version
         mkdir build
         cmake -Wdev -G "Unix Makefiles" -S . -B build -DCMAKE_INSTALL_PREFIX="${HOME}/apps/OpenCoarrays" -DCMAKE_BUILD_TYPE:STRING="Debug"
