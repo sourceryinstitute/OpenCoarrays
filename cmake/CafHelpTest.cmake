@@ -1,5 +1,6 @@
-# Check that caf and cafrun print their usage when stdout is not a terminal,
-# with a `less` and a PAGER that would lose the text (#810). Usage:
+# Check that caf and cafrun write their usage straight to stdout when stdout
+# is not a terminal (#810). A fake `less` and `PAGER=false` discard the text,
+# so the test fails if either script sends its usage to a pager. Usage:
 #   cmake -DCAF=<caf> -DCAFRUN=<cafrun> -DBASH=<bash> -DOUT_DIR=<dir>
 #         -P CafHelpTest.cmake
 foreach(var IN ITEMS CAF CAFRUN BASH OUT_DIR)
