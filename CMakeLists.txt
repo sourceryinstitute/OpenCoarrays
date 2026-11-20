@@ -853,6 +853,11 @@ if(opencoarrays_aware_compiler)
             "-DCAFRUN_TEMPLATE=${CMAKE_SOURCE_DIR}/src/script-templates/cafrun.in"
             "-DOUT_DIR=${CMAKE_BINARY_DIR}/caf_error_status" "-DBASH=${BASH_EXECUTABLE}"
             -P "${CMAKE_SOURCE_DIR}/cmake/CafErrorStatusTest.cmake")
+  # cafrun must strip every --reenable-auto-cleanup and keep the other arguments
+  add_test(NAME cafrun_reenable_auto_cleanup
+    COMMAND "${CMAKE_COMMAND}" "-DCAFRUN_TEMPLATE=${CMAKE_SOURCE_DIR}/src/script-templates/cafrun.in"
+            "-DOUT_DIR=${CMAKE_BINARY_DIR}/cafrun_reenable_auto_cleanup" "-DBASH=${BASH_EXECUTABLE}"
+            -P "${CMAKE_SOURCE_DIR}/cmake/CafrunReenableAutoCleanupTest.cmake")
   # -cpp only turns on preprocessing, so caf must still link
   file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/caf_cpp_link")
   add_test(NAME caf_cpp_link

@@ -184,21 +184,23 @@ usage() {
   echo ""
 }
 
-i=0
 disable_failed_images=false
+kept_args=()
 # Not `in "${@}"`: bash 3.2 (macOS) treats `"${@}"` as unbound under nounset
 # when there are no arguments
 for arg; do
-  ((i+=1))
   if [[ "${arg}" == "--reenable-auto-cleanup" ]]; then
-    # Strip "--reenable-auto-cleanup" from args
-    set -- "${@:1:$((i - 1))}" "${@:$((i+1)):$((${#} - i))}"
-    if ! ${have_failed_img}; then
-      echo "Library was not built with failed image support, so passing \`--reenable-auto-cleanup\` is a noop" >&2
-    fi
     disable_failed_images=true
+  else
+    kept_args+=("${arg}")
   fi
 done
+# Strip "--reenable-auto-cleanup" from args; bash 3.2 treats an empty array as
+# unbound under nounset
+set -- ${kept_args[@]+"${kept_args[@]}"}
+if ${disable_failed_images} && ! ${have_failed_img}; then
+  echo "Library was not built with failed image support, so passing \`--reenable-auto-cleanup\` is a noop" >&2
+fi
 
 if ! ${disable_failed_images}; then
   if ${have_failed_img}; then
