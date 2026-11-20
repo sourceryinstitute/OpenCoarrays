@@ -157,13 +157,13 @@ check_symbol_exists(MPICH_VERSION "mpi.h" HAVE_MPICH)
 check_symbol_exists(I_MPI_VERSION "mpi.h" HAVE_Intel_MPI)
 cmake_pop_check_state()
 if (HAVE_OPEN_MPI)
+  message(STATUS "MPI implementation: Open MPI")
   if ( gfortran_compiler AND ( NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 15.0.0 ) )
     # From GFortran 15 on, tokens (MPI windows) are passed between images (GCC_GE_15).
     # OpenMPI uses addresses for windows instead of identical ids on all images for the same token.
     # Therefore we can't use it (yet; and probably never).
     message( FATAL_ERROR "OpenMPI is incompatible with gfortran's coarray implementation from gfortran version 15 on. Please use a different MPI implementation!")
   endif ()
-  message( STATUS "OpenMPI detected")
   set_property(GLOBAL PROPERTY openmpi true)
   # Write out a host file because OMPI's mpiexec is dumb
   file(WRITE ${CMAKE_BINARY_DIR}/hostfile "${HOST_NAME} slots=${N_CPU}\n")
@@ -171,10 +171,14 @@ if (HAVE_OPEN_MPI)
   if(NOT DEFINED ENV{TRAVIS})
     message( STATUS "Open-MPI back end detected, passing --allow-run-as-root to allow tests to pass when run with sudo or as root." )
   endif()
-elseif (HAVE_MPICH AND NOT HAVE_Intel_MPI) # Intel MPI's mpi.h defines MPICH_VERSION too
-  message(STATUS "MPICH detected")
+elseif (HAVE_Intel_MPI) # Before MPICH: Intel MPI's mpi.h defines MPICH_VERSION too
+  message(STATUS "MPI implementation: Intel MPI")
+elseif (HAVE_MPICH)
+  message(STATUS "MPI implementation: MPICH")
   target_compile_definitions(caf_mpi PRIVATE MPI_CLEAR_COMM_BEFORE_FREE)
   target_compile_definitions(caf_mpi_static PRIVATE MPI_CLEAR_COMM_BEFORE_FREE)
+else ()
+  message(STATUS "MPI implementation: unknown")
 endif ()
 
 if("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
