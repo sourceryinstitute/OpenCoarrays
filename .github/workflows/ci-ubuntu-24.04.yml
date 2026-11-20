@@ -61,11 +61,17 @@ jobs:
         mpirun --version
         mkdir build
         (set -o pipefail; cmake -S . -B build -Wdev -DCMAKE_INSTALL_PREFIX:PATH="${HOME}/OpenCoarrays" -DCMAKE_BUILD_TYPE:STRING="Debug" | tee build/configure.log)
-        # Fail if configure did not identify the job's MPI (#814)
+        # Fail unless configure named the job's MPI: tests depend on it (#814)
         case "${{ matrix.mpi }}" in
-          mpich) grep -x -- '-- MPICH detected' build/configure.log ;;
-          *) if grep -E -- '-- (OpenMPI|MPICH) detected' build/configure.log; then exit 1; fi ;;
+          openmpi) expected_mpi="Open MPI" ;;
+          mpich) expected_mpi="MPICH" ;;
+          impi) expected_mpi="Intel MPI" ;;
+          *) echo "::error::No expected MPI name for matrix.mpi '${{ matrix.mpi }}'"; exit 1 ;;
         esac
+        if ! grep -q -x -F -e "-- MPI implementation: ${expected_mpi}" build/configure.log; then
+          echo "::error::Configure did not print '-- MPI implementation: ${expected_mpi}'"
+          exit 1
+        fi
         cmake --build build -j "$(nproc)"
         # Install to a prefix other than the configured one: nothing may go to the latter
         cmake --install build --prefix "${HOME}/prefix" || echo "installation failed"
