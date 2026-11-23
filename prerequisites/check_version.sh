@@ -5,8 +5,8 @@
 # -- Verify whether an OpenCoarrays prerequisite meets the required minimum version number.
 #
 # OpenCoarrays is distributed under the OSI-approved BSD 3-clause License:
-# Copyright (c) 2015-2022, Sourcery Institute
-# Copyright (c) 2015-2022, Archaeologic Inc.
+# Copyright (c) 2015-2026, Sourcery Institute
+# Copyright (c) 2015-2026, Archaeologic Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification,
@@ -90,7 +90,7 @@ elif [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
   echo ""
   echo "OpenCoarrays prerequisite version verifier"
   echo "Copyright (C) 2015-2016 Sourcery, Inc."
-  echo "Copyright (C) 2015-2016 Sourcery Institute"
+  echo "Copyright (C) 2015-2026 Sourcery Institute"
   echo ""
   echo "OpenCoarrays comes with NO WARRANTY, to the extent permitted by law."
   echo "You may redistribute copies of $this_script under the terms of the"
