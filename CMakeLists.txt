@@ -629,11 +629,11 @@ endif()
 
 function(lint_script script_dir script_name)
   if (SHELLCHECK_EXE)
-    add_test(NAME "shellcheck:${script_name}"
+    add_test(NAME "shellcheck-${script_name}"
       COMMAND ${SHELLCHECK_EXE} -x "${script_dir}/${script_name}"
       WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
   elseif (CAF_RUN_DEVELOPER_TESTS OR $ENV{OPENCOARRAYS_DEVELOPER})
-    message( AUTHOR_WARNING "test: shellcheck:${script_name} not run because shellcheck not installed." )
+    message( AUTHOR_WARNING "test: shellcheck-${script_name} not run because shellcheck not installed." )
   endif()
 endfunction()
 
