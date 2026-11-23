@@ -1,7 +1,7 @@
 ! Fortran 2015 feature support for Fortran 2008 compilers
 !
-! Copyright (c) 2015-2022, Sourcery Institute
-! Copyright (c) 2015-2022, Archaeologic Inc.
+! Copyright (c) 2015-2026, Sourcery Institute
+! Copyright (c) 2015-2026, Archaeologic Inc.
 ! All rights reserved.
 !
 ! Redistribution and use in source and binary forms, with or without
