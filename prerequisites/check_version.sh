@@ -97,6 +97,7 @@ elif [[ $1 == '-v' || $1 == '-V' || $1 == '--version' ]]; then
   echo "BSD 3-Clause License.  For more information about these matters, see"
   echo "http://www.sourceryinstitute.org/license.html"
   echo ""
+  exit 0
 fi
 
 package_version_header=$($package --version | head -1)
