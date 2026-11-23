@@ -149,9 +149,12 @@ include(CMakePushCheckState)
 cmake_push_check_state()
 list(APPEND CMAKE_REQUIRED_INCLUDES ${MPI_C_INCLUDE_DIRS})
 # Probe again on every configure: the MPI may change in an existing build tree
-unset(HAVE_OPEN_MPI CACHE)
-unset(HAVE_MPICH CACHE)
-unset(HAVE_Intel_MPI CACHE)
+unset(HAVE_OPEN_MPI
+  CACHE)
+unset(HAVE_MPICH
+  CACHE)
+unset(HAVE_Intel_MPI
+  CACHE)
 check_symbol_exists(OPEN_MPI "mpi.h" HAVE_OPEN_MPI)
 check_symbol_exists(MPICH_VERSION "mpi.h" HAVE_MPICH)
 check_symbol_exists(I_MPI_VERSION "mpi.h" HAVE_Intel_MPI)
@@ -250,7 +253,9 @@ else()
   set(CMAKE_REQUIRED_INCLUDES ${MPI_C_INCLUDE_DIRS})
 endif()
 set(old_cmake_required_flags "${CMAKE_REQUIRED_FLAGS}")
-list(TRANSFORM MPI_C_COMPILE_DEFINITIONS PREPEND "-D" OUTPUT_VARIABLE mpi_c_definition_flags)
+list(TRANSFORM MPI_C_COMPILE_DEFINITIONS
+  PREPEND "-D"
+  OUTPUT_VARIABLE mpi_c_definition_flags)
 if(CMAKE_REQUIRED_FLAGS)
   string(JOIN " " CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS} ${MPI_C_COMPILE_OPTIONS} ${mpi_c_definition_flags} ${MPI_C_LINK_FLAGS})
 else()
@@ -357,7 +362,9 @@ foreach( lflag IN LISTS MPI_Fortran_LINK_FLAGS)
 endforeach()
 string(STRIP "${CAF_MPI_Fortran_LINK_FLAGS}" CAF_MPI_Fortran_LINK_FLAGS)
 set(CAF_MPI_Fortran_COMPILE_FLAGS "")
-list(TRANSFORM MPI_Fortran_COMPILE_DEFINITIONS PREPEND "-D" OUTPUT_VARIABLE mpi_fortran_definition_flags)
+list(TRANSFORM MPI_Fortran_COMPILE_DEFINITIONS
+  PREPEND "-D"
+  OUTPUT_VARIABLE mpi_fortran_definition_flags)
 foreach( fcflag IN LISTS MPI_Fortran_COMPILE_OPTIONS mpi_fortran_definition_flags)
   set(CAF_MPI_Fortran_COMPILE_FLAGS "${CAF_MPI_Fortran_COMPILE_FLAGS} ${fcflag}" )
 endforeach()
